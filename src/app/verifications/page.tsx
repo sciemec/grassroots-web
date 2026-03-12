@@ -22,18 +22,18 @@ export default function VerificationsPage() {
   const { data, isLoading } = useQuery<PaginatedResponse<IdentityVerification>>({
     queryKey: ["verifications", page, status],
     queryFn: async () => {
-      const res = await api.get("/api/admin/verifications", { params: { page, status } });
+      const res = await api.get("/admin/verifications", { params: { page, status } });
       return res.data;
     },
   });
 
   const approve = useMutation({
-    mutationFn: (id: string) => api.post(`/api/admin/verifications/${id}/approve`),
+    mutationFn: (id: string) => api.post(`/admin/verifications/${id}/approve`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["verifications"] }),
   });
 
   const reject = useMutation({
-    mutationFn: (id: string) => api.post(`/api/admin/verifications/${id}/reject`),
+    mutationFn: (id: string) => api.post(`/admin/verifications/${id}/reject`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["verifications"] }),
   });
 

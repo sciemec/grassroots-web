@@ -25,7 +25,7 @@ export default function ScoutPage() {
   const { data: players, isLoading, refetch } = useQuery<ScoutPlayer[]>({
     queryKey: ["scout-players", position, province],
     queryFn: async () => {
-      const res = await api.get("/api/scout/players", {
+      const res = await api.get("/scout/players", {
         params: { position: position || undefined, province: province || undefined },
       });
       return res.data?.data ?? res.data;
@@ -35,7 +35,7 @@ export default function ScoutPage() {
 
   const contact = useMutation({
     mutationFn: ({ player_id, reason }: { player_id: string; reason: string }) =>
-      api.post("/api/scout/contact-requests", { player_id, reason }),
+      api.post("/scout/contact-requests", { player_id, reason }),
     onSuccess: (_, vars) => setSent((prev) => ({ ...prev, [vars.player_id]: true })),
   });
 

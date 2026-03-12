@@ -22,19 +22,19 @@ export default function CoachSquadPage() {
   const { data: squad, isLoading } = useQuery<SquadMember[]>({
     queryKey: ["squad"],
     queryFn: async () => {
-      const res = await api.get("/api/coach/squad");
+      const res = await api.get("/coach/squad");
       return res.data;
     },
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/coach/squad/${id}`),
+    mutationFn: (id: string) => api.delete(`/coach/squad/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["squad"] }),
   });
 
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      api.patch(`/api/coach/squad/${id}`, { status }),
+      api.patch(`/coach/squad/${id}`, { status }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["squad"] }),
   });
 
@@ -42,7 +42,7 @@ export default function CoachSquadPage() {
     setInsightsLoading(true);
     setInsights(null);
     try {
-      const res = await api.post("/api/coach/insights", { question: question || "Analyse my squad fitness and injury risk." });
+      const res = await api.post("/coach/insights", { question: question || "Analyse my squad fitness and injury risk." });
       setInsights(res.data.insight ?? res.data.message ?? JSON.stringify(res.data));
     } catch {
       setInsights("Failed to load insights. Try again.");

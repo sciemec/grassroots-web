@@ -11,6 +11,8 @@ import {
   UserSearch,
   ClipboardList,
   BarChart2,
+  Bell,
+  Heart,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +27,8 @@ const navItems = [
   { href: "/subscriptions", label: "Subscriptions", icon: CreditCard, roles: ["admin"] },
   { href: "/scout-requests", label: "Scout Requests", icon: ClipboardList, roles: ["admin"] },
   { href: "/analytics", label: "Analytics", icon: BarChart2, roles: ["admin"] },
+  { href: "/notifications", label: "Notifications", icon: Bell, roles: ["admin"] },
+  { href: "/community", label: "Community", icon: Heart, roles: ["admin"] },
   { href: "/coach", label: "My Squad", icon: Users, roles: ["coach"] },
   { href: "/scout", label: "Find Players", icon: UserSearch, roles: ["scout"] },
 ];

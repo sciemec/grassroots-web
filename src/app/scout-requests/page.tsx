@@ -14,18 +14,18 @@ export default function ScoutRequestsPage() {
   const { data, isLoading } = useQuery<PaginatedResponse<ScoutContactRequest>>({
     queryKey: ["scout-requests", page],
     queryFn: async () => {
-      const res = await api.get("/api/admin/contact-requests/pending", { params: { page } });
+      const res = await api.get("/admin/contact-requests/pending", { params: { page } });
       return res.data;
     },
   });
 
   const approve = useMutation({
-    mutationFn: (id: string) => api.post(`/api/admin/contact-requests/${id}/approve`),
+    mutationFn: (id: string) => api.post(`/admin/contact-requests/${id}/approve`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["scout-requests"] }),
   });
 
   const reject = useMutation({
-    mutationFn: (id: string) => api.post(`/api/admin/contact-requests/${id}/reject`),
+    mutationFn: (id: string) => api.post(`/admin/contact-requests/${id}/reject`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["scout-requests"] }),
   });
 

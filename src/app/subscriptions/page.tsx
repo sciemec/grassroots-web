@@ -24,7 +24,7 @@ export default function SubscriptionsPage() {
   const { data, isLoading } = useQuery<PaginatedResponse<PlayerSubscription>>({
     queryKey: ["subscriptions", page, status],
     queryFn: async () => {
-      const res = await api.get("/api/admin/subscriptions", { params: { page, status: status || undefined } });
+      const res = await api.get("/admin/subscriptions", { params: { page, status: status || undefined } });
       return res.data;
     },
   });

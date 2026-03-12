@@ -25,13 +25,13 @@ export default function UsersPage() {
   const { data, isLoading } = useQuery<PaginatedResponse<User>>({
     queryKey: ["users", page, search, role],
     queryFn: async () => {
-      const res = await api.get("/api/admin/users", { params: { page, search: search || undefined, role: role || undefined } });
+      const res = await api.get("/admin/users", { params: { page, search: search || undefined, role: role || undefined } });
       return res.data;
     },
   });
 
   const toggle = useMutation({
-    mutationFn: (id: string) => api.post(`/api/admin/users/${id}/toggle-active`),
+    mutationFn: (id: string) => api.post(`/admin/users/${id}/toggle-active`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 

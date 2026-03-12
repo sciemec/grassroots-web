@@ -23,7 +23,7 @@ export default function SessionsPage() {
   const { data, isLoading } = useQuery<PaginatedResponse<TrainingSession>>({
     queryKey: ["sessions", page, status],
     queryFn: async () => {
-      const res = await api.get("/api/admin/sessions", { params: { page, status: status || undefined } });
+      const res = await api.get("/admin/sessions", { params: { page, status: status || undefined } });
       return res.data;
     },
   });

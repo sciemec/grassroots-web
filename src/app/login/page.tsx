@@ -26,7 +26,7 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     setError("");
     try {
-      const res = await api.post("/api/admin/login", data);
+      const res = await api.post("/admin/login", data);
       const { token, user } = res.data;
       login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
       router.push("/dashboard");
