@@ -6,8 +6,8 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Grassroots Sport — Dashboard",
-  description: "Admin & management portal for Grassroots Sport",
+  title: "Grassroots Sport Pro",
+  description: "AI-powered multi-sport platform for Africa's next generation of athletes. Train smarter, get scouted, grow your game.",
 };
 
 export default function RootLayout({

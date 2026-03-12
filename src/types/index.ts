@@ -7,8 +7,17 @@ export interface PaginatedResponse<T> {
   total: number;
 }
 
+// ─── Sports ───────────────────────────────────────────────────────────────────
+export interface Sport {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  active: boolean;
+}
+
 // ─── User & Roles ─────────────────────────────────────────────────────────────
-export type UserRole = "player" | "coach" | "scout" | "admin";
+export type UserRole = "player" | "coach" | "scout" | "admin" | "fan";
 export type AgeGroup = "u13" | "u17" | "u20" | "senior";
 
 export interface User {

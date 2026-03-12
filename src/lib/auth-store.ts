@@ -1,7 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type UserRole = "admin" | "coach" | "scout" | "player";
+export type UserRole = "admin" | "coach" | "scout" | "player" | "fan";
+
+export function roleHomePath(role: UserRole): string {
+  switch (role) {
+    case "admin":  return "/dashboard";
+    case "coach":  return "/coach";
+    case "scout":  return "/scout";
+    case "player": return "/player";
+    case "fan":    return "/fan";
+  }
+}
 
 export interface AuthUser {
   id: string;

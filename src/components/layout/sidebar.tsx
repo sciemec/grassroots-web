@@ -3,34 +3,36 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  ShieldCheck,
-  Users,
-  Dumbbell,
-  CreditCard,
-  UserSearch,
-  ClipboardList,
-  BarChart2,
-  Bell,
-  Heart,
-  LogOut,
+  LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
+  ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "coach", "scout"] },
-  { href: "/verifications", label: "Verifications", icon: ShieldCheck, roles: ["admin"] },
-  { href: "/users", label: "Users", icon: Users, roles: ["admin"] },
-  { href: "/sessions", label: "Sessions", icon: Dumbbell, roles: ["admin"] },
-  { href: "/subscriptions", label: "Subscriptions", icon: CreditCard, roles: ["admin"] },
-  { href: "/scout-requests", label: "Scout Requests", icon: ClipboardList, roles: ["admin"] },
-  { href: "/analytics", label: "Analytics", icon: BarChart2, roles: ["admin"] },
-  { href: "/notifications", label: "Notifications", icon: Bell, roles: ["admin"] },
-  { href: "/community", label: "Community", icon: Heart, roles: ["admin"] },
-  { href: "/coach", label: "My Squad", icon: Users, roles: ["coach"] },
-  { href: "/scout", label: "Find Players", icon: UserSearch, roles: ["scout"] },
+  // Admin
+  { href: "/dashboard",      label: "Dashboard",      icon: LayoutDashboard, roles: ["admin"] },
+  { href: "/verifications",  label: "Verifications",  icon: ShieldCheck,     roles: ["admin"] },
+  { href: "/users",          label: "Users",          icon: Users,           roles: ["admin"] },
+  { href: "/sessions",       label: "Sessions",       icon: Dumbbell,        roles: ["admin"] },
+  { href: "/subscriptions",  label: "Subscriptions",  icon: CreditCard,      roles: ["admin"] },
+  { href: "/scout-requests", label: "Scout Requests", icon: ClipboardList,   roles: ["admin"] },
+  { href: "/analytics",      label: "Analytics",      icon: BarChart2,       roles: ["admin"] },
+  { href: "/notifications",  label: "Notifications",  icon: Bell,            roles: ["admin"] },
+  { href: "/community",      label: "Community",      icon: Heart,           roles: ["admin"] },
+  // Coach
+  { href: "/coach",          label: "My Squad",       icon: Users,           roles: ["coach"] },
+  // Scout
+  { href: "/scout",          label: "Find Players",   icon: UserSearch,      roles: ["scout"] },
+  // Player
+  { href: "/player",         label: "My Hub",         icon: LayoutDashboard, roles: ["player"] },
+  { href: "/player/ai-coach",label: "AI Coach",       icon: Brain,           roles: ["player"] },
+  { href: "/player/drills",  label: "Drills",         icon: Dumbbell,        roles: ["player"] },
+  { href: "/player/milestones", label: "Milestones",  icon: Trophy,          roles: ["player"] },
+  // Fan
+  { href: "/fan",            label: "Discover",       icon: Star,            roles: ["fan"] },
+  { href: "/fan/leaderboard",label: "Leaderboard",    icon: Trophy,          roles: ["fan"] },
 ];
 
 export function Sidebar() {
@@ -46,7 +48,10 @@ export function Sidebar() {
     <aside className="flex h-screen w-60 flex-col border-r bg-card px-3 py-6">
       {/* Logo */}
       <div className="mb-8 px-3">
-        <span className="text-lg font-bold text-primary">⚽ Grassroots Sport</span>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-lg">⚽</span>
+          <span className="text-base font-bold text-primary">Grassroots Sport</span>
+        </Link>
       </div>
 
       {/* Nav */}
@@ -57,7 +62,7 @@ export function Sidebar() {
             href={href}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              pathname.startsWith(href)
+              pathname === href || pathname.startsWith(href + "/")
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
@@ -74,7 +79,7 @@ export function Sidebar() {
           <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
           <p className="px-3 text-xs font-medium capitalize text-foreground">{user.role}</p>
           <button
-            onClick={() => { logout(); router.push("/login"); }}
+            onClick={() => { logout(); router.push("/"); }}
             className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-4 w-4" />
