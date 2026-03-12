@@ -69,7 +69,7 @@ export default function AnalyticsPage() {
             {isLoading ? skeleton : (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
-                  <Pie data={data?.verifications ?? []} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={90} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}>
+                  <Pie data={data?.verifications ?? []} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                     {(data?.verifications ?? []).map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
