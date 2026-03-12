@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
-  ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
+  ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star, UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
@@ -30,6 +30,7 @@ const navItems = [
   { href: "/player/ai-coach",label: "AI Coach",       icon: Brain,           roles: ["player"] },
   { href: "/player/drills",  label: "Drills",         icon: Dumbbell,        roles: ["player"] },
   { href: "/player/milestones", label: "Milestones",  icon: Trophy,          roles: ["player"] },
+  { href: "/player/profile",   label: "My Profile",  icon: UserCircle,      roles: ["player"] },
   // Fan
   { href: "/fan",            label: "Discover",       icon: Star,            roles: ["fan"] },
   { href: "/fan/leaderboard",label: "Leaderboard",    icon: Trophy,          roles: ["fan"] },
