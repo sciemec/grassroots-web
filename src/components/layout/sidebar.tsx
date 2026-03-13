@@ -7,6 +7,7 @@ import {
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
@@ -25,8 +26,12 @@ const navItems: NavItem[] = [
   { href: "/notifications",  label: "Notifications",  icon: Bell,            roles: ["admin"] },
   { href: "/community",      label: "Community",      icon: Heart,           roles: ["admin"] },
   // ─── Coach ────────────────────────────────────────────────────────────────
-  { href: "/coach",          label: "My Squad",       icon: Users,           roles: ["coach"] },
-  { href: "/streaming",      label: "Live Matches",   icon: Radio,           roles: ["coach"] },
+  { href: "/coach",               label: "Coach Hub",    icon: LayoutDashboard, roles: ["coach"] },
+  { href: "/coach/squad",         label: "My Squad",     icon: Users,           roles: ["coach"] },
+  { href: "/coach/tactics",       label: "Tactics Board",icon: ClipboardList,   roles: ["coach"] },
+  { href: "/coach/matches",       label: "Matches",      icon: Trophy,          roles: ["coach"] },
+  { href: "/coach/ai-insights",   label: "AI Insights",  icon: Brain,           roles: ["coach"] },
+  { href: "/streaming",           label: "Live Matches", icon: Radio,           roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
   { href: "/scout",          label: "Find Players",   icon: UserSearch,      roles: ["scout"] },
   { href: "/scout/shortlist",label: "Shortlist",      icon: Star,            roles: ["scout"] },
@@ -73,7 +78,11 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
         {visible.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || (href !== "/player" && pathname.startsWith(href + "/")) || (href === "/player" && pathname === "/player");
+          const active =
+            pathname === href ||
+            (href !== "/player" && href !== "/coach" && pathname.startsWith(href + "/")) ||
+            (href === "/player" && pathname === "/player") ||
+            (href === "/coach" && pathname === "/coach");
           return (
             <Link
               key={href}
