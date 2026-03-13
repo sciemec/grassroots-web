@@ -129,7 +129,7 @@ export default function ProgressPage() {
             <p className="font-medium">No performance data yet</p>
             <p className="mt-1 text-sm text-muted-foreground">Complete training sessions to see your progress charts</p>
             <Link href="/player/sessions/new"
-              className="mt-4 inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
               Start a session
             </Link>
           </div>

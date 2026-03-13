@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Eye, EyeOff, ArrowLeft, Loader2, CheckCircle2, Camera } from "lucide-react";
+import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -104,8 +104,32 @@ export default function PlayerProfilePage() {
 
   if (!user || loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-screen bg-background">
+        <Sidebar />
+        <main className="flex-1 overflow-auto p-6">
+          <div className="mx-auto max-w-2xl space-y-6">
+            <div className="h-8 w-40 animate-pulse rounded-lg bg-muted" />
+            <div className="flex items-center gap-5">
+              <div className="h-20 w-20 animate-pulse rounded-full bg-muted" />
+              <div className="space-y-2">
+                <div className="h-5 w-32 animate-pulse rounded-lg bg-muted" />
+                <div className="h-4 w-48 animate-pulse rounded-lg bg-muted" />
+              </div>
+            </div>
+            <div className="h-16 animate-pulse rounded-xl bg-muted" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-12 animate-pulse rounded-lg bg-muted" />
+              <div className="h-12 animate-pulse rounded-lg bg-muted" />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="h-12 animate-pulse rounded-lg bg-muted" />
+              <div className="h-12 animate-pulse rounded-lg bg-muted" />
+              <div className="h-12 animate-pulse rounded-lg bg-muted" />
+            </div>
+            <div className="h-28 animate-pulse rounded-xl bg-muted" />
+            <div className="h-11 animate-pulse rounded-xl bg-muted" />
+          </div>
+        </main>
       </div>
     );
   }

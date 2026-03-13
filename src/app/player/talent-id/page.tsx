@@ -106,7 +106,7 @@ export default function TalentIDPage() {
             <Target className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="font-medium">No data yet</p>
             <p className="mt-1 text-sm text-muted-foreground">Complete training sessions to build your Talent ID profile</p>
-            <Link href="/player/sessions/new" className="mt-4 inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+            <Link href="/player/sessions/new" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
               Start training
             </Link>
           </div>
@@ -128,7 +128,7 @@ export default function TalentIDPage() {
                 <p className="mt-1 text-lg font-bold">{user.name}</p>
                 <p className="text-sm text-muted-foreground">{completed.length} sessions analysed · {skills.length} skills tracked</p>
                 <button onClick={generateScoutReport} disabled={loadingReport}
-                  className="mt-3 flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50 transition-colors">
+                  className="mt-3 flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50 transition-colors">
                   {loadingReport ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</> : <><Brain className="h-3.5 w-3.5" /> Generate Scout Report</>}
                 </button>
               </div>

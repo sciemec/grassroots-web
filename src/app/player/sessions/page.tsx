@@ -108,16 +108,17 @@ export default function SessionsPage() {
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+              <div key={i} className="h-[72px] animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
         ) : !paged?.data.length ? (
           <div className="rounded-xl border border-dashed p-12 text-center">
             <Dumbbell className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="font-medium">No sessions yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Start tracking your training to see progress</p>
             <Link
               href="/player/sessions/new"
-              className="mt-4 inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               Start your first session <ChevronRight className="h-3.5 w-3.5" />
             </Link>

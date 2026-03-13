@@ -27,9 +27,9 @@ const SUGGESTED_PROMPTS = [
 function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === "user";
   return (
-    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+    <div className={`flex items-start gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
       {/* Avatar */}
-      <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
+      <div className={`h-8 w-8 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
         isUser ? "bg-green-500 text-white" : "bg-purple-600 text-white"
       }`}>
         {isUser ? "Me" : <Brain className="h-4 w-4" />}
@@ -181,7 +181,7 @@ export default function AICoachPage() {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="flex-1 scroll-smooth overflow-y-auto px-6 py-4 space-y-4">
           {messages.map((msg) => (
             <MessageBubble key={msg.id} msg={msg} />
           ))}
