@@ -48,6 +48,7 @@ const navItems: NavItem[] = [
   { href: "/player/nutrition",            label: "Nutrition",       icon: Apple,           roles: ["player"] },
   { href: "/player/development",          label: "Dev Phases",      icon: Layers,          roles: ["player"] },
   { href: "/player/subscription",         label: "Subscription",    icon: SubIcon,         roles: ["player"] },
+  { href: "/player/verification",          label: "Verification",    icon: ShieldCheck,     roles: ["player"] },
   { href: "/player/profile",              label: "My Profile",      icon: UserCircle,      roles: ["player"] },
   { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
