@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Users, Brain, ChevronRight, Flame, Shield, AlertTriangle,
-  Trophy, Radio, ClipboardList, TrendingUp, Loader2,
+  Trophy, Radio, ClipboardList, Loader2,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";

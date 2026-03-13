@@ -47,11 +47,6 @@ const POSITIONS_TESTS: Record<string, { label: string; tests: { name: string; de
   },
 };
 
-interface TestResult {
-  name: string;
-  value: string;
-  passed: boolean;
-}
 
 export default function AssessmentPage() {
   const router = useRouter();
