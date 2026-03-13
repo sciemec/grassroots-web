@@ -7,6 +7,7 @@ import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
+  Film, Activity,
   Menu, X,
 } from "lucide-react";
 
@@ -33,6 +34,8 @@ const navItems: NavItem[] = [
   { href: "/coach/tactics",       label: "Tactics Board",icon: ClipboardList,   roles: ["coach"] },
   { href: "/coach/matches",       label: "Matches",      icon: Trophy,          roles: ["coach"] },
   { href: "/coach/ai-insights",   label: "AI Insights",  icon: Brain,           roles: ["coach"] },
+  { href: "/video-studio",        label: "Video Studio", icon: Film,            roles: ["coach"] },
+  { href: "/injury-tracker",      label: "Injury Tracker",icon: Activity,       roles: ["coach"] },
   { href: "/streaming",           label: "Live Matches", icon: Radio,           roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
   { href: "/scout",          label: "Find Players",   icon: UserSearch,      roles: ["scout"] },
@@ -52,6 +55,8 @@ const navItems: NavItem[] = [
   { href: "/player/subscription",         label: "Subscription",    icon: SubIcon,         roles: ["player"] },
   { href: "/player/verification",          label: "Verification",    icon: ShieldCheck,     roles: ["player"] },
   { href: "/player/profile",              label: "My Profile",      icon: UserCircle,      roles: ["player"] },
+  { href: "/video-studio",               label: "Video Studio",    icon: Film,            roles: ["player"] },
+  { href: "/injury-tracker",             label: "Injury Tracker",  icon: Activity,        roles: ["player"] },
   { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Discover",       icon: Star,          roles: ["fan"] },
