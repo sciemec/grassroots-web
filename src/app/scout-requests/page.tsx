@@ -32,13 +32,13 @@ export default function ScoutRequestsPage() {
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Scout Contact Requests</h1>
+        <h1 className="text-2xl font-bold text-balance">Scout Contact Requests</h1>
         <p className="text-sm text-muted-foreground">Review and approve scout outreach to players</p>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">
-          {[...Array(5)].map((_, i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-muted" />)}
+          {[...Array(5)].map((_, i) => <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />)}
         </div>
       ) : (
         <div className="space-y-3">
@@ -62,14 +62,14 @@ export default function ScoutRequestsPage() {
                   <button
                     onClick={() => approve.mutate(req.id)}
                     disabled={approve.isPending}
-                    className="flex items-center gap-1 rounded-md bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-xl bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 transition-colors disabled:opacity-50"
                   >
                     <CheckCircle className="h-3 w-3" /> Approve
                   </button>
                   <button
                     onClick={() => reject.mutate(req.id)}
                     disabled={reject.isPending}
-                    className="flex items-center gap-1 rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-xl bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                   >
                     <XCircle className="h-3 w-3" /> Reject
                   </button>
@@ -92,9 +92,9 @@ export default function ScoutRequestsPage() {
           </p>
           <div className="flex gap-2">
             <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-              className="rounded-md border px-3 py-1 text-sm disabled:opacity-40">Prev</button>
+              className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted transition-colors">Prev</button>
             <button onClick={() => setPage((p) => p + 1)} disabled={page === data.last_page}
-              className="rounded-md border px-3 py-1 text-sm disabled:opacity-40">Next</button>
+              className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted transition-colors">Next</button>
           </div>
         </div>
       )}

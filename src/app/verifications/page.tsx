@@ -8,10 +8,10 @@ import type { IdentityVerification, PaginatedResponse } from "@/types";
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 const statusBadge: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  approved: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
-  flagged: "bg-orange-100 text-orange-800",
+  pending: "bg-amber-500/15 text-amber-700",
+  approved: "bg-green-500/15 text-green-700",
+  rejected: "bg-red-500/15 text-red-700",
+  flagged: "bg-orange-500/15 text-orange-700",
 };
 
 export default function VerificationsPage() {
@@ -41,13 +41,13 @@ export default function VerificationsPage() {
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Identity Verifications</h1>
+          <h1 className="text-2xl font-bold text-balance">Identity Verifications</h1>
           <p className="text-sm text-muted-foreground">Review player identity documents</p>
         </div>
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="rounded-md border bg-background px-3 py-2 text-sm"
+          className="rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
         >
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
@@ -59,13 +59,13 @@ export default function VerificationsPage() {
       {isLoading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
           ))}
         </div>
       ) : (
         <div className="rounded-xl border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b">
+            <thead className="border-b bg-muted/30">
               <tr className="text-left text-muted-foreground">
                 <th className="px-4 py-3 font-medium">Player</th>
                 <th className="px-4 py-3 font-medium">Document</th>
@@ -81,9 +81,13 @@ export default function VerificationsPage() {
                   <td className="px-4 py-3 font-medium">{v.user?.name ?? "—"}</td>
                   <td className="px-4 py-3 capitalize">{v.document_type?.replace(/_/g, " ")}</td>
                   <td className="px-4 py-3">
-                    <span className={`font-mono ${v.ai_confidence_score >= 85 ? "text-green-600" : v.ai_confidence_score >= 50 ? "text-amber-600" : "text-red-600"}`}>
-                      {v.ai_confidence_score}%
-                    </span>
+                    {v.ai_confidence_score != null ? (
+                      <span className={`font-mono ${v.ai_confidence_score >= 85 ? "text-green-600" : v.ai_confidence_score >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                        {v.ai_confidence_score}%
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge[v.status]}`}>
@@ -98,13 +102,13 @@ export default function VerificationsPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => approve.mutate(v.id)}
-                          className="flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
+                          className="flex items-center gap-1 rounded-lg bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 transition-colors"
                         >
                           <CheckCircle className="h-3 w-3" /> Approve
                         </button>
                         <button
                           onClick={() => reject.mutate(v.id)}
-                          className="flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                          className="flex items-center gap-1 rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-500/20 transition-colors"
                         >
                           <XCircle className="h-3 w-3" /> Reject
                         </button>
@@ -134,9 +138,9 @@ export default function VerificationsPage() {
               </p>
               <div className="flex gap-2">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-                  className="rounded-md border px-3 py-1 text-sm disabled:opacity-40">Prev</button>
+                  className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted transition-colors">Prev</button>
                 <button onClick={() => setPage((p) => p + 1)} disabled={page === data.last_page}
-                  className="rounded-md border px-3 py-1 text-sm disabled:opacity-40">Next</button>
+                  className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted transition-colors">Next</button>
               </div>
             </div>
           )}

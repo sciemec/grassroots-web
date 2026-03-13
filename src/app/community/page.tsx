@@ -55,7 +55,7 @@ export default function CommunityPage() {
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Community Access</h1>
+        <h1 className="text-2xl font-bold text-balance">Community Access</h1>
         <p className="text-sm text-muted-foreground">
           Manage poverty districts — players in these areas get free premium access
         </p>
@@ -72,7 +72,7 @@ export default function CommunityPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Epworth"
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
             <div>
@@ -80,7 +80,7 @@ export default function CommunityPage() {
               <select
                 value={province}
                 onChange={(e) => setProvince(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="">Select province</option>
                 {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -90,7 +90,7 @@ export default function CommunityPage() {
             <button
               onClick={() => add.mutate()}
               disabled={!name.trim() || !province || add.isPending}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               {add.isPending ? "Adding…" : "Add District"}
@@ -106,7 +106,7 @@ export default function CommunityPage() {
           </div>
           {isLoading ? (
             <div className="space-y-2 p-4">
-              {[...Array(5)].map((_, i) => <div key={i} className="h-10 animate-pulse rounded-lg bg-muted" />)}
+              {[...Array(5)].map((_, i) => <div key={i} className="h-10 animate-pulse rounded-xl bg-muted" />)}
             </div>
           ) : (
             <ul className="divide-y">
@@ -119,7 +119,7 @@ export default function CommunityPage() {
                   <button
                     onClick={() => remove.mutate(d.id)}
                     disabled={remove.isPending}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

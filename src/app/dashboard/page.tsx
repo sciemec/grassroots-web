@@ -70,7 +70,7 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-balance">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Platform overview</p>
       </div>
 
@@ -111,15 +111,15 @@ export default function DashboardPage() {
           <h2 className="mb-4 font-semibold">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { href: "/verifications", label: "Review Verifications", color: "bg-amber-50 text-amber-700 hover:bg-amber-100" },
-              { href: "/scout-requests", label: "Scout Requests", color: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100" },
-              { href: "/notifications", label: "Send Notification", color: "bg-blue-50 text-blue-700 hover:bg-blue-100" },
-              { href: "/community", label: "Community Districts", color: "bg-green-50 text-green-700 hover:bg-green-100" },
-              { href: "/analytics", label: "View Analytics", color: "bg-purple-50 text-purple-700 hover:bg-purple-100" },
-              { href: "/users", label: "Manage Users", color: "bg-gray-50 text-gray-700 hover:bg-gray-100" },
+              { href: "/verifications", label: "Review Verifications", color: "bg-amber-500/10 text-amber-700 hover:bg-amber-500/20" },
+              { href: "/scout-requests", label: "Scout Requests", color: "bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20" },
+              { href: "/notifications", label: "Send Notification", color: "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20" },
+              { href: "/community", label: "Community Districts", color: "bg-green-500/10 text-green-700 hover:bg-green-500/20" },
+              { href: "/analytics", label: "View Analytics", color: "bg-purple-500/10 text-purple-700 hover:bg-purple-500/20" },
+              { href: "/users", label: "Manage Users", color: "bg-muted text-muted-foreground hover:bg-muted/80" },
             ].map(({ href, label, color }) => (
               <Link key={href} href={href}
-                className={`rounded-lg px-3 py-3 text-sm font-medium transition-colors ${color}`}>
+                className={`rounded-xl px-3 py-3 text-sm font-medium transition-colors ${color}`}>
                 {label}
               </Link>
             ))}

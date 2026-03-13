@@ -51,18 +51,18 @@ export default function NotificationsPage() {
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Push Notifications</h1>
+        <h1 className="text-2xl font-bold text-balance">Push Notifications</h1>
         <p className="text-sm text-muted-foreground">Send FCM push notifications to users</p>
       </div>
 
       <div className="max-w-lg">
-        <div className="rounded-xl border bg-card p-6 space-y-4">
+        <div className="rounded-xl border bg-card p-6 space-y-5">
           <div>
             <label className="mb-1 block text-sm font-medium">Recipient</label>
             <select
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="">All users (broadcast)</option>
               {users?.data?.map((u) => (
@@ -79,7 +79,7 @@ export default function NotificationsPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Notification title"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
 
@@ -90,14 +90,14 @@ export default function NotificationsPage() {
               onChange={(e) => setBody(e.target.value)}
               placeholder="Notification body…"
               rows={4}
-              className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-xl border bg-background px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground resize-none"
             />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           {sent && (
-            <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+            <div className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-700">
               <CheckCircle className="h-4 w-4" /> Notification sent successfully.
             </div>
           )}
@@ -105,7 +105,7 @@ export default function NotificationsPage() {
           <button
             onClick={() => { setError(""); send.mutate(); }}
             disabled={!title.trim() || !body.trim() || send.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
             {send.isPending ? "Sending…" : userId ? "Send to User" : "Broadcast to All"}

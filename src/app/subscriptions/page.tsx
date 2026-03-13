@@ -7,14 +7,14 @@ import api from "@/lib/api";
 import type { PlayerSubscription, PaginatedResponse } from "@/types";
 
 const planBadge: Record<string, string> = {
-  weekly: "bg-sky-100 text-sky-700",
-  monthly: "bg-blue-100 text-blue-700",
-  "3-month": "bg-indigo-100 text-indigo-700",
+  weekly: "bg-blue-500/15 text-blue-700",
+  monthly: "bg-indigo-500/15 text-indigo-700",
+  "3-month": "bg-purple-500/15 text-purple-700",
 };
 const statusBadge: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  grace_period: "bg-amber-100 text-amber-700",
-  cancelled: "bg-red-100 text-red-700",
+  active: "bg-green-500/15 text-green-700",
+  grace_period: "bg-amber-500/15 text-amber-700",
+  cancelled: "bg-red-500/15 text-red-700",
 };
 
 export default function SubscriptionsPage() {
@@ -33,11 +33,11 @@ export default function SubscriptionsPage() {
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Subscriptions</h1>
+          <h1 className="text-2xl font-bold text-balance">Subscriptions</h1>
           <p className="text-sm text-muted-foreground">Player payment plans and transaction history</p>
         </div>
         <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="rounded-md border bg-background px-3 py-2 text-sm">
+          className="rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring">
           <option value="">All statuses</option>
           <option value="active">Active</option>
           <option value="grace_period">Grace Period</option>
@@ -47,12 +47,12 @@ export default function SubscriptionsPage() {
 
       {isLoading ? (
         <div className="space-y-3">
-          {[...Array(8)].map((_, i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}
+          {[...Array(8)].map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted" />)}
         </div>
       ) : (
         <div className="rounded-xl border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b">
+            <thead className="border-b bg-muted/30">
               <tr className="text-left text-muted-foreground">
                 <th className="px-4 py-3 font-medium">Player</th>
                 <th className="px-4 py-3 font-medium">Plan</th>
@@ -67,12 +67,12 @@ export default function SubscriptionsPage() {
                 <tr key={s.id} className="hover:bg-muted/40">
                   <td className="px-4 py-3 font-medium">{s.user?.name ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${planBadge[s.plan_type]}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${planBadge[s.plan_type] ?? "bg-muted text-muted-foreground"}`}>
                       {s.plan_type}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge[s.status]}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge[s.status] ?? "bg-muted text-muted-foreground"}`}>
                       {s.status.replace(/_/g, " ")}
                     </span>
                   </td>
@@ -90,9 +90,9 @@ export default function SubscriptionsPage() {
               </p>
               <div className="flex gap-2">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-                  className="rounded-md border px-3 py-1 text-sm disabled:opacity-40">Prev</button>
+                  className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted transition-colors">Prev</button>
                 <button onClick={() => setPage((p) => p + 1)} disabled={page === data.last_page}
-                  className="rounded-md border px-3 py-1 text-sm disabled:opacity-40">Next</button>
+                  className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted transition-colors">Next</button>
               </div>
             </div>
           )}

@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
+  Menu, X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -57,7 +59,7 @@ const navItems: NavItem[] = [
   { href: "/streaming",          label: "Live Matches",   icon: Radio,         roles: ["fan"] },
 ];
 
-export function Sidebar() {
+function NavContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
@@ -67,10 +69,10 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r bg-card px-3 py-6">
+    <>
       {/* Logo */}
       <div className="mb-6 px-3">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" onClick={onNavClick}>
           <span className="text-lg">⚽</span>
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
         </Link>
@@ -88,6 +90,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={onNavClick}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 active
@@ -108,7 +111,7 @@ export function Sidebar() {
           <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
           <p className="px-3 text-xs font-medium capitalize text-foreground">{user.role}</p>
           <button
-            onClick={() => { logout(); router.push("/"); }}
+            onClick={() => { logout(); router.push("/"); onNavClick?.(); }}
             className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-4 w-4" />
@@ -116,6 +119,61 @@ export function Sidebar() {
           </button>
         </div>
       )}
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex h-screen w-60 flex-col border-r bg-card px-3 py-6">
+        <NavContent />
+      </aside>
+
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b bg-card px-4 py-3">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-lg">⚽</span>
+          <span className="text-base font-bold text-primary">Grassroots Sport</span>
+        </Link>
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="rounded-md p-2 text-muted-foreground hover:bg-muted transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Mobile overlay backdrop */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-50 bg-black/50"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile overlay sidebar */}
+      <aside
+        className={cn(
+          "lg:hidden fixed top-0 left-0 z-50 h-full w-72 flex flex-col border-r bg-card px-3 py-6 transition-transform duration-300",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-4 right-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
+          aria-label="Close menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <NavContent onNavClick={() => setMobileOpen(false)} />
+      </aside>
+    </>
   );
 }
