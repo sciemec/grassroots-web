@@ -52,10 +52,10 @@ interface UserDetail {
 }
 
 const roleBadge: Record<string, string> = {
-  player: "bg-blue-100 text-blue-700",
-  coach: "bg-purple-100 text-purple-700",
-  scout: "bg-indigo-100 text-indigo-700",
-  admin: "bg-gray-100 text-gray-700",
+  player: "bg-blue-500/15 text-blue-700",
+  coach: "bg-purple-500/15 text-purple-700",
+  scout: "bg-indigo-500/15 text-indigo-700",
+  admin: "bg-muted text-muted-foreground",
 };
 
 export default function UserDetailPage() {

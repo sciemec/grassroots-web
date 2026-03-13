@@ -101,7 +101,7 @@ export default function ScoutShortlistPage() {
             <Star className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="font-medium">Shortlist empty</p>
             <p className="mt-1 text-sm text-muted-foreground">Contact players from the search page to build your shortlist</p>
-            <Link href="/scout" className="mt-4 inline-flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+            <Link href="/scout" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
               Search players
             </Link>
           </div>
