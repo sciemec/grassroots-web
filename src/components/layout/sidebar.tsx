@@ -4,14 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
-  ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star, UserCircle,
+  ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
+  UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
 
-const navItems = [
-  // Admin
+type NavItem = { href: string; label: string; icon: React.ElementType; roles: string[] };
+
+const navItems: NavItem[] = [
+  // ─── Admin ────────────────────────────────────────────────────────────────
   { href: "/dashboard",      label: "Dashboard",      icon: LayoutDashboard, roles: ["admin"] },
   { href: "/verifications",  label: "Verifications",  icon: ShieldCheck,     roles: ["admin"] },
   { href: "/users",          label: "Users",          icon: Users,           roles: ["admin"] },
@@ -21,19 +24,31 @@ const navItems = [
   { href: "/analytics",      label: "Analytics",      icon: BarChart2,       roles: ["admin"] },
   { href: "/notifications",  label: "Notifications",  icon: Bell,            roles: ["admin"] },
   { href: "/community",      label: "Community",      icon: Heart,           roles: ["admin"] },
-  // Coach
+  // ─── Coach ────────────────────────────────────────────────────────────────
   { href: "/coach",          label: "My Squad",       icon: Users,           roles: ["coach"] },
-  // Scout
+  { href: "/streaming",      label: "Live Matches",   icon: Radio,           roles: ["coach"] },
+  // ─── Scout ────────────────────────────────────────────────────────────────
   { href: "/scout",          label: "Find Players",   icon: UserSearch,      roles: ["scout"] },
-  // Player
-  { href: "/player",         label: "My Hub",         icon: LayoutDashboard, roles: ["player"] },
-  { href: "/player/ai-coach",label: "AI Coach",       icon: Brain,           roles: ["player"] },
-  { href: "/player/drills",  label: "Drills",         icon: Dumbbell,        roles: ["player"] },
-  { href: "/player/milestones", label: "Milestones",  icon: Trophy,          roles: ["player"] },
-  { href: "/player/profile",   label: "My Profile",  icon: UserCircle,      roles: ["player"] },
-  // Fan
-  { href: "/fan",            label: "Discover",       icon: Star,            roles: ["fan"] },
-  { href: "/fan/leaderboard",label: "Leaderboard",    icon: Trophy,          roles: ["fan"] },
+  { href: "/scout/shortlist",label: "Shortlist",      icon: Star,            roles: ["scout"] },
+  // ─── Player ───────────────────────────────────────────────────────────────
+  { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
+  { href: "/player/ai-coach",             label: "AI Coach",        icon: Brain,           roles: ["player"] },
+  { href: "/player/drills",               label: "Drills",          icon: Dumbbell,        roles: ["player"] },
+  { href: "/player/training-formats",     label: "Training Formats",icon: Layers,          roles: ["player"] },
+  { href: "/player/sessions",             label: "Sessions",        icon: Target,          roles: ["player"] },
+  { href: "/player/milestones",           label: "Milestones",      icon: Trophy,          roles: ["player"] },
+  { href: "/player/progress",             label: "Progress",        icon: TrendingUp,      roles: ["player"] },
+  { href: "/player/talent-id",            label: "Talent ID",       icon: Zap,             roles: ["player"] },
+  { href: "/player/assessment",           label: "Assessment",      icon: Target,          roles: ["player"] },
+  { href: "/player/nutrition",            label: "Nutrition",       icon: Apple,           roles: ["player"] },
+  { href: "/player/development",          label: "Dev Phases",      icon: Layers,          roles: ["player"] },
+  { href: "/player/subscription",         label: "Subscription",    icon: SubIcon,         roles: ["player"] },
+  { href: "/player/profile",              label: "My Profile",      icon: UserCircle,      roles: ["player"] },
+  { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
+  // ─── Fan ──────────────────────────────────────────────────────────────────
+  { href: "/fan",                label: "Discover",       icon: Star,          roles: ["fan"] },
+  { href: "/fan/leaderboard",    label: "Leaderboard",    icon: Trophy,        roles: ["fan"] },
+  { href: "/streaming",          label: "Live Matches",   icon: Radio,         roles: ["fan"] },
 ];
 
 export function Sidebar() {
@@ -48,7 +63,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-60 flex-col border-r bg-card px-3 py-6">
       {/* Logo */}
-      <div className="mb-8 px-3">
+      <div className="mb-6 px-3">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-lg">⚽</span>
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
@@ -56,22 +71,25 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-1">
-        {visible.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              pathname === href || pathname.startsWith(href + "/")
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        ))}
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
+        {visible.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || (href !== "/player" && pathname.startsWith(href + "/")) || (href === "/player" && pathname === "/player");
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* User + Logout */}
