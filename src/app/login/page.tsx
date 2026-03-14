@@ -73,7 +73,7 @@ export default function LoginPage() {
     }
 
     try {
-      const res = await api.post("/auth/login", { email, password });
+      const res = await api.post("/auth/login", { identifier: email, password });
       const { token, user } = res.data;
       login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
       router.push(roleHomePath(user.role));
