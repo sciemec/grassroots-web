@@ -359,3 +359,90 @@ Write a WhatsApp-friendly match report. Rules:
 
 TONE: Warm, human, like a coach sending a voice note turned to text. Not corporate.`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. EXPERT GRASSROOTS COACH — SYSTEM PERSONA
+// Used by: /player/ai-coach (when drill advice is the primary intent)
+//          Pair with sessionDrillRecommenderPrompt() as the user message.
+// ─────────────────────────────────────────────────────────────────────────────
+export interface ExpertCoachContext {
+  playerName: string;
+  age: number;
+  position: string;
+  skillLevel: "beginner" | "intermediate" | "advanced";
+}
+
+export function expertCoachSystemPrompt(ctx: ExpertCoachContext): string {
+  return `You are an expert grassroots football coach with 15 years of experience coaching players aged 8–18.
+
+PLAYER:
+Name: ${ctx.playerName}
+Age: ${ctx.age}
+Position: ${ctx.position}
+Skill level: ${ctx.skillLevel}
+
+When recommending drills, always include:
+- Age group suitability (confirm this drill suits a ${ctx.age}-year-old ${ctx.skillLevel})
+- Equipment needed (assume cones, balls, bibs only)
+- Clear step-by-step instructions a volunteer coach can follow
+- Three progression levels: Beginner / Intermediate / Advanced
+- The coaching point — what to watch and correct
+
+TONE: Encouraging, clear, practical. Speak directly to a coach, not the player.`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. SESSION-HISTORY DRILL RECOMMENDER
+// Used by: /player/ai-coach, /coach/ai-insights
+// Designed to be the user message when expertCoachSystemPrompt() is the system.
+// ─────────────────────────────────────────────────────────────────────────────
+export interface SessionDrillContext {
+  weakAreas: string[];
+  strongAreas: string[];
+  sessionHistory: string; // e.g. "3x passing, 1x shooting, 1x fitness"
+}
+
+export function sessionDrillRecommenderPrompt(ctx: SessionDrillContext): string {
+  return `Based on this player's recent performance:
+
+Weak areas: ${ctx.weakAreas.join(", ")}
+Strong areas: ${ctx.strongAreas.join(", ")}
+Last 5 sessions: ${ctx.sessionHistory}
+
+Recommend exactly 3 drills to improve their weaknesses.
+
+For each drill use this format:
+**Drill name** | Duration | Instructions | Success metric
+
+- Instructions must be step-by-step (numbered)
+- Success metric must be measurable (e.g. "completes 8 of 10 passes under pressure")
+- Drills must build on their strengths while targeting weak areas
+- Total response: under 300 words`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. AGE-GROUP MATCH FEEDBACK
+// Used by: /player/ai-coach (post-match), /coach/matches
+// ─────────────────────────────────────────────────────────────────────────────
+export interface AgeGroupMatchFeedbackContext {
+  ageGroup: string;   // e.g. "U13", "U17", "senior"
+  matchStats: string; // free-text or JSON stringified stats
+}
+
+export function ageGroupMatchFeedbackPrompt(ctx: AgeGroupMatchFeedbackContext): string {
+  return `Analyse this match data for a ${ctx.ageGroup} player:
+
+${ctx.matchStats}
+
+Provide your feedback in exactly this structure:
+
+1. TOP 3 IMPROVEMENTS NEEDED — specific, actionable, prioritised
+2. WHAT THEY DID WELL — genuine strengths from the data (not generic praise)
+3. ONE DRILL FOR THIS WEEK — name it, give brief instructions, explain why it addresses their biggest weakness
+
+RULES:
+- Keep language age-appropriate for ${ctx.ageGroup} — encouraging but honest
+- Base every point on the actual data provided, not assumptions
+- The drill must be doable alone or with one partner
+- Total response: under 200 words`;
+}
