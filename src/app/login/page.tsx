@@ -50,6 +50,7 @@ function LoginContent() {
   const params      = useSearchParams();
   const nextPath    = params.get("next");
   const login       = useAuthStore((s) => s.login);
+  const updateUser  = useAuthStore((s) => s.updateUser);
 
   const [portal, setPortal]       = useState<PortalType>("player");
   const [email, setEmail]         = useState("");
@@ -78,6 +79,20 @@ function LoginContent() {
       const res = await api.post("/auth/login", { identifier: email, password });
       const { token, user } = res.data;
       login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
+
+      // Fetch profile fields in the background so AI features have context
+      api.get("/profile", { headers: { Authorization: `Bearer ${token}` } })
+        .then((profileRes) => {
+          const p = profileRes.data;
+          updateUser({
+            sport:     p.sport     ?? undefined,
+            position:  p.position  ?? p.position_primary ?? undefined,
+            age_group: p.age_group ?? undefined,
+            province:  p.province  ?? undefined,
+          });
+        })
+        .catch(() => {}); // non-critical — AI falls back to defaults
+
       router.push(nextPath ?? roleHomePath(user.role));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;

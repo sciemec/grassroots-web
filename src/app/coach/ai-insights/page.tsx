@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Brain, Send, RotateCcw, ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { coachAiAssistantPrompt } from "@/config/prompts";
+import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
 
 interface Message {
@@ -55,6 +57,11 @@ function MessageBubble({ msg }: { msg: Message }) {
 export default function CoachAIInsightsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+
+  const systemPrompt = coachAiAssistantPrompt({
+    sport: (user?.sport as SportKey) ?? "football",
+    coachingLevel: user?.position ?? undefined,
+  });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -91,8 +98,15 @@ export default function CoachAIInsightsPage() {
     setLoading(true);
 
     try {
+      const history = messages
+        .filter((m) => m.id !== "welcome")
+        .slice(-10)
+        .map((m) => ({ role: m.role, content: m.content }));
+
       const res = await api.post("/ai-coach/query", {
-        message: `[Coach mode] ${content}`,
+        message: content,
+        system_prompt: systemPrompt,
+        history,
       });
       const reply = res.data?.response ?? res.data?.message ?? "I couldn't process that. Please try again.";
       setMessages((prev) => [

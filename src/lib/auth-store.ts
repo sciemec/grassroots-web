@@ -31,6 +31,8 @@ interface AuthState {
   /** Admin-only: which hub is currently being previewed */
   adminHub: UserRole;
   login: (user: AuthUser) => void;
+  /** Merge profile fields into the stored user (called after /profile fetch) */
+  updateUser: (fields: Partial<AuthUser>) => void;
   logout: () => void;
   setAdminHub: (hub: UserRole) => void;
 }
@@ -55,6 +57,10 @@ export const useAuthStore = create<AuthState>()(
         setCookie("gs_role", user.role);
         set({ user, adminHub: "admin" });
       },
+      updateUser: (fields) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...fields } : state.user,
+        })),
       logout: () => {
         localStorage.removeItem("auth_token");
         clearCookie("gs_token");

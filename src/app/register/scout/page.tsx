@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { SPORT_MAP, SportKey } from "@/config/sports";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
 
@@ -26,8 +27,11 @@ const INIT: Form = {
   terms: false,
 };
 
-export default function ScoutRegisterPage() {
+function ScoutRegisterForm() {
   const router  = useRouter();
+  const searchParams = useSearchParams();
+  const sportParam = (searchParams.get("sport") ?? "football") as SportKey;
+  const sportCfg = SPORT_MAP[sportParam] ?? SPORT_MAP["football"];
   const [step, setStep]     = useState(1);
   const [form, setForm]     = useState<Form>(INIT);
   const [error, setError]   = useState("");
@@ -112,10 +116,12 @@ export default function ScoutRegisterPage() {
         </div>
 
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-purple-500 text-2xl shadow-lg">🔍</div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-purple-500 text-2xl shadow-lg">
+            {sportCfg.emoji}
+          </div>
           <div>
-            <h1 className="text-xl font-black text-white">Scout Registration</h1>
-            <p className="text-xs text-purple-300">Professional account · AI report generation included</p>
+            <h1 className="text-xl font-black text-white">{sportCfg.label} — Scout Registration</h1>
+            <p className="text-xs text-purple-300">{sportCfg.governingBody} · Professional account · AI report generation included</p>
           </div>
         </div>
 
@@ -268,5 +274,13 @@ export default function ScoutRegisterPage() {
         <p className="mt-5 text-center text-sm text-purple-400">Already have an account?{" "}<Link href="/login" className="font-semibold text-white hover:underline">Sign in</Link></p>
       </div>
     </div>
+  );
+}
+
+export default function ScoutRegisterPage() {
+  return (
+    <Suspense>
+      <ScoutRegisterForm />
+    </Suspense>
   );
 }
