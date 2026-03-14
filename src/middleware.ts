@@ -23,13 +23,18 @@ const PUBLIC_PREFIXES = [
 ];
 
 // ── Role-restricted route prefixes ───────────────────────────────────────────
+// Admin can access ALL routes (they preview any hub via adminHub state)
 const ROLE_ROUTES: Record<string, UserRole[]> = {
-  "/player":        ["player"],
-  "/coach":         ["coach"],
-  "/scout":         ["scout"],
-  "/fan":           ["fan"],
+  "/player":        ["player",  "admin"],
+  "/coach":         ["coach",   "admin"],
+  "/scout":         ["scout",   "admin"],
+  "/fan":           ["fan",     "admin"],
   "/dashboard":     ["admin"],
+  "/users":         ["admin"],
+  "/verifications": ["admin"],
   "/scout-requests":["admin", "scout"],
+  "/tournaments":   ["player", "coach", "scout", "fan", "admin"],
+  "/video-analysis":["player", "coach", "admin"],
   // Shared protected routes — any authenticated user
   "/settings":      ["player", "coach", "scout", "fan", "admin"],
   "/sessions":      ["player", "coach", "scout", "fan", "admin"],
