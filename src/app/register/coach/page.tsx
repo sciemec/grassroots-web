@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
-import { useAuthStore, roleHomePath } from "@/lib/auth-store";
+import { useAuthStore } from "@/lib/auth-store";
 
 const PROVINCES = [
   "Harare","Bulawayo","Manicaland","Mashonaland Central",
@@ -87,7 +87,7 @@ export default function CoachRegisterPage() {
       });
       const { token, user } = res.data;
       login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
-      router.push(roleHomePath(user.role));
+      router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
     } catch (e: unknown) {
       const data = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
       setError(data?.errors ? Object.values(data.errors).flat().join(". ") : (data?.message ?? "Registration failed."));

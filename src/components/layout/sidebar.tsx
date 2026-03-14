@@ -39,10 +39,12 @@ const navItems: NavItem[] = [
   { href: "/injury-tracker",         label: "Injury Tracker", icon: Activity,        roles: ["coach"] },
   { href: "/streaming",              label: "Live Matches",   icon: Radio,           roles: ["coach"] },
   { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
+  { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
   { href: "/scout",           label: "Find Players",  icon: UserSearch,  roles: ["scout"] },
   { href: "/scout/shortlist", label: "Shortlist",     icon: Star,        roles: ["scout"] },
   { href: "/scout/reports",   label: "PDF Reports",   icon: FileText,    roles: ["scout"] },
+  { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
   { href: "/player/ai-coach",             label: "AI Coach",        icon: Brain,           roles: ["player"] },
