@@ -6,6 +6,8 @@ import { Brain, Send, Mic, Loader2, RotateCcw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { playerAiCoachPrompt } from "@/config/prompts";
+import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
 
 interface Message {
@@ -58,6 +60,15 @@ function MessageBubble({ msg }: { msg: Message }) {
 export default function AICoachPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+
+  /** Build system prompt from user profile. Falls back to sensible defaults. */
+  const systemPrompt = playerAiCoachPrompt({
+    sport: (user?.sport as SportKey) ?? "football",
+    position: user?.position ?? undefined,
+    ageGroup: user?.age_group ?? undefined,
+    province: user?.province ?? undefined,
+    name: user?.name ?? undefined,
+  });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -94,7 +105,16 @@ export default function AICoachPage() {
     setLoading(true);
 
     try {
-      const res = await api.post("/ai-coach/query", { message: content });
+      const history = messages
+        .filter((m) => m.id !== "welcome")
+        .slice(-10)
+        .map((m) => ({ role: m.role, content: m.content }));
+
+      const res = await api.post("/ai-coach/query", {
+        message: content,
+        system_prompt: systemPrompt,
+        history,
+      });
       const reply = res.data?.response ?? res.data?.message ?? "I couldn't process that. Please try again.";
       setMessages((prev) => [
         ...prev,

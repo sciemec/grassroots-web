@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Brain, Save, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
-import { SPORT_MAP, SPORT_STATS, getSportAnalysisPrompt, SportKey } from "@/config/sports";
+import { SPORT_MAP, SPORT_STATS, SportKey } from "@/config/sports";
+import { sportStatsFeedbackPrompt } from "@/config/prompts";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
@@ -106,21 +107,29 @@ export default function SportStatsPage() {
 
   const getAiFeedback = async () => {
     setAi({ text: "", loading: true, error: "" });
+
     const statSummary = Object.entries(stats)
       .filter(([, v]) => v !== "" && v !== 0)
       .map(([k, v]) => `${k}: ${v}`)
       .join(", ");
 
-    const prompt = getSportAnalysisPrompt(
-      sportKey,
-      `${context ? context + ". " : ""}Stats: ${statSummary || "No stats provided"}.`
-    );
+    const systemPrompt = sportStatsFeedbackPrompt({
+      sport: sportKey,
+      role: roleKey !== "all" ? roleKey : undefined,
+      position: cfg.positions?.[0] ?? undefined,
+    });
+
+    const message = [
+      statSummary ? `Performance stats: ${statSummary}.` : "No stats provided yet.",
+      context ? `Additional context: ${context}` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
 
     try {
       const res = await api.post("/ai-coach/query", {
-        message: prompt,
-        sport: sportKey,
-        type: "skill_review",
+        message,
+        system_prompt: systemPrompt,
       });
       setAi({ text: res.data.response ?? res.data.message ?? "", loading: false, error: "" });
     } catch {

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Brain, Send, Loader2, Target } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { tacticalAnalysisPrompt } from "@/config/prompts";
 import api from "@/lib/api";
 
 interface MatchRecord {
@@ -163,13 +164,33 @@ export default function TacticalAnalysisPage() {
     setCustomQuestion("");
 
     const context = buildMatchContext(matches, stats);
-    const prefix = matches.length > 0
-      ? `[Football Tactical Analysis — Coach mode]\n\nMatch data: ${context}\n\nQuestion: `
-      : `[Football Tactical Analysis — Coach mode]\n\nNo match data recorded yet.\n\nQuestion: `;
-    const message = prefix + question;
+
+    const systemPrompt = tacticalAnalysisPrompt({
+      sport: "football",
+      record: `${stats.wins}W ${stats.draws}D ${stats.losses}L`,
+      goalsFor: stats.goalsFor,
+      goalsAgainst: stats.goalsAgainst,
+      recentForm: matches
+        .slice(0, 5)
+        .map((m) => (m.our_score > m.their_score ? "W" : m.our_score === m.their_score ? "D" : "L"))
+        .join(""),
+    });
+
+    const message = matches.length > 0
+      ? `Match data context: ${context}\n\nQuestion: ${question}`
+      : question;
 
     try {
-      const res = await api.post("/ai-coach/query", { message });
+      const history = responses.slice(-6).flatMap((r) => [
+        { role: "user" as const, content: r.question },
+        { role: "assistant" as const, content: r.answer },
+      ]);
+
+      const res = await api.post("/ai-coach/query", {
+        message,
+        system_prompt: systemPrompt,
+        history,
+      });
       const answer =
         res.data?.response ??
         res.data?.message ??

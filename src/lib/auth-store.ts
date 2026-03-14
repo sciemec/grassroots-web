@@ -19,6 +19,11 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   token: string;
+  // Profile fields — populated after registration/login
+  sport?: string;
+  position?: string;
+  age_group?: string;
+  province?: string;
 }
 
 interface AuthState {
