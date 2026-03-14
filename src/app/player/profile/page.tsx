@@ -9,6 +9,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { SportSelector } from "@/components/sports/sport-selector";
+import { SPORT_MAP, SportKey } from "@/config/sports";
 import api from "@/lib/api";
 
 const POSITIONS = [
@@ -28,6 +30,7 @@ const AGE_GROUPS = ["u13", "u17", "u20", "senior"];
 const PREFERRED_FEET = ["right", "left", "both"];
 
 const schema = z.object({
+  sport: z.string().optional(),
   position: z.string().min(1, "Position required"),
   province: z.string().min(1, "Province required"),
   age_group: z.string().min(1, "Age group required"),
@@ -51,6 +54,7 @@ export default function PlayerProfilePage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [togglingVisibility, setTogglingVisibility] = useState(false);
+  const [selectedSport, setSelectedSport] = useState<SportKey>("football");
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -61,7 +65,9 @@ export default function PlayerProfilePage() {
     api.get("/profile")
       .then((res) => {
         setProfile(res.data);
+        if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
         reset({
+          sport: res.data.sport ?? "football",
           position: res.data.position ?? "",
           province: res.data.province ?? "",
           age_group: res.data.age_group ?? "",
@@ -212,6 +218,20 @@ export default function PlayerProfilePage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Primary sport */}
+            <div>
+              <label className="mb-2 block text-sm font-medium">Primary sport</label>
+              <SportSelector
+                value={selectedSport}
+                onChange={(v) => {
+                  setSelectedSport(v as SportKey);
+                  // Reset position when sport changes
+                  reset((prev) => ({ ...prev, sport: v as string, position: "" }));
+                }}
+                size="sm"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Position</label>
@@ -220,7 +240,9 @@ export default function PlayerProfilePage() {
                   className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 >
                   <option value="">Select position…</option>
-                  {POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  {(SPORT_MAP[selectedSport]?.positions ?? POSITIONS).map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
                 </select>
                 {errors.position && <p className="mt-1 text-xs text-destructive">{errors.position.message}</p>}
               </div>

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
-  Film, Activity, FileText, Crosshair, Tv2,
+  Film, Activity, FileText, Crosshair, Tv2, Swords,
   Menu, X,
 } from "lucide-react";
 
@@ -42,12 +42,14 @@ const navItems: NavItem[] = [
   { href: "/injury-tracker",         label: "Injury Tracker", icon: Activity,        roles: ["coach"] },
   { href: "/streaming",              label: "Live Matches",   icon: Radio,           roles: ["coach"] },
   { href: "/streaming/broadcast",    label: "Broadcast",      icon: Tv2,             roles: ["coach"] },
+  { href: "/tournaments",             label: "Tournaments",    icon: Trophy,          roles: ["coach"] },
   { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
   { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
   { href: "/scout",           label: "Find Players",  icon: UserSearch,  roles: ["scout"] },
   { href: "/scout/shortlist", label: "Shortlist",     icon: Star,        roles: ["scout"] },
   { href: "/scout/reports",   label: "PDF Reports",   icon: FileText,    roles: ["scout"] },
+  { href: "/tournaments",     label: "Tournaments",   icon: Trophy,      roles: ["scout"] },
   { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
@@ -67,12 +69,15 @@ const navItems: NavItem[] = [
   { href: "/video-studio",               label: "Video Studio",    icon: Film,            roles: ["player"] },
   { href: "/injury-tracker",             label: "Injury Tracker",  icon: Activity,        roles: ["player"] },
   { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
+  { href: "/player/sports",               label: "My Sports",       icon: Swords,          roles: ["player"] },
+  { href: "/tournaments",                 label: "Tournaments",     icon: Trophy,          roles: ["player"] },
   { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },
   { href: "/fan/discover",       label: "Discover",       icon: Star,            roles: ["fan"] },
   { href: "/fan/following",      label: "Following",      icon: Heart,           roles: ["fan"] },
   { href: "/fan/leaderboard",    label: "Leaderboard",    icon: Trophy,          roles: ["fan"] },
+  { href: "/tournaments",        label: "Tournaments",    icon: Swords,          roles: ["fan"] },
   { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
 ];
 
