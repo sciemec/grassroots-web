@@ -53,7 +53,7 @@ export default function CoachHubPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "coach") { router.push("/dashboard"); return; }
+    if (user.role !== "coach" && user.role !== "admin") { router.push("/dashboard"); return; }
     api.get("/coach/squad")
       .then((res) => setSquad(res.data?.data ?? res.data ?? []))
       .catch(() => {})

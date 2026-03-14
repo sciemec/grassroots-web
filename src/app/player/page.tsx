@@ -70,7 +70,7 @@ export default function PlayerHubPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "player") { router.push("/dashboard"); return; }
+    if (user.role !== "player" && user.role !== "admin") { router.push("/dashboard"); return; }
 
     Promise.all([
       api.get("/sessions?per_page=5"),

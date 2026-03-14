@@ -57,7 +57,7 @@ export default function FanHubPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "fan") { router.push("/dashboard"); return; }
+    if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
   }, [user, router]);
 
   const { data: playersData, isLoading: playersLoading, isError: playersError } = useQuery<{ data: ScoutPlayer[] }>({

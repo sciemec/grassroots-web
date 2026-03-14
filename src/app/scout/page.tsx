@@ -66,7 +66,7 @@ export default function ScoutPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "scout") { router.push("/dashboard"); return; }
+    if (user.role !== "scout" && user.role !== "admin") { router.push("/dashboard"); return; }
   }, [user, router]);
 
   const search = async () => {

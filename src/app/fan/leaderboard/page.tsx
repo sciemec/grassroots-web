@@ -53,7 +53,7 @@ export default function FanLeaderboardPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "fan") { router.push("/dashboard"); return; }
+    if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
   }, [user, router]);
 
   const { data, isLoading, isError } = useQuery<{ data: LeaderboardPlayer[] }>({
