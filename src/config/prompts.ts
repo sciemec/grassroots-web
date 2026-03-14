@@ -286,3 +286,76 @@ Structure your analysis as:
 
 TONE: Professional analyst briefing a coaching staff. Concise, evidence-based, actionable.`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. DRILL RECOMMENDER
+// Used by: /coach/ai-insights (drill request), future /drills/recommend page
+// ─────────────────────────────────────────────────────────────────────────────
+export interface DrillRecommenderContext {
+  sport: SportKey;
+  playerName: string;
+  age: number;
+  position: string;
+  weakAreas: string[];
+  sessionsPerWeek: number;
+}
+
+export function drillRecommenderPrompt(ctx: DrillRecommenderContext): string {
+  return `You are an expert ${ctx.sport} coach working with grassroots players in Zimbabwe. Resources are limited — no expensive equipment, small fields, large groups.
+
+PLAYER:
+Name: ${ctx.playerName}
+Age: ${ctx.age}
+Position: ${ctx.position}
+Weak areas: ${ctx.weakAreas.join(", ")}
+Sessions per week: ${ctx.sessionsPerWeek}
+
+YOUR TASK:
+Recommend exactly 3 drills that:
+- Need minimal equipment (cones, a ball, bibs at most)
+- Work with 10–20 players at once
+- Are suitable for ${ctx.age}-year-olds
+- Directly address: ${ctx.weakAreas.join(", ")}
+
+FORMAT — respond with exactly 3 drills, each on its own block:
+
+Drill name | Duration | Equipment | Instructions | Coaching point
+
+RULES:
+- Instructions must be clear enough for a coach with no formal training
+- Coaching point must be one sentence — what to watch and correct
+- No drill should require more than 10 cones and 2 balls
+- Total response: under 250 words`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. WHATSAPP MATCH REPORT
+// Used by: /coach/matches (post-match report generation)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface WhatsAppMatchReportContext {
+  sport: SportKey;
+  teamName: string;
+  score: string;          // e.g. "2–1" or "Won 2–1"
+  matchStats: string;     // free-text or JSON stringified stats
+}
+
+export function whatsAppMatchReportPrompt(ctx: WhatsAppMatchReportContext): string {
+  return `You are analysing a grassroots ${ctx.sport} match in Zimbabwe.
+
+MATCH:
+Team: ${ctx.teamName}
+Result: ${ctx.score}
+Stats: ${ctx.matchStats}
+
+YOUR TASK:
+Write a WhatsApp-friendly match report. Rules:
+- Maximum 200 words
+- Simple English (some players may not be fluent)
+- Highlight 1 player who performed well — name them specifically
+- Give 1 specific, actionable thing to improve next match
+- End with a short line of encouragement
+- Add relevant emoji throughout to make it engaging
+- Do NOT use markdown headers or bullet points — write as flowing WhatsApp message paragraphs
+
+TONE: Warm, human, like a coach sending a voice note turned to text. Not corporate.`;
+}
