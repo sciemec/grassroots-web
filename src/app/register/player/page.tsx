@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff, User, Calendar, MapPin, Dumbbell, Shield } from "lucide-react";
 import api from "@/lib/api";
+import { SPORT_MAP, SportKey } from "@/config/sports";
 
-const POSITIONS = [
+// Fallback football positions if sport has no position list
+const FOOTBALL_POSITIONS = [
   "Goalkeeper","Right Back","Left Back","Centre Back",
   "Defensive Midfielder","Central Midfielder","Attacking Midfielder",
   "Right Winger","Left Winger","Centre Forward","Striker",
@@ -63,8 +65,13 @@ const INIT: Form = {
   terms: false, guardian_phone: "",
 };
 
-export default function PlayerRegisterPage() {
+function PlayerRegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sportParam = (searchParams.get("sport") ?? "football") as SportKey;
+  const sportCfg = SPORT_MAP[sportParam] ?? SPORT_MAP["football"];
+  const positions = sportCfg.positions ?? FOOTBALL_POSITIONS;
+
   const [step, setStep]       = useState(1);
   const [form, setForm]       = useState<Form>(INIT);
   const [error, setError]     = useState("");
@@ -92,8 +99,8 @@ export default function PlayerRegisterPage() {
       if (form.password !== form.confirm_password) return "Passwords don't match";
     }
     if (step === 3) {
-      if (!form.position_primary) return "Please select your position";
-      if (!form.province)         return "Please select your province";
+      if (positions.length > 0 && !form.position_primary) return "Please select your position";
+      if (!form.province) return "Please select your province";
     }
     if (step === 5) {
       if (!form.terms) return "You must accept the terms to continue";
@@ -126,6 +133,7 @@ export default function PlayerRegisterPage() {
         dominant_foot: form.dominant_foot || "right",
         province: form.province,
         org_name: form.school || undefined,
+        sport: sportParam,
       };
       if (isUnder13) payload.guardian_phone = form.guardian_phone.trim();
 
@@ -156,10 +164,12 @@ export default function PlayerRegisterPage() {
         </div>
 
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-emerald-500 text-2xl shadow-lg">🏃</div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-emerald-500 text-2xl shadow-lg">
+            {sportCfg.emoji}
+          </div>
           <div>
-            <h1 className="text-xl font-black text-white">Player Registration</h1>
-            <p className="text-xs text-green-300">Free account · AI coaching included</p>
+            <h1 className="text-xl font-black text-white">{sportCfg.label} — Player Registration</h1>
+            <p className="text-xs text-green-300">{sportCfg.governingBody} · Free account · AI coaching included</p>
           </div>
         </div>
 
@@ -283,13 +293,15 @@ export default function PlayerRegisterPage() {
                 <h2 className="text-xl font-bold text-white">Playing details</h2>
                 <p className="text-sm text-green-300">Help us personalise your training</p>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-green-200">Position</label>
-                <select value={form.position_primary} onChange={(e) => set("position_primary", e.target.value)} className={selectCls}>
-                  <option value="">Select your position…</option>
-                  {POSITIONS.map((p) => <option key={p}>{p}</option>)}
-                </select>
-              </div>
+              {positions.length > 0 && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-green-200">Position</label>
+                  <select value={form.position_primary} onChange={(e) => set("position_primary", e.target.value)} className={selectCls}>
+                    <option value="">Select your position…</option>
+                    {positions.map((p) => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="mb-1 block text-xs font-medium text-green-200">Province</label>
                 <select value={form.province} onChange={(e) => set("province", e.target.value)} className={selectCls}>
@@ -406,5 +418,13 @@ export default function PlayerRegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function PlayerRegisterPage() {
+  return (
+    <Suspense>
+      <PlayerRegisterForm />
+    </Suspense>
   );
 }

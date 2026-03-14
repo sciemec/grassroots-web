@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
+import { SPORT_MAP, SportKey } from "@/config/sports";
 
 const PROVINCES = [
   "Harare","Bulawayo","Manicaland","Mashonaland Central",
@@ -32,10 +33,14 @@ const INIT: Form = {
   terms: false,
 };
 
-export default function CoachRegisterPage() {
+function CoachRegisterForm() {
   const router  = useRouter();
+  const searchParams = useSearchParams();
+  const sportParam = (searchParams.get("sport") ?? "football") as SportKey;
+  const sportCfg = SPORT_MAP[sportParam] ?? SPORT_MAP["football"];
+
   const [step, setStep]     = useState(1);
-  const [form, setForm]     = useState<Form>(INIT);
+  const [form, setForm]     = useState<Form>({ ...INIT, sport: sportCfg.label });
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw]   = useState(false);
@@ -113,10 +118,12 @@ export default function CoachRegisterPage() {
 
         {/* Role badge */}
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 text-2xl shadow-lg">📋</div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 text-2xl shadow-lg">
+            {sportCfg.emoji}
+          </div>
           <div>
-            <h1 className="text-xl font-black text-white">Coach Registration</h1>
-            <p className="text-xs text-blue-300">Professional account · Squad management included</p>
+            <h1 className="text-xl font-black text-white">{sportCfg.label} — Coach Registration</h1>
+            <p className="text-xs text-blue-300">{sportCfg.governingBody} · Video analytics · AI coaching insights</p>
           </div>
         </div>
 
@@ -272,5 +279,13 @@ export default function CoachRegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function CoachRegisterPage() {
+  return (
+    <Suspense>
+      <CoachRegisterForm />
+    </Suspense>
   );
 }
