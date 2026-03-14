@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
@@ -21,7 +22,7 @@ export function PublicNavbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-white">
-          <span className="text-2xl">⚽</span>
+          <Image src="/logo.png" alt="Grassroots Sport" width={36} height={36} className="rounded-md" />
           <span className="text-lg font-bold tracking-tight">
             Grassroots <span className="text-green-400">Sport</span>
           </span>

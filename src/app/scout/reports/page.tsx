@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
-import { SPORT_STATS, getSportAnalysisPrompt } from "@/config/sports";
+import { SPORT_STATS, getSportAnalysisPrompt, type SportKey } from "@/config/sports";
 
 interface ScoutPlayer {
   id: string;
@@ -43,7 +43,7 @@ async function fetchPlayerAnalysis(player: ScoutPlayer): Promise<string> {
     `Overall Score: ${player.overall_score}/100, Sport: ${player.sport}. ` +
     `Key stats tracked: ${statsKeys.join(", ")}.`;
 
-  const prompt = getSportAnalysisPrompt(player.sport, context);
+  const prompt = getSportAnalysisPrompt(player.sport as SportKey, context);
 
   const res = await api.post("/ai-coach/query", {
     message: `[Scout Report — ${player.sport}] ${prompt}`,

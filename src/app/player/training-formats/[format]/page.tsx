@@ -324,7 +324,7 @@ export default function TrainingFormatSessionPage() {
                 <Counter label="Accuracy %" value={accuracy} onInc={() => setAccuracy(a => Math.min(100, a + 5))} onDec={() => setAccuracy(a => Math.max(0, a - 5))} color={cfg.accent} />
               </div>
               <div className="rounded-xl border bg-card p-4">
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Personal best (optional — e.g. "14.2s")</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Personal best (optional — e.g. 14.2s)</label>
                 <input type="text" placeholder="e.g. 14.2s or 8/10 reps" value={pb} onChange={(e) => setPb(e.target.value)}
                   className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
               </div>

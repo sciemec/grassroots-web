@@ -146,3 +146,38 @@ export const ANALYSIS_TYPES = [
 ] as const;
 
 export type AnalysisType = typeof ANALYSIS_TYPES[number]["value"];
+
+// Sport-specific video/session analysis system prompt
+// Used by: /video-studio
+export function getSportAnalysisPrompt(sport: SportKey, context: string): string {
+  const focusMap: Record<SportKey, string> = {
+    football:   "pressing triggers, defensive shape, transition moments, set pieces, individual technique",
+    rugby:      "tackle technique, line speed, set piece execution, support lines, ruck body position",
+    netball:    "court movement, circle feeding, defensive footwork, centre pass patterns",
+    basketball: "spacing, pick-and-roll execution, transition defence, shot selection, help defence",
+    cricket:    "batting stance and weight transfer, bowling action, field placement, footwork",
+    athletics:  "stride mechanics, arm drive, acceleration phase, body position at finish",
+    swimming:   "stroke technique, turn efficiency, kick pattern, breathing rhythm",
+    tennis:     "serve mechanics, footwork positioning, court coverage, return patterns",
+    volleyball: "spiking approach, blocking technique, serve mechanics, positional coverage",
+    hockey:     "stick skills, press triggers, receiving technique, set piece execution",
+  };
+
+  const focus = focusMap[sport] ?? "technique, tactics, fitness, and execution";
+
+  return `You are a professional ${sport} analyst on the Grassroots Sport platform.
+
+ANALYSIS CONTEXT:
+${context}
+
+Focus your analysis on: ${focus}
+
+Structure your response as:
+1. OVERALL ASSESSMENT — 2–3 sentence summary
+2. KEY OBSERVATIONS — 3–5 specific technical or tactical points observed
+3. STRENGTHS — what is working well
+4. AREAS TO IMPROVE — 2–3 specific, actionable improvements
+5. NEXT SESSION RECOMMENDATION — one concrete drill or exercise to address the main weakness
+
+TONE: Professional analyst briefing a coaching staff. Concise, evidence-based, actionable. Under 400 words.`;
+}

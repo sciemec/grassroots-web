@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
@@ -112,7 +113,7 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Logo + notification bell */}
       <div className="mb-4 px-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2" onClick={onNavClick}>
-          <span className="text-lg">⚽</span>
+          <Image src="/logo.png" alt="Grassroots Sport" width={28} height={28} className="rounded-sm" />
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
         </Link>
         {user && <NotificationBell />}
@@ -213,7 +214,7 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b bg-card px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg">⚽</span>
+          <Image src="/logo.png" alt="Grassroots Sport" width={24} height={24} className="rounded-sm" />
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
         </Link>
         <button
