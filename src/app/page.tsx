@@ -7,14 +7,16 @@ import {
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 const sports = [
-  { name: "Football", icon: "⚽", color: "bg-green-500" },
+  { name: "Football",   icon: "⚽", color: "bg-green-500" },
   { name: "Basketball", icon: "🏀", color: "bg-orange-500" },
-  { name: "Athletics", icon: "🏃", color: "bg-blue-500" },
+  { name: "Athletics",  icon: "🏃", color: "bg-blue-500" },
   { name: "Volleyball", icon: "🏐", color: "bg-yellow-500" },
-  { name: "Cricket", icon: "🏏", color: "bg-red-500" },
-  { name: "Netball", icon: "🥅", color: "bg-purple-500" },
-  { name: "Rugby", icon: "🏉", color: "bg-amber-600" },
-  { name: "Swimming", icon: "🏊", color: "bg-cyan-500" },
+  { name: "Cricket",    icon: "🏏", color: "bg-red-500" },
+  { name: "Netball",    icon: "🥅", color: "bg-purple-500" },
+  { name: "Rugby",      icon: "🏉", color: "bg-amber-600" },
+  { name: "Swimming",   icon: "🏊", color: "bg-cyan-500" },
+  { name: "Tennis",     icon: "🎾", color: "bg-lime-500" },
+  { name: "Hockey",     icon: "🏑", color: "bg-teal-500" },
 ];
 
 const roles = [
@@ -33,7 +35,7 @@ const roles = [
       "Drill library with 48+ exercises",
     ],
     cta: "Start as Player",
-    href: "/register?role=player",
+    href: "/register/player",
     accent: "text-green-400",
   },
   {
@@ -51,7 +53,7 @@ const roles = [
       "Export PDF training reports",
     ],
     cta: "Start as Coach",
-    href: "/register?role=coach",
+    href: "/register/coach",
     accent: "text-blue-400",
   },
   {
@@ -69,7 +71,7 @@ const roles = [
       "Radar chart comparisons",
     ],
     cta: "Start as Scout",
-    href: "/register?role=scout",
+    href: "/register/scout",
     accent: "text-yellow-400",
   },
   {
@@ -87,7 +89,7 @@ const roles = [
       "Live session highlights feed",
     ],
     cta: "Start as Fan",
-    href: "/register?role=fan",
+    href: "/register/fan",
     accent: "text-pink-400",
   },
 ];
@@ -95,7 +97,7 @@ const roles = [
 const stats = [
   { value: "10,000+", label: "Registered Athletes", icon: Users },
   { value: "50,000+", label: "Training Sessions", icon: Dumbbell },
-  { value: "8", label: "Sports Supported", icon: Trophy },
+  { value: "10", label: "Sports Supported", icon: Trophy },
   { value: "10", label: "Provinces Covered", icon: Globe },
 ];
 
@@ -258,11 +260,11 @@ export default function LandingPage() {
       <section id="sports" className="border-y border-white/10 bg-green-900/40 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold">8 Sports, One Platform</h2>
+            <h2 className="text-3xl font-bold">10 Sports, One Platform</h2>
             <p className="mt-2 text-green-300">Track and improve across the sports Africa loves most</p>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 sm:grid-cols-8">
+          <div className="grid grid-cols-5 gap-4 sm:grid-cols-10">
             {sports.map(({ name, icon, color }) => (
               <div
                 key={name}
@@ -524,8 +526,12 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-green-500">
-            © {new Date().getFullYear()} Grassroots Sport Pro. Built in Zimbabwe 🇿🇼
+          <div className="mt-10 border-t border-white/10 pt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between text-xs text-green-500">
+            <span>© {new Date().getFullYear()} Grassroots Sport Pro. Built in Zimbabwe 🇿🇼</span>
+            <div className="flex gap-4">
+              <Link href="/terms" className="hover:text-green-300 transition-colors">Terms of Service</Link>
+              <Link href="/privacy" className="hover:text-green-300 transition-colors">Privacy Policy</Link>
+            </div>
           </div>
         </div>
       </footer>
