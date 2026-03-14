@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
 
 const PROVINCES = [
   "Harare","Bulawayo","Manicaland","Mashonaland Central",
@@ -21,13 +20,13 @@ const SPORTS = ["Football","Rugby","Netball","Basketball","Cricket","Athletics",
 const STEPS = ["Personal", "Account", "Professional", "Confirm"];
 
 interface Form {
-  name: string; phone: string; province: string;
+  first_name: string; surname: string; phone: string; province: string;
   email: string; password: string; confirm_password: string;
   team_name: string; coaching_level: string; sport: string; experience_years: string;
   terms: boolean;
 }
 const INIT: Form = {
-  name: "", phone: "", province: "",
+  first_name: "", surname: "", phone: "", province: "",
   email: "", password: "", confirm_password: "",
   team_name: "", coaching_level: "", sport: "Football", experience_years: "",
   terms: false,
@@ -35,7 +34,6 @@ const INIT: Form = {
 
 export default function CoachRegisterPage() {
   const router  = useRouter();
-  const login   = useAuthStore((s) => s.login);
   const [step, setStep]     = useState(1);
   const [form, setForm]     = useState<Form>(INIT);
   const [error, setError]   = useState("");
@@ -49,9 +47,10 @@ export default function CoachRegisterPage() {
 
   const validate = (): string => {
     if (step === 1) {
-      if (!form.name.trim())    return "Full name is required";
-      if (!form.phone.trim())   return "Phone number is required";
-      if (!form.province)       return "Please select your province";
+      if (!form.first_name.trim()) return "First name is required";
+      if (!form.surname.trim())    return "Surname is required";
+      if (!form.phone.trim())      return "Phone number is required";
+      if (!form.province)          return "Please select your province";
     }
     if (step === 2) {
       if (!form.email.includes("@"))               return "Valid email address required";
@@ -79,15 +78,15 @@ export default function CoachRegisterPage() {
     setError("");
     try {
       const res = await api.post("/auth/register", {
-        role: "coach", name: form.name, email: form.email, phone: form.phone,
+        role: "coach", first_name: form.first_name, surname: form.surname,
+        email: form.email, phone: form.phone,
         password: form.password, password_confirmation: form.confirm_password,
         province: form.province, team_name: form.team_name,
         coaching_level: form.coaching_level, sport: form.sport,
         experience_years: form.experience_years,
       });
-      const { token, user } = res.data;
-      login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
-      router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
+      const { identifier } = res.data;
+      router.push(`/verify-otp?identifier=${encodeURIComponent(identifier)}`);
     } catch (e: unknown) {
       const data = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
       setError(data?.errors ? Object.values(data.errors).flat().join(". ") : (data?.message ?? "Registration failed."));
@@ -144,9 +143,15 @@ export default function CoachRegisterPage() {
           {step === 1 && (
             <div className="space-y-4">
               <div><h2 className="text-xl font-bold text-white">Personal information</h2><p className="text-sm text-blue-300">Your contact details</p></div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Full name</label>
-                <input type="text" placeholder="Takudzwa Mhaka" value={form.name} onChange={(e) => set("name", e.target.value)} className={inputCls} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-blue-200">First name</label>
+                  <input type="text" placeholder="Takudzwa" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-blue-200">Surname</label>
+                  <input type="text" placeholder="Mhaka" value={form.surname} onChange={(e) => set("surname", e.target.value)} className={inputCls} />
+                </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-blue-200">Phone number</label>
@@ -228,7 +233,7 @@ export default function CoachRegisterPage() {
             <div className="space-y-5">
               <div><h2 className="text-xl font-bold text-white">Review & confirm</h2><p className="text-sm text-blue-300">Check your details before submitting</p></div>
               <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-4">
-                {[["Name", form.name],["Email", form.email],["Province", form.province],["Team/Club", form.team_name],["Sport", form.sport],["Coaching Level", form.coaching_level],["Experience", `${form.experience_years} years`]].map(([k, v]) => (
+                {[["Name", `${form.first_name} ${form.surname}`],["Email", form.email],["Province", form.province],["Team/Club", form.team_name],["Sport", form.sport],["Coaching Level", form.coaching_level],["Experience", `${form.experience_years} years`]].map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
                     <span className="text-blue-400">{k}</span>
                     <span className="font-medium text-white">{v}</span>

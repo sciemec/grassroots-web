@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/lib/auth-store";
+import { useAuthStore, useEffectiveRole, roleHomePath, UserRole } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
 import { NotificationBell } from "./notification-bell";
 
@@ -72,25 +72,65 @@ const navItems: NavItem[] = [
   { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
 ];
 
+const HUB_TABS: { role: UserRole; label: string; color: string }[] = [
+  { role: "admin",  label: "Admin",  color: "bg-purple-500 text-white" },
+  { role: "player", label: "Player", color: "bg-blue-500 text-white" },
+  { role: "coach",  label: "Coach",  color: "bg-green-500 text-white" },
+  { role: "scout",  label: "Scout",  color: "bg-orange-500 text-white" },
+  { role: "fan",    label: "Fan",    color: "bg-pink-500 text-white" },
+];
+
 function NavContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, setAdminHub, adminHub } = useAuthStore();
+  const effectiveRole = useEffectiveRole();
 
   const visible = navItems.filter((item) =>
-    user ? item.roles.includes(user.role) : false
+    effectiveRole ? item.roles.includes(effectiveRole) : false
   );
+
+  function handleHubSwitch(hub: UserRole) {
+    setAdminHub(hub);
+    router.push(roleHomePath(hub));
+    onNavClick?.();
+  }
 
   return (
     <>
       {/* Logo + notification bell */}
-      <div className="mb-6 px-3 flex items-center justify-between">
+      <div className="mb-4 px-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2" onClick={onNavClick}>
           <span className="text-lg">⚽</span>
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
         </Link>
         {user && <NotificationBell />}
       </div>
+
+      {/* Admin hub switcher */}
+      {user?.role === "admin" && (
+        <div className="mb-4 px-2">
+          <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Preview Hub
+          </p>
+          <div className="grid grid-cols-5 gap-1">
+            {HUB_TABS.map(({ role, label, color }) => (
+              <button
+                key={role}
+                onClick={() => handleHubSwitch(role)}
+                className={cn(
+                  "rounded px-1 py-1.5 text-[10px] font-bold transition-all",
+                  adminHub === role
+                    ? color
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
@@ -123,7 +163,11 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
       {user && (
         <div className="mt-4 border-t pt-4">
           <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
-          <p className="px-3 text-xs font-medium capitalize text-foreground">{user.role}</p>
+          <p className="px-3 text-xs font-medium capitalize text-foreground">
+            {user.role === "admin" && effectiveRole !== "admin"
+              ? `Admin · previewing ${effectiveRole}`
+              : user.role}
+          </p>
           <Link
             href="/settings"
             onClick={onNavClick}

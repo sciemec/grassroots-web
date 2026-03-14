@@ -23,23 +23,40 @@ export interface AuthUser {
 
 interface AuthState {
   user: AuthUser | null;
+  /** Admin-only: which hub is currently being previewed */
+  adminHub: UserRole;
   login: (user: AuthUser) => void;
   logout: () => void;
+  setAdminHub: (hub: UserRole) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      adminHub: "admin",
       login: (user) => {
         localStorage.setItem("auth_token", user.token);
-        set({ user });
+        set({ user, adminHub: "admin" });
       },
       logout: () => {
         localStorage.removeItem("auth_token");
-        set({ user: null });
+        set({ user: null, adminHub: "admin" });
       },
+      setAdminHub: (hub) => set({ adminHub: hub }),
     }),
     { name: "grassroots-auth" }
   )
 );
+
+/**
+ * Returns the effective role for nav/routing purposes.
+ * Admin can preview any hub — this returns the hub they're currently viewing.
+ */
+export function useEffectiveRole(): UserRole | null {
+  const user = useAuthStore((s) => s.user);
+  const adminHub = useAuthStore((s) => s.adminHub);
+  if (!user) return null;
+  if (user.role === "admin") return adminHub;
+  return user.role;
+}

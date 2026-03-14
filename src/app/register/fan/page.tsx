@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
 
 const PROVINCES = [
   "Harare","Bulawayo","Manicaland","Mashonaland Central",
@@ -28,19 +27,18 @@ const SPORTS = [
 const STEPS = ["Discover", "Account", "Confirm"];
 
 interface Form {
-  name: string; province: string; favourite_sport: string;
+  first_name: string; surname: string; province: string; favourite_sport: string;
   email: string; password: string; confirm_password: string;
   terms: boolean;
 }
 const INIT: Form = {
-  name: "", province: "", favourite_sport: "football",
+  first_name: "", surname: "", province: "", favourite_sport: "football",
   email: "", password: "", confirm_password: "",
   terms: false,
 };
 
 export default function FanRegisterPage() {
   const router = useRouter();
-  const login  = useAuthStore((s) => s.login);
   const [step, setStep]       = useState(1);
   const [form, setForm]       = useState<Form>(INIT);
   const [error, setError]     = useState("");
@@ -52,8 +50,9 @@ export default function FanRegisterPage() {
 
   const validate = (): string => {
     if (step === 1) {
-      if (!form.name.trim()) return "Full name is required";
-      if (!form.province)    return "Please select your province";
+      if (!form.first_name.trim()) return "First name is required";
+      if (!form.surname.trim())    return "Surname is required";
+      if (!form.province)          return "Please select your province";
     }
     if (step === 2) {
       if (!form.email.includes("@"))               return "Valid email address required";
@@ -76,13 +75,13 @@ export default function FanRegisterPage() {
     setError("");
     try {
       const res = await api.post("/auth/register", {
-        role: "fan", name: form.name, email: form.email,
+        role: "fan", first_name: form.first_name, surname: form.surname,
+        email: form.email,
         password: form.password, password_confirmation: form.confirm_password,
         province: form.province, favourite_sport: form.favourite_sport,
       });
-      const { token, user } = res.data;
-      login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
-      router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
+      const { identifier } = res.data;
+      router.push(`/verify-otp?identifier=${encodeURIComponent(identifier)}`);
     } catch (e: unknown) {
       const data = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
       setError(data?.errors ? Object.values(data.errors).flat().join(". ") : (data?.message ?? "Registration failed."));
@@ -136,9 +135,15 @@ export default function FanRegisterPage() {
             <div className="space-y-5">
               <div><h2 className="text-xl font-bold text-white">Discover Zimbabwe Sport</h2><p className="text-sm text-amber-300">Tell us what you love</p></div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-amber-200">Your name</label>
-                <input type="text" placeholder="Rudo Chirwa" value={form.name} onChange={(e) => set("name", e.target.value)} className={inputCls} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-amber-200">First name</label>
+                  <input type="text" placeholder="Rudo" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-amber-200">Surname</label>
+                  <input type="text" placeholder="Chirwa" value={form.surname} onChange={(e) => set("surname", e.target.value)} className={inputCls} />
+                </div>
               </div>
 
               <div>
@@ -202,7 +207,7 @@ export default function FanRegisterPage() {
             <div className="space-y-5">
               <div><h2 className="text-xl font-bold text-white">You&apos;re almost in!</h2><p className="text-sm text-amber-300">Confirm to create your free fan account</p></div>
               <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-4">
-                {[["Name", form.name],["Email", form.email],["Province", form.province],["Favourite Sport", SPORTS.find(s => s.key === form.favourite_sport)?.label ?? form.favourite_sport]].map(([k, v]) => (
+                {[["Name", `${form.first_name} ${form.surname}`],["Email", form.email],["Province", form.province],["Favourite Sport", SPORTS.find(s => s.key === form.favourite_sport)?.label ?? form.favourite_sport]].map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
                     <span className="text-amber-400">{k}</span>
                     <span className="font-medium text-white">{v}</span>
