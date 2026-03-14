@@ -7,13 +7,14 @@ import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
-  Film, Activity,
+  Film, Activity, FileText,
   Menu, X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
+import { NotificationBell } from "./notification-bell";
 
 type NavItem = { href: string; label: string; icon: React.ElementType; roles: string[] };
 
@@ -29,17 +30,19 @@ const navItems: NavItem[] = [
   { href: "/notifications",  label: "Notifications",  icon: Bell,            roles: ["admin"] },
   { href: "/community",      label: "Community",      icon: Heart,           roles: ["admin"] },
   // ─── Coach ────────────────────────────────────────────────────────────────
-  { href: "/coach",               label: "Coach Hub",    icon: LayoutDashboard, roles: ["coach"] },
-  { href: "/coach/squad",         label: "My Squad",     icon: Users,           roles: ["coach"] },
-  { href: "/coach/tactics",       label: "Tactics Board",icon: ClipboardList,   roles: ["coach"] },
-  { href: "/coach/matches",       label: "Matches",      icon: Trophy,          roles: ["coach"] },
-  { href: "/coach/ai-insights",   label: "AI Insights",  icon: Brain,           roles: ["coach"] },
-  { href: "/video-studio",        label: "Video Studio", icon: Film,            roles: ["coach"] },
-  { href: "/injury-tracker",      label: "Injury Tracker",icon: Activity,       roles: ["coach"] },
-  { href: "/streaming",           label: "Live Matches", icon: Radio,           roles: ["coach"] },
+  { href: "/coach",                  label: "Coach Hub",      icon: LayoutDashboard, roles: ["coach"] },
+  { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
+  { href: "/coach/tactics",          label: "Tactics Board",  icon: ClipboardList,   roles: ["coach"] },
+  { href: "/coach/matches",          label: "Matches",        icon: Trophy,          roles: ["coach"] },
+  { href: "/coach/ai-insights",      label: "AI Insights",    icon: Brain,           roles: ["coach"] },
+  { href: "/video-studio",           label: "Video Studio",   icon: Film,            roles: ["coach"] },
+  { href: "/injury-tracker",         label: "Injury Tracker", icon: Activity,        roles: ["coach"] },
+  { href: "/streaming",              label: "Live Matches",   icon: Radio,           roles: ["coach"] },
+  { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
-  { href: "/scout",          label: "Find Players",   icon: UserSearch,      roles: ["scout"] },
-  { href: "/scout/shortlist",label: "Shortlist",      icon: Star,            roles: ["scout"] },
+  { href: "/scout",           label: "Find Players",  icon: UserSearch,  roles: ["scout"] },
+  { href: "/scout/shortlist", label: "Shortlist",     icon: Star,        roles: ["scout"] },
+  { href: "/scout/reports",   label: "PDF Reports",   icon: FileText,    roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
   { href: "/player/ai-coach",             label: "AI Coach",        icon: Brain,           roles: ["player"] },
@@ -53,11 +56,12 @@ const navItems: NavItem[] = [
   { href: "/player/nutrition",            label: "Nutrition",       icon: Apple,           roles: ["player"] },
   { href: "/player/development",          label: "Dev Phases",      icon: Layers,          roles: ["player"] },
   { href: "/player/subscription",         label: "Subscription",    icon: SubIcon,         roles: ["player"] },
-  { href: "/player/verification",          label: "Verification",    icon: ShieldCheck,     roles: ["player"] },
+  { href: "/player/verification",         label: "Verification",    icon: ShieldCheck,     roles: ["player"] },
   { href: "/player/profile",              label: "My Profile",      icon: UserCircle,      roles: ["player"] },
   { href: "/video-studio",               label: "Video Studio",    icon: Film,            roles: ["player"] },
   { href: "/injury-tracker",             label: "Injury Tracker",  icon: Activity,        roles: ["player"] },
   { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
+  { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Discover",       icon: Star,          roles: ["fan"] },
   { href: "/fan/leaderboard",    label: "Leaderboard",    icon: Trophy,        roles: ["fan"] },
@@ -75,12 +79,13 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
 
   return (
     <>
-      {/* Logo */}
-      <div className="mb-6 px-3">
+      {/* Logo + notification bell */}
+      <div className="mb-6 px-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2" onClick={onNavClick}>
           <span className="text-lg">⚽</span>
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
         </Link>
+        {user && <NotificationBell />}
       </div>
 
       {/* Nav */}
@@ -93,7 +98,7 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
             (href === "/coach" && pathname === "/coach");
           return (
             <Link
-              key={href}
+              key={`${href}-${label}`}
               href={href}
               onClick={onNavClick}
               className={cn(

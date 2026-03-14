@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, RotateCcw, Save, Brain, Loader2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Save, Brain, Loader2, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
@@ -97,11 +97,13 @@ export default function TacticsPage() {
   const { user } = useAuthStore();
   const [squad, setSquad] = useState<SquadMember[]>([]);
   const [formation, setFormation] = useState("4-3-3");
-  const [lineup, setLineup] = useState<Record<string, string>>({}); // positionId → squadMemberId
+  const [lineup, setLineup] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
   const [saved, setSaved] = useState(false);
   const [aiAdvice, setAiAdvice] = useState("");
   const [loadingAi, setLoadingAi] = useState(false);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
@@ -115,7 +117,6 @@ export default function TacticsPage() {
   const assign = (posId: string, memberId: string) => {
     setLineup((prev) => {
       const next = { ...prev };
-      // Remove any existing assignment for this member
       Object.keys(next).forEach((k) => { if (next[k] === memberId) delete next[k]; });
       if (memberId) next[posId] = memberId;
       else delete next[posId];
@@ -123,15 +124,36 @@ export default function TacticsPage() {
     });
   };
 
+  const getMember = (memberId: string) => squad.find((s) => s.id === memberId);
   const getMemberName = (memberId: string) => {
-    const m = squad.find((s) => s.id === memberId);
+    const m = getMember(memberId);
     return m ? `#${m.shirt_no} ${m.player?.name?.split(" ")[0] ?? "—"}` : "";
   };
 
   const assignedIds = new Set(Object.values(lineup));
 
+  // Drag handlers
+  const onDragStart = (e: React.DragEvent, memberId: string) => {
+    e.dataTransfer.setData("memberId", memberId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDropPosition = (e: React.DragEvent, posId: string) => {
+    e.preventDefault();
+    const memberId = e.dataTransfer.getData("memberId");
+    if (memberId) assign(posId, memberId);
+    setDragOver(null);
+  };
+
+  const onDragOverPosition = (e: React.DragEvent, posId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOver(posId);
+  };
+
   const saveLineup = () => {
     setSaved(true);
+    api.post("/coach/tactics/save", { formation, lineup, notes }).catch(() => {});
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -143,7 +165,7 @@ export default function TacticsPage() {
       .join(", ");
     try {
       const res = await api.post("/ai-coach/query", {
-        message: `Tactics analysis request. Formation: ${formation}. Lineup: ${lineupSummary}. Coach notes: ${notes || "none"}. Provide: 1) Assessment of this formation vs common opposition, 2) Key tactical instructions for 2-3 positions, 3) One set-piece recommendation.`,
+        message: `Tactics analysis. Formation: ${formation}. Lineup: ${lineupSummary}. Notes: ${notes || "none"}. Give: 1) Assessment of this formation, 2) Key tactical instructions for 2-3 positions, 3) One set-piece recommendation.`,
       });
       setAiAdvice(res.data?.response ?? "");
     } catch { setAiAdvice("Unable to generate advice. Please try again."); }
@@ -151,6 +173,8 @@ export default function TacticsPage() {
   };
 
   if (!user) return null;
+
+  const availableSquad = squad.filter((m) => m.status !== "injured");
 
   return (
     <div className="flex h-screen bg-background">
@@ -163,7 +187,7 @@ export default function TacticsPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Tactics Board</h1>
-            <p className="text-sm text-muted-foreground">Set your formation and assign players</p>
+            <p className="text-sm text-muted-foreground">Drag players from the squad list onto the pitch</p>
           </div>
         </div>
 
@@ -187,55 +211,69 @@ export default function TacticsPage() {
               ))}
             </div>
 
-            {/* Football pitch SVG */}
-            <div className="relative overflow-hidden rounded-xl border bg-green-900" style={{ paddingBottom: "140%" }}>
+            {/* Football pitch SVG — drop targets */}
+            <div
+              className="relative overflow-hidden rounded-xl border bg-green-900"
+              style={{ paddingBottom: "140%" }}
+            >
               <div className="absolute inset-0">
-                {/* Pitch markings */}
-                <svg viewBox="0 0 100 140" className="h-full w-full" preserveAspectRatio="xMidYMid meet">
+                <svg
+                  ref={svgRef}
+                  viewBox="0 0 100 140"
+                  className="h-full w-full"
+                  preserveAspectRatio="xMidYMid meet"
+                >
                   {/* Grass */}
                   <rect width="100" height="140" fill="#2d6a2d" />
-                  {/* Pitch outline */}
+                  {/* Pitch markings */}
                   <rect x="5" y="5" width="90" height="130" fill="none" stroke="#4a9a4a" strokeWidth="0.8" />
-                  {/* Centre line */}
                   <line x1="5" y1="70" x2="95" y2="70" stroke="#4a9a4a" strokeWidth="0.6" />
-                  {/* Centre circle */}
                   <circle cx="50" cy="70" r="12" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
                   <circle cx="50" cy="70" r="0.8" fill="#4a9a4a" />
-                  {/* Penalty areas */}
                   <rect x="24" y="5" width="52" height="20" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
                   <rect x="24" y="115" width="52" height="20" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
-                  {/* Goal areas */}
                   <rect x="36" y="5" width="28" height="10" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
                   <rect x="36" y="125" width="28" height="10" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
-                  {/* Goals */}
                   <rect x="42" y="2" width="16" height="4" fill="none" stroke="#fff" strokeWidth="0.8" />
                   <rect x="42" y="134" width="16" height="4" fill="none" stroke="#fff" strokeWidth="0.8" />
-                  {/* Penalty spots */}
                   <circle cx="50" cy="22" r="0.8" fill="#4a9a4a" />
                   <circle cx="50" cy="118" r="0.8" fill="#4a9a4a" />
 
-                  {/* Player positions */}
+                  {/* Player positions — drag targets */}
                   {positions.map((pos) => {
                     const memberId = lineup[pos.id];
                     const memberName = memberId ? getMemberName(memberId) : null;
                     const isAssigned = !!memberId;
+                    const isOver = dragOver === pos.id;
                     return (
-                      <g key={pos.id}>
+                      <g
+                        key={pos.id}
+                        onDragOver={(e) => onDragOverPosition(e, pos.id)}
+                        onDragLeave={() => setDragOver(null)}
+                        onDrop={(e) => onDropPosition(e, pos.id)}
+                        onClick={() => { if (isAssigned) assign(pos.id, ""); }}
+                        style={{ cursor: isAssigned ? "pointer" : "default" }}
+                      >
+                        {/* Larger invisible hit area for easy drop */}
+                        <circle cx={pos.x} cy={pos.y} r="9" fill="transparent" />
                         <circle
                           cx={pos.x}
                           cy={pos.y}
                           r="5.5"
-                          fill={isAssigned ? "#22c55e" : "rgba(255,255,255,0.2)"}
-                          stroke={isAssigned ? "#16a34a" : "rgba(255,255,255,0.5)"}
+                          fill={isOver ? "#facc15" : isAssigned ? "#22c55e" : "rgba(255,255,255,0.2)"}
+                          stroke={isOver ? "#ca8a04" : isAssigned ? "#16a34a" : "rgba(255,255,255,0.5)"}
                           strokeWidth="0.8"
                         />
-                        <text x={pos.x} y={pos.y + 0.8} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="3.2" fontWeight="bold">
+                        <text x={pos.x} y={pos.y + 0.8} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="3.2" fontWeight="bold" style={{ pointerEvents: "none" }}>
                           {pos.role}
                         </text>
                         {memberName && (
-                          <text x={pos.x} y={pos.y + 7.5} textAnchor="middle" fill="white" fontSize="2.8">
+                          <text x={pos.x} y={pos.y + 7.5} textAnchor="middle" fill="white" fontSize="2.8" style={{ pointerEvents: "none" }}>
                             {memberName.split(" ")[1] ?? memberName}
                           </text>
+                        )}
+                        {isAssigned && (
+                          <title>Click to remove {memberName}</title>
                         )}
                       </g>
                     );
@@ -244,13 +282,18 @@ export default function TacticsPage() {
               </div>
             </div>
 
+            {/* Drag hint */}
+            <p className="text-xs text-muted-foreground text-center">
+              Drag players from the squad onto position circles · Click a filled circle to remove
+            </p>
+
             {/* Actions */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={saveLineup}
                 className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                <Save className="h-4 w-4" />
+                {saved ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                 {saved ? "Saved!" : "Save lineup"}
               </button>
               <button
@@ -281,38 +324,44 @@ export default function TacticsPage() {
             )}
           </div>
 
-          {/* Right panel: assign players + notes */}
+          {/* Right panel */}
           <div className="lg:col-span-2 space-y-4">
 
-            {/* Assign players */}
+            {/* Draggable squad list */}
             <div className="rounded-xl border bg-card p-5">
-              <h2 className="mb-4 font-semibold">Assign players</h2>
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-                {positions.map((pos) => (
-                  <div key={pos.id} className="flex items-center gap-2">
-                    <span className="w-10 flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-center text-xs font-bold">
-                      {pos.role}
-                    </span>
-                    <select
-                      value={lineup[pos.id] ?? ""}
-                      onChange={(e) => assign(pos.id, e.target.value)}
-                      className="flex-1 rounded-lg border bg-background px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring"
-                    >
-                      <option value="">— Unassigned —</option>
-                      {squad
-                        .filter((m) => m.status !== "injured" && (!assignedIds.has(m.id) || lineup[pos.id] === m.id))
-                        .map((m) => (
-                          <option key={m.id} value={m.id}>
-                            #{m.shirt_no} {m.player?.name ?? "—"}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                ))}
+              <h2 className="mb-3 font-semibold">Squad — drag onto pitch</h2>
+              <p className="mb-3 text-xs text-muted-foreground">{assignedIds.size} of {availableSquad.length} placed</p>
+              <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                {availableSquad.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No squad members loaded.</p>
+                ) : (
+                  availableSquad.map((m) => {
+                    const isPlaced = assignedIds.has(m.id);
+                    return (
+                      <div
+                        key={m.id}
+                        draggable={!isPlaced}
+                        onDragStart={(e) => onDragStart(e, m.id)}
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                          isPlaced
+                            ? "bg-green-500/10 text-green-700 cursor-default opacity-60"
+                            : "border bg-background hover:bg-muted cursor-grab active:cursor-grabbing"
+                        }`}
+                      >
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold flex-shrink-0">
+                          {m.shirt_no}
+                        </span>
+                        <span className="flex-1 truncate font-medium">{m.player?.name ?? "—"}</span>
+                        <span className="text-xs text-muted-foreground capitalize">{m.position}</span>
+                        {isPlaced && <CheckCircle className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
-            {/* Match notes */}
+            {/* Tactical notes */}
             <div className="rounded-xl border bg-card p-5">
               <h2 className="mb-3 font-semibold">Tactical notes</h2>
               <textarea
@@ -325,20 +374,15 @@ export default function TacticsPage() {
             </div>
 
             {/* Bench / unavailable */}
-            {squad.filter((m) => !assignedIds.has(m.id)).length > 0 && (
+            {squad.filter((m) => m.status === "injured").length > 0 && (
               <div className="rounded-xl border bg-card p-5">
-                <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Not in lineup</h2>
+                <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Unavailable (Injured)</h2>
                 <div className="space-y-1.5">
-                  {squad.filter((m) => !assignedIds.has(m.id)).map((m) => (
+                  {squad.filter((m) => m.status === "injured").map((m) => (
                     <div key={m.id} className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">{m.shirt_no}</span>
                       <span>{m.player?.name?.split(" ")[0] ?? "—"}</span>
-                      <span className="text-xs capitalize">· {m.position}</span>
-                      {m.status !== "fit" && (
-                        <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium capitalize ${m.status === "injured" ? "bg-red-500/15 text-red-700" : "bg-amber-500/15 text-amber-700"}`}>
-                          {m.status}
-                        </span>
-                      )}
+                      <span className="ml-auto rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700">Injured</span>
                     </div>
                   ))}
                 </div>
