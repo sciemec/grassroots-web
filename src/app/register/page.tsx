@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, ChevronLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 
@@ -63,6 +63,8 @@ export default function RegisterPage() {
   const [form, setForm] = useState<FormState>(INIT);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const totalSteps = form.role === "player" ? 5 : 4;
 
@@ -195,12 +197,11 @@ export default function RegisterPage() {
               <h2 className="mb-2 text-xl font-bold text-white">Create your account</h2>
               <p className="mb-6 text-sm text-green-300">Your login details</p>
               <div className="space-y-4">
+                {/* Plain text fields */}
                 {[
-                  { k: "name", label: "Full name", type: "text", placeholder: "Tinashe Moyo" },
-                  { k: "email", label: "Email", type: "email", placeholder: "you@example.com" },
-                  { k: "phone", label: "Phone (WhatsApp)", type: "tel", placeholder: "+263 77 123 4567" },
-                  { k: "password", label: "Password (min 8 chars)", type: "password", placeholder: "••••••••" },
-                  { k: "confirm_password", label: "Confirm password", type: "password", placeholder: "••••••••" },
+                  { k: "name",  label: "Full name",          type: "text",  placeholder: "Tinashe Moyo" },
+                  { k: "email", label: "Email",              type: "email", placeholder: "you@example.com" },
+                  { k: "phone", label: "Phone (WhatsApp)",   type: "tel",   placeholder: "+263 77 123 4567" },
                 ].map(({ k, label, type, placeholder }) => (
                   <div key={k}>
                     <label className="mb-1 block text-xs font-medium text-green-200">{label}</label>
@@ -213,6 +214,57 @@ export default function RegisterPage() {
                     />
                   </div>
                 ))}
+
+                {/* Password field with eye toggle */}
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-green-200">Password (min 8 chars)</label>
+                  <div className="relative">
+                    <input
+                      type={showPw ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={form.password}
+                      onChange={(e) => set("password", e.target.value)}
+                      className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 pr-10 text-sm text-white placeholder-green-400/60 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400/70 hover:text-green-300 transition-colors"
+                      aria-label={showPw ? "Hide password" : "Show password"}
+                    >
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm password field with eye toggle */}
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-green-200">Confirm password</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={form.confirm_password}
+                      onChange={(e) => set("confirm_password", e.target.value)}
+                      className={`w-full rounded-lg border bg-white/10 px-3 py-2.5 pr-10 text-sm text-white placeholder-green-400/60 outline-none focus:ring-1 focus:ring-green-400 ${
+                        form.confirm_password && form.password !== form.confirm_password
+                          ? "border-red-400 focus:border-red-400"
+                          : "border-white/20 focus:border-green-400"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400/70 hover:text-green-300 transition-colors"
+                      aria-label={showConfirm ? "Hide password" : "Show password"}
+                    >
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {form.confirm_password && form.password !== form.confirm_password && (
+                    <p className="mt-1 text-xs text-red-300">Passwords don&apos;t match</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
