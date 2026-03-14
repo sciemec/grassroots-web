@@ -7,7 +7,7 @@ import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
-  Film, Activity, FileText, Crosshair, Tv2, Swords,
+  Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles,
   Menu, X,
 } from "lucide-react";
 
@@ -39,6 +39,7 @@ const navItems: NavItem[] = [
   { href: "/coach/live-match",          label: "Live Match",       icon: Tv2,         roles: ["coach"] },
   { href: "/coach/stats",               label: "Season Stats",     icon: BarChart2,   roles: ["coach"] },
   { href: "/video-studio",           label: "Video Studio",   icon: Film,            roles: ["coach"] },
+  { href: "/video-analysis",         label: "Video Analysis", icon: Sparkles,        roles: ["coach"] },
   { href: "/injury-tracker",         label: "Injury Tracker", icon: Activity,        roles: ["coach"] },
   { href: "/streaming",              label: "Live Matches",   icon: Radio,           roles: ["coach"] },
   { href: "/streaming/broadcast",    label: "Broadcast",      icon: Tv2,             roles: ["coach"] },
@@ -67,6 +68,7 @@ const navItems: NavItem[] = [
   { href: "/player/verification",         label: "Verification",    icon: ShieldCheck,     roles: ["player"] },
   { href: "/player/profile",              label: "My Profile",      icon: UserCircle,      roles: ["player"] },
   { href: "/video-studio",               label: "Video Studio",    icon: Film,            roles: ["player"] },
+  { href: "/video-analysis",             label: "Video Analysis",  icon: Sparkles,        roles: ["player"] },
   { href: "/injury-tracker",             label: "Injury Tracker",  icon: Activity,        roles: ["player"] },
   { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
   { href: "/player/sports",               label: "My Sports",       icon: Swords,          roles: ["player"] },
