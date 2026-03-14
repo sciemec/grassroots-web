@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trophy, X, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Plus, Trophy, X, ChevronDown, ChevronUp, MessageCircle, Loader2, Copy, Check } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { whatsAppMatchReportPrompt } from "@/config/prompts";
+import api from "@/lib/api";
 
 interface MatchRecord {
   id: string;
@@ -39,6 +41,9 @@ export default function CoachMatchesPage() {
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState<string | null>(null);
+  const [reports, setReports] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState<string | null>(null);
   const [form, setForm] = useState({
     opponent: "", venue: "home" as "home" | "away" | "neutral",
     date: new Date().toISOString().slice(0, 10),
@@ -73,6 +78,38 @@ export default function CoachMatchesPage() {
   const deleteMatch = (id: string) => {
     if (!confirm("Delete this match record?")) return;
     saveMatches(matches.filter((m) => m.id !== id));
+  };
+
+  const generateReport = async (m: MatchRecord) => {
+    setReportLoading(m.id);
+    const sport = user?.sport ?? "football";
+    const score = `${getOutcome(m.our_score, m.their_score)} ${m.our_score}–${m.their_score} vs ${m.opponent} (${m.venue})`;
+    const statsText = [
+      `Formation: ${m.formation}`,
+      m.scorers ? `Scorers: ${m.scorers}` : "",
+      `Yellow cards: ${m.yellow_cards}`,
+      `Red cards: ${m.red_cards}`,
+      m.notes ? `Notes: ${m.notes}` : "",
+    ].filter(Boolean).join(". ");
+    try {
+      const system = whatsAppMatchReportPrompt({ sport: sport as import("@/config/sports").SportKey, teamName: user?.name ?? "Team", score, matchStats: statsText });
+      const res = await api.post("/ai-coach/query", {
+        message: "Generate the WhatsApp match report now.",
+        system_prompt: system,
+        history: [],
+      }, { headers: { Authorization: `Bearer ${user?.token}` } });
+      setReports((prev) => ({ ...prev, [m.id]: res.data.reply ?? res.data.response ?? res.data.message ?? "" }));
+    } catch {
+      setReports((prev) => ({ ...prev, [m.id]: "Could not generate report. Please try again." }));
+    } finally {
+      setReportLoading(null);
+    }
+  };
+
+  const copyReport = async (id: string) => {
+    await navigator.clipboard.writeText(reports[id] ?? "");
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   if (!user) return null;
@@ -299,12 +336,34 @@ export default function CoachMatchesPage() {
                       {m.notes && (
                         <p className="mb-3 rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">{m.notes}</p>
                       )}
-                      <button
-                        onClick={() => deleteMatch(m.id)}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-red-600 hover:bg-red-500/10 transition-colors"
-                      >
-                        <X className="h-3.5 w-3.5" /> Delete record
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => generateReport(m)}
+                          disabled={reportLoading === m.id}
+                          className="flex items-center gap-1.5 rounded-lg bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 disabled:opacity-50 transition-colors"
+                        >
+                          {reportLoading === m.id
+                            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
+                            : <><MessageCircle className="h-3.5 w-3.5" /> WhatsApp report</>}
+                        </button>
+                        <button
+                          onClick={() => deleteMatch(m.id)}
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-red-600 hover:bg-red-500/10 transition-colors"
+                        >
+                          <X className="h-3.5 w-3.5" /> Delete record
+                        </button>
+                      </div>
+                      {reports[m.id] && (
+                        <div className="mt-3 rounded-xl border border-green-500/20 bg-green-500/5 p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-xs font-semibold text-green-700">WhatsApp Report</p>
+                            <button onClick={() => copyReport(m.id)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted transition-colors">
+                              {copied === m.id ? <><Check className="h-3 w-3 text-green-600" /> Copied!</> : <><Copy className="h-3 w-3" /> Copy</>}
+                            </button>
+                          </div>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{reports[m.id]}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -26,6 +26,8 @@ const SUGGESTED_PROMPTS = [
   "Which players need individual development focus?",
   "How do I motivate a losing team at half time?",
   "Plan a 4-week pre-season programme",
+  "Recommend 3 drills for a striker with weak finishing",
+  "Give me drills for a defender who loses the ball under pressure",
 ];
 
 function MessageBubble({ msg }: { msg: Message }) {

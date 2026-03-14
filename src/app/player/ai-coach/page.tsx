@@ -6,7 +6,7 @@ import { Brain, Send, Mic, Loader2, RotateCcw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import { playerAiCoachPrompt } from "@/config/prompts";
+import { playerAiCoachPrompt, ageGroupMatchFeedbackPrompt } from "@/config/prompts";
 import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
 
@@ -24,6 +24,7 @@ const SUGGESTED_PROMPTS = [
   "Ndisimudze sei pamutambo wefootball?",
   "What drills should I do for speed?",
   "How do I recover after an intense session?",
+  "Analyse my last match and give me feedback",
 ];
 
 function MessageBubble({ msg }: { msg: Message }) {
@@ -90,9 +91,35 @@ export default function AICoachPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const sendWithMatchFeedback = async (matchStats: string) => {
+    const ageGroup = user?.age_group ?? "senior";
+    const system = ageGroupMatchFeedbackPrompt({ ageGroup, matchStats });
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: `Analyse my recent match:\n${matchStats}`, timestamp: new Date() };
+    setMessages((prev) => [...prev, userMsg]);
+    setLoading(true);
+    try {
+      const res = await api.post("/ai-coach/query", {
+        message: userMsg.content,
+        system_prompt: system,
+        history: [],
+      }, { headers: { Authorization: `Bearer ${user?.token}` } });
+      const reply = res.data.reply ?? res.data.response ?? res.data.message ?? "Analysis complete.";
+      setMessages((prev) => [...prev, { id: Date.now().toString() + "r", role: "assistant", content: reply, timestamp: new Date() }]);
+    } catch {
+      setMessages((prev) => [...prev, { id: Date.now().toString() + "e", role: "assistant", content: "I couldn't analyse the match right now. Please try again.", timestamp: new Date() }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const send = async (text?: string) => {
     const content = (text ?? input).trim();
     if (!content || loading) return;
+    // If it's the match feedback chip, trigger the match feedback flow with a prompt
+    if (content === "Analyse my last match and give me feedback") {
+      sendWithMatchFeedback("No match stats provided — give general post-match feedback advice and ask the player to share their stats.");
+      return;
+    }
     setInput("");
 
     const userMsg: Message = {
