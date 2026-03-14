@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
+  Layers, Apple, Zap,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
 
 interface Session {
@@ -91,114 +93,86 @@ export default function PlayerHubPage() {
     ? Math.round(completed.reduce((sum, s) => sum + (s.overall_score ?? 0), 0) / completed.length)
     : 0;
 
-  const quickActions = [
-    { icon: Play,    label: "Start Session", href: "/player/sessions/new", bg: "bg-green-500",  hover: "hover:bg-green-400" },
-    { icon: Brain,   label: "Ask AI Coach",  href: "/player/ai-coach",     bg: "bg-purple-500", hover: "hover:bg-purple-400" },
-    { icon: Dumbbell,label: "Drill Library", href: "/player/drills",       bg: "bg-blue-500",   hover: "hover:bg-blue-400" },
-    { icon: Trophy,  label: "Milestones",    href: "/player/milestones",   bg: "bg-amber-500",  hover: "hover:bg-amber-400" },
+  const hubCards = [
+    { icon: Brain,    title: "AI Coach",         subtitle: "Mubatsiri wako — Claude AI",  href: "/player/ai-coach",           bg: "bg-[#6c3483]",  gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
+    { icon: Play,     title: "Start Session",    subtitle: "Tanga mushandiro",            href: "/player/sessions/new",       bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#27ae60] to-[#1a6b3c]" },
+    { icon: Dumbbell, title: "Drill Library",    subtitle: "Madrills — 48+ exercises",   href: "/player/drills",             bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+    { icon: Layers,   title: "Training Formats", subtitle: "Rondo, SSG, Shooting",       href: "/player/training-formats",   bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#7d6608] to-[#5a4b06]" },
+    { icon: Trophy,   title: "Milestones",       subtitle: "Zvikumbiro zvako",            href: "/player/milestones",         bg: "bg-[#d35400]",  gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
+    { icon: Zap,      title: "Talent ID",        subtitle: "Get scouted — Verekedza",    href: "/player/talent-id",          bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
+    { icon: Apple,    title: "Nutrition",        subtitle: "Sadza, nyama, zeventeen",    href: "/player/nutrition",          bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
+    { icon: TrendingUp,title: "My Progress",    subtitle: "Kuvandudzwa — track journey",href: "/player/progress",           bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
   ];
 
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="gs-watermark flex-1 overflow-auto p-6">
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-balance text-2xl font-bold">
-            Welcome back, {user.name.split(" ")[0]} 👋
+        <div className="mb-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-accent">
+            Mhoro — Player Hub
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-white">
+            {user.name.split(" ")[0]} 👋
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm italic text-accent/80">
             {profile?.position
               ? `${profile.position} · ${profile.province ?? ""} · ${profile.age_group?.toUpperCase() ?? ""}`
-              : "Complete your profile to get discovered by scouts"}
+              : "Ita profile yako — Complete your profile"}
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {/* Stats row */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { icon: Flame,     label: "Sessions completed", value: completed.length, color: "text-orange-500" },
-            { icon: Star,      label: "Avg score",          value: `${avgScore}%`,   color: "text-yellow-500" },
-            { icon: Target,    label: "Total sessions",     value: sessions.length,  color: "text-blue-500" },
-            { icon: TrendingUp,label: "Scout visible",      value: profile?.scout_visible ? "Yes" : "No", color: "text-green-500" },
+            { icon: Flame,      label: "Completed",    value: completed.length, color: "text-orange-400" },
+            { icon: Star,       label: "Avg score",    value: `${avgScore}%`,   color: "text-accent" },
+            { icon: Target,     label: "Total",        value: sessions.length,  color: "text-blue-400" },
+            { icon: TrendingUp, label: "Scout visible",value: profile?.scout_visible ? "Yes" : "No", color: "text-primary" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="rounded-xl border bg-card p-5">
-              <Icon className={`mb-2 h-5 w-5 ${color}`} />
-              <p className="text-2xl font-bold">{value}</p>
+            <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+              <Icon className={`mb-2 h-4 w-4 ${color}`} />
+              <p className="text-xl font-bold text-white">{value}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
 
-        {/* AI Coach banner */}
-        <div className="mb-8 rounded-2xl border bg-gradient-to-r from-purple-950/60 to-green-950/60 p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="mb-2 flex items-center gap-2">
-                <Brain className="h-5 w-5 flex-shrink-0 text-purple-400" />
-                <span className="text-sm font-semibold text-purple-300">AI Coach — Claude</span>
-              </div>
-              <h3 className="mb-1 text-balance text-lg font-bold text-white">
-                What do you want to improve today?
-              </h3>
-              <p className="text-sm leading-relaxed text-green-300">
-                Technique, training plans, nutrition, or anything about your game.
-                Supports English and Shona.
-              </p>
-            </div>
-            <Link
-              href="/player/ai-coach"
-              className="flex-shrink-0 rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-purple-400 active:scale-95"
-            >
-              Open Chat
-            </Link>
-          </div>
-        </div>
-
-        {/* Quick actions */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Quick actions
-          </h2>
+        {/* Hub cards grid — mobile-style */}
+        <div className="mb-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent/70">
+            Your Hub
+          </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {quickActions.map(({ icon: Icon, label, href, bg, hover }) => (
-              <Link
-                key={label}
-                href={href}
-                className={`flex flex-col items-center gap-3 rounded-xl p-5 text-center text-sm font-semibold text-white transition-all active:scale-95 ${bg} ${hover}`}
-              >
-                <Icon className="h-6 w-6" />
-                {label}
-              </Link>
+            {hubCards.map((card) => (
+              <HubCard key={card.href} {...card} />
             ))}
           </div>
         </div>
 
         {/* Recent sessions */}
         <div>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Recent sessions
-            </h2>
-            <Link
-              href="/player/sessions"
-              className="flex items-center gap-1 text-xs text-primary hover:underline"
-            >
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-widest text-accent/70">
+              Recent Sessions
+            </p>
+            <Link href="/player/sessions" className="flex items-center gap-1 text-xs text-accent hover:text-white transition-colors">
               View all <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
 
           {sessions.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-10 text-center">
+            <div className="rounded-2xl border border-dashed border-white/20 p-8 text-center">
               <Dumbbell className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-              <p className="font-medium">No sessions yet</p>
+              <p className="font-medium text-white">No sessions yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Start your first training session to track progress
+                Tanga mushandiro wako wekutanga
               </p>
               <Link
                 href="/player/sessions/new"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
               >
                 <Play className="h-3.5 w-3.5" /> Start session
               </Link>
@@ -209,14 +183,14 @@ export default function PlayerHubPage() {
                 <Link
                   key={session.id}
                   href={`/sessions/${session.id}`}
-                  className="flex items-center justify-between rounded-xl border bg-card px-4 py-3.5 transition-colors hover:bg-muted/40"
+                  className="flex items-center justify-between rounded-xl border border-white/10 bg-card/60 px-4 py-3.5 transition-colors hover:bg-card"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/20">
                       <Dumbbell className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium capitalize">{session.focus_area}</p>
+                      <p className="text-sm font-medium capitalize text-white">{session.focus_area}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(session.created_at).toLocaleDateString("en-ZW", {
                           day: "numeric", month: "short", year: "numeric",
@@ -226,7 +200,7 @@ export default function PlayerHubPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     {session.overall_score !== null && (
-                      <span className="text-sm font-bold">{session.overall_score}%</span>
+                      <span className="text-sm font-bold text-accent">{session.overall_score}%</span>
                     )}
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${STATUS_STYLES[session.status] ?? "bg-muted text-muted-foreground"}`}>
                       {session.status}

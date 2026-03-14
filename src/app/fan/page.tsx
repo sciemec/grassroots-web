@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Heart, Trophy, Users, Globe, Star, ChevronRight, Search, Calendar, MapPin,
+  Heart, Trophy, Users, Globe, Star, ChevronRight, Search, Calendar, MapPin, Radio,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
 
 interface ScoutPlayer {
@@ -80,29 +81,44 @@ export default function FanHubPage() {
       )
     : players;
 
+  const fanCards = [
+    { icon: Star,   title: "Discover",     subtitle: "Tsvaga nyeredzi — Find talent", href: "/fan/discover",    bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
+    { icon: Heart,  title: "Following",    subtitle: "Vatambi vaunotevera",           href: "/fan/following",   bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
+    { icon: Trophy, title: "Leaderboard",  subtitle: "Top players — Rankings",        href: "/fan/leaderboard", bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
+    { icon: Radio,  title: "Live Matches", subtitle: "Watch live — Tarisai",          href: "/streaming",       bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+  ];
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="gs-watermark flex-1 overflow-auto p-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-balance">Fan Hub</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Discover talent, follow athletes, and support grassroots sport
+        <div className="mb-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-accent">Mhoro — Fan Hub</p>
+          <h1 className="mt-1 text-2xl font-bold text-white">Welcome 🎉</h1>
+          <p className="mt-0.5 text-sm italic text-accent/80">
+            Tevera vatambi — Discover talent & support grassroots sport
           </p>
         </div>
 
+        {/* Fan hub cards */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {fanCards.map((c) => (
+            <HubCard key={c.href} {...c} />
+          ))}
+        </div>
+
         {/* Quick stats */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { icon: Users, label: "Athletes on platform", value: "10K+", color: "text-green-500" },
-            { icon: Trophy, label: "Top-rated this week", value: "250", color: "text-yellow-500" },
-            { icon: Globe, label: "Provinces covered", value: "10", color: "text-blue-500" },
-            { icon: Heart, label: "Players you follow", value: "0", color: "text-pink-500" },
+            { icon: Users,  label: "Athletes",       value: "10K+", color: "text-primary" },
+            { icon: Trophy, label: "Top-rated",       value: "250",  color: "text-accent" },
+            { icon: Globe,  label: "Provinces",       value: "10",   color: "text-blue-400" },
+            { icon: Heart,  label: "You follow",      value: "0",    color: "text-red-400" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="rounded-xl border bg-card p-5">
-              <Icon className={`h-5 w-5 ${color} mb-2`} />
-              <p className="text-2xl font-bold">{value}</p>
+            <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+              <Icon className={`h-4 w-4 ${color} mb-2`} />
+              <p className="text-xl font-bold text-white">{value}</p>
               <p className="text-xs text-muted-foreground">{label}</p>
             </div>
           ))}

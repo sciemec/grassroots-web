@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Users, Brain, ChevronRight, Flame, Shield, AlertTriangle,
-  Trophy, Radio, ClipboardList, Loader2,
+  Trophy, Radio, ClipboardList, Loader2, Film, Activity, Crosshair,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
 import type { SquadMember } from "@/types";
 
@@ -82,82 +83,79 @@ export default function CoachHubPage() {
 
   if (!user || loading) return <PageSkeleton />;
 
-  const quickActions = [
-    { icon: Users,       label: "My Squad",      href: "/coach/squad",       bg: "bg-blue-500",   hover: "hover:bg-blue-400" },
-    { icon: ClipboardList,label: "Tactics Board", href: "/coach/tactics",     bg: "bg-green-500",  hover: "hover:bg-green-400" },
-    { icon: Trophy,      label: "Matches",        href: "/coach/matches",     bg: "bg-amber-500",  hover: "hover:bg-amber-400" },
-    { icon: Brain,       label: "AI Insights",    href: "/coach/ai-insights", bg: "bg-purple-500", hover: "hover:bg-purple-400" },
+  const hubCards = [
+    { icon: Brain,        title: "AI Insights",      subtitle: "Mubatsiri wako — Claude AI",  href: "/coach/ai-insights",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
+    { icon: Users,        title: "My Squad",         subtitle: "Timu yako — Manage squad",    href: "/coach/squad",             bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+    { icon: ClipboardList,title: "Tactics Board",    subtitle: "Formation & set pieces",      href: "/coach/tactics",           bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#27ae60] to-[#1a6b3c]" },
+    { icon: Trophy,       title: "Matches",          subtitle: "Log & review — Zvikwata",     href: "/coach/matches",           bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
+    { icon: Crosshair,    title: "Tactical Analysis",subtitle: "Deep analysis — AI powered",  href: "/coach/tactical-analysis", bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
+    { icon: Film,         title: "Video Studio",     subtitle: "Record & edit — Vidiyo",      href: "/video-studio",            bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
+    { icon: Activity,     title: "Injury Tracker",   subtitle: "Player health status",        href: "/injury-tracker",          bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
+    { icon: Radio,        title: "Live Matches",     subtitle: "Stream & broadcast live",     href: "/streaming",               bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
   ];
 
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="gs-watermark flex-1 overflow-auto p-6">
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-balance text-2xl font-bold">
-            Coach Hub — {user.name.split(" ")[0]} 👋
+        <div className="mb-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-accent">
+            Mhoro — Coach Hub
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-white">
+            {user.name.split(" ")[0]} 👋
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your squad, tactics, and get AI-powered coaching support
+          <p className="mt-0.5 text-sm italic text-accent/80">
+            Ramba uchishanda — Manage your squad & tactics
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {/* Stats row */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { icon: Users,         label: "Squad size",   value: squad.length, color: "text-blue-500" },
-            { icon: Flame,         label: "Fit players",  value: fit,          color: "text-green-500" },
-            { icon: AlertTriangle, label: "On caution",   value: caution,      color: "text-amber-500" },
-            { icon: Shield,        label: "Injured",      value: injured,      color: "text-red-500" },
+            { icon: Users,         label: "Squad",      value: squad.length, color: "text-blue-400" },
+            { icon: Flame,         label: "Fit",        value: fit,          color: "text-primary" },
+            { icon: AlertTriangle, label: "Caution",    value: caution,      color: "text-accent" },
+            { icon: Shield,        label: "Injured",    value: injured,      color: "text-red-400" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="rounded-xl border bg-card p-5">
-              <Icon className={`mb-2 h-5 w-5 ${color}`} />
-              <p className="text-2xl font-bold">{value}</p>
+            <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+              <Icon className={`mb-2 h-4 w-4 ${color}`} />
+              <p className="text-xl font-bold text-white">{value}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
 
-        {/* Quick actions */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Quick actions
-          </h2>
+        {/* Hub cards grid */}
+        <div className="mb-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent/70">
+            Coach Tools
+          </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {quickActions.map(({ icon: Icon, label, href, bg, hover }) => (
-              <Link
-                key={label}
-                href={href}
-                className={`flex flex-col items-center gap-3 rounded-xl p-5 text-center text-sm font-semibold text-white transition-all active:scale-95 ${bg} ${hover}`}
-              >
-                <Icon className="h-6 w-6" />
-                {label}
-              </Link>
+            {hubCards.map((card) => (
+              <HubCard key={card.href} {...card} />
             ))}
           </div>
         </div>
 
-        {/* AI banner + squad overview side by side */}
-        <div className="grid gap-6 lg:grid-cols-2">
-
+        {/* AI insight + squad side by side */}
+        <div className="grid gap-4 lg:grid-cols-2">
           {/* AI Quick Insight */}
-          <div className="rounded-2xl border bg-gradient-to-r from-purple-950/60 to-green-950/60 p-6">
+          <div className="rounded-2xl border border-[#6c3483]/40 bg-gradient-to-br from-[#6c3483]/40 to-[#1a4a2e]/60 p-5">
             <div className="mb-3 flex items-center gap-2">
-              <Brain className="h-5 w-5 text-purple-400" />
-              <span className="text-sm font-semibold text-purple-300">AI Coaching Assistant</span>
+              <Brain className="h-4 w-4 text-purple-300" />
+              <span className="text-xs font-semibold text-purple-300 uppercase tracking-wide">AI Coaching Assistant</span>
             </div>
-            <h3 className="mb-1 text-balance text-lg font-bold text-white">
-              Get today&apos;s coaching tips
-            </h3>
-            <p className="mb-4 text-sm leading-relaxed text-green-300">
-              Based on your squad fitness status, get instant AI recommendations.
+            <h3 className="mb-1 text-base font-bold text-white">Get today&apos;s coaching tips</h3>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Based on your squad fitness — instant AI recommendations.
             </p>
             {aiInsight ? (
-              <div className="rounded-xl bg-black/30 p-4">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">{aiInsight}</p>
-                <Link href="/coach/ai-insights" className="mt-3 block text-xs text-purple-300 hover:underline">
+              <div className="rounded-xl bg-black/30 p-3">
+                <p className="whitespace-pre-wrap text-xs leading-relaxed text-white">{aiInsight}</p>
+                <Link href="/coach/ai-insights" className="mt-2 block text-xs text-purple-300 hover:underline">
                   Open full AI chat →
                 </Link>
               </div>
@@ -166,14 +164,14 @@ export default function CoachHubPage() {
                 <button
                   onClick={getQuickInsight}
                   disabled={insightLoading || squad.length === 0}
-                  className="flex items-center gap-2 rounded-xl bg-purple-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-400 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 rounded-xl bg-[#6c3483] px-4 py-2 text-xs font-semibold text-white hover:bg-[#8e44ad] disabled:opacity-50 transition-colors"
                 >
-                  {insightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+                  {insightLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
                   {insightLoading ? "Analysing…" : "Get quick tips"}
                 </button>
                 <Link
                   href="/coach/ai-insights"
-                  className="flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
                 >
                   Full chat
                 </Link>
@@ -181,78 +179,49 @@ export default function CoachHubPage() {
             )}
           </div>
 
-          {/* Squad fitness overview */}
-          <div className="rounded-xl border bg-card p-5">
+          {/* Squad fitness */}
+          <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold">Squad fitness</h2>
-              <Link href="/coach/squad" className="flex items-center gap-1 text-xs text-primary hover:underline">
+              <p className="text-xs font-semibold uppercase tracking-widest text-accent/70">Squad Fitness</p>
+              <Link href="/coach/squad" className="flex items-center gap-1 text-xs text-accent hover:text-white transition-colors">
                 Manage <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
-
             {squad.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-8 text-center">
-                <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                <p className="font-medium">No squad yet</p>
-                <p className="mt-1 text-sm text-muted-foreground">Add players to get started</p>
-                <Link href="/coach/squad" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+              <div className="rounded-xl border border-dashed border-white/20 p-6 text-center">
+                <Users className="mx-auto mb-3 h-7 w-7 text-muted-foreground" />
+                <p className="text-sm font-medium text-white">No squad yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">Wedzera vatambi — Add players</p>
+                <Link href="/coach/squad" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-colors">
                   Add players
                 </Link>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {squad.slice(0, 6).map((m) => (
-                  <div key={m.id} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-muted/40">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  <div key={m.id} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-white/5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                         {m.shirt_no}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{m.player?.name ?? "—"}</p>
+                        <p className="text-sm font-medium text-white">{m.player?.name ?? "—"}</p>
                         <p className="text-xs capitalize text-muted-foreground">{m.position}</p>
                       </div>
                     </div>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[m.status] ?? "bg-muted text-muted-foreground"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[m.status] ?? "bg-muted text-muted-foreground"}`}>
                       {m.status}
                     </span>
                   </div>
                 ))}
                 {squad.length > 6 && (
-                  <Link href="/coach/squad" className="block pt-1 text-center text-xs text-primary hover:underline">
-                    +{squad.length - 6} more players →
+                  <Link href="/coach/squad" className="block pt-1 text-center text-xs text-accent hover:text-white transition-colors">
+                    +{squad.length - 6} more →
                   </Link>
                 )}
               </div>
             )}
           </div>
-        </div>
-
-        {/* Bottom links */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Link href="/coach/tactics" className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:bg-muted/40 transition-colors">
-            <ClipboardList className="h-5 w-5 text-green-500" />
-            <div>
-              <p className="text-sm font-semibold">Tactics Board</p>
-              <p className="text-xs text-muted-foreground">Set formation & lineup</p>
-            </div>
-            <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-          </Link>
-          <Link href="/coach/matches" className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:bg-muted/40 transition-colors">
-            <Trophy className="h-5 w-5 text-amber-500" />
-            <div>
-              <p className="text-sm font-semibold">Match Record</p>
-              <p className="text-xs text-muted-foreground">Log & review matches</p>
-            </div>
-            <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-          </Link>
-          <Link href="/streaming" className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:bg-muted/40 transition-colors sm:col-span-1 col-span-2">
-            <Radio className="h-5 w-5 text-red-500" />
-            <div>
-              <p className="text-sm font-semibold">Live Matches</p>
-              <p className="text-xs text-muted-foreground">Stream & record footage</p>
-            </div>
-            <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
-          </Link>
         </div>
 
       </main>

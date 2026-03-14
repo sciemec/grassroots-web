@@ -12,99 +12,190 @@
 
 @layer base {
   :root {
-    /* ── Bhora AI / Grassroots Sport — matches Flutter AppTheme.light ──────── */
-    /* kSurface #F5F7F5 — light green-tinted background */
-    --background: oklch(0.97 0.005 145);
-    /* #0D2B1A — very dark green heading text */
-    --foreground: oklch(0.20 0.06 145);
-    /* white cards */
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.20 0.06 145);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.20 0.06 145);
-    /* kBrandGreen #1A6B3C */
-    --primary: oklch(0.42 0.13 145);
+    /* ── Grassroots Sport — Deep Forest Green (matches mobile AppTheme) ─────── */
+    /* Primary background: #1a4a2e */
+    --background: oklch(0.29 0.09 145);
+    /* Text: white */
+    --foreground: oklch(1 0 0);
+    /* Cards: #2d6a3f */
+    --card: oklch(0.41 0.12 145);
+    --card-foreground: oklch(1 0 0);
+    /* Popovers: slightly darker */
+    --popover: oklch(0.35 0.10 145);
+    --popover-foreground: oklch(1 0 0);
+    /* Primary action: #27ae60 success green */
+    --primary: oklch(0.64 0.17 145);
     --primary-foreground: oklch(1 0 0);
-    /* #E8F5EE chip/secondary background */
-    --secondary: oklch(0.95 0.03 145);
-    --secondary-foreground: oklch(0.42 0.13 145);
-    --muted: oklch(0.95 0.03 145);
-    /* #2D4A35 body text */
-    --muted-foreground: oklch(0.32 0.06 145);
-    /* kBrandGold #F5A623 */
-    --accent: oklch(0.76 0.18 65);
-    --accent-foreground: oklch(0.20 0.04 65);
-    /* kError #D32F2F */
-    --destructive: oklch(0.48 0.20 25);
-    /* #E8EDE8 borders */
-    --border: oklch(0.92 0.01 145);
-    --input: oklch(0.92 0.01 145);
-    --ring: oklch(0.42 0.13 145);
-    /* charts: green / gold / red / teal / lime */
-    --chart-1: oklch(0.42 0.13 145);
-    --chart-2: oklch(0.76 0.18 65);
-    --chart-3: oklch(0.48 0.20 25);
-    --chart-4: oklch(0.55 0.14 180);
-    --chart-5: oklch(0.65 0.17 120);
-    /* border-radius: 12px → 0.75rem (matches Flutter borderRadius.circular(12)) */
-    --radius: 0.75rem;
-    /* sidebar: white like Flutter's drawer */
-    --sidebar: oklch(1 0 0);
-    --sidebar-foreground: oklch(0.20 0.06 145);
-    --sidebar-primary: oklch(0.42 0.13 145);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.95 0.03 145);
-    --sidebar-accent-foreground: oklch(0.42 0.13 145);
-    --sidebar-border: oklch(0.92 0.01 145);
-    --sidebar-ring: oklch(0.42 0.13 145);
-  }
-  .dark {
-    /* ── Dark variant (kept for reference — app uses light theme by default) ── */
-    --background: oklch(0.12 0.025 145);
-    --foreground: oklch(0.95 0 0);
-    --card: oklch(0.17 0.03 145);
-    --card-foreground: oklch(0.95 0 0);
-    --popover: oklch(0.17 0.03 145);
-    --popover-foreground: oklch(0.95 0 0);
-    --primary: oklch(0.59 0.17 145);
-    --primary-foreground: oklch(0.10 0.02 145);
-    --secondary: oklch(0.22 0.04 145);
-    --secondary-foreground: oklch(0.95 0 0);
-    --muted: oklch(0.22 0.04 145);
-    --muted-foreground: oklch(0.65 0.04 145);
-    --accent: oklch(0.76 0.18 65);
-    --accent-foreground: oklch(0.10 0.02 65);
-    --destructive: oklch(0.60 0.20 25);
-    --border: oklch(1 0 0 / 10%);
+    /* Secondary: #0d2818 darker green */
+    --secondary: oklch(0.17 0.07 145);
+    --secondary-foreground: oklch(1 0 0);
+    /* Muted: mid-green */
+    --muted: oklch(0.24 0.06 145);
+    --muted-foreground: oklch(0.74 0.05 145);
+    /* Accent: #f0b429 golden yellow */
+    --accent: oklch(0.78 0.17 75);
+    --accent-foreground: oklch(0.17 0.07 145);
+    /* Destructive: #c0392b */
+    --destructive: oklch(0.47 0.18 25);
+    /* Borders: white at low opacity */
+    --border: oklch(1 0 0 / 12%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.59 0.17 145);
-    --chart-1: oklch(0.59 0.17 145);
-    --chart-2: oklch(0.76 0.18 65);
-    --chart-3: oklch(0.60 0.20 25);
-    --chart-4: oklch(0.55 0.14 180);
-    --chart-5: oklch(0.65 0.17 120);
-    --radius: 0.75rem;
-    --sidebar: oklch(0.10 0.02 145);
-    --sidebar-foreground: oklch(0.95 0 0);
-    --sidebar-primary: oklch(0.59 0.17 145);
-    --sidebar-primary-foreground: oklch(0.10 0.02 145);
-    --sidebar-accent: oklch(0.22 0.04 145);
-    --sidebar-accent-foreground: oklch(0.95 0 0);
+    --ring: oklch(0.64 0.17 145);
+    /* Charts */
+    --chart-1: oklch(0.64 0.17 145);   /* green */
+    --chart-2: oklch(0.78 0.17 75);    /* gold */
+    --chart-3: oklch(0.47 0.18 25);    /* red */
+    --chart-4: oklch(0.55 0.14 230);   /* blue */
+    --chart-5: oklch(0.56 0.17 50);    /* orange */
+    /* border-radius: 16px matches mobile */
+    --radius: 1rem;
+    /* Sidebar: #0d2818 darkest green */
+    --sidebar: oklch(0.17 0.07 145);
+    --sidebar-foreground: oklch(1 0 0);
+    --sidebar-primary: oklch(0.64 0.17 145);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.24 0.06 145);
+    --sidebar-accent-foreground: oklch(1 0 0);
     --sidebar-border: oklch(1 0 0 / 8%);
-    --sidebar-ring: oklch(0.59 0.17 145);
+    --sidebar-ring: oklch(0.64 0.17 145);
   }
+
+  .dark {
+    /* Same as :root — single dark theme */
+    --background: oklch(0.29 0.09 145);
+    --foreground: oklch(1 0 0);
+    --card: oklch(0.41 0.12 145);
+    --card-foreground: oklch(1 0 0);
+    --popover: oklch(0.35 0.10 145);
+    --popover-foreground: oklch(1 0 0);
+    --primary: oklch(0.64 0.17 145);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.17 0.07 145);
+    --secondary-foreground: oklch(1 0 0);
+    --muted: oklch(0.24 0.06 145);
+    --muted-foreground: oklch(0.74 0.05 145);
+    --accent: oklch(0.78 0.17 75);
+    --accent-foreground: oklch(0.17 0.07 145);
+    --destructive: oklch(0.47 0.18 25);
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.64 0.17 145);
+    --chart-1: oklch(0.64 0.17 145);
+    --chart-2: oklch(0.78 0.17 75);
+    --chart-3: oklch(0.47 0.18 25);
+    --chart-4: oklch(0.55 0.14 230);
+    --chart-5: oklch(0.56 0.17 50);
+    --radius: 1rem;
+    --sidebar: oklch(0.17 0.07 145);
+    --sidebar-foreground: oklch(1 0 0);
+    --sidebar-primary: oklch(0.64 0.17 145);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.24 0.06 145);
+    --sidebar-accent-foreground: oklch(1 0 0);
+    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-ring: oklch(0.64 0.17 145);
+  }
+
   .theme {
     --font-sans: var(--font-sans);
   }
+
   * {
     border-color: var(--border);
     outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
   }
+
   body {
-    background-color: var(--background);
+    background-color: #1a4a2e;
+    /* Chevron/zigzag wave pattern matching mobile splash screen */
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.03) 10px,
+      rgba(255, 255, 255, 0.03) 20px
+    );
+    background-attachment: fixed;
     color: var(--foreground);
   }
+
   html {
     font-family: var(--font-sans), sans-serif;
   }
+}
+
+/* ── Grassroots Logo Watermark ───────────────────────────────────────────────
+   Apply class="gs-watermark" to any page wrapper to get the subtle logo
+   in the bottom-right corner. Opacity 0.05 — barely visible, blends in.
+────────────────────────────────────────────────────────────────────────────── */
+.gs-watermark {
+  position: relative;
+}
+.gs-watermark::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 380px;
+  height: 380px;
+  background-image: url("/logo.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  opacity: 0.05;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  z-index: 0;
+}
+
+/* ── Hub Feature Cards ───────────────────────────────────────────────────────
+   Mobile-style colored hub cards with faded icon and gradient overlay
+────────────────────────────────────────────────────────────────────────────── */
+.hub-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 120px;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.hub-card:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+}
+.hub-card:active {
+  transform: scale(0.97);
+}
+.hub-card .hub-card-icon {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  opacity: 0.13;
+  width: 88px;
+  height: 88px;
+}
+.hub-card .hub-card-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+  position: relative;
+  z-index: 1;
+}
+.hub-card .hub-card-sub {
+  font-size: 0.75rem;
+  color: #f0b429;
+  position: relative;
+  z-index: 1;
+}
+.hub-card .hub-card-open {
+  margin-top: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  position: relative;
+  z-index: 1;
 }

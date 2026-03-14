@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { UserSearch, Send, Star, ChevronRight, Search, Loader2, Shield } from "lucide-react";
+import { UserSearch, Send, Star, ChevronRight, Search, Loader2, Shield, FileText, ClipboardList } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
 
 interface ScoutPlayer {
@@ -106,26 +107,46 @@ export default function ScoutPage() {
 
   if (!user) return <PageSkeleton />;
 
+  const scoutCards = [
+    { icon: UserSearch, title: "Find Players",  subtitle: "Tsvaga vatambi — Search talent", href: "#search",             bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
+    { icon: Star,       title: "Shortlist",     subtitle: "Vadakara vako — Your watchlist", href: "/scout/shortlist",    bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
+    { icon: FileText,   title: "PDF Reports",   subtitle: "AI scouting reports — Claude",  href: "/scout/reports",      bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
+    { icon: ClipboardList,title:"Scout Requests",subtitle: "Contact approvals",            href: "/scout-requests",     bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+  ];
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="gs-watermark flex-1 overflow-auto p-6">
 
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6">
+          <p className="text-xs font-medium uppercase tracking-widest text-accent">Mhoro — Scout Hub</p>
+          <h1 className="mt-1 text-2xl font-bold text-white">Find Players 🔍</h1>
+          <p className="mt-0.5 text-sm italic text-accent/80">
+            Tsvaga mukurumbira — Names hidden until contact approved
+          </p>
+        </div>
+
+        {/* Scout hub cards */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {scoutCards.map((c) => (
+            <HubCard key={c.href} {...c} />
+          ))}
+        </div>
+
+        {/* Search section — id="search" for anchor link */}
+        <div id="search" className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Find Players</h1>
-            <p className="text-sm text-muted-foreground">
-              Player names are hidden — initials and region only until contact is approved
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-accent/70">Player Search</p>
           </div>
           <Link
             href="/scout/shortlist"
-            className="flex items-center gap-2 rounded-xl border bg-card px-4 py-2.5 text-sm font-semibold hover:bg-muted transition-colors"
+            className="flex items-center gap-2 rounded-xl border border-white/20 bg-card/60 px-4 py-2 text-xs font-semibold text-white hover:bg-card transition-colors"
           >
-            <Star className="h-4 w-4 text-yellow-500" />
+            <Star className="h-3.5 w-3.5 text-accent" />
             My Shortlist
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground" />
           </Link>
         </div>
 
