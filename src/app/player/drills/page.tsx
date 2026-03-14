@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, Clock, ChevronDown, ChevronUp, ArrowLeft,
-  Wrench, Eye, MessageSquare, Package, X, Loader2, WifiOff,
+  Wrench, Eye, MessageSquare, Package, X, WifiOff,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
-  ALL_DRILLS, DRILL_CATEGORIES, getDrillsByCategory,
+  ALL_DRILLS, DRILL_CATEGORIES,
   type TrainingDrill, type DrillCategory,
 } from "@/data/training-drills";
 import api from "@/lib/api";
