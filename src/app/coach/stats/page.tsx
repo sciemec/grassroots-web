@@ -42,12 +42,6 @@ function outcome(m: MatchRecord): Outcome {
     : "L";
 }
 
-const OUTCOME_COLORS: Record<Outcome, string> = {
-  W: "#22c55e",
-  D: "#3b82f6",
-  L: "#ef4444",
-};
-
 const OUTCOME_BG: Record<Outcome, string> = {
   W: "bg-green-500/15 text-green-700",
   D: "bg-blue-500/15 text-blue-700",
