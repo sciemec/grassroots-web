@@ -7,6 +7,30 @@ const nextConfig = {
     config.resolve.symlinks = false;
     return config;
   },
+
+  /**
+   * FFmpeg.wasm requires SharedArrayBuffer which requires:
+   *   Cross-Origin-Opener-Policy: same-origin
+   *   Cross-Origin-Embedder-Policy: require-corp
+   *
+   * These headers are applied to all routes.  Without them the FFmpeg WASM
+   * module will throw "SharedArrayBuffer is not defined" at runtime.
+   *
+   * NOTE: These headers also affect HLS.js and any third-party iframes.
+   * If embedding external content breaks, scope the headers to only
+   * the /video-studio and /streaming/broadcast paths.
+   */
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Cross-Origin-Opener-Policy",   value: "same-origin" },
+          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+        ],
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {

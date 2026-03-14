@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Radio, Users, Clock, MapPin, Eye, ChevronRight, X, Volume2, VolumeX, Maximize2 } from "lucide-react";
+import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { VoiceCommentary } from "@/components/video/voice-commentary";
 import api from "@/lib/api";
 
 interface LiveMatch {
@@ -159,6 +161,8 @@ export default function StreamingPage() {
   const [upcoming, setUpcoming] = useState<UpcomingMatch[]>(MOCK_UPCOMING);
   const [activeStream, setActiveStream] = useState<{ url: string; title: string } | null>(null);
   const [province, setProvince] = useState("all");
+  // Track latest commentary text for voice commentary auto-speak
+  const [latestCommentary, setLatestCommentary] = useState("");
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
@@ -176,6 +180,7 @@ export default function StreamingPage() {
   const filteredUpcoming = province === "all" ? upcoming : upcoming.filter(m => m.province === province);
 
   const watchMatch = (match: LiveMatch) => {
+    setLatestCommentary(match.commentary);
     if (match.stream_url) {
       setActiveStream({ url: match.stream_url, title: `${match.homeTeam} vs ${match.awayTeam}` });
     } else {
@@ -293,15 +298,31 @@ export default function StreamingPage() {
           )}
         </div>
 
-        {/* Coach streaming CTA */}
+        {/* Coach streaming CTA — includes web broadcast button */}
         {user.role === "coach" && (
           <div className="mt-8 rounded-2xl border border-dashed p-6 text-center">
             <Radio className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <h3 className="font-semibold">Stream your match</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Coaches can record and stream matches directly from the mobile app. Real-time commentary generated from pose tracking.
+              Start a local broadcast directly from your browser — record your match and download the recording.
             </p>
-            <p className="mt-3 text-xs text-muted-foreground">Use the Grassroots Sport mobile app to start streaming →</p>
+            <Link
+              href="/streaming/broadcast"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-600 transition-colors"
+            >
+              <Radio className="h-4 w-4" /> Start Broadcasting
+            </Link>
+          </div>
+        )}
+
+        {/* Voice commentary — auto-speaks latest match commentary */}
+        {latestCommentary && (
+          <div className="mt-6">
+            <VoiceCommentary
+              commentary={latestCommentary}
+              autoPlay
+              style="enthusiastic"
+            />
           </div>
         )}
       </main>

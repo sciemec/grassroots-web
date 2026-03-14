@@ -41,6 +41,7 @@ const navItems: NavItem[] = [
   { href: "/video-studio",           label: "Video Studio",   icon: Film,            roles: ["coach"] },
   { href: "/injury-tracker",         label: "Injury Tracker", icon: Activity,        roles: ["coach"] },
   { href: "/streaming",              label: "Live Matches",   icon: Radio,           roles: ["coach"] },
+  { href: "/streaming/broadcast",    label: "Broadcast",      icon: Tv2,             roles: ["coach"] },
   { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
   { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
