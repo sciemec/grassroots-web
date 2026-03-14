@@ -1,72 +1,69 @@
-const CACHE_NAME = "gs-sport-v1";
-const OFFLINE_URL = "/offline";
+// Grassroots Sport Pro — Service Worker (Workbox-powered)
+importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js");
 
-// Assets to pre-cache on install
-const PRECACHE_ASSETS = [
-  "/",
-  "/login",
-  "/register",
-  "/manifest.json",
-  "/favicon.ico",
-];
+const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
-  );
-  self.skipWaiting();
+const CACHE_VERSION = "v2";
+const OFFLINE_URL   = "/offline";
+
+// Precache shell pages
+precaching.precacheAndRoute([
+  { url: "/",              revision: CACHE_VERSION },
+  { url: "/login",         revision: CACHE_VERSION },
+  { url: "/register",      revision: CACHE_VERSION },
+  { url: OFFLINE_URL,      revision: CACHE_VERSION },
+  { url: "/manifest.json", revision: CACHE_VERSION },
+  { url: "/favicon.ico",   revision: CACHE_VERSION },
+]);
+
+// Static assets — Cache First
+routing.registerRoute(
+  ({ request }) =>
+    ["script","style","image","font"].includes(request.destination),
+  new strategies.CacheFirst({
+    cacheName: "gs-assets-" + CACHE_VERSION,
+    plugins: [new expiration.ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 2592000 })],
+  })
+);
+
+// Pages — Stale While Revalidate
+routing.registerRoute(
+  ({ request }) => request.mode === "navigate",
+  new strategies.StaleWhileRevalidate({
+    cacheName: "gs-pages-" + CACHE_VERSION,
+    plugins: [new expiration.ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 86400 })],
+  })
+);
+
+// API — Network First with 10s timeout
+routing.registerRoute(
+  ({ url }) => url.hostname.includes("bhora-ai.onrender.com"),
+  new strategies.NetworkFirst({
+    cacheName: "gs-api-" + CACHE_VERSION,
+    networkTimeoutSeconds: 10,
+    plugins: [new expiration.ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 300 })],
+  })
+);
+
+// Background sync — queue failed POST/PUT when offline
+const bgSyncPlugin = new backgroundSync.BackgroundSyncPlugin("gs-sync-queue", {
+  maxRetentionTime: 1440,
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
+routing.registerRoute(
+  ({ url, request }) => url.hostname.includes("bhora-ai.onrender.com") && request.method === "POST",
+  new strategies.NetworkOnly({ plugins: [bgSyncPlugin] }),
+  "POST"
+);
 
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
+routing.registerRoute(
+  ({ url, request }) => url.hostname.includes("bhora-ai.onrender.com") && request.method === "PUT",
+  new strategies.NetworkOnly({ plugins: [bgSyncPlugin] }),
+  "PUT"
+);
 
-  // Skip non-GET and cross-origin requests
-  if (request.method !== "GET" || !request.url.startsWith(self.location.origin)) return;
-
-  // Skip API calls — always go to network
-  if (request.url.includes("/api/")) return;
-
-  // Network-first for navigation (HTML pages)
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
-    );
-    return;
-  }
-
-  // Cache-first for static assets (JS, CSS, images, fonts)
-  if (
-    request.destination === "script" ||
-    request.destination === "style" ||
-    request.destination === "image" ||
-    request.destination === "font"
-  ) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            return response;
-          })
-      )
-    );
-    return;
-  }
+// Offline fallback
+routing.setCatchHandler(async ({ request }) => {
+  if (request.destination === "document") return caches.match(OFFLINE_URL);
+  return Response.error();
 });
