@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import api from "@/lib/api";
-import { useAuthStore, roleHomePath } from "@/lib/auth-store";
+import { useAuthStore } from "@/lib/auth-store";
 
 function ConfirmContent() {
   const params = useSearchParams();
@@ -29,7 +29,7 @@ function ConfirmContent() {
       .then(() => {
         setStatus("success");
         setTimeout(() => {
-          router.push(user ? roleHomePath(user.role) : "/login");
+          router.push(user ? "/welcome" : "/login");
         }, 2500);
       })
       .catch((err) => {
@@ -41,7 +41,6 @@ function ConfirmContent() {
       });
   }, [params, router, user]);
 
-  const dashboardHref = user ? roleHomePath(user.role) : "/login";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-800 px-4">
@@ -65,10 +64,10 @@ function ConfirmContent() {
             </p>
             <div className="mt-6">
               <Link
-                href={dashboardHref}
+                href="/welcome"
                 className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-400"
               >
-                Go to dashboard
+                Get started →
               </Link>
             </div>
           </>

@@ -6,6 +6,11 @@
       "sourceType": "github",
       "computedHash": "494d59fffe67c87b485f4ee2fb1abd73fc9d0d508c4c8bd9c43a9edd3242f730"
     },
+    "best-practices": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "computedHash": "f5d58f0adf9cc9646b35daf2241377e1ad7b8ab094e54c9792a826af1e0dca5b"
+    },
     "changelog-generator": {
       "source": "ComposioHQ/awesome-claude-skills",
       "sourceType": "github",
@@ -24,7 +29,7 @@
     "gstack": {
       "source": "garrytan/gstack",
       "sourceType": "github",
-      "computedHash": "821dff93750722f5d65f6387ae7008f41750883e763aa6d1dcca5bf68ada4d69"
+      "computedHash": "c789721b7842350e31192fb5087de9ae90b891d0aa4072919413a0cd237045f7"
     },
     "performance": {
       "source": "addyosmani/web-quality-skills",

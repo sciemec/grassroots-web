@@ -65,9 +65,11 @@ const navItems: NavItem[] = [
   { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
   { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
-  { href: "/fan",                label: "Discover",       icon: Star,          roles: ["fan"] },
-  { href: "/fan/leaderboard",    label: "Leaderboard",    icon: Trophy,        roles: ["fan"] },
-  { href: "/streaming",          label: "Live Matches",   icon: Radio,         roles: ["fan"] },
+  { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },
+  { href: "/fan/discover",       label: "Discover",       icon: Star,            roles: ["fan"] },
+  { href: "/fan/following",      label: "Following",      icon: Heart,           roles: ["fan"] },
+  { href: "/fan/leaderboard",    label: "Leaderboard",    icon: Trophy,          roles: ["fan"] },
+  { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
 ];
 
 function NavContent({ onNavClick }: { onNavClick?: () => void }) {
@@ -122,9 +124,17 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
         <div className="mt-4 border-t pt-4">
           <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
           <p className="px-3 text-xs font-medium capitalize text-foreground">{user.role}</p>
+          <Link
+            href="/settings"
+            onClick={onNavClick}
+            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <UserCircle className="h-4 w-4" />
+            Settings
+          </Link>
           <button
             onClick={() => { logout(); router.push("/"); onNavClick?.(); }}
-            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <LogOut className="h-4 w-4" />
             Sign out

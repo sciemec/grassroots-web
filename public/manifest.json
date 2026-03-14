@@ -1,0 +1,94 @@
+{
+  "name": "Grassroots Sport Pro",
+  "short_name": "GS Sport",
+  "description": "Zimbabwe's AI-powered multi-sport platform for grassroots athletes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c1a0f",
+  "theme_color": "#16a34a",
+  "orientation": "portrait-primary",
+  "categories": ["sports", "health", "fitness"],
+  "lang": "en-ZW",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/player-hub.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Player Hub — Track your progress"
+    },
+    {
+      "src": "/screenshots/ai-coach.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "AI Coach — Get instant feedback"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI Coach",
+      "short_name": "Coach",
+      "description": "Open your AI coach",
+      "url": "/player/ai-coach",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Training Drills",
+      "short_name": "Drills",
+      "description": "Browse and start drills",
+      "url": "/player/drills",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ]
+}
