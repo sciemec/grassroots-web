@@ -138,36 +138,6 @@ export const SPORT_STATS: Record<string, Record<string, string[]>> = {
   },
 };
 
-// AI analysis prompt per sport — sent to Claude API via Laravel backend
-export const getSportAnalysisPrompt = (sport: string, context: string): string => {
-  const sportContexts: Record<string, string> = {
-    football: `Analyse as a UEFA-qualified football coach. Focus on: positioning, movement off the ball, pressing triggers, transition play, defensive shape.`,
-    rugby: `Analyse as an experienced rugby coach. Focus on: tackle technique, body position in contact, support lines, set piece execution, offload decisions.`,
-    athletics: `Analyse as an athletics coach. Focus on: technique, stride pattern, arm mechanics, acceleration phase, finish, breathing rhythm.`,
-    netball: `Analyse as a netball coach. Focus on: footwork, ball handling, court movement, defending, feeding the circle, positioning.`,
-    basketball: `Analyse as a basketball coach. Focus on: shooting form, defensive positioning, court vision, transition, pick-and-roll execution.`,
-    cricket: `Analyse as a cricket coach. Focus on: batting stance, shot selection, weight transfer, bowling action, field placement awareness.`,
-    swimming: `Analyse as a swimming coach. Focus on: stroke technique, turn efficiency, kick pattern, breathing rhythm, stroke rate.`,
-    tennis: `Analyse as a tennis coach. Focus on: serve mechanics, footwork, shot selection, court positioning, return of serve.`,
-    volleyball: `Analyse as a volleyball coach. Focus on: spiking approach, blocking technique, serve mechanics, court coverage, setting accuracy.`,
-    hockey: `Analyse as a hockey coach. Focus on: stick skills, receiving technique, movement into space, press triggers, penalty corner execution.`,
-  };
-
-  const base = sportContexts[sport] ?? "Analyse as an experienced sports coach.";
-
-  return `${base}
-
-Context provided: ${context}
-
-Provide your feedback in exactly 3 sections:
-1. STRENGTHS — what is working well (2-3 specific points)
-2. AREAS TO IMPROVE — specific, actionable improvements (2-3 points)
-3. DRILL RECOMMENDATIONS — practical exercises to fix the issues (2-3 drills with brief instructions)
-
-Keep language simple and encouraging — the athlete may be young or new to analytics.
-End with one short motivational sentence.`;
-};
-
 export const ANALYSIS_TYPES = [
   { value: "full_match", label: "Full Match Analysis", desc: "Tactics, shape, team performance" },
   { value: "skill_review", label: "Individual Skill Review", desc: "Technique and personal improvement" },

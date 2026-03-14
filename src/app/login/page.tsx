@@ -102,8 +102,6 @@ function LoginContent() {
     }
   };
 
-  const registerHref = portal === "player" ? "/register/player" : portal === "fan" ? "/register/fan" : "/register";
-
   return (
     <div className={`flex min-h-screen items-center justify-center bg-gradient-to-br ${BG[portal]} px-4 transition-all duration-500`}>
       <div className="w-full max-w-sm">
@@ -192,28 +190,21 @@ function LoginContent() {
             <Link href="/forgot-password" className="text-white/50 hover:text-white transition-colors">
               Forgot password?
             </Link>
-            <Link href={registerHref} className="font-medium text-white/70 hover:text-white transition-colors">
+            <Link href="/register" className="font-medium text-white/70 hover:text-white transition-colors">
               Create account →
             </Link>
           </div>
         </div>
 
-        {/* Register prompt */}
+        {/* Register prompt — links to sport-first registration */}
         <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-          <p className="text-xs text-white/60 mb-3">New to Grassroots Sport? Choose your path:</p>
-          <div className="flex gap-2 justify-center flex-wrap">
-            {[
-              { href: "/register/player", label: "🏃 Player", color: "border-green-500/40 text-green-300 hover:bg-green-500/20" },
-              { href: "/register/coach",  label: "📋 Coach",  color: "border-blue-500/40 text-blue-300 hover:bg-blue-500/20" },
-              { href: "/register/scout",  label: "🔍 Scout",  color: "border-purple-500/40 text-purple-300 hover:bg-purple-500/20" },
-              { href: "/register/fan",    label: "🎉 Fan",    color: "border-amber-500/40 text-amber-300 hover:bg-amber-500/20" },
-            ].map(({ href, label, color }) => (
-              <Link key={href} href={href}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${color}`}>
-                {label}
-              </Link>
-            ))}
-          </div>
+          <p className="text-xs text-white/60 mb-3">New to Grassroots Sport?</p>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+          >
+            ⚽ Choose your sport &amp; sign up
+          </Link>
         </div>
       </div>
     </div>
