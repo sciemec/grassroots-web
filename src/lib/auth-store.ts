@@ -30,6 +30,15 @@ interface AuthState {
   setAdminHub: (hub: UserRole) => void;
 }
 
+function setCookie(name: string, value: string, days = 7) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
+}
+
+function clearCookie(name: string) {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -37,10 +46,14 @@ export const useAuthStore = create<AuthState>()(
       adminHub: "admin",
       login: (user) => {
         localStorage.setItem("auth_token", user.token);
+        setCookie("gs_token", user.token);
+        setCookie("gs_role", user.role);
         set({ user, adminHub: "admin" });
       },
       logout: () => {
         localStorage.removeItem("auth_token");
+        clearCookie("gs_token");
+        clearCookie("gs_role");
         set({ user: null, adminHub: "admin" });
       },
       setAdminHub: (hub) => set({ adminHub: hub }),

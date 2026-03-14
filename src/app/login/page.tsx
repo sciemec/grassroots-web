@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import api from "@/lib/api";
@@ -45,9 +45,11 @@ const BG: Record<PortalType, string> = {
   fan:          "from-amber-950 via-orange-900 to-red-900",
 };
 
-export default function LoginPage() {
-  const router = useRouter();
-  const login  = useAuthStore((s) => s.login);
+function LoginContent() {
+  const router      = useRouter();
+  const params      = useSearchParams();
+  const nextPath    = params.get("next");
+  const login       = useAuthStore((s) => s.login);
 
   const [portal, setPortal]       = useState<PortalType>("player");
   const [email, setEmail]         = useState("");
@@ -67,7 +69,7 @@ export default function LoginPage() {
     // Dev admin bypass — lets Nigel test all hubs without a live backend account
     if (email.trim().toLowerCase() === "nnygel@live.com" && password === "nigel") {
       login({ id: "dev-admin-1", name: "Nigel", email: "nnygel@live.com", role: "admin", token: "dev-token" });
-      router.push("/dashboard");
+      router.push(nextPath ?? "/dashboard");
       setLoading(false);
       return;
     }
@@ -76,7 +78,7 @@ export default function LoginPage() {
       const res = await api.post("/auth/login", { identifier: email, password });
       const { token, user } = res.data;
       login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
-      router.push(roleHomePath(user.role));
+      router.push(nextPath ?? roleHomePath(user.role));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? "Incorrect email or password. Please try again.");
@@ -200,5 +202,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-green-950" />}>
+      <LoginContent />
+    </Suspense>
   );
 }
