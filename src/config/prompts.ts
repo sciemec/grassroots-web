@@ -445,6 +445,7 @@ RULES:
 - Base every point on the actual data provided, not assumptions
 - The drill must be doable alone or with one partner
 - Total response: under 200 words`;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 12. LIVE MATCH COMMENTARY
@@ -465,5 +466,4 @@ RULES:
 - Return ONLY the spoken commentary text — no quotes, no labels, no formatting
 - Do not start with "And" or "Well"
 - Make it sound natural when spoken aloud`;
-}
 }

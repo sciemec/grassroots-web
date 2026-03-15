@@ -1088,3 +1088,94 @@ Both are needed — they serve different parts of the system.
 - Web app detects this token and skips the 401 redirect
 - AI Coach routes directly to the Next.js Anthropic proxy (bypasses Laravel `/ask`)
 - Login: nnygel@live.com / test1234 (sets dev-bypass session)
+
+## 🐛 CODE ANALYSIS & DEBUGGING PROTOCOL
+
+When I ask you to "analyze", "debug", "check", or "fix" a file, ALWAYS follow this structure:
+
+### Step 1 — Understand First
+Before suggesting any fix:
+- State what the file is supposed to do in 2-3 sentences
+- Confirm what the reported problem or error is
+- If the error message is missing, ASK for it before proceeding
+
+### Step 2 — Analyze the File
+Go through the code and check for:
+1. **Bugs / broken logic** — wrong conditions, null references, off-by-one errors
+2. **Runtime errors** — type mismatches, missing null checks, unhandled exceptions
+3. **Performance issues** — N+1 queries, unnecessary loops, large payloads
+4. **Security issues** — unvalidated input, exposed keys, SQL injection risk
+5. **Framework misuse** — wrong Laravel/Flutter patterns, deprecated methods
+
+### Step 3 — Report Findings
+Format your findings like this:
+
+```
+🔴 CRITICAL — [issue title]
+   Line: [line number]
+   Problem: [what is wrong]
+   Fix:
+   [corrected code snippet]
+
+🟡 WARNING — [issue title]
+   Line: [line number]
+   Problem: [what is wrong]
+   Fix:
+   [corrected code snippet]
+
+🔵 SUGGESTION — [issue title]
+   Line: [line number]
+   Reason: [why this is better]
+   Improvement:
+   [improved code snippet]
+
+✅ LOOKS GOOD — [what is working correctly]
+```
+
+### Step 4 — Summary
+End with:
+- Total issues found: X critical, X warnings, X suggestions
+- The ONE most important fix to apply first
+- Whether the reported error is now explained
+
+---
+
+## 📁 PROJECT FILE CONTEXT
+
+When analyzing files, always assume this context unless told otherwise:
+
+### Grassroots Sports (Bhora AI) — Laravel Backend
+- Framework: Laravel 10+
+- Backend URL: bhora-ai.onrender.com
+- Database: MySQL
+- Auth: Laravel Sanctum
+- AI Provider: DeepSeek API (app/Services/DeepSeekService.php)
+- Key folders: app/Http/Controllers/, app/Services/, app/Models/
+- Common issues to watch: Render cold starts, missing .env vars on deploy, CORS errors
+
+### Grassroots Sports — Flutter Frontend
+- Framework: Flutter (Android target, Samsung SM M135FU, Android 14)
+- Key packages: http, ml_kit, onnxruntime, geolocator
+- Offline support: Yes — check for connectivity before API calls
+- Language support: English + Shona
+- Common issues to watch: Null safety errors, setState after dispose, large APK size
+
+### Sci-Guru Smart Tutor — Flutter
+- Framework: Flutter (Android, offline-first)
+- Content: Loaded from JSON files bundled inside APK
+- AI: Claude API via Laravel backend (server-side key only)
+- Payment: EcoCash / InnBucks integration
+- Common issues to watch: Asset loading errors, JSON parse failures, offline state management
+
+---
+
+## ⚠️ DEBUGGING RULES (NEVER BREAK THESE)
+
+1. **Never guess** — if you are not sure what a line does, say so
+2. **Never change working code** — only fix what is broken or flagged
+3. **Always show line numbers** in your findings
+4. **Always show the fix** — don't just describe the problem
+5. **One file at a time** — if the bug spans two files, analyze them separately then explain the interaction
+6. **Check logs first** — if I paste a Laravel log or Flutter logcat, read it carefully before looking at the code
+7. **Do not add new features** while debugging — fix only, no extras
+8. **Ask before refactoring** — if a fix requires restructuring the file, confirm with me first

@@ -55,11 +55,22 @@ export default function FanHubPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [search, setSearch] = useState("");
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
-  }, [user, router]);
+  }, [hydrated, user, router]);
 
   const { data: playersData, isLoading: playersLoading, isError: playersError } = useQuery<{ data: ScoutPlayer[] }>({
     queryKey: ["fan-leaderboard"],
@@ -70,7 +81,7 @@ export default function FanHubPage() {
     enabled: !!user,
   });
 
-  if (!user) return null;
+  if (!hydrated || !user) return null;
 
   const players = playersData?.data ?? [];
   const filtered = search.trim()
