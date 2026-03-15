@@ -104,6 +104,40 @@ export default function AICoachPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  /**
+   * callAI — tries the Laravel backend first (for real user tokens).
+   * Falls back to the Next.js /api/ai-coach route when the backend returns 401
+   * (dev-bypass or admin accounts that aren't registered in the backend).
+   */
+  const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
+    // Dev-bypass token — skip Laravel entirely, go straight to the Next.js route
+    const isDevBypass = user?.token === "dev-token";
+
+    if (!isDevBypass) {
+      try {
+        const res = await api.post("/ai-coach/query", { message, system_prompt: systemP, history });
+        return res.data?.reply ?? res.data?.response ?? res.data?.message ?? "";
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status !== 401) throw err; // surface real errors (network, 500, etc.)
+        // 401 from backend → fall through to the Next.js route below
+      }
+    }
+
+    // Next.js server route — calls Claude directly with server-side API key
+    const res = await fetch("/api/ai-coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, system_prompt: systemP, history }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error ?? `AI service error (${res.status})`);
+    }
+    const data = await res.json();
+    return data.response ?? data.reply ?? "";
+  };
+
   const sendWithMatchFeedback = async (matchStats: string) => {
     const ageGroup = user?.age_group ?? "senior";
     const system = ageGroupMatchFeedbackPrompt({ ageGroup, matchStats });
@@ -111,19 +145,11 @@ export default function AICoachPage() {
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: userMsg.content,
-        system_prompt: system,
-        history: [],
-      }, { headers: { Authorization: `Bearer ${user?.token}` } });
-      const reply = res.data.reply ?? res.data.response ?? res.data.message ?? "Analysis complete.";
-      setMessages((prev) => [...prev, { id: Date.now().toString() + "r", role: "assistant", content: reply, timestamp: new Date() }]);
+      const reply = await callAI(userMsg.content, system, []);
+      setMessages((prev) => [...prev, { id: Date.now().toString() + "r", role: "assistant", content: reply || "Analysis complete.", timestamp: new Date() }]);
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      const errMsg = status === 401
-        ? "Authentication failed — the backend requires a real account token. Dev-bypass accounts cannot call the AI. Please log in with a real account to use AI Coach."
-        : "I couldn't analyse the match right now. Please try again.";
-      setMessages((prev) => [...prev, { id: Date.now().toString() + "e", role: "assistant", content: errMsg, timestamp: new Date() }]);
+      const msg = err instanceof Error ? err.message : "I couldn't analyse the match right now. Please try again.";
+      setMessages((prev) => [...prev, { id: Date.now().toString() + "e", role: "assistant", content: msg, timestamp: new Date() }]);
     } finally {
       setLoading(false);
     }
@@ -132,7 +158,6 @@ export default function AICoachPage() {
   const send = async (text?: string) => {
     const content = (text ?? input).trim();
     if (!content || loading) return;
-    // If it's the match feedback chip, trigger the match feedback flow with a prompt
     if (content === "Analyse my last match and give me feedback") {
       sendWithMatchFeedback("No match stats provided — give general post-match feedback advice and ask the player to share their stats.");
       return;
@@ -154,24 +179,16 @@ export default function AICoachPage() {
         .slice(-10)
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const res = await api.post("/ai-coach/query", {
-        message: content,
-        system_prompt: systemPrompt,
-        history,
-      });
-      const reply = res.data?.response ?? res.data?.message ?? "I couldn't process that. Please try again.";
+      const reply = await callAI(content, systemPrompt, history);
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "assistant", content: reply, timestamp: new Date() },
+        { id: Date.now().toString(), role: "assistant", content: reply || "I couldn't process that. Please try again.", timestamp: new Date() },
       ]);
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      const errMsg = status === 401
-        ? "AI Coach requires a real account token. The dev-bypass session can't authenticate with the backend. Log in with a real account to use AI Coach."
-        : "Sorry, I'm having trouble connecting right now. Check your internet connection and try again.";
+      const msg = err instanceof Error ? err.message : "Sorry, I'm having trouble connecting right now.";
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "assistant", content: errMsg, timestamp: new Date() },
+        { id: Date.now().toString(), role: "assistant", content: msg, timestamp: new Date() },
       ]);
     } finally {
       setLoading(false);
