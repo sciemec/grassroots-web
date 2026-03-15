@@ -935,3 +935,156 @@ NAPH (National Association of Primary Heads)
 *If no — skip it.*
 
 *"Train Anywhere in Zimbabwe. Use AI to Get Recognized."* 🇿🇼
+
+---
+
+## SESSION PROGRESS LOG — March 2026
+
+### Theme — Zimbabwe Palette & Chevron Background
+
+**Background pattern** (`src/app/globals.css`):
+```css
+body {
+  background-color: #1a5c2a;
+  background-image:
+    repeating-linear-gradient(-45deg, transparent 0px, transparent 8px, rgba(180, 160, 0, 0.08) 8px, rgba(180, 160, 0, 0.08) 10px),
+    repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(180, 160, 0, 0.08) 8px, rgba(180, 160, 0, 0.08) 10px);
+  background-attachment: fixed;
+}
+```
+Matches the mobile app splash screen exactly — chevron/herringbone wave in Zimbabwe gold on green.
+
+**CSS variables**: `--background: oklch(0.37 0.12 148)` (maps to #1a5c2a green).
+
+**Approved color palette**:
+```
+#1a5c2a  — Zimbabwe green (background, primary)
+#f0b429  — Gold/amber (accent, CTAs, pricing badge)
+#ce1126  — Zimbabwe red (hero blob only)
+```
+
+**Cards**: `rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm` (dark glass style).
+
+**Landing page** (`src/app/page.tsx`): Hero blobs use green + gold + red; CTA buttons gold `bg-[#f0b429] text-[#1a3a1a]`; hero title accent gold.
+
+---
+
+### Auth Fixes
+
+#### Bug 1 — Zustand Hydration Race (redirect loop on login)
+
+**Affected files**: `src/components/layout/dashboard-layout.tsx`, `src/app/player/ai-coach/page.tsx`
+
+**Root cause**: Zustand `persist` rehydrates from localStorage asynchronously. The auth guard `useEffect` fired with `user=null` before the stored session was restored, triggering a redirect to `/login` on every page load.
+
+**Fix** — wait for hydration before running the auth guard:
+```tsx
+const [hydrated, setHydrated] = useState(false);
+useEffect(() => {
+  if (useAuthStore.persist.hasHydrated()) {
+    setHydrated(true);
+  } else {
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+    return unsub;
+  }
+}, []);
+useEffect(() => {
+  if (!hydrated) return;
+  if (!user) router.replace("/login");
+}, [hydrated, user, router]);
+if (!hydrated || !user) return null;
+```
+
+#### Bug 2 — 401 Interceptor Dev-Bypass Boot
+
+**Affected file**: `src/lib/api.ts`
+
+**Root cause**: The Axios response interceptor did `window.location.href="/login"` on any 401. The admin dev-bypass token (`"dev-token"`) is always rejected by the Laravel backend with 401, so the admin was booted on every API call.
+
+**Fix** — skip redirect when the token is the dev-bypass value:
+```ts
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      const token = localStorage.getItem("auth_token");
+      const isDevBypass = !token || token === "dev-token";
+      if (!isDevBypass) {
+        useAuthStore.getState().logout();
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+---
+
+### AI Coach Architecture
+
+#### Routing Logic (`src/app/player/ai-coach/page.tsx`)
+
+Two-tier routing based on session type:
+
+```
+Real users (valid token)  → POST /api/v1/ask  (Laravel → DeepSeekService)
+                             body:  { question, role, language }
+                             response: { answer }
+
+Dev-bypass / admin         → POST /api/ai-coach  (Next.js server route → Anthropic Claude)
+  OR 401 fallback            body:  { message, system_prompt, history }
+                             response: { response }
+```
+
+The 401 fallback means real users whose tokens expire mid-session automatically fall through to the Anthropic proxy instead of getting an error.
+
+#### Laravel Backend Endpoint
+
+- **Correct endpoint**: `POST /api/v1/ask`
+- **Request body**: `{ question: string, role: string, language: string }`
+- **Response**: `{ answer: string }`
+- **NOT** `/ai-coach/query` (does not exist)
+
+#### Next.js Server Proxy (`src/app/api/ai-coach/route.ts`)
+
+Server-side route — `ANTHROPIC_API_KEY` never exposed to the browser.
+Uses Anthropic Messages API directly (no SDK):
+```
+POST https://api.anthropic.com/v1/messages
+Headers: x-api-key, anthropic-version: 2023-06-01
+Model: claude-sonnet-4-6
+Max tokens: 1024
+Supports: conversation history (last 10 messages)
+```
+
+---
+
+### Required Environment Variables
+
+**.env.local** (Next.js / Vercel):
+```
+NEXT_PUBLIC_API_URL=https://bhora-ai.onrender.com/api/v1
+ANTHROPIC_API_KEY=<set in Vercel dashboard + .env.local>
+DEEPSEEK_API_KEY=<set in Vercel dashboard — not currently used by web app>
+```
+
+**Render** (Laravel backend):
+```
+DEEPSEEK_API_KEY=<set in Render environment — used by DeepSeekService for /ask endpoint>
+ANTHROPIC_API_KEY=<set in Render environment — for any future Laravel Claude calls>
+```
+
+Note: The Next.js proxy uses `ANTHROPIC_API_KEY` from Vercel/`.env.local`.
+The Laravel `/ask` endpoint uses `DEEPSEEK_API_KEY` from Render.
+Both are needed — they serve different parts of the system.
+
+---
+
+### Dev-Bypass Token (Admin Testing)
+
+- Token value: `"dev-token"` (stored in localStorage as `auth_token`)
+- Backend always returns 401 for this token — that is expected
+- Web app detects this token and skips the 401 redirect
+- AI Coach routes directly to the Next.js Anthropic proxy (bypasses Laravel `/ask`)
+- Login: nnygel@live.com / test1234 (sets dev-bypass session)
