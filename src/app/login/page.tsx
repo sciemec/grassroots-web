@@ -68,14 +68,6 @@ function LoginContent() {
     setError("");
     setLoading(true);
 
-    // Dev admin bypass — lets Nigel test all hubs without a live backend account
-    if (email.trim().toLowerCase() === "nnygel@live.com" && password === "nigel") {
-      login({ id: "dev-admin-1", name: "Nigel", email: "nnygel@live.com", role: "admin", token: "dev-token" });
-      router.push(nextPath ?? "/dashboard");
-      setLoading(false);
-      return;
-    }
-
     try {
       const res = await api.post("/auth/login", { identifier: email, password });
       const { token, user } = res.data;

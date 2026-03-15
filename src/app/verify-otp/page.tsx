@@ -3,7 +3,7 @@
 import { useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -96,6 +96,12 @@ function VerifyOtpContent() {
               We sent a 6-digit code to<br />
               <span className="font-semibold text-white">{maskedIdentifier || "your contact"}</span>
             </p>
+            <p className="mt-1 text-xs text-green-500">
+              Wrong address?{" "}
+              <Link href="/register" className="text-green-300 underline hover:text-white transition-colors">
+                Go back and re-register
+              </Link>
+            </p>
           </div>
 
           {/* OTP boxes */}
@@ -147,11 +153,6 @@ function VerifyOtpContent() {
           </div>
         </div>
 
-        <div className="mt-4 text-center">
-          <Link href="/register" className="inline-flex items-center gap-1 text-sm text-green-400 hover:text-white transition-colors">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to register
-          </Link>
-        </div>
       </div>
     </div>
   );

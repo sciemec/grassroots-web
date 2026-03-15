@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
+import { extractApiError } from "@/lib/api-error";
 
 const PROVINCES = [
   "Harare","Bulawayo","Manicaland","Mashonaland Central",
@@ -88,8 +89,7 @@ function FanRegisterForm() {
       const { identifier } = res.data;
       router.push(`/verify-otp?identifier=${encodeURIComponent(identifier)}`);
     } catch (e: unknown) {
-      const data = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-      setError(data?.errors ? Object.values(data.errors).flat().join(". ") : (data?.message ?? "Registration failed."));
+      setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);
     }
   };

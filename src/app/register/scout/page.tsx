@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/api";
+import { extractApiError } from "@/lib/api-error";
 
 const PROVINCES = [
   "Harare","Bulawayo","Manicaland","Mashonaland Central",
@@ -93,8 +94,7 @@ function ScoutRegisterForm() {
       const { identifier } = res.data;
       router.push(`/verify-otp?identifier=${encodeURIComponent(identifier)}`);
     } catch (e: unknown) {
-      const data = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-      setError(data?.errors ? Object.values(data.errors).flat().join(". ") : (data?.message ?? "Registration failed."));
+      setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);
     }
   };
@@ -110,7 +110,7 @@ function ScoutRegisterForm() {
             <ChevronLeft className="h-4 w-4" /> All roles
           </Link>
           <Link href="/" className="flex items-center gap-2 text-white">
-            <span className="text-2xl">⚽</span>
+            <span className="text-2xl">{sportCfg.emoji}</span>
             <span className="font-bold">Grassroots Sport</span>
           </Link>
         </div>

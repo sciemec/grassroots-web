@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff, User, Calendar, MapPin, Dumbbell, Shield } from "lucide-react";
 import api from "@/lib/api";
+import { extractApiError } from "@/lib/api-error";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 
 // Fallback football positions if sport has no position list
@@ -141,8 +142,7 @@ function PlayerRegisterForm() {
       const { identifier } = res.data;
       router.push(`/verify-otp?identifier=${encodeURIComponent(identifier ?? form.email ?? form.phone)}`);
     } catch (e: unknown) {
-      const data = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-      setError(data?.errors ? Object.values(data.errors).flat().join(". ") : (data?.message ?? "Registration failed. Please try again."));
+      setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);
     }
   };
@@ -158,7 +158,7 @@ function PlayerRegisterForm() {
             <ChevronLeft className="h-4 w-4" /> All roles
           </Link>
           <Link href="/" className="flex items-center gap-2 text-white">
-            <span className="text-2xl">⚽</span>
+            <span className="text-2xl">{sportCfg.emoji}</span>
             <span className="font-bold">Grassroots Sport</span>
           </Link>
         </div>
