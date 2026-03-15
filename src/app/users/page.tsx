@@ -75,6 +75,15 @@ export default function UsersPage() {
   const clearSelection = () => setSelected(new Set());
 
   // Bulk actions
+  const escapeCsv = (val: unknown): string => {
+    const str = String(val ?? "");
+    // Prevent CSV injection — prefix formula-starting chars with single quote
+    if (/^[=+\-@\t\r]/.test(str)) return `"'${str.replace(/"/g, '""')}"`;
+    return str.includes(",") || str.includes('"') || str.includes("\n")
+      ? `"${str.replace(/"/g, '""')}"`
+      : str;
+  };
+
   const bulkAction = async (action: "activate" | "deactivate" | "delete" | "export") => {
     const ids = Array.from(selected);
     if (action === "export") {
@@ -82,7 +91,11 @@ export default function UsersPage() {
         "id,name,email,role,province,status",
         ...users
           .filter((u) => selected.has(u.id))
-          .map((u) => `${u.id},${u.name},${u.email},${u.role},${u.province ?? ""},${u.is_active ? "active" : "inactive"}`),
+          .map((u) =>
+            [u.id, u.name, u.email, u.role, u.province ?? "", u.is_active ? "active" : "inactive"]
+              .map(escapeCsv)
+              .join(",")
+          ),
       ].join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);

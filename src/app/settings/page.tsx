@@ -173,7 +173,7 @@ export default function SettingsPage() {
                   <label className={labelCls}>{label}</label>
                   <div className="relative">
                     <input
-                      {...pwForm.register(name, { required: true, minLength: name === "current_password" ? 1 : 8 })}
+                      {...pwForm.register(name, { required: true, minLength: 8 })}
                       type={show ? "text" : "password"}
                       className={`${inputCls} pr-10`}
                       placeholder="••••••••"

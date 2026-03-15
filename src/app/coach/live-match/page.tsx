@@ -11,6 +11,8 @@ import {
   Coffee,
   Loader2,
   Brain,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -19,6 +21,7 @@ import { MatchEvent, MatchPhase, MatchSetup } from "./_types";
 import { EventLogger } from "./_components/event-logger";
 import { EventLog } from "./_components/event-log";
 import { LiveStatsSidebar } from "./_components/live-stats-sidebar";
+import { useCommentary } from "@/lib/use-commentary";
 
 const FORMATIONS = ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "5-3-2"];
 
@@ -177,6 +180,8 @@ export default function LiveMatchPage() {
   const [halftimeLoading, setHalftimeLoading] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const commentary = useCommentary({ setup, homeScore, awayScore });
+
   useEffect(() => {
     if (!user) router.push("/login");
   }, [user, router]);
@@ -256,7 +261,15 @@ export default function LiveMatchPage() {
     setPhase("ended");
 
     const saved = localStorage.getItem("coach_matches");
-    const existing = saved ? (JSON.parse(saved) as Record<string, unknown>[]) : [];
+    const existing = (() => {
+      try {
+        return saved ? (JSON.parse(saved) as Record<string, unknown>[]) : [];
+      } catch {
+        console.error("[LiveMatch] Corrupted match history in localStorage — resetting.");
+        localStorage.removeItem("coach_matches");
+        return [];
+      }
+    })();
 
     const record = {
       id: Date.now().toString(),
@@ -286,10 +299,9 @@ export default function LiveMatchPage() {
   }, [events, setup, homeScore, awayScore]);
 
   const logEvent = (evt: Omit<MatchEvent, "id">) => {
-    setEvents((prev) => [
-      ...prev,
-      { ...evt, id: Date.now().toString() },
-    ]);
+    const event: MatchEvent = { ...evt, id: crypto.randomUUID() };
+    setEvents((prev) => [...prev, event]);
+    commentary.commentOnEvent(event);
   };
 
   if (!user) return null;
@@ -320,6 +332,22 @@ export default function LiveMatchPage() {
 
           {phase === "live" && (
             <div className="flex items-center gap-2">
+              {/* AI Commentary toggle */}
+              <button
+                onClick={commentary.toggle}
+                title={commentary.enabled ? "Turn off AI commentary" : "Turn on AI commentary"}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+                  commentary.enabled
+                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                    : "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                }`}
+              >
+                {commentary.enabled
+                  ? <><Mic className="h-3.5 w-3.5 animate-pulse" /> On Air</>
+                  : <><MicOff className="h-3.5 w-3.5" /> Commentary</>
+                }
+              </button>
+
               <button
                 onClick={handlePauseResume}
                 className="flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs hover:bg-zinc-800 transition-colors"
@@ -379,6 +407,18 @@ export default function LiveMatchPage() {
               >
                 View Match Records
               </Link>
+            </div>
+          )}
+
+          {/* Commentary banner — shown when enabled and a line is available */}
+          {phase === "live" && commentary.enabled && commentary.lastLine && (
+            <div className={`mb-4 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all ${
+              commentary.speaking
+                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+                : "border-zinc-700 bg-zinc-900 text-zinc-300"
+            }`}>
+              <Mic className={`h-4 w-4 flex-shrink-0 ${commentary.speaking ? "text-emerald-400 animate-pulse" : "text-zinc-500"}`} />
+              <span className="italic">&ldquo;{commentary.lastLine}&rdquo;</span>
             </div>
           )}
 

@@ -52,7 +52,6 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       adminHub: "admin",
       login: (user) => {
-        localStorage.setItem("auth_token", user.token);
         setCookie("gs_token", user.token);
         setCookie("gs_role", user.role);
         set({ user, adminHub: "admin" });
@@ -62,7 +61,6 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, ...fields } : state.user,
         })),
       logout: () => {
-        localStorage.removeItem("auth_token");
         clearCookie("gs_token");
         clearCookie("gs_role");
         set({ user: null, adminHub: "admin" });

@@ -8,6 +8,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { extractApiError } from "@/lib/api-error";
 import { SPORTS, ANALYSIS_TYPES, getSportAnalysisPrompt, type SportKey, type AnalysisType } from "@/config/sports";
 import { useFileSystem } from "@/hooks/use-file-system";
 import { extractFrames, trimVideo } from "@/lib/ffmpeg-processor";
@@ -148,7 +149,8 @@ export default function VideoStudioPage() {
       setFrames(frameUrls); setProgress(50);
 
       setStatusMsg("Analysing with AI…"); setStage("analysing");
-      const context = `Video: "${file.name}" (${formatBytes(file.size)}). ${frameUrls.length} frames extracted. Analysis: ${analysisType}. ${question.trim() ? `Question: ${question.trim()}` : ""}`;
+      const sanitize = (s: string) => s.replace(/[<>"'`\\]/g, "").slice(0, 300);
+      const context = `Video: "${sanitize(file.name)}" (${formatBytes(file.size)}). ${frameUrls.length} frames extracted. Analysis: ${analysisType}. ${question.trim() ? `Question: ${sanitize(question.trim())}` : ""}`;
       const prompt = getSportAnalysisPrompt(sport, context);
 
       const res = await api.post("/ai-coach/query", { message: prompt });
@@ -158,8 +160,7 @@ export default function VideoStudioPage() {
       setResult(parseAIResponse(raw));
       setStage("done");
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErrorMsg(msg ?? "Analysis failed. Check your connection and try again.");
+      setErrorMsg(extractApiError(e, "Analysis failed. Check your connection and try again."));
       setStage("error"); setProgress(0);
     }
   };

@@ -158,7 +158,7 @@ export default function AICoachPage() {
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: reply || "Analysis complete.", timestamp: new Date() }]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "I couldn't analyse the match right now. Please try again.";
-      setMessages((prev) => [...prev, { id: crypto.randomUUID() + "e", role: "assistant", content: msg, timestamp: new Date() }]);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: msg, timestamp: new Date() }]);
     } finally {
       setLoading(false);
     }
