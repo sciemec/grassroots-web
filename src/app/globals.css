@@ -12,88 +12,90 @@
 
 @layer base {
   :root {
-    /* ── Grassroots Sport — Deep Forest Green (matches mobile AppTheme) ─────── */
-    /* Primary background: #1a4a2e */
-    --background: oklch(0.29 0.09 145);
+    /* ── Grassroots Sport — Zimbabwe Palette (lighter green + gold + red) ────── */
+    /* Zimbabwe flag: green #1a6b3c · gold #f0b429 · red #ce1126 · white · NO black */
+
+    /* Primary background: #1a6b3c — lighter, vibrant Zimbabwean green */
+    --background: oklch(0.42 0.13 148);
     /* Text: white */
     --foreground: oklch(1 0 0);
-    /* Cards: #2d6a3f */
-    --card: oklch(0.41 0.12 145);
+    /* Cards: slightly lighter green with more transparency */
+    --card: oklch(0.50 0.14 148);
     --card-foreground: oklch(1 0 0);
-    /* Popovers: slightly darker */
-    --popover: oklch(0.35 0.10 145);
+    /* Popovers */
+    --popover: oklch(0.45 0.13 148);
     --popover-foreground: oklch(1 0 0);
-    /* Primary action: #27ae60 success green */
+    /* Primary action: #27ae60 bright green */
     --primary: oklch(0.64 0.17 145);
     --primary-foreground: oklch(1 0 0);
-    /* Secondary: #0d2818 darker green */
-    --secondary: oklch(0.17 0.07 145);
+    /* Secondary: deep green #0d3320 */
+    --secondary: oklch(0.22 0.08 148);
     --secondary-foreground: oklch(1 0 0);
-    /* Muted: mid-green */
-    --muted: oklch(0.24 0.06 145);
-    --muted-foreground: oklch(0.74 0.05 145);
-    /* Accent: #f0b429 golden yellow */
+    /* Muted: mid green */
+    --muted: oklch(0.30 0.08 148);
+    --muted-foreground: oklch(0.80 0.06 148);
+    /* Accent: Zimbabwe gold #f0b429 */
     --accent: oklch(0.78 0.17 75);
-    --accent-foreground: oklch(0.17 0.07 145);
-    /* Destructive: #c0392b */
-    --destructive: oklch(0.47 0.18 25);
+    --accent-foreground: oklch(0.22 0.08 148);
+    /* Destructive: Zimbabwe red #ce1126 */
+    --destructive: oklch(0.47 0.22 25);
     /* Borders: white at low opacity */
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.64 0.17 145);
-    /* Charts */
+    --border: oklch(1 0 0 / 14%);
+    --input: oklch(1 0 0 / 18%);
+    --ring: oklch(0.78 0.17 75);
+    /* Charts: Zimbabwe colours */
     --chart-1: oklch(0.64 0.17 145);   /* green */
     --chart-2: oklch(0.78 0.17 75);    /* gold */
-    --chart-3: oklch(0.47 0.18 25);    /* red */
+    --chart-3: oklch(0.47 0.22 25);    /* red */
     --chart-4: oklch(0.55 0.14 230);   /* blue */
     --chart-5: oklch(0.56 0.17 50);    /* orange */
     /* border-radius: 16px matches mobile */
     --radius: 1rem;
-    /* Sidebar: #0d2818 darkest green */
-    --sidebar: oklch(0.17 0.07 145);
+    /* Sidebar: deep green */
+    --sidebar: oklch(0.22 0.08 148);
     --sidebar-foreground: oklch(1 0 0);
     --sidebar-primary: oklch(0.64 0.17 145);
     --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.24 0.06 145);
+    --sidebar-accent: oklch(0.30 0.08 148);
     --sidebar-accent-foreground: oklch(1 0 0);
-    --sidebar-border: oklch(1 0 0 / 8%);
-    --sidebar-ring: oklch(0.64 0.17 145);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.78 0.17 75);
   }
 
   .dark {
-    /* Same as :root — single dark theme */
-    --background: oklch(0.29 0.09 145);
+    /* Same as :root — single Zimbabwe green theme */
+    --background: oklch(0.42 0.13 148);
     --foreground: oklch(1 0 0);
-    --card: oklch(0.41 0.12 145);
+    --card: oklch(0.50 0.14 148);
     --card-foreground: oklch(1 0 0);
-    --popover: oklch(0.35 0.10 145);
+    --popover: oklch(0.45 0.13 148);
     --popover-foreground: oklch(1 0 0);
     --primary: oklch(0.64 0.17 145);
     --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.17 0.07 145);
+    --secondary: oklch(0.22 0.08 148);
     --secondary-foreground: oklch(1 0 0);
-    --muted: oklch(0.24 0.06 145);
-    --muted-foreground: oklch(0.74 0.05 145);
+    --muted: oklch(0.30 0.08 148);
+    --muted-foreground: oklch(0.80 0.06 148);
     --accent: oklch(0.78 0.17 75);
-    --accent-foreground: oklch(0.17 0.07 145);
-    --destructive: oklch(0.47 0.18 25);
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.64 0.17 145);
+    --accent-foreground: oklch(0.22 0.08 148);
+    --destructive: oklch(0.47 0.22 25);
+    --border: oklch(1 0 0 / 14%);
+    --input: oklch(1 0 0 / 18%);
+    --ring: oklch(0.78 0.17 75);
     --chart-1: oklch(0.64 0.17 145);
     --chart-2: oklch(0.78 0.17 75);
-    --chart-3: oklch(0.47 0.18 25);
+    --chart-3: oklch(0.47 0.22 25);
     --chart-4: oklch(0.55 0.14 230);
     --chart-5: oklch(0.56 0.17 50);
     --radius: 1rem;
-    --sidebar: oklch(0.17 0.07 145);
+    --sidebar: oklch(0.22 0.08 148);
     --sidebar-foreground: oklch(1 0 0);
     --sidebar-primary: oklch(0.64 0.17 145);
     --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.24 0.06 145);
+    --sidebar-accent: oklch(0.30 0.08 148);
     --sidebar-accent-foreground: oklch(1 0 0);
-    --sidebar-border: oklch(1 0 0 / 8%);
-    --sidebar-ring: oklch(0.64 0.17 145);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.78 0.17 75);
   }
 
   .theme {
@@ -106,15 +108,32 @@
   }
 
   body {
-    background-color: #1a4a2e;
-    /* Chevron/zigzag wave pattern matching mobile splash screen */
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(255, 255, 255, 0.03) 10px,
-      rgba(255, 255, 255, 0.03) 20px
-    );
+    /* ── Zimbabwe palette: lighter Zimbabwean green base ── */
+    background-color: #1a6b3c;
+
+    /* ── Gold chevron/herringbone pattern — Zimbabwe flag gold #f0b429 ── */
+    background-image:
+      /* Top-right diagonals */
+      linear-gradient(
+        135deg,
+        rgba(240, 180, 41, 0.18) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(240, 180, 41, 0.18) 50%,
+        rgba(240, 180, 41, 0.18) 75%,
+        transparent 75%
+      ),
+      /* Top-left diagonals forming the V/chevron */
+      linear-gradient(
+        45deg,
+        rgba(240, 180, 41, 0.18) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(240, 180, 41, 0.18) 50%,
+        rgba(240, 180, 41, 0.18) 75%,
+        transparent 75%
+      );
+    background-size: 28px 28px;
     background-attachment: fixed;
     color: var(--foreground);
   }

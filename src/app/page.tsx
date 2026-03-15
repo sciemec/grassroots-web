@@ -192,27 +192,28 @@ const pricing = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-green-950 text-white">
+    <div className="min-h-screen text-white" style={{ background: "transparent" }}>
       <PublicNavbar />
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-16">
-        {/* Background gradient blobs */}
+        {/* Zimbabwe colour blobs: green · gold · red */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute left-1/4 top-20 h-96 w-96 rounded-full bg-green-600/20 blur-3xl" />
-          <div className="absolute right-1/4 top-40 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
+          <div className="absolute left-1/4 top-20 h-96 w-96 rounded-full bg-green-400/15 blur-3xl" />
+          <div className="absolute right-1/4 top-40 h-64 w-64 rounded-full bg-[#f0b429]/10 blur-3xl" />
+          <div className="absolute left-1/2 bottom-0 h-48 w-48 rounded-full bg-[#ce1126]/8 blur-3xl" />
         </div>
 
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-4 py-1.5 text-sm text-green-300">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#f0b429]/40 bg-[#f0b429]/10 px-4 py-1.5 text-sm text-[#f0b429]">
               <Zap className="h-3.5 w-3.5" />
               AI-powered · Multi-sport · Offline-first
             </div>
 
             <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight sm:text-6xl lg:text-7xl">
               Grassroots Sport<br />
-              <span className="text-green-400">Pro Platform</span>
+              <span className="text-[#f0b429]">Pro Platform</span>
             </h1>
 
             <p className="mb-10 text-lg text-green-200 sm:text-xl">
@@ -223,7 +224,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/register"
-                className="flex items-center gap-2 rounded-xl bg-green-500 px-8 py-3.5 text-base font-semibold text-white hover:bg-green-400 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-8 py-3.5 text-base font-semibold text-[#1a3a1a] hover:bg-[#f5c842] transition-colors shadow-lg shadow-[#f0b429]/20"
               >
                 Get started free <ChevronRight className="h-4 w-4" />
               </Link>
@@ -236,7 +237,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <p className="mt-6 text-sm text-green-400">
+            <p className="mt-6 text-sm text-[#f0b429]/80">
               Free for players · No credit card required · Download the app too
             </p>
           </div>
@@ -258,7 +259,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Sports Strip ─────────────────────────────────────────────────────── */}
-      <section id="sports" className="border-y border-white/10 bg-green-900/40 py-16">
+      <section id="sports" className="border-y border-[#f0b429]/20 bg-[#f0b429]/5 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 text-center">
             <h2 className="text-3xl font-bold">10 Sports, One Platform</h2>
@@ -330,7 +331,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── AI Features ─────────────────────────────────────────────────────── */}
-      <section id="ai" className="border-y border-white/10 bg-gradient-to-b from-green-900/20 to-transparent py-24">
+      <section id="ai" className="border-y border-white/10 bg-gradient-to-b from-white/5 to-transparent py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-16 text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-sm text-purple-300">
@@ -417,13 +418,13 @@ export default function LandingPage() {
                 key={plan.name}
                 className={`relative flex flex-col rounded-2xl p-6 ${
                   plan.highlighted
-                    ? "border-2 border-green-500 bg-green-500/10"
+                    ? "border-2 border-[#f0b429] bg-[#f0b429]/10"
                     : "border border-white/10 bg-white/5"
                 }`}
               >
                 {plan.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-bold text-white">
+                    <span className="rounded-full bg-[#f0b429] px-3 py-1 text-xs font-bold text-[#1a3a1a]">
                       Most popular
                     </span>
                   </div>
@@ -451,7 +452,7 @@ export default function LandingPage() {
                   href={plan.href}
                   className={`block rounded-xl px-4 py-3 text-center text-sm font-semibold transition-colors ${
                     plan.highlighted
-                      ? "bg-green-500 text-white hover:bg-green-400"
+                      ? "bg-[#f0b429] text-[#1a3a1a] font-bold hover:bg-[#f5c842]"
                       : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
                   }`}
                 >
@@ -464,7 +465,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────────────────────────── */}
-      <section className="border-t border-white/10 bg-gradient-to-t from-green-900/40 py-24">
+      <section className="border-t border-[#f0b429]/20 bg-gradient-to-t from-[#f0b429]/8 py-24">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
           <Image src="/logo.png" alt="Grassroots Sport" width={72} height={72} className="mx-auto mb-4" />
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
@@ -476,7 +477,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-8 py-4 text-base font-bold text-white hover:bg-green-400 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#f0b429] px-8 py-4 text-base font-bold text-[#1a3a1a] hover:bg-[#f5c842] transition-colors shadow-lg shadow-[#f0b429]/25"
           >
             Create free account <ChevronRight className="h-5 w-5" />
           </Link>
@@ -484,7 +485,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ────────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/10 bg-green-950 py-12">
+      <footer className="border-t border-white/10 bg-black/20 py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
