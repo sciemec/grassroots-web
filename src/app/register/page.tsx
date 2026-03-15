@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { SPORTS, SportKey } from "@/config/sports";
@@ -84,7 +85,10 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2 text-white">
-            <span className="text-3xl">{sport ? SPORTS.find(s => s.key === sport)?.emoji : "⚽"}</span>
+            {sport
+              ? <span className="text-3xl">{SPORTS.find(s => s.key === sport)?.emoji}</span>
+              : <Image src="/logo.png" alt="Grassroots Sport" width={40} height={40} />
+            }
             <span className="text-2xl font-bold tracking-tight">Grassroots Sport</span>
           </Link>
         </div>

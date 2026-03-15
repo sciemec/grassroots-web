@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
@@ -108,7 +109,7 @@ function LoginContent() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2 text-white">
-            <span className="text-3xl">⚽</span>
+            <Image src="/logo.png" alt="Grassroots Sport" width={40} height={40} />
             <span className="text-xl font-bold tracking-tight">Grassroots Sport</span>
           </Link>
         </div>

@@ -36,7 +36,7 @@ export default function SettingsPage() {
   const [showCfm, setShowCfm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
 
-  const inputCls = "w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring";
+  const inputCls = "w-full rounded-lg border border-white/15 bg-secondary px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring";
   const labelCls = "mb-1 block text-xs font-medium text-muted-foreground";
 
   const flash = (msg: string) => { setSaved(msg); setTimeout(() => setSaved(""), 3000); };
@@ -78,11 +78,12 @@ export default function SettingsPage() {
     <DashboardLayout>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Account Settings</h1>
-          <p className="text-sm text-muted-foreground">Manage your account preferences</p>
+          <p className="text-xs font-medium uppercase tracking-widest text-accent">Mhoro — Settings</p>
+          <h1 className="mt-1 text-2xl font-bold text-white">Account Settings</h1>
+          <p className="mt-0.5 text-sm italic text-accent/80">Chenjedza account yako — Manage your preferences</p>
         </div>
         {saved && (
-          <div className="flex items-center gap-2 rounded-xl bg-green-500/10 px-4 py-2 text-sm font-medium text-green-600">
+          <div className="flex items-center gap-2 rounded-xl bg-primary/20 border border-primary/30 px-4 py-2 text-sm font-medium text-primary">
             <CheckCircle2 className="h-4 w-4" /> {saved}
           </div>
         )}
@@ -98,11 +99,11 @@ export default function SettingsPage() {
               className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors text-left ${
                 tab === id
                   ? id === "danger"
-                    ? "bg-red-500/10 text-red-600"
-                    : "bg-primary/10 text-primary"
+                    ? "bg-destructive/20 text-destructive border border-destructive/30"
+                    : "bg-primary/20 text-primary border border-primary/30"
                   : id === "danger"
-                  ? "text-red-500 hover:bg-red-500/5"
-                  : "text-muted-foreground hover:bg-muted"
+                  ? "text-red-400 hover:bg-destructive/10"
+                  : "text-muted-foreground hover:bg-white/5"
               }`}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
@@ -117,17 +118,17 @@ export default function SettingsPage() {
           {/* ── Profile tab ── */}
           {tab === "profile" && (
             <form onSubmit={profileForm.handleSubmit((d) => saveProfile.mutate(d))}
-              className="rounded-xl border bg-card p-6 space-y-4">
-              <h2 className="text-sm font-semibold">Personal Information</h2>
+              className="rounded-2xl border border-white/10 bg-card/60 p-6 space-y-4 backdrop-blur-sm">
+              <h2 className="text-sm font-semibold text-white">Personal Information</h2>
 
-              <div className="flex items-center gap-4 pb-4 border-b">
+              <div className="flex items-center gap-4 pb-4 border-b border-white/10">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
                   {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-medium">{user?.name}</p>
+                  <p className="font-medium text-white">{user?.name}</p>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <span className="mt-1 inline-block rounded-full bg-muted px-2 py-0.5 text-xs capitalize">
+                  <span className="mt-1 inline-block rounded-full bg-white/10 px-2 py-0.5 text-xs capitalize text-muted-foreground">
                     {user?.role}
                   </span>
                 </div>
@@ -159,8 +160,8 @@ export default function SettingsPage() {
           {/* ── Security tab ── */}
           {tab === "security" && (
             <form onSubmit={pwForm.handleSubmit((d) => savePw.mutate(d))}
-              className="rounded-xl border bg-card p-6 space-y-4">
-              <h2 className="text-sm font-semibold">Change Password</h2>
+              className="rounded-2xl border border-white/10 bg-card/60 p-6 space-y-4 backdrop-blur-sm">
+              <h2 className="text-sm font-semibold text-white">Change Password</h2>
               <p className="text-xs text-muted-foreground">Choose a strong password of at least 8 characters.</p>
 
               {[
@@ -201,8 +202,8 @@ export default function SettingsPage() {
           {/* ── Notifications tab ── */}
           {tab === "notifications" && (
             <form onSubmit={notifForm.handleSubmit((d) => saveNotif.mutate(d))}
-              className="rounded-xl border bg-card p-6 space-y-5">
-              <h2 className="text-sm font-semibold">Notification Preferences</h2>
+              className="rounded-2xl border border-white/10 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
+              <h2 className="text-sm font-semibold text-white">Notification Preferences</h2>
 
               {[
                 { section: "Email Notifications", items: [
@@ -220,7 +221,7 @@ export default function SettingsPage() {
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{section}</p>
                   <div className="space-y-3">
                     {items.map(({ name, label, sub }) => (
-                      <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border p-3 hover:bg-muted/40 transition-colors">
+                      <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
                         <div>
                           <p className="text-sm font-medium">{label}</p>
                           <p className="text-xs text-muted-foreground">{sub}</p>
@@ -243,7 +244,7 @@ export default function SettingsPage() {
 
           {/* ── Danger zone tab ── */}
           {tab === "danger" && (
-            <div className="rounded-xl border border-destructive/30 bg-card p-6 space-y-5">
+            <div className="rounded-2xl border border-destructive/30 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
                 <div>

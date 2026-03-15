@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import {
   Users, Dumbbell, Brain, Trophy, Globe, Shield, Zap, Star, ChevronRight, Play,
@@ -465,7 +466,7 @@ export default function LandingPage() {
       {/* ── Final CTA ─────────────────────────────────────────────────────────── */}
       <section className="border-t border-white/10 bg-gradient-to-t from-green-900/40 py-24">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <span className="mb-4 block text-5xl">⚽</span>
+          <Image src="/logo.png" alt="Grassroots Sport" width={72} height={72} className="mx-auto mb-4" />
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
             Start your journey today
           </h2>
@@ -488,7 +489,7 @@ export default function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="mb-4 flex items-center gap-2">
-                <span className="text-xl">⚽</span>
+                <Image src="/logo.png" alt="Grassroots Sport" width={28} height={28} />
                 <span className="font-bold text-white">Grassroots Sport</span>
               </div>
               <p className="text-sm text-green-400">
