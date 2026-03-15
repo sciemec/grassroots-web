@@ -192,7 +192,7 @@ const pricing = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen text-white" style={{ background: "transparent" }}>
+    <div className="min-h-screen text-white">
       <PublicNavbar />
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}

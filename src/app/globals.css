@@ -15,8 +15,8 @@
     /* ── Grassroots Sport — Zimbabwe Palette (lighter green + gold + red) ────── */
     /* Zimbabwe flag: green #1a6b3c · gold #f0b429 · red #ce1126 · white · NO black */
 
-    /* Primary background: #1a6b3c — lighter, vibrant Zimbabwean green */
-    --background: oklch(0.42 0.13 148);
+    /* Primary background: #1a5c2a — mobile splash green */
+    --background: oklch(0.37 0.12 148);
     /* Text: white */
     --foreground: oklch(1 0 0);
     /* Cards: slightly lighter green with more transparency */
@@ -64,9 +64,9 @@
 
   .dark {
     /* Same as :root — single Zimbabwe green theme */
-    --background: oklch(0.42 0.13 148);
+    --background: oklch(0.37 0.12 148);
     --foreground: oklch(1 0 0);
-    --card: oklch(0.50 0.14 148);
+    --card: oklch(0.45 0.13 148);
     --card-foreground: oklch(1 0 0);
     --popover: oklch(0.45 0.13 148);
     --popover-foreground: oklch(1 0 0);
@@ -108,32 +108,24 @@
   }
 
   body {
-    /* ── Zimbabwe palette: lighter Zimbabwean green base ── */
-    background-color: #1a6b3c;
-
-    /* ── Gold chevron/herringbone pattern — Zimbabwe flag gold #f0b429 ── */
+    /* ── Zimbabwe green — matches mobile splash screen ── */
+    background-color: #1a5c2a;
+    /* ── Chevron wave pattern — matches mobile app exactly ── */
     background-image:
-      /* Top-right diagonals */
-      linear-gradient(
-        135deg,
-        rgba(240, 180, 41, 0.18) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(240, 180, 41, 0.18) 50%,
-        rgba(240, 180, 41, 0.18) 75%,
-        transparent 75%
+      repeating-linear-gradient(
+        -45deg,
+        transparent 0px,
+        transparent 8px,
+        rgba(180, 160, 0, 0.08) 8px,
+        rgba(180, 160, 0, 0.08) 10px
       ),
-      /* Top-left diagonals forming the V/chevron */
-      linear-gradient(
+      repeating-linear-gradient(
         45deg,
-        rgba(240, 180, 41, 0.18) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(240, 180, 41, 0.18) 50%,
-        rgba(240, 180, 41, 0.18) 75%,
-        transparent 75%
+        transparent 0px,
+        transparent 8px,
+        rgba(180, 160, 0, 0.08) 8px,
+        rgba(180, 160, 0, 0.08) 10px
       );
-    background-size: 28px 28px;
     background-attachment: fixed;
     color: var(--foreground);
   }
