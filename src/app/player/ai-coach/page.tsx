@@ -105,26 +105,40 @@ export default function AICoachPage() {
   }, [messages]);
 
   /**
-   * callAI — tries the Laravel backend first (for real user tokens).
-   * Falls back to the Next.js /api/ai-coach route when the backend returns 401
-   * (dev-bypass or admin accounts that aren't registered in the backend).
+   * callAI — routes the request to the right AI service:
+   *
+   * Real users  → POST /api/v1/ask  (Laravel → DeepSeekService::answerFootballQuestion)
+   *               request:  { question, role, language }
+   *               response: { answer }
+   *
+   * Dev-bypass  → POST /api/ai-coach (Next.js server route → DeepSeek API directly)
+   * or 401 fallback  request:  { message, system_prompt, history }
+   *               response: { response }
+   *
+   * The Next.js route preserves conversation history; the Laravel /ask endpoint
+   * handles each message independently (backend limitation — no history param).
    */
   const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
-    // Dev-bypass token — skip Laravel entirely, go straight to the Next.js route
     const isDevBypass = user?.token === "dev-token";
 
     if (!isDevBypass) {
       try {
-        const res = await api.post("/ai-coach/query", { message, system_prompt: systemP, history });
-        return res.data?.reply ?? res.data?.response ?? res.data?.message ?? "";
+        // Correct backend endpoint: POST /ask with { question, role, language }
+        const res = await api.post("/ask", {
+          question: message,
+          role: user?.role ?? "player",
+          language: "english",
+        });
+        // Backend returns { answer: string }
+        return res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status;
         if (status !== 401) throw err; // surface real errors (network, 500, etc.)
-        // 401 from backend → fall through to the Next.js route below
+        // 401 → fall through to the Next.js proxy below
       }
     }
 
-    // Next.js server route — calls Claude directly with server-side API key
+    // Next.js server route → DeepSeek API directly (supports conversation history)
     const res = await fetch("/api/ai-coach", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
