@@ -62,6 +62,23 @@ export default function AICoachPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
+  // Wait for Zustand persist to rehydrate from localStorage before running the
+  // auth guard — same race condition fix as DashboardLayout.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!user) router.push("/login");
+  }, [hydrated, user, router]);
+
   /** Build system prompt from user profile. Falls back to sensible defaults. */
   const systemPrompt = playerAiCoachPrompt({
     sport: (user?.sport as SportKey) ?? "football",
@@ -84,10 +101,6 @@ export default function AICoachPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-  }, [user, router]);
-
-  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -105,8 +118,12 @@ export default function AICoachPage() {
       }, { headers: { Authorization: `Bearer ${user?.token}` } });
       const reply = res.data.reply ?? res.data.response ?? res.data.message ?? "Analysis complete.";
       setMessages((prev) => [...prev, { id: Date.now().toString() + "r", role: "assistant", content: reply, timestamp: new Date() }]);
-    } catch {
-      setMessages((prev) => [...prev, { id: Date.now().toString() + "e", role: "assistant", content: "I couldn't analyse the match right now. Please try again.", timestamp: new Date() }]);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const errMsg = status === 401
+        ? "Authentication failed — the backend requires a real account token. Dev-bypass accounts cannot call the AI. Please log in with a real account to use AI Coach."
+        : "I couldn't analyse the match right now. Please try again.";
+      setMessages((prev) => [...prev, { id: Date.now().toString() + "e", role: "assistant", content: errMsg, timestamp: new Date() }]);
     } finally {
       setLoading(false);
     }
@@ -147,15 +164,14 @@ export default function AICoachPage() {
         ...prev,
         { id: Date.now().toString(), role: "assistant", content: reply, timestamp: new Date() },
       ]);
-    } catch {
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const errMsg = status === 401
+        ? "AI Coach requires a real account token. The dev-bypass session can't authenticate with the backend. Log in with a real account to use AI Coach."
+        : "Sorry, I'm having trouble connecting right now. Check your internet connection and try again.";
       setMessages((prev) => [
         ...prev,
-        {
-          id: Date.now().toString(),
-          role: "assistant",
-          content: "Sorry, I'm having trouble connecting right now. Check your internet connection and try again.",
-          timestamp: new Date(),
-        },
+        { id: Date.now().toString(), role: "assistant", content: errMsg, timestamp: new Date() },
       ]);
     } finally {
       setLoading(false);
@@ -179,7 +195,7 @@ export default function AICoachPage() {
     }]);
   };
 
-  if (!user) return null;
+  if (!hydrated || !user) return null;
 
   return (
     <div className="flex h-screen bg-background">
