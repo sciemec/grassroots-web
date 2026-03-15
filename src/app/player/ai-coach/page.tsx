@@ -119,26 +119,21 @@ export default function AICoachPage() {
    * handles each message independently (backend limitation — no history param).
    */
   const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
-    const isDevBypass = user?.token === "dev-token";
-
-    if (!isDevBypass) {
-      try {
-        // Correct backend endpoint: POST /ask with { question, role, language }
-        const res = await api.post("/ask", {
-          question: message,
-          role: user?.role ?? "player",
-          language: "english",
-        });
-        // Backend returns { answer: string }
-        return res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
-      } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status !== 401) throw err; // surface real errors (network, 500, etc.)
-        // 401 → fall through to the Next.js proxy below
-      }
+    try {
+      // Primary: POST /ask via Laravel backend
+      const res = await api.post("/ask", {
+        question: message,
+        role: user?.role ?? "player",
+        language: "english",
+      });
+      return res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== 401) throw err; // surface real errors (network, 500, etc.)
+      // 401 → fall through to the Next.js proxy below
     }
 
-    // Next.js server route → DeepSeek API directly (supports conversation history)
+    // Fallback: Next.js server route → Anthropic API (supports conversation history)
     const res = await fetch("/api/ai-coach", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -155,15 +150,15 @@ export default function AICoachPage() {
   const sendWithMatchFeedback = async (matchStats: string) => {
     const ageGroup = user?.age_group ?? "senior";
     const system = ageGroupMatchFeedbackPrompt({ ageGroup, matchStats });
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: `Analyse my recent match:\n${matchStats}`, timestamp: new Date() };
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: `Analyse my recent match:\n${matchStats}`, timestamp: new Date() };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
     try {
       const reply = await callAI(userMsg.content, system, []);
-      setMessages((prev) => [...prev, { id: Date.now().toString() + "r", role: "assistant", content: reply || "Analysis complete.", timestamp: new Date() }]);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: reply || "Analysis complete.", timestamp: new Date() }]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "I couldn't analyse the match right now. Please try again.";
-      setMessages((prev) => [...prev, { id: Date.now().toString() + "e", role: "assistant", content: msg, timestamp: new Date() }]);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID() + "e", role: "assistant", content: msg, timestamp: new Date() }]);
     } finally {
       setLoading(false);
     }
@@ -179,7 +174,7 @@ export default function AICoachPage() {
     setInput("");
 
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: "user",
       content,
       timestamp: new Date(),
@@ -196,13 +191,13 @@ export default function AICoachPage() {
       const reply = await callAI(content, systemPrompt, history);
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "assistant", content: reply || "I couldn't process that. Please try again.", timestamp: new Date() },
+        { id: crypto.randomUUID(), role: "assistant", content: reply || "I couldn't process that. Please try again.", timestamp: new Date() },
       ]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Sorry, I'm having trouble connecting right now.";
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "assistant", content: msg, timestamp: new Date() },
+        { id: crypto.randomUUID(), role: "assistant", content: msg, timestamp: new Date() },
       ]);
     } finally {
       setLoading(false);

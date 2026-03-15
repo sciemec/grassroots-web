@@ -3,11 +3,11 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Upload, Film, Play, ChevronLeft, Loader2, CheckCircle2, AlertCircle, Sparkles, Download } from "lucide-react";
+import { Upload, Film, Play, ChevronLeft, Loader2, CheckCircle2, AlertCircle, Sparkles, Download, ImageIcon } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { SPORTS, SportKey } from "@/config/sports";
 import { videoAnalysisPrompt } from "@/config/prompts";
-import api from "@/lib/api";
+import { extractFrames } from "@/lib/extract-frames";
 
 const MATCH_TYPES = [
   { value: "league",   label: "League Match" },
@@ -21,6 +21,7 @@ interface AnalysisResult {
   sport: string;
   matchType: string;
   teamName: string;
+  frameCount: number;
   generatedAt: string;
 }
 
@@ -43,10 +44,12 @@ export default function VideoAnalysisPage() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   // Processing state
-  const [stage,    setStage]    = useState<"idle" | "processing" | "done" | "error">("idle");
-  const [progress, setProgress] = useState(0);
-  const [result,   setResult]   = useState<AnalysisResult | null>(null);
-  const [error,    setError]    = useState("");
+  type Stage = "idle" | "extracting" | "analysing" | "done" | "error";
+  const [stage,      setStage]      = useState<Stage>("idle");
+  const [progress,   setProgress]   = useState(0);
+  const [statusMsg,  setStatusMsg]  = useState("");
+  const [result,     setResult]     = useState<AnalysisResult | null>(null);
+  const [error,      setError]      = useState("");
 
   if (!user) {
     router.push("/login?next=/video-analysis");
@@ -60,6 +63,7 @@ export default function VideoAnalysisPage() {
     setVideoUrl(URL.createObjectURL(f));
     setResult(null);
     setStage("idle");
+    setError("");
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -70,6 +74,7 @@ export default function VideoAnalysisPage() {
     setVideoUrl(URL.createObjectURL(f));
     setResult(null);
     setStage("idle");
+    setError("");
   };
 
   const formatSize = (bytes: number) => {
@@ -83,66 +88,92 @@ export default function VideoAnalysisPage() {
       return;
     }
     setError("");
-    setStage("processing");
-    setProgress(0);
+    setResult(null);
 
-    // Simulate frame extraction progress
-    const progressSteps = [
-      { pct: 15, label: "Extracting key frames…" },
-      { pct: 35, label: "Processing video data…" },
-      { pct: 60, label: "Running AI analysis…" },
-      { pct: 85, label: "Generating insights…" },
-    ];
+    const systemPrompt = videoAnalysisPrompt({
+      sport,
+      analysisType: matchType === "training" ? "training" : "match",
+      teamOrPlayer: teamName || undefined,
+    });
 
-    let stepIdx = 0;
-    const ticker = setInterval(() => {
-      if (stepIdx < progressSteps.length) {
-        setProgress(progressSteps[stepIdx].pct);
-        stepIdx++;
+    const scoreStr = scoreUs && scoreThem ? `${scoreUs}–${scoreThem}` : "";
+    const contextText = [
+      `Sport: ${sport}`,
+      `Match type: ${matchType}`,
+      teamName    ? `Team: ${teamName}`         : "",
+      opposition  ? `Opposition: ${opposition}` : "",
+      scoreStr    ? `Score: ${scoreStr}`         : "",
+      observations ? `Coach observations:\n${observations}` : "",
+    ].filter(Boolean).join("\n");
+
+    // Step 1 — extract frames if a video was uploaded
+    let frames: string[] = [];
+    if (file) {
+      setStage("extracting");
+      setStatusMsg("Reading video frames…");
+      setProgress(0);
+      try {
+        frames = await extractFrames(file, (pct) => {
+          setProgress(pct);
+          setStatusMsg(`Extracting frames… ${pct}%`);
+        });
+        setStatusMsg(`Extracted ${frames.length} frames`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Frame extraction failed.";
+        setError(msg + " You can still analyse using the observations field below.");
+        // Continue without frames — text-only analysis
+        frames = [];
       }
-    }, 800);
+    }
+
+    // Step 2 — send to Claude vision API
+    setStage("analysing");
+    setProgress(0);
+    setStatusMsg(frames.length > 0
+      ? `Sending ${frames.length} frames to Claude…`
+      : "Running AI analysis…"
+    );
+
+    // Animate progress bar while waiting for Claude
+    let tick = 0;
+    const ticker = setInterval(() => {
+      tick = Math.min(tick + 3, 90);
+      setProgress(tick);
+    }, 400);
 
     try {
-      const scoreStr = scoreUs && scoreThem ? `${scoreUs}–${scoreThem}` : "";
-      const contextText = [
-        teamName    ? `Team: ${teamName}`            : "",
-        opposition  ? `Opposition: ${opposition}`    : "",
-        scoreStr    ? `Score: ${scoreStr}`            : "",
-        matchType   ? `Match type: ${matchType}`      : "",
-        observations ? `Coach observations: ${observations}` : "",
-      ].filter(Boolean).join("\n");
-
-      const systemPrompt = videoAnalysisPrompt({
-        sport,
-        analysisType: matchType === "training" ? "training" : "match",
-        teamOrPlayer: teamName || undefined,
-      });
-
-      const { data } = await api.post(
-        "/ai-coach/query",
-        {
-          message: `Analyse this ${matchType} for ${sport}.\n\n${contextText}\n\nProvide a detailed tactical and technical analysis with specific actionable recommendations.`,
+      const res = await fetch("/api/video-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          frames,
+          context: contextText,
           system_prompt: systemPrompt,
-          history: [],
-        },
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
+        }),
+      });
 
       clearInterval(ticker);
       setProgress(100);
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Analysis failed (${res.status})`);
+      }
+
+      const data = await res.json();
       setResult({
-        text:        data.reply ?? data.response ?? data.message ?? "Analysis complete.",
+        text:       data.analysis ?? "Analysis complete.",
         sport,
         matchType,
-        teamName:    teamName || "Your Team",
+        teamName:   teamName || "Your Team",
+        frameCount: frames.length,
         generatedAt: new Date().toLocaleString("en-ZW"),
       });
       setStage("done");
     } catch (err: unknown) {
       clearInterval(ticker);
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? "Analysis failed. Please check your connection and try again.");
+      const msg = err instanceof Error ? err.message : "Analysis failed. Please try again.";
+      setError(msg);
       setStage("error");
     }
   };
@@ -150,14 +181,15 @@ export default function VideoAnalysisPage() {
   const handleDownload = () => {
     if (!result) return;
     const text = [
-      `MATCH ANALYSIS REPORT`,
+      "MATCH ANALYSIS REPORT",
       `Generated: ${result.generatedAt}`,
-      `Sport: ${result.sport} | Match Type: ${result.matchType}`,
+      `Sport: ${result.sport} | Match type: ${result.matchType}`,
       `Team: ${result.teamName}`,
-      ``,
+      result.frameCount > 0 ? `Video frames analysed: ${result.frameCount}` : "Analysis based on coach observations",
+      "",
       result.text,
-      ``,
-      `— Grassroots Sport AI Analysis Studio`,
+      "",
+      "— Grassroots Sport AI Analysis Studio",
     ].join("\n");
     const blob = new Blob([text], { type: "text/plain" });
     const url  = URL.createObjectURL(blob);
@@ -167,6 +199,8 @@ export default function VideoAnalysisPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const isProcessing = stage === "extracting" || stage === "analysing";
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -185,7 +219,7 @@ export default function VideoAnalysisPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">AI Video Analysis Studio</h1>
-              <p className="text-sm text-muted-foreground">Upload match footage and get AI-powered tactical insights</p>
+              <p className="text-sm text-muted-foreground">Upload match footage — Claude reads the frames and returns tactical insights</p>
             </div>
           </div>
         </div>
@@ -214,24 +248,27 @@ export default function VideoAnalysisPage() {
 
             {/* Video upload */}
             <div className="rounded-xl border bg-card p-5">
-              <h2 className="mb-3 text-sm font-semibold">Match Video <span className="text-muted-foreground font-normal">(optional)</span></h2>
+              <h2 className="mb-3 text-sm font-semibold">
+                Match Video <span className="text-muted-foreground font-normal">(optional — or describe below)</span>
+              </h2>
               <div
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
-                onClick={() => fileRef.current?.click()}
-                className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-8 text-center transition-colors hover:border-blue-400 hover:bg-blue-500/5"
+                onClick={() => !isProcessing && fileRef.current?.click()}
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors ${isProcessing ? "cursor-not-allowed opacity-50" : "border-border hover:border-blue-400 hover:bg-blue-500/5"}`}
               >
                 {file ? (
                   <>
                     <Play className="mb-2 h-8 w-8 text-blue-500" />
                     <p className="text-sm font-medium text-foreground">{file.name}</p>
                     <p className="text-xs text-muted-foreground mt-1">{formatSize(file.size)}</p>
+                    <p className="text-xs text-blue-500 mt-1">Click to change</p>
                   </>
                 ) : (
                   <>
                     <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
                     <p className="text-sm font-medium">Drop video here or click to browse</p>
-                    <p className="text-xs text-muted-foreground mt-1">MP4, MOV, AVI — up to 2 GB</p>
+                    <p className="text-xs text-muted-foreground mt-1">MP4, MOV, AVI, WebM — any size</p>
                   </>
                 )}
               </div>
@@ -286,19 +323,13 @@ export default function VideoAnalysisPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={scoreUs}
+                    type="number" min="0" placeholder="0" value={scoreUs}
                     onChange={(e) => setScoreUs(e.target.value)}
                     className="w-16 rounded-lg border border-border bg-background px-3 py-2 text-sm text-center outline-none focus:border-blue-400"
                   />
                   <span className="text-muted-foreground font-semibold">–</span>
                   <input
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={scoreThem}
+                    type="number" min="0" placeholder="0" value={scoreThem}
                     onChange={(e) => setScoreThem(e.target.value)}
                     className="w-16 rounded-lg border border-border bg-background px-3 py-2 text-sm text-center outline-none focus:border-blue-400"
                   />
@@ -310,7 +341,7 @@ export default function VideoAnalysisPage() {
                   Key Observations <span className="opacity-60">(what you noticed)</span>
                 </label>
                 <textarea
-                  placeholder={`e.g. We struggled to hold our defensive shape in the second half. Their #10 was dangerous in transition. Our striker missed 3 one-on-ones…`}
+                  placeholder="e.g. We struggled to hold our defensive shape in the second half. Their #10 was dangerous in transition. Our striker missed 3 one-on-ones…"
                   value={observations}
                   onChange={(e) => setObservations(e.target.value)}
                   rows={4}
@@ -328,12 +359,12 @@ export default function VideoAnalysisPage() {
 
             <button
               onClick={handleAnalyse}
-              disabled={stage === "processing"}
+              disabled={isProcessing}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
             >
-              {stage === "processing"
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Analysing…</>
-                : <><Sparkles className="h-4 w-4" /> Analyse Match</>
+              {isProcessing
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> {stage === "extracting" ? "Extracting frames…" : "Analysing with Claude…"}</>
+                : <><Sparkles className="h-4 w-4" /> Analyse with Claude</>
               }
             </button>
           </div>
@@ -351,16 +382,14 @@ export default function VideoAnalysisPage() {
                 </div>
               )}
 
-              {stage === "processing" && (
+              {isProcessing && (
                 <div className="py-8 space-y-4">
                   <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 animate-spin text-blue-500 flex-shrink-0" />
-                    <span className="text-sm">
-                      {progress < 35 ? "Extracting key frames…"
-                        : progress < 60 ? "Processing video data…"
-                        : progress < 85 ? "Running AI analysis…"
-                        : "Generating insights…"}
-                    </span>
+                    {stage === "extracting"
+                      ? <ImageIcon className="h-5 w-5 text-blue-500 flex-shrink-0 animate-pulse" />
+                      : <Loader2 className="h-5 w-5 animate-spin text-blue-500 flex-shrink-0" />
+                    }
+                    <span className="text-sm">{statusMsg}</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                     <div
@@ -368,7 +397,12 @@ export default function VideoAnalysisPage() {
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground text-center">{progress}% complete</p>
+                  <p className="text-xs text-muted-foreground text-center">{progress}%</p>
+                  {stage === "analysing" && (
+                    <p className="text-xs text-muted-foreground text-center opacity-70">
+                      Claude is reading your match frames…
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -386,13 +420,18 @@ export default function VideoAnalysisPage() {
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <span className="text-xs text-muted-foreground">{result.generatedAt}</span>
                   </div>
-                  <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground flex gap-3">
+                  <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1">
                     <span className="capitalize font-medium text-foreground">{result.sport}</span>
                     <span>·</span>
                     <span className="capitalize">{result.matchType}</span>
                     {result.teamName !== "Your Team" && (
                       <><span>·</span><span>{result.teamName}</span></>
                     )}
+                    <span>·</span>
+                    <span className="flex items-center gap-1">
+                      <ImageIcon className="h-3 w-3" />
+                      {result.frameCount > 0 ? `${result.frameCount} frames` : "text analysis"}
+                    </span>
                   </div>
                   <div className="text-sm leading-relaxed whitespace-pre-wrap max-h-[480px] overflow-y-auto">
                     {result.text}

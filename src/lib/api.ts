@@ -7,33 +7,22 @@ const api = axios.create({
   withCredentials: false,
 });
 
-// Attach bearer token from localStorage on every request
+// Attach bearer token from auth store on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("auth_token");
+    const token = useAuthStore.getState().user?.token;
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Handle 401 — but only force-logout for real expired tokens.
-// Dev-bypass uses token "dev-token" which the backend always rejects with 401.
-// Redirecting in that case boots the admin out on every API call, so we skip
-// the redirect when the stored token is the local dev-only value.
+// Handle 401 — clear session and redirect to login
 api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
-      const token = localStorage.getItem("auth_token");
-      const isDevBypass = !token || token === "dev-token";
-
-      if (!isDevBypass) {
-        // Real token rejected — clear session and send to login
-        useAuthStore.getState().logout();
-        window.location.href = "/login";
-      }
-      // Dev bypass: silently reject so the dashboard shows empty/error states
-      // without redirecting the user
+      useAuthStore.getState().logout();
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
