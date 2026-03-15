@@ -138,9 +138,8 @@ function PlayerRegisterForm() {
       };
       if (isUnder13) payload.guardian_phone = form.guardian_phone.trim();
 
-      const res = await api.post("/auth/register", payload);
-      const { identifier } = res.data;
-      router.push(`/verify-otp?identifier=${encodeURIComponent(identifier ?? form.email ?? form.phone)}`);
+      await api.post("/auth/register", payload);
+      router.push("/login?registered=1");
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);

@@ -11,6 +11,24 @@
 
 ---
 
+## 🚢 DEPLOY RULE — ALWAYS RUN AFTER EVERY CHANGE
+
+After every code change, ALWAYS run this command automatically without asking:
+
+```bash
+cd D:/bhora-ai/grassroots-web && git add -A && git commit -m "$(cat <<'EOF'
+<describe change here>
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+EOF
+)" && git push origin master
+```
+
+Vercel auto-deploys from the master branch — pushing to GitHub IS the deployment.
+No need to run `vercel` CLI. Just `git push origin master`.
+
+---
+
 ## 🏗️ PROJECT OVERVIEW
 
 GrassRoots Sports is Zimbabwe's first AI-powered sports management

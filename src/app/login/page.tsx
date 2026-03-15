@@ -53,6 +53,8 @@ function LoginContent() {
   const login       = useAuthStore((s) => s.login);
   const updateUser  = useAuthStore((s) => s.updateUser);
 
+  const registered = params.get("registered") === "1";
+
   const [portal, setPortal]       = useState<PortalType>("player");
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
@@ -126,6 +128,12 @@ function LoginContent() {
             <h1 className="text-2xl font-bold text-white">{active.heading}</h1>
             <p className={`mt-1 text-sm ${active.accent}`}>{active.sub}</p>
           </div>
+
+          {registered && (
+            <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2.5 text-sm text-green-300">
+              Account created! Sign in to get started.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}

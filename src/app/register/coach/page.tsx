@@ -83,7 +83,7 @@ function CoachRegisterForm() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.post("/auth/register", {
+      await api.post("/auth/register", {
         role: "coach", first_name: form.first_name, surname: form.surname,
         email: form.email, phone: form.phone,
         password: form.password, password_confirmation: form.confirm_password,
@@ -91,8 +91,7 @@ function CoachRegisterForm() {
         coaching_level: form.coaching_level, sport: form.sport,
         experience_years: form.experience_years,
       });
-      const { identifier } = res.data;
-      router.push(`/verify-otp?identifier=${encodeURIComponent(identifier)}`);
+      router.push("/login?registered=1");
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);

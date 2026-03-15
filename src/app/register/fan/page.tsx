@@ -80,14 +80,13 @@ function FanRegisterForm() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.post("/auth/register", {
+      await api.post("/auth/register", {
         role: "fan", first_name: form.first_name, surname: form.surname,
         email: form.email,
         password: form.password, password_confirmation: form.confirm_password,
         province: form.province, favourite_sport: form.favourite_sport,
       });
-      const { identifier } = res.data;
-      router.push(`/verify-otp?identifier=${encodeURIComponent(identifier)}`);
+      router.push("/login?registered=1");
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);
