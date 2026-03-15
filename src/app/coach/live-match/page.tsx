@@ -180,8 +180,6 @@ export default function LiveMatchPage() {
   const [halftimeLoading, setHalftimeLoading] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const commentary = useCommentary({ setup, homeScore, awayScore });
-
   useEffect(() => {
     if (!user) router.push("/login");
   }, [user, router]);
@@ -209,6 +207,8 @@ export default function LiveMatchPage() {
   const awayScore = events.filter(
     (e) => e.type === "goal" && e.team === "away"
   ).length;
+
+  const commentary = useCommentary({ setup, homeScore, awayScore });
 
   const handleStart = () => {
     setPhase("live");
