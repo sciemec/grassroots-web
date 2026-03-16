@@ -22,8 +22,17 @@ import { EventLogger } from "./_components/event-logger";
 import { EventLog } from "./_components/event-log";
 import { LiveStatsSidebar } from "./_components/live-stats-sidebar";
 import { useCommentary } from "@/lib/use-commentary";
+import { SPORTS } from "@/config/sports";
 
-const FORMATIONS = ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "5-3-2"];
+/** Formations / systems per sport — omitted for individual sports */
+const SPORT_FORMATIONS: Record<string, string[]> = {
+  football:   ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "5-3-2"],
+  rugby:      ["Forward-heavy", "Wide game", "Kick-chase", "Pick-and-go"],
+  netball:    ["Standard", "Fast-break", "Zone Defence"],
+  basketball: ["Motion offence", "Triangle", "Zone defence", "Pick-and-roll"],
+  hockey:     ["4-3-3", "3-3-4", "5-3-2"],
+  volleyball: ["6-2 rotation", "5-1 rotation", "4-2 rotation"],
+};
 
 const DEFAULT_SETUP: MatchSetup = {
   homeTeam: "",
@@ -42,71 +51,99 @@ function SetupForm({
   onChange: (s: MatchSetup) => void;
   onStart: () => void;
 }) {
-  const valid = setup.homeTeam.trim() && setup.awayTeam.trim();
+  const valid = setup.homeTeam.trim() && setup.awayTeam.trim() && setup.sport;
+  const formations = SPORT_FORMATIONS[setup.sport] ?? [];
+
+  const handleSportChange = (sportKey: string) => {
+    const defaultFormation = SPORT_FORMATIONS[sportKey]?.[0] ?? "";
+    onChange({ ...setup, sport: sportKey, formation: defaultFormation });
+  };
+
+  const kickoffLabel: Record<string, string> = {
+    football: "Kick Off", rugby: "Kick Off", cricket: "Start Match",
+    athletics: "Start Race", swimming: "Start Race", tennis: "Start Match",
+    netball: "Centre Pass", basketball: "Tip Off", volleyball: "Serve", hockey: "Bully Off",
+  };
+
   return (
     <div className="mx-auto max-w-lg space-y-5 py-8">
       <div className="text-center">
         <h2 className="text-xl font-bold">Match Setup</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Enter team details before kicking off
+          Select sport and enter team details
         </p>
       </div>
 
       <div className="rounded-xl border bg-card p-5 space-y-4">
+        {/* Sport selector */}
+        <div>
+          <label className="mb-2 block text-sm font-medium">Sport</label>
+          <div className="grid grid-cols-5 gap-1.5">
+            {SPORTS.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => handleSportChange(s.key)}
+                className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-center transition-all ${
+                  setup.sport === s.key
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                }`}
+              >
+                <span className="text-xl">{s.emoji}</span>
+                <span className="text-[10px] font-medium leading-tight">{s.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Team names */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Home Team
-            </label>
+            <label className="mb-1.5 block text-sm font-medium">Home Team</label>
             <input
               type="text"
               value={setup.homeTeam}
-              onChange={(e) =>
-                onChange({ ...setup, homeTeam: e.target.value })
-              }
+              onChange={(e) => onChange({ ...setup, homeTeam: e.target.value })}
               placeholder="Your team"
               className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Away Team
-            </label>
+            <label className="mb-1.5 block text-sm font-medium">Away Team</label>
             <input
               type="text"
               value={setup.awayTeam}
-              onChange={(e) =>
-                onChange({ ...setup, awayTeam: e.target.value })
-              }
+              onChange={(e) => onChange({ ...setup, awayTeam: e.target.value })}
               placeholder="Opponent"
               className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium">Formation</label>
-          <select
-            value={setup.formation}
-            onChange={(e) =>
-              onChange({ ...setup, formation: e.target.value })
-            }
-            className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-          >
-            {FORMATIONS.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Formation — only for team sports that use tactical shapes */}
+        {formations.length > 0 && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Formation / System</label>
+            <select
+              value={setup.formation}
+              onChange={(e) => onChange({ ...setup, formation: e.target.value })}
+              className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+            >
+              {formations.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <button
           onClick={onStart}
           disabled={!valid}
           className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
-          <Play className="h-4 w-4" /> Kick Off
+          <Play className="h-4 w-4" />
+          {kickoffLabel[setup.sport] ?? "Start Match"}
         </button>
       </div>
     </div>
@@ -229,9 +266,10 @@ export default function LiveMatchPage() {
       .map((e) => `${e.minute}' ${e.type} (${e.team})`)
       .join(", ");
 
+    const formationLine = setup.formation ? ` Formation: ${setup.formation}.` : "";
     const message =
-      `Halftime analysis. Match: ${setup.homeTeam} vs ${setup.awayTeam}. ` +
-      `Score: ${homeScore}-${awayScore}. Formation: ${setup.formation}. ` +
+      `Halftime analysis. Sport: ${setup.sport}. Match: ${setup.homeTeam} vs ${setup.awayTeam}. ` +
+      `Score: ${homeScore}-${awayScore}.${formationLine} ` +
       `Events so far: ${eventSummary || "none"}. ` +
       `Give tactical adjustments for the second half in 3 bullet points.`;
 

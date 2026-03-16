@@ -34,6 +34,20 @@ const INIT: Form = {
   terms: false,
 };
 
+// FIX: If backend expects sport slugs, uncomment this mapping and use in submit.
+// const sportSlugMap: Record<string, string> = {
+//   Football: "football",
+//   Rugby: "rugby",
+//   Netball: "netball",
+//   Basketball: "basketball",
+//   Cricket: "cricket",
+//   Athletics: "athletics",
+//   Swimming: "swimming",
+//   Tennis: "tennis",
+//   Volleyball: "volleyball",
+//   Hockey: "hockey",
+// };
+
 function CoachRegisterForm() {
   const router  = useRouter();
   const searchParams = useSearchParams();
@@ -55,18 +69,30 @@ function CoachRegisterForm() {
     if (step === 1) {
       if (!form.first_name.trim()) return "First name is required";
       if (!form.surname.trim())    return "Surname is required";
-      if (!form.phone.trim())      return "Phone number is required";
+      // FIX: phone validation
+      const phone = form.phone.trim();
+      if (!phone) return "Phone number is required";
+      const phoneRegex = /^(\+263|0)[0-9]{9}$/; // Zimbabwean mobile basic format
+      if (!phoneRegex.test(phone)) return "Enter a valid Zimbabwean phone number (e.g., 0771234567 or +263771234567)";
       if (!form.province)          return "Please select your province";
     }
     if (step === 2) {
-      if (!form.email.includes("@"))               return "Valid email address required";
-      if (form.password.length < 8)                return "Password must be at least 8 characters";
+      // FIX: proper email validation
+      const email = form.email.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) return "Valid email address required";
+      if (form.password.length < 8) return "Password must be at least 8 characters";
       if (form.password !== form.confirm_password) return "Passwords don't match";
     }
     if (step === 3) {
       if (!form.team_name.trim())    return "Team or club name is required";
       if (!form.coaching_level)      return "Please select your coaching level";
       if (!form.experience_years)    return "Years of experience is required";
+      // FIX: range validation for experience years
+      const years = parseInt(form.experience_years, 10);
+      if (isNaN(years) || years < 0 || years > 50) {
+        return "Years of experience must be between 0 and 50";
+      }
     }
     if (step === 4 && !form.terms)   return "You must accept the terms to continue";
     return "";
@@ -83,14 +109,23 @@ function CoachRegisterForm() {
     setLoading(true);
     setError("");
     try {
-      await api.post("/auth/register", {
-        role: "coach", first_name: form.first_name, surname: form.surname,
-        email: form.email, phone: form.phone,
-        password: form.password, password_confirmation: form.confirm_password,
-        province: form.province, team_name: form.team_name,
-        coaching_level: form.coaching_level, sport: form.sport,
-        experience_years: form.experience_years,
-      });
+      // FIX: convert experience_years to number and map sport if needed
+      const payload = {
+        role: "coach",
+        first_name: form.first_name.trim(),
+        surname: form.surname.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        password: form.password,
+        password_confirmation: form.confirm_password,
+        province: form.province,
+        team_name: form.team_name.trim(),
+        coaching_level: form.coaching_level,
+        sport: form.sport, // If backend expects slug, use sportSlugMap[form.sport] || form.sport
+        experience_years: parseInt(form.experience_years, 10),
+      };
+      await api.post("/auth/register", payload);
+      setLoading(false);
       router.push("/login?registered=1");
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
@@ -98,6 +133,7 @@ function CoachRegisterForm() {
     }
   };
 
+  // FIX: common class names (unchanged)
   const inputCls = "w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-blue-300/50 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400";
   const selectCls = "w-full rounded-lg border border-white/20 bg-blue-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-400";
 
@@ -151,23 +187,49 @@ function CoachRegisterForm() {
               <div><h2 className="text-xl font-bold text-white">Personal information</h2><p className="text-sm text-blue-300">Your contact details</p></div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-blue-200">First name</label>
-                  <input type="text" placeholder="Takudzwa" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className={inputCls} />
+                  <label htmlFor="first_name" className="mb-1 block text-xs font-medium text-blue-200">First name</label>
+                  <input
+                    id="first_name"
+                    type="text"
+                    placeholder="Takudzwa"
+                    value={form.first_name}
+                    onChange={(e) => set("first_name", e.target.value)}
+                    className={inputCls}
+                  />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-blue-200">Surname</label>
-                  <input type="text" placeholder="Mhaka" value={form.surname} onChange={(e) => set("surname", e.target.value)} className={inputCls} />
+                  <label htmlFor="surname" className="mb-1 block text-xs font-medium text-blue-200">Surname</label>
+                  <input
+                    id="surname"
+                    type="text"
+                    placeholder="Mhaka"
+                    value={form.surname}
+                    onChange={(e) => set("surname", e.target.value)}
+                    className={inputCls}
+                  />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Phone number</label>
-                <input type="tel" placeholder="+263 77 123 4567" value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
+                <label htmlFor="phone" className="mb-1 block text-xs font-medium text-blue-200">Phone number</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  placeholder="+263 77 123 4567"
+                  value={form.phone}
+                  onChange={(e) => set("phone", e.target.value)}
+                  className={inputCls}
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Province</label>
-                <select value={form.province} onChange={(e) => set("province", e.target.value)} className={selectCls}>
+                <label htmlFor="province" className="mb-1 block text-xs font-medium text-blue-200">Province</label>
+                <select
+                  id="province"
+                  value={form.province}
+                  onChange={(e) => set("province", e.target.value)}
+                  className={selectCls}
+                >
                   <option value="">Select your province…</option>
-                  {PROVINCES.map((p) => <option key={p}>{p}</option>)}
+                  {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)} {/* FIX: added value={p} */}
                 </select>
               </div>
             </div>
@@ -178,23 +240,43 @@ function CoachRegisterForm() {
             <div className="space-y-4">
               <div><h2 className="text-xl font-bold text-white">Account credentials</h2><p className="text-sm text-blue-300">Used to sign in to your coach hub</p></div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Work email address</label>
-                <input type="email" placeholder="coach@club.co.zw" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} />
+                <label htmlFor="email" className="mb-1 block text-xs font-medium text-blue-200">Work email address</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="coach@club.co.zw"
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  className={inputCls}
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Password (min 8 characters)</label>
+                <label htmlFor="password" className="mb-1 block text-xs font-medium text-blue-200">Password (min 8 characters)</label>
                 <div className="relative">
-                  <input type={showPw ? "text" : "password"} placeholder="••••••••" value={form.password} onChange={(e) => set("password", e.target.value)} className={`${inputCls} pr-10`} />
+                  <input
+                    id="password"
+                    type={showPw ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={(e) => set("password", e.target.value)}
+                    className={`${inputCls} pr-10`}
+                  />
                   <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400/70 hover:text-blue-300 transition-colors">
                     {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Confirm password</label>
+                <label htmlFor="confirm_password" className="mb-1 block text-xs font-medium text-blue-200">Confirm password</label>
                 <div className="relative">
-                  <input type={showCfm ? "text" : "password"} placeholder="••••••••" value={form.confirm_password} onChange={(e) => set("confirm_password", e.target.value)}
-                    className={`${inputCls} pr-10 ${form.confirm_password && form.password !== form.confirm_password ? "border-red-400" : ""}`} />
+                  <input
+                    id="confirm_password"
+                    type={showCfm ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={form.confirm_password}
+                    onChange={(e) => set("confirm_password", e.target.value)}
+                    className={`${inputCls} pr-10 ${form.confirm_password && form.password !== form.confirm_password ? "border-red-400" : ""}`}
+                  />
                   <button type="button" onClick={() => setShowCfm(!showCfm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400/70 hover:text-blue-300 transition-colors">
                     {showCfm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -211,25 +293,51 @@ function CoachRegisterForm() {
             <div className="space-y-4">
               <div><h2 className="text-xl font-bold text-white">Professional details</h2><p className="text-sm text-blue-300">Tell us about your coaching background</p></div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Team / Club name</label>
-                <input type="text" placeholder="FC Harare Youth, Dynamos FC Academy…" value={form.team_name} onChange={(e) => set("team_name", e.target.value)} className={inputCls} />
+                <label htmlFor="team_name" className="mb-1 block text-xs font-medium text-blue-200">Team / Club name</label>
+                <input
+                  id="team_name"
+                  type="text"
+                  placeholder="FC Harare Youth, Dynamos FC Academy…"
+                  value={form.team_name}
+                  onChange={(e) => set("team_name", e.target.value)}
+                  className={inputCls}
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Sport coached</label>
-                <select value={form.sport} onChange={(e) => set("sport", e.target.value)} className={selectCls}>
-                  {SPORTS.map((s) => <option key={s}>{s}</option>)}
+                <label htmlFor="sport_select" className="mb-1 block text-xs font-medium text-blue-200">Sport coached</label>
+                <select
+                  id="sport_select"
+                  value={form.sport}
+                  onChange={(e) => set("sport", e.target.value)}
+                  className={selectCls}
+                >
+                  {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)} {/* FIX: added value={s} */}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Coaching level / qualification</label>
-                <select value={form.coaching_level} onChange={(e) => set("coaching_level", e.target.value)} className={selectCls}>
+                <label htmlFor="coaching_level" className="mb-1 block text-xs font-medium text-blue-200">Coaching level / qualification</label>
+                <select
+                  id="coaching_level"
+                  value={form.coaching_level}
+                  onChange={(e) => set("coaching_level", e.target.value)}
+                  className={selectCls}
+                >
                   <option value="">Select your level…</option>
-                  {COACHING_LEVELS.map((l) => <option key={l}>{l}</option>)}
+                  {COACHING_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)} {/* FIX: added value={l} */}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-blue-200">Years of coaching experience</label>
-                <input type="number" placeholder="e.g. 5" min="0" max="50" value={form.experience_years} onChange={(e) => set("experience_years", e.target.value)} className={inputCls} />
+                <label htmlFor="experience_years" className="mb-1 block text-xs font-medium text-blue-200">Years of coaching experience</label>
+                <input
+                  id="experience_years"
+                  type="number"
+                  placeholder="e.g. 5"
+                  min="0"
+                  max="50"
+                  value={form.experience_years}
+                  onChange={(e) => set("experience_years", e.target.value)}
+                  className={inputCls}
+                />
               </div>
             </div>
           )}
@@ -239,7 +347,16 @@ function CoachRegisterForm() {
             <div className="space-y-5">
               <div><h2 className="text-xl font-bold text-white">Review & confirm</h2><p className="text-sm text-blue-300">Check your details before submitting</p></div>
               <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-4">
-                {[["Name", `${form.first_name} ${form.surname}`],["Email", form.email],["Province", form.province],["Team/Club", form.team_name],["Sport", form.sport],["Coaching Level", form.coaching_level],["Experience", `${form.experience_years} years`]].map(([k, v]) => (
+                {[
+                  ["Name", `${form.first_name} ${form.surname}`],
+                  ["Email", form.email],
+                  ["Province", form.province],
+                  ["Team/Club", form.team_name],
+                  ["Sport", form.sport],
+                  ["Coaching Level", form.coaching_level],
+                  // FIX: only show experience if value exists
+                  ...(form.experience_years ? [["Experience", `${form.experience_years} years`]] : []),
+                ].map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
                     <span className="text-blue-400">{k}</span>
                     <span className="font-medium text-white">{v}</span>
@@ -247,7 +364,13 @@ function CoachRegisterForm() {
                 ))}
               </div>
               <label className="flex cursor-pointer items-start gap-3">
-                <input type="checkbox" checked={form.terms} onChange={(e) => set("terms", e.target.checked)} className="mt-0.5 h-4 w-4 accent-blue-500" />
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={form.terms}
+                  onChange={(e) => set("terms", e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-blue-500"
+                />
                 <span className="text-sm text-blue-200">
                   I agree to the <span className="text-blue-400 underline">Terms of Service</span> and <span className="text-blue-400 underline">Privacy Policy</span>
                 </span>
