@@ -10,7 +10,8 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "deploy": "git add -u && git add src public && git commit -m \"deploy: $(date '+%Y-%m-%d %H:%M')\" && git push"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
