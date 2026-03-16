@@ -1,27 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
 interface EndStreamBody {
-  live_input_id?: string;
+  room_name?: string;
 }
 
 export async function POST(req: NextRequest) {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const apiToken  = process.env.CLOUDFLARE_STREAM_API_TOKEN;
+  const apiKey = process.env.DAILY_API_KEY;
 
-  // No-op if Cloudflare is not configured
-  if (!accountId || !apiToken) return NextResponse.json({ ok: true });
+  // No-op if Daily is not configured
+  if (!apiKey) return NextResponse.json({ ok: true });
 
   const body = (await req.json().catch(() => ({}))) as EndStreamBody;
-  const { live_input_id } = body;
-  if (!live_input_id) return NextResponse.json({ ok: true });
+  const { room_name } = body;
+  if (!room_name) return NextResponse.json({ ok: true });
 
-  await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/live_inputs/${live_input_id}`,
-    {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${apiToken}` },
-    }
-  ).catch(() => {});
+  await fetch(`https://api.daily.co/v1/rooms/${room_name}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${apiKey}` },
+  }).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

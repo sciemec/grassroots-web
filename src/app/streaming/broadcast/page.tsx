@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * Broadcast Page — MediaRecorder local recording + Cloudflare WHIP live streaming.
+ * Broadcast Page — MediaRecorder local recording + Daily.co live streaming.
  *
- * When Cloudflare env vars are configured, pressing "Go Live" sends WebRTC via
- * WHIP to Cloudflare Stream (HLS URL shown for viewers).
+ * When DAILY_API_KEY is configured, pressing "Go Live" creates a Daily.co room
+ * and joins it as broadcaster. A shareable room URL is shown — viewers click it
+ * to watch instantly in their browser (no app or plugin needed).
  * MediaRecorder runs simultaneously so the host always gets a local .webm download.
- * If Cloudflare returns 503 (not configured), recording continues locally.
+ * If Daily returns 503 (not configured), recording continues locally.
  *
  * TensorFlow.js COCO-SSD player tracking runs on a canvas overlay at ~5 fps
  * and can be toggled independently of recording.
@@ -23,7 +24,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { SponsorshipOverlay, DEFAULT_SPONSORS } from "@/components/video/sponsorship-overlay";
 import { StreamInfoPanel } from "./stream-info-panel";
 import { usePlayerTracker } from "@/lib/use-player-tracker";
-import { useWhipStream } from "@/lib/use-whip-stream";
+import { useDailyStream } from "@/lib/use-daily-stream";
 
 type BroadcastState = "idle" | "requesting" | "ready" | "live" | "stopped" | "error";
 
@@ -63,8 +64,8 @@ export default function BroadcastPage() {
   const [resolution, setResolution] = useState("—");
   const [showOverlay, setShowOverlay] = useState(false);
   const [trackingEnabled, setTrackingEnabled] = useState(false);
-  const [whipNote, setWhipNote] = useState("");
-  const [hlsCopied, setHlsCopied] = useState(false);
+  const [dailyNote, setDailyNote] = useState("");
+  const [roomCopied, setRoomCopied] = useState(false);
 
   // TF.js player tracking hook
   const { playerCount, loading: trackerLoading, error: trackerError } = usePlayerTracker(
@@ -73,8 +74,8 @@ export default function BroadcastPage() {
     trackingEnabled
   );
 
-  // Cloudflare WHIP streaming hook
-  const { whipState, whipError, hlsUrl, startStream, stopStream } = useWhipStream();
+  // Daily.co live streaming hook
+  const { dailyState, dailyError, roomUrl, startStream, stopStream } = useDailyStream();
 
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
 
@@ -131,11 +132,11 @@ export default function BroadcastPage() {
     timerRef.current = setInterval(() => setDuration((d) => d + 1), 1000);
     setBroadcastState("live");
 
-    // Attempt Cloudflare WHIP stream (non-blocking — recording continues if it fails)
+    // Attempt Daily.co stream (non-blocking — recording continues if it fails)
     try {
       await startStream(stream);
     } catch {
-      // startStream sets whipState to "error" internally — show a note but keep recording
+      // startStream sets dailyState to "error" internally — show a note but keep recording
     }
   }, [startStream]);
 
@@ -156,23 +157,23 @@ export default function BroadcastPage() {
       };
     }
 
-    // Stop Cloudflare WHIP stream if it was active
-    if (whipState === "live" || whipState === "connecting") {
+    // Stop Daily.co stream if it was active
+    if (dailyState === "live" || dailyState === "connecting") {
       await stopStream();
     }
 
     stopAllTracks();
     setBroadcastState("stopped");
-    setWhipNote("");
-  }, [streamId, whipState, stopStream]);
+    setDailyNote("");
+  }, [streamId, dailyState, stopStream]);
 
-  /** Copies the HLS viewer URL to clipboard. */
-  const copyHlsUrl = async () => {
-    if (!hlsUrl) return;
+  /** Copies the Daily.co viewer room URL to clipboard. */
+  const copyRoomUrl = async () => {
+    if (!roomUrl) return;
     try {
-      await navigator.clipboard.writeText(hlsUrl);
-      setHlsCopied(true);
-      setTimeout(() => setHlsCopied(false), 2000);
+      await navigator.clipboard.writeText(roomUrl);
+      setRoomCopied(true);
+      setTimeout(() => setRoomCopied(false), 2000);
     } catch {
       // Clipboard write failed — silently ignore
     }
@@ -214,16 +215,16 @@ export default function BroadcastPage() {
                     <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />LIVE
                   </span>
                 )}
-                {whipState === "live" && (
+                {dailyState === "live" && (
                   <span className="flex items-center gap-1.5 rounded-full bg-orange-500 px-2.5 py-0.5 text-xs font-bold text-white">
                     <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />STREAMING LIVE
                   </span>
                 )}
               </h1>
               <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                Record locally + stream live to Cloudflare.
+                Record locally + stream live via Daily.co.
                 <span className="flex items-center gap-1 text-xs text-amber-600">
-                  <Info className="h-3 w-3" />Cloudflare Stream required for live viewers
+                  <Info className="h-3 w-3" />Viewers click your room link — no app needed
                 </span>
               </p>
             </div>
@@ -307,43 +308,43 @@ export default function BroadcastPage() {
               )}
             </div>
 
-            {/* WHIP connecting state */}
-            {whipState === "connecting" && (
+            {/* Daily connecting state */}
+            {dailyState === "connecting" && (
               <div className="flex items-center gap-2 rounded-xl border border-orange-400/30 bg-orange-400/5 px-4 py-3 text-sm text-orange-600">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Connecting to Cloudflare Stream…
+                Connecting to Daily.co…
               </div>
             )}
 
-            {/* HLS URL share panel — shown when WHIP is live */}
-            {whipState === "live" && hlsUrl && (
+            {/* Room URL share panel — shown when Daily is live */}
+            {dailyState === "live" && roomUrl && (
               <div className="rounded-xl border border-orange-400/30 bg-orange-400/5 px-5 py-4 space-y-2">
                 <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
-                  Live HLS stream — share this URL with viewers
+                  You&apos;re live — share this link with viewers
                 </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 truncate rounded-lg bg-background border px-3 py-2 text-xs font-mono">
-                    {hlsUrl}
+                    {roomUrl}
                   </code>
                   <button
-                    onClick={copyHlsUrl}
+                    onClick={copyRoomUrl}
                     className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium hover:bg-muted transition-colors shrink-0"
                   >
-                    {hlsCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-                    {hlsCopied ? "Copied!" : "Copy"}
+                    {roomCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    {roomCopied ? "Copied!" : "Copy"}
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Viewers can paste this URL into any HLS player. Stream may take 10–20s to become active.
+                  Viewers click this link to watch instantly — no app or plugin needed.
                 </p>
               </div>
             )}
 
-            {/* WHIP error note (non-blocking — recording still works) */}
-            {(whipState === "error" || whipNote) && (
+            {/* Daily error note (non-blocking — recording still works) */}
+            {(dailyState === "error" || dailyNote) && (
               <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 px-4 py-3 text-xs text-yellow-700">
-                <strong>Live streaming unavailable:</strong> {whipError || whipNote || "Cloudflare Stream not configured."} Local recording is still active.
+                <strong>Live streaming unavailable:</strong> {dailyError || dailyNote || "DAILY_API_KEY not configured."} Local recording is still active.
               </div>
             )}
 
