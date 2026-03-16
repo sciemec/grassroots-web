@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
+import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import { UserPlus, UserCheck, Search, MapPin, Star } from "lucide-react";
 
@@ -35,11 +37,29 @@ interface Player {
 }
 
 export default function FanDiscoverPage() {
+  const router = useRouter();
+  const { user } = useAuthStore();
   const qc = useQueryClient();
+  const [hydrated, setHydrated] = useState(false);
   const [search, setSearch]     = useState("");
   const [province, setProvince] = useState("All Provinces");
   const [sport, setSport]       = useState("all");
   const [ageGroup, setAgeGroup] = useState("All Ages");
+
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!user) { router.push("/login"); return; }
+    if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
+  }, [hydrated, user, router]);
 
   const { data: players = [], isLoading } = useQuery<Player[]>({
     queryKey: ["discover-players", province, sport, ageGroup],
@@ -53,6 +73,7 @@ export default function FanDiscoverPage() {
       });
       return res.data?.data ?? res.data ?? [];
     },
+    enabled: hydrated && !!user,
   });
 
   const follow = useMutation({
@@ -64,17 +85,19 @@ export default function FanDiscoverPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["discover-players"] }),
   });
 
+  if (!hydrated || !user) return null;
+
   const filtered = players.filter((p) =>
     !search || p.initials?.toLowerCase().includes(search.toLowerCase()) ||
     p.position?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="gs-watermark flex-1 overflow-auto p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Discover Athletes</h1>
+          <h1 className="text-2xl font-bold">Discover Talent — Tsvaga Nyeredzi</h1>
           <p className="text-sm text-muted-foreground">
             Browse Zimbabwe&apos;s emerging talent — profiles shown as initials to protect player privacy
           </p>

@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
+import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import { UserMinus, MapPin, Star, Users, Trophy } from "lucide-react";
 
@@ -19,7 +22,25 @@ interface FollowedPlayer {
 }
 
 export default function FanFollowingPage() {
+  const router = useRouter();
+  const { user } = useAuthStore();
   const qc = useQueryClient();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!user) { router.push("/login"); return; }
+    if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
+  }, [hydrated, user, router]);
 
   const { data: following = [], isLoading } = useQuery<FollowedPlayer[]>({
     queryKey: ["fan-following"],
@@ -27,6 +48,7 @@ export default function FanFollowingPage() {
       const res = await api.get("/fan/following");
       return res.data?.data ?? res.data ?? [];
     },
+    enabled: hydrated && !!user,
   });
 
   const unfollow = useMutation({
@@ -34,13 +56,15 @@ export default function FanFollowingPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fan-following"] }),
   });
 
+  if (!hydrated || !user) return null;
+
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="gs-watermark flex-1 overflow-auto p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Following</h1>
+            <h1 className="text-2xl font-bold">Following — Vatambi Vaunotevera</h1>
             <p className="text-sm text-muted-foreground">
               Athletes you&apos;re tracking — {following.length} total
             </p>

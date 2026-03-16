@@ -1,412 +1,310 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Heart, AlertTriangle, CheckCircle2, Loader2,
-  Activity, ChevronRight, ShieldAlert, Info,
-} from "lucide-react";
+import { ArrowLeft, Plus, X, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface InjuryRiskResult {
-  player_id?: string;
-  risk_score: number;           // 0.0 – 1.0
-  risk_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  risk_factors: string[];
-  recommendation: string;
-}
-
-interface InjuryFormData {
+interface InjuryRecord {
+  id: string;
   player_id: string;
-  sessions_per_week: number;
-  intensity: number;            // 1–10
-  rest_days: number;
-  match_minutes_this_week: number;
-  previous_injuries: string;    // comma-separated body parts, or ""
-  player_age: number;
-  position: string;
+  initials: string;
+  injury_type: string;
+  body_part: string;
+  severity: "minor" | "moderate" | "serious";
+  status: "injured" | "recovering" | "fit";
+  injured_at: string;
+  expected_return: string | null;
+  notes: string | null;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+interface SquadMember {
+  id: string;
+  player?: { id?: string; name?: string };
+  shirt_no?: number;
+  position?: string;
+  status?: string;
+}
 
-const RISK_CONFIG = {
-  LOW:      { color: "text-green-600",  bg: "bg-green-500/10",  border: "border-green-500/30",  bar: "bg-green-500",  label: "Low Risk",      icon: CheckCircle2 },
-  MEDIUM:   { color: "text-yellow-600", bg: "bg-yellow-500/10", border: "border-yellow-500/30", bar: "bg-yellow-500", label: "Medium Risk",    icon: AlertTriangle },
-  HIGH:     { color: "text-orange-600", bg: "bg-orange-500/10", border: "border-orange-500/30", bar: "bg-orange-500", label: "High Risk",      icon: ShieldAlert },
-  CRITICAL: { color: "text-red-600",    bg: "bg-red-500/10",    border: "border-red-500/30",    bar: "bg-red-500",    label: "Critical Risk",  icon: ShieldAlert },
+const SEVERITY_STYLES: Record<string, string> = {
+  minor:    "bg-green-500/15 text-green-700",
+  moderate: "bg-amber-500/15 text-amber-700",
+  serious:  "bg-red-500/15 text-red-700",
 };
 
-const POSITIONS = [
-  "GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST",
-  "Prop", "Flanker", "Scrum-half", "Fly-half", "Wing",
-  "Sprinter", "Distance Runner", "Jumper", "Thrower",
-  "Other",
-];
+const STATUS_STYLES: Record<string, string> = {
+  injured:   "bg-red-500/15 text-red-700",
+  recovering:"bg-amber-500/15 text-amber-700",
+  fit:       "bg-green-500/15 text-green-700",
+};
 
-const INJURY_SITES = [
-  "Hamstring", "Knee", "Ankle", "Groin", "Shoulder",
-  "Calf", "Hip", "Back", "Quadricep", "Shin splints",
-];
+const SEVERITY_ICON: Record<string, React.ElementType> = {
+  minor:    CheckCircle2,
+  moderate: AlertTriangle,
+  serious:  ShieldAlert,
+};
 
-// ─── Slider input ─────────────────────────────────────────────────────────────
-
-function SliderField({
-  label, hint, value, min, max, step = 1, onChange, displayValue,
-}: {
-  label: string;
-  hint: string;
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  onChange: (v: number) => void;
-  displayValue?: string;
-}) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <label className="text-sm font-medium">{label}</label>
-        <span className="text-sm font-bold text-primary">{displayValue ?? value}</span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-primary"
-      />
-      <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
-}
-
-// ─── Risk gauge ───────────────────────────────────────────────────────────────
-
-function RiskGauge({ score, level }: { score: number; level: InjuryRiskResult["risk_level"] }) {
-  const pct = Math.round(score * 100);
-  const cfg = RISK_CONFIG[level];
-  const RiskIcon = cfg.icon;
-  const r = 40;
-  const circ = 2 * Math.PI * r;
-  const dash = (pct / 100) * circ;
-  const strokeColor = { LOW: "#22c55e", MEDIUM: "#eab308", HIGH: "#f97316", CRITICAL: "#ef4444" }[level];
-
-  return (
-    <div className="flex flex-col items-center">
-      <svg width="110" height="110" viewBox="0 0 110 110">
-        <circle cx="55" cy="55" r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
-        <circle
-          cx="55" cy="55" r={r} fill="none"
-          stroke={strokeColor} strokeWidth="10"
-          strokeDasharray={`${dash} ${circ}`}
-          strokeLinecap="round"
-          transform="rotate(-90 55 55)"
-          style={{ transition: "stroke-dasharray 0.8s ease" }}
-        />
-        <text x="55" y="50" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="bold" fill="currentColor">
-          {pct}%
-        </text>
-        <text x="55" y="65" textAnchor="middle" fontSize="9" fill="hsl(var(--muted-foreground))">
-          risk score
-        </text>
-      </svg>
-      <div className={`mt-1 flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${cfg.color} ${cfg.bg}`}>
-        <RiskIcon className="h-4 w-4" />
-        {cfg.label}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+const BODY_PARTS = ["Hamstring", "Knee", "Ankle", "Groin", "Shoulder", "Calf", "Hip", "Back", "Quadricep", "Shin", "Foot", "Other"];
+const INJURY_TYPES = ["Muscle strain", "Ligament sprain", "Fracture", "Bruise / contusion", "Tendinitis", "Dislocation", "Concussion", "Overuse", "Other"];
 
 export default function InjuryTrackerPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-
-  const [form, setForm] = useState<InjuryFormData>({
+  const qc = useQueryClient();
+  const [hydrated, setHydrated] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({
     player_id: "",
-    sessions_per_week: 4,
-    intensity: 6,
-    rest_days: 2,
-    match_minutes_this_week: 90,
-    previous_injuries: "",
-    player_age: 18,
-    position: "CM",
+    injury_type: "Muscle strain",
+    body_part: "Hamstring",
+    severity: "minor" as "minor" | "moderate" | "serious",
+    expected_return: "",
+    notes: "",
   });
 
-  const [selectedInjuries, setSelectedInjuries] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<InjuryRiskResult | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
+    }
+  }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
-    // Pre-fill player_id from logged-in player
-    if (user.role === "player") {
-      setForm((f) => ({ ...f, player_id: user.id }));
-    }
-  }, [user, router]);
+    if (user.role !== "coach" && user.role !== "admin") { router.push("/dashboard"); return; }
+  }, [hydrated, user, router]);
 
-  const setField = <K extends keyof InjuryFormData>(key: K, value: InjuryFormData[K]) =>
-    setForm((f) => ({ ...f, [key]: value }));
+  const { data: injuries = [], isLoading } = useQuery<InjuryRecord[]>({
+    queryKey: ["coach-injuries"],
+    queryFn: async () => {
+      const res = await api.get("/coach/injuries");
+      return res.data?.data ?? res.data ?? [];
+    },
+    enabled: hydrated && !!user,
+  });
 
-  const toggleInjury = (site: string) => {
-    setSelectedInjuries((prev) => {
-      const next = prev.includes(site) ? prev.filter((s) => s !== site) : [...prev, site];
-      setField("previous_injuries", next.join(", "));
-      return next;
-    });
-  };
+  const { data: squad = [] } = useQuery<SquadMember[]>({
+    queryKey: ["coach-squad"],
+    queryFn: async () => {
+      const res = await api.get("/coach/squad");
+      return res.data?.data ?? res.data ?? [];
+    },
+    enabled: hydrated && !!user,
+  });
 
-  const submit = async () => {
-    setLoading(true);
-    setErrorMsg("");
-    setResult(null);
-    try {
-      const payload = { ...form, previous_injuries: selectedInjuries };
-      const endpoint = form.player_id
-        ? `/players/${form.player_id}/injury-risk`
-        : "/injury-risk";
-      const res = await api.post(endpoint, payload);
-      setResult(res.data);
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErrorMsg(msg ?? "Could not calculate risk. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const markFit = useMutation({
+    mutationFn: (id: string) => api.put(`/coach/injuries/${id}`, { status: "fit" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-injuries"] }),
+  });
 
-  if (!user) return null;
+  const addInjury = useMutation({
+    mutationFn: () => api.post("/coach/injuries", {
+      ...form,
+      expected_return: form.expected_return || null,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["coach-injuries"] });
+      setShowForm(false);
+      setForm({ player_id: "", injury_type: "Muscle strain", body_part: "Hamstring", severity: "minor", expected_return: "", notes: "" });
+    },
+  });
 
-  const cfg = result ? RISK_CONFIG[result.risk_level] : null;
+  if (!hydrated || !user) return null;
+
+  const totalInjured   = injuries.filter((i) => i.status === "injured").length;
+  const totalRecovering = injuries.filter((i) => i.status === "recovering").length;
+  const totalFit       = injuries.filter((i) => i.status === "fit").length;
 
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="gs-watermark flex-1 overflow-auto p-6">
 
         {/* Header */}
-        <div className="border-b bg-card px-6 py-5">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10">
-              <Heart className="h-5 w-5 text-red-500" />
-            </div>
+            <Link href="/coach" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
             <div>
-              <h1 className="text-xl font-bold">Injury Risk Engine</h1>
-              <p className="text-sm text-muted-foreground">
-                AI-powered injury prevention — no physio needed
-              </p>
+              <h1 className="text-2xl font-bold">Injury Tracker — Kurwara kweVatambi</h1>
+              <p className="text-sm text-muted-foreground">Monitor squad health and recovery</p>
             </div>
           </div>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {showForm ? "Cancel" : "Add Injury"}
+          </button>
         </div>
 
-        <div className="mx-auto max-w-2xl space-y-6 p-6">
-
-          {/* Info banner */}
-          <div className="flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3">
-            <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
-            <p className="text-sm text-blue-700">
-              Enter the player&apos;s current training load and history. The AI calculates injury risk
-              using XGBoost — the same model used by professional clubs.
-            </p>
-          </div>
-
-          {/* ── Training Load ── */}
-          <div className="rounded-xl border bg-card p-5">
-            <div className="mb-5 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              <h2 className="font-semibold">Training Load This Week</h2>
+        {/* Summary row */}
+        <div className="mb-6 grid grid-cols-3 gap-4">
+          {[
+            { label: "Injured",    value: totalInjured,    color: "text-red-500",    icon: ShieldAlert },
+            { label: "Recovering", value: totalRecovering, color: "text-amber-500",  icon: AlertTriangle },
+            { label: "Fit / Cleared", value: totalFit,    color: "text-green-500",  icon: CheckCircle2 },
+          ].map(({ label, value, color, icon: Icon }) => (
+            <div key={label} className="rounded-xl border bg-card p-5 text-center">
+              <Icon className={`mx-auto mb-1 h-5 w-5 ${color}`} />
+              <p className="text-2xl font-bold">{value}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
             </div>
-            <div className="space-y-5">
-              <SliderField
-                label="Sessions per week"
-                hint="How many training sessions this week?"
-                value={form.sessions_per_week}
-                min={0} max={14}
-                onChange={(v) => setField("sessions_per_week", v)}
-              />
-              <SliderField
-                label="Training intensity"
-                hint="1 = light warmup · 10 = max effort pre-match"
-                value={form.intensity}
-                min={1} max={10}
-                onChange={(v) => setField("intensity", v)}
-                displayValue={`${form.intensity}/10`}
-              />
-              <SliderField
-                label="Rest days"
-                hint="Full rest days with no training or matches"
-                value={form.rest_days}
-                min={0} max={7}
-                onChange={(v) => setField("rest_days", v)}
-              />
-              <SliderField
-                label="Match minutes this week"
-                hint="Total competitive match minutes played"
-                value={form.match_minutes_this_week}
-                min={0} max={360} step={10}
-                onChange={(v) => setField("match_minutes_this_week", v)}
-                displayValue={`${form.match_minutes_this_week} min`}
-              />
-            </div>
-          </div>
+          ))}
+        </div>
 
-          {/* ── Player Info ── */}
-          <div className="rounded-xl border bg-card p-5">
-            <h2 className="mb-4 font-semibold">Player Information</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+        {/* Add injury form */}
+        {showForm && (
+          <div className="mb-6 rounded-xl border bg-card p-5">
+            <h2 className="mb-4 font-semibold">Log New Injury</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Age</label>
+                <label className="mb-1.5 block text-sm font-medium">Player</label>
+                <select
+                  value={form.player_id}
+                  onChange={(e) => setForm((f) => ({ ...f, player_id: e.target.value }))}
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">Select player…</option>
+                  {squad.map((m) => (
+                    <option key={m.id} value={m.player?.id ?? m.id}>
+                      {m.shirt_no ? `#${m.shirt_no} ` : ""}{m.player?.name ?? `Player ${m.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Injury Type</label>
+                <select
+                  value={form.injury_type}
+                  onChange={(e) => setForm((f) => ({ ...f, injury_type: e.target.value }))}
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {INJURY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Body Part</label>
+                <select
+                  value={form.body_part}
+                  onChange={(e) => setForm((f) => ({ ...f, body_part: e.target.value }))}
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {BODY_PARTS.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Severity</label>
+                <select
+                  value={form.severity}
+                  onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value as typeof form.severity }))}
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="minor">Minor</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="serious">Serious</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Expected Return <span className="font-normal text-muted-foreground">(optional)</span></label>
                 <input
-                  type="number"
-                  min={10} max={50}
-                  value={form.player_age}
-                  onChange={(e) => setField("player_age", Number(e.target.value))}
+                  type="date"
+                  value={form.expected_return}
+                  onChange={(e) => setForm((f) => ({ ...f, expected_return: e.target.value }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Position</label>
-                <select
-                  value={form.position}
-                  onChange={(e) => setField("position", e.target.value)}
+                <label className="mb-1.5 block text-sm font-medium">Notes <span className="font-normal text-muted-foreground">(optional)</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g. Grade 1 hamstring, avoid sprinting"
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                >
-                  {POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
+                />
               </div>
             </div>
-          </div>
-
-          {/* ── Injury History ── */}
-          <div className="rounded-xl border bg-card p-5">
-            <h2 className="mb-1.5 font-semibold">Previous Injury History</h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Select any body parts previously injured (increases risk score)
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {INJURY_SITES.map((site) => (
-                <button
-                  key={site}
-                  onClick={() => toggleInjury(site)}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                    selectedInjuries.includes(site)
-                      ? "bg-red-500/15 text-red-700 border border-red-500/30"
-                      : "border bg-card text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {site}
-                </button>
-              ))}
+            <div className="mt-4">
+              <button
+                onClick={() => addInjury.mutate()}
+                disabled={!form.player_id || addInjury.isPending}
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {addInjury.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
+                Log Injury
+              </button>
             </div>
-            {selectedInjuries.length > 0 && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Selected: {selectedInjuries.join(", ")}
-              </p>
-            )}
           </div>
+        )}
 
-          {/* Error */}
-          {errorMsg && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {errorMsg}
-            </div>
-          )}
-
-          {/* Submit */}
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors active:scale-[0.99]"
-          >
-            {loading ? <><Loader2 className="h-5 w-5 animate-spin" /> Calculating risk…</> : <><Heart className="h-5 w-5" /> Calculate Injury Risk</>}
-          </button>
-
-          {/* ── Results ── */}
-          {result && cfg && (
-            <div className={`rounded-xl border p-6 ${cfg.bg} ${cfg.border}`}>
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                <RiskGauge score={result.risk_score} level={result.risk_level} />
-
-                <div className="flex-1 text-center sm:text-left">
-                  <h2 className={`text-xl font-bold ${cfg.color}`}>{cfg.label}</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-foreground">
-                    {result.recommendation}
-                  </p>
-
-                  {result.risk_factors.length > 0 && (
-                    <div className="mt-4">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Risk factors detected
-                      </p>
-                      <ul className="space-y-1.5">
-                        {result.risk_factors.map((factor, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <AlertTriangle className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${cfg.color}`} />
-                            {factor}
-                          </li>
-                        ))}
-                      </ul>
+        {/* Injuries list */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+        ) : injuries.length === 0 ? (
+          <div className="rounded-xl border border-dashed p-12 text-center">
+            <Activity className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+            <p className="font-medium">No injury records</p>
+            <p className="mt-1 text-sm text-muted-foreground">All players are fit — log an injury when needed</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {injuries.map((record) => {
+              const SeverityIcon = SEVERITY_ICON[record.severity] ?? AlertTriangle;
+              const isActive = record.status !== "fit";
+              return (
+                <div key={record.id} className="flex items-center gap-4 rounded-xl border bg-card px-5 py-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold">
+                    {record.initials ?? "?"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-sm">{record.injury_type}</p>
+                      <span className="text-xs text-muted-foreground">— {record.body_part}</span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${SEVERITY_STYLES[record.severity]}`}>
+                        <SeverityIcon className="h-3 w-3" />
+                        {record.severity}
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[record.status]}`}>
+                        {record.status}
+                      </span>
                     </div>
+                    <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span>Injured: {new Date(record.injured_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      {record.expected_return && (
+                        <span>Return: {new Date(record.expected_return).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      )}
+                      {record.notes && <span className="truncate max-w-xs">{record.notes}</span>}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <button
+                      onClick={() => markFit.mutate(record.id)}
+                      disabled={markFit.isPending}
+                      className="flex-shrink-0 flex items-center gap-1.5 rounded-lg bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-500/20 disabled:opacity-50 transition-colors"
+                    >
+                      {markFit.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                      Mark Fit
+                    </button>
                   )}
                 </div>
-              </div>
-
-              {/* SHAP-style explanation bar */}
-              <div className="mt-5 border-t pt-4">
-                <p className="mb-2 text-xs font-medium text-muted-foreground">Risk breakdown</p>
-                <div className="h-3 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={`h-full rounded-full transition-all duration-1000 ${cfg.bar}`}
-                    style={{ width: `${Math.round(result.risk_score * 100)}%` }}
-                  />
-                </div>
-                <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                  <span>0% — No risk</span>
-                  <span>100% — Certain injury</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button
-                  onClick={() => { setResult(null); setErrorMsg(""); }}
-                  className="flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-background/60 transition-colors"
-                >
-                  Recalculate
-                </button>
-                {user.role === "coach" && (
-                  <Link
-                    href="/coach/squad"
-                    className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                  >
-                    View Squad <ChevronRight className="h-4 w-4" />
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Empty first-time state */}
-          {!result && !loading && (
-            <div className="rounded-xl border border-dashed p-8 text-center">
-              <Heart className="mx-auto mb-3 h-8 w-8 text-muted-foreground opacity-40" />
-              <p className="text-sm font-medium">Fill in the form above and tap Calculate</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                The AI uses training load, rest, match minutes and injury history to predict risk
-              </p>
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );
