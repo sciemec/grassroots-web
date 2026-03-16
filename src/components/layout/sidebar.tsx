@@ -21,15 +21,13 @@ type NavItem = { href: string; label: string; icon: React.ElementType; roles: st
 
 const navItems: NavItem[] = [
   // ─── Admin ────────────────────────────────────────────────────────────────
-  { href: "/dashboard",      label: "Dashboard",      icon: LayoutDashboard, roles: ["admin"] },
-  { href: "/verifications",  label: "Verifications",  icon: ShieldCheck,     roles: ["admin"] },
-  { href: "/users",          label: "Users",          icon: Users,           roles: ["admin"] },
-  { href: "/sessions",       label: "Sessions",       icon: Dumbbell,        roles: ["admin"] },
-  { href: "/subscriptions",  label: "Subscriptions",  icon: CreditCard,      roles: ["admin"] },
-  { href: "/scout-requests", label: "Scout Requests", icon: ClipboardList,   roles: ["admin"] },
-  { href: "/analytics",      label: "Analytics",      icon: BarChart2,       roles: ["admin"] },
-  { href: "/notifications",  label: "Notifications",  icon: Bell,            roles: ["admin"] },
-  { href: "/community",      label: "Community",      icon: Heart,           roles: ["admin"] },
+  { href: "/admin",                  label: "Admin Hub",      icon: LayoutDashboard, roles: ["admin"] },
+  { href: "/admin/users",            label: "Users",          icon: Users,           roles: ["admin"] },
+  { href: "/admin/verifications",    label: "Verifications",  icon: ShieldCheck,     roles: ["admin"] },
+  { href: "/admin/scout-requests",   label: "Scout Requests", icon: ClipboardList,   roles: ["admin"] },
+  { href: "/admin/subscriptions",    label: "Subscriptions",  icon: CreditCard,      roles: ["admin"] },
+  { href: "/admin/stats",            label: "Platform Stats", icon: BarChart2,       roles: ["admin"] },
+  { href: "/admin/announcements",    label: "Announcements",  icon: Bell,            roles: ["admin"] },
   // ─── Coach ────────────────────────────────────────────────────────────────
   { href: "/coach",                  label: "Coach Hub",      icon: LayoutDashboard, roles: ["coach"] },
   { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
@@ -147,11 +145,11 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
         {visible.map(({ href, label, icon: Icon }) => {
+          const hubRoots = ["/player", "/coach", "/admin"];
           const active =
             pathname === href ||
-            (href !== "/player" && href !== "/coach" && pathname.startsWith(href + "/")) ||
-            (href === "/player" && pathname === "/player") ||
-            (href === "/coach" && pathname === "/coach");
+            (!hubRoots.includes(href) && pathname.startsWith(href + "/")) ||
+            (hubRoots.includes(href) && pathname === href);
           return (
             <Link
               key={`${href}-${label}`}
