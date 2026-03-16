@@ -1197,3 +1197,253 @@ When analyzing files, always assume this context unless told otherwise:
 6. **Check logs first** — if I paste a Laravel log or Flutter logcat, read it carefully before looking at the code
 7. **Do not add new features** while debugging — fix only, no extras
 8. **Ask before refactoring** — if a fix requires restructuring the file, confirm with me first
+
+---
+
+## ✅ PLATFORM COMPLETION STATUS — March 2026
+
+This section documents EXACTLY what has been built, what is working,
+and what still needs backend or payment integration.
+READ THIS at the start of every session before touching any code.
+
+### COMPLETED (do not rebuild — already exists and works)
+
+#### Registration & Auth
+- OTP step REMOVED from all 4 registration flows (player, coach, scout, fan)
+- All register pages go straight to `/login?registered=1` after API call
+- `/login` page shows green "Account created!" banner when `?registered=1`
+- Files: `src/app/register/player/page.tsx`, `coach/`, `scout/`, `fan/`
+
+#### Auth Guard — Hydration Race Fix (CRITICAL — DO NOT UNDO)
+The platform uses Zustand `persist` middleware. localStorage rehydrates
+ASYNCHRONOUSLY. Without the fix below, every page redirects to /login on load.
+
+**Fix 1:** `src/lib/auth-store.ts` has `_hasHydrated` flag:
+```typescript
+_hasHydrated: false,
+setHasHydrated: (val) => set({ _hasHydrated: val }),
+// in persist config:
+onRehydrateStorage: () => (state) => { state?.setHasHydrated(true); },
+```
+
+**Fix 2:** Every protected hub has a `layout.tsx` that waits for hydration:
+```typescript
+// Pattern used in ALL layout files:
+const hasHydrated = useAuthStore((s) => s._hasHydrated);
+useEffect(() => {
+  if (!hasHydrated) return;
+  if (!user) router.push("/login");
+}, [hasHydrated, user, router]);
+if (!hasHydrated || !user) return null;
+return <>{children}</>;
+```
+
+**Layout files created (cover ALL pages in these hubs automatically):**
+- `src/app/player/layout.tsx` — covers all 48 player pages + role check
+- `src/app/coach/layout.tsx` — covers all coach pages + role check
+- `src/app/scout/layout.tsx` — covers all scout pages + role check
+- `src/app/fan/layout.tsx` — covers all fan pages + role check
+- `src/app/admin/layout.tsx` — already existed, uses same pattern
+- `src/app/streaming/layout.tsx` — auth guard for streaming pages
+- `src/app/video-studio/layout.tsx` — auth guard
+- `src/app/welcome/layout.tsx` — auth guard
+- `src/app/sessions/layout.tsx` — auth guard
+- `src/app/video-analysis/layout.tsx` — auth guard
+
+#### Multi-Sport Live Match (`/coach/live-match`)
+- Sport selector grid: all 10 sports (football, rugby, athletics, netball,
+  basketball, cricket, swimming, tennis, volleyball, hockey)
+- `SPORT_FORMATIONS` record: each sport has correct tactical formations
+  (football 4-3-3 etc, rugby scrum configs, athletics "N/A", netball court zones)
+- Kick-off label is sport-specific ("Kick-off", "Kick-off", "Start gun", etc.)
+- Halftime AI prompt includes `Sport: ${setup.sport}` + conditional formation line
+- `useCommentary` hook called AFTER `homeScore`/`awayScore` declarations (was a
+  TypeScript build error when it was called before them — never move it back)
+- File: `src/app/coach/live-match/page.tsx`
+
+#### Scout PDF Reports (`/scout/reports`)
+- FULLY IMPLEMENTED — do not rebuild
+- Uses `jspdf` + `jspdf-autotable` (both in package.json)
+- `generatePdf()` function: green header, player profile table, sport stats
+  table, AI analysis section, recommendations box, ZIFA confidentiality footer
+- AI analysis fetched from `/ai-coach/query` endpoint (Claude API)
+- Generates and downloads PDF in browser — no server required
+- File: `src/app/scout/reports/page.tsx`
+
+#### Push Notifications
+- IMPLEMENTED using browser Web Notification API (no Firebase/VAPID needed)
+- `src/components/layout/notification-bell.tsx`:
+  - Polls `/notifications` every 30s
+  - On subsequent polls (not first load), fires `new Notification(title, body)`
+    for any new unread items not seen before
+  - `fireBrowserNotif()` helper — silently fails on Safari/old browsers
+- `src/app/settings/page.tsx` Notifications tab:
+  - Shows live permission badge: "Browser enabled" (green) / "Blocked" (red) / "Enable" button
+  - Enabling any push toggle calls `Notification.requestPermission()`
+  - Permission state tracked with `notifPermission` useState
+
+#### Notification Bell (`/components/layout/notification-bell.tsx`)
+- Polls every 30s for new notifications
+- Unread count badge on bell icon
+- Dropdown panel with mark-read / mark-all-read
+- Fires browser Notification API for new items (see above)
+
+#### Admin Push Notification Sender (`/notifications`)
+- Admin page to send FCM notifications to all users or one specific user
+- Calls `POST /admin/notifications/send` on Laravel backend
+- Backend needs to handle FCM delivery (web app side is complete)
+
+### ALL BUILT ROUTES (do not recreate these pages — they exist)
+
+```
+/                          Landing page
+/login                     Login (shows ?registered=1 banner)
+/register                  Role picker
+/register/player           Player registration (NO OTP)
+/register/coach            Coach registration (NO OTP)
+/register/scout            Scout registration (NO OTP)
+/register/fan              Fan registration (NO OTP)
+/dashboard                 Main dashboard
+/settings                  Account settings (profile/security/notifications/danger)
+
+/player                    Player hub home
+/player/ai-coach           AI Coach chat (DeepSeek via Laravel OR Claude via Next.js)
+/player/assessment         Assessment
+/player/development        Development tracking
+/player/drills             Drills library
+/player/milestones         Milestone tracker
+/player/notifications      Player notification list
+/player/nutrition          Nutrition hub
+/player/nutrition/foods    Food library
+/player/nutrition/plan     Nutrition plan
+/player/profile            Player profile
+/player/progress           Progress tracker
+/player/sessions           Training sessions list
+/player/sessions/new       New session form
+/player/sports             Sport selector
+/player/sports/[sport]     Sport-specific page
+/player/subscription       Subscription management
+/player/talent-id          Talent identification
+/player/training-formats   Training formats hub
+/player/training-formats/[format]   Dynamic format page
+/player/training-formats/drills     Drills
+/player/training-formats/rondo      Rondo
+/player/training-formats/shooting   Shooting
+/player/training-formats/ssg        Small-sided games
+/player/verification       Verification page
+
+/coach                     Coach hub home
+/coach/ai-insights         AI insights
+/coach/live-match          Live match dashboard (multi-sport)
+/coach/matches             Fixtures/matches
+/coach/notifications       Coach notification list
+/coach/profile             Coach profile (via /coach/squad/[id])
+/coach/squad               Squad list
+/coach/squad/[id]          Individual player detail
+/coach/stats               Team stats
+/coach/tactical-analysis   Tactical analysis
+/coach/tactics             Tactics board
+
+/scout                     Scout hub home
+/scout/compare             Player comparison
+/scout/profile             Scout profile
+/scout/reports             PDF report generator (FULLY BUILT with jsPDF)
+/scout/shortlist           Player shortlist
+
+/fan                       Fan hub home
+/fan/discover              Discover players/teams
+/fan/following             Teams/players following
+/fan/leaderboard           Leaderboard
+
+/admin                     Admin hub
+/admin/announcements       Announcements
+/admin/scout-requests      Scout approval requests
+/admin/stats               Platform stats
+/admin/subscriptions       Subscription management
+/admin/users               User management
+/admin/verifications       Verification queue
+
+/streaming                 Live streaming hub
+/streaming/broadcast       Live broadcast (Daily.co WebRTC)
+/video-studio              Video upload & AI analysis
+/video-analysis            Video analysis viewer
+/sessions                  Sessions hub
+/sessions/[id]             Session detail
+/welcome                   Welcome page
+/notifications             Admin push notification sender
+/analytics                 Analytics dashboard
+/community                 Community page
+/tournaments               Tournaments
+/injury-tracker            Injury tracking page
+/subscriptions             Subscription plans
+/settings                  User settings
+/privacy                   Privacy policy
+/terms                     Terms of service
+/users                     Users list (admin)
+/users/[id]                User detail (admin)
+/forgot-password           Password reset request
+/reset-password            Password reset form
+/offline                   Offline fallback page
+/scout-requests            Scout requests (standalone)
+/verifications             Verifications (standalone)
+```
+
+### WHAT STILL NEEDS BACKEND / EXTERNAL WORK
+
+These frontend pages ARE built but the backend/external service is incomplete:
+
+| Feature | Frontend | What's Missing |
+|---|---|---|
+| Push Notifications | Done | Backend needs to store notifications in DB and trigger on events |
+| Payment / Subscriptions | UI exists | PayFast/Stripe integration not wired |
+| Email delivery | UI exists | Laravel mail config (SMTP/Mailgun) not set up |
+| WhatsApp Match Reports | Not built yet | Twilio WhatsApp API key + Laravel route needed |
+| Video Storage | UI exists | AWS S3 or Cloudflare R2 bucket not configured |
+| FCM Push Delivery | Admin UI done | Firebase project + FCM server key needed on Laravel |
+| Streaming | Daily.co UI done | Need DAILY_API_KEY in Vercel env |
+
+### PACKAGES IN package.json (do not re-install these)
+```
+jspdf              ^4.2.0   — PDF generation
+jspdf-autotable    ^5.0.7   — PDF tables
+@tanstack/react-query        — all data fetching
+zustand                      — global state (auth-store, etc.)
+@daily-co/daily-js           — WebRTC live streaming
+next                 14      — framework
+```
+
+### ENVIRONMENT VARIABLES (.env.local + Vercel)
+```
+NEXT_PUBLIC_API_URL = https://bhora-ai.onrender.com/api/v1
+ANTHROPIC_API_KEY   = set in both .env.local AND Vercel dashboard
+DEEPSEEK_API_KEY    = set in .env.local (not used by web app, used by Laravel)
+DAILY_API_KEY       = set in .env.local AND Vercel (live streaming)
+```
+
+### LAST 5 COMMITS (as of March 2026)
+```
+774756f  feat: browser push notifications via Web Notification API
+4b53f48  feat: auth hydration guard — add layout.tsx for streaming/video-studio/welcome/sessions/video-analysis
+[prior]  feat: player/coach/scout/fan layout.tsx auth guards + _hasHydrated in auth-store
+[prior]  feat: multi-sport live match — sport selector, SPORT_FORMATIONS, halftime prompt
+[prior]  fix: remove OTP step from all 4 registration flows
+```
+
+### KNOWN ISSUES (do not waste time re-investigating these)
+
+1. **Windows EPERM on `npm run build`** — `.next\trace` file lock on Windows.
+   Not a real error. Vercel builds fine. Run `rm -rf .next` if needed locally.
+
+2. **`experimentalChromeVideoMuteLightOff` error** — was a stale Vercel error
+   from old build cache. Fixed in commit `e973ffc`. Property does not exist
+   anywhere in the codebase. If it appears again, clear Vercel build cache.
+
+3. **Render cold starts** — `bhora-ai.onrender.com` goes to sleep on free tier.
+   First API call takes 30–60 seconds after inactivity. Normal behavior.
+
+4. **`/ask` is the correct Laravel AI endpoint** — NOT `/ai-coach/query`.
+   Request: `{ question, role, language }`. Response: `{ answer }`.
+
+5. **Dev-bypass token** — Login `nnygel@live.com / test1234` sets localStorage
+   `auth_token = "dev-token"`. Backend always returns 401 for this. That is
+   expected. The 401 interceptor in `src/lib/api.ts` skips redirect for dev-token.
