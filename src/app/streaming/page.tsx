@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Radio, Users, Clock, MapPin, Eye, ChevronRight, X, Volume2, VolumeX, Maximize2 } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { VoiceCommentary } from "@/components/video/voice-commentary";
@@ -157,8 +158,6 @@ function HLSPlayer({ streamUrl, title, onClose }: { streamUrl: string; title: st
 export default function StreamingPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [liveMatches, setLiveMatches] = useState<LiveMatch[]>(MOCK_LIVE);
-  const [upcoming, setUpcoming] = useState<UpcomingMatch[]>(MOCK_UPCOMING);
   const [activeStream, setActiveStream] = useState<{ url: string; title: string } | null>(null);
   const [province, setProvince] = useState("all");
   // Track latest commentary text for voice commentary auto-speak
@@ -166,14 +165,85 @@ export default function StreamingPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    // Fetch real matches from API, fall back to mock on error
-    api.get("/matches/live").then((res) => {
-      if (res.data?.live?.length) setLiveMatches(res.data.live);
-      if (res.data?.upcoming?.length) setUpcoming(res.data.upcoming);
-    }).catch(() => {}); // keep mock data on error
   }, [user, router]);
 
+  // Poll live matches every 30 seconds
+  const { data: liveData } = useQuery<LiveMatch[]>({
+    queryKey: ["streaming-live"],
+    queryFn: async () => {
+      const res = await api.get("/matches/live");
+      const raw: Array<{
+        id: string;
+        home_team: string;
+        away_team: string;
+        home_score: number;
+        away_score: number;
+        minute: number;
+        venue: string;
+        province: string;
+        age_group: string;
+        viewer_count: number;
+        status: "live" | "upcoming";
+        commentary: string;
+        stream_url?: string;
+      }> = res.data?.data ?? [];
+      if (raw.length === 0) return MOCK_LIVE;
+      return raw.map((item) => ({
+        id: item.id,
+        homeTeam: item.home_team,
+        awayTeam: item.away_team,
+        homeScore: item.home_score,
+        awayScore: item.away_score,
+        minute: item.minute,
+        venue: item.venue,
+        province: item.province,
+        ageGroup: item.age_group,
+        viewers: item.viewer_count,
+        status: item.status,
+        commentary: item.commentary,
+        stream_url: item.stream_url,
+      }));
+    },
+    enabled: !!user,
+    refetchInterval: 30000,
+    // Fall back to mock data on error
+    placeholderData: MOCK_LIVE,
+  });
+
+  // Poll upcoming matches every 60 seconds
+  const { data: upcomingData } = useQuery<UpcomingMatch[]>({
+    queryKey: ["streaming-upcoming"],
+    queryFn: async () => {
+      const res = await api.get("/matches/upcoming", { params: { per_page: 6 } });
+      const raw: Array<{
+        id: string;
+        home_team: string;
+        away_team: string;
+        match_date: string;
+        venue: string;
+        province: string;
+        age_group: string;
+      }> = res.data?.data ?? [];
+      if (raw.length === 0) return MOCK_UPCOMING;
+      return raw.map((item) => ({
+        id: item.id,
+        homeTeam: item.home_team,
+        awayTeam: item.away_team,
+        date: item.match_date,
+        venue: item.venue,
+        province: item.province,
+        ageGroup: item.age_group,
+      }));
+    },
+    enabled: !!user,
+    refetchInterval: 60000,
+    placeholderData: MOCK_UPCOMING,
+  });
+
   if (!user) return null;
+
+  const liveMatches: LiveMatch[] = liveData ?? MOCK_LIVE;
+  const upcoming: UpcomingMatch[] = upcomingData ?? MOCK_UPCOMING;
 
   const provinces = ["all", ...Array.from(new Set([...liveMatches.map(m => m.province), ...upcoming.map(m => m.province)]))];
   const filteredLive = province === "all" ? liveMatches : liveMatches.filter(m => m.province === province);
@@ -221,6 +291,11 @@ export default function StreamingPage() {
           <div className="mb-4 flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
             <h2 className="font-semibold text-sm uppercase tracking-wide">Live Now ({filteredLive.length})</h2>
+            {/* Auto-refresh indicator */}
+            <div className="ml-auto flex items-center gap-1.5 text-xs text-green-500">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span>Auto-refreshing</span>
+            </div>
           </div>
 
           {filteredLive.length === 0 ? (

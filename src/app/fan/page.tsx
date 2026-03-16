@@ -30,13 +30,18 @@ interface Fixture {
   competition: string;
 }
 
-const FIXTURES: Fixture[] = [
+interface Province {
+  name: string;
+  count: number;
+}
+
+const FALLBACK_FIXTURES: Fixture[] = [
   { id: 1, home: "Harare City FC", away: "CAPS United", date: "2026-03-22", venue: "Rufaro Stadium", competition: "Castle Lager PSL" },
   { id: 2, home: "Dynamos FC", away: "Highlanders FC", date: "2026-03-29", venue: "National Sports Stadium", competition: "Castle Lager PSL" },
   { id: 3, home: "FC Platinum", away: "Chicken Inn FC", date: "2026-04-05", venue: "Mandava Stadium", competition: "Castle Lager PSL" },
 ];
 
-const PROVINCES = [
+const FALLBACK_PROVINCES: Province[] = [
   { name: "Harare", count: 2840 },
   { name: "Bulawayo", count: 1620 },
   { name: "Manicaland", count: 980 },
@@ -48,8 +53,6 @@ const PROVINCES = [
   { name: "Matabeleland North", count: 320 },
   { name: "Matabeleland South", count: 290 },
 ];
-
-const MAX_PROVINCE_COUNT = PROVINCES[0].count;
 
 export default function FanHubPage() {
   const router = useRouter();
@@ -81,6 +84,41 @@ export default function FanHubPage() {
     enabled: !!user,
   });
 
+  const { data: fixturesData, isLoading: fixturesLoading } = useQuery<{ data: Fixture[] }>({
+    queryKey: ["fan-fixtures"],
+    queryFn: async () => {
+      const res = await api.get("/matches/upcoming", { params: { per_page: 5 } });
+      // Map API shape → Fixture interface
+      const mapped: Fixture[] = (res.data?.data ?? []).map(
+        (item: { id: number | string; home_team: string; away_team: string; match_date: string; venue: string; competition: string }) => ({
+          id: item.id,
+          home: item.home_team,
+          away: item.away_team,
+          date: item.match_date,
+          venue: item.venue,
+          competition: item.competition,
+        })
+      );
+      return { data: mapped };
+    },
+    enabled: !!user,
+  });
+
+  const { data: provincesData, isLoading: provincesLoading } = useQuery<{ data: Province[] }>({
+    queryKey: ["fan-provinces"],
+    queryFn: async () => {
+      const res = await api.get("/stats/provinces");
+      const mapped: Province[] = (res.data?.data ?? []).map(
+        (item: { province: string; player_count: number }) => ({
+          name: item.province,
+          count: item.player_count,
+        })
+      );
+      return { data: mapped };
+    },
+    enabled: !!user,
+  });
+
   if (!hydrated || !user) return null;
 
   const players = playersData?.data ?? [];
@@ -91,6 +129,19 @@ export default function FanHubPage() {
         p.age_group?.toLowerCase().includes(search.toLowerCase())
       )
     : players;
+
+  // Use API data when available, fall back to hardcoded arrays
+  const fixtures: Fixture[] =
+    fixturesData?.data && fixturesData.data.length > 0
+      ? fixturesData.data
+      : FALLBACK_FIXTURES;
+
+  const provinces: Province[] =
+    provincesData?.data && provincesData.data.length > 0
+      ? provincesData.data
+      : FALLBACK_PROVINCES;
+
+  const maxProvinceCount = provinces.length > 0 ? provinces[0].count : 1;
 
   const fanCards = [
     { icon: Star,   title: "Discover",     subtitle: "Tsvaga nyeredzi — Find talent", href: "/fan/discover",    bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
@@ -108,7 +159,7 @@ export default function FanHubPage() {
           <p className="text-xs font-medium uppercase tracking-widest text-accent">Mhoro — Fan Hub</p>
           <h1 className="mt-1 text-2xl font-bold text-white">Welcome 🎉</h1>
           <p className="mt-0.5 text-sm italic text-accent/80">
-            Tevera vatambi — Discover talent & support grassroots sport
+            Tevera vatambi — Discover talent &amp; support grassroots sport
           </p>
         </div>
 
@@ -215,30 +266,38 @@ export default function FanHubPage() {
           <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide text-balance">
             Upcoming Fixtures
           </h2>
-          <div className="space-y-3">
-            {FIXTURES.map((f) => (
-              <div key={f.id} className="rounded-xl border bg-card px-5 py-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">
-                      {f.home} <span className="text-muted-foreground font-normal">vs</span> {f.away}
-                    </p>
-                    <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {f.venue}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> {new Date(f.date).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
-                      </span>
+          {fixturesLoading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {fixtures.map((f) => (
+                <div key={f.id} className="rounded-xl border bg-card px-5 py-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold">
+                        {f.home} <span className="text-muted-foreground font-normal">vs</span> {f.away}
+                      </p>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" /> {f.venue}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> {new Date(f.date).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      </div>
                     </div>
+                    <span className="shrink-0 rounded-full bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-700">
+                      {f.competition}
+                    </span>
                   </div>
-                  <span className="shrink-0 rounded-full bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-700">
-                    {f.competition}
-                  </span>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Top Provinces */}
@@ -246,21 +305,29 @@ export default function FanHubPage() {
           <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide text-balance">
             Top Provinces by Athletes
           </h2>
-          <div className="rounded-xl border bg-card p-5 space-y-3">
-            {PROVINCES.map((prov, i) => (
-              <div key={prov.name} className="flex items-center gap-3">
-                <span className="w-5 text-xs text-muted-foreground text-right">{i + 1}</span>
-                <span className="w-36 text-sm font-medium truncate">{prov.name}</span>
-                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${(prov.count / MAX_PROVINCE_COUNT) * 100}%` }}
-                  />
+          {provincesLoading ? (
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-5 animate-pulse rounded-full bg-muted" />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              {provinces.map((prov, i) => (
+                <div key={prov.name} className="flex items-center gap-3">
+                  <span className="w-5 text-xs text-muted-foreground text-right">{i + 1}</span>
+                  <span className="w-36 text-sm font-medium truncate">{prov.name}</span>
+                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${(prov.count / maxProvinceCount) * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-12 text-right text-xs text-muted-foreground">{prov.count.toLocaleString()}</span>
                 </div>
-                <span className="w-12 text-right text-xs text-muted-foreground">{prov.count.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
