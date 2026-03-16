@@ -8,6 +8,17 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
+// Backend response shape: { id, scout_id, player_id, status, message, created_at }
+interface ContactRequest {
+  id: string;
+  scout_id: string;
+  player_id: string;
+  status: "pending" | "approved" | "rejected";
+  message: string;
+  created_at: string;
+}
+
+// Mapped shape used in the UI
 interface ScoutRequest {
   id: string;
   scout_id: string;
@@ -19,6 +30,21 @@ interface ScoutRequest {
   requested_at: string;
   status: "pending" | "approved" | "rejected";
   message: string;
+}
+
+function mapContactRequest(r: ContactRequest): ScoutRequest {
+  return {
+    id: r.id,
+    scout_id: r.scout_id,
+    scout_name: `Scout #${r.scout_id}`,
+    player_id: r.player_id,
+    player_initials: `P${r.player_id}`,
+    player_position: "—",
+    player_province: "—",
+    requested_at: r.created_at,
+    status: r.status,
+    message: r.message ?? "",
+  };
 }
 
 const STATUS_TABS = ["pending", "approved", "rejected"] as const;
@@ -45,11 +71,16 @@ export default function AdminScoutRequestsPage() {
   const queryClient = useQueryClient();
   const [statusTab, setStatusTab] = useState<StatusTab>("pending");
 
-  const { data, isLoading } = useQuery<{ data: ScoutRequest[] }>({
+  const { data, isLoading } = useQuery<{ data: ContactRequest[] }>({
     queryKey: ["admin-scout-requests", statusTab],
     queryFn: async () => {
-      const res = await api.get("/admin/scout-requests", {
-        params: { status: statusTab, per_page: 20 },
+      // pending uses /contact-requests/pending; approved/rejected pass status param
+      const url =
+        statusTab === "pending"
+          ? "/admin/contact-requests/pending"
+          : "/admin/contact-requests/pending";
+      const res = await api.get(url, {
+        params: statusTab !== "pending" ? { status: statusTab, per_page: 20 } : { per_page: 20 },
       });
       return res.data;
     },
@@ -57,16 +88,16 @@ export default function AdminScoutRequestsPage() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/admin/scout-requests/${id}/approve`),
+    mutationFn: (id: string) => api.post(`/admin/contact-requests/${id}/approve`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-scout-requests"] }),
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/admin/scout-requests/${id}/reject`),
+    mutationFn: (id: string) => api.post(`/admin/contact-requests/${id}/reject`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-scout-requests"] }),
   });
 
-  const requests = data?.data ?? [];
+  const requests: ScoutRequest[] = (data?.data ?? []).map(mapContactRequest);
 
   return (
     <div className="flex h-screen bg-background">

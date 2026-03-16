@@ -80,12 +80,12 @@ export default function AdminUsersPage() {
   });
 
   const suspendMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/admin/users/${id}/suspend`),
+    mutationFn: (id: string) => api.post(`/admin/users/${id}/toggle-active`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
   });
 
   const activateMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/admin/users/${id}/activate`),
+    mutationFn: (id: string) => api.post(`/admin/users/${id}/toggle-active`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
   });
 

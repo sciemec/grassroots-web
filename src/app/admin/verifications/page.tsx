@@ -57,13 +57,13 @@ export default function AdminVerificationsPage() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/admin/verifications/${id}/approve`),
+    mutationFn: (id: string) => api.post(`/admin/verifications/${id}/approve`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-verifications"] }),
   });
 
   const rejectMutation = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes: string }) =>
-      api.put(`/admin/verifications/${id}/reject`, { notes }),
+      api.post(`/admin/verifications/${id}/reject`, { notes }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["admin-verifications"] });
       setRejectOpen((prev) => ({ ...prev, [variables.id]: false }));

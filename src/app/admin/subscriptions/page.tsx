@@ -1,19 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, CreditCard, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
-
-interface SubSummary {
-  active: number;
-  trialing: number;
-  cancelled: number;
-  total_revenue_usd: number;
-}
 
 interface Subscription {
   id: string;
@@ -55,15 +48,6 @@ export default function AdminSubscriptionsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
 
-  const { data: summaryData, isLoading: summaryLoading } = useQuery<{ data: SubSummary }>({
-    queryKey: ["admin-subscriptions-summary"],
-    queryFn: async () => {
-      const res = await api.get("/admin/subscriptions/summary");
-      return res.data;
-    },
-    enabled: !!user,
-  });
-
   const { data, isLoading } = useQuery<{ data: Subscription[] }>({
     queryKey: ["admin-subscriptions", page],
     queryFn: async () => {
@@ -77,12 +61,20 @@ export default function AdminSubscriptionsPage() {
     mutationFn: (id: string) => api.put(`/admin/subscriptions/${id}/cancel`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-subscriptions-summary"] });
     },
   });
 
-  const summary = summaryData?.data;
   const subs = data?.data ?? [];
+
+  // Derive summary from the list data — no separate API call needed
+  const summary = useMemo(() => {
+    return {
+      active:            subs.filter((s) => s.status === "active").length,
+      trialing:          subs.filter((s) => s.status === "trialing").length,
+      cancelled:         subs.filter((s) => s.status === "cancelled").length,
+      total_revenue_usd: subs.reduce((sum, s) => sum + (s.amount_usd ?? 0), 0),
+    };
+  }, [subs]);
 
   return (
     <div className="flex h-screen bg-background">
@@ -100,21 +92,21 @@ export default function AdminSubscriptionsPage() {
           </div>
         </div>
 
-        {/* Summary cards */}
+        {/* Summary cards — derived from list data */}
         <div className="mb-6">
-          {summaryLoading ? (
+          {isLoading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="h-20 animate-pulse rounded-xl bg-muted" />
               ))}
             </div>
-          ) : summary ? (
+          ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: "Active",         value: summary.active,       color: "text-green-500" },
-                { label: "Trialing",       value: summary.trialing,     color: "text-blue-400" },
-                { label: "Cancelled",      value: summary.cancelled,    color: "text-red-400" },
-                { label: "Revenue (USD)",  value: `$${summary.total_revenue_usd?.toLocaleString() ?? 0}`, color: "text-amber-400" },
+                { label: "Active",        value: summary.active,       color: "text-green-500" },
+                { label: "Trialing",      value: summary.trialing,     color: "text-blue-400" },
+                { label: "Cancelled",     value: summary.cancelled,    color: "text-red-400" },
+                { label: "Revenue (USD)", value: `$${summary.total_revenue_usd.toLocaleString()}`, color: "text-amber-400" },
               ].map(({ label, value, color }) => (
                 <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4">
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
@@ -122,7 +114,7 @@ export default function AdminSubscriptionsPage() {
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
         </div>
 
         {/* Subscriptions table */}

@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Megaphone, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Megaphone, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
 
 interface Announcement {
   id: string;
@@ -27,48 +25,16 @@ const ROLE_COLORS: Record<string, string> = {
   fan:    "bg-pink-500/15 text-pink-700",
 };
 
-function ListSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
-      ))}
-    </div>
-  );
-}
+// Placeholder list until the API is live
+const PLACEHOLDER_ANNOUNCEMENTS: Announcement[] = [];
 
 export default function AdminAnnouncementsPage() {
-  const { user } = useAuthStore();
-  const queryClient = useQueryClient();
+  // user kept for future auth-gating once API is ready
+  useAuthStore();
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ title: "", body: "", target_role: "all" });
 
-  const { data, isLoading } = useQuery<{ data: Announcement[] }>({
-    queryKey: ["admin-announcements"],
-    queryFn: async () => {
-      const res = await api.get("/admin/announcements");
-      return res.data;
-    },
-    enabled: !!user,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (payload: { title: string; body: string; target_role: string }) =>
-      api.post("/admin/announcements", payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });
-      setForm({ title: "", body: "", target_role: "all" });
-      setFormOpen(false);
-    },
-  });
-
-  const deactivateMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/admin/announcements/${id}/deactivate`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-announcements"] }),
-  });
-
-  const announcements = data?.data ?? [];
-  const canSubmit = form.title.trim() && form.body.trim();
+  const announcements: Announcement[] = PLACEHOLDER_ANNOUNCEMENTS;
 
   return (
     <div className="flex h-screen bg-background">
@@ -88,16 +54,29 @@ export default function AdminAnnouncementsPage() {
           </div>
           <button
             onClick={() => setFormOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            title="Backend coming soon"
+            disabled
+            className="flex cursor-not-allowed items-center gap-2 rounded-xl bg-primary/50 px-4 py-2.5 text-sm font-semibold text-primary-foreground opacity-60"
           >
             {formOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             New Announcement
           </button>
         </div>
 
-        {/* Create form */}
+        {/* Coming Soon banner */}
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <div>
+            <p className="font-semibold text-amber-400">Announcement API is being set up. Check back soon.</p>
+            <p className="mt-0.5 text-sm text-amber-400/70">
+              The form below is disabled until the backend endpoint is live.
+            </p>
+          </div>
+        </div>
+
+        {/* Create form — visible but fully disabled */}
         {formOpen && (
-          <div className="mb-6 rounded-xl border bg-card p-5">
+          <div className="mb-6 rounded-xl border bg-card p-5 opacity-60">
             <h2 className="mb-4 font-semibold text-white">Create Announcement</h2>
             <div className="space-y-4">
               <div>
@@ -107,7 +86,8 @@ export default function AdminAnnouncementsPage() {
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="Announcement title…"
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  disabled
+                  className="w-full cursor-not-allowed rounded-lg border bg-background px-3 py-2.5 text-sm outline-none"
                 />
               </div>
               <div>
@@ -117,7 +97,8 @@ export default function AdminAnnouncementsPage() {
                   value={form.body}
                   onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
                   placeholder="Announcement content…"
-                  className="w-full resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                  disabled
+                  className="w-full cursor-not-allowed resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
                 />
               </div>
               <div>
@@ -125,7 +106,8 @@ export default function AdminAnnouncementsPage() {
                 <select
                   value={form.target_role}
                   onChange={(e) => setForm((f) => ({ ...f, target_role: e.target.value }))}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring capitalize"
+                  disabled
+                  className="w-full cursor-not-allowed rounded-lg border bg-background px-3 py-2.5 text-sm outline-none capitalize"
                 >
                   {TARGET_ROLES.map((r) => (
                     <option key={r} value={r} className="capitalize">{r === "all" ? "All users" : r}</option>
@@ -134,11 +116,10 @@ export default function AdminAnnouncementsPage() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => createMutation.mutate(form)}
-                  disabled={!canSubmit || createMutation.isPending}
-                  className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  disabled
+                  title="Backend coming soon"
+                  className="flex cursor-not-allowed items-center gap-2 rounded-xl bg-primary/50 px-4 py-2.5 text-sm font-semibold text-primary-foreground opacity-50"
                 >
-                  {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Publish
                 </button>
                 <button
@@ -152,14 +133,12 @@ export default function AdminAnnouncementsPage() {
           </div>
         )}
 
-        {/* Announcements list */}
-        {isLoading ? (
-          <ListSkeleton />
-        ) : announcements.length === 0 ? (
+        {/* Announcements list — empty state while API is pending */}
+        {announcements.length === 0 ? (
           <div className="rounded-xl border border-dashed p-12 text-center">
             <Megaphone className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="font-medium text-white">No announcements yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Create your first announcement above</p>
+            <p className="mt-1 text-sm text-muted-foreground">Announcements will appear here once the API is live</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -181,17 +160,6 @@ export default function AdminAnnouncementsPage() {
                       {new Date(a.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
-
-                  {a.is_active && (
-                    <button
-                      onClick={() => deactivateMutation.mutate(a.id)}
-                      disabled={deactivateMutation.isPending}
-                      className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
-                    >
-                      {deactivateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                      Deactivate
-                    </button>
-                  )}
                 </div>
               </div>
             ))}

@@ -7,14 +7,14 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
+// Real backend response shape from GET /admin/stats
 interface AdminStats {
   total_users: number;
-  total_players: number;
-  total_coaches: number;
-  total_scouts: number;
-  total_fans: number;
-  active_sessions_today: number;
-  new_registrations_this_week: number;
+  pending_verifications: number;
+  active_subscriptions: number;
+  sessions_today: number;
+  pending_scout_requests: number;
+  new_users_this_week: number;
 }
 
 const HUB_CARDS = [
@@ -41,12 +41,12 @@ export default function AdminHubPage() {
   const stats = data?.data;
 
   const statCards = [
-    { label: "Total Users",    value: stats?.total_users },
-    { label: "Players",        value: stats?.total_players },
-    { label: "Coaches",        value: stats?.total_coaches },
-    { label: "Scouts",         value: stats?.total_scouts },
-    { label: "Active Today",   value: stats?.active_sessions_today },
-    { label: "New This Week",  value: stats?.new_registrations_this_week },
+    { label: "Total Users",          value: stats?.total_users },
+    { label: "Pending Verifications",value: stats?.pending_verifications },
+    { label: "Active Subscriptions", value: stats?.active_subscriptions },
+    { label: "Sessions Today",       value: stats?.sessions_today },
+    { label: "Scout Requests",       value: stats?.pending_scout_requests },
+    { label: "New This Week",        value: stats?.new_users_this_week },
   ];
 
   return (

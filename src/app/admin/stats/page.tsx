@@ -7,16 +7,17 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
-interface DayCount     { date: string; count: number }
-interface SportCount   { sport: string; count: number }
-interface ProvinceCount{ province: string; count: number }
-interface DrillCount   { drill_name: string; count: number }
+interface DayCount       { date: string; count: number }
+interface StatusCount    { status: string; count: number }
+interface PlanCount      { plan: string; count: number }
+interface MonthRevenue   { month: string; amount_usd: number }
 
-interface DetailedStats {
-  registrations_by_day:  DayCount[];
-  sessions_by_sport:     SportCount[];
-  users_by_province:     ProvinceCount[];
-  top_drills:            DrillCount[];
+interface AnalyticsData {
+  registrations:    DayCount[];
+  verifications:    StatusCount[];
+  subscriptions:    PlanCount[];
+  sessions_by_day:  DayCount[];
+  revenue_by_month: MonthRevenue[];
 }
 
 function SectionSkeleton() {
@@ -32,17 +33,16 @@ function SectionSkeleton() {
 export default function AdminStatsPage() {
   const { user } = useAuthStore();
 
-  const { data, isLoading } = useQuery<{ data: DetailedStats }>({
-    queryKey: ["admin-stats-detailed"],
+  const { data, isLoading } = useQuery<{ data: AnalyticsData }>({
+    queryKey: ["admin-analytics"],
     queryFn: async () => {
-      const res = await api.get("/admin/stats/detailed");
+      const res = await api.get("/admin/analytics");
       return res.data;
     },
     enabled: !!user,
   });
 
-  const stats = data?.data;
-  const maxProvince = stats?.users_by_province?.[0]?.count ?? 1;
+  const analytics = data?.data;
 
   return (
     <div className="flex h-screen bg-background">
@@ -70,7 +70,7 @@ export default function AdminStatsPage() {
                 Registrations by Day
               </p>
             </div>
-            {isLoading ? <SectionSkeleton /> : !stats?.registrations_by_day?.length ? (
+            {isLoading ? <SectionSkeleton /> : !analytics?.registrations?.length ? (
               <p className="text-sm text-muted-foreground">No data available</p>
             ) : (
               <div className="overflow-hidden rounded-lg border">
@@ -82,7 +82,7 @@ export default function AdminStatsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {stats.registrations_by_day.map((row) => (
+                    {analytics.registrations.map((row) => (
                       <tr key={row.date} className="hover:bg-muted/20 transition-colors">
                         <td className="px-3 py-2 text-muted-foreground">
                           {new Date(row.date).toLocaleDateString("en-ZW", { day: "numeric", month: "short" })}
@@ -96,76 +96,128 @@ export default function AdminStatsPage() {
             )}
           </div>
 
-          {/* Sessions by sport */}
+          {/* Sessions by day */}
           <div className="rounded-xl border bg-card p-5">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Sessions by Sport
-            </p>
-            {isLoading ? <SectionSkeleton /> : !stats?.sessions_by_sport?.length ? (
+            <div className="mb-4 flex items-center gap-2">
+              <BarChart2 className="h-4 w-4 text-accent" />
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Sessions by Day
+              </p>
+            </div>
+            {isLoading ? <SectionSkeleton /> : !analytics?.sessions_by_day?.length ? (
               <p className="text-sm text-muted-foreground">No data available</p>
             ) : (
-              <div className="space-y-2">
-                {stats.sessions_by_sport.map((row) => (
-                  <div key={row.sport} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-muted/20 transition-colors">
-                    <p className="text-sm capitalize text-white">{row.sport}</p>
-                    <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                      {row.count.toLocaleString()}
+              <div className="overflow-hidden rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Date</th>
+                      <th className="px-3 py-2 text-right font-medium text-muted-foreground">Sessions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {analytics.sessions_by_day.map((row) => (
+                      <tr key={row.date} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {new Date(row.date).toLocaleDateString("en-ZW", { day: "numeric", month: "short" })}
+                        </td>
+                        <td className="px-3 py-2 text-right font-semibold text-white">{row.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Verifications by status */}
+          <div className="rounded-xl border bg-card p-5">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Verifications by Status
+            </p>
+            {isLoading ? <SectionSkeleton /> : !analytics?.verifications?.length ? (
+              <p className="text-sm text-muted-foreground">No data available</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {analytics.verifications.map((row) => (
+                  <span
+                    key={row.status}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium capitalize ${
+                      row.status === "approved"
+                        ? "bg-green-500/15 text-green-700"
+                        : row.status === "pending"
+                        ? "bg-amber-500/15 text-amber-700"
+                        : "bg-red-500/15 text-red-700"
+                    }`}
+                  >
+                    {row.status}
+                    <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-xs font-bold">
+                      {row.count}
                     </span>
-                  </div>
+                  </span>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Users by province — bar chart */}
+          {/* Revenue by month */}
           <div className="rounded-xl border bg-card p-5">
             <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Users by Province
+              Revenue by Month (USD)
             </p>
-            {isLoading ? <SectionSkeleton /> : !stats?.users_by_province?.length ? (
+            {isLoading ? <SectionSkeleton /> : !analytics?.revenue_by_month?.length ? (
               <p className="text-sm text-muted-foreground">No data available</p>
             ) : (
-              <div className="space-y-3">
-                {stats.users_by_province.map((row, i) => (
-                  <div key={row.province} className="flex items-center gap-3">
-                    <span className="w-5 text-right text-xs text-muted-foreground">{i + 1}</span>
-                    <span className="w-36 truncate text-sm font-medium text-white">{row.province}</span>
-                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${(row.count / maxProvince) * 100}%` }}
-                      />
-                    </div>
-                    <span className="w-14 text-right text-xs text-muted-foreground">
-                      {row.count.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
+              <div className="overflow-hidden rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="px-3 py-2 text-left font-medium text-muted-foreground">Month</th>
+                      <th className="px-3 py-2 text-right font-medium text-muted-foreground">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {analytics.revenue_by_month.map((row) => (
+                      <tr key={row.month} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-3 py-2 text-muted-foreground">{row.month}</td>
+                        <td className="px-3 py-2 text-right font-semibold text-white">
+                          ${row.amount_usd.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
 
-          {/* Top drills */}
-          <div className="rounded-xl border bg-card p-5">
+          {/* Subscriptions by plan */}
+          <div className="rounded-xl border bg-card p-5 lg:col-span-2">
             <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Top Drills
+              Subscriptions by Plan
             </p>
-            {isLoading ? <SectionSkeleton /> : !stats?.top_drills?.length ? (
+            {isLoading ? <SectionSkeleton /> : !analytics?.subscriptions?.length ? (
               <p className="text-sm text-muted-foreground">No data available</p>
             ) : (
-              <div className="space-y-2">
-                {stats.top_drills.map((row, i) => (
-                  <div key={row.drill_name} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/20 transition-colors">
-                    <span className={`w-6 text-center text-sm font-bold ${
-                      i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-muted-foreground"
-                    }`}>
-                      {i + 1}
+              <div className="flex flex-wrap gap-2">
+                {analytics.subscriptions.map((row) => (
+                  <span
+                    key={row.plan}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium capitalize ${
+                      row.plan === "pro"
+                        ? "bg-purple-500/15 text-purple-700"
+                        : row.plan === "premium"
+                        ? "bg-amber-500/15 text-amber-700"
+                        : row.plan === "starter"
+                        ? "bg-blue-500/15 text-blue-700"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {row.plan}
+                    <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-xs font-bold">
+                      {row.count}
                     </span>
-                    <p className="flex-1 text-sm text-white">{row.drill_name}</p>
-                    <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-semibold text-accent">
-                      {row.count.toLocaleString()}
-                    </span>
-                  </div>
+                  </span>
                 ))}
               </div>
             )}
