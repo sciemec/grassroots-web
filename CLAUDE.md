@@ -1447,3 +1447,20 @@ DAILY_API_KEY       = set in .env.local AND Vercel (live streaming)
 5. **Dev-bypass token** — Login `nnygel@live.com / test1234` sets localStorage
    `auth_token = "dev-token"`. Backend always returns 401 for this. That is
    expected. The 401 interceptor in `src/lib/api.ts` skips redirect for dev-token.
+
+---
+
+## Developer Involvement Rule (MANDATORY)
+
+Before writing, editing, or creating ANY code file, Claude must:
+
+1. **Name the file** - State the exact file path being created or changed
+2. **Explain the file's job** - In plain English, what does this file do in the project? (No jargon)
+3. **Explain the change** - What exactly are you adding, fixing, or removing and why?
+4. **Show the connection** - How does this file connect to other parts of the app?
+5. **State the visible result** - What will Nigel see or experience differently after this change?
+
+Only proceed with writing code AFTER explaining the above 5 points.
+If Nigel asks "why" or "what does this mean" at any point, stop and explain before continuing.
+Never assume Nigel understands technical terms — always use simple analogies.
+Think of Nigel as the architect who approves every decision, not just a bystander.
