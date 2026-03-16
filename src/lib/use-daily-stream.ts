@@ -47,7 +47,6 @@ export function useDailyStream(): DailyStreamResult {
       const call = DailyIframe.createCallObject({
         videoSource: videoTrack || false,
         audioSource: audioTrack || false,
-        dailyConfig: { experimentalChromeVideoMuteLightOff: true },
       });
       callRef.current = call;
 
