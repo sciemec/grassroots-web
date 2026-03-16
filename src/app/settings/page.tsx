@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
@@ -56,6 +56,19 @@ export default function SettingsPage() {
   });
 
   /* ── Notifications ── */
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>("default");
+  useEffect(() => {
+    if (typeof Notification !== "undefined") {
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestPushPermission = async () => {
+    if (typeof Notification === "undefined") return;
+    const perm = await Notification.requestPermission();
+    setNotifPermission(perm);
+  };
+
   const notifForm = useForm<NotifForm>({
     defaultValues: {
       email_sessions: true, email_achievements: true,
@@ -64,7 +77,13 @@ export default function SettingsPage() {
     },
   });
   const saveNotif = useMutation({
-    mutationFn: (d: NotifForm) => api.patch("/profile/notifications", d),
+    mutationFn: async (d: NotifForm) => {
+      // Request browser notification permission if any push toggle is on
+      if ((d.push_sessions || d.push_achievements) && notifPermission !== "granted") {
+        await requestPushPermission();
+      }
+      return api.patch("/profile/notifications", d);
+    },
     onSuccess: () => flash("Notification preferences saved"),
   });
 
@@ -205,34 +224,67 @@ export default function SettingsPage() {
               className="rounded-2xl border border-white/10 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
               <h2 className="text-sm font-semibold text-white">Notification Preferences</h2>
 
-              {[
-                { section: "Email Notifications", items: [
-                  { name: "email_sessions" as const,       label: "Session summaries",      sub: "After each training session" },
-                  { name: "email_achievements" as const,   label: "Achievements & milestones", sub: "When you earn XP or badges" },
-                  { name: "email_scout_requests" as const, label: "Scout contact requests", sub: "When a scout wants to connect" },
-                  { name: "email_platform_news" as const,  label: "Platform news",          sub: "Updates and new features" },
-                ]},
-                { section: "Push Notifications", items: [
-                  { name: "push_sessions" as const,       label: "Session reminders",   sub: "Daily training reminders" },
-                  { name: "push_achievements" as const,   label: "Achievement alerts",  sub: "Real-time achievement pings" },
-                ]},
-              ].map(({ section, items }) => (
-                <div key={section}>
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{section}</p>
-                  <div className="space-y-3">
-                    {items.map(({ name, label, sub }) => (
-                      <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
-                        <div>
-                          <p className="text-sm font-medium">{label}</p>
-                          <p className="text-xs text-muted-foreground">{sub}</p>
-                        </div>
-                        <input {...notifForm.register(name)} type="checkbox"
-                          className="h-4 w-4 rounded accent-primary" />
-                      </label>
-                    ))}
-                  </div>
+              {/* Email Notifications */}
+              <div>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email Notifications</p>
+                <div className="space-y-3">
+                  {[
+                    { name: "email_sessions" as const,       label: "Session summaries",         sub: "After each training session" },
+                    { name: "email_achievements" as const,   label: "Achievements & milestones",  sub: "When you earn XP or badges" },
+                    { name: "email_scout_requests" as const, label: "Scout contact requests",     sub: "When a scout wants to connect" },
+                    { name: "email_platform_news" as const,  label: "Platform news",              sub: "Updates and new features" },
+                  ].map(({ name, label, sub }) => (
+                    <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
+                      <div>
+                        <p className="text-sm font-medium">{label}</p>
+                        <p className="text-xs text-muted-foreground">{sub}</p>
+                      </div>
+                      <input {...notifForm.register(name)} type="checkbox" className="h-4 w-4 rounded accent-primary" />
+                    </label>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Push Notifications */}
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Push Notifications</p>
+                  {notifPermission === "granted" ? (
+                    <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-400">
+                      <CheckCircle2 className="h-3 w-3" /> Browser enabled
+                    </span>
+                  ) : notifPermission === "denied" ? (
+                    <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-400">
+                      Blocked — allow in browser settings
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={requestPushPermission}
+                      className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/30 transition-colors"
+                    >
+                      Enable browser alerts
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { name: "push_sessions" as const,     label: "Session reminders",  sub: "Daily training reminders" },
+                    { name: "push_achievements" as const, label: "Achievement alerts",  sub: "Real-time achievement pings" },
+                  ].map(({ name, label, sub }) => (
+                    <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
+                      <div>
+                        <p className="text-sm font-medium">{label}</p>
+                        <p className="text-xs text-muted-foreground">{sub}</p>
+                      </div>
+                      <input {...notifForm.register(name)} type="checkbox" className="h-4 w-4 rounded accent-primary" />
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  When enabled, new notifications will pop up on your device even while browsing other tabs.
+                </p>
+              </div>
 
               <button type="submit" disabled={saveNotif.isPending}
                 className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">

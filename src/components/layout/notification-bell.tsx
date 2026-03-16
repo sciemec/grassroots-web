@@ -6,6 +6,20 @@ import { Bell, Check, CheckCheck, X } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
+/** Fire a browser notification if permission is granted. */
+function fireBrowserNotif(title: string, body: string) {
+  if (typeof window === "undefined") return;
+  if (Notification.permission !== "granted") return;
+  try {
+    new Notification(title, {
+      body,
+      icon: "/logo.png",
+      badge: "/logo.png",
+      tag: "grassroots-" + Date.now(),
+    });
+  } catch { /* Safari/old browser fallback — silently ignore */ }
+}
+
 interface Notification {
   id: string;
   title: string;
@@ -28,14 +42,31 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const seenIdsRef = useRef<Set<string>>(new Set());
 
   const unread = notifications.filter((n) => !n.read).length;
+
+  const isFirstFetchRef = useRef(true);
 
   const fetchNotifications = async () => {
     if (!user) return;
     try {
       const res = await api.get("/notifications");
-      setNotifications(res.data?.data ?? res.data ?? []);
+      const fetched: Notification[] = res.data?.data ?? res.data ?? [];
+      setNotifications(fetched);
+
+      const isFirst = isFirstFetchRef.current;
+      isFirstFetchRef.current = false;
+
+      for (const n of fetched) {
+        if (!n.read && !seenIdsRef.current.has(n.id)) {
+          seenIdsRef.current.add(n.id);
+          // Only fire browser notification on subsequent fetches (not on initial load)
+          if (!isFirst) {
+            fireBrowserNotif(n.title, n.body);
+          }
+        }
+      }
     } catch { /* keep existing */ }
   };
 
