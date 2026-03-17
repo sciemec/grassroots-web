@@ -105,15 +105,36 @@ export default function CoachAIInsightsPage() {
         .slice(-10)
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const res = await api.post("/ai-coach/query", {
-        message: content,
-        system_prompt: systemPrompt,
-        history,
-      });
-      const reply = res.data?.response ?? res.data?.message ?? "I couldn't process that. Please try again.";
+      let reply = "";
+
+      // Step 1 — try Laravel backend (DeepSeek, works with valid token)
+      try {
+        const res = await api.post("/ask", {
+          question: content,
+          role: user?.role ?? "coach",
+          language: "english",
+        });
+        reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status !== 401) throw err; // surface real errors (network, 500, etc.)
+        // 401 → fall through to Claude proxy below
+      }
+
+      // Step 2 — fallback: Next.js proxy → Anthropic Claude (supports history)
+      if (!reply) {
+        const res = await fetch("/api/ai-coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
+        });
+        const data = await res.json();
+        reply = data?.response ?? data?.message ?? "";
+      }
+
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "assistant", content: reply, timestamp: new Date() },
+        { id: Date.now().toString(), role: "assistant", content: reply || "I couldn't process that. Please try again.", timestamp: new Date() },
       ]);
     } catch {
       setMessages((prev) => [
