@@ -105,7 +105,7 @@ export default function CoachHubPage() {
             Mhoro — Coach Hub
           </p>
           <h1 className="mt-1 text-2xl font-bold text-white">
-            {user.name.split(" ")[0]} 👋
+            {user.name?.split(" ")[0] ?? "Coach"} 👋
           </h1>
           <p className="mt-0.5 text-sm italic text-accent/80">
             Ramba uchishanda — Manage your squad & tactics

@@ -73,7 +73,12 @@ function LoginContent() {
     try {
       const res = await api.post("/auth/login", { identifier: email, password });
       const { token, user } = res.data;
-      login({ id: user.id, name: user.name, email: user.email, role: user.role, token });
+      // Backend may return first_name + surname separately for new accounts
+      const displayName =
+        user.name ||
+        [user.first_name, user.surname].filter(Boolean).join(" ") ||
+        user.email;
+      login({ id: user.id, name: displayName, email: user.email, role: user.role, token });
 
       // Fetch profile fields in the background so AI features have context
       api.get("/profile", { headers: { Authorization: `Bearer ${token}` } })

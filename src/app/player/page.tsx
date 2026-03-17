@@ -115,7 +115,7 @@ export default function PlayerHubPage() {
             Mhoro — Player Hub
           </p>
           <h1 className="mt-1 text-2xl font-bold text-white">
-            {user.name.split(" ")[0]} 👋
+            {user.name?.split(" ")[0] ?? "Player"} 👋
           </h1>
           <p className="mt-0.5 text-sm italic text-accent/80">
             {profile?.position
