@@ -23,17 +23,23 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Security headers — applied to every page
         source: "/(.*)",
         headers: [
-          // Required for FFmpeg WASM SharedArrayBuffer
-          { key: "Cross-Origin-Opener-Policy",   value: "same-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
-          // Security headers
           { key: "X-Content-Type-Options",  value: "nosniff" },
           { key: "X-Frame-Options",         value: "SAMEORIGIN" },
           { key: "X-XSS-Protection",        value: "1; mode=block" },
           { key: "Referrer-Policy",         value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy",      value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+      {
+        // COOP + COEP only where SharedArrayBuffer (FFmpeg WASM) is needed.
+        // Applying these to all pages breaks login, registration, and hub pages.
+        source: "/(video-studio|streaming/broadcast)(.*)",
+        headers: [
+          { key: "Cross-Origin-Opener-Policy",   value: "same-origin" },
+          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
         ],
       },
     ];

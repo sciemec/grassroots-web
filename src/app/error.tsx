@@ -26,6 +26,13 @@ export default function Error({
         An unexpected error occurred. If this keeps happening, please contact support.
       </p>
 
+      {/* Show real error message so it can be reported and fixed */}
+      {error.message && (
+        <p className="mt-3 max-w-md rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 font-mono text-xs text-destructive">
+          {error.message}
+        </p>
+      )}
+
       {error.digest && (
         <p className="mt-2 font-mono text-xs text-muted-foreground">
           Error ID: {error.digest}
