@@ -1464,3 +1464,45 @@ Only proceed with writing code AFTER explaining the above 5 points.
 If Nigel asks "why" or "what does this mean" at any point, stop and explain before continuing.
 Never assume Nigel understands technical terms — always use simple analogies.
 Think of Nigel as the architect who approves every decision, not just a bystander.
+
+---
+
+## Error Explanation Rule (MANDATORY)
+
+When Nigel reports any error, bug, or broken feature, Claude must ALWAYS follow this order:
+
+### Step 1 — Explain the error first (plain English, no jargon)
+- What went wrong? (Describe it like explaining to someone who has never coded)
+- Why did it happen? (What caused it — be specific)
+- Where is it happening? (Which page, which feature, which moment)
+- Use a simple real-world analogy if helpful
+
+### Step 2 — Explain the fix (before writing a single line of code)
+- What will you change?
+- Why will that change fix the problem?
+- What will Nigel see differently after the fix?
+
+### Step 3 — Wait for Nigel to say "yes" or "ok" before writing any code
+
+### Example of the correct format:
+```
+ERROR EXPLANATION
+-----------------
+What went wrong: The coach AI chat was knocking on a door that doesn't exist.
+Why it happened: The page was sending messages to /ai-coach/query — an address
+                 that was never built on the backend. Like calling a phone number
+                 that was never registered.
+Where: /coach/ai-insights — the AI chat page inside the coach hub.
+
+THE FIX
+-------
+What changes: Redirect the messages to /ask — the correct address that the
+              player AI chat already uses successfully.
+Why it works: /ask is the real backend endpoint connected to the DeepSeek AI.
+What you'll see: Coaches type a question and get a real answer instead of
+                 the connection error message.
+
+Ready to apply this fix — shall I proceed?
+```
+
+Never skip straight to code. Nigel must understand the problem before it is fixed.
