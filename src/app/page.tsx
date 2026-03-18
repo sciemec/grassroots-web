@@ -209,8 +209,8 @@ export default function LandingPage() {
     <div className="min-h-screen">
       <PublicNavbar />
 
-      {/* ── Pattern strip: charcoal + gold diamonds + white zigzag ─────────── */}
-      <AfricanPatternStrip variant="dark" height={36} />
+      {/* ── Pattern strip: forest green + gold arch teeth ───────────────────── */}
+      <AfricanPatternStrip variant="green" height={36} />
 
       {/* ── Hero — dark green + SVG tile watermark ───────────────────────────── */}
       <section

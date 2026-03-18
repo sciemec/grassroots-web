@@ -3,7 +3,7 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const OFFLINE_URL   = "/offline";
 
 // Precache shell pages + knowledge base data files
