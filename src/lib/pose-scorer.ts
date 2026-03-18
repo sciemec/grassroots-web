@@ -36,10 +36,6 @@ const IDX = {
   R_ANKLE:       28,
 } as const;
 
-function dist(a: NormalizedLandmark, b: NormalizedLandmark): number {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-}
-
 function visible(lm: NormalizedLandmark): boolean {
   return (lm.visibility ?? 1) > 0.4;
 }
