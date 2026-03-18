@@ -19,7 +19,11 @@ export function PublicNavbar() {
   return (
     <header
       className="fixed top-0 z-50 w-full border-b border-white/10 backdrop-blur-md"
-      style={{ background: "rgba(27,94,32,0.92)" }}
+      style={{
+        background: "rgba(27,94,32,0.92)",
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpolygon points='40,8 52,32 40,56 28,32' fill='none' stroke='%23E6A817' stroke-width='0.6' opacity='0.15'/%3E%3Cpolygon points='0,8 12,32 0,56' fill='none' stroke='%23E6A817' stroke-width='0.6' opacity='0.15'/%3E%3Cpolygon points='80,8 80,56 68,32' fill='none' stroke='%23E6A817' stroke-width='0.6' opacity='0.15'/%3E%3C/svg%3E")`,
+        backgroundSize: "80px 80px",
+      }}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
