@@ -203,6 +203,30 @@
   z-index: 0;
 }
 
+/* ── African pattern feature card hover accent ───────────────────────────────
+   Gold → terracotta → teal gradient bottom line appears on hover.
+   Applied to landing page feature cards.
+────────────────────────────────────────────────────────────────────────────── */
+.feature-card-african {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.feature-card-african::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #E6A817 0%, #C1714A 50%, #3A7D6B 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.feature-card-african:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(27,94,32,0.1);
+}
+.feature-card-african:hover::after { opacity: 1; }
+
 /* ── Hub Feature Cards ───────────────────────────────────────────────────────
    Mobile-style colored hub cards matching the Bhora AI card style.
 ────────────────────────────────────────────────────────────────────────────── */

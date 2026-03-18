@@ -229,58 +229,94 @@ export default function LandingPage() {
           backgroundSize: "160px 160px",
         }}
       >
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#E6A817]/40 bg-[#E6A817]/15 px-4 py-1.5 text-sm text-[#F5C842]">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#F5C842] animate-pulse" />
-              AI-powered · Multi-sport · Offline-first
+        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
+          {/* 2-column hero: text left, stat cards right */}
+          <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
+
+            {/* Left — copy */}
+            <div>
+              <div className="mb-5 inline-flex items-center gap-2 border px-3.5 py-1.5 text-[11px] font-semibold tracking-[2px] uppercase text-[#F5C842]"
+                style={{ background: "rgba(230,168,23,0.15)", borderColor: "rgba(230,168,23,0.4)", borderRadius: "2px" }}>
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#F5C842] animate-pulse" />
+                Live · Harare Province
+              </div>
+
+              <h1 className="mb-5 text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl">
+                Develop <em className="not-italic text-[#F5C842]">Every</em><br />
+                Athlete in Zimbabwe
+              </h1>
+
+              <p className="mb-8 max-w-md text-base leading-7 text-white/75">
+                The complete digital platform for talent identification, coach management,
+                and real-time competition tracking — whether you&apos;re in Harare or Hwange.
+              </p>
+
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  href="/register"
+                  className="rounded px-7 py-3.5 text-sm font-bold text-[#2C2416] transition hover:-translate-y-px hover:opacity-90"
+                  style={{ background: "#E6A817" }}
+                >
+                  Register as Athlete
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 rounded border border-white/35 px-7 py-3.5 text-sm font-semibold text-white hover:border-white/70 transition"
+                >
+                  <Play className="h-4 w-4" />
+                  Coach Hub →
+                </Link>
+              </div>
             </div>
 
-            <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Grassroots Sport<br />
-              <em className="not-italic text-[#F5C842]">Pro Platform</em>
-            </h1>
-
-            <p className="mb-10 text-lg text-white/75 sm:text-xl">
-              The complete sports platform for Africa&apos;s next generation of athletes.
-              Train smarter, get scouted, and grow your game — whether you&apos;re in Harare or Hwange.
-            </p>
-
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link
-                href="/register"
-                className="flex items-center gap-2 rounded px-8 py-3.5 text-sm font-bold text-[#2C2416] transition hover:-translate-y-px"
-                style={{ background: "#E6A817" }}
-              >
-                Get started free <ChevronRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/login"
-                className="flex items-center gap-2 rounded border border-white/35 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/6 transition"
-              >
-                <Play className="h-4 w-4" />
-                Sign in
-              </Link>
-            </div>
-
-            <p className="mt-6 text-sm text-[#F5C842]/80">
-              Free for players · No credit card required · Download the app too
-            </p>
-          </div>
-
-          {/* Stats row */}
-          <div className="mx-auto mt-20 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
-            {stats.map(({ value, label, icon: Icon }) => (
+            {/* Right — stat cards */}
+            <div className="flex flex-col gap-3">
+              {/* 3-card row */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { num: "10,000+", label: "Athletes" },
+                  { num: "86+",     label: "Coaches" },
+                  { num: "34+",     label: "Clubs" },
+                ].map(({ num, label }) => (
+                  <div
+                    key={label}
+                    className="relative overflow-hidden rounded-lg p-4 pl-6"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(230,168,23,0.2)" }}
+                  >
+                    {/* Gold left bar */}
+                    <div className="absolute left-0 top-0 h-full w-1" style={{ background: "#E6A817", opacity: 0.7 }} />
+                    <p className="text-2xl font-bold text-white">{num}</p>
+                    <p className="mt-0.5 text-xs tracking-wide text-white/55">{label}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Wide stat card */}
               <div
-                key={label}
-                className="rounded-lg p-6 text-center"
+                className="relative overflow-hidden rounded-lg p-5 pl-7"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(230,168,23,0.2)" }}
               >
-                <Icon className="mx-auto mb-2 h-6 w-6 text-[#E6A817]" />
-                <p className="text-2xl font-bold text-white">{value}</p>
-                <p className="mt-1 text-xs text-white/55">{label}</p>
+                <div className="absolute left-0 top-0 h-full w-1" style={{ background: "#E6A817", opacity: 0.7 }} />
+                <p className="text-lg font-bold text-[#F5C842]">Live This Weekend</p>
+                <p className="mt-1.5 text-sm text-white/55">3 tournaments · 18 matches · 240 players registered</p>
               </div>
-            ))}
+              {/* Extra stats */}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { num: "50,000+", label: "Training Sessions" },
+                  { num: "10",      label: "Provinces Covered" },
+                ].map(({ num, label }) => (
+                  <div
+                    key={label}
+                    className="relative overflow-hidden rounded-lg p-4 pl-6"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(230,168,23,0.2)" }}
+                  >
+                    <div className="absolute left-0 top-0 h-full w-1" style={{ background: "#E6A817", opacity: 0.7 }} />
+                    <p className="text-2xl font-bold text-white">{num}</p>
+                    <p className="mt-0.5 text-xs tracking-wide text-white/55">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -328,7 +364,7 @@ export default function LandingPage() {
             {roles.map((role) => (
               <div
                 key={role.id}
-                className="group flex flex-col rounded-xl p-6 transition hover:-translate-y-1"
+                className="feature-card-african flex flex-col rounded-xl p-6"
                 style={{
                   background: "rgba(255,248,230,0.82)",
                   border: "1px solid rgba(160,82,45,0.15)",
@@ -391,7 +427,7 @@ export default function LandingPage() {
             {aiFeatures.map(({ icon: Icon, title, description, color, bg }) => (
               <div
                 key={title}
-                className="rounded-xl p-6 transition hover:-translate-y-1"
+                className="feature-card-african rounded-xl p-6"
                 style={{
                   background: "rgba(255,248,230,0.82)",
                   border: "1px solid rgba(160,82,45,0.15)",
@@ -573,8 +609,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pattern strip: charcoal + gold zigzag ────────────────────────────── */}
-      <AfricanPatternStrip variant="dark" height={36} />
+      {/* ── Bottom pattern: charcoal + GOLD zigzag + terracotta/teal dots ──── */}
+      <div style={{ lineHeight: 0, overflow: "hidden" }}>
+        <svg viewBox="0 0 1440 36" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", width: "100%", height: 36 }}>
+          <rect width="1440" height="36" fill="#2C2416"/>
+          <polyline points="0,26 9,14 18,26 27,14 36,26 45,14 54,26 63,14 72,26 81,14 90,26 99,14 108,26 117,14 126,26 135,14 144,26 153,14 162,26 171,14 180,26 189,14 198,26 207,14 216,26 225,14 234,26 243,14 252,26 261,14 270,26 279,14 288,26 297,14 306,26 315,14 324,26 333,14 342,26 351,14 360,26 369,14 378,26 387,14 396,26 405,14 414,26 423,14 432,26 441,14 450,26 459,14 468,26 477,14 486,26 495,14 504,26 513,14 522,26 531,14 540,26 549,14 558,26 567,14 576,26 585,14 594,26 603,14 612,26 621,14 630,26 639,14 648,26 657,14 666,26 675,14 684,26 693,14 702,26 711,14 720,26 729,14 738,26 747,14 756,26 765,14 774,26 783,14 792,26 801,14 810,26 819,14 828,26 837,14 846,26 855,14 864,26 873,14 882,26 891,14 900,26 909,14 918,26 927,14 936,26 945,14 954,26 963,14 972,26 981,14 990,26 999,14 1008,26 1017,14 1026,26 1035,14 1044,26 1053,14 1062,26 1071,14 1080,26 1089,14 1098,26 1107,14 1116,26 1125,14 1134,26 1143,14 1152,26 1161,14 1170,26 1179,14 1188,26 1197,14 1206,26 1215,14 1224,26 1233,14 1242,26 1251,14 1260,26 1269,14 1278,26 1287,14 1296,26 1305,14 1314,26 1323,14 1332,26 1341,14 1350,26 1359,14 1368,26 1377,14 1386,26 1395,14 1404,26 1413,14 1422,26 1431,14 1440,26" fill="none" stroke="#E6A817" strokeWidth="1.2" opacity="0.5"/>
+          {[36,108,180,252,324,396,468,540,612,684,756,828,900,972,1044,1116,1188,1260,1332,1404].map((cx, i) => (
+            <circle key={cx} cx={cx} cy="18" r="2.5" fill={i % 2 === 0 ? "#C1714A" : "#3A7D6B"} opacity="0.6"/>
+          ))}
+        </svg>
+      </div>
 
       {/* ── Footer — charcoal + diamond tile ─────────────────────────────────── */}
       <footer
