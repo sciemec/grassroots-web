@@ -3,7 +3,6 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";

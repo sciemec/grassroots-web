@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import {
   Users, Dumbbell, Brain, Trophy, Globe, Shield, Zap, Star, ChevronRight, Play,
