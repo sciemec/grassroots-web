@@ -39,12 +39,10 @@ const COLORS = {
 };
 
 // ── VARIANT: DARK ──────────────────────────────────────────────────
-// Charcoal background with gold diamond outlines, white zigzag,
-// and alternating terracotta / teal dots.
+// Charcoal background with white zigzag and alternating terracotta/teal dots.
 // Used: below NavBar, above Footer
 function DarkStrip({ height }) {
   const zigzag = buildZigzag(1440, height, 9);
-  const diamonds = buildDiamonds(1440, height, 36);
   const dots = buildDots(1440, height, 36, 18);
 
   return (
@@ -55,17 +53,6 @@ function DarkStrip({ height }) {
       style={{ display: 'block', width: '100%', height }}
     >
       <rect width="1440" height={height} fill={COLORS.charcoal} />
-
-      {/* Diamond outlines */}
-      {diamonds.map((d, i) => (
-        <polygon
-          key={i}
-          points={d}
-          fill="none"
-          stroke={COLORS.gold}
-          strokeWidth="1.5"
-        />
-      ))}
 
       {/* White zigzag */}
       <polyline
@@ -203,18 +190,7 @@ function buildZigzag(width, height, step) {
   return points.join(' ');
 }
 
-function buildDiamonds(width, height, spacing) {
-  const diamonds = [];
-  const halfH = height * 0.42;
-  const halfW = height * 0.28;
-  const cy = height / 2;
-  for (let cx = spacing / 2; cx < width; cx += spacing) {
-    diamonds.push(
-      `${cx},${cy - halfH} ${cx + halfW},${cy} ${cx},${cy + halfH} ${cx - halfW},${cy}`
-    );
-  }
-  return diamonds;
-}
+
 
 function buildDots(width, height, spacing, offset) {
   const dots = [];
