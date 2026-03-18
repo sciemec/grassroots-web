@@ -19,6 +19,19 @@
 /* ── Chevron pattern: reusable definition ─────────────────────────────────── */
 /* Two overlapping diagonal gradients create a diamond/chevron grid pattern.  */
 /* Gold colour: #f0b429 (Zimbabwe gold) at 22% opacity on dark green base.   */
+/* ── African Pattern Palette ──────────────────────────────────────────────── */
+:root {
+  --gold:         #E6A817;
+  --gold-light:   #F5C842;
+  --terracotta:   #A0522D;
+  --terra-light:  #C1714A;
+  --charcoal:     #2C2416;
+  --teal-accent:  #3A7D6B;
+  --warm-bg:      #EDE0C4;
+  --card-bg:      rgba(255, 248, 230, 0.82);
+}
+
+/* ── Chevron pattern: reusable definition ─────────────────────────────────── */
 :root {
   --chevron:
     repeating-linear-gradient(

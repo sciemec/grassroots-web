@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import AfricanPatternStrip from "@/components/ui/AfricanPatternStrip";
 import {
   Users, Dumbbell, Brain, Trophy, Globe, Shield, Zap, Star, ChevronRight, Play,
 } from "lucide-react";
@@ -193,6 +194,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen text-white">
       <PublicNavbar />
+      <AfricanPatternStrip variant="dark" height={40} />
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-16">
@@ -257,6 +259,8 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <AfricanPatternStrip variant="gold" height={28} />
+
       {/* ── Sports Strip ─────────────────────────────────────────────────────── */}
       <section id="sports" className="border-y border-[#f0b429]/20 bg-[#f0b429]/5 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -282,7 +286,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Roles Section ─────────────────────────────────────────────────────── */}
-      <section id="features" className="py-24">
+      <section id="features" className="py-24" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(160,82,45,0.06) 50%, transparent 100%)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-16 text-center">
             <h2 className="text-3xl font-bold sm:text-4xl">Built for everyone in the game</h2>
@@ -295,23 +299,24 @@ export default function LandingPage() {
             {roles.map((role) => (
               <div
                 key={role.id}
-                className="flex flex-col rounded-2xl border border-white/10 bg-white/5 p-6 hover:border-green-500/40 hover:bg-white/8 transition-all"
+                className="flex flex-col rounded-2xl border p-6 hover:border-[#f0b429]/40 transition-all"
+                style={{ background: "var(--card-bg)", borderColor: "rgba(160,82,45,0.18)" }}
               >
                 <div className="mb-4 flex items-center gap-3">
                   <span className="text-3xl">{role.icon}</span>
                   <div>
-                    <h3 className={`text-lg font-bold ${role.accent}`}>{role.label}</h3>
-                    <p className="text-xs text-green-400">Hub</p>
+                    <h3 className="text-lg font-bold" style={{ color: "var(--charcoal)" }}>{role.label}</h3>
+                    <p className="text-xs font-medium" style={{ color: "var(--teal-accent)" }}>Hub</p>
                   </div>
                 </div>
 
-                <h4 className="mb-2 text-base font-semibold text-white">{role.headline}</h4>
-                <p className="mb-5 text-sm text-green-300 leading-relaxed">{role.description}</p>
+                <h4 className="mb-2 text-base font-semibold" style={{ color: "var(--charcoal)" }}>{role.headline}</h4>
+                <p className="mb-5 text-sm leading-relaxed" style={{ color: "var(--terracotta)" }}>{role.description}</p>
 
                 <ul className="mb-6 flex-1 space-y-2">
                   {role.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-green-200">
-                      <span className="mt-0.5 text-green-500">✓</span>
+                    <li key={f} className="flex items-start gap-2 text-xs" style={{ color: "var(--charcoal)" }}>
+                      <span className="mt-0.5" style={{ color: "var(--teal-accent)" }}>✓</span>
                       {f}
                     </li>
                   ))}
@@ -319,7 +324,8 @@ export default function LandingPage() {
 
                 <Link
                   href={role.href}
-                  className="mt-auto flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+                  className="mt-auto flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors hover:opacity-80"
+                  style={{ background: "var(--charcoal)", color: "var(--gold)", borderColor: "var(--terracotta)" }}
                 >
                   {role.cta} <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
@@ -483,6 +489,8 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
+
+      <AfricanPatternStrip variant="green" height={44} />
 
       {/* ── Footer ────────────────────────────────────────────────────────────── */}
       <footer className="border-t border-white/10 bg-black/20 py-12">
