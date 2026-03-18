@@ -136,19 +136,36 @@
   html {
     font-family: var(--font-sans), sans-serif;
     background-color: #EDE0C4;
+    /* African pattern tile — visible on every page as the base layer */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpolygon points='100,30 120,65 100,100 80,65' fill='none' stroke='%232C2416' stroke-width='1.5' opacity='0.25'/%3E%3Cpolyline points='0,120 12,108 24,120 36,108 48,120 60,108 72,120 84,108 96,120 108,108 120,120 132,108 144,120 156,108 168,120 180,108 192,120 200,112' fill='none' stroke='%232C2416' stroke-width='1' opacity='0.20'/%3E%3Ccircle cx='30' cy='170' r='5' fill='%23C1714A' opacity='0.32'/%3E%3Ccircle cx='100' cy='170' r='5' fill='%23E6A817' opacity='0.32'/%3E%3Ccircle cx='170' cy='170' r='5' fill='%233A7D6B' opacity='0.32'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    background-attachment: fixed;
   }
 
   body {
     color: var(--foreground);
-    /* Transparent so html chevron shows through where no opaque element sits */
     background: transparent;
   }
 }
 
-/* ── bg-background: warm African cream base ──────────────────────────────── */
+/* ── bg-background: warm African cream base + pattern ────────────────────── */
 .bg-background {
   background-color: #EDE0C4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpolygon points='100,30 120,65 100,100 80,65' fill='none' stroke='%232C2416' stroke-width='1.5' opacity='0.25'/%3E%3Cpolyline points='0,120 12,108 24,120 36,108 48,120 60,108 72,120 84,108 96,120 108,108 120,120 132,108 144,120 156,108 168,120 180,108 192,120 200,112' fill='none' stroke='%232C2416' stroke-width='1' opacity='0.20'/%3E%3Ccircle cx='30' cy='170' r='5' fill='%23C1714A' opacity='0.32'/%3E%3Ccircle cx='100' cy='170' r='5' fill='%23E6A817' opacity='0.32'/%3E%3Ccircle cx='170' cy='170' r='5' fill='%233A7D6B' opacity='0.32'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
 }
+
+/* ── Warm up pure white and light grey so African pattern colours show ──────
+   Pure white and light grey backgrounds wash out the gold/terracotta/teal.
+   Replace with warm cream tones that let the pattern breathe.
+────────────────────────────────────────────────────────────────────────────── */
+.bg-white        { background-color: #FAF8F3 !important; }
+.bg-gray-50      { background-color: #F5EDD8 !important; }
+.bg-gray-100     { background-color: #EDE0C4 !important; }
+.bg-slate-50     { background-color: #F5EDD8 !important; }
+.bg-slate-100    { background-color: #EDE0C4 !important; }
+.bg-zinc-50      { background-color: #F5EDD8 !important; }
+.bg-zinc-100     { background-color: #EDE0C4 !important; }
 
 /* ── Grassroots Logo Watermark ───────────────────────────────────────────────
    Apply class="gs-watermark" to any page wrapper for the subtle bottom-right
