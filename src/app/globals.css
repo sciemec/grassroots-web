@@ -16,9 +16,6 @@
    Background: dark navy-green with bold diagonal gold chevron lines
    ══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Chevron pattern: reusable definition ─────────────────────────────────── */
-/* Two overlapping diagonal gradients create a diamond/chevron grid pattern.  */
-/* Gold colour: #f0b429 (Zimbabwe gold) at 22% opacity on dark green base.   */
 /* ── African Pattern Palette ──────────────────────────────────────────────── */
 :root {
   --gold:         #E6A817;
@@ -29,25 +26,6 @@
   --teal-accent:  #3A7D6B;
   --warm-bg:      #EDE0C4;
   --card-bg:      rgba(255, 248, 230, 0.82);
-}
-
-/* ── Chevron pattern: reusable definition ─────────────────────────────────── */
-:root {
-  --chevron:
-    repeating-linear-gradient(
-      -45deg,
-      transparent        0px,
-      transparent        14px,
-      rgba(240,180,41,0.22) 14px,
-      rgba(240,180,41,0.22) 17px
-    ),
-    repeating-linear-gradient(
-      45deg,
-      transparent        0px,
-      transparent        14px,
-      rgba(240,180,41,0.22) 14px,
-      rgba(240,180,41,0.22) 17px
-    );
 }
 
 @layer base {
@@ -157,10 +135,7 @@
 
   html {
     font-family: var(--font-sans), sans-serif;
-    /* Dark green + gold chevron on the root element — always behind everything */
-    background-color: #0c1f10;
-    background-image: var(--chevron);
-    background-attachment: fixed;
+    background-color: #EDE0C4;
   }
 
   body {
@@ -170,13 +145,9 @@
   }
 }
 
-/* ── Apply chevron to every page wrapper that uses bg-background ──────────── */
-/* This ensures the gold diagonal pattern shows on ALL dashboard pages,        */
-/* not just where the html element is exposed.                                 */
+/* ── bg-background: warm African cream base ──────────────────────────────── */
 .bg-background {
-  background-color: #0c1f10;
-  background-image: var(--chevron);
-  background-attachment: fixed;
+  background-color: #EDE0C4;
 }
 
 /* ── Grassroots Logo Watermark ───────────────────────────────────────────────
