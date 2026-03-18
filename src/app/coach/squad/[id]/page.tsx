@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 import type { SquadMember, TrainingSession } from "@/types";
 
 const STATUS_BADGE: Record<string, string> = {
@@ -59,10 +60,8 @@ export default function CoachPlayerDetailPage() {
     setLoadingAi(true);
     setAiReport("");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Generate a player development report for ${member.player?.name}, position: ${member.position}, status: ${member.status}. Recent sessions: ${sessions.length}. Avg score: ${stats?.avg_score ?? "N/A"}. Top skill: ${stats?.top_skill ?? "N/A"}. Area to improve: ${stats?.improvement_area ?? "N/A"}. Provide: 1) Current form assessment, 2) Recommended training focus for next 2 weeks, 3) Tactical role suitability.`,
-      });
-      setAiReport(res.data?.response ?? "");
+      const reply = await queryAI(`Generate a player development report for ${member.player?.name}, position: ${member.position}, status: ${member.status}. Recent sessions: ${sessions.length}. Avg score: ${stats?.avg_score ?? "N/A"}. Top skill: ${stats?.top_skill ?? "N/A"}. Area to improve: ${stats?.improvement_area ?? "N/A"}. Provide: 1) Current form assessment, 2) Recommended training focus for next 2 weeks, 3) Tactical role suitability.`, "coach");
+      setAiReport(reply);
     } catch { setAiReport("Unable to generate report. Please try again."); }
     finally { setLoadingAi(false); }
   };

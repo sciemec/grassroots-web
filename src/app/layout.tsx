@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { PwaBanner } from "@/components/pwa/install-banner";
+import { OfflineIndicator } from "@/components/ui/offline-indicator";
+import { PushPrompt } from "@/components/ui/push-prompt";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -62,7 +64,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1A6B3C",
+  themeColor: "#f0b429",
   width: "device-width",
   initialScale: 1,
 };
@@ -81,6 +83,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           {children}
           <PwaBanner />
+          <OfflineIndicator />
+          <PushPrompt />
         </Providers>
         <script
           dangerouslySetInnerHTML={{

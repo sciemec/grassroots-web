@@ -1,0 +1,724 @@
+{
+  "version": "1.0",
+  "description": "Grassroots Sport offline feedback responses",
+  "categories": {
+    "technical": {
+      "foundation": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Outstanding! Your ball control is brilliant for your age. Keep playing with both feet every day!",
+              "shona": "Waita zvakanaka! Kubata bhora kwako kwakanaka zvikuru. Ramba uchidiridzira nemakumbo maviri zuva nezuva!"
+            },
+            {
+              "english": "Amazing work! You touched the ball so many times with great control. You are a natural!",
+              "shona": "Basa rakanaka! Wakabata bhora kangani zvikuru nehunyanzvi. Uri munhu ane hukama nebhora!"
+            },
+            {
+              "english": "Excellent! Your feet moved so well with the ball. Keep smiling and keep playing!",
+              "shona": "Zvakanaka! Makumbo ako akafamba zvakanaka nebhora. Ramba uchiseka uye uchitamba!"
+            }
+          ],
+          "next_drill": "Ball Juggling Challenge",
+          "next_drill_shona": "Magumo eBhora"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good effort! You are learning fast. Try to use your other foot a little more next time.",
+              "shona": "Basa rakanaka! Uri kudzidza nekukurumidza. Edza kushandisa rimwe gumbo pane imwe nguva."
+            },
+            {
+              "english": "Well done! Your strong foot is working great. Now let us train your other foot too!",
+              "shona": "Waita zvakanaka! Gumbo rako rine simba rinoshanda zvakanaka. Zvino ngatidzidzise rimwe gumbo rako!"
+            },
+            {
+              "english": "Nice work! Keep practicing every day and you will get even better very soon.",
+              "shona": "Basa rakanaka! Ramba uchiita magumo zuva nezuva uye uchakura zvikuru nokukurumidza."
+            }
+          ],
+          "next_drill": "Weak Foot Tapping",
+          "next_drill_shona": "Kurova Negumbo Risina Simba"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Keep trying! Every great player started just like you. Practice makes perfect — try again!",
+              "shona": "Ramba uchiedza! Mutambi wese mukuru akatanga saiwe. Kudzidzira kunoita kuti uve nhubu — edza zvakare!"
+            },
+            {
+              "english": "Do not give up! The ball is your friend. Spend 10 minutes with it every day and watch how fast you improve.",
+              "shona": "Usape! Bhora ndeshamwari yako. Pedza maminitsi gumi naro zuva nezuva uye tarisa kukurumidza kwaunosimuka."
+            },
+            {
+              "english": "Good try! Focus on keeping the ball close to your feet. Slow and steady first, then fast!",
+              "shona": "Waedza zvakanaka! Tarisa kuchengeta bhora padyo nemakumbo ako. Nyore uye akasimba kutanga, wobva wakurumidza!"
+            }
+          ],
+          "next_drill": "Ball Rolling Foundations",
+          "next_drill_shona": "Kutangira Kukwidza Bhora"
+        }
+      },
+      "development": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Excellent technique! Your first touch is clean and your body shape is spot on. You are ready for the next level.",
+              "shona": "Hunyanzvi hwakanaka! Kubata kwako kwokutanga kwakanaka uye chimiro chemuviri wako chakanaka. Uri kugadzirika kwechikepe chekuteedzera."
+            },
+            {
+              "english": "Outstanding session! Both feet working well, good balance, strong decision making. Scouts would be impressed.",
+              "shona": "Nguva yakanaka zvikuru! Makumbo maviri ashanda zvakanaka, kuenzana kwakanaka, kusarudza kwakasimba. Vaongorori vangafara."
+            },
+            {
+              "english": "Brilliant work! Your technique under pressure stayed clean. That is a sign of a real footballer.",
+              "shona": "Basa rakanaka zvikuru! Hunyanzvi hwako pasi pemhinduro hwakasara hwakanaka. Icho chiratidzo chemutambi webhora wechokwadi."
+            }
+          ],
+          "next_drill": "Combination Passing Drill",
+          "next_drill_shona": "Magumo Ekupfuura Bhora Pamwechete"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good session! Your strong foot is excellent. Your weak foot needs 15 more minutes of work daily to catch up.",
+              "shona": "Nguva yakanaka! Gumbo rako rine simba rakanaka zvikuru. Gumbo rako risina simba rinoda maminitsi gumi nemashanu emagumo zuva nezuva kuti rikwane."
+            },
+            {
+              "english": "Well done! Your passing accuracy is improving. Focus on your body shape before you receive the ball.",
+              "shona": "Waita zvakanaka! Chokwadi chekupfuura kwako chiri kusimba. Tarisa chimiro chemuviri wako usati wagamuchira bhora."
+            },
+            {
+              "english": "Solid work! Your speed with the ball is good. Work on your first touch — it will make everything faster.",
+              "shona": "Basa rakasimba! Mwero wako nebhora wakanaka. Shanda pakubata kwako kwokutanga — kuchagadzira zvose kukurumidza."
+            }
+          ],
+          "next_drill": "Weak Foot Cone Weave",
+          "next_drill_shona": "Kukweva Magwaro Negumbo Risina Simba"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Keep working! Your technique needs more repetition. Do this drill every day for one week and you will see a big difference.",
+              "shona": "Ramba uchishanda! Hunyanzvi hwako hunoda kuita zvakawanda. Ita magumo aya zuva nezuva kwevhiki rimwe uye uchaona musiyano mukuru."
+            },
+            {
+              "english": "Do not be discouraged! Your body position needs adjustment. Watch how you stand before touching the ball.",
+              "shona": "Usanyadzirwe! Chimiro chemuviri wako chinoda kugadzirwa. Tarisa mumiro wako usati watambira bhora."
+            },
+            {
+              "english": "Slow down and focus on quality first. One clean touch is better than five messy ones.",
+              "shona": "Nonoka uye tarisa kunaka kwokutanga. Kubata kumwe kwakanaka kunopfuura kubata kushanu kusina kunaka."
+            }
+          ],
+          "next_drill": "Wall Passing Basics",
+          "next_drill_shona": "Magumo Ekupfuura Kumadziro"
+        }
+      },
+      "performance": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Elite level technique! Your execution under pressure is professional quality. ZIFA scouts should see this.",
+              "shona": "Hunyanzvi hwevhu repamusoro! Kushanda kwako pasi pemhinduro ndicho hunhu hwemutambi wenhengo. Vaongorori veZIFA vanofanira kuona izvi."
+            },
+            {
+              "english": "Exceptional session! Both feet at high level, body shape perfect, decision speed excellent. You are performing like a professional.",
+              "shona": "Nguva yakanakisisa! Makumbo maviri epakoma, chimiro chemuviri chakanaka, mwero wekusarudza wakanaka. Uri kuita semutambi wepasuru."
+            },
+            {
+              "english": "Outstanding! Your weak foot has caught up to your strong foot. This is exactly what coaches look for at the next level.",
+              "shona": "Zvakanaka zvikuru! Gumbo rako risina simba rakakwana regumbo rako rine simba. Ichi ndichowo chinotsvagwa nevadzidzisi pachikepe chinotevera."
+            }
+          ],
+          "next_drill": "Advanced Combination Play",
+          "next_drill_shona": "Kutamba Pamwechete Kwepakoma"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good performance! At this level, the difference between good and great is your weak foot. Dedicate 20 minutes daily to it.",
+              "shona": "Kushanda kwakanaka! Pachikero ichi, musiyano pakati pekanaka nekubvira kunaka ndicho gumbo rako risina simba. Ipa maminitsi makumi maviri zuva nezuva."
+            },
+            {
+              "english": "Solid session! Your technical base is strong. Work on executing the same quality when fatigued in the last 20 minutes of a match.",
+              "shona": "Nguva yakasimba! Hwaro hwako hwenyanzvi hwakasimba. Shanda pakuita hunhu humwechete iwe waneta mumaminitsi makumi maviri ekupedzisira emutambo."
+            },
+            {
+              "english": "Well done! Your 1v1 skills are sharp. Add more disguise to your movement to make defenders read you less easily.",
+              "shona": "Waita zvakanaka! Hunyanzvi hwako hwekutamba nomumwe nechete hwakachenjera. Wedzera kuhwanda kumashure kwekufamba kwako kuti vadziviriri vakuverenge zvishoma."
+            }
+          ],
+          "next_drill": "1v1 Pressure Finishing",
+          "next_drill_shona": "Kupedza Mutambo Pasi Pemhinduro"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "At this level, consistency is everything. Your technique breaks down under pressure. Train specifically in pressure situations daily.",
+              "shona": "Pachikero ichi, kuenderana ndiko kose. Hunyanzvi hwako hunopamhidzika pasi pemhinduro. Dzidzira zvakanyanya mumamiriro emhinduro zuva nezuva."
+            },
+            {
+              "english": "The foundation is there but needs sharpening. Focus on your weaker areas with deliberate practice every session.",
+              "shona": "Hwaro huripo asi hunoda kusimbidzwa. Tarisa kunzvimbo dzako dzisina simba nekudzidzira kwakagadziridzwa muhuroro hwose."
+            },
+            {
+              "english": "Trust the process. Identify your three weakest technical areas and spend 10 minutes on each one every day.",
+              "shona": "Vimba nenzira. Ona nzvimbo dzako nhatu dzisina simba dzenyanzvi uye pedzera maminitsi gumi pane imwe neimwe zuva nezuva."
+            }
+          ],
+          "next_drill": "Technical Pressure Circuit",
+          "next_drill_shona": "Magumo Enyanzvi Pasi Pemhinduro"
+        }
+      },
+      "professional": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Professional standard execution. Your technical consistency across both feet at match intensity is elite. Keep this standard every session.",
+              "shona": "Kushanda kwemutambi wenhengo. Kuenderana kwako kwenyanzvi pamakumbo maviri pamwero wemutambo ndekhwe. Chengeta chinhu ichi muhuroro hwose."
+            },
+            {
+              "english": "Exceptional. Your technical quality under match pressure is what separates professionals from the rest. Document this session for scouts.",
+              "shona": "Zvakanaka zvikuru. Hunhu hwako hwenyanzvi pasi pemhinduro yemutambo ndiko kunosiyanisa vaprofesheni nevamwe. Nyora huroro uhwu kune vaongorori."
+            }
+          ],
+          "next_drill": "Match Simulation Technical Circuit",
+          "next_drill_shona": "Magumo Enyanzvi Ekuongorora Mutambo"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good professional standard. Marginal gains now make the difference. Focus on your touch quality in tight spaces.",
+              "shona": "Chinhu chakanaka chemutambi wenhengo. Kuwana zvishoma zvishoma zvino knoita musiyano. Tarisa hunhu hwekubata kwako munzvimbo dzinosimba."
+            },
+            {
+              "english": "Solid session. At professional level, 1 percent improvements compound over time. Identify your weakest technical moment today and drill it.",
+              "shona": "Huroro hwakasimba. Pachikero cheprofesheni, kusimuka kwepasendi rimwe kunowedzera nekufamba kwenguva. Ona nguva yako yakaipa munyanzvi nhasi uye idzidzire."
+            }
+          ],
+          "next_drill": "Position Specific Technical Mastery",
+          "next_drill_shona": "Kudzidza Hunyanzvi Hwenzvimbo Yako"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Below professional standard today. Analyse what broke down technically and target it specifically in your next three sessions.",
+              "shona": "Pasi pechinhu chemutambi wenhengo nhasi. Ongorora zvakaregedza kunyanzvi uye zvitarise zvakanyanya muhuroro hwako hwematatu hunouya."
+            }
+          ],
+          "next_drill": "Technical Fundamentals Reset",
+          "next_drill_shona": "Kudzosera Hwaro Hwenyanzvi"
+        }
+      }
+    },
+    "physical": {
+      "foundation": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "You are so fast and strong for your age! Your body moves beautifully. Keep running and playing every day!",
+              "shona": "Uri nekukurumidza uye nesimba zvikuru pakoreji yako! Muviri wako unofamba zvakanaka. Ramba uchimhanya uye uchitamba zuva nezuva!"
+            },
+            {
+              "english": "Incredible energy! You never stopped moving. That energy will take you very far in football!",
+              "shona": "Simba rinoshamisa! Hauna kumira kufamba. Simba iroro richakuendesa kure zvikuru mubhora!"
+            }
+          ],
+          "next_drill": "Fun Speed Chase Game",
+          "next_drill_shona": "Mutambo Wekukurumidza Unofarira"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Great effort! Your speed is good. To get even faster, practice sprinting to a tree and back every morning.",
+              "shona": "Kushanda kwakanaka! Mwero wako wakanaka. Kuti ukurumidze zvikuru, dzidzira kumhanya kusvika kumuti uye kudzoka mangwanani ose."
+            },
+            {
+              "english": "Well done! Your stamina kept up well. Eat sweet potato before training to give you more energy.",
+              "shona": "Waita zvakanaka! Kusimba kwako kwakamira zvakanaka. Dya mbambaira usati wadzidza kukupa simba rakawanda."
+            }
+          ],
+          "next_drill": "Agility Cone Fun",
+          "next_drill_shona": "Mutambo Wekujeka Nemaconi"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Keep moving every day! Run to school instead of walking when you can. Your fitness will build up quickly!",
+              "shona": "Ramba uchifamba zuva nezuva! Mhanya kuenda kuchikoro panzvimbo yokufamba iwe unogona. Simba rako richakura nekukurumidza!"
+            },
+            {
+              "english": "Do not worry about speed yet — just enjoy moving your body. Play tag with friends every day and your fitness will grow!",
+              "shona": "Usafunganya nezvemwero ikozvino — ingofara kufamba nemuviri wako. Tamba nhodo neshamwari zuva nezuva uye simba rako richakura!"
+            }
+          ],
+          "next_drill": "Running Games and Tag",
+          "next_drill_shona": "Mitambo Yekumhanya Nenhodo"
+        }
+      },
+      "development": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Excellent physical performance! Your sprint speed and recovery time are above average for your age group. Keep this training consistency.",
+              "shona": "Kushanda kwomuviri kwakanaka! Mwero wako wekumhanya nekupora kwenguva ari pamusoro pemwero wechikepe chako cherekoreji. Ramba uchishanda zvakaenzana."
+            },
+            {
+              "english": "Outstanding athleticism! Your acceleration in the first 5 metres is explosive. This is a huge advantage on the pitch.",
+              "shona": "Usimba hwakasiyana! Kukurumidza kwako mumita shanu dzokutanga kunoputika. Uyu ndiwo mubatsiro mukuru pamutambo."
+            }
+          ],
+          "next_drill": "Sprint Interval Training",
+          "next_drill_shona": "Magumo Ekumhanya Nekunongedza"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good physical base! Your stamina is solid but your sprint speed can improve. Add 3 short sprints at the end of every training session.",
+              "shona": "Hwaro hwakanaka hwomuviri! Kusimba kwako kwakasimba asi mwero wako wekumhanya unogona kusimba. Wedzera kumhanya katatu kukupera kwehuroro hwose hwekudzidzira."
+            },
+            {
+              "english": "Well done! Your fitness stayed consistent throughout. To improve, eat beans or eggs after training for muscle recovery.",
+              "shona": "Waita zvakanaka! Simba rako rakagara rakaenzana. Kusimudzira, dya nyemba kana mazai mushure mekudzidzira kugadzirisa masuru."
+            }
+          ],
+          "next_drill": "Shuttle Run Fitness",
+          "next_drill_shona": "Magumo Ekumhanya Kuna Kuna"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Your fitness needs work but it will come. Run for 20 minutes every morning before school. In one month you will feel the difference.",
+              "shona": "Simba rako rinoda kushanda asi richauya. Mhanya maminitsi makumi maviri mangwanani ose usati waenda kuchikoro. Mumwedzi umwe uchanzwa musiyano."
+            },
+            {
+              "english": "Do not be discouraged — fitness takes time to build. Focus on eating well — sadza with beans gives you great energy for training.",
+              "shona": "Usanyadzirwe — simba rinoda nguva kukura. Tarisa kudya zvakanaka — sadza nenyemba inokupa simba rakanaka rekudzidzira."
+            }
+          ],
+          "next_drill": "Basic Fitness Circuit",
+          "next_drill_shona": "Magumo Ekutanga Esimba"
+        }
+      },
+      "performance": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Elite physical performance! Your speed zones show you can sustain high intensity for the full session. Scouts look for exactly this.",
+              "shona": "Kushanda kwomuviri kwepakoma! Nzvimbo dzako dzemwero dzinoratidza kuti unogona kugarisa mwero murefu muhuroro hwose. Vaongorori vanotsvaga chokwadi ichi."
+            },
+            {
+              "english": "Exceptional athleticism at this level! Your sprint count and recovery speed put you in the top tier for your age group.",
+              "shona": "Usimba hwakasiyana pachikero ichi! Nhamba yako yekumhanya uye mwero wokupora zvakuisa muchikamu chepamusoro chechikepe chako."
+            }
+          ],
+          "next_drill": "High Intensity Position Play",
+          "next_drill_shona": "Kutamba Nzvimbo Wemwero Murefu"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Solid physical session! To reach elite level, your sprint recovery needs to be under 30 seconds consistently. Track this every session.",
+              "shona": "Huroro hwomuviri hwakasimba! Kusvika pachikero chepamusoro, kupora kwako kwekumhanya kunofanira kuva pasi pesekendi makumi matatu zvakaenzana. Ongorora izvi muhuroro hwose."
+            },
+            {
+              "english": "Good stamina and speed! Your physical profile is strong. Now add position-specific conditioning to sharpen your match fitness.",
+              "shona": "Kusimba uye mwero wakanaka! Chimiro chako chomuviri chakasimba. Zvino wedzera kudzidzirwa kwenzvimbo yako yechokwadi kusimbisa simba rako remutambo."
+            }
+          ],
+          "next_drill": "Position Specific Conditioning",
+          "next_drill_shona": "Kudzidzirwa Kwenzvimbo Yako"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Your physical output dropped significantly in the second half of the session. Focus on match fitness training and nutrition before sessions.",
+              "shona": "Kushanda kwako kwomuviri kwakaderuka zvikuru muhafu yechipiri yehuroro. Tarisa kudzidzira kwesimba remutambo uye kudya usati waita huroro."
+            }
+          ],
+          "next_drill": "Match Fitness Intervals",
+          "next_drill_shona": "Magumo Esimba Remutambo"
+        }
+      },
+      "professional": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Professional physical standard. Your load management and intensity output are exactly where they need to be for match performance.",
+              "shona": "Chinhu chomuviri chemutambi wenhengo. Kubata kwako kwemutoro uye kushanda kwemwero zviri pachiri panofanira kuva nemutambo."
+            }
+          ],
+          "next_drill": "Match Day Activation Protocol",
+          "next_drill_shona": "Magumo Ekumutsa Pazuva Remutambo"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good professional output. Monitor your load carefully — recovery at this level is as important as the training itself.",
+              "shona": "Kushanda kwakanaka kwemutambi wenhengo. Ona mutoro wako zvakangwara — kupora pachikero ichi kunokosha zvakafanana nekudzidzira pacharo."
+            }
+          ],
+          "next_drill": "Recovery and Activation Session",
+          "next_drill_shona": "Huroro Hwokupora Nokumutsa"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Physical output below professional standard today. Review your sleep, nutrition and training load from the past week.",
+              "shona": "Kushanda kwomuviri pasi pechinhu chemutambi wenhengo nhasi. Ongorora hope dzako, kudya uye mutoro wekudzidzira wevhiki rapfuura."
+            }
+          ],
+          "next_drill": "Recovery Day Light Session",
+          "next_drill_shona": "Huroro Hwakajeka Hwezuva Rokupora"
+        }
+      }
+    },
+    "tactical": {
+      "foundation": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "You understood where to go so well! You found the open spaces perfectly. That is very smart football!",
+              "shona": "Wakunzwisisa zvakanaka kwekuenda! Wakawana nzvimbo dzakavhurika zvakanaka. Iri bhora rine njere zvikuru!"
+            }
+          ],
+          "next_drill": "Simple 2v1 Game",
+          "next_drill_shona": "Mutambo Mwiri Nomumwe"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good thinking on the pitch! You found some good spaces. Keep looking around you before you get the ball.",
+              "shona": "Kufunga kwakanaka pamutambo! Wakawana nzvimbo dzakanaka. Ramba uchitarisa-tarisa nekukurumidza usati wabata bhora."
+            }
+          ],
+          "next_drill": "Space Finding Game",
+          "next_drill_shona": "Mutambo Wekutsvaga Nzvimbo"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Keep looking around the pitch! Before you get the ball, look left and right to see where your friends are.",
+              "shona": "Ramba uchitarisa-tarisa pamutambo! Usati wabata bhora, tarisa kuruboshwe uye kurudyi kuona shamwari dzako dziriko."
+            }
+          ],
+          "next_drill": "Look Before You Receive",
+          "next_drill_shona": "Tarisa Usati Wagamuchira"
+        }
+      },
+      "development": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Excellent tactical awareness! Your movement off the ball created great passing options for your teammates. A real team player.",
+              "shona": "Njere dzepamusoro dzepamutambo! Kufamba kwako kubva pabhora kwakagadzira nzira dzakanaka dzekupfuura kune vamwe vako. Mutambi wechokwadi wesepuka."
+            }
+          ],
+          "next_drill": "Rondo 5v2",
+          "next_drill_shona": "Rondo Vashanu Pavaviri"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good tactical play! You understand position well. Work on scanning the pitch more often — look up every 3 seconds.",
+              "shona": "Kutamba zvakanaka pamutambo! Unonzwisisa nzvimbo zvakanaka. Shanda kuongorora mutambo kakawanda — tarisa kumusoro masekendi matatu ose."
+            }
+          ],
+          "next_drill": "Positional Rondo 4v1",
+          "next_drill_shona": "Rondo Yenzvimbo Vana Pomumwe"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Positioning needs work. Remember — good positioning means getting open before the ball arrives, not after.",
+              "shona": "Nzvimbo inoda kushanda. Rangarira — nzvimbo yakanaka kureva kuwana yakavhurwa bhora risati rasvika, kwete mushure."
+            }
+          ],
+          "next_drill": "Shadow Positioning Drill",
+          "next_drill_shona": "Magumo Enzvimbo Yemumvuri"
+        }
+      },
+      "performance": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Elite tactical intelligence! Your pressing triggers, positioning and transition speed are all at a high level. Ready for higher competition.",
+              "shona": "Njere dzepamusoro dzepamutambo! Zvimutsa zvako zvekumanikidza, nzvimbo uye mwero wekuchinja zvose zviri pachikero chepamusoro. Wakagadzirira makwikwi epamusoro."
+            }
+          ],
+          "next_drill": "Tactical Small Sided Game",
+          "next_drill_shona": "Mutambo Mudiki Wenjere Dzepamutambo"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good tactical understanding! Your decision making is solid but slow under pressure. Practice quick decisions in rondo every session.",
+              "shona": "Kunzwisisa kwakanaka kwepamutambo! Kusarudza kwako kwakasimba asi kunononoka pasi pemhinduro. Dzidzira kusarudza nekukurumidza murondo muhuroro hwose."
+            }
+          ],
+          "next_drill": "Decision Making Under Pressure",
+          "next_drill_shona": "Kusarudza Pasi Pemhinduro"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Tactical awareness needs significant improvement. Study your position specifically — watch how professional players in your position move without the ball.",
+              "shona": "Njere dzepamutambo dzinoda kusimbidzwa zvikuru. Ongorora nzvimbo yako zvakanyanya — tarisa vaprofesheni vanofamba sei pasina bhora munzvimbo yako."
+            }
+          ],
+          "next_drill": "Position Study and Shadow Play",
+          "next_drill_shona": "Kudzidza Nzvimbo Nokutamba Mumvuri"
+        }
+      },
+      "professional": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Professional tactical execution. Your game model understanding and implementation are at the level required for professional football.",
+              "shona": "Kushanda kwenjere dzepamutambo kwemutambi wenhengo. Kunzwisisa kwako kwemodeli yemutambo uye kushandisa zviri pachikero chinodiwa mubhora raprofesheni."
+            }
+          ],
+          "next_drill": "Game Model Implementation Session",
+          "next_drill_shona": "Huroro Hwokushandisa Modeli Yemutambo"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Solid tactical session. Review the moments where your positioning was off and understand the game model principle behind each one.",
+              "shona": "Huroro hwakasimba hwenjere dzepamutambo. Ongorora nguva dzakarasika nzvimbo yako uye nzwisisa mhedzisiro yemodeli yemutambo shure kwega wega."
+            }
+          ],
+          "next_drill": "Tactical Periodization Review",
+          "next_drill_shona": "Kuongorora Nguva Dzenjere Dzepamutambo"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Tactical output below required standard. Study the team game model and identify specifically where your role breaks down.",
+              "shona": "Kushanda kwenjere dzepamutambo pasi pechinhu chinodiwa. Ongorora modeli yemutambo wesepuka uye ona zvakanyanya nzvimbo inorasika basa rako."
+            }
+          ],
+          "next_drill": "Individual Tactical Analysis",
+          "next_drill_shona": "Kuongorora Kwenjere Dzako Dzomumwe Nomumwe"
+        }
+      }
+    },
+    "mental": {
+      "foundation": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "You never gave up and you kept smiling! That is the most important thing in football. You have the heart of a champion!",
+              "shona": "Hauna kupa uye wakaramba uchiseka! Ndiko kunonyanya kukosha mubhora. Une moyo wamukundi!"
+            }
+          ],
+          "next_drill": "Celebration and Fun Drill",
+          "next_drill_shona": "Magumo Okufara Nokupemberera"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Great attitude today! You tried again after making mistakes. That is exactly what champions do. Keep that spirit!",
+              "shona": "Mwoyo wakanaka nhasi! Wakaedza zvakare mushure mekukanganisa. Ndozvakaitwa nevakundi. Chengeta mwoyo uwoyo!"
+            }
+          ],
+          "next_drill": "Try Again Challenge",
+          "next_drill_shona": "Magumo Okuedziazve"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "It is okay to find things hard! Every player you admire found it hard too. The secret is to keep trying. You can do this!",
+              "shona": "Zvakanaka kuwana zvinhu zvakaoma! Mutambi wose waunofarira akawana zvakaoma zvakare. Chakavanzika ndechokuramba uchiedza. Unogona kuita izvi!"
+            }
+          ],
+          "next_drill": "Confidence Building Fun Game",
+          "next_drill_shona": "Mutambo Wokuvaka Kutenda"
+        }
+      },
+      "development": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Outstanding mental strength! You pushed through fatigue and kept your performance level high. This mental toughness will take you far.",
+              "shona": "Simba repamusoro remwoyo! Wakapfuura kuneta uye ukachengeta mwero wako wekushanda wakakwirira. Kusimba kwemwoyo kwokudarika kukuendesa kure."
+            }
+          ],
+          "next_drill": "Pressure Performance Drill",
+          "next_drill_shona": "Magumo Ekushanda Pasi Pemhinduro"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good mental approach! You recovered well from mistakes. Work on maintaining focus for the full session without dropping intensity.",
+              "shona": "Mwoyo wakanaka! Wakapora zvakanaka pashure pekukanganisa. Shanda kuchengeta kutarisa muhuroro hwose pasina kuderuka kwemwero."
+            }
+          ],
+          "next_drill": "Focus and Consistency Challenge",
+          "next_drill_shona": "Magumo Okutarisa Uye Okuenderana"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Your confidence dropped after the first mistake. Remember — mistakes are how you learn. Next time you make a mistake, say out loud: I will do better!",
+              "shona": "Kutenda kwako kwakaderera mushure mekanganiso rokutanga. Rangarira — zvikanganiso ndizvo zvinokufundisa. Pane nguva inotevera unokanganisa, taura pachena: Ndichaita zvakanaka!"
+            }
+          ],
+          "next_drill": "Resilience Building Drill",
+          "next_drill_shona": "Magumo Okuvaka Kusimba Kwemwoyo"
+        }
+      },
+      "performance": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Elite mental performance! Your composure under pressure and leadership on the pitch are qualities that scouts specifically look for.",
+              "shona": "Kushanda kwemwoyo kwepakoma! Kuturika kwako pasi pemhinduro uye hutungamiriri hwako pamutambo zvinhu zvakanyanya zvinotsvagwa nevaongorori."
+            }
+          ],
+          "next_drill": "Leadership Pressure Simulation",
+          "next_drill_shona": "Kuongorora Hutungamiriri Pasi Pemhinduro"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Strong mental session! Work on your pre-performance routine — a consistent warm up ritual will help you reach peak mental state faster.",
+              "shona": "Huroro hwakasimba hwemwoyo! Shanda pamaitiro ako ekutanga — chiitiko chakaenzana chekupisa muviri chichakubatsira kusvika pamwero wepamusoro wemwoyo nekukurumidza."
+            }
+          ],
+          "next_drill": "Pre Performance Routine Building",
+          "next_drill_shona": "Kuvaka Maitiro Ekutanga Ekushanda"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Mental performance needs attention. Develop a pre-training mindset routine. Speak with your coach about mental preparation strategies.",
+              "shona": "Kushanda kwemwoyo kunoda kutariswa. Gadzira maitiro emwoyo ekutanga kwekudzidzira. Taura nomudzidzisi wako nezvenzira dzekugadzirira mwoyo."
+            }
+          ],
+          "next_drill": "Mindset Reset Session",
+          "next_drill_shona": "Huroro Hwokudzorera Mwoyo"
+        }
+      },
+      "professional": {
+        "excellent": {
+          "score_range": [85, 100],
+          "responses": [
+            {
+              "english": "Professional mental standard. Your psychological resilience and performance consistency under all conditions is exactly what professional football demands.",
+              "shona": "Chinhu chemwoyo chemutambi wenhengo. Kusimba kwako kwemwoyo uye kuenderana kwekushanda pasi pezvinhu zvose ndicho chokwadi chinodiwa nebhora raprofesheni."
+            }
+          ],
+          "next_drill": "Elite Mindset Maintenance",
+          "next_drill_shona": "Kuchengeta Mwoyo Wepamusoro"
+        },
+        "good": {
+          "score_range": [65, 84],
+          "responses": [
+            {
+              "english": "Good professional mental output. Review your focus points and ensure your pre-match preparation is locked in for the next fixture.",
+              "shona": "Kushanda kwakanaka kwemwoyo kwemutambi wenhengo. Ongorora mapoinzi ako okutarisa uye ita shuwa kuti kugadzirira kwako kwemutambo kwakachengetwa kumutambo unotevera."
+            }
+          ],
+          "next_drill": "Pre Match Mental Preparation",
+          "next_drill_shona": "Kugadzirira Mwoyo Kumutambo"
+        },
+        "needs_work": {
+          "score_range": [0, 64],
+          "responses": [
+            {
+              "english": "Mental performance below professional standard. This is a priority area. Consider working with a sports psychologist to develop your mental game.",
+              "shona": "Kushanda kwemwoyo pasi pechinhu chemutambi wenhengo. Iyi nzvimbo inokosha. Funga kushanda nomuongorori wesimba remutambo kugadzira mutambo wemwoyo wako."
+            }
+          ],
+          "next_drill": "Professional Mental Skills Program",
+          "next_drill_shona": "Chirongwa Chenyanzvi Dzemwoyo Chemutambi Wenhengo"
+        }
+      }
+    }
+  },
+  "quick_responses": {
+    "session_start": [
+      {
+        "english": "Camera is ready. Let us see what you can do today!",
+        "shona": "Kamera yakagadzirira. Ngatione zvaunogona nhasi!"
+      },
+      {
+        "english": "Tracking started. Give it everything you have!",
+        "shona": "Kuteedzera kwatanga. Ipa zvose zvaunazvo!"
+      },
+      {
+        "english": "Your session has begun. Focus and enjoy!",
+        "shona": "Huroro hwako hwatanga. Tarisa uye ufare!"
+      }
+    ],
+    "session_end": [
+      {
+        "english": "Great work today! Your data has been saved automatically.",
+        "shona": "Basa rakanaka nhasi! Zvikamu zvako zvakachengetwa otomatiki."
+      },
+      {
+        "english": "Session complete! Check your report below.",
+        "shona": "Huroro hwapera! Tarisa ripoti rako pasi."
+      }
+    ],
+    "no_person_detected": [
+      {
+        "english": "Point the camera at the player. Make sure the whole body is visible.",
+        "shona": "Rondedza kamera kumutambi. Ita shuwa muviri wose unoonekan."
+      }
+    ],
+    "poor_lighting": [
+      {
+        "english": "Lighting is too dark. Move to a brighter area for best results.",
+        "shona": "Chiedza chiri gotsi. Famba kunzvimbo yakajeka zvakawanda kuti uwane mhedzisiro yakanaka."
+      }
+    ]
+  }
+}

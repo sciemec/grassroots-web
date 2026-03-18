@@ -6,8 +6,8 @@ import Link from "next/link";
 import { ArrowLeft, Play, Square, RotateCcw, Plus, Minus, Brain, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import { sessionDrillRecommenderPrompt, expertCoachSystemPrompt } from "@/config/prompts";
-import api from "@/lib/api";
+import { sessionDrillRecommenderPrompt } from "@/config/prompts";
+import { queryAI } from "@/lib/ai-query";
 
 // ─── Config per format ────────────────────────────────────────────────────────
 
@@ -203,21 +203,13 @@ export default function TrainingFormatSessionPage() {
     setAi({ text: "", loading: true, error: "" });
     const statsSummary = buildStatsSummary();
     try {
-      const system = expertCoachSystemPrompt({
-        playerName: user.name ?? "Player",
-        age: 17,
-        position: user.position ?? "midfielder",
-        skillLevel: "intermediate",
-      });
       const message = sessionDrillRecommenderPrompt({
         weakAreas: [`${cfg.label} performance`],
         strongAreas: [],
         sessionHistory: `${shape} session — ${statsSummary}`,
       });
-      const res = await api.post("/ai-coach/query", { message, system_prompt: system, history: [] }, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setAi({ text: res.data.reply ?? res.data.response ?? res.data.message ?? "", loading: false, error: "" });
+      const reply = await queryAI(message, "player");
+      setAi({ text: reply, loading: false, error: "" });
     } catch {
       setAi({ text: "", loading: false, error: "Could not get AI feedback. Please try again." });
     }

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, RotateCcw, Brain, Loader2, Play, Square } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 const DRILLS = [
   { id: "t-cone", name: "T-Cone Agility", benchmark: "10.5s", unit: "s", desc: "Sprint forward, shuffle right, shuffle left, back-pedal to start" },
@@ -57,10 +57,8 @@ export default function DrillsFormatPage() {
       return `${d.name}: best ${best}${d.unit} (benchmark ${d.benchmark})`;
     }).filter(Boolean).join(", ");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Cone drill results: ${summary}. Give feedback on agility, speed, and technique. Identify weakness areas and recommend 3 specific improvements.`,
-      });
-      setAiReport(res.data?.response ?? "");
+      const reply = await queryAI(`Cone drill results: ${summary}. Give feedback on agility, speed, and technique. Identify weakness areas and recommend 3 specific improvements.`, "player");
+      setAiReport(reply);
     } catch { setAiReport("Unable to generate report."); }
     finally { setLoadingReport(false); }
   };

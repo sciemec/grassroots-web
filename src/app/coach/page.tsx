@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Users, Brain, ChevronRight, Flame, Shield, AlertTriangle,
-  Trophy, Radio, ClipboardList, Loader2, Film, Activity, Crosshair,
+  Trophy, Radio, ClipboardList, Loader2, Film, Activity, Crosshair, BookOpen,
+  Layers, ScanSearch,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
+import { searchOffline } from "@/lib/offline-ai";
 import type { SquadMember } from "@/types";
 
 function PageSkeleton() {
@@ -69,12 +71,33 @@ export default function CoachHubPage() {
     setInsightLoading(true);
     setAiInsight("");
     const summary = `Squad of ${squad.length}: ${fit} fit, ${injured} injured, ${caution} on caution.`;
+    const message = `Coach insight request. ${summary} Give me 3 concise coaching recommendations for today's training session. Format as a numbered list.`;
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Coach insight request. ${summary} Give me 3 concise coaching recommendations for today's training session. Format as a numbered list.`,
-      });
-      setAiInsight(res.data?.response ?? res.data?.message ?? "");
-    } catch {
+      // Step 1 — Laravel backend
+      try {
+        const res = await api.post("/ask", { question: message, role: "coach", language: "english" });
+        const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+        if (reply) { setAiInsight(reply); return; }
+      } catch { /* fall through */ }
+
+      // Step 2 — Claude proxy
+      try {
+        const res = await fetch("/api/ai-coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const reply = data.response ?? data.reply ?? "";
+          if (reply) { setAiInsight(reply); return; }
+        }
+      } catch { /* fall through */ }
+
+      // Step 3 — Offline knowledge base
+      const offline = await searchOffline(message);
+      if (offline) { setAiInsight(`${offline.text}\n\n_📚 Offline: ${offline.source}_`); return; }
+
       setAiInsight("Unable to load insights. Check your connection.");
     } finally {
       setInsightLoading(false);
@@ -92,6 +115,9 @@ export default function CoachHubPage() {
     { icon: Film,         title: "Video Studio",     subtitle: "Record & edit — Vidiyo",      href: "/video-studio",            bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
     { icon: Activity,     title: "Injury Tracker",   subtitle: "Player health status",        href: "/injury-tracker",          bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
     { icon: Radio,        title: "Live Matches",     subtitle: "Stream & broadcast live",     href: "/streaming",               bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
+    { icon: BookOpen,     title: "Knowledge Base",   subtitle: "Drills, tactics & nutrition", href: "/knowledge",               bg: "bg-[#2471a3]", gradient: "bg-gradient-to-br from-[#2e86c1] to-[#1a5276]" },
+    { icon: ScanSearch,   title: "Scouting",         subtitle: "Player TalentID rankings",    href: "/coach/scouting",          bg: "bg-[#4a235a]", gradient: "bg-gradient-to-br from-[#7d3c98] to-[#4a235a]" },
+    { icon: Layers,       title: "Training Plans",   subtitle: "Phases & programmes",         href: "/coach/training-plans",    bg: "bg-[#145a32]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#145a32]" },
   ];
 
   return (

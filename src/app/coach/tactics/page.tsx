@@ -7,6 +7,7 @@ import { ArrowLeft, RotateCcw, Save, Brain, Loader2, CheckCircle } from "lucide-
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 import type { SquadMember } from "@/types";
 
 const FORMATIONS: Record<string, { label: string; positions: { id: string; role: string; x: number; y: number }[] }> = {
@@ -164,10 +165,8 @@ export default function TacticsPage() {
       .map((p) => `${p.role}: ${getMemberName(lineup[p.id]) || "unassigned"}`)
       .join(", ");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Tactics analysis. Formation: ${formation}. Lineup: ${lineupSummary}. Notes: ${notes || "none"}. Give: 1) Assessment of this formation, 2) Key tactical instructions for 2-3 positions, 3) One set-piece recommendation.`,
-      });
-      setAiAdvice(res.data?.response ?? "");
+      const reply = await queryAI(`Tactics analysis. Formation: ${formation}. Lineup: ${lineupSummary}. Notes: ${notes || "none"}. Give: 1) Assessment of this formation, 2) Key tactical instructions for 2-3 positions, 3) One set-piece recommendation.`, "coach");
+      setAiAdvice(reply);
     } catch { setAiAdvice("Unable to generate advice. Please try again."); }
     finally { setLoadingAi(false); }
   };

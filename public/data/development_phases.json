@@ -1,0 +1,303 @@
+{
+  "source": "Special Olympics Football Coaching Guide (2004) + Zimbabwe Grassroots Football Development Framework",
+  "phases": [
+    {
+      "id": "foundation",
+      "name": "Foundation",
+      "label": "Foundation Phase",
+      "age_range": "Under 10 (U10)",
+      "color": "#4CAF50",
+      "focus": "Fun, ball familiarity, basic movement and love for the game",
+      "description": "The Foundation Phase focuses on developing a love for football, basic motor skills, and ball familiarity. Winning is NOT important at this stage. Every child must have fun and get maximum ball contact.",
+      "training_guidelines": {
+        "sessions_per_week": 2,
+        "session_duration_minutes": 45,
+        "session_structure": [
+          {"component": "Warm-up + stretching", "duration_minutes": 10},
+          {"component": "Ball familiarization games", "duration_minutes": 15},
+          {"component": "Skill drill (one skill focus)", "duration_minutes": 10},
+          {"component": "Mini game (2v2 or 3v3)", "duration_minutes": 10}
+        ],
+        "ratio": "1 coach to 4–6 players maximum",
+        "field_size": "Small — 18 metres x 9 metres for games",
+        "ball_size": "Size 3"
+      },
+      "physical_milestones": [
+        "Can run with a ball at feet (slow jog)",
+        "Can kick a stationary ball at least 5 metres",
+        "Can stop a slow-rolling ball",
+        "Can change direction while dribbling (slow)",
+        "Developing basic coordination and balance"
+      ],
+      "technical_milestones": [
+        "Attempts to control ball (may bounce off foot)",
+        "Brings rolling ball under control using inside of foot",
+        "Dribbles forward using top of foot (toe down)",
+        "Can pass ball in general direction of a teammate",
+        "Kicks at goal — no consistency or power yet",
+        "Attempts to head stationary ball (very basic)"
+      ],
+      "mental_milestones": [
+        "Enjoys playing football",
+        "Can distinguish teammates from opponents most of the time",
+        "Knows which direction to kick",
+        "Beginning to understand basic rules (in/out, goals)",
+        "Responds to positive reinforcement"
+      ],
+      "weekly_home_training": {
+        "minimum_sessions": 2,
+        "activities": [
+          {"day": "Day 1", "focus": "Juggling/Trapping — tap ball with feet alternately for 15 seconds"},
+          {"day": "Day 2", "focus": "Shooting — kick ball at target (wall, fence, goal)"},
+          {"day": "Day 3", "focus": "Control-Receiving — receive passes from family member"},
+          {"day": "Day 4", "focus": "Dribbling — dribble around objects at home"},
+          {"day": "Day 5–7", "focus": "Free play with a ball — just enjoy football"}
+        ]
+      },
+      "coaching_approach": [
+        "Demonstrate rather than just telling — show the skill",
+        "Use gentle physical prompting when needed (hand on back for forward motion)",
+        "Maximum praise — especially for effort, not just success",
+        "Short drills with frequent breaks",
+        "Make everything a game — competition is between the player and themselves",
+        "Do NOT emphasize winning",
+        "Use simple, concrete key words",
+        "Give every player maximum touches of the ball"
+      ],
+      "do_not": [
+        "Do not teach heading until U-10 minimum",
+        "Do not use adult-size goals",
+        "Do not run adult-length sessions",
+        "Do not give abusive or destructive criticism",
+        "Do not allow sideline shouting"
+      ]
+    },
+    {
+      "id": "development",
+      "name": "Development",
+      "label": "Development Phase",
+      "age_range": "Ages 10–15",
+      "color": "#2196F3",
+      "focus": "Skill consolidation, tactical awareness, team play introduction",
+      "description": "The Development Phase builds on foundation skills. Players begin to understand team concepts, develop consistent technique and are introduced to tactical principles. Character development and respect for the game are emphasized.",
+      "training_guidelines": {
+        "sessions_per_week": 3,
+        "session_duration_minutes": 60,
+        "session_structure": [
+          {"component": "Warm-up — easy aerobic run", "duration_minutes": 5},
+          {"component": "Stretching (groin, hamstring, thigh, calf, achilles)", "duration_minutes": 10},
+          {"component": "Rhythm drills (plyometrics)", "duration_minutes": 5},
+          {"component": "Technical skill focus", "duration_minutes": 15},
+          {"component": "Small-sided game with condition", "duration_minutes": 20},
+          {"component": "Cool-down + coaching talk", "duration_minutes": 5}
+        ],
+        "ratio": "1 coach to 8–10 players",
+        "field_size": "5-a-side field (minimum 40m x 30m)",
+        "ball_size": "Size 4"
+      },
+      "physical_milestones": [
+        "Can run with ball at pace",
+        "Developing aerobic base — can sustain 20–30 minute steady runs",
+        "Beginning anaerobic capacity — can sprint and recover",
+        "Correct plyometric movements — butt kicks, high knees, skipping",
+        "Adequate flexibility for football — groin, hamstring, calf, achilles",
+        "Basic strength — push-ups, sit-ups, lunges"
+      ],
+      "technical_milestones": [
+        "Brings rolling ball under control using inside of foot consistently",
+        "Good attempt at controlling air balls using chest",
+        "Dribbles with ball close — one metre or less",
+        "Uses inside and outside of foot to change direction",
+        "Passes with inside of foot for short passes, instep for longer",
+        "Shoots with instep for power — reasonable accuracy",
+        "Front block tackle executed correctly",
+        "Shows no fear heading ball — uses forehead",
+        "Goalkeeper attempts to get hands to ball and dive for ground shots"
+      ],
+      "mental_milestones": [
+        "Understands own role on the team",
+        "Beginning to support player with the ball",
+        "Can follow simple positional instructions",
+        "Understands basic restarts (kick-off, goal kick, corner, throw-in, free kick)",
+        "Shows respect for teammates, opponents and referee",
+        "Developing concentration for full match duration",
+        "Beginning to use mental imagery for skill practice"
+      ],
+      "tactical_milestones": [
+        "Understands attack vs. defend roles",
+        "Knows their position (wing, striker, defender, goalkeeper)",
+        "Attempts to spread out rather than crowd the ball",
+        "Beginning to support the player with the ball",
+        "Understands 'play safe from the back' principle",
+        "Beginning to shoot when opportunity arises"
+      ],
+      "weekly_home_training": {
+        "minimum_sessions": 3,
+        "activities": [
+          {"day": "Day 1", "focus": "Juggling/Trapping — set personal best record"},
+          {"day": "Day 2", "focus": "Shooting — 20 shots at target, aim for corners"},
+          {"day": "Day 3", "focus": "Control-Receiving — 2-touch drills with partner"},
+          {"day": "Day 4", "focus": "Dribbling — cone course with both feet"},
+          {"day": "Day 5", "focus": "Fitness — 20-minute steady jog with ball"},
+          {"day": "Day 6–7", "focus": "Street football / mini game"}
+        ]
+      },
+      "coaching_approach": [
+        "Use the 'freeze' technique in games to teach principles",
+        "Praise correct technique publicly",
+        "Begin introducing game conditions (no dribble in own half, etc.)",
+        "Explain WHY each technique or principle is important",
+        "Use small-sided games as the primary learning tool",
+        "Ask players questions — What position are you? Where should you be?",
+        "Introduce mental imagery — visualize the skill step by step"
+      ]
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "label": "Performance Phase",
+      "age_range": "Ages 15–18",
+      "color": "#FF9800",
+      "focus": "Technical refinement, tactical sophistication, physical development, competitive readiness",
+      "description": "The Performance Phase prepares players for serious competitive football. Technical excellence, physical conditioning, tactical understanding and mental toughness are all developed systematically.",
+      "training_guidelines": {
+        "sessions_per_week": 4,
+        "session_duration_minutes": 75,
+        "session_structure": [
+          {"component": "Warm-up — aerobic run with ball", "duration_minutes": 5},
+          {"component": "Stretching (full body, event-specific)", "duration_minutes": 10},
+          {"component": "Plyometrics / rhythm drills", "duration_minutes": 10},
+          {"component": "Technical skill work", "duration_minutes": 15},
+          {"component": "Tactical training / set pieces", "duration_minutes": 20},
+          {"component": "Full 11-a-side or conditioned game", "duration_minutes": 10},
+          {"component": "Cool-down + team debrief", "duration_minutes": 5}
+        ],
+        "ratio": "1 coach to 12–15 players",
+        "field_size": "11-a-side field (minimum 91m x 50m)",
+        "ball_size": "Size 5"
+      },
+      "physical_milestones": [
+        "Good cardiovascular capacity — sustains pace for 90 minutes",
+        "Can sprint, recover and sprint again multiple times",
+        "Full flexibility routine — all major muscle groups",
+        "Adequate strength — push-ups, lunges, medicine ball throws",
+        "Plyometric competency — rhythm drills, power exercises",
+        "Body awareness and proprioception well developed"
+      ],
+      "technical_milestones": [
+        "Controls ball with all surfaces under pressure",
+        "Dribbles with head up — aware of game around them",
+        "Passes accurately over short and long distances using both feet",
+        "Shoots with power and accuracy — can volley",
+        "Executes all four types of tackle correctly and safely",
+        "Headers — standing, jumping, clearing and attacking",
+        "Goalkeeper — reads game, commands box, distributes accurately"
+      ],
+      "mental_milestones": [
+        "Full concentration for 90-minute match",
+        "Composed under pressure — does not rush",
+        "Confident in own ability",
+        "Uses mental imagery regularly",
+        "Respectful winner and gracious loser",
+        "Motivates teammates positively",
+        "Can self-correct technique during a game"
+      ],
+      "tactical_milestones": [
+        "Executes all five game principles consistently",
+        "Understands 11-a-side formation and own role within it",
+        "Makes correct decisions: pass, dribble or shoot — and when",
+        "Can execute all basic restarts correctly without prompting",
+        "Anticipates opponent's movements",
+        "Provides consistent support to player with ball",
+        "Understands defensive organization (marking, covering, tracking)"
+      ],
+      "weekly_home_training": {
+        "minimum_sessions": 4,
+        "activities": [
+          {"day": "Day 1", "focus": "Strength circuit — push-ups, lunges, sit-ups, medicine ball"},
+          {"day": "Day 2", "focus": "Ball work — juggling, dribbling, shooting 30 minutes"},
+          {"day": "Day 3", "focus": "Anaerobic fitness — fartlek run or shuttle runs"},
+          {"day": "Day 4", "focus": "Technical — passing and control with partner"},
+          {"day": "Day 5", "focus": "Mental training — imagery session 10 minutes + rest"},
+          {"day": "Day 6–7", "focus": "Game or free training"}
+        ]
+      }
+    },
+    {
+      "id": "professional",
+      "name": "Professional",
+      "label": "Professional Phase",
+      "age_range": "18 and above",
+      "color": "#9C27B0",
+      "focus": "Peak performance, competition preparation, professional standards, leadership",
+      "description": "The Professional Phase represents the peak of a player's development. Training is systematic, periodized and competition-focused. Players are responsible for own fitness maintenance and contribute to team culture.",
+      "training_guidelines": {
+        "sessions_per_week": 5,
+        "session_duration_minutes": 90,
+        "session_structure": [
+          {"component": "Warm-up — team warm-up (strengthens belonging)", "duration_minutes": 10},
+          {"component": "Stretching — full event-specific program", "duration_minutes": 10},
+          {"component": "Plyometrics — varies with season phase", "duration_minutes": 10},
+          {"component": "Technical finishing work", "duration_minutes": 15},
+          {"component": "Tactical unit and team training", "duration_minutes": 30},
+          {"component": "Full game or extended practice match", "duration_minutes": 10},
+          {"component": "Cool-down + individual feedback", "duration_minutes": 5}
+        ],
+        "ratio": "1 coach to 15–20 players (with assistant coaches)",
+        "field_size": "Full 11-a-side pitch",
+        "ball_size": "Size 5",
+        "periodization": "Volume and intensity vary over season. Reduce plyometrics to one light session per week during peak competition. Stop strenuous plyometric training 7–10 days before playoffs."
+      },
+      "physical_milestones": [
+        "Peak cardiovascular fitness",
+        "Sport-specific strength and power",
+        "Complete flexibility program as daily habit",
+        "Optimized body composition for position",
+        "Full plyometric program executed correctly",
+        "Fast recovery between training sessions"
+      ],
+      "technical_milestones": [
+        "Technical excellence across all skills",
+        "Executes skills under maximum pressure",
+        "Ambidextrous — equally competent with both feet",
+        "Advanced techniques — volleys, headers from crosses, sliding tackles",
+        "Complete goalkeeper — command of box, set pieces, distribution"
+      ],
+      "mental_milestones": [
+        "Mental imagery as standard preparation routine",
+        "Complete composure under match pressure",
+        "Strong leadership and positive team communication",
+        "Resilient — recovers immediately from errors",
+        "Respectful winner and gracious loser at all times",
+        "Role model for younger players"
+      ],
+      "tactical_milestones": [
+        "Reads the game several moves ahead",
+        "Executes complex tactical instructions",
+        "Understands multiple positions and formations",
+        "Sets piece organization and execution",
+        "Knows when to break tactical patterns and improvise",
+        "Effective player in both pressing and defensive block systems"
+      ],
+      "weekly_home_training": {
+        "minimum_sessions": 5,
+        "note": "Players at this level maintain personal training schedules. Recovery and mental preparation are equally important as physical training.",
+        "activities": [
+          {"day": "Day 1", "focus": "Strength — full gym or bodyweight circuit"},
+          {"day": "Day 2", "focus": "Ball mastery — individual technical work 45 minutes"},
+          {"day": "Day 3", "focus": "Anaerobic conditioning — sprint intervals, fartlek"},
+          {"day": "Day 4", "focus": "Tactical study + mental imagery"},
+          {"day": "Day 5", "focus": "Recovery — light jog, stretching, cool down"},
+          {"day": "Day 6–7", "focus": "Competition or rest depending on schedule"}
+        ]
+      }
+    }
+  ],
+  "age_appropriate_notes": {
+    "heading": "Do not teach or stress headers until U-11. Use soft or underinflated ball when first introducing. Medical studies have found extensive heading can cause brain damage.",
+    "slide_tackling": "Only teach to higher ability players (Performance phase and above). Must be done correctly — all contact on the ball from the side.",
+    "full_sided_game": "5-a-side appropriate from Foundation phase. 11-a-side only appropriate from Performance phase (U15+) with good basic skills, speed and endurance.",
+    "plyometrics": "Begin with simple rhythm drills. Introduce power exercises only once rhythm drills are mastered. Volume and intensity always low to moderate for youth players.",
+    "strength_training": "Bodyweight exercises only until Performance phase. No weight room until late Performance / Professional phase."
+  }
+}

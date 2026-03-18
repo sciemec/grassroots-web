@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Dumbbell, ArrowLeft, Play, Loader2 } from "lucide-react";
+import { Dumbbell, ArrowLeft, Play, Loader2, Activity, ChevronDown, ChevronUp } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { PoseCamera } from "@/components/video/pose-camera";
 import api from "@/lib/api";
 
 const FOCUS_AREAS = [
@@ -28,6 +29,8 @@ export default function NewSessionPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [error, setError] = useState("");
+  const [poseOpen, setPoseOpen] = useState(false);
+  const [poseScore, setPoseScore] = useState<number | null>(null);
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -44,7 +47,8 @@ export default function NewSessionPage() {
   const onSubmit = async (data: FormData) => {
     setError("");
     try {
-      const res = await api.post("/sessions", data);
+      const payload = poseScore !== null ? { ...data, pre_session_pose_score: poseScore } : data;
+      const res = await api.post("/sessions", payload);
       const sessionId = res.data?.id ?? res.data?.data?.id;
       if (sessionId) {
         router.push(`/sessions/${sessionId}`);
@@ -156,6 +160,34 @@ export default function NewSessionPage() {
                 </div>
               </div>
             )}
+
+            {/* Pose camera — pre-session form check */}
+            <div className="rounded-2xl border border-white/10 bg-card/40 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setPoseOpen((v) => !v)}
+                className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-accent" />
+                  <span className="text-sm font-semibold text-white">Check my form before starting</span>
+                  {poseScore !== null && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${poseScore >= 75 ? "bg-green-500/20 text-green-400" : poseScore >= 50 ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400"}`}>
+                      {poseScore}%
+                    </span>
+                  )}
+                </div>
+                {poseOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              </button>
+              {poseOpen && (
+                <div className="border-t border-white/10">
+                  <PoseCamera
+                    focusArea={focusArea || undefined}
+                    onScore={(score) => setPoseScore(score)}
+                  />
+                </div>
+              )}
+            </div>
 
             <button
               type="submit"

@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 import { SPORT_STATS, getSportAnalysisPrompt, type SportKey } from "@/config/sports";
 
 interface ScoutPlayer {
@@ -45,11 +46,7 @@ async function fetchPlayerAnalysis(player: ScoutPlayer): Promise<string> {
 
   const prompt = getSportAnalysisPrompt(player.sport as SportKey, context);
 
-  const res = await api.post("/ai-coach/query", {
-    message: `[Scout Report — ${player.sport}] ${prompt}`,
-  });
-
-  return res.data?.response ?? res.data?.message ?? "No AI analysis available.";
+  return await queryAI(`[Scout Report — ${player.sport}] ${prompt}`, "scout");
 }
 
 /** Generates and downloads a professional PDF scouting report for one player. */

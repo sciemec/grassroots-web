@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 interface DrillSet {
   id: string;
@@ -161,10 +162,8 @@ export default function SessionDetailPage() {
       .map((ds) => `${ds.drill?.name ?? "drill"}: ${ds.score ?? "no score"}%`)
       .join(", ");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Session analysis: Focus area: ${session.focus_area}, Overall score: ${session.overall_score ?? "N/A"}%. Drill breakdown: ${drillSummary || "no drills recorded"}. Provide: 1) Brief performance summary, 2) Top strength from this session, 3) One specific improvement tip. Keep it concise and encouraging.`,
-      });
-      setAiReport(res.data?.response ?? "");
+      const reply = await queryAI(`Session analysis: Focus area: ${session.focus_area}, Overall score: ${session.overall_score ?? "N/A"}%. Drill breakdown: ${drillSummary || "no drills recorded"}. Provide: 1) Brief performance summary, 2) Top strength from this session, 3) One specific improvement tip. Keep it concise and encouraging.`, "player");
+      setAiReport(reply);
     } catch { setAiReport("Unable to generate analysis. Try again."); }
     finally { setLoadingAi(false); }
   };

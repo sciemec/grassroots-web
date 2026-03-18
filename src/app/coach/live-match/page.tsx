@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 import { MatchEvent, MatchPhase, MatchSetup } from "./_types";
 import { EventLogger } from "./_components/event-logger";
 import { EventLog } from "./_components/event-log";
@@ -274,10 +274,8 @@ export default function LiveMatchPage() {
       `Give tactical adjustments for the second half in 3 bullet points.`;
 
     try {
-      const res = await api.post("/ai-coach/query", { message });
-      setHalftimeAnalysis(
-        res.data?.response ?? res.data?.message ?? "No analysis returned."
-      );
+      const reply = await queryAI(message, "coach");
+      setHalftimeAnalysis(reply);
     } catch {
       setHalftimeAnalysis(
         "Could not reach AI service. Review your first-half events and adjust your shape."

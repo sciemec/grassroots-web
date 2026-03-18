@@ -87,7 +87,8 @@ export default function RegisterPage() {
           <Link href="/" className="inline-flex items-center gap-2 text-white">
             {sport
               ? <span className="text-3xl">{SPORTS.find(s => s.key === sport)?.emoji}</span>
-              : <Image src="/logo.png" alt="Grassroots Sport" width={40} height={40} />
+              // eslint-disable-next-line @next/next/no-img-element
+              : <img src="/logo.svg" alt="Grassroots Sport" width={40} height={40} />
             }
             <span className="text-2xl font-bold tracking-tight">Grassroots Sport</span>
           </Link>

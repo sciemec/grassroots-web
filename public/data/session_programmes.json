@@ -1,0 +1,1860 @@
+{
+  "session_programmes": [
+    {
+      "id": "pressing_covering",
+      "title": "Pressing and Covering to Stop Goals",
+      "category": "defending",
+      "key_words": [
+        "pressing",
+        "covering",
+        "stop",
+        "goals"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "practising the press",
+          "coaching_points": [
+            "Get players to think about how their body positioning can help them win the ball. If they position themselves side on,",
+            "Ask players to look for opportunities to challenge for the ball. A couple of good triggers are when their opponent puts",
+            "Encourage your players to steal the ball to set up an attack."
+          ],
+          "objectives": [
+            "think about when and how to press",
+            "work with teammates to press and cover",
+            "improve their ability to challenge."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create two 20x15-yard corridors with a safe zone at",
+                "The rest start at one end and try to dribble to the",
+                "If successful, they exit the area and go back to the",
+                "If a defender steals a ball, they try to get to a safe"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create two 20x15-yard areas with a halfway line.",
+                "Split players into two teams.",
+                "Pair them up with an opponent so everyone’s in a",
+                "Each team has a half as their stadium.",
+                "One player in each pair starts with a ball.",
+                "Players need to keep it in their own stadium to win a"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "speed of the press",
+          "coaching_points": [
+            "Ask players to look for signs to apply pressure, such as their opponent looking down, taking a heavy touch or not",
+            "Emphasise the importance of being able to increase and decrease their speed at the right time. Defenders need to",
+            "Encourage players to take a side on and lowered position to help them react to the movements of the player with the"
+          ],
+          "objectives": [
+            "work on when and how to press",
+            "use speed and body positioning effectively",
+            "improve their ability to apply pressure to the player on the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create parallel pitches appropriate for the age and",
+                "Put a goal at each end.",
+                "Players take part in a normal small-sided game on",
+                "Encourage players to think about how and when they"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a 10x10-yard diamond area for this 1v1",
+                "Attackers start on one cone with defenders on the",
+                "If attackers avoid being tagged, they score a point for",
+                "Progress this by giving attackers a ball to run with."
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "press to dictate",
+          "coaching_points": [
+            "Once a goal is scored or the ball goes out of play in the 1v1 and 2v2 practices, ensure the next set of players go into",
+            "Ask players to think about their positioning and angle of approach when pressing. Doing this well can help players"
+          ],
+          "objectives": [
+            "work on when and how to press",
+            "improve their ability to apply pressure to the player on the ball",
+            "dictate the direction of the player in possession."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create 15x10-yard areas with three goals at each",
+                "Have other pairs waiting outside.",
+                "The attacker receives the ball and goes for goal.",
+                "Scoring in the middle goal is worth five points, the two",
+                "The defender can win the ball back and score too.",
+                "When a goal is scored, the two players leave, and a"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Remove the goals from the first activity for this 2v2",
+                "Players look to beat their opponents and dribble past"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "locked in",
+          "coaching_points": [
+            "During the ‘part’ section of this session, ensure defenders switch roles with the pair of attackers if they’ve scored in",
+            "Get players thinking about if they can reach the player who is receiving the ball as they take their first touch or not.",
+            "Emphasise the importance of scanning. Players need to scan to see what’s around them. Do they, or the closest",
+            "Ask players to look for poor passes, poor first touches and the direction of a first touch to help make the decision to"
+          ],
+          "objectives": [
+            "work on when and how to press",
+            "scan to improve decision-making",
+            "recognise when they need to delay an opponent."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create 30x20-yard pitches with a goal at each end",
+                "In this game, the side on the ball can move anywhere.",
+                "The side without it are locked in whichever half they",
+                "If they win the ball back, they can then move any­"
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Split your pitches into thirds.",
+                "Have at least two attackers locked in the end thirds",
+                "One defender can go press.",
+                "The head height rule is in place.",
+                "Attackers work the ball from one side to the other.",
+                "If the defenders win the ball, they break out to attack"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "swift support",
+          "coaching_points": [
+            "Encourage players to scan to identify who is the closest defender that can apply pressure to the opponent on the ball.",
+            "Remind players that as the ball moves, the role of pressing and covering player may change.",
+            "Observe players on the line to see if they’re scanning the pitch for the position of their teammates and the ball. This"
+          ],
+          "objectives": [
+            "work on when and how to press",
+            "scan to improve decision-making",
+            "recognise when to apply pressure and when to cover a teammate."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Split your pitch into thirds.",
+                "Have attackers in the end thirds and defenders in the",
+                "Most players are locked in but the attacker on the ball",
+                "Attackers work the ball from one side to the other.",
+                "If the defenders win the ball, they break out to attack"
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Set up an area for a 2v2 activity.",
+                "Have a mini-goal behind a line at each end.",
+                "The idea for both teams is to combine to score.",
+                "The team that doesn’t have the ball works together to",
+                "The other offers covering support on the line in front"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "festival week",
+          "coaching_points": [
+            "Time the games to provide high intensity and rest periods. As a guide you could rotate and mix up teams every eight",
+            "Ask players to think about their positioning and angle of approach when pressing.",
+            "Emphasise the importance of scanning. Players need to scan to see what’s around them.",
+            "Ask players to look for opportunities to challenge for the ball. A couple of good triggers are when their opponent puts"
+          ],
+          "objectives": [
+            "know when and how to press",
+            "understand when to apply pressure and when to cover a teammate."
+          ],
+          "activities": []
+        }
+      ],
+      "image_id": "pressing_covering"
+    },
+    {
+      "id": "marking_intercepting_defend",
+      "title": "Marking and Intercepting to Defend",
+      "category": "defending",
+      "key_words": [
+        "marking",
+        "intercepting",
+        "defend"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "marking rivals",
+          "coaching_points": [
+            "Focus on really good movement to close the ball down. Encourage players to try to stay",
+            "Encourage players to be goal-side of their opponents to stop them from having an easy",
+            "Ask players to think about their body positioning. Being able to see their opponent and the"
+          ],
+          "objectives": [
+            "understand what marking is",
+            "become positive and enthusiastic defenders",
+            "use scanning, movement, and positioning skills to mark an opponent or zone."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "For cat and mouse, create a 5x5-yard square.",
+                "Have a 1v1 with players starting opposite each other",
+                "Players run around the area. They can’t go through it.",
+                "The cat has 15 seconds to tag the mouse.",
+                "Players swap roles after the time limit or if the mouse"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "For the stadium game, create a 30x20-yard area with",
+                "Pair players up. Allocate each player to a team and",
+                "The aim is to have the ball under control in your own"
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "You could progress this game to make it directional",
+                "Overall, play for five to seven minutes, then have a"
+              ]
+            },
+            {
+              "name": "Practice Three",
+              "instructions": [
+                "Return to the rivals game but remove the middle",
+                "Put a line of cones down each side of the pitch.",
+                "Teams combine to try to work the ball over the end",
+                "The scorer then runs off to turn one of their cones"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "defend as friends",
+          "coaching_points": [
+            "Encourage players to scan to help them think about where the space may be and where",
+            "Challenge players to stay close to their opponent, anticipate their moves, and use their",
+            "Ask players to communicate with teammates, stay alert, and move quickly to challenge an"
+          ],
+          "objectives": [
+            "become positive and enthusiastic defenders",
+            "use scanning, movement, and positioning skills to mark an opponent or zone",
+            "communicate with teammates to defend effectively."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "For cat and mouse, create a 5x5-yard square.",
+                "Have a 1v1 with players starting opposite each other.",
+                "The mouse carries a football.",
+                "Players run around the area. They can’t go through it.",
+                "The cat has 15 seconds to tag the mouse.",
+                "Players swap roles after the time limit or if the mouse"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a 30x20-yard area and split it into five",
+                "One team starts with the ball. The other side work",
+                "The aim is to keep possession as a team.",
+                "Teams score a point when all their players have had"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "interception perfection",
+          "coaching_points": [
+            "Encourage players to communicate to work together effectively and adjust their",
+            "Get players to think about ‘why’ ‘when’ and ‘how’ when it comes to intercepting. Closing",
+            "When intercepting, challenge players to think about what they need to do before, during",
+            "Try to judge whether an interception is possible.",
+            "Try to make sure you can see the path of the ball and relevant attackers.",
+            "Try to make sure you can see the space you want to use when you win the ball.",
+            "Try to be prepared to use different surfaces to make first contact.",
+            "Try to leave attackers behind with your first touch.",
+            "Try to follow up the interception with good positive actions and techniques, for example, a"
+          ],
+          "objectives": [
+            "become positive and enthusiastic defenders",
+            "communicate with teammates to defend effectively",
+            "understand the importance of a positive action after they intercept the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a 20x20-yard box for this arrival activity.",
+                "Have two taggers or interceptors.",
+                "The rest have one ball between them and must use",
+                "The pair have 30 seconds to intercept it.",
+                "They swap roles if they succeed, or the time runs out.",
+                "Create a 20x20-yard box for the first carousel"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "table football",
+          "coaching_points": [
+            "Encourage players to constantly scan the pitch to be aware of the positions and movements",
+            "Teach players to position themselves between the ball or the player they’re marking and",
+            "Ask players to think about the timing of their movement. This is vital for intercepting. They",
+            "Encourage players to look up and assess their options once they’ve intercepted the ball."
+          ],
+          "objectives": [
+            "become positive and enthusiastic defenders",
+            "understand what intercepting is",
+            "work on their positioning",
+            "read the game and anticipate where the ball may go."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create parallel 15x10-yard pitches with end zones for",
+                "Have a 2v2 in the middle with each team having a",
+                "Teams aim to get the ball to their target player for a"
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Create a 30x20-yard pitch with end zones at each",
+                "Two interceptors start in the middle zone.",
+                "A passer starts in each area between the zones.",
+                "Passers aim to pass to each other without the ball"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "intercept as a team",
+          "coaching_points": [
+            "Remind defenders to position themselves strategically, anticipating the movements of the",
+            "Encourage players to react positively when they make an interception by launching a"
+          ],
+          "objectives": [
+            "become positive and enthusiastic defenders",
+            "make informed decisions of when to mark and when to intercept."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Attackers carry on playing if they’ve been tagged –",
+                "Attackers score a point each time they escape"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "festival week",
+          "coaching_points": [
+            "Emphasise the importance of communicating with teammates. Players need to work",
+            "Encourage players to mark opponents closely to given themselves the opportunity to nick"
+          ],
+          "objectives": [
+            "become positive and enthusiastic defenders",
+            "communicate with teammates",
+            "work on their positioning skills."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a 30x20-yard area with end zones for this 5v5",
+                "Have five goals at one end and three goals at the",
+                "Teams can only have one player in their own end",
+                "Scoring in the goal that’s guarded is worth three",
+                "Scoring in the others is worth one point."
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Create a 30x20-yard area for a version of 5v5 rivals.",
+                "Each player has a direct rival to stop scoring. Players",
+                "At the end of the match, each pair adds a goal to their"
+              ]
+            }
+          ]
+        }
+      ],
+      "image_id": "marking_intercepting_def"
+    },
+    {
+      "id": "marking_intercepting_stop",
+      "title": "Marking and Intercepting to Stop Goals",
+      "category": "defending",
+      "key_words": [
+        "marking",
+        "intercepting",
+        "stop",
+        "goals"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "dynamic defending",
+          "coaching_points": [
+            "Adapt movement to track runs and the movement of the opponent.",
+            "Scan effectively to make good decisions about marking an opponent or space.",
+            "Use a side-on body position when marking tight and covering spaces.",
+            "Use quick movement to get into a covering position.",
+            "Mirror first defender’s body position to enable effective scanning.",
+            "Give early and clear communication to the first defender."
+          ],
+          "objectives": [
+            "to become positive and enthusiastic defenders",
+            "who try to use scanning, movement and positioning skills when marking as an individual",
+            "to understand the role of covering and communication when defending in pairs."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Players get a point for getting through a side gate and",
+                "After all three attackers have had a go, the teams"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "On the other pitch, have two gates at each end with a",
+                "Teams get a point for passing the ball through a gate.",
+                "They get two points if they pass through a gate for the",
+                "Passes need to be below shoulder height."
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "The attacker can use the feeder player as a passing",
+                "After three goes, all players rotate positions and the"
+              ]
+            },
+            {
+              "name": "Practice Three",
+              "instructions": [
+                "Return to the parallel games. But this time, replace",
+                "Add the rule for both pitches: when a goal is scored,"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "dynamic defending revisited",
+          "coaching_points": [
+            "Adapt movement to track runs and the movement of the opponent.",
+            "Scan effectively to make good decisions about marking an opponent or space.",
+            "Use a side-on body position when marking tight and covering spaces.",
+            "Use quick movement to get into a covering position.",
+            "Mirror first defender’s body position to enable effective scanning.",
+            "Give early and clear communication to the first defender."
+          ],
+          "objectives": [
+            "to become positive and enthusiastic defenders",
+            "who try to use scanning, movement and positioning skills when marking as an individual",
+            "to understand the role of covering and communication when defending in pairs."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Attackers get a point for getting through a side gate",
+                "Defenders need to stop them from reaching any gate.",
+                "After all three attackers have had a go, the teams",
+                "This can be progressed to a 2v1 or 2v2 activity."
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "be on guard to intercept",
+          "coaching_points": [
+            "Consolidate coaching points from the first two weeks.",
+            "When intercepting, judge whether it’s possible by trying to see path of the ball and nearby",
+            "Decide to use ‘best’ surface for making first contact on the ball.",
+            "Execute an interception with a positive first touch."
+          ],
+          "objectives": [
+            "show intelligence when making decisions as defenders",
+            "add timing and deception skills when marking as an individual",
+            "understand the core skill of intercepting when defending in pairs and units."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "For “on guard”, set up four gates in a 10x10-yard",
+                "Have an attacker with a ball in the middle and three",
+                "The attacker escapes through a gate for a point.",
+                "Defenders scan and move to block gates.",
+                "Change roles after 30 seconds or when the attacker"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a 20x10-yard area with end zones and a",
+                "Have two ‘interceptors’ in the middle zone with a",
+                "An interceptor passes to a passer to start the game.",
+                "The passer needs to pass to their teammate, who"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "be on guard to intercept revisited",
+          "coaching_points": [
+            "Consolidate coaching points from the first two weeks.",
+            "When intercepting, judge whether it’s possible by trying to see path of the ball and nearby",
+            "Decide to use ‘best’ surface for making first contact on the ball.",
+            "Execute an interception with a positive first touch."
+          ],
+          "objectives": [
+            "show intelligence when making decisions as defenders",
+            "add timing and deception skills when marking as an individual",
+            "understand the core skill of intercepting when defending in pairs and units."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "For “on guard”, set up four gates in a 10x10-yard",
+                "Have an attacker with a ball in the middle and three",
+                "The attacker escapes through a gate for a point.",
+                "Defenders scan and move to block gates.",
+                "Change roles after 30 seconds or when the attacker"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a 20x10-yard area with end zones and a",
+                "Have two interceptors in the middle zone with two",
+                "Passers need to pass to a teammate in the other half,",
+                "Interceptors try to block the pass."
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "space invaders",
+          "coaching_points": [
+            "Consolidate the coaching points of the previous four weeks.",
+            "Use previous learning to aid decision-making to skilfully mark, cover and intercept."
+          ],
+          "objectives": [
+            "demonstrate positive, enthusiastic, and intelligent defending",
+            "refine their skills and decision-making around marking and intercepting when defending as",
+            "follow up winning the ball with positive actions."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a 10x10-yard area using four cones.",
+                "Have a tagger inside the square with three other",
+                "Those players aim to get across to the opposite side of",
+                "The tagger gets a point per shoulder tag they make.",
+                "After three tags, the tagger swaps roles.",
+                "Set up three 20x15-yard pitches to play games from"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "front to back, defend to attack",
+          "coaching_points": [
+            "Consolidate the coaching points of the previous four weeks.",
+            "Use previous learning to aid decision-making to skilfully mark, cover and intercept."
+          ],
+          "objectives": [
+            "demonstrate positive, enthusiastic, and intelligent defending",
+            "refine their skills and decision-making around marking and intercepting when defending as",
+            "follow up winning the ball with positive actions.",
+            "On half a pitch, have a goal and a keeper at one end.",
+            "Put three squares at the other end.",
+            "The defending team has eight outfielders and a",
+            "Defenders score a point for controlling the ball in any",
+            "The attackers score three points for scoring in the",
+            "Play offside for the team attacking the main goal but",
+            "After seven minutes, rotate the teams.",
+            "This then becomes an 8v8 for a round with a keeper"
+          ],
+          "activities": []
+        }
+      ],
+      "image_id": "marking_intercepting_stop"
+    },
+    {
+      "id": "moving_ball_turning",
+      "title": "Moving with the Ball and Turning to Attack",
+      "category": "attacking",
+      "key_words": [
+        "moving",
+        "with",
+        "ball",
+        "turning",
+        "attack"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "finding space to attack",
+          "coaching_points": [
+            "Ask players to think about how they can beat a defender using their movement or a teammate.",
+            "Encourage players to look around to identify where the space is, where the opposition is, and",
+            "Encourage players to create passing angles by finding areas of space where the player on the",
+            "Ask your players to think about how they time their movement. If they move too early, the",
+            "Help the players understand the end zone game by relating it to positions on the pitch. Passing"
+          ],
+          "objectives": [
+            "recognise space to attack into",
+            "work with a teammate to beat defenders",
+            "improve decision-making skills when moving with the ball and turning."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a 20x15-yard area.",
+                "Each player has a bib tucked into their shorts in line",
+                "Players try to steal other bibs while protecting their",
+                "If they steal a bib, they tuck that into their shorts.",
+                "If they lose their bib, they try to get another one."
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Put a goal at each end of your 35x25-yard pitch.",
+                "Have a keeper and a defender at one end with pairs of",
+                "Attackers move and combine to try to score.",
+                "If the defender wins the ball, they work with the",
+                "When play resets, the next pair have a go."
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Use the same area but use end zones instead of goals.",
+                "Have a neutral target player in each end zone.",
+                "Teams work together to get the ball to a target player",
+                "If they do, they get the ball back and try to get it to the"
+              ]
+            },
+            {
+              "name": "Practice Three",
+              "instructions": [
+                "Use the same area again but use the goals at both",
+                "Players take part in a match to put their learning into"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "escaping the defender",
+          "coaching_points": [
+            "Ask players to think about how they can beat a defender using their movement or a teammate.",
+            "Set up a ‘tactics zone’ for double trouble. Use this space to speak to individual players about",
+            "Encourage players to use their body to protect the ball by being in between the opponent and",
+            "Encourage players to use their speed to move with the ball into space.",
+            "When near a defender, get players to think about taking smaller touches and keeping the ball"
+          ],
+          "objectives": [
+            "develop their moving with the ball and turning skills",
+            "use their speed and moving with the ball technique to attack space",
+            "work with a teammate to beat defenders",
+            "improve decision-making skills when moving with the ball and turning."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "To progress this activity, give a ball to each player and",
+                "The aim of the game is the same, but players can go"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "turning to play forward",
+          "coaching_points": [
+            "Ask players to think about how they can beat a defender using their movement or a teammate.",
+            "When near a defender, get players to think about taking smaller touches and keeping the ball close",
+            "Before receiving, encourage your players to adopt an open body shape to allow them to turn and",
+            "Ask players to think about how they can use clever, disguised movements to lose a defender. They"
+          ],
+          "objectives": [
+            "develop their ability to twist, turn, dodge and weave",
+            "work with a teammate to beat defenders",
+            "improve decision-making skills when moving with the ball and turning."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a 30x30-yard area.",
+                "Choose two players to be taggers and give each a bib",
+                "To tag someone, they throw their spiderweb at them.",
+                "If it connects with a player, the tagger gets a point.",
+                "The others need to dodge the spiderwebs.",
+                "The tagger with the most points wins."
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Use the same space and split your group into two",
+                "Have one start on the outside of the area and one on",
+                "Give the outside players a ball each.",
+                "They pass to a player in the middle without a ball.",
+                "They turn and move before passing to another"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "scanning and turning",
+          "coaching_points": [
+            "Remind players to scan before, during, and after receiving the ball, so they know where and when",
+            "Give players some examples of turns they could use to escape any interference, such as a ‘Cruyff’",
+            "Coordination skills are key in the arrival activity. Ask players to think about their turns as they’re",
+            "Ensure players understand the importance of keeping the ball close to their body when they"
+          ],
+          "objectives": [
+            "To score, the ball has to have travelled in at least two"
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a 40x35-yard area.",
+                "Give everyone a ball and a bib (a spiderweb).",
+                "To tag someone, players throw their spiderweb at",
+                "If it connects, the tagger gets a point.",
+                "They do this while trying to dodge other spiderwebs.",
+                "The tagger with the most points wins."
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Use the same area and add goals at each end.",
+                "Split the area into three channels and make the"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "moving with deception",
+          "coaching_points": [
+            "Remind players to scan before, during and after receiving the ball, so they know where and when to",
+            "Support players to understand how a change in direction and speed can help them beat defenders",
+            "Encourage players to use feints and body movement to disguise their intentions when moving with",
+            "Ask players to think about when they can move forward with the ball, or when they may have to"
+          ],
+          "objectives": [
+            "change direction and speed while moving with the ball",
+            "scan for space to discover when and where to move and turn",
+            "use deception and disguise to move with the ball and turn while under pressure."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Players with a ball must dribble into the area and try",
+                "The guards get a point for winning the ball off a",
+                "Keep rotating guards after a few minutes to give"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "positioning to turn",
+          "coaching_points": [
+            "Remind players to scan before, during, and after receiving the ball to recognise and exploit the",
+            "Ensure your players think about their body shape when they’re receiving the ball to provide",
+            "Ask your players to try and anticipate the turns and movements of their teammates. This allows"
+          ],
+          "objectives": [
+            "understand the need to have appropriate positioning on the pitch, and correct body shape,",
+            "recognise space to dribble through",
+            "change direction and speed while moving with the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up multiple gates across your pitch and vary the",
+                "Have some players as gate guards and the rest as",
+                "Give each attacker a ball.",
+                "They aim to dribble through gates for a point.",
+                "Guards can’t tackle but can tag attackers inside a"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Use the full 45x40-yard area and put a goal at each",
+                "Then let your players take part in a small-sided game.",
+                "Give players freedom to express themselves.",
+                "Observe to make sure they have the right challenge"
+              ]
+            }
+          ]
+        }
+      ],
+      "image_id": "moving_with_ball"
+    },
+    {
+      "id": "press_cover_defend",
+      "title": "Press and Cover to Defend",
+      "category": "defending",
+      "key_words": [
+        "press",
+        "cover",
+        "defend"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "read and react",
+          "coaching_points": [
+            "Encourage your players to hurry the player on the ball and close the space as quickly as possible.",
+            "Challenge players to get within arm’s-length of their opponent to help them press and put their oppo­",
+            "Get players to think about how they approach an opponent when they press. If they approach straight",
+            "Ask players how best to support their teammates throughout the session."
+          ],
+          "objectives": [
+            "learn to use a wide variety of passes",
+            "be aware of the factors that may impact decisions including the space available, first touch, and"
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Progress this by adding challenges.",
+                "Challenge teams on the pitch with a halfway line",
+                "Challenge teams on the other pitch to think about"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "pressing for glory",
+          "coaching_points": [
+            "Ensure that your players always look to stop the opponent from playing forward. They",
+            "Encourage your players to look for triggers to press. If the opponent is facing their own goal,",
+            "Ask players to consider when they should press and when it’s wise to offer cover. If two"
+          ],
+          "objectives": [
+            "press with intensity in the final third",
+            "work in units and as a team to win the ball back quickly",
+            "identify and react to triggers from the opposition and teammates."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Both players put down a starting cone and a cone",
+                "One player starts as an attacker and the other as a",
+                "The aim is to get past the opponent and dribble to one",
+                "Reaching their starting cone is worth three points."
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "cover and recover",
+          "coaching_points": [
+            "Encourage your players to protect the middle of the pitch in the first instance. When the",
+            "Get players to think about their positioning. Have they got the distance right between",
+            "Get your players to think about how and when to move into the line of the ball or goal.",
+            "Encourage your players to look for triggers to press. If the opponent is facing their own goal,",
+            "Encourage your players to try to recover as quick as possible once they have lost",
+            "Remind players to scan and think about what’s around them."
+          ],
+          "objectives": [
+            "provide defensive cover for their teammates",
+            "anticipate when to move to make interceptions",
+            "recover to defend when they lose the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create appropriately sized parallel pitches for your",
+                "Players take part in a normal small-sided game.",
+                "To embed the idea of covering, challenge players"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Set up three 20x15-yard pitches with an end line at",
+                "Create a covering line ten yards out from each end",
+                "Have a 2v2 or 3v3 on each pitch.",
+                "Teams try to get over their opponent’s end line.",
+                "When a team’s out of possession they need to have a"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "pressing duels",
+          "coaching_points": [
+            "Get your players to think about when to cover ground quickly and then when they should",
+            "Ask your players to think about how best they can use their whole body to help them win",
+            "Encourage your players to try to win the ball cleanly and then think about the best way to",
+            "Encourage your players to look for triggers to press. If the opponent is facing their own goal,"
+          ],
+          "objectives": [
+            "develop their tackling and pressing skills",
+            "work on their movement skills to win the ball",
+            "understand when to challenge for the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create parallel 20x15-yard pitches.",
+                "On the first, winning the ball in the opponent’s half",
+                "On the second, winning the ball and scoring from the",
+                "On the third, teams get three goals for keeping a clean"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Set up two areas with mini-goals at each end.",
+                "Put flat markers down in a diamond shape in both",
+                "Attackers get a point for reaching a side cone and",
+                "If they score, play restarts from the beginning and"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "defending in small numbers",
+          "coaching_points": [
+            "Ask your players to make good contact on the ball and to think about the best way to go",
+            "Encourage your players to stay in the duel, even if the attacker gets past them. It’s",
+            "When your players win the ball cleanly, encourage them to start a counter-attack. If they",
+            "Encourage your players to look for triggers to press. If the opponent is facing their own goal,"
+          ],
+          "objectives": [
+            "develop their tackling skills",
+            "work on their ability to press and cover with their teammates",
+            "transition quickly after regaining the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create parallel 20x15-yard pitches.",
+                "Pitch one: if teams win the ball in their opponent’s half",
+                "Pitch two: if a team wins the ball and scores from the",
+                "Pitch three: teams get three goals for keeping a clean"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Split your pitches in half and have two mini-goals at",
+                "The defender stands in between the goals with the",
+                "Player’s exchange passes before the attacker decides",
+                "The defender tries to stop them."
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "games week",
+          "coaching_points": [
+            "Ask your players to think about their position so that they are ready to press the ball.",
+            "Encourage players to stay on their feet where possible. Challenge them to win the ball",
+            "Get players to think about their positioning. Have they got the distance right between them­",
+            "Encourage your players to look for triggers to press. If the opponent is facing their own goal,",
+            "Encourage players to think about how they press. They need to decelerate when approach­"
+          ],
+          "objectives": [
+            "develop pressing skills",
+            "work on covering skills",
+            "learn how to help start counter-attacks."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Ensure players rotate around the pitches so they play",
+                "And, if you and the players want to, progress the"
+              ]
+            }
+          ]
+        }
+      ],
+      "image_id": "press_cover_defend"
+    },
+    {
+      "id": "attacking_skills",
+      "title": "Attacking Skills",
+      "category": "attacking",
+      "key_words": [
+        "attacking",
+        "skills"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "2v2 to score",
+          "coaching_points": [
+            "Look for players’ movement to receive, technique to receive and shoot, and their creativity in tight areas.",
+            "Encourage players to think about how they can use their scanning, movement and deception skills effectively to find",
+            "Get players to consider how they can help create space and become a passing option for their teammate when",
+            "Ask players to be brave and stay on the ball for the right amount of time. They might be able to move the defender and"
+          ],
+          "objectives": [
+            "pass and receive in tight areas",
+            "work with teammates to create space",
+            "know when to pass or shoot."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create a pitch with a halfway line and a goal at each",
+                "Use flat markers to make a second pitch within that,",
+                "Play a normal 5v5 game using the whole pitch"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Put two mini-goals either side of the halfway line",
+                "This splits your original pitch into two smaller ones",
+                "The two attackers need to combine to score in the big"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "create to score",
+          "coaching_points": [
+            "Encourage players to scan. They need to know where their opponents and teammates are. This will help them decide",
+            "Consider the six capabilities when observing your players. Think about:"
+          ],
+          "objectives": [
+            "link up with teammates",
+            "use movement to make space",
+            "get repetition of passing and receiving",
+            "practise finishing."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create a pitch with a goal at each end for this 5v5",
+                "Put a square area around one goal",
+                "The attackers have five outfielders, with two locked in",
+                "The defenders have a keeper and four outfielders,",
+                "Both sides look to combine to score"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Progress the activity by allowing one of the attacking",
+                "This creates an overload in the middle of the pitch and"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "pass, turn, score",
+          "coaching_points": [
+            "Make sure players rotate so they get a chance to attack and defend.",
+            "As it’s a narrow pitch, get players to consider how their positioning and movement off the ball can support their",
+            "Think about the six core capabilities. Encourage players to think about how they can use deception when passing,"
+          ],
+          "objectives": [
+            "pass and turn under pressure",
+            "know when and where to pass and turn",
+            "combine with teammates",
+            "practise finishing."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create a narrow pitch with a halfway line. Put a large",
+                "Have a 3v3 in each half",
+                "The attacking team start with the ball in each half –",
+                "Scoring in the large goal is worth one point. Scoring in"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Progress this practice by bringing in your two goal-",
+                "Put one in each large goal",
+                "You can amend the scoring system to reflect this"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "width for deception",
+          "coaching_points": [
+            "Observe how teams use the wide channels. Get players thinking about when the best time is to use them and how",
+            "Encourage players to think about the type of cross they could use and to try different ones. For example, using a cut-",
+            "Ask players to think about how the timing of their runs into the channels and the box can help create space – and"
+          ],
+          "objectives": [
+            "know when, how and why to use width",
+            "work on different types of crosses",
+            "develop their movement skills to get out wide",
+            "practise finishing from a cross into the box."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a small area for a 4v4 – put a goal at each end",
+                "Each team also has two wide players outside the area",
+                "Teams need to work with all their teammates to make",
+                "Then they can try to score in either goal",
+                "Play for three rounds"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a wide pitch with a goal at each end for a 6v6",
+                "Use flat markers to create channels out wide on both",
+                "Players take part in a normal game but should natu-",
+                "You can add scoring systems to encourage teams to"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "playing out to attack",
+          "coaching_points": [
+            "Ask players to consider how their positioning can help the team to retain possession or play forward. Positioning is",
+            "Encourage teams to use two-player and three-player core moves to unlock the opposition.",
+            "Observe the timing and technique players use to finish."
+          ],
+          "objectives": [
+            "develop confidence on the ball under pressure",
+            "improve passing and receiving skills",
+            "use combination play to create goalscoring opportunities",
+            "work on finishing."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Progress this activity by allowing wide players to",
+                "You can also allow the defending team to attack and"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "scoring as a team",
+          "coaching_points": [
+            "Encourage players to take shots whenever there’s a good chance to score. After all, this session is all about creating",
+            "Reassure players if they miss a chance and encourage them to go again. Having a positive mindset is really important",
+            "Get players to think about how they can create space for themselves and others to help their team build and finish an",
+            "Ask players to consider their positioning. As a team, they need to create an attack but also provide cover and balance"
+          ],
+          "objectives": [
+            "get repetition of finishing",
+            "shoot from different distances",
+            "understand roles and responsibilities around scoring in game situations",
+            "understand security behind the ball."
+          ],
+          "activities": []
+        }
+      ],
+      "image_id": "attacking_skills"
+    },
+    {
+      "id": "passing_receiving_attack",
+      "title": "Passing and Receiving to Attack",
+      "category": "passing",
+      "key_words": [
+        "passing",
+        "receiving",
+        "attack"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "connecting with teammates",
+          "coaching_points": [
+            "Look for individual movement off-the-ball to see if players are aligning themselves with their",
+            "Emphasise the need to align the timing of the pass with the receiver’s movement.",
+            "Ask players to think about whether it’s best for the pass to be into the receiver’s feet or"
+          ],
+          "objectives": [
+            "use scanning movement off the ball to connect with teammates on the ball",
+            "make decisions on when and where to pass."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create two 10x10-yard grids using nine cones for",
+                "Two teams of three start on the middle cone.",
+                "On “Go”, they run to form a three-in-a-row with their",
+                "Teams get a point for successfully doing that.",
+                "The first team to then do it three times, wins."
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a circle with a ten-yard radius.",
+                "Within that, place two small squares down. A",
+                "Pair the rest of the players up. Give each pair a ball.",
+                "Teams look to pass between another pair. If the"
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Set up 30x20-yard and 30x30-yard pitches.",
+                "On the smaller pitch use mini-goals.",
+                "Use bigger goals and keepers on the other pitch.",
+                "Begin with a matched-up game on each.",
+                "Players can switch pitches to create overloads.",
+                "Combine the scores on both pitches to find the winner"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "the lions’ den",
+          "coaching_points": [
+            "Ask players to scan for ‘BOTS’ to gain key information before receiving the ball. This stands",
+            "Encourage players to vary their body positioning and technique when receiving the ball.",
+            "Task players with using deception to outwit their opponent.",
+            "During the last two drills, state the importance of offering supporting movement. When the"
+          ],
+          "objectives": [
+            "receive the ball in tight spaces",
+            "develop confidence to receive the ball under pressure."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "The pressing team can only send one player out at a",
+                "If the pressing team do win the ball, the side they won"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "around the clock",
+          "coaching_points": [
+            "Ask players to scan for ‘BOTS’ to gain key information before receiving the ball. This stands",
+            "Encourage players to receive on their back foot so they open their body out to see the next",
+            "Challenge passers to think about where the receiver is to dictate what pass they need. If the",
+            "Task players with using deception to outwit their opponent."
+          ],
+          "objectives": [
+            "make decisions on when to play forward",
+            "explore receiving to turn forward and receiving to pass forward."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create a 10x10-yard diamond area.",
+                "Have three players on each cone.",
+                "One player starts with the ball. They pass to the",
+                "While the passer runs to join the cone on their left, a",
+                "The receiver passes to their right and the process"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create an 40x30-yard pitch that’s split into thirds",
+                "Have one defender locked in each third.",
+                "Three attackers drive into the area and look to",
+                "If the defenders win the ball, they’re unlocked and can"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "creating and exploiting space",
+          "coaching_points": [
+            "Encourage players to create space through using width, depth and height with your",
+            "Look for movement into space to receive and the timing of it.",
+            "Observe if players are identifying spaces to exploit and using a varied range of passes to do",
+            "Get players thinking about two-player and three-player core moves to help them combine"
+          ],
+          "objectives": [
+            "combine with teammates, even in tight spaces",
+            "work on passing range",
+            "understand how use width, depth and height, to create space for individuals to receive."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Target players can pass to each other and players",
+                "If the attackers successfully combine to get from one",
+                "If the defenders win the ball, they become the"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "eliminating the opposition",
+          "coaching_points": [
+            "Encourage players to create space through using width, depth and height effectively with",
+            "Look for movement into space to receive and the timing of it.",
+            "Observe if players are identifying spaces to exploit and using a varied range of passes to do",
+            "Get players thinking about two-player and three-player core moves to help them combine"
+          ],
+          "objectives": [
+            "combine to play forward",
+            "explore ways to combine passes to eliminate opponents."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up parallel pitches. Create a 40x20-yard pitch",
+                "Have a 3v3 on each pitch."
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a 50x60-yard pitch with end zones and put a",
+                "Have a 6v6 in the middle.",
+                "Players combine with teammates to play the ball",
+                "Defenders can’t enter here, while attackers can only"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "festival week",
+          "coaching_points": [
+            "Encourage players to think about using height, width and depth to create space – and where",
+            "Try using drive-by coaching interactions. Take opportunities to move in and out of the"
+          ],
+          "objectives": [
+            "create and exploit space to connect with teammates",
+            "decide whether to pass into space or feet",
+            "decide whether to receive to turn or receive to pass.",
+            "Create three 30x20-yard pitches for 3v3 games.",
+            "On pitch one, put a goal in each corner.",
+            "On pitch two, put a goal at each end with a diamond",
+            "On pitch three, put a goal at each end.",
+            "Rotate after five minutes."
+          ],
+          "activities": []
+        }
+      ],
+      "image_id": "passing_receiving_attack"
+    },
+    {
+      "id": "passing_receiving_score",
+      "title": "Passing and Receiving to Score",
+      "category": "passing",
+      "key_words": [
+        "passing",
+        "receiving",
+        "score"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "building technique",
+          "coaching_points": [
+            "Allow for your players to practise multiple techniques and decide which methods work best.",
+            "Challenge players to think about how they can move the ball out of their feet to create an",
+            "Encourage bravery in passing and moving quickly.",
+            "Consider if space and time is impacting execution of the pass.",
+            "Encourage players to scan and consider their positioning."
+          ],
+          "objectives": [
+            "learn to use a wide variety of passes",
+            "be aware of the factors that may impact decisions including the space available, first touch,"
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "One player in each team passes to neutral player.",
+                "The neutral player, receives and passes back to",
+                "Teams move between grids, and the neutral players"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "combine with a partner",
+          "coaching_points": [
+            "Consider using variations on two-player moves.",
+            "Consider key capabilities such as scanning, positioning, and technique.",
+            "Allow players to make their own choices on which moves work best.",
+            "Encourage players to get their heads up to scan for teammates and space.",
+            "Get players to think about their positioning by asking “can you see the ball, and can the ball"
+          ],
+          "objectives": [
+            "explore two-player moves",
+            "work together as a team."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Progress the arrival activity by introducing the"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "receiving in space",
+          "coaching_points": [
+            "Ask players to pass the ball how they’d like to receive it and encourage them to make some",
+            "Once players have passed the ball, ask them to move into a new space to be ready to",
+            "Remind players to scan and think about what’s around them."
+          ],
+          "objectives": [
+            "explore what it means to be effective at receiving",
+            "understand how receiving can impact your next move or decision."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a 25x25-yard area. Split your group into four",
+                "Three teams have a ball. The other team are the",
+                "Taggers can only tag a player who has a ball.",
+                "The other teams support each other by passing and",
+                "Players high-five a tagged player to free them."
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Use cones to create a circle within half of your pitch.",
+                "Split your group into teams of three or four players.",
+                "One player from each team starts in the middle with",
+                "Each team can have one or two footballs between"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "passing to penetrate",
+          "coaching_points": [
+            "Get your players to think about the timing of their passes.",
+            "Encourage your players to think about how you can help other players to pass forward with",
+            "Explore how to best use body shape and receiving angles to play forward.",
+            "Use the right terminology for your players to encourage them to scan and pick their next"
+          ],
+          "objectives": [
+            "develop understanding on penetrative passes",
+            "look at the timing and techniques for when these passes can be made",
+            "consider how penetrative passes can help us score goals."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Progress the activity by adding competition.",
+                "Teams score one point if their pass through a gate",
+                "This gets teams to start thinking about how to play a"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "combinations to play forward",
+          "coaching_points": [
+            "Get your players to consider techniques and the weight of pass.",
+            "Support players to have a positive first touch to help the next move.",
+            "Ask players to think about their positioning in ‘through the gates’. If the receiver stands a bit",
+            "To keep the intensity high, challenge players to ‘not let the ball stop’.",
+            "Whole-part-whole session allows for players to work on key areas, so keep an eye out in the"
+          ],
+          "objectives": [
+            "play progressive, forward passes",
+            "consider weight and direction of pass to create goal scoring opportunities."
+          ],
+          "activities": [
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a 25x20 yard pitch with goals and an end zone",
+                "Split your players into two teams. Each team has two",
+                "Teams combine to pass to their target players.",
+                "After receiving a pass, target players turn and score"
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Using cones, place loads of ‘gates’ around your pitch.",
+                "Split players into pairs or threes. Challenge them to",
+                "Players move around the area to pass through"
+              ]
+            },
+            {
+              "name": "Practice Three",
+              "instructions": [
+                "Return to the original practice but this time, add"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "passing to score festival",
+          "coaching_points": [
+            "Remind players to pass with purpose. Whether it’s first-time passing, combination play, or",
+            "Don’t be afraid to support, however find a balance to allow them to demonstrate their",
+            "Feel free to adapt games you’ve used over the weeks that the players have liked, just"
+          ],
+          "objectives": [
+            "revisit key passing and receiving techniques from previous weeks",
+            "work back through activities from the previous weeks and add competition for positive",
+            "compete to gain points towards a cumulative total."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create two 20x15 yard pitches with two gates across",
+                "Teams have their own half. One starts with the ball.",
+                "Teams get one point if they pass through a gate and it"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Progress into small-sided games on your pitches.",
+                "Teams can only score with a one-touch finish.",
+                "Use pass-ins if the ball goes off the side of the pitch,",
+                "Players also can’t use their hands to make a save."
+              ]
+            }
+          ]
+        }
+      ],
+      "image_id": "passing_receiving_score"
+    },
+    {
+      "id": "receiving_finishing",
+      "title": "Receiving and Finishing to Score",
+      "category": "finishing",
+      "key_words": [
+        "receiving",
+        "finishing",
+        "score"
+      ],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "receiving techniques",
+          "coaching_points": [
+            "Encourage your players to try to scan before receiving the ball. Make sure they’re looking at",
+            "Make sure your players learn how to use a variety of receiving techniques to help with any",
+            "Ask players to make sure they’re using their body to protect the ball."
+          ],
+          "objectives": [
+            "work out how to receive the ball using a variety of technqiues",
+            "develop confidence in receiving the ball",
+            "learn how to receive the ball opposed and unopposed."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "In the next area, players on the side cones drop into",
+                "Swap players over after 90 seconds."
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Progress the drill by having an attacker and a",
+                "The lone attacker drops into the middle to receive the",
+                "As soon as the pass is played, the 3v2 game is live.",
+                "You can add another defender to make it a 3v3."
+              ]
+            },
+            {
+              "name": "Practice Two",
+              "instructions": [
+                "Finish the session off by setting up parallel pitches",
+                "If the ball goes out, use kick-ins to restart.",
+                "Play for three minutes then rotate teams around to"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "receiving under pressure",
+          "coaching_points": [
+            "Encourage your players to try to scan before receiving the ball. Make sure they’re looking at",
+            "Make sure your players learn how to use a variety of receiving techniques to help with any",
+            "Ask players to make sure they’re using their body to protect the ball."
+          ],
+          "objectives": [
+            "develop how to receive the ball under pressure",
+            "improve their confidence in receiving the ball",
+            "learn how to receive the ball opposed and unopposed."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Create a 40x30-yard area.",
+                "Have a group of players on the outside with a ball and",
+                "Players in the middle receive the ball off a player from",
+                "They then transfer the ball to a different player on the"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Set up an 40x30-yard area with a goal at each end",
+                "An attacker starts in the zone with a defender just",
+                "Once the attacking team pass to the zone player, the",
+                "After a goal, the attacking team rotate the player in"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "techniques to score",
+          "coaching_points": [
+            "Encourage your players to try to scan before receiving the ball. Make sure they’re looking at",
+            "Make sure your players learn how to use a variety of finishing techniques to help with any",
+            "Ask players to think about whether to control the ball or to try to finish first time."
+          ],
+          "objectives": [
+            "learn a variety of finishes to score",
+            "improve their confidence in using these variety of finishes."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a 40x30-yard area and fill it with different",
+                "Players work in pairs, pass and receive through as",
+                "You could add a scoring system for each size gate or"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a diamond area with a goal at each end for this",
+                "Put three footballs in each goal and start with one ball",
+                "Teams aim to empty their net before the other team",
+                "If a team scores, they grab a ball from their own net"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "receive to score",
+          "coaching_points": [
+            "Encourage your players to try to scan before receiving the ball. Make sure they’re looking at",
+            "Make sure your players learn how to use a variety of receiving and finishing techniques to",
+            "Ask players to think about how they could use their body to protect the ball."
+          ],
+          "objectives": [
+            "learn how to receive the ball to score",
+            "improve confidence and bravey to receive and finish",
+            "develop decision making when receiving the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a grid using nine cones.",
+                "Have two teams of three start on the middle cone.",
+                "When someone shouts “go”, players run to a free",
+                "Only one player can be on a cone at a time.",
+                "The first team to create three-in-a-row wins the"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create a pitch that’s split into thirds with a goal at",
+                "Two defenders and an attacker start in each final",
+                "Players are locked in.",
+                "Have a bounce player outside the 40x40-yard area",
+                "Players combine to score but the ball must be played"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "applying the finish",
+          "coaching_points": [
+            "Encourage your players to try to scan before receiving the ball. Make sure they’re looking at",
+            "Make sure your players learn how to use a variety of receiving and finishing techniques to",
+            "Ask players to think about how they could use their body to protect the ball."
+          ],
+          "objectives": [
+            "learn how to receive the ball to score",
+            "improve confidence and bravey to receive and finish",
+            "develop decision making when receiving the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up parallel small pitches for a 3v3 arrival activity.",
+                "Have a goal at each end. Play for two minutes then",
+                "Progress this by adding a condition, for example,"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Create an 20x40-yard area with a goal at one end.",
+                "Have a 4v4 in the middle with four players on the",
+                "They pass to someone in the middle then combine to",
+                "The other team can only shoot if they win the ball,"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "festival week",
+          "coaching_points": [
+            "Encourage your players to try to scan before receiving the ball. Make sure they’re looking at",
+            "Make sure your players learn how to use a variety of receiving and finishing techniques to",
+            "Ask players to think about how they could use their body to protect the ball."
+          ],
+          "objectives": [
+            "learn how to receive the ball to score",
+            "improve confidence and bravey to receive and finish",
+            "develop decision making when receiving the ball."
+          ],
+          "activities": [
+            {
+              "name": "Arrival Activity",
+              "instructions": [
+                "Set up a pitch with a goal at each end.",
+                "Have a 4v4 in the middle with four bounce players on",
+                "Both teams can use the bounce players.",
+                "Play for three minutes or until one side scores two.",
+                "The winning side stays on while the other team"
+              ]
+            },
+            {
+              "name": "Practice One",
+              "instructions": [
+                "Set up three 40x30-yard pitches with a goal at each",
+                "Put safe zones in between each pitch.",
+                "Each pitch hosts a 3v3 activity.",
+                "Teams play on each pitch for four minutes, then move",
+                "Rotate everyone around so teams play on each pitch",
+                "Remember to build in breaks after each activity."
+              ]
+            }
+          ]
+        }
+      ],
+      "image_id": "receiving_finishing"
+    }
+  ]
+}

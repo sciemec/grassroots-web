@@ -467,7 +467,8 @@ export default function LandingPage() {
       {/* ── Final CTA ─────────────────────────────────────────────────────────── */}
       <section className="border-t border-[#f0b429]/20 bg-gradient-to-t from-[#f0b429]/8 py-24">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <Image src="/logo.png" alt="Grassroots Sport" width={72} height={72} className="mx-auto mb-4" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Grassroots Sport" width={72} height={72} className="mx-auto mb-4" />
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
             Start your journey today
           </h2>
@@ -490,7 +491,8 @@ export default function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="mb-4 flex items-center gap-2">
-                <Image src="/logo.png" alt="Grassroots Sport" width={28} height={28} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Grassroots Sport" width={28} height={28} />
                 <span className="font-bold text-white">Grassroots Sport</span>
               </div>
               <p className="text-sm text-green-400">

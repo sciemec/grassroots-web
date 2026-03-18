@@ -8,8 +8,8 @@ import {
   LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
-  Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles,
-  Menu, X,
+  Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
+  Menu, X, ScanSearch,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -31,9 +31,12 @@ const navItems: NavItem[] = [
   // ─── Coach ────────────────────────────────────────────────────────────────
   { href: "/coach",                  label: "Coach Hub",      icon: LayoutDashboard, roles: ["coach"] },
   { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
+  { href: "/coach/scouting",         label: "Scouting",       icon: ScanSearch,      roles: ["coach"] },
+  { href: "/coach/training-plans",   label: "Training Plans", icon: Layers,          roles: ["coach"] },
   { href: "/coach/tactics",          label: "Tactics Board",  icon: ClipboardList,   roles: ["coach"] },
   { href: "/coach/matches",             label: "Matches",          icon: Trophy,      roles: ["coach"] },
   { href: "/coach/ai-insights",        label: "AI Insights",      icon: Brain,       roles: ["coach"] },
+  { href: "/knowledge",               label: "Knowledge Base",   icon: BookOpen,    roles: ["coach"] },
   { href: "/coach/tactical-analysis",  label: "Tactical Analysis", icon: Crosshair,  roles: ["coach"] },
   { href: "/coach/live-match",          label: "Live Match",       icon: Tv2,         roles: ["coach"] },
   { href: "/coach/stats",               label: "Season Stats",     icon: BarChart2,   roles: ["coach"] },
@@ -54,6 +57,7 @@ const navItems: NavItem[] = [
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
   { href: "/player/ai-coach",             label: "AI Coach",        icon: Brain,           roles: ["player"] },
+  { href: "/knowledge",                   label: "Knowledge Base",  icon: BookOpen,        roles: ["player"] },
   { href: "/player/drills",               label: "Drills",          icon: Dumbbell,        roles: ["player"] },
   { href: "/player/training-formats",     label: "Training Formats",icon: Layers,          roles: ["player"] },
   { href: "/player/sessions",             label: "Sessions",        icon: Target,          roles: ["player"] },
@@ -111,7 +115,8 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Logo + notification bell */}
       <div className="mb-4 px-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2" onClick={onNavClick}>
-          <Image src="/logo.png" alt="Grassroots Sport" width={28} height={28} className="rounded-sm" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Grassroots Sport" width={28} height={28} className="rounded-sm" />
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
         </Link>
         {user && <NotificationBell />}
@@ -212,7 +217,8 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b bg-card px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="Grassroots Sport" width={24} height={24} className="rounded-sm" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Grassroots Sport" width={24} height={24} className="rounded-sm" />
           <span className="text-base font-bold text-primary">Grassroots Sport</span>
         </Link>
         <button

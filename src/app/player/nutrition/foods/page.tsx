@@ -3,56 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Search, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
 interface Food {
+  id?: string | number;
   name: string;
+  name_shona?: string;
   category: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  portion: string;
-  note: string;
-  zim: boolean; // Zimbabwe-specific
+  calories_per_100g: number;
+  protein_per_100g: number;
+  carbs_per_100g: number;
+  fat_per_100g: number;
+  fiber_per_100g: number;
+  football_benefit?: string;
+  football_benefit_shona?: string;
 }
-
-const FOODS: Food[] = [
-  // Staples
-  { name: "Sadza (white maize)", category: "Staples", calories: 320, protein: 7, carbs: 68, fat: 2, fiber: 3, portion: "1 cup cooked (200g)", note: "Zimbabwe's staple carbohydrate", zim: true },
-  { name: "Sadza (sorghum)", category: "Staples", calories: 290, protein: 9, carbs: 60, fat: 3, fiber: 5, portion: "1 cup cooked (200g)", note: "Higher iron than maize sadza", zim: true },
-  { name: "Sweet potato", category: "Staples", calories: 180, protein: 3, carbs: 42, fat: 0, fiber: 4, portion: "1 medium (180g)", note: "Excellent for pre-training fuel", zim: true },
-  { name: "Rice (white)", category: "Staples", calories: 240, protein: 5, carbs: 53, fat: 0, fiber: 1, portion: "1 cup cooked (180g)", note: "Easy to digest", zim: false },
-
-  // Proteins
-  { name: "Matemba (dried kapenta)", category: "Protein", calories: 180, protein: 38, carbs: 0, fat: 4, fiber: 0, portion: "50g serving", note: "High protein, calcium, iron. Superstar food!", zim: true },
-  { name: "Nyama (beef)", category: "Protein", calories: 220, protein: 28, carbs: 0, fat: 11, fiber: 0, portion: "100g lean", note: "Grass-fed Zimbabwean beef is excellent quality", zim: true },
-  { name: "Chicken breast", category: "Protein", calories: 165, protein: 31, carbs: 0, fat: 4, fiber: 0, portion: "100g cooked", note: "Lean protein for muscle recovery", zim: false },
-  { name: "Fish (Bream/Tilapia)", category: "Protein", calories: 145, protein: 26, carbs: 0, fat: 4, fiber: 0, portion: "100g fillet", note: "From Kariba/Cahora Bassa. High omega-3", zim: true },
-  { name: "Boiled eggs", category: "Protein", calories: 155, protein: 13, carbs: 1, fat: 11, fiber: 0, portion: "2 large eggs", note: "Complete protein source", zim: false },
-  { name: "Groundnuts (peanuts)", category: "Protein", calories: 280, protein: 14, carbs: 8, fat: 23, fiber: 4, portion: "50g (handful)", note: "High energy snack, great for endurance", zim: true },
-
-  // Vegetables
-  { name: "Muriwo (rape/collards)", category: "Vegetables", calories: 35, protein: 3, carbs: 5, fat: 0, fiber: 3, portion: "1 cup cooked (120g)", note: "High iron and calcium. Eat daily!", zim: true },
-  { name: "Covo (kale)", category: "Vegetables", calories: 32, protein: 3, carbs: 4, fat: 0, fiber: 3, portion: "1 cup cooked (120g)", note: "Even more nutrient-dense than muriwo", zim: true },
-  { name: "Tomatoes", category: "Vegetables", calories: 22, protein: 1, carbs: 5, fat: 0, fiber: 1, portion: "1 medium (120g)", note: "Lycopene for recovery", zim: false },
-  { name: "Butternut squash", category: "Vegetables", calories: 68, protein: 2, carbs: 15, fat: 0, fiber: 2, portion: "1 cup cubed (150g)", note: "Vitamin A for vision and immunity", zim: true },
-
-  // Fruits
-  { name: "Mango", category: "Fruits", calories: 99, protein: 1, carbs: 25, fat: 0, fiber: 3, portion: "1 medium (200g)", note: "Vitamin C + quick carbs pre-match", zim: true },
-  { name: "Banana", category: "Fruits", calories: 89, protein: 1, carbs: 23, fat: 0, fiber: 3, portion: "1 medium (118g)", note: "Potassium prevents cramps", zim: false },
-  { name: "Guava", category: "Fruits", calories: 68, protein: 3, carbs: 14, fat: 1, fiber: 5, portion: "1 medium (165g)", note: "Highest vitamin C fruit available locally", zim: true },
-  { name: "Papaya", category: "Fruits", calories: 59, protein: 1, carbs: 15, fat: 0, fiber: 2, portion: "1 cup cubed (145g)", note: "Anti-inflammatory, aids digestion", zim: true },
-
-  // Dairy/Fats
-  { name: "Full cream milk", category: "Dairy", calories: 149, protein: 8, carbs: 12, fat: 8, fiber: 0, portion: "1 cup (240ml)", note: "Best post-training recovery drink", zim: false },
-  { name: "Maheu", category: "Dairy", calories: 165, protein: 5, carbs: 32, fat: 2, fiber: 1, portion: "1 cup (250ml)", note: "Fermented maize drink — probiotics + carbs", zim: true },
-];
-
-const CATEGORIES = ["All", "Staples", "Protein", "Vegetables", "Fruits", "Dairy"];
 
 export default function FoodBrowserPage() {
   const router = useRouter();
@@ -60,13 +27,29 @@ export default function FoodBrowserPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState<Food | null>(null);
+  const [foods, setFoods] = useState<Food[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
   }, [user, router]);
 
-  const filtered = FOODS.filter((f) => {
-    const matchSearch = !search || f.name.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    fetch("/data/zim_foods.json")
+      .then((r) => r.json())
+      .then((data: Food[]) => setFoods(data))
+      .catch(() => setFoods([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const categories = ["All", ...Array.from(new Set(foods.map((f) => f.category))).sort()];
+
+  const filtered = foods.filter((f) => {
+    const q = search.toLowerCase();
+    const matchSearch = !search ||
+      f.name.toLowerCase().includes(q) ||
+      (f.name_shona ?? "").toLowerCase().includes(q) ||
+      (f.football_benefit ?? "").toLowerCase().includes(q);
     const matchCat = category === "All" || f.category === category;
     return matchSearch && matchCat;
   });
@@ -83,55 +66,96 @@ export default function FoodBrowserPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Food Browser</h1>
-            <p className="text-sm text-muted-foreground">Zimbabwe athlete food database</p>
+            <p className="text-sm text-muted-foreground">
+              Zimbabwe athlete food database{!loading && ` · ${foods.length} foods`}
+            </p>
           </div>
         </div>
 
-        <div className="mb-4 flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search foods…" value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border bg-card py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-ring" />
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading foods…
           </div>
-        </div>
-
-        <div className="mb-5 flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <button key={c} onClick={() => setCategory(c)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                category === c ? "bg-primary text-primary-foreground" : "border bg-card text-muted-foreground hover:bg-muted"
-              }`}>{c}</button>
-          ))}
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((food) => (
-            <button key={food.name} onClick={() => setSelected(food === selected ? null : food)}
-              className={`rounded-xl border p-4 text-left transition-all hover:border-primary/40 ${selected?.name === food.name ? "border-primary bg-primary/5" : "bg-card"}`}>
-              <div className="mb-2 flex items-start justify-between">
-                <p className="font-semibold text-sm">{food.name}
-                  {food.zim && <span className="ml-1.5 text-xs">🇿🇼</span>}
-                </p>
-                <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-bold text-orange-600">{food.calories} kcal</span>
+        ) : (
+          <>
+            <div className="mb-4 flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search by name, Shona name or benefit…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-lg border bg-card py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-ring"
+                />
               </div>
-              <p className="mb-2 text-xs text-muted-foreground">{food.portion}</p>
-              <div className="flex gap-3 text-xs">
-                <span className="text-blue-600 font-medium">{food.protein}g protein</span>
-                <span className="text-green-600 font-medium">{food.carbs}g carbs</span>
-                <span className="text-yellow-600 font-medium">{food.fat}g fat</span>
+            </div>
+
+            <div className="mb-5 flex flex-wrap gap-2">
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCategory(c)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    category === c ? "bg-primary text-primary-foreground" : "border bg-card text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            {filtered.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">No foods found. Try a different search.</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((food, idx) => {
+                  const key = food.id ?? `${food.name}-${idx}`;
+                  const isSelected = selected?.name === food.name;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelected(isSelected ? null : food)}
+                      className={`rounded-xl border p-4 text-left transition-all hover:border-primary/40 ${isSelected ? "border-primary bg-primary/5" : "bg-card"}`}
+                    >
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-sm">{food.name} <span className="text-xs">🇿🇼</span></p>
+                          {food.name_shona && (
+                            <p className="text-xs text-muted-foreground italic">{food.name_shona}</p>
+                          )}
+                        </div>
+                        <span className="flex-shrink-0 rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-bold text-orange-500">
+                          {food.calories_per_100g} kcal
+                        </span>
+                      </div>
+                      <p className="mb-2 text-[10px] text-muted-foreground">per 100 g</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="text-blue-400 font-medium">{food.protein_per_100g}g protein</span>
+                        <span className="text-green-400 font-medium">{food.carbs_per_100g}g carbs</span>
+                        <span className="text-yellow-400 font-medium">{food.fat_per_100g}g fat</span>
+                      </div>
+                      {isSelected && (
+                        <div className="mt-3 border-t pt-3 space-y-2">
+                          {food.football_benefit && (
+                            <p className="text-xs text-muted-foreground">⚽ {food.football_benefit}</p>
+                          )}
+                          {food.football_benefit_shona && (
+                            <p className="text-xs text-muted-foreground/70 italic">🗣 {food.football_benefit_shona}</p>
+                          )}
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            <span className="rounded bg-muted px-2 py-0.5">Fiber: {food.fiber_per_100g}g</span>
+                            <span className="rounded bg-muted px-2 py-0.5">{food.category}</span>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              {selected?.name === food.name && (
-                <div className="mt-3 border-t pt-3">
-                  <p className="text-xs text-muted-foreground">{food.note}</p>
-                  <div className="mt-2 flex gap-2 text-xs">
-                    <span className="rounded bg-muted px-2 py-0.5">Fiber: {food.fiber}g</span>
-                    <span className="rounded bg-muted px-2 py-0.5">{food.category}</span>
-                  </div>
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
+            )}
+          </>
+        )}
       </main>
     </div>
   );

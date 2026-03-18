@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { playerAiCoachPrompt, ageGroupMatchFeedbackPrompt } from "@/config/prompts";
 import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
+import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
 interface Message {
   id: string;
@@ -100,6 +101,9 @@ export default function AICoachPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Preload offline knowledge bases in the background as soon as the page mounts
+  useEffect(() => { preloadOfflineAI(); }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -119,32 +123,42 @@ export default function AICoachPage() {
    * handles each message independently (backend limitation — no history param).
    */
   const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
+    // Step 1 — Laravel backend (DeepSeek)
     try {
-      // Primary: POST /ask via Laravel backend
       const res = await api.post("/ask", {
         question: message,
         role: user?.role ?? "player",
         language: "english",
       });
-      return res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status !== 401) throw err; // surface real errors (network, 500, etc.)
-      // 401 → fall through to the Next.js proxy below
+      const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+      if (reply) return reply;
+    } catch {
+      // Any error → fall through to Claude proxy
     }
 
-    // Fallback: Next.js server route → Anthropic API (supports conversation history)
-    const res = await fetch("/api/ai-coach", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, system_prompt: systemP, history }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error ?? `AI service error (${res.status})`);
+    // Step 2 — Next.js Claude proxy (requires internet)
+    try {
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, system_prompt: systemP, history }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data.response ?? data.reply ?? "";
+        if (reply) return reply;
+      }
+    } catch {
+      // Network down → fall through to offline AI
     }
-    const data = await res.json();
-    return data.response ?? data.reply ?? "";
+
+    // Step 3 — Offline knowledge base (no internet required)
+    const offline = await searchOffline(message);
+    if (offline) {
+      return `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`;
+    }
+
+    throw new Error("I couldn't connect to any AI service. Please check your connection and try again.");
   };
 
   const sendWithMatchFeedback = async (matchStats: string) => {

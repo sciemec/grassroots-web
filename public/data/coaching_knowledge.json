@@ -1,0 +1,525 @@
+{
+  "source": "Special Olympics Football Coaching Guide (2004)",
+  "skills": {
+    "control_receiving": {
+      "description": "The first touch is the most important skill in football. Receiving the ball cleanly sets up every subsequent action.",
+      "key_words": ["Open Up the Foot", "Raise the Foot", "Soft Foot", "Cushion", "Relax"],
+      "techniques": [
+        {
+          "name": "Inside of Foot",
+          "description": "Use the inside of the foot to bring a ground ball under control. All body weight on the supporting leg with receiving foot raised slightly off the ground.",
+          "steps": [
+            "Stand in a relaxed position with eyes focused on the ball",
+            "Adjust position to remain in the flight of the ball",
+            "Place non-kicking foot slightly in front",
+            "Meet the ball and immediately withdraw foot on impact",
+            "Raise foot 4–5 inches off the ground, toes pulled up, foot parallel to ground"
+          ]
+        },
+        {
+          "name": "Cushioning",
+          "description": "Absorb pace by meeting the ball with a cushioned touch. Withdraw the controlling surface as contact is made.",
+          "steps": [
+            "Stand lightly as ball approaches",
+            "Position in ball's line of travel",
+            "Assess options and choose controlling body surface",
+            "Look directly at the ball",
+            "Position non-kicking foot ahead of ball",
+            "Use arms for balance",
+            "Bring striking foot back at moment of impact"
+          ]
+        },
+        {
+          "name": "Outside of Foot",
+          "description": "Trapping foot brought in front or across the plant leg so outside of foot faces the ball. Toe pointed slightly down, ankle locked."
+        },
+        {
+          "name": "Thigh",
+          "description": "Raise thigh to 90-degree angle. As ball contacts thigh, drop knee toward ground to create cushioning effect."
+        },
+        {
+          "name": "Chest",
+          "description": "Stand inline with flight of ball. Use arms for balance, bend backward to get chest underneath ball. Bend knees slightly to absorb momentum."
+        }
+      ],
+      "ball_control_principles": [
+        "First touch protects ball from challenging players",
+        "Play ball into available space to allow for next touch",
+        "Allow game movement to start or continue by gaining or keeping momentum"
+      ],
+      "faults_and_fixes": [
+        {
+          "fault": "Ball bounces away after receiving",
+          "fix": "Let the ball come and just as it is received, pull foot back slightly",
+          "drill": "Roll or toss ball slowly at first, increase speed until player is comfortable"
+        },
+        {
+          "fault": "Ball goes under foot",
+          "fix": "Watch ball all the way to foot. Let the ball hit foot"
+        },
+        {
+          "fault": "Ball path misread, player misses pass",
+          "fix": "Repeated practice using passes from different distances. Keep eyes on ball at all times, get body in line"
+        },
+        {
+          "fault": "Player indecisive choosing controlling surface",
+          "fix": "Player shouts type of body surface they will use before server provides pass"
+        },
+        {
+          "fault": "Ball bounces off player, control lost",
+          "fix": "Exaggerate the relaxation movement. Start with gentle service, build up difficulty. Try smaller or lighter balls"
+        }
+      ],
+      "coaching_tips": [
+        "Help lower ability players move into position and get behind the flight of the ball",
+        "Encourage players to slow down, relax and concentrate — as important as coaching correct technique",
+        "Have players receive the ball with different parts of their body — thigh, knee and chest",
+        "Emphasize the importance of the first touch",
+        "Give positive reinforcement to players that control the ball",
+        "Play a make-shift game allowing players only two touches"
+      ]
+    },
+    "dribbling": {
+      "description": "Dribbling is running with the ball at your feet — speeding through open space, maneuvering out of tight situations and feinting to beat opponents.",
+      "key_words": ["Keep It Close", "Light Touches", "Toe Down", "Inside of the Foot", "Change Direction", "Keep It On The Outside", "Spin Away", "Balance", "Reverse"],
+      "techniques": [
+        {
+          "name": "Top of Foot (Laces)",
+          "description": "Dribble forward using the top of the foot along the outside of the laces. Point toe down toward ground. Keep ball within one metre."
+        },
+        {
+          "name": "Inside of Foot",
+          "description": "Use inside of foot to quickly change direction and beat opponent. Short, even strides while keeping ball close."
+        },
+        {
+          "name": "Outside of Foot",
+          "description": "Shield the ball from opponents and evade tackles. Keeps player in position to pass to teammate."
+        },
+        {
+          "name": "Sole of Foot",
+          "description": "Change ball direction, then move ball to outside of foot."
+        }
+      ],
+      "essentials": ["Close control", "Changing direction or pace", "Disguise"],
+      "faults_and_fixes": [
+        {
+          "fault": "Cannot control ball when running",
+          "fix": "Player walks and dribbles. Slowly increase to light jog, then to a run",
+          "drill": "Dribble around half of the field while running"
+        },
+        {
+          "fault": "Loses ball when moving right and/or left",
+          "fix": "Player slowly dribbles around cones. Increase speed as touch improves",
+          "drill": "Timed cone dribbling — award point for best time or best change in time"
+        },
+        {
+          "fault": "Ball always runs away from player",
+          "fix": "Slow down. Have pace related to ability",
+          "drill": "Cone dribbling"
+        }
+      ],
+      "coaching_tips": [
+        "Work individually with low-energy players using gentle physical prompting (hand on middle of back)",
+        "For high-energy players who kick ball too far, start by walking and concentrate on control before speeding up",
+        "For players who have mastered dribbling, have them dribble with head up, viewing the field",
+        "Encourage use of individual tricks — dummies, stopovers, turns, dragging ball back",
+        "Encourage players to dribble to create space",
+        "Players need to be aware of teammates' positions before dribbling"
+      ]
+    },
+    "passing": {
+      "description": "Football is a team game. Through passing, a team can counterattack, maintain possession and set up scoring opportunities. 70% of passing is made with the inside of the foot.",
+      "key_words": ["Head Up", "Look At Your Teammate", "Push The Ball Firmly", "Follow Through With Your Foot", "Toe Down", "Firm Strike"],
+      "techniques": [
+        {
+          "name": "Inside of Foot (Push Pass)",
+          "description": "For short passes. Strike firmly with foot following through in direction of intended receiver.",
+          "steps": [
+            "Square up so player, ball and target are in a straight line",
+            "Place plant foot about 4 inches from side of ball, pointing toward target",
+            "Head over the ball, eyes looking down, both knees slightly bent",
+            "Place striking foot flat against back of ball, 5 inches above ground",
+            "Push ball toward target, following through (not a jab)",
+            "Ball contact with toes pulled up, foot parallel to ground, ankle locked",
+            "Make contact with arch below ankle bone, follow through for top spin"
+          ]
+        },
+        {
+          "name": "Instep (Long Pass)",
+          "description": "Use instep to send longer passes with greater power."
+        }
+      ],
+      "organizing_tips": [
+        "Control with one foot, pass with same foot",
+        "Control with one foot, pass with other foot",
+        "Control with outside of one foot, pass with inside of same foot",
+        "Control with inside of one foot, pass with outside of same foot"
+      ],
+      "faults_and_fixes": [
+        {
+          "fault": "Frustrated player not receiving passes",
+          "fix": "Players put themselves in good position to receive pass and call for ball",
+          "drill": "Encourage players to move around the field when they don't have the ball"
+        },
+        {
+          "fault": "Ball goes in the air",
+          "fix": "Show player correct ball contact. Make contact with ball higher"
+        },
+        {
+          "fault": "Player stumbles after kick",
+          "fix": "Show player correct ball contact. Make contact with ball lower"
+        },
+        {
+          "fault": "Ball goes to the side of teammate",
+          "fix": "Striking foot not square to balancing foot. Correct player's stance"
+        }
+      ],
+      "coaching_tips": [
+        "Always begin teaching passing with side of foot first",
+        "Have receiver stand close, then move further as passing improves",
+        "The major problem with most players is not looking for teammates before passing",
+        "Coach can freeze play in practice games to allow player to look for teammate",
+        "Practice at home using a wall or fence to perfect technique",
+        "When on offense, pass from outside of field to inside of field",
+        "Always pass the ball in front of your teammate"
+      ]
+    },
+    "shooting": {
+      "description": "The aim of the game is to score goals. Players need good technique and a positive attitude toward taking shots whenever they have a good opportunity.",
+      "key_words": ["From The Side", "Sweep Around", "Head Down", "Toe Down", "Watch The Foot Strike", "Strike"],
+      "techniques": [
+        {
+          "name": "Instep Shot",
+          "description": "For power and accuracy. Approach from side. Head down, ankle firmly locked, strike with instep.",
+          "steps": [
+            "Approach ball slightly from the side, not straight on",
+            "Place non-kicking foot at side of ball",
+            "Swing kicking foot backward with bent knee",
+            "Keep eye on ball and head still",
+            "Swing kicking foot forward with knee pointing down",
+            "Kicking foot follows ball as knee straightens",
+            "Follow through guides ball to corner of net"
+          ]
+        },
+        {
+          "name": "Low Shot (Laces)",
+          "description": "Hit ball with laces of shoe for effective low shots."
+        }
+      ],
+      "coaching_principles": [
+        "Most goals scored from side of goal — teach players to shoot at an angle",
+        "It is harder for goalkeeper to save a low shot",
+        "Always aim for far post when shooting at an angle",
+        "When shooting, accuracy is more important than power",
+        "Teach shooting in correct size goals"
+      ],
+      "faults_and_fixes": [
+        {
+          "fault": "Ball has back spin when shot or goes high/wide",
+          "fix": "Encourage player to strike the middle of the ball. Listen for the 'boom' when ball is struck properly"
+        },
+        {
+          "fault": "Player cannot get power or accuracy when shooting",
+          "fix": "Make sure player plants non-kicking foot next to ball. Make sure knee on kicking leg is over the ball. Kick through the ball",
+          "drill": "Have player stand with non-kicking foot next to ball and phantom kick"
+        }
+      ],
+      "coaching_tips": [
+        "As a general rule, teach players to control the ball before trying to shoot",
+        "Encourage players to shoot toward corners of goal, not middle",
+        "Do not be afraid to shoot even if not close to goal — good things can happen",
+        "Play one-on-one games to perfect forward play or defense"
+      ]
+    },
+    "tackling": {
+      "description": "Tackling uses your feet to take the ball away from an opponent. A committed, determined and cool-headed approach is essential.",
+      "key_words": ["Go To The Ball", "Do Not Let Them Dribble", "See Your Foot Strike The Ball", "Make Contact - Then Make It Yours!"],
+      "types": [
+        {
+          "name": "Front Block Tackle",
+          "description": "When defender meets attacker head-on with body square to ball. Forceful contact with inside of boot.",
+          "coaching_tips": [
+            "Keep eye on ball",
+            "Upper body weight forward",
+            "Coordinate body movement",
+            "Apply maximum force, aiming to block the ball, not kick it"
+          ]
+        },
+        {
+          "name": "Side Block Tackle",
+          "description": "When attacker has partially gone past defender or defender tries to close down angled pass. Requires good balance with outstretched leg.",
+          "coaching_tips": [
+            "Keep eye on ball",
+            "Teach athletes not to sell themselves as the attacker",
+            "Touch shoulder to shoulder before tackling to reduce risk"
+          ]
+        },
+        {
+          "name": "Ground Block Tackle",
+          "description": "When block or side tackle cannot be used. Defender throws body into ball. Stay on feet as long as possible.",
+          "coaching_tips": [
+            "Keep eye on ball",
+            "Be patient",
+            "Use only as last resort",
+            "Get back on feet as quickly as possible"
+          ]
+        },
+        {
+          "name": "Sliding Tackle",
+          "description": "Last resort to prevent attacker getting past. Defender slides on ground into ball, playing it with outside leg.",
+          "coaching_tips": [
+            "Always made from the side of the dribbler",
+            "All contact on the ball",
+            "Very useful if player has been beaten",
+            "Can be dangerous if not done correctly — use with experienced players only"
+          ]
+        }
+      ],
+      "faults_and_fixes": [
+        {
+          "fault": "Defender gets beat because of giving too much space",
+          "fix": "Stay close to opposing players and run with them. Concentrate on the player being defended"
+        },
+        {
+          "fault": "Defender chases player and cannot catch opponent",
+          "fix": "Always stay between your goal and player. Teach positional sense"
+        },
+        {
+          "fault": "Opposition player runs past because of missed tackle",
+          "fix": "Time tackle so you are sure of winning ball. Do not commit too early"
+        }
+      ],
+      "coaching_tips": [
+        "Cue beginner players to 'slow down' and 'concentrate on ball' when approaching opponent",
+        "Organize players in pairs with a ball to practice 50/50 ball situations",
+        "Encourage players to run through tackles by keeping legs moving in close contact",
+        "Encourage players to jockey until the time is right to tackle",
+        "Do not play defenders too far back — no more than 5-metre cushion",
+        "Only tackle when you think you will win the ball"
+      ]
+    },
+    "heading": {
+      "description": "Approximately 20% of goals come from headed shots. Players must be able to pass, shoot, clear and control the ball using their head.",
+      "key_words": ["Eyes Open", "Watch The Ball", "Rock Back", "Forehead", "Power Through"],
+      "types": [
+        {
+          "name": "Directional Header",
+          "description": "Control the ball (pass, shoot or receive). Strike with forehead just below or at hairline where player can see the ball."
+        },
+        {
+          "name": "Clearing Header",
+          "description": "Send ball as far as possible. Strike with forehead at hairline or top of head. Defender often leaps for more power."
+        },
+        {
+          "name": "Flick Header",
+          "description": "Jump for ball to play or continue it in more or less the same direction. Useful for center forwards receiving long passes."
+        }
+      ],
+      "techniques": {
+        "ground_heading": {
+          "steps": [
+            "Keep eyes open until impact, fixed on ball",
+            "Position body inline with ball",
+            "Rock onto back foot before ball arrives",
+            "Make contact with forehead (not top of head)",
+            "Attack through ball for power",
+            "Power comes from legs, back and neck — keep wide base, staggered stance"
+          ]
+        },
+        "jumping_header": {
+          "steps": [
+            "Run and jump off one leg to meet ball",
+            "Good timing of run and anticipation of where ball will be",
+            "Upper body arches backward after takeoff",
+            "Body propelled forward — snapping action",
+            "Neck extended then snapped forward in synchronization",
+            "Strike ball at TOP of jump — jumping too early loses all power",
+            "Drive non-jumping leg up toward ball when jumping"
+          ]
+        }
+      },
+      "safety_note": "Medical studies have found that extensive heading can cause brain damage. Do not teach headers until U-10. Do not stress them until U-11. Use soft or underinflated ball when teaching.",
+      "faults_and_fixes": [
+        {
+          "fault": "Ball hits player's head and goes in any direction",
+          "fix": "Eyes must focus on ball. Coach serves ball ensuring correct contact is made"
+        },
+        {
+          "fault": "No direction in header",
+          "fix": "Place feet in correct position. Coach demonstrates correct timing"
+        },
+        {
+          "fault": "Player refuses to head ball",
+          "fix": "Build up confidence using lighter ball. Motivate. Show correct technique"
+        }
+      ],
+      "coaching_tips": [
+        "Overcome fear by working one-on-one with player heading stationary ball from coach's hand",
+        "Deflate ball a little or use sponge/foam ball at first",
+        "Higher ability players can begin to jump to head rather than waiting for ball",
+        "Use verbal cue to help player time the jump just before ball arrives",
+        "Power in heading comes from trunk, legs and arms — not from snapping neck",
+        "Explain that trunk arches backward prior to contacting ball whether on ground or in air",
+        "For nervous players, teach them to deflect ball to another player using chest"
+      ]
+    },
+    "goalkeeping": {
+      "description": "Goalkeeping protects your goal from opponent's shots. A sound, confident goalkeeper is the source of confidence for the entire team.",
+      "key_words": ["On Your Toes", "Watch the Play", "Ready Position", "Hands Up", "Get Behind The Ball", "Two Hands", "Catch It - Hug It", "Stay Low", "Side Not Stomach", "Look Wide", "Quick Throw", "Big Kick Up Field"],
+      "selection_criteria": [
+        "Confidence — bold character willing to throw into penalty area",
+        "Communication — able to organize players and call clearly when leaving line",
+        "Handling — safe hands more important than height",
+        "Distribution — must be confident ball kicker who can kick long distance"
+      ],
+      "ready_position": [
+        "Head must remain still throughout",
+        "Eyes fixed on ball",
+        "Stand lightly on balls of feet",
+        "Feet shoulder-width apart",
+        "Hands at waist height with palms opened"
+      ],
+      "techniques": [
+        {
+          "name": "Handling High Balls",
+          "description": "Form a 'W' with thumbs almost touching. Gets hands behind ball for safe stopping."
+        },
+        {
+          "name": "Handling Low Balls",
+          "description": "Form an 'M' with little fingers almost touching. Get hands behind ball consistently."
+        },
+        {
+          "name": "Diving for Ground Ball",
+          "description": "Lower center of gravity before diving. Dive on side of body (not flat on stomach). Get both hands to ball then immediately bring into body.",
+          "steps": [
+            "Crouch and bend knees to lower center of gravity",
+            "Dive on side of body — increases barrier and is safer",
+            "Get both hands to ball",
+            "Bring securely into body immediately"
+          ]
+        },
+        {
+          "name": "Distribution — Throwing",
+          "description": "Look wide to wings, not middle. Use underhand (bowling), overhand (baseball) or two-handed throw-in style. Distribute quickly before opponents regroup."
+        },
+        {
+          "name": "Distribution — Punting",
+          "description": "In 11-a-side, most effective distribution for Special Olympics goalkeepers. Always kick to wing, not middle."
+        }
+      ],
+      "faults_and_fixes": [
+        {
+          "fault": "Goalkeeper uses only one hand to catch the ball",
+          "fix": "Always use two hands — form a 'W' for high balls (thumbs almost touching) and an 'M' for low balls (little fingers almost touching). Practice catching with both hands together"
+        },
+        {
+          "fault": "Ball drops or spills out of hands after catch",
+          "fix": "After catching, immediately hug ball into chest. Get both hands behind ball and pull into body before any movement"
+        },
+        {
+          "fault": "Goalkeeper dives flat on stomach when diving for ground balls",
+          "fix": "Always dive on the SIDE of the body, not the stomach. Lower your centre of gravity first by bending knees, then go down on the side — it is safer and creates a bigger barrier"
+        },
+        {
+          "fault": "Goalkeeper stands flat-footed and is slow to react",
+          "fix": "Always stay on the balls of your feet — never flat-footed. Keep knees slightly bent and hands at waist height ready to move in any direction"
+        },
+        {
+          "fault": "Goalkeeper stands on or too near the goal line",
+          "fix": "Come one or two steps off the goal line. This gives better angle coverage and makes it harder for attackers to chip over you"
+        },
+        {
+          "fault": "Goalkeeper throws ball straight up the middle",
+          "fix": "Always distribute WIDE to the wings. Look left or right first, never throw into crowded central areas where opponents can intercept"
+        },
+        {
+          "fault": "Goalkeeper distributes too slowly — opponents regroup",
+          "fix": "Distribute quickly once you have the ball secure. Look up first, pick your target on the wing, and throw or kick immediately"
+        },
+        {
+          "fault": "Goalkeeper does not communicate with defenders",
+          "fix": "Call loudly and early — shout 'KEEPER!' when coming for the ball, 'AWAY!' to tell defenders to clear, and call players by name when distributing"
+        },
+        {
+          "fault": "Goalkeeper comes off line too early on one-on-one",
+          "fix": "Come out slowly at first to narrow the angle, then hold your position. Do not dive too early — wait for the attacker to commit before making your move"
+        },
+        {
+          "fault": "Goalkeeper watches feet instead of the ball",
+          "fix": "Eyes must be FIXED on the ball at all times. Watch the ball from the moment it leaves the attacker's foot all the way into your hands"
+        },
+        {
+          "fault": "Poor positioning — goalkeeper not central between posts",
+          "fix": "Always check your position relative to both posts. Use your feet to feel the line and keep glancing back to adjust. Stay in the centre of an imaginary line between the ball and the goal centre"
+        },
+        {
+          "fault": "Goalkeeper loses concentration when ball is at the other end",
+          "fix": "Keep scanning the field at all times. Glance over your shoulder, watch the play, and be ready to organise your defence. Concentration must never drop"
+        }
+      ],
+      "coaching_tips": [
+        "Lower ability goalkeeper should stay close to goal at all times and not wander out",
+        "Teach all players never to blame the goalkeeper when the other team scores — this destroys confidence",
+        "Goalkeeper must communicate constantly — call for the ball, organise defenders, give instructions",
+        "Always kick or throw to the player on the wing, never up the middle",
+        "Have a backup goalkeeper trained and ready in case of injury",
+        "Keep focused on play in front when ball is not at your end — never switch off",
+        "Encourage goalkeeper after every save, even small ones — confidence is everything",
+        "Teach the goalkeeper to read the game — watch attacker's body shape to predict shot direction",
+        "Practice distribution daily — a goalkeeper who distributes well starts attacks",
+        "Remind goalkeeper: the ready position is the foundation of all good goalkeeping"
+      ]
+    }
+  },
+  "game_concepts": {
+    "team_principles": [
+      {
+        "number": 1,
+        "principle": "Support the Player with the Ball",
+        "description": "Move into open space within passing distance or call for the ball",
+        "key_words": ["Move To Get Open", "Call For The Ball"]
+      },
+      {
+        "number": 2,
+        "principle": "Play Safe From The Back",
+        "description": "Pass out of your own half, do not dribble. Safer to pass quickly up field.",
+        "key_words": ["Play Simple", "Pass From The Back"]
+      },
+      {
+        "number": 3,
+        "principle": "Take Risks in Attack",
+        "description": "Use dribbling moves in opponent's penalty area. Encourage fakes and direct runs at goal.",
+        "key_words": ["Use Your Moves", "Go To Goal"]
+      },
+      {
+        "number": 4,
+        "principle": "Use Your Wings",
+        "description": "Play wide to the wings and attack down side of field before moving toward goal.",
+        "key_words": ["Play Wide"]
+      },
+      {
+        "number": 5,
+        "principle": "Shoot Whenever You Have a Good Opportunity",
+        "description": "If you have a reasonable chance to score, shoot. Do not wait.",
+        "key_words": ["If You Have A Chance, Shoot"]
+      }
+    ],
+    "positions": {
+      "5_a_side": [
+        {"position": "Goalkeeper", "responsibilities": ["Protects goal", "Uses two hands", "Stays close to goal", "Throws ball out quickly to wings"]},
+        {"position": "Defender", "responsibilities": ["Stops opponents from shooting", "Chases and tackles", "Passes ball up to attackers", "Follows play up to halfway line"]},
+        {"position": "Wings", "responsibilities": ["Helps attack and defend", "Gets open by going wide", "Stays on their side of field"]},
+        {"position": "Striker", "responsibilities": ["Goes for goal", "Scores", "Stays on opponent's side of field"]}
+      ],
+      "11_a_side": [
+        {"position": "Goalkeeper", "responsibilities": ["Protects goal", "Uses two hands", "Stays close to goal", "Quickly throws or punts ball to wings"]},
+        {"position": "Sweeper", "responsibilities": ["Last line of defense", "Backs up other defenders", "Plays ball quickly up field"]},
+        {"position": "Stopper", "responsibilities": ["Key central defender", "Marks opposing center forward", "Moves up to halfway line when team has ball"]},
+        {"position": "Defenders (RB/LB)", "responsibilities": ["Marks opposing forwards", "Stops opponents shooting", "Chases and tackles", "Passes up to attackers"]},
+        {"position": "Midfielders", "responsibilities": ["Links defense and attack", "Must have plenty of stamina", "Gets open for passes from defenders", "Passes to forwards and runs to support"]},
+        {"position": "Wings", "responsibilities": ["Stays wide", "Gets open for passes", "Takes ball down wing and crosses", "Chases back to halfway line"]},
+        {"position": "Center Forward/Striker", "responsibilities": ["Goes for goal", "Scores", "Stays up in opponent's half"]}
+      ]
+    }
+  }
+}

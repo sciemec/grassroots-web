@@ -6,9 +6,9 @@ import { ArrowLeft, Loader2, Brain, Save, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SPORT_MAP, SPORT_STATS, SportKey } from "@/config/sports";
-import { sportStatsFeedbackPrompt } from "@/config/prompts";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 interface StatEntry {
   [key: string]: string | number;
@@ -113,12 +113,6 @@ export default function SportStatsPage() {
       .map(([k, v]) => `${k}: ${v}`)
       .join(", ");
 
-    const systemPrompt = sportStatsFeedbackPrompt({
-      sport: sportKey,
-      role: roleKey !== "all" ? roleKey : undefined,
-      position: cfg.positions?.[0] ?? undefined,
-    });
-
     const message = [
       statSummary ? `Performance stats: ${statSummary}.` : "No stats provided yet.",
       context ? `Additional context: ${context}` : "",
@@ -127,11 +121,8 @@ export default function SportStatsPage() {
       .join(" ");
 
     try {
-      const res = await api.post("/ai-coach/query", {
-        message,
-        system_prompt: systemPrompt,
-      });
-      setAi({ text: res.data.response ?? res.data.message ?? "", loading: false, error: "" });
+      const reply = await queryAI(message, "player");
+      setAi({ text: reply, loading: false, error: "" });
     } catch {
       setAi({ text: "", loading: false, error: "Failed to get AI feedback. Please try again." });
     }

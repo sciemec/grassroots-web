@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, RotateCcw, Brain, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 // 3x3 goal zone grid
 const ZONES = [
@@ -53,10 +53,8 @@ export default function ShootingFormatPage() {
       return `${z}: ${d.goals}/${d.shots}`;
     }).join(", ");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Shooting session results: Zone breakdown: ${zoneSummary}. Weak foot: ${weakFoot.goals}/${weakFoot.shots}. Volleys: ${volleys.goals}/${volleys.shots}. Overall: ${totalGoals}/${totalShots} (${accuracy}%). Provide specific coaching feedback on strongest/weakest zones and a 2-week improvement plan.`,
-      });
-      setAiReport(res.data?.response ?? "");
+      const reply = await queryAI(`Shooting session results: Zone breakdown: ${zoneSummary}. Weak foot: ${weakFoot.goals}/${weakFoot.shots}. Volleys: ${volleys.goals}/${volleys.shots}. Overall: ${totalGoals}/${totalShots} (${accuracy}%). Provide specific coaching feedback on strongest/weakest zones and a 2-week improvement plan.`, "player");
+      setAiReport(reply);
     } catch { setAiReport("Unable to generate report."); }
     finally { setLoadingReport(false); }
   };

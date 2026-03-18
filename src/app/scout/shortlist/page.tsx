@@ -7,6 +7,7 @@ import { ArrowLeft, Star, Trash2, Brain, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 interface ShortlistPlayer {
   id: string;
@@ -62,10 +63,8 @@ export default function ScoutShortlistPage() {
     const selected = shortlist.filter((p) => comparing.includes(p.id));
     const summary = selected.map((p) => `${p.initials} (${p.position}, ${p.age_group}, ${p.province}): score ${p.overall_score ?? "N/A"}`).join(" vs ");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Compare these players for scouting: ${summary}. Provide a brief comparison of their potential, key differences, and a recommendation on who to prioritize for signing. Write in professional scouting language.`,
-      });
-      setAiComparison(res.data?.response ?? "");
+      const reply = await queryAI(`Compare these players for scouting: ${summary}. Provide a brief comparison of their potential, key differences, and a recommendation on who to prioritize for signing. Write in professional scouting language.`, "scout");
+      setAiComparison(reply);
     } catch { setAiComparison("Unable to generate comparison."); }
     finally { setLoadingAi(false); }
   };

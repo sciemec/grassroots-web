@@ -1,0 +1,121 @@
+{
+  "version": "1.0",
+  "description": "Grassroots Sport offline nutrition advice - Zimbabwe foods only",
+  "pre_training": {
+    "technical": {
+      "english": "Before this drill session eat sadza with peanut butter or maputi (popcorn) 1 hour before. These give you steady energy to keep your focus sharp and your feet quick.",
+      "shona": "Usati waita magumo aya dya sadza nebhotela yendobwe kana maputi awa rimwe usati watanga. Izvi zvikupa simba rakakwana kuchengeta pfungwa dzako uye makumbo ako akangwara."
+    },
+    "physical": {
+      "english": "Before speed and fitness training eat sweet potato or two slices of bread with peanut butter 90 minutes before. Your muscles need carbohydrates to sprint hard.",
+      "shona": "Usati waita magumo emwero uye esimba dya mbambaira kana zvingwa zviviri nebhotela yendobwe maminitsi makumi mapfumbamwe usati watanga. Masuru ako anoda makabohaidirethi kumhanya nesimba."
+    },
+    "tactical": {
+      "english": "Before tactical training drink water and eat a banana or guava if available. Your brain needs to be hydrated and fuelled to make fast decisions on the pitch.",
+      "shona": "Usati waita kudzidzira kwenjere nwa mvura uye dya bhanana kana gwavha kana iripo. Uropi hwako hunoda kunwa mvura uye kudyiwa kugadzira kusarudza nekukurumidza pamutambo."
+    },
+    "mental": {
+      "english": "Before mental and pressure training eat a light meal — eggs with bread or sadza with vegetables. Do not train on a full stomach or an empty one.",
+      "shona": "Usati waita kudzidzira kwemwoyo uye kwemhinduro dya chikafu chakajeka — mazai nechingwa kana sadza niriwo. Usadzidzira nemudumbu uzere kana usina kudya."
+    }
+  },
+  "post_training": {
+    "technical": {
+      "english": "After technical training your muscles need repair. Eat beans and sadza within 30 minutes of finishing. If you have eggs, eat two boiled eggs. This helps your muscle memory develop faster.",
+      "shona": "Mushure mekudzidzira kwenyanzvi masuru ako anoda kurapwa. Dya nyemba nesadza mukati memaminitsi makumi matatu ekupedza. Kana uine mazai, dya mazai maviri akabikwa. Izvi zvibatsira kugadzira pfungwa yemasuru nekukurumidza."
+    },
+    "physical": {
+      "english": "After speed and fitness training your body needs protein urgently. Eat road runner chicken, beans or eggs within 45 minutes. Add rape or covo vegetables for vitamins. Drink plenty of water.",
+      "shona": "Mushure mekudzidzira kwemwero uye kwesimba muviri wako unoda puroteni nekukurumidza. Dya huku yemumisha, nyemba kana mazai mukati memaminitsi makumi mana nemashanu. Wedzera miriwo yeripe kana iri covo mavitamini. Nwa mvura yakawanda."
+    },
+    "physical_recovery": {
+      "english": "For recovery after a hard physical session try to eat sweet potato with green vegetables and beans. If you have access to road runner or chicken that is even better. Rest is also part of recovery.",
+      "shona": "Kokupora mushure mekudzidzira kwomuviri kuoma edza kudya mbambaira neriwo remusango uye nyemba. Kana uine mukana wehuku yemumisha kana huku ndaizvo zviri nani. Zorora nako zvakare chikamu chokupora."
+    },
+    "tactical": {
+      "english": "After tactical training drink water first then eat sadza with any relish available. Muriwo wemuriwo, nyama kana nyemba zvose zvakanaka. Your brain recovers through good food and sleep.",
+      "shona": "Mushure mekudzidzira kwenjere nwa mvura kutanga wobva wadya sadza nechakadya chipi nachipi chiripo. Muriwo, nyama kana nyemba zvose zvakanaka. Uropi hwako hunopora nekudya zvakanaka uye nehope."
+    },
+    "mental": {
+      "english": "After a tough mental session eat something you enjoy — even maputi or roasted peanuts. Reward yourself. Your confidence grows when you feel good after training.",
+      "shona": "Mushure mehuroro hwemwoyo hwakakuomera dya chimwe chinhu chinokufadza — kunyange maputi kana nzungu dzakochwa. Iwe umbiridzire. Kutenda kwako kunokura iwe unofara mushure mekudzidzira."
+    }
+  },
+  "by_session_intensity": {
+    "light": {
+      "english": "Light session today — a normal meal of sadza with relish is perfect. Drink 2 glasses of water before and 2 after.",
+      "shona": "Huroro hwakajeka nhasi — chikafu chakajairika chesadza nechakadya ndicho chakanaka. Nwa magiribhisi maviri emvura usati watanga uye maviri mushure."
+    },
+    "moderate": {
+      "english": "Moderate intensity session — eat sadza with protein (beans, eggs or chicken) after training. Add a fruit like guava or mazhanje if available for extra vitamins.",
+      "shona": "Huroro hwemwero wepakati — dya sadza nemaputireti (nyemba, mazai kana huku) mushure mekudzidzira. Wedzera muchero saguva kana mazhanje kana iripo mavitamini ekuwedzera."
+    },
+    "high": {
+      "english": "High intensity session today — your body worked very hard. Eat a large meal of sadza with protein and vegetables within 1 hour. Drink water every 20 minutes for the rest of the day.",
+      "shona": "Huroro hwemwero murefu nhasi — muviri wako washanda nesimba zvikuru. Dya chikafu chikuru chesadza nemaputireti uye miriwo mukati meawa rimwe. Nwa mvura maminitsi makumi maviri ose hwasara hwezuva."
+    }
+  },
+  "by_age_phase": {
+    "foundation": {
+      "english": "Young players need to eat well to grow strong. Make sure you eat sadza every day with vegetables and protein. Drink lots of water and get plenty of sleep — your body grows while you sleep!",
+      "shona": "Vatambi vadiki vanoda kudya zvakanaka kukura nesimba. Ita shuwa unodya sadza zuva nezuva neriwo uye maputireti. Nwa mvura yakawanda uye urare zvakawanda — muviri wako unokura iwe urere!"
+    },
+    "development": {
+      "english": "You are in the growth phase — your body needs good food to develop properly. Eat sadza with beans or eggs daily. Avoid fizzy drinks and eat fruit instead. Your football performance is directly linked to what you eat.",
+      "shona": "Uri muchikamu chekukura — muviri wako unoda chikafu chakanaka kugadziridzwa zvakanaka. Dya sadza nenyemba kana mazai zuva nezuva. Dzivisa zvinwa zvemimhanzi uye dya michero panzvimbo yacho. Kushanda kwako kwebhora kwakabatana zvakananga nezvauri kudya."
+    },
+    "performance": {
+      "english": "At your level, nutrition is a performance tool. Plan your meals around your training schedule. Eat carbohydrates before training for energy and protein after training for recovery. This is what professional players do.",
+      "shona": "Pachikero chako, kudya chinhu chekushanda. Ronga zvokudya zvako zvakanangana nehurongwa hwako hwekudzidzira. Dya makabohaidirethi usati wadzidzira simba uye maputireti mushure mekudzidzira kokupora. Ndizvo zvinoita vaprofesheni."
+    },
+    "professional": {
+      "english": "Professional nutrition requires planning every meal. Work with your coach to create a nutrition plan based on your training load each week. Focus on local foods — road runner, beans, sweet potato, rape and sadza provide everything a professional needs.",
+      "shona": "Kudya kwemutambi wenhengo kunodiwa kuronga chikafu chose. Shanda nomudzidzisi wako kugadzira hurongwa hwokudya hwakavakirwa pamutoro wako wekudzidzira svondo rese. Tarisa chikafu chemunyika — huku yemumisha, nyemba, mbambaira, ripe uye sadza zvinopa zvose zvidiwa nemutambi wenhengo."
+    }
+  },
+  "foods_by_region": {
+    "harare_bulawayo": {
+      "available": ["sadza", "beans", "eggs", "chicken", "rape", "covo", "tomatoes", "onions", "bread", "peanut butter", "bananas"],
+      "note_english": "You have good access to variety — make sure your meals are balanced with sadza, protein and vegetables at every main meal.",
+      "note_shona": "Une mukana wakanaka wezvakasiyana — ita shuwa zvokudya zvako zvakatsigirwa nesadza, maputireti uye miriwo pakudya kwose kukuru."
+    },
+    "rural_areas": {
+      "available": ["sadza", "beans", "nyemba", "peanuts", "sweet potato", "mazhanje", "masau", "road runner", "eggs", "rape", "derere", "muboora"],
+      "note_english": "Rural foods are actually excellent for football — beans, sweet potato, peanuts and road runner chicken give you everything you need. Eat what is available locally and you will have the energy to train hard.",
+      "note_shona": "Zvokudya zvemumaruwa zviri nani zvikuru mubhora — nyemba, mbambaira, nzungu uye huku yemumisha zvikupa zvose zvauri kuda. Dya zviri pasi pako uye uchaita simba rekudzidzira nesimba."
+    },
+    "midlands_masvingo": {
+      "available": ["sadza", "beans", "eggs", "sweet potato", "peanuts", "masau", "mazhanje", "road runner", "rape", "muboora"],
+      "note_english": "Masau and mazhanje are excellent natural energy sources. Eat them as snacks between meals on training days.",
+      "note_shona": "Masau nemazhanje zvipo zvakanaka zvesimba zvepanyika. Adya sezvokudya zvepakati pezvokudya mazuva ekudzidzira."
+    }
+  },
+  "hydration": {
+    "before_training": {
+      "english": "Drink 2 large glasses of water 30 minutes before training. If you have access to water with a pinch of salt and sugar that is even better for hydration.",
+      "shona": "Nwa magiribhisi maviri makuru emvura maminitsi makumi matatu usati wadzidzira. Kana une mkana wemvura neyunga diki neshunga ndaizvo zviri nani kupora."
+    },
+    "during_training": {
+      "english": "Drink water every 20 minutes during training. Even if you do not feel thirsty — in Zimbabwe heat you lose water fast.",
+      "shona": "Nwa mvura maminitsi makumi maviri ose panguva yekudzidzira. Kunyange usina nyota — muzvinhu zvekupisa kweZimbabwe unorasa mvura nekukurumidza."
+    },
+    "after_training": {
+      "english": "After training drink until your urine is light yellow. Dark yellow means you need more water. Proper hydration speeds up your recovery significantly.",
+      "shona": "Mushure mekudzidzira nwa kusvika weti yako iri yero yepachena. Yero rema kureva unoda mvura yakawanda. Kupora zvakakwana kwemvura kunokurumidza kupora kwako zvikuru."
+    }
+  },
+  "special_advice": {
+    "before_match": {
+      "english": "On match day eat sadza with chicken or beans 3 hours before kickoff. Do not eat too close to the match. Eat a small banana 30 minutes before for quick energy.",
+      "shona": "Pazuva remutambo dya sadza nehuku kana nyemba maawa matatu usati watanga. Usadya pedyo nemutambo. Dya bhanana diki maminitsi makumi matatu usati watanga simba rekukurumidza."
+    },
+    "after_match": {
+      "english": "After a match your body needs protein and carbohydrates urgently. Eat within 45 minutes — sadza with beans, eggs or chicken. Rest and sleep early to recover for the next session.",
+      "shona": "Mushure memutambo muviri wako unoda maputireti uye makabohaidirethi nekukurumidza. Dya mukati memaminitsi makumi mana nemashanu — sadza nenyemba, mazai kana huku. Zorora uye rara mangwanani kokupora huroro hunotevera."
+    },
+    "injury_recovery": {
+      "english": "If you are recovering from injury eat more protein than usual — beans and eggs every day. Add vegetables with every meal. Your body uses protein to repair itself. Sleep is also medicine.",
+      "shona": "Kana upora kubva pakukuvara dya maputireti akawanda kupfuura kujairika — nyemba uye mazai zuva nezuva. Wedzera miriwo pakudya kwose. Muviri wako unoshandisa maputireti kuzvigadzirisa. Hope zvakare mushonga."
+    }
+  }
+}

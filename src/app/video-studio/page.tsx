@@ -13,7 +13,9 @@ import { SPORTS, ANALYSIS_TYPES, getSportAnalysisPrompt, type SportKey, type Ana
 import { useFileSystem } from "@/hooks/use-file-system";
 import { extractFrames, trimVideo } from "@/lib/ffmpeg-processor";
 import { PlayerTracker } from "@/components/video/player-tracker";
+import { PoseCamera } from "@/components/video/pose-camera";
 import { ResultsPanel, type AnalysisResult } from "./results-panel";
+import { searchOffline } from "@/lib/offline-ai";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,8 +155,35 @@ export default function VideoStudioPage() {
       const context = `Video: "${sanitize(file.name)}" (${formatBytes(file.size)}). ${frameUrls.length} frames extracted. Analysis: ${analysisType}. ${question.trim() ? `Question: ${sanitize(question.trim())}` : ""}`;
       const prompt = getSportAnalysisPrompt(sport, context);
 
-      const res = await api.post("/ai-coach/query", { message: prompt });
-      const raw: string = res.data?.response ?? res.data?.feedback ?? res.data?.ai_feedback ?? "";
+      // Step 1 — Laravel backend
+      let raw = "";
+      try {
+        const res = await api.post("/ask", { question: prompt, role: user?.role ?? "player", language: "english" });
+        raw = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+      } catch { /* fall through */ }
+
+      // Step 2 — Claude proxy
+      if (!raw) {
+        try {
+          const res = await fetch("/api/ai-coach", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: prompt }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            raw = data.response ?? data.reply ?? "";
+          }
+        } catch { /* fall through */ }
+      }
+
+      // Step 3 — Offline knowledge base
+      if (!raw) {
+        const offline = await searchOffline(prompt);
+        if (offline) raw = `${offline.text}\n\n_📚 Offline: ${offline.source}_`;
+      }
+
+      if (!raw) throw new Error("No AI response available. Please check your connection.");
 
       setProgress(100); setStatusMsg("Done");
       setResult(parseAIResponse(raw));
@@ -271,8 +300,13 @@ export default function VideoStudioPage() {
             </button>
           )}
 
-          {/* Player tracker */}
-          {file && <PlayerTracker videoFile={file} />}
+          {/* AI trackers — player detection + live pose analysis */}
+          {file && (
+            <div className="space-y-4">
+              <PlayerTracker videoFile={file} />
+              <PoseCamera focusArea={analysisType || undefined} />
+            </div>
+          )}
 
           {/* Results */}
           {stage === "done" && result && (

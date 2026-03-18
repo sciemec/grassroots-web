@@ -10,92 +10,127 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   GRASSROOTS SPORT — Zimbabwe Theme
+   Colours: deep forest green · Zimbabwe gold · red · white text
+   Background: dark navy-green with bold diagonal gold chevron lines
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Chevron pattern: reusable definition ─────────────────────────────────── */
+/* Two overlapping diagonal gradients create a diamond/chevron grid pattern.  */
+/* Gold colour: #f0b429 (Zimbabwe gold) at 22% opacity on dark green base.   */
+:root {
+  --chevron:
+    repeating-linear-gradient(
+      -45deg,
+      transparent        0px,
+      transparent        14px,
+      rgba(240,180,41,0.22) 14px,
+      rgba(240,180,41,0.22) 17px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent        0px,
+      transparent        14px,
+      rgba(240,180,41,0.22) 14px,
+      rgba(240,180,41,0.22) 17px
+    );
+}
+
 @layer base {
   :root {
-    /* ── Grassroots Sport — Zimbabwe Palette (lighter green + gold + red) ────── */
-    /* Zimbabwe flag: green #1a6b3c · gold #f0b429 · red #ce1126 · white · NO black */
+    /* ── Background colours ───────────────────────────────────── */
+    /* Main bg: deep dark forest green — like the app's nav */
+    --background:          #0c1f10;
+    --foreground:          #ffffff;
 
-    /* Primary background: #1a5c2a — mobile splash green */
-    --background: oklch(0.37 0.12 148);
-    /* Text: white */
-    --foreground: oklch(1 0 0);
-    /* Cards: slightly lighter green with more transparency */
-    --card: oklch(0.50 0.14 148);
-    --card-foreground: oklch(1 0 0);
+    /* Cards: slightly lighter green panel */
+    --card:                #163220;
+    --card-foreground:     #ffffff;
+
     /* Popovers */
-    --popover: oklch(0.45 0.13 148);
-    --popover-foreground: oklch(1 0 0);
-    /* Primary action: #27ae60 bright green */
-    --primary: oklch(0.64 0.17 145);
-    --primary-foreground: oklch(1 0 0);
-    /* Secondary: deep green #0d3320 */
-    --secondary: oklch(0.22 0.08 148);
-    --secondary-foreground: oklch(1 0 0);
-    /* Muted: mid green */
-    --muted: oklch(0.30 0.08 148);
-    --muted-foreground: oklch(0.80 0.06 148);
-    /* Accent: Zimbabwe gold #f0b429 */
-    --accent: oklch(0.78 0.17 75);
-    --accent-foreground: oklch(0.22 0.08 148);
-    /* Destructive: Zimbabwe red #ce1126 */
-    --destructive: oklch(0.47 0.22 25);
-    /* Borders: white at low opacity */
-    --border: oklch(1 0 0 / 14%);
-    --input: oklch(1 0 0 / 18%);
-    --ring: oklch(0.78 0.17 75);
-    /* Charts: Zimbabwe colours */
-    --chart-1: oklch(0.64 0.17 145);   /* green */
-    --chart-2: oklch(0.78 0.17 75);    /* gold */
-    --chart-3: oklch(0.47 0.22 25);    /* red */
-    --chart-4: oklch(0.55 0.14 230);   /* blue */
-    --chart-5: oklch(0.56 0.17 50);    /* orange */
-    /* border-radius: 16px matches mobile */
+    --popover:             #163220;
+    --popover-foreground:  #ffffff;
+
+    /* Primary action: bright Zimbabwe green */
+    --primary:             #22c55e;
+    --primary-foreground:  #ffffff;
+
+    /* Secondary: deep green */
+    --secondary:           #0a1a0d;
+    --secondary-foreground:#ffffff;
+
+    /* Muted elements */
+    --muted:               #1a3022;
+    --muted-foreground:    #86a891;
+
+    /* Accent: Zimbabwe gold */
+    --accent:              #f0b429;
+    --accent-foreground:   #0c1f10;
+
+    /* Destructive: Zimbabwe red */
+    --destructive:         #ce1126;
+
+    /* Borders and inputs */
+    --border:              rgba(255,255,255,0.14);
+    --input:               rgba(255,255,255,0.18);
+    --ring:                #f0b429;
+
+    /* Charts */
+    --chart-1:             #22c55e;
+    --chart-2:             #f0b429;
+    --chart-3:             #ce1126;
+    --chart-4:             #3b82f6;
+    --chart-5:             #f97316;
+
+    /* Border radius — matches mobile */
     --radius: 1rem;
-    /* Sidebar: deep green */
-    --sidebar: oklch(0.22 0.08 148);
-    --sidebar-foreground: oklch(1 0 0);
-    --sidebar-primary: oklch(0.64 0.17 145);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.30 0.08 148);
-    --sidebar-accent-foreground: oklch(1 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.78 0.17 75);
+
+    /* Sidebar */
+    --sidebar:                    #091508;
+    --sidebar-foreground:         #ffffff;
+    --sidebar-primary:            #22c55e;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent:             #163220;
+    --sidebar-accent-foreground:  #ffffff;
+    --sidebar-border:             rgba(255,255,255,0.10);
+    --sidebar-ring:               #f0b429;
   }
 
   .dark {
-    /* Same as :root — single Zimbabwe green theme */
-    --background: oklch(0.37 0.12 148);
-    --foreground: oklch(1 0 0);
-    --card: oklch(0.45 0.13 148);
-    --card-foreground: oklch(1 0 0);
-    --popover: oklch(0.45 0.13 148);
-    --popover-foreground: oklch(1 0 0);
-    --primary: oklch(0.64 0.17 145);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.22 0.08 148);
-    --secondary-foreground: oklch(1 0 0);
-    --muted: oklch(0.30 0.08 148);
-    --muted-foreground: oklch(0.80 0.06 148);
-    --accent: oklch(0.78 0.17 75);
-    --accent-foreground: oklch(0.22 0.08 148);
-    --destructive: oklch(0.47 0.22 25);
-    --border: oklch(1 0 0 / 14%);
-    --input: oklch(1 0 0 / 18%);
-    --ring: oklch(0.78 0.17 75);
-    --chart-1: oklch(0.64 0.17 145);
-    --chart-2: oklch(0.78 0.17 75);
-    --chart-3: oklch(0.47 0.22 25);
-    --chart-4: oklch(0.55 0.14 230);
-    --chart-5: oklch(0.56 0.17 50);
-    --radius: 1rem;
-    --sidebar: oklch(0.22 0.08 148);
-    --sidebar-foreground: oklch(1 0 0);
-    --sidebar-primary: oklch(0.64 0.17 145);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.30 0.08 148);
-    --sidebar-accent-foreground: oklch(1 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.78 0.17 75);
+    /* Mirror :root — single Zimbabwe theme, no light/dark switch */
+    --background:          #0c1f10;
+    --foreground:          #ffffff;
+    --card:                #163220;
+    --card-foreground:     #ffffff;
+    --popover:             #163220;
+    --popover-foreground:  #ffffff;
+    --primary:             #22c55e;
+    --primary-foreground:  #ffffff;
+    --secondary:           #0a1a0d;
+    --secondary-foreground:#ffffff;
+    --muted:               #1a3022;
+    --muted-foreground:    #86a891;
+    --accent:              #f0b429;
+    --accent-foreground:   #0c1f10;
+    --destructive:         #ce1126;
+    --border:              rgba(255,255,255,0.14);
+    --input:               rgba(255,255,255,0.18);
+    --ring:                #f0b429;
+    --chart-1:             #22c55e;
+    --chart-2:             #f0b429;
+    --chart-3:             #ce1126;
+    --chart-4:             #3b82f6;
+    --chart-5:             #f97316;
+    --radius:              1rem;
+    --sidebar:                    #091508;
+    --sidebar-foreground:         #ffffff;
+    --sidebar-primary:            #22c55e;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent:             #163220;
+    --sidebar-accent-foreground:  #ffffff;
+    --sidebar-border:             rgba(255,255,255,0.10);
+    --sidebar-ring:               #f0b429;
   }
 
   .theme {
@@ -104,40 +139,36 @@
 
   * {
     border-color: var(--border);
-    outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
-  }
-
-  body {
-    /* ── Zimbabwe green — matches mobile splash screen ── */
-    background-color: #1a5c2a;
-    /* ── Chevron wave pattern — matches mobile app exactly ── */
-    background-image:
-      repeating-linear-gradient(
-        -45deg,
-        transparent 0px,
-        transparent 8px,
-        rgba(180, 160, 0, 0.08) 8px,
-        rgba(180, 160, 0, 0.08) 10px
-      ),
-      repeating-linear-gradient(
-        45deg,
-        transparent 0px,
-        transparent 8px,
-        rgba(180, 160, 0, 0.08) 8px,
-        rgba(180, 160, 0, 0.08) 10px
-      );
-    background-attachment: fixed;
-    color: var(--foreground);
+    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
 
   html {
     font-family: var(--font-sans), sans-serif;
+    /* Dark green + gold chevron on the root element — always behind everything */
+    background-color: #0c1f10;
+    background-image: var(--chevron);
+    background-attachment: fixed;
+  }
+
+  body {
+    color: var(--foreground);
+    /* Transparent so html chevron shows through where no opaque element sits */
+    background: transparent;
   }
 }
 
+/* ── Apply chevron to every page wrapper that uses bg-background ──────────── */
+/* This ensures the gold diagonal pattern shows on ALL dashboard pages,        */
+/* not just where the html element is exposed.                                 */
+.bg-background {
+  background-color: #0c1f10;
+  background-image: var(--chevron);
+  background-attachment: fixed;
+}
+
 /* ── Grassroots Logo Watermark ───────────────────────────────────────────────
-   Apply class="gs-watermark" to any page wrapper to get the subtle logo
-   in the bottom-right corner. Opacity 0.05 — barely visible, blends in.
+   Apply class="gs-watermark" to any page wrapper for the subtle bottom-right
+   logo. The chevron + watermark combine to create the full branded look.
 ────────────────────────────────────────────────────────────────────────────── */
 .gs-watermark {
   position: relative;
@@ -153,14 +184,14 @@
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
-  opacity: 0.05;
+  opacity: 0.06;
   pointer-events: none;
   mix-blend-mode: overlay;
   z-index: 0;
 }
 
 /* ── Hub Feature Cards ───────────────────────────────────────────────────────
-   Mobile-style colored hub cards with faded icon and gradient overlay
+   Mobile-style colored hub cards matching the Bhora AI card style.
 ────────────────────────────────────────────────────────────────────────────── */
 .hub-card {
   position: relative;
@@ -209,4 +240,18 @@
   color: rgba(255, 255, 255, 0.75);
   position: relative;
   z-index: 1;
+}
+
+/* ── Scrollbar — thin gold on dark ──────────────────────────────────────────  */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0c1f10; }
+::-webkit-scrollbar-thumb { background: rgba(240,180,41,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(240,180,41,0.6); }
+
+/* ── PWA splash / safe areas ─────────────────────────────────────────────── */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }

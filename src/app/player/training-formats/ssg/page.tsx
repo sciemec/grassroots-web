@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, RotateCcw, Brain, Loader2, Plus, Minus } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 const FORMATS_SSG = ["3v3", "4v4", "5v5", "6v6", "7v7", "Attack vs Defence"];
 
@@ -36,10 +36,8 @@ export default function SSGPage() {
   const getReport = async () => {
     setLoadingReport(true);
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `SSG (${format}) results: Score ${score.team1}-${score.team2}. Possession: Team1 ${stats.team1Possession}% vs Team2 ${stats.team2Possession}%. Fouls: Team1 ${stats.team1Fouls}, Team2 ${stats.team2Fouls}. Corners: ${stats.corners}, Offsides: ${stats.offsides}. ${half > 1 ? "2nd half played." : "1st half only."} Give tactical feedback and key learning points for both teams.`,
-      });
-      setAiReport(res.data?.response ?? "");
+      const reply = await queryAI(`SSG (${format}) results: Score ${score.team1}-${score.team2}. Possession: Team1 ${stats.team1Possession}% vs Team2 ${stats.team2Possession}%. Fouls: Team1 ${stats.team1Fouls}, Team2 ${stats.team2Fouls}. Corners: ${stats.corners}, Offsides: ${stats.offsides}. ${half > 1 ? "2nd half played." : "1st half only."} Give tactical feedback and key learning points for both teams.`, "player");
+      setAiReport(reply);
     } catch { setAiReport("Unable to generate report."); }
     finally { setLoadingReport(false); }
   };

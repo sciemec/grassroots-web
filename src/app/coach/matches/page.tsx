@@ -6,8 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Trophy, X, ChevronDown, ChevronUp, MessageCircle, Loader2, Copy, Check } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import { whatsAppMatchReportPrompt } from "@/config/prompts";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 interface MatchRecord {
   id: string;
@@ -82,23 +81,9 @@ export default function CoachMatchesPage() {
 
   const generateReport = async (m: MatchRecord) => {
     setReportLoading(m.id);
-    const sport = user?.sport ?? "football";
-    const score = `${getOutcome(m.our_score, m.their_score)} ${m.our_score}–${m.their_score} vs ${m.opponent} (${m.venue})`;
-    const statsText = [
-      `Formation: ${m.formation}`,
-      m.scorers ? `Scorers: ${m.scorers}` : "",
-      `Yellow cards: ${m.yellow_cards}`,
-      `Red cards: ${m.red_cards}`,
-      m.notes ? `Notes: ${m.notes}` : "",
-    ].filter(Boolean).join(". ");
     try {
-      const system = whatsAppMatchReportPrompt({ sport: sport as import("@/config/sports").SportKey, teamName: user?.name ?? "Team", score, matchStats: statsText });
-      const res = await api.post("/ai-coach/query", {
-        message: "Generate the WhatsApp match report now.",
-        system_prompt: system,
-        history: [],
-      }, { headers: { Authorization: `Bearer ${user?.token}` } });
-      setReports((prev) => ({ ...prev, [m.id]: res.data.reply ?? res.data.response ?? res.data.message ?? "" }));
+      const reply = await queryAI("Generate the WhatsApp match report now.", "coach");
+      setReports((prev) => ({ ...prev, [m.id]: reply }));
     } catch {
       setReports((prev) => ({ ...prev, [m.id]: "Could not generate report. Please try again." }));
     } finally {

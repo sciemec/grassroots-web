@@ -1,0 +1,639 @@
+{
+  "source": "Special Olympics Football Coaching Guide (2004) + Zimbabwe Grassroots Football Development Framework",
+  "fitness_protocols": {
+    "warm_up": {
+      "description": "Every training session and match must begin with a proper warm-up. This prepares the body for exercise and reduces injury risk.",
+      "total_duration_minutes": 20,
+      "components": [
+        {
+          "order": 1,
+          "name": "Aerobic Run",
+          "duration_minutes": 5,
+          "instructions": "Easy jogging to gradually raise heart rate and body temperature. Players jog around the field at a comfortable, conversational pace. No sprinting.",
+          "coaching_points": [
+            "Relaxed, upright posture",
+            "Arms swinging naturally",
+            "Breathing comfortably — can hold conversation",
+            "Do not rush this phase"
+          ]
+        },
+        {
+          "order": 2,
+          "name": "Stretching",
+          "duration_minutes": 10,
+          "instructions": "Full-body stretch sequence. Hold each stretch for 15–30 seconds. Do not bounce. Stretch to the point of gentle tension, not pain.",
+          "sequence": [
+            "Chest opener (arms wide, deep breath)",
+            "Side stretch (arm overhead, lean)",
+            "Triceps stretch (arm behind head)",
+            "Shoulder stretch (arm across chest)",
+            "Deep hip stretch / hip flexor stretch",
+            "Groin stretch (seated or standing butterfly)",
+            "Hip rolls (hands on hips, circular motion)",
+            "Calf stretch (wall lean, heel on ground)",
+            "Hamstring stretch (seated reach for toes)",
+            "Seated straddle (legs apart, reach forward)",
+            "Hurdle stretch (one leg extended, lean to foot)",
+            "Quad stretch (standing, pull foot to glutes)"
+          ]
+        },
+        {
+          "order": 3,
+          "name": "Rhythm Drills (Plyometrics — Light)",
+          "duration_minutes": 5,
+          "instructions": "Dynamic movements to activate fast-twitch muscles and neuromuscular coordination. Perform in a straight line across the field and back.",
+          "drills": [
+            {
+              "name": "Easy Skipping",
+              "description": "Skip lightly with arms swinging, focus on rhythm and coordination"
+            },
+            {
+              "name": "High Skipping",
+              "description": "Exaggerate the skip — drive knee up high, push off toes for maximum height"
+            },
+            {
+              "name": "Butt Kicks",
+              "description": "Jog forward kicking heels up to touch buttocks. Fast, rhythmic movement."
+            },
+            {
+              "name": "High Knees",
+              "description": "Drive knees up to hip height with each step. Pump arms aggressively."
+            },
+            {
+              "name": "Skipping Kicks",
+              "description": "Skip forward, kicking one leg out straight in front (alternating). Stretches hamstrings dynamically."
+            }
+          ],
+          "coaching_points": [
+            "Begin slowly and build speed through each drill",
+            "Focus on correct form before speed",
+            "Arms should mirror leg movement",
+            "Light contact with the ground — stay on toes"
+          ]
+        }
+      ]
+    },
+    "cool_down": {
+      "description": "Every session must end with a proper cool-down to return the body to its resting state, remove waste products from muscles and reduce next-day soreness.",
+      "total_duration_minutes": 10,
+      "components": [
+        {
+          "order": 1,
+          "name": "Slow Aerobic Run",
+          "duration_minutes": 5,
+          "instructions": "Easy jog, gradually slowing to a walk over the 5 minutes. This helps flush lactic acid from muscles."
+        },
+        {
+          "order": 2,
+          "name": "Light Stretching",
+          "duration_minutes": 5,
+          "instructions": "Repeat key stretches from warm-up but hold longer (30 seconds each). Focus on muscles used most during the session.",
+          "key_stretches": [
+            "Hamstring stretch",
+            "Quad stretch",
+            "Groin stretch",
+            "Calf stretch",
+            "Hip stretch"
+          ]
+        }
+      ],
+      "coaching_points": [
+        "Do not let players leave immediately after a session — cool-down is mandatory",
+        "Use this time for a team debrief or coaching talk",
+        "Hydrate during cool-down"
+      ]
+    },
+    "stretching_catalog": {
+      "description": "Complete stretching library. All stretches should be held for 15–30 seconds. Do not bounce. Breathe steadily throughout.",
+      "categories": [
+        {
+          "name": "Upper Body",
+          "stretches": [
+            {
+              "name": "Chest Opener",
+              "target": "Chest, shoulders, anterior deltoids",
+              "instructions": "Stand upright, extend both arms wide to the sides, palms forward. Take a deep breath in, expanding the chest. Hold. Exhale slowly.",
+              "hold_seconds": 15
+            },
+            {
+              "name": "Side Stretch",
+              "target": "Obliques, lats, intercostal muscles",
+              "instructions": "Stand feet shoulder-width apart. Raise one arm overhead and lean to the opposite side. Keep hips square. Repeat both sides.",
+              "hold_seconds": 20
+            },
+            {
+              "name": "Triceps Stretch",
+              "target": "Triceps, shoulder",
+              "instructions": "Raise one arm overhead, bend elbow so hand drops behind head. Use other hand to gently push elbow back. Repeat both sides.",
+              "hold_seconds": 20
+            },
+            {
+              "name": "Shoulder Cross-Body Stretch",
+              "target": "Rear deltoids, rotator cuff",
+              "instructions": "Bring one arm across the chest at shoulder height. Use the opposite forearm to press it gently closer to the body. Repeat both sides.",
+              "hold_seconds": 20
+            }
+          ]
+        },
+        {
+          "name": "Low Back and Glutes",
+          "stretches": [
+            {
+              "name": "Deep Hip Stretch (Hip Flexor Lunge)",
+              "target": "Hip flexors, iliopsoas",
+              "instructions": "Step forward into a lunge position. Lower the back knee toward the ground. Push hips gently forward until you feel a stretch in the front of the back hip. Keep torso upright. Repeat both sides.",
+              "hold_seconds": 30
+            },
+            {
+              "name": "Groin Stretch (Butterfly / Seated)",
+              "target": "Adductors, inner thigh, groin",
+              "instructions": "Sit on the ground. Bring the soles of both feet together in front of you. Let knees fall outward. Hold ankles and gently press knees toward the ground. Sit tall.",
+              "hold_seconds": 30
+            },
+            {
+              "name": "Hip Rolls",
+              "target": "Hip rotators, lower back",
+              "instructions": "Stand feet shoulder-width apart, hands on hips. Rotate hips in large slow circles — 5 times clockwise, 5 times counter-clockwise.",
+              "hold_seconds": null,
+              "reps": "5 circles each direction"
+            }
+          ]
+        },
+        {
+          "name": "Lower Body",
+          "stretches": [
+            {
+              "name": "Calf Stretch",
+              "target": "Gastrocnemius, soleus, achilles tendon",
+              "instructions": "Stand facing a wall. Place hands on wall. Step one foot back, keeping heel flat on ground, leg straight. Lean forward until stretch is felt in calf. For deeper stretch, slightly bend the back knee (targets soleus). Repeat both sides.",
+              "hold_seconds": 30
+            },
+            {
+              "name": "Hamstring Stretch (Seated)",
+              "target": "Hamstrings, lower back",
+              "instructions": "Sit on the ground with both legs extended straight in front. Keeping back flat (not rounded), reach both hands forward toward toes. Hold at point of tension.",
+              "hold_seconds": 30
+            },
+            {
+              "name": "Seated Straddle Stretch",
+              "target": "Hamstrings, inner thigh, groin",
+              "instructions": "Sit with legs spread wide apart (straddle position). Keeping back flat, reach both hands forward along the floor between your legs. Then reach to each foot alternately.",
+              "hold_seconds": 30
+            },
+            {
+              "name": "Hurdle Stretch",
+              "target": "Hamstring, inner thigh",
+              "instructions": "Sit with one leg extended straight, other leg bent with foot near opposite thigh (like a hurdler position). Reach forward toward the straight leg's foot. Repeat both sides.",
+              "hold_seconds": 30
+            },
+            {
+              "name": "Quad Stretch (Standing)",
+              "target": "Quadriceps, hip flexor",
+              "instructions": "Stand on one foot (hold wall for balance if needed). Bend the other knee, pulling the foot toward the buttocks. Hold ankle — not the shoe. Keep knees together. Repeat both sides.",
+              "hold_seconds": 25
+            }
+          ]
+        }
+      ]
+    },
+    "plyometrics": {
+      "description": "Plyometric exercises develop power, explosiveness and neuromuscular coordination. Begin with rhythm drills and only advance to power exercises once rhythm drills are mastered. Volume and intensity must remain low-to-moderate for youth players.",
+      "age_guidance": {
+        "foundation_u10": "Rhythm drills only — no power plyometrics",
+        "development_10_15": "Rhythm drills + basic power exercises at low volume",
+        "performance_15_18": "Full plyometric program at moderate volume",
+        "professional": "Full program, periodized — reduce to one light session per week during peak competition. Stop strenuous plyometrics 7–10 days before playoffs."
+      },
+      "rhythm_drills": {
+        "description": "Light, rhythmic movements that improve coordination, foot speed and neuromuscular activation. Always performed first.",
+        "exercises": [
+          {
+            "name": "Easy Skipping",
+            "instructions": "Skip lightly with a natural arm swing. Focus on rhythm and relaxation. Distance: one width of the field and back.",
+            "intensity": "Low"
+          },
+          {
+            "name": "High Skipping",
+            "instructions": "Exaggerate the skip by driving the lead knee up as high as possible on each step. Push forcefully off the toes. Arms drive upward.",
+            "intensity": "Low-Medium"
+          },
+          {
+            "name": "Butt Kicks",
+            "instructions": "Jog forward, kicking heels up rapidly to touch the buttocks on each stride. Keep torso upright and drive arms. Focus on speed of heel recovery.",
+            "intensity": "Medium"
+          },
+          {
+            "name": "High Knees",
+            "instructions": "Drive knees up to hip height with each step. Arms pump hard. Land on balls of feet. Maintain fast cadence.",
+            "intensity": "Medium"
+          },
+          {
+            "name": "Skipping Kicks (Straight-Leg Skip)",
+            "instructions": "Skip forward, kicking one straight leg out in front on each skip (alternating). Reach opposite hand toward foot. Dynamically stretches hamstrings.",
+            "intensity": "Medium"
+          }
+        ]
+      },
+      "power_exercises": {
+        "description": "Higher-intensity plyometric exercises for Performance and Professional phase players only. Only introduce once rhythm drills are fully mastered.",
+        "exercises": [
+          {
+            "name": "Jump Squats",
+            "instructions": "Squat to 90 degrees, then explode upward, leaving the ground. Land softly on balls of feet, immediately descend into next squat.",
+            "sets": 3,
+            "reps": 8,
+            "rest_seconds": 60
+          },
+          {
+            "name": "Bounding",
+            "instructions": "Exaggerated running strides with maximum push-off on each step. Drive knee up, reach for maximum distance per stride. Land and immediately bound again.",
+            "sets": 3,
+            "distance_meters": 20,
+            "rest_seconds": 90
+          },
+          {
+            "name": "Lateral Bounds",
+            "instructions": "Push off one foot to bound sideways to the other foot. Stick the landing briefly before bounding back. Develops lateral power for cutting and defending.",
+            "sets": 3,
+            "reps": 10,
+            "rest_seconds": 60
+          }
+        ]
+      }
+    },
+    "aerobic_fitness": {
+      "description": "Aerobic (endurance) fitness allows players to maintain performance throughout a 90-minute match. Developed through sustained moderate-intensity running.",
+      "target_by_phase": {
+        "foundation": "Not required — game activity is sufficient",
+        "development": "20–30 minute steady runs, 2x per week",
+        "performance": "30–45 minute runs at 65–75% max heart rate",
+        "professional": "Periodized aerobic base work — volume varies with season phase"
+      },
+      "methods": [
+        {
+          "name": "Steady Pace Run",
+          "description": "Continuous running at a comfortable, sustainable pace. The player can speak in short sentences but not hold a full conversation.",
+          "duration_minutes": "20–30",
+          "intensity": "65–75% maximum heart rate",
+          "frequency": "2–3 times per week",
+          "coaching_points": [
+            "Upright posture, relaxed shoulders",
+            "Arms at 90 degrees, driving forward and back",
+            "Land mid-foot, not heel",
+            "Breathing controlled — in through nose, out through mouth where possible",
+            "Do not let players walk — maintain steady jog throughout"
+          ],
+          "progression": "Begin with 20 minutes. Add 5 minutes each week until reaching 30–45 minutes."
+        }
+      ]
+    },
+    "anaerobic_fitness": {
+      "description": "Anaerobic fitness allows players to sprint, recover and sprint again. Football is an intermittent sport — players sprint, jog, walk and sprint again throughout a match.",
+      "target_by_phase": {
+        "foundation": "Not required — game activity is sufficient",
+        "development": "Beginning to develop — short shuttle runs 1x per week",
+        "performance": "Fartlek runs and shuttle runs 2x per week",
+        "professional": "Sprint intervals, fartlek and shuttle runs — periodized with season"
+      },
+      "methods": [
+        {
+          "name": "Fartlek Run",
+          "description": "Fartlek means 'speed play' in Swedish. The player alternates between jogging and sprinting at irregular intervals. Simulates the demands of a football match.",
+          "duration_minutes": "20–30",
+          "protocol": [
+            "Jog one straight of the field (relaxed pace)",
+            "Sprint one straight of the field (full pace)",
+            "Walk around the corners if needed",
+            "Repeat for full duration without stopping",
+            "Alternatively: sprint to every second lamp post, jog to the next"
+          ],
+          "coaching_points": [
+            "Encourage maximum effort on sprint sections",
+            "Recovery jog should be slow enough to allow breathing to settle",
+            "Players should feel challenged but not exhausted",
+            "Increase sprint sections relative to jog sections as fitness improves"
+          ]
+        },
+        {
+          "name": "Shuttle Runs",
+          "description": "Short sharp sprints with direction changes. Develops acceleration, deceleration and agility — all critical in football.",
+          "setup": "Mark lines at 5, 10, 15, 20 and 25 metres from a start line",
+          "protocol": [
+            "Sprint to 5-metre mark and back to start",
+            "Sprint to 10-metre mark and back to start",
+            "Sprint to 15-metre mark and back to start",
+            "Sprint to 20-metre mark and back to start",
+            "Sprint to 25-metre mark and back to start",
+            "That is one full shuttle set",
+            "Rest 2 minutes",
+            "Repeat 3–4 times"
+          ],
+          "coaching_points": [
+            "Touch the line at each marker before turning",
+            "Low body position when turning — bend knees, not waist",
+            "Drive arms hard on acceleration",
+            "Full sprint effort — not a jog"
+          ],
+          "sets": "3–4",
+          "rest_between_sets_minutes": 2
+        },
+        {
+          "name": "Sprint Intervals",
+          "description": "Timed sprint repeats over a fixed distance. Develops maximum speed and speed endurance.",
+          "protocol": [
+            "Sprint 40 meters at maximum effort",
+            "Walk back to start (recovery)",
+            "Repeat 8–10 times",
+            "Rest 3 minutes",
+            "Do 2–3 sets"
+          ],
+          "coaching_points": [
+            "Maximum effort on every sprint",
+            "Do not rush recovery — walk fully back",
+            "Technique must be maintained — not a shuffling jog"
+          ]
+        }
+      ]
+    },
+    "strength_training": {
+      "description": "Football-specific strength developed through bodyweight exercises. No weight room until late Performance or Professional phase. Core, legs and upper body all important for football performance.",
+      "age_guidance": {
+        "foundation_u10": "No structured strength training — game and play activities sufficient",
+        "development_10_15": "Bodyweight only — focus on correct form before volume",
+        "performance_15_18": "Bodyweight circuits. Medicine ball introduced late in this phase.",
+        "professional": "Full strength program including gym work where available"
+      },
+      "exercises": [
+        {
+          "name": "Push-Ups",
+          "target": "Chest, shoulders, triceps, core",
+          "instructions": [
+            "Hands shoulder-width apart, fingers forward",
+            "Body in a straight line from head to heels (plank position)",
+            "Lower chest to 2 cm from ground",
+            "Push back to start",
+            "Do not let hips sag or pike"
+          ],
+          "beginner": "3 sets of 5–8",
+          "intermediate": "3 sets of 15–20",
+          "advanced": "4 sets of 25+",
+          "progression": "When player can complete all reps with perfect form, increase reps or add a set"
+        },
+        {
+          "name": "Lunges",
+          "target": "Quadriceps, glutes, hamstrings, hip stability",
+          "instructions": [
+            "Stand upright, feet together",
+            "Step one foot forward into a large stride",
+            "Lower back knee toward the ground — do not let it touch",
+            "Front knee must not pass over the toes",
+            "Push off front foot to return to start",
+            "Alternate legs"
+          ],
+          "beginner": "3 sets of 5 each leg",
+          "intermediate": "3 sets of 12 each leg",
+          "advanced": "4 sets of 20 each leg + walking lunges"
+        },
+        {
+          "name": "Sit-Ups / Crunches",
+          "target": "Abdominals, core stabilizers",
+          "instructions": [
+            "Lie on back, knees bent, feet flat on ground",
+            "Hands crossed on chest or fingertips at temples (not pulling neck)",
+            "Curl upper body toward knees — shoulder blades leave ground",
+            "Lower slowly back down",
+            "Controlled movement — do not jerk"
+          ],
+          "beginner": "3 sets of 10",
+          "intermediate": "3 sets of 25",
+          "advanced": "4 sets of 40",
+          "variation": "Add a twist (oblique crunch) — bring elbow toward opposite knee"
+        },
+        {
+          "name": "Medicine Ball Throws",
+          "target": "Core, upper body power, total-body coordination",
+          "phase": "Performance and Professional only",
+          "equipment": "Medicine ball (3–5 kg for youth, 5–8 kg for senior)",
+          "variations": [
+            {
+              "name": "Overhead Throw",
+              "instructions": "Stand 2 meters from a wall or partner. Hold ball with both hands overhead. Throw forward and down with full body force. Catch and repeat.",
+              "sets": 3,
+              "reps": 10
+            },
+            {
+              "name": "Forward Chest Pass Throw",
+              "instructions": "Hold ball at chest. Push/throw directly forward toward partner or wall with both hands. Catch and repeat.",
+              "sets": 3,
+              "reps": 10
+            },
+            {
+              "name": "Side Throw (Rotational)",
+              "instructions": "Stand sideways to wall or partner. Hold ball with both hands at hip. Rotate and throw ball explosively against wall using core rotation. Catch and repeat. Do both sides.",
+              "sets": 3,
+              "reps": 8,
+              "per_side": true
+            },
+            {
+              "name": "Straight Arm Forward Throw",
+              "instructions": "Hold ball in front at waist height with straight arms. Swing ball upward and release forward at chest height, using momentum from legs and core.",
+              "sets": 3,
+              "reps": 8
+            }
+          ]
+        }
+      ],
+      "sample_circuit": {
+        "name": "Bodyweight Football Circuit",
+        "duration_minutes": 20,
+        "rest_between_exercises_seconds": 30,
+        "rest_between_rounds_minutes": 2,
+        "rounds": 3,
+        "exercises": [
+          {"exercise": "Push-Ups", "reps": 15},
+          {"exercise": "Lunges (each leg)", "reps": 10},
+          {"exercise": "Sit-Ups", "reps": 20},
+          {"exercise": "Squat Jumps", "reps": 10},
+          {"exercise": "Burpees", "reps": 8},
+          {"exercise": "Plank Hold", "duration_seconds": 30}
+        ]
+      }
+    },
+    "weekly_home_training_programs": {
+      "description": "Structured home training programs for players to follow between team sessions. Minimum requirements by phase.",
+      "programs": [
+        {
+          "phase": "foundation",
+          "age": "Under 10",
+          "minimum_sessions": 2,
+          "days": [
+            {
+              "day": "Day 1",
+              "focus": "Juggling / Trapping",
+              "activity": "Tap ball with feet alternately for 15 seconds. Count and try to beat personal best each session."
+            },
+            {
+              "day": "Day 2",
+              "focus": "Shooting",
+              "activity": "Kick ball at a target — wall, fence or makeshift goal. 10 kicks each session."
+            },
+            {
+              "day": "Day 3",
+              "focus": "Control / Receiving",
+              "activity": "Receive passes from a family member. Focus on stopping the ball cleanly."
+            },
+            {
+              "day": "Day 4",
+              "focus": "Dribbling",
+              "activity": "Dribble around objects at home — chairs, shoes, cones. Both feet."
+            },
+            {
+              "day": "Days 5–7",
+              "focus": "Free Play",
+              "activity": "Play freely with a ball. Enjoy football — no structured drills."
+            }
+          ]
+        },
+        {
+          "phase": "development",
+          "age": "10–15",
+          "minimum_sessions": 3,
+          "days": [
+            {
+              "day": "Day 1",
+              "focus": "Juggling / Trapping",
+              "activity": "Set a personal best record. Count consecutive touches. Track progress weekly."
+            },
+            {
+              "day": "Day 2",
+              "focus": "Shooting",
+              "activity": "20 shots at target — aim for corners. Mix power shots and placed shots."
+            },
+            {
+              "day": "Day 3",
+              "focus": "Control / Receiving",
+              "activity": "Two-touch drills with a partner. Receive with one touch, pass back with second touch."
+            },
+            {
+              "day": "Day 4",
+              "focus": "Dribbling",
+              "activity": "Cone course using both feet. Time yourself and try to improve each session."
+            },
+            {
+              "day": "Day 5",
+              "focus": "Fitness",
+              "activity": "20-minute steady jog with a ball — dribble during the jog."
+            },
+            {
+              "day": "Days 6–7",
+              "focus": "Street Football / Mini Game",
+              "activity": "Play street football or organize a mini game with friends."
+            }
+          ]
+        },
+        {
+          "phase": "performance",
+          "age": "15–18",
+          "minimum_sessions": 4,
+          "days": [
+            {
+              "day": "Day 1",
+              "focus": "Strength Circuit",
+              "activity": "Push-ups, lunges, sit-ups, medicine ball throws. 3 rounds. Focus on correct technique."
+            },
+            {
+              "day": "Day 2",
+              "focus": "Ball Work",
+              "activity": "Juggling, dribbling, shooting — 30 minutes of individual technical work."
+            },
+            {
+              "day": "Day 3",
+              "focus": "Anaerobic Fitness",
+              "activity": "Fartlek run 20 minutes OR shuttle runs (5/10/15/20/25 metres) x 3 sets."
+            },
+            {
+              "day": "Day 4",
+              "focus": "Technical — Passing and Control",
+              "activity": "Passing and control drills with a partner. Vary distances and surfaces."
+            },
+            {
+              "day": "Day 5",
+              "focus": "Mental Training",
+              "activity": "Mental imagery session — 10 minutes visualizing key skills and match situations. Then rest."
+            },
+            {
+              "day": "Days 6–7",
+              "focus": "Game or Free Training",
+              "activity": "Match or free training based on competition schedule."
+            }
+          ]
+        },
+        {
+          "phase": "professional",
+          "age": "18+",
+          "minimum_sessions": 5,
+          "note": "Players at this level maintain personal training schedules. Recovery and mental preparation are equally important as physical training.",
+          "days": [
+            {
+              "day": "Day 1",
+              "focus": "Strength",
+              "activity": "Full gym session or comprehensive bodyweight circuit. Compound movements prioritized."
+            },
+            {
+              "day": "Day 2",
+              "focus": "Ball Mastery",
+              "activity": "Individual technical work — 45 minutes. Juggling, dribbling patterns, finishing."
+            },
+            {
+              "day": "Day 3",
+              "focus": "Anaerobic Conditioning",
+              "activity": "Sprint intervals or fartlek run. Maximum intensity. 20–30 minutes."
+            },
+            {
+              "day": "Day 4",
+              "focus": "Tactical Study + Mental Imagery",
+              "activity": "Watch match footage, study opponent patterns. Follow with 15-minute mental imagery session."
+            },
+            {
+              "day": "Day 5",
+              "focus": "Recovery",
+              "activity": "Light jog 15 minutes, full stretching routine, cool down. Active recovery only."
+            },
+            {
+              "day": "Days 6–7",
+              "focus": "Competition or Rest",
+              "activity": "Match day or complete rest depending on competition schedule."
+            }
+          ]
+        }
+      ]
+    },
+    "mental_training": {
+      "description": "Mental preparation is a core component of football development, particularly from Development phase onwards.",
+      "techniques": [
+        {
+          "name": "Mental Imagery (Visualization)",
+          "description": "The player mentally rehearses skills, movements or game situations in their mind with vivid detail. Research shows mental practice improves physical performance.",
+          "how_to": [
+            "Find a quiet place and close your eyes",
+            "Breathe slowly and relax",
+            "Picture yourself on the football field",
+            "Mentally perform the skill step by step — see yourself doing it correctly",
+            "Include sensory details: feel the ball, hear the crowd, see teammates",
+            "Always visualize success, not failure",
+            "Practice for 10 minutes before sleep or before training"
+          ],
+          "when_to_use": "Before training, before matches, during recovery sessions",
+          "skills_to_visualize": [
+            "Penalty kicks — see yourself scoring",
+            "Controlling a long ball — feel the ball settle",
+            "Making a tackle — correct technique",
+            "Goalkeeper saves — diving to the correct corner",
+            "Set-piece runs — timing the run, meeting the cross"
+          ],
+          "phase_introduction": "development"
+        }
+      ]
+    }
+  }
+}

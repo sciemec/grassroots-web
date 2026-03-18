@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, RotateCcw, Brain, Loader2, Plus, Minus } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 const SHAPES = ["4v1", "5v2", "6v2", "6v3", "Position rondo"];
 
@@ -42,10 +42,8 @@ export default function RondoPage() {
     try {
       const total = metrics.passes + metrics.turnovers;
       const retentionPct = total > 0 ? Math.round((metrics.passes / total) * 100) : 0;
-      const res = await api.post("/ai-coach/query", {
-        message: `Rondo session (${shape}): ${metrics.passes} passes, ${metrics.turnovers} turnovers, ${metrics.pressureWins} pressure wins, ${metrics.successfulSequences} sequences of 5+ passes. Retention rate: ${retentionPct}%. Max consecutive passes: ${maxSequence}. Give coaching feedback on ball retention, press resistance, and 3 specific drills to improve.`,
-      });
-      setAiReport(res.data?.response ?? "");
+      const reply = await queryAI(`Rondo session (${shape}): ${metrics.passes} passes, ${metrics.turnovers} turnovers, ${metrics.pressureWins} pressure wins, ${metrics.successfulSequences} sequences of 5+ passes. Retention rate: ${retentionPct}%. Max consecutive passes: ${maxSequence}. Give coaching feedback on ball retention, press resistance, and 3 specific drills to improve.`, "player");
+      setAiReport(reply);
     } catch { setAiReport("Unable to generate report."); }
     finally { setLoadingReport(false); }
   };

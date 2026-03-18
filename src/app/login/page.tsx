@@ -108,7 +108,8 @@ function LoginContent() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2 text-white">
-            <Image src="/logo.png" alt="Grassroots Sport" width={40} height={40} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Grassroots Sport" width={40} height={40} />
             <span className="text-xl font-bold tracking-tight">Grassroots Sport</span>
           </Link>
         </div>

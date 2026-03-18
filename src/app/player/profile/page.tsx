@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2 } from "lucide-react";
+import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -328,6 +329,16 @@ export default function PlayerProfilePage() {
               ) : "Save profile"}
             </button>
           </form>
+
+          {/* QR Profile Card */}
+          <div className="mt-6">
+            <QRProfileCard
+              playerId={user.id}
+              playerName={user.name}
+              ageGroup={user.age_group}
+              province={user.province}
+            />
+          </div>
         </div>
       </main>
     </div>

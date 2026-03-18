@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Brain, Loader2, RefreshCw } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -35,13 +35,10 @@ export default function NutritionPlanPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Generate a 7-day meal plan for a Zimbabwean football player focused on ${goal}.
+      const text = await queryAI(`Generate a 7-day meal plan for a Zimbabwean football player focused on ${goal}.
 Use local foods: sadza, matemba, nyama, muriwo, matemba, sweet potato, groundnuts, maheu, mango.
 Format as JSON array with fields: day, breakfast, lunch, dinner, snacks, training_note.
-Return ONLY the JSON array, no markdown.`,
-      });
-      const text = res.data?.response ?? "";
+Return ONLY the JSON array, no markdown.`, "player");
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as MealPlan[];

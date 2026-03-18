@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <!-- Zimbabwe colors: green, gold, red, black -->
+    <linearGradient id="g1" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#1a6b3c"/>
+      <stop offset="35%"  stop-color="#f0b429"/>
+      <stop offset="65%"  stop-color="#cc2200"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#1a6b3c"/>
+      <stop offset="40%"  stop-color="#f0b429"/>
+      <stop offset="70%"  stop-color="#cc2200"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#1a6b3c"/>
+      <stop offset="35%"  stop-color="#f0b429"/>
+      <stop offset="65%"  stop-color="#cc2200"/>
+      <stop offset="100%" stop-color="#111111"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Far left blade — tall, curves left -->
+  <path d="M 14 88 C 13 70 8 45 14 14 C 15 9 18 8 20 10 C 22 14 22 40 22 88 Z" fill="url(#g1)"/>
+
+  <!-- Left-center blade — medium -->
+  <path d="M 30 88 C 29 74 27 55 31 36 C 33 28 36 27 38 31 C 40 38 39 62 38 88 Z" fill="url(#g2)"/>
+
+  <!-- Center blade — tallest, straight -->
+  <path d="M 44 92 C 43 72 42 46 45 8 C 46 3 49 2 51 2 C 53 2 56 3 57 8 C 60 46 59 72 58 92 Z" fill="url(#g1)"/>
+
+  <!-- Right-center blade — medium -->
+  <path d="M 62 88 C 63 62 62 38 64 31 C 66 27 69 28 71 36 C 75 55 73 74 71 88 Z" fill="url(#g2)"/>
+
+  <!-- Far right blade — tall, curves right -->
+  <path d="M 78 88 C 78 40 80 14 82 10 C 84 8 87 9 88 14 C 94 45 89 70 87 88 Z" fill="url(#g3)"/>
+</svg>

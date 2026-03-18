@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Target, Play, CheckCircle2, Brain, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 const POSITIONS_TESTS: Record<string, { label: string; tests: { name: string; desc: string; benchmark: string; unit: string }[] }> = {
   goalkeeper: {
@@ -69,11 +69,9 @@ export default function AssessmentPage() {
     setLoadingReport(true);
     const summary = currentTests.map((t) => `${t.name}: ${results[t.name]} ${t.unit} (benchmark: ${t.benchmark})`).join(", ");
     try {
-      const res = await api.post("/ai-coach/query", {
-        message: `Position assessment results for ${positionGroup}: ${summary}.
-Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to improve, and a 4-week training focus. Be specific and encouraging.`,
-      });
-      setAiReport(res.data?.response ?? "Unable to generate report. Please try again.");
+      const reply = await queryAI(`Position assessment results for ${positionGroup}: ${summary}.
+Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to improve, and a 4-week training focus. Be specific and encouraging.`, "player");
+      setAiReport(reply);
     } catch {
       setAiReport("Unable to connect to AI Coach. Please check your connection and try again.");
     } finally {

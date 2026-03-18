@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { coachAiAssistantPrompt } from "@/config/prompts";
 import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
+import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
 interface Message {
   id: string;
@@ -81,6 +82,9 @@ export default function CoachAIInsightsPage() {
     if (!user) { router.push("/login"); return; }
   }, [user, router]);
 
+  // Preload offline knowledge bases as soon as page mounts
+  useEffect(() => { preloadOfflineAI(); }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -107,7 +111,7 @@ export default function CoachAIInsightsPage() {
 
       let reply = "";
 
-      // Step 1 — try Laravel backend (DeepSeek, works with valid token)
+      // Step 1 — Laravel backend (DeepSeek)
       try {
         const res = await api.post("/ask", {
           question: content,
@@ -115,26 +119,38 @@ export default function CoachAIInsightsPage() {
           language: "english",
         });
         reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
-      } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status !== 401) throw err; // surface real errors (network, 500, etc.)
-        // 401 → fall through to Claude proxy below
+      } catch {
+        // Any error → fall through
       }
 
-      // Step 2 — fallback: Next.js proxy → Anthropic Claude (supports history)
+      // Step 2 — Next.js Claude proxy (requires internet)
       if (!reply) {
-        const res = await fetch("/api/ai-coach", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
-        });
-        const data = await res.json();
-        reply = data?.response ?? data?.message ?? "";
+        try {
+          const res = await fetch("/api/ai-coach", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            reply = data?.response ?? data?.message ?? "";
+          }
+        } catch {
+          // Network down → fall through to offline AI
+        }
+      }
+
+      // Step 3 — Offline knowledge base (no internet required)
+      if (!reply) {
+        const offline = await searchOffline(content);
+        if (offline) {
+          reply = `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`;
+        }
       }
 
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "assistant", content: reply || "I couldn't process that. Please try again.", timestamp: new Date() },
+        { id: Date.now().toString(), role: "assistant", content: reply || "I couldn't find anything for that query. Try rephrasing or check your connection.", timestamp: new Date() },
       ]);
     } catch {
       setMessages((prev) => [
