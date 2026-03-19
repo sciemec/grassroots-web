@@ -29,7 +29,7 @@ export function PublicNavbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-white">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="Grassroots Sport" width={36} height={36} className="rounded-md" />
+          <img src="/logo.png" alt="Grassroots Sport" width={36} height={36} className="rounded-md" />
           <span className="text-lg font-bold tracking-tight">
             Grassroots <span style={{ color: "#F5C842" }}>Sport</span>
           </span>
