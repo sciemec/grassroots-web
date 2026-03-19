@@ -47,14 +47,25 @@ function ScoreBadge({ score }: { score: number }) {
 export default function FanLeaderboardPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const [hydrated, setHydrated] = useState(false);
   const [search, setSearch] = useState("");
   const [position, setPosition] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
 
   useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
-  }, [user, router]);
+  }, [hydrated, user, router]);
 
   const { data, isLoading, isError } = useQuery<{ data: LeaderboardPlayer[] }>({
     queryKey: ["fan-leaderboard-full", position, ageGroup],
@@ -68,10 +79,10 @@ export default function FanLeaderboardPage() {
       });
       return res.data;
     },
-    enabled: !!user,
+    enabled: hydrated && !!user,
   });
 
-  if (!user) return null;
+  if (!hydrated || !user) return null;
 
   const players = data?.data ?? [];
   const filtered = search.trim()
