@@ -3,10 +3,10 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
 
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const OFFLINE_URL   = "/offline";
 
-// Precache shell pages + knowledge base data files
+// Precache shell pages only — knowledge base JSON loaded on demand
 precaching.precacheAndRoute([
   { url: "/",              revision: CACHE_VERSION },
   { url: "/login",         revision: CACHE_VERSION },
@@ -14,18 +14,6 @@ precaching.precacheAndRoute([
   { url: OFFLINE_URL,      revision: CACHE_VERSION },
   { url: "/manifest.json", revision: CACHE_VERSION },
   { url: "/favicon.ico",   revision: CACHE_VERSION },
-  // Offline knowledge base — cache at install time so AI works without internet
-  { url: "/data/coaching_knowledge.json",  revision: CACHE_VERSION },
-  { url: "/data/drill_library.json",       revision: CACHE_VERSION },
-  { url: "/data/development_phases.json",  revision: CACHE_VERSION },
-  { url: "/data/fitness_protocols.json",   revision: CACHE_VERSION },
-  { url: "/data/session_programmes.json",  revision: CACHE_VERSION },
-  { url: "/data/football_guide.json",      revision: CACHE_VERSION },
-  { url: "/data/feedback_responses.json",  revision: CACHE_VERSION },
-  { url: "/data/nutrition_advice.json",    revision: CACHE_VERSION },
-  { url: "/data/zim_foods.json",           revision: CACHE_VERSION },
-  { url: "/data/zimbabwe_schools.json",    revision: CACHE_VERSION },
-  { url: "/data/poverty_districts.json",   revision: CACHE_VERSION },
 ]);
 
 // Static assets — Cache First
@@ -35,6 +23,15 @@ routing.registerRoute(
   new strategies.CacheFirst({
     cacheName: "gs-assets-" + CACHE_VERSION,
     plugins: [new expiration.ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 2592000 })],
+  })
+);
+
+// Knowledge base JSON — cache on first use, not on install
+routing.registerRoute(
+  ({ url }) => url.pathname.startsWith("/data/") && url.pathname.endsWith(".json"),
+  new strategies.StaleWhileRevalidate({
+    cacheName: "gs-knowledge-" + CACHE_VERSION,
+    plugins: [new expiration.ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 604800 })],
   })
 );
 

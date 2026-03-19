@@ -139,7 +139,6 @@
     /* African pattern tile — visible on every page as the base layer */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpolygon points='100,30 120,65 100,100 80,65' fill='none' stroke='%232C2416' stroke-width='1.5' opacity='0.25'/%3E%3Cpolyline points='0,120 12,108 24,120 36,108 48,120 60,108 72,120 84,108 96,120 108,108 120,120 132,108 144,120 156,108 168,120 180,108 192,120 200,112' fill='none' stroke='%232C2416' stroke-width='1' opacity='0.20'/%3E%3Ccircle cx='30' cy='170' r='5' fill='%23C1714A' opacity='0.32'/%3E%3Ccircle cx='100' cy='170' r='5' fill='%23E6A817' opacity='0.32'/%3E%3Ccircle cx='170' cy='170' r='5' fill='%233A7D6B' opacity='0.32'/%3E%3C/svg%3E");
     background-size: 200px 200px;
-    background-attachment: fixed;
   }
 
   body {
@@ -181,7 +180,7 @@
   right: -20px;
   width: 380px;
   height: 380px;
-  background-image: url("/logo.png");
+  background-image: url("/logo.svg");
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
