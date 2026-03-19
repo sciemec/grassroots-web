@@ -126,7 +126,7 @@ function CoachRegisterForm() {
       };
       await api.post("/auth/register", payload);
       setLoading(false);
-      router.push("/login?registered=1");
+      router.push(`/verify-email?email=${encodeURIComponent(form.email.trim())}`);
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);

@@ -137,9 +137,11 @@ function PlayerRegisterForm() {
         sport: sportParam,
       };
       if (isUnder13) payload.guardian_phone = form.guardian_phone.trim();
+      if (form.height_cm) payload.height_cm = parseInt(form.height_cm, 10);
+      if (form.weight_kg) payload.weight_kg = parseInt(form.weight_kg, 10);
 
       await api.post("/auth/register", payload);
-      router.push("/login?registered=1");
+      router.push(`/verify-email?email=${encodeURIComponent(form.email.trim())}`);
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);

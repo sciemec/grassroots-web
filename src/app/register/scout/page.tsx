@@ -91,7 +91,7 @@ function ScoutRegisterForm() {
         experience_years: form.experience_years,
         scouting_regions: form.scouting_regions,
       });
-      router.push("/login?registered=1");
+      router.push(`/verify-email?email=${encodeURIComponent(form.email.trim())}`);
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);

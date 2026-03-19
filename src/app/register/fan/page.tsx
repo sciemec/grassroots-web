@@ -86,7 +86,7 @@ function FanRegisterForm() {
         password: form.password, password_confirmation: form.confirm_password,
         province: form.province, favourite_sport: form.favourite_sport,
       });
-      router.push("/login?registered=1");
+      router.push(`/verify-email?email=${encodeURIComponent(form.email.trim())}`);
     } catch (e: unknown) {
       setError(extractApiError(e, "Registration failed. Please try again."));
       setLoading(false);
