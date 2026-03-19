@@ -129,6 +129,7 @@ function PlayerRegisterForm() {
         email: form.email.trim(),
         phone: form.phone.trim(),
         password: form.password,
+        password_confirmation: form.confirm_password,
         date_of_birth: dob,
         position_primary: form.position_primary,
         dominant_foot: form.dominant_foot || "right",
