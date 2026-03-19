@@ -588,7 +588,7 @@ export default function LandingPage() {
       >
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 relative z-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Grassroots Sport" width={72} height={72} className="mx-auto mb-4" />
+          <img src="/logo_v2.png" alt="Grassroots Sport" width={72} height={72} className="mx-auto mb-4" />
           <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">
             Start your journey today
           </h2>
@@ -627,7 +627,7 @@ export default function LandingPage() {
             <div>
               <div className="mb-4 flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="Grassroots Sport" width={28} height={28} />
+                <img src="/logo_v2.png" alt="Grassroots Sport" width={28} height={28} />
                 <span className="font-bold text-white">
                   Grassroots <span style={{ color: "#F5C842" }}>Sport</span>
                 </span>

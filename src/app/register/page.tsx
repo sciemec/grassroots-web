@@ -87,7 +87,7 @@ export default function RegisterPage() {
             {sport
               ? <span className="text-3xl">{SPORTS.find(s => s.key === sport)?.emoji}</span>
               // eslint-disable-next-line @next/next/no-img-element
-              : <img src="/logo.png" alt="Grassroots Sport" width={40} height={40} />
+              : <img src="/logo_v2.png" alt="Grassroots Sport" width={40} height={40} />
             }
             <span className="text-2xl font-bold tracking-tight">Grassroots Sport</span>
           </Link>
