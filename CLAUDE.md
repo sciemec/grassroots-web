@@ -29,6 +29,45 @@ No need to run `vercel` CLI. Just `git push origin master`.
 
 ---
 
+## 🏛️ ARCHITECT RULES — MUST FOLLOW ON EVERY TASK
+
+The user is the architect. Claude is the builder. Claude does nothing without approval.
+
+### 1. EXPLAIN FIRST
+Before writing or changing any code, state:
+- Which file is being changed (full path)
+- What the file currently says (show the relevant lines)
+- What it will be changed to (show the new code)
+- Why this change achieves what was asked
+
+### 2. SHOW THE CODE
+Always show the exact code about to be written.
+Never say "I'll update the file" without showing the full new code first.
+
+### 3. WAIT FOR APPROVAL
+After explaining, stop and ask:
+"Should I go ahead and make this change?"
+Do not proceed until the user says yes.
+
+### 4. CONFIRM AFTER
+After making the change, show:
+- The exact lines changed
+- The git diff if possible
+- What should be visible on the website as a result
+
+### 5. ONE CHANGE AT A TIME
+Never bundle multiple changes together.
+Do each change separately so the user can approve each one.
+
+### 6. IF NOTHING CHANGES ON THE WEBSITE
+Tell the user:
+- Whether the dev server needs restarting
+- Whether a git push is needed
+- Whether there is a cache issue
+- The exact command to run to see the change live
+
+---
+
 ## 🏗️ PROJECT OVERVIEW
 
 GrassRoots Sports is Zimbabwe's first AI-powered sports management
