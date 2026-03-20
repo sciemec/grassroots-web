@@ -3,25 +3,24 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
 
-const CACHE_VERSION = "v5";
-const OFFLINE_URL   = "/offline";
+const OFFLINE_URL = "/offline";
 
 // Precache shell pages only — knowledge base JSON loaded on demand
 precaching.precacheAndRoute([
-  { url: "/",              revision: CACHE_VERSION },
-  { url: "/login",         revision: CACHE_VERSION },
-  { url: "/register",      revision: CACHE_VERSION },
-  { url: OFFLINE_URL,      revision: CACHE_VERSION },
-  { url: "/manifest.json", revision: CACHE_VERSION },
-  { url: "/favicon.ico",   revision: CACHE_VERSION },
+  { url: "/",              revision: null },
+  { url: "/login",         revision: null },
+  { url: "/register",      revision: null },
+  { url: OFFLINE_URL,      revision: null },
+  { url: "/manifest.json", revision: null },
+  { url: "/favicon.ico",   revision: null },
 ]);
 
-// Static assets — Cache First
+// Static assets — Stale While Revalidate
 routing.registerRoute(
   ({ request }) =>
     ["script","style","image","font"].includes(request.destination),
   new strategies.StaleWhileRevalidate({
-    cacheName: "gs-assets-" + CACHE_VERSION,
+    cacheName: "gs-assets",
     plugins: [new expiration.ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 2592000 })],
   })
 );
@@ -30,7 +29,7 @@ routing.registerRoute(
 routing.registerRoute(
   ({ url }) => url.pathname.startsWith("/data/") && url.pathname.endsWith(".json"),
   new strategies.StaleWhileRevalidate({
-    cacheName: "gs-knowledge-" + CACHE_VERSION,
+    cacheName: "gs-knowledge",
     plugins: [new expiration.ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 604800 })],
   })
 );
@@ -39,7 +38,7 @@ routing.registerRoute(
 routing.registerRoute(
   ({ request }) => request.mode === "navigate",
   new strategies.StaleWhileRevalidate({
-    cacheName: "gs-pages-" + CACHE_VERSION,
+    cacheName: "gs-pages",
     plugins: [new expiration.ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 86400 })],
   })
 );
@@ -48,7 +47,7 @@ routing.registerRoute(
 routing.registerRoute(
   ({ url }) => url.hostname.includes("bhora-ai.onrender.com"),
   new strategies.NetworkFirst({
-    cacheName: "gs-api-" + CACHE_VERSION,
+    cacheName: "gs-api",
     networkTimeoutSeconds: 10,
     plugins: [new expiration.ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 300 })],
   })
