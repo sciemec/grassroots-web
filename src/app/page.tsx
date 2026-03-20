@@ -44,7 +44,7 @@ const sports = [
   { name: "Athletics",  icon: "🏃", color: "bg-blue-600" },
   { name: "Volleyball", icon: "🏐", color: "bg-yellow-600" },
   { name: "Cricket",    icon: "🏏", color: "bg-red-700" },
-  { name: "Netball",    icon: "🥅", color: "bg-purple-700" },
+  { name: "Netball",    icon: "🥅", color: "bg-purple-700", href: "/sports/netball" },
   { name: "Rugby",      icon: "🏉", color: "bg-amber-700" },
   { name: "Swimming",   icon: "🏊", color: "bg-cyan-700" },
   { name: "Tennis",     icon: "🎾", color: "bg-lime-700" },
@@ -332,18 +332,34 @@ export default function LandingPage() {
           <h2 className="mb-10 text-3xl font-bold text-[#1B5E20]">One Platform</h2>
 
           <div className="grid grid-cols-5 gap-4 sm:grid-cols-10">
-            {sports.map(({ name, icon, color }) => (
-              <div
-                key={name}
-                className="flex flex-col items-center gap-2 rounded-xl p-4 cursor-pointer transition hover:-translate-y-0.5"
-                style={{ background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)" }}
-              >
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}/20`}>
-                  <span className="text-2xl">{icon}</span>
+            {sports.map(({ name, icon, color, href }) => {
+              const inner = (
+                <>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}/20`}>
+                    <span className="text-2xl">{icon}</span>
+                  </div>
+                  <span className="text-xs font-medium text-[#2C2416]">{name}</span>
+                </>
+              );
+              return href ? (
+                <Link
+                  key={name}
+                  href={href}
+                  className="flex flex-col items-center gap-2 rounded-xl p-4 cursor-pointer transition hover:-translate-y-0.5 hover:ring-2 hover:ring-purple-400"
+                  style={{ background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)" }}
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <div
+                  key={name}
+                  className="flex flex-col items-center gap-2 rounded-xl p-4 cursor-pointer transition hover:-translate-y-0.5"
+                  style={{ background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)" }}
+                >
+                  {inner}
                 </div>
-                <span className="text-xs font-medium text-[#2C2416]">{name}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
