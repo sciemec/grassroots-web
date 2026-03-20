@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Users, ShieldCheck, Search, CreditCard, BarChart2, Megaphone, Loader2 } from "lucide-react";
+import { Users, ShieldCheck, Search, CreditCard, BarChart2, Megaphone, Loader2, Globe } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -24,6 +24,7 @@ const HUB_CARDS = [
   { icon: CreditCard,  title: "Subscriptions",   subtitle: "Billing & plans",         href: "/admin/subscriptions",  bg: "bg-amber-600" },
   { icon: BarChart2,   title: "Platform Stats",  subtitle: "System analytics",        href: "/admin/stats",          bg: "bg-red-600" },
   { icon: Megaphone,   title: "Announcements",   subtitle: "Platform notices",        href: "/admin/announcements",  bg: "bg-teal-600" },
+  { icon: Globe,       title: "Sports Content",  subtitle: "Netball info page",       href: "/sports/netball",       bg: "bg-purple-600" },
 ];
 
 export default function AdminHubPage() {
