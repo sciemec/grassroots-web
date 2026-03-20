@@ -3,7 +3,7 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
 
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const OFFLINE_URL   = "/offline";
 
 // Precache shell pages only — knowledge base JSON loaded on demand
@@ -20,7 +20,7 @@ precaching.precacheAndRoute([
 routing.registerRoute(
   ({ request }) =>
     ["script","style","image","font"].includes(request.destination),
-  new strategies.CacheFirst({
+  new strategies.StaleWhileRevalidate({
     cacheName: "gs-assets-" + CACHE_VERSION,
     plugins: [new expiration.ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 2592000 })],
   })
