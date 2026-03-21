@@ -343,7 +343,7 @@ function EventPlanner() {
                 {checklist.map((item, j) => (
                   <button
                     key={j}
-                    onClick={() => setDone((prev) => { const n = new Set(prev); n.has(j) ? n.delete(j) : n.add(j); return n; })}
+                    onClick={() => setDone((prev) => { const n = new Set(prev); if (n.has(j)) { n.delete(j); } else { n.add(j); } return n; })}
                     className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs text-left transition-all ${done.has(j) ? "border-green-500/30 bg-green-500/10 text-green-300" : "border-white/10 bg-white/5 text-white/60"}`}
                   >
                     <CheckCircle className={`h-3.5 w-3.5 shrink-0 ${done.has(j) ? "text-green-400" : "text-white/20"}`} />
