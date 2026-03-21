@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2 } from "lucide-react";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth, setPendingConfirmation } from "@/lib/firebase";
+import { signInWithPhoneNumber } from "firebase/auth";
+import { auth, setPendingConfirmation, useRecaptcha } from "@/lib/firebase";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 
 const PROVINCES = [
@@ -43,12 +43,7 @@ function FanRegisterForm() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus]   = useState("");
 
-  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
-  useEffect(() => { return () => { recaptchaRef.current?.clear(); recaptchaRef.current = null; }; }, []);
-  const getVerifier = () => {
-    if (!recaptchaRef.current) recaptchaRef.current = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
-    return recaptchaRef.current;
-  };
+  const { getVerifier, resetVerifier } = useRecaptcha("recaptcha-container");
 
   const set = (k: keyof Form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -82,8 +77,7 @@ function FanRegisterForm() {
       setPendingConfirmation(result);
       router.push(`/verify-phone?phone=${encodeURIComponent(form.phone.trim())}&mode=register`);
     } catch {
-      recaptchaRef.current?.clear();
-      recaptchaRef.current = null;
+      resetVerifier();
       setStatus(""); setError("Zvatadza kutuma code. Edza zvakare. / Could not send code. Please try again.");
       setLoading(false);
     }

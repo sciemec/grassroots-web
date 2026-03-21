@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, CheckCircle2, MessageCircle } from "lucide-react";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth, getPendingConfirmation, setPendingConfirmation, clearPendingConfirmation } from "@/lib/firebase";
+import { signInWithPhoneNumber } from "firebase/auth";
+import { auth, getPendingConfirmation, setPendingConfirmation, clearPendingConfirmation, useRecaptcha } from "@/lib/firebase";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 import axios from "axios";
 import api from "@/lib/api";
@@ -38,8 +38,8 @@ function VerifyPhoneForm() {
   const [failCount, setFailCount] = useState(0);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
 
-  const inputRefs        = useRef<(HTMLInputElement | null)[]>([]);
-  const resendVerifierRef = useRef<RecaptchaVerifier | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const { getVerifier: getResendVerifier, resetVerifier: resetResendVerifier } = useRecaptcha("recaptcha-resend");
 
   // Countdown timer
   useEffect(() => {
@@ -136,15 +136,13 @@ function VerifyPhoneForm() {
     setResending(true); setError(""); setShowWhatsApp(false); setFailCount(0);
     setStatus(MSG.sending);
     try {
-      if (resendVerifierRef.current) { resendVerifierRef.current.clear(); resendVerifierRef.current = null; }
-      const verifier = new RecaptchaVerifier(auth, "recaptcha-resend", { size: "invisible" });
-      resendVerifierRef.current = verifier;
-      const result = await signInWithPhoneNumber(auth, phone, verifier);
+      const result = await signInWithPhoneNumber(auth, phone, getResendVerifier());
       setPendingConfirmation(result);
       setOtp(["","","","","",""]);
       setCountdown(60); setCanResend(false); setStatus("");
       inputRefs.current[0]?.focus();
     } catch {
+      resetResendVerifier();
       setStatus("");
       setError("Zvatadza kutuma code. Edza zvakare. / Could not resend. Try again.");
     } finally {

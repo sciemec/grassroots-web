@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, RecaptchaVerifier } from "firebase/auth";
 import type { ConfirmationResult } from "firebase/auth";
+import { useEffect, useRef } from "react";
 
 const firebaseConfig = {
   apiKey:     process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -19,3 +20,40 @@ let _pendingConfirmation: ConfirmationResult | null = null;
 export const getPendingConfirmation = () => _pendingConfirmation;
 export const setPendingConfirmation = (r: ConfirmationResult) => { _pendingConfirmation = r; };
 export const clearPendingConfirmation = () => { _pendingConfirmation = null; };
+
+/**
+ * Hook that pre-renders an invisible RecaptchaVerifier on mount so it is
+ * fully ready before the user clicks "Send code".
+ *
+ * Returns:
+ *   getVerifier() — returns the live verifier (creates one if cleared)
+ *   resetVerifier() — clears the current verifier and pre-renders a new one
+ *                     (call this after a send failure)
+ */
+export function useRecaptcha(containerId: string) {
+  const ref = useRef<RecaptchaVerifier | null>(null);
+
+  const initVerifier = (id: string) => {
+    const v = new RecaptchaVerifier(auth, id, { size: "invisible" });
+    v.render(); // pre-render so the widget token is ready before signIn
+    return v;
+  };
+
+  useEffect(() => {
+    ref.current = initVerifier(containerId);
+    return () => { ref.current?.clear(); ref.current = null; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const getVerifier = () => {
+    if (!ref.current) ref.current = initVerifier(containerId);
+    return ref.current;
+  };
+
+  const resetVerifier = () => {
+    ref.current?.clear();
+    ref.current = initVerifier(containerId);
+  };
+
+  return { getVerifier, resetVerifier };
+}
