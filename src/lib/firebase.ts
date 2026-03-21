@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, RecaptchaVerifier } from "firebase/auth";
+import { getAuth, RecaptchaVerifier, initializeRecaptchaConfig } from "firebase/auth";
 import type { ConfirmationResult } from "firebase/auth";
 import { useEffect, useRef } from "react";
 
@@ -12,6 +12,20 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth = getAuth(app);
+
+// Initialise reCAPTCHA Enterprise config (required when Enterprise is enabled in Firebase Console).
+// Fire-and-forget — if it fails the standard RecaptchaVerifier still works.
+initializeRecaptchaConfig(auth).catch(() => {});
+
+// Bypass reCAPTCHA widget entirely in non-production so test phone numbers work immediately.
+// Set NEXT_PUBLIC_FIREBASE_TEST_MODE=true in Vercel preview environments if needed.
+if (
+  typeof window !== "undefined" &&
+  (process.env.NODE_ENV !== "production" ||
+    process.env.NEXT_PUBLIC_FIREBASE_TEST_MODE === "true")
+) {
+  auth.settings.appVerificationDisabledForTesting = true;
+}
 
 // Shared confirmation result — set by registration form, read by verify-phone page.
 // Lives in module scope so it survives client-side navigation between pages.
