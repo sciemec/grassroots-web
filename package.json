@@ -29,6 +29,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dexie": "^4.3.0",
+    "firebase": "^10.14.1",
     "hls.js": "^1.6.15",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.0",
