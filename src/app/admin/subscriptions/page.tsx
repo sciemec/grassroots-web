@@ -64,7 +64,7 @@ export default function AdminSubscriptionsPage() {
     },
   });
 
-  const subs = data?.data ?? [];
+  const subs = useMemo(() => data?.data ?? [], [data]);
 
   // Derive summary from the list data — no separate API call needed
   const summary = useMemo(() => {

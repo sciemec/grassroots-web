@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, User, Calendar, MapPin, Dumbbell } from "lucide-react";
+import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, User, MapPin, Dumbbell } from "lucide-react";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { auth, setPendingConfirmation } from "@/lib/firebase";
 import { SPORT_MAP, SportKey } from "@/config/sports";
