@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Phone } from "lucide-react";
@@ -17,6 +17,19 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus]   = useState("");
   const [error, setError]     = useState("");
+
+  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
+
+  useEffect(() => {
+    return () => { recaptchaRef.current?.clear(); recaptchaRef.current = null; };
+  }, []);
+
+  const getVerifier = () => {
+    if (!recaptchaRef.current) {
+      recaptchaRef.current = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+    }
+    return recaptchaRef.current;
+  };
 
   // ONE-TAP RETURN — skip login if already authenticated
   useEffect(() => {
@@ -36,23 +49,15 @@ function LoginForm() {
     setLoading(true); setError(""); setStatus("Tirikutuma code... / Sending your code...");
 
     try {
-      const verifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
-      const result = await signInWithPhoneNumber(auth, phone.trim(), verifier);
+      const result = await signInWithPhoneNumber(auth, phone.trim(), getVerifier());
       setPendingConfirmation(result);
       router.push(`/verify-phone?phone=${encodeURIComponent(phone.trim())}&mode=login`);
     } catch {
-      // Auto-retry once before showing message
-      try {
-        setStatus("Zviri kutora nguva... / Taking a moment...");
-        const verifier2 = new RecaptchaVerifier(auth, "recaptcha-container-retry", { size: "invisible" });
-        const result2 = await signInWithPhoneNumber(auth, phone.trim(), verifier2);
-        setPendingConfirmation(result2);
-        router.push(`/verify-phone?phone=${encodeURIComponent(phone.trim())}&mode=login`);
-      } catch {
-        setStatus("");
-        setError("Zvatadza. Edza zvakare. / Could not send code. Please try again.");
-        setLoading(false);
-      }
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+      setStatus("");
+      setError("Zvatadza. Edza zvakare. / Could not send code. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -80,7 +85,6 @@ function LoginForm() {
         )}
 
         <div id="recaptcha-container" />
-        <div id="recaptcha-container-retry" />
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm space-y-5">
 

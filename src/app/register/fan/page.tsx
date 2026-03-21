@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2 } from "lucide-react";
@@ -43,6 +43,13 @@ function FanRegisterForm() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus]   = useState("");
 
+  const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
+  useEffect(() => { return () => { recaptchaRef.current?.clear(); recaptchaRef.current = null; }; }, []);
+  const getVerifier = () => {
+    if (!recaptchaRef.current) recaptchaRef.current = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+    return recaptchaRef.current;
+  };
+
   const set = (k: keyof Form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
   const validate = (): string => {
@@ -71,11 +78,12 @@ function FanRegisterForm() {
     };
     try {
       sessionStorage.setItem("gs_phone_reg", JSON.stringify(payload));
-      const verifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
-      const result = await signInWithPhoneNumber(auth, form.phone.trim(), verifier);
+      const result = await signInWithPhoneNumber(auth, form.phone.trim(), getVerifier());
       setPendingConfirmation(result);
       router.push(`/verify-phone?phone=${encodeURIComponent(form.phone.trim())}&mode=register`);
     } catch {
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
       setStatus(""); setError("Zvatadza kutuma code. Edza zvakare. / Could not send code. Please try again.");
       setLoading(false);
     }
