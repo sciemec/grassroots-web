@@ -93,11 +93,12 @@ export function middleware(req: NextRequest) {
 
 function rolePath(role: UserRole): string {
   switch (role) {
-    case "admin":  return "/dashboard";
-    case "coach":  return "/coach";
-    case "scout":  return "/scout";
-    case "player": return "/player";
-    case "fan":    return "/fan";
+    case "admin":    return "/dashboard";
+    case "coach":    return "/coach";
+    case "scout":    return "/scout";
+    case "player":   return "/player";
+    case "fan":      return "/fan";
+    case "analyst":  return "/analyst";
   }
 }
 
