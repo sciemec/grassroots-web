@@ -266,8 +266,9 @@ export const SPORT_STATS = {
     field: ['eventType', 'personalBest', 'seasonBest', 'attempts', 'fouls'],
   },
   netball: {
-    all: ['goals', 'attempts', 'goalAccuracy', 'intercepts', 'contacts',
-          'centerPassReceives', 'rebounds'],
+    shooter:  ['goals', 'attempts', 'goalAccuracy', 'centerPassReceives', 'rebounds', 'minutesPlayed'],
+    midcourt: ['centerPassReceives', 'intercepts', 'contacts', 'feeds', 'minutesPlayed'],
+    defender: ['intercepts', 'contacts', 'rebounds', 'deflections', 'obstructions', 'minutesPlayed'],
   },
   basketball: {
     all: ['points', 'rebounds', 'assists', 'steals', 'blocks',
@@ -1513,11 +1514,11 @@ DAILY_API_KEY       = set in .env.local AND Vercel (live streaming)
 
 ### LAST 5 COMMITS (as of March 2026)
 ```
+67f9d45  feat: split netball stats into position-specific roles (shooter/midcourt/defender)
 774756f  feat: browser push notifications via Web Notification API
 4b53f48  feat: auth hydration guard — add layout.tsx for streaming/video-studio/welcome/sessions/video-analysis
 [prior]  feat: player/coach/scout/fan layout.tsx auth guards + _hasHydrated in auth-store
 [prior]  feat: multi-sport live match — sport selector, SPORT_FORMATIONS, halftime prompt
-[prior]  fix: remove OTP step from all 4 registration flows
 ```
 
 ### KNOWN ISSUES (do not waste time re-investigating these)
@@ -1597,3 +1598,136 @@ Ready to apply this fix — shall I proceed?
 ```
 
 Never skip straight to code. Nigel must understand the problem before it is fixed.
+
+---
+
+## 💼 BUSINESS HUB — /business-hub
+
+### Status: BUILT (March 2026)
+
+A standalone public page (no auth required) targeting sports business operators in Zimbabwe.
+
+### Target Users (5 types):
+- **Club Admin** — manage team finances, sponsorships, budgets
+- **Event Organiser** — plan tournaments, track gate fees and costs
+- **School Sports Coordinator** — manage school sports budgets and fixtures
+- **League Manager** — run league finances, prize money, entry fees
+- **Sponsor/Company** — find teams to sponsor, track ROI
+
+### Files:
+- `src/components/layout/public-navbar.tsx` — "Business Hub" link added between "AI Coach" and "Pricing"
+- `src/app/business-hub/page.tsx` — full 670-line page (no auth required, public)
+
+### Page Structure:
+1. **Hero** — headline, CTA buttons, 4 trust badges (Free plan, No credit card, etc.)
+2. **Who Is This For?** — 5 expandable user-type cards, each listing their specific features
+3. **5 Interactive Tools (tabbed dashboard)**:
+   - Budget Planner — live budget items with progress bars, add categories, remaining balance
+   - Sponsor Finder — searchable Zimbabwe sponsor directory (NetOne, Econet, Delta, CBZ, etc.) with budget ranges
+   - Financial Tracker — income/expense ledger with net balance and PDF export
+   - Event Planner — collapsible event cards with interactive task checklist
+   - Business Skills — 5 articles (sponsorship proposals, gate fees, budgeting, legal registration, revenue streams)
+4. **Pricing** — Free ($0) vs Pro ($5/month) side-by-side cards
+5. **Bottom CTA** — sign up prompt
+
+### Pricing:
+```
+Free:  Basic tools, 1 event, 3 budget categories
+Pro:   $5/month — unlimited events, PDF exports, sponsor matching, priority support
+```
+
+### Design:
+- Green/gold Grassroots Sports palette (#1a5c2a, #f0b429)
+- Dark glass cards: `rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm`
+- Mobile responsive (375px+)
+- No backend required — all tools are client-side only (no API calls)
+
+---
+
+## 🎯 ANALYST HUB — /analyst
+
+### Status: PARTIALLY BUILT (March 2026)
+
+A professional data analytics hub for match analysts. Role-gated to `analyst` and `admin` only.
+
+### Files:
+- `src/app/analyst/layout.tsx` — auth guard, allows `analyst` + `admin` roles only
+- `src/app/analyst/page.tsx` — hub home with 6 tool cards
+- `src/app/analyst/live-match/page.tsx` — Live Match Collector with xG tracking (see below)
+
+### Hub Home (`/analyst`) — Tool Cards:
+
+| Tool | Status | Route |
+|---|---|---|
+| Live Match Collector | LIVE ✅ | `/analyst/live-match` |
+| xG & Shot Analysis | Coming Soon 🔒 | `#` |
+| AI Tactical Report | Coming Soon 🔒 | `#` |
+| Pass Map Network | Coming Soon 🔒 | `#` |
+| Player Heatmaps | Coming Soon 🔒 | `#` |
+| Season Intelligence | Coming Soon 🔒 | `#` |
+
+### Design:
+- Uses `Sidebar` component + `gs-watermark` class on main
+- Gold/green palette: `text-accent` for labels, `bg-[#f0b429]` for LIVE badge
+- Bottom banner: "Same tools as European clubs — $99/month vs Wyscout's €299/month"
+
+---
+
+## 🔴 LIVE MATCH COLLECTOR — /analyst/live-match
+
+### Status: BUILT (March 2026)
+
+A pitchside xG data collection tool. Analyst taps pitch zones to log shots; xG auto-calculated from zone.
+
+### File: `src/app/analyst/live-match/page.tsx`
+
+### xG Values by Zone (built-in, no backend needed):
+```typescript
+const XG_ZONES = [
+  { id: "six_yard",        label: "Six-Yard Box",         xg: 0.76, col: 2, row: 1 },
+  { id: "penalty_spot",    label: "Penalty Spot",          xg: 0.45, col: 2, row: 2 },
+  { id: "central_box",     label: "Central Box",           xg: 0.35, col: 2, row: 3 },
+  { id: "wide_box_left",   label: "Wide Box Left",         xg: 0.12, col: 1, row: 2 },
+  { id: "wide_box_right",  label: "Wide Box Right",        xg: 0.12, col: 3, row: 2 },
+  { id: "edge_centre",     label: "Edge of Box (Centre)",  xg: 0.18, col: 2, row: 4 },
+  { id: "edge_wide_left",  label: "Edge of Box (Left)",    xg: 0.07, col: 1, row: 4 },
+  { id: "edge_wide_right", label: "Edge of Box (Right)",   xg: 0.07, col: 3, row: 4 },
+  { id: "long_range",      label: "Long Range",            xg: 0.04, col: 2, row: 5 },
+];
+```
+
+### Page Structure (3 phases):
+
+**Phase 1 — Setup:**
+- Home team / away team name inputs
+- Sport selector (same 10-sport grid as coach live-match)
+- "Start Match" button
+
+**Phase 2 — Live (3-column layout):**
+- Left col (lg:col-span-2):
+  - Pitch zone tapper (3×5 grid representing attacking half)
+  - Team toggle: Home shot / Away shot
+  - "Goal?" checkbox — marks if shot resulted in a goal
+  - Each tap logs: `{ id, minute, team, zone, xg, isGoal }`
+  - Shot timeline below (scrollable list of all logged shots)
+- Right col:
+  - Live scoreboard (actual goals: home vs away)
+  - xG scoreboard (cumulative xG: home vs away)
+  - Shot counts (home vs away)
+  - "End Match" button
+
+**Phase 3 — Ended:**
+- Final score + final xG totals
+- xG vs Actual comparison (who over/underperformed)
+- Back to Analyst Hub link
+
+### No backend required:
+- All data stored in component state during the match
+- No API calls during live collection
+- Future: add POST to `/api/v1/matches/{id}/xg-data` to persist
+
+### Connections:
+- Linked from `/analyst` hub card "Live Match Collector"
+- Uses `Sidebar` component from `@/components/layout/sidebar`
+- Uses `useAuthStore` for user greeting
+- Does NOT reuse coach live-match components (separate purpose)
