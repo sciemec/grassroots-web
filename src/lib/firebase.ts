@@ -33,11 +33,8 @@ export const clearPendingConfirmation = () => { _pendingConfirmation = null; };
 export function useRecaptcha(containerId: string) {
   const ref = useRef<RecaptchaVerifier | null>(null);
 
-  const initVerifier = (id: string) => {
-    const v = new RecaptchaVerifier(auth, id, { size: "invisible" });
-    v.render(); // pre-render so the widget token is ready before signIn
-    return v;
-  };
+  const initVerifier = (id: string) =>
+    new RecaptchaVerifier(auth, id, { size: "invisible" });
 
   useEffect(() => {
     ref.current = initVerifier(containerId);
