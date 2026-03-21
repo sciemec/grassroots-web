@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type UserRole = "admin" | "coach" | "scout" | "player" | "fan";
+export type UserRole = "admin" | "coach" | "scout" | "player" | "fan" | "analyst";
 
 export function roleHomePath(role: UserRole): string {
   switch (role) {
@@ -9,7 +9,8 @@ export function roleHomePath(role: UserRole): string {
     case "coach":  return "/coach";
     case "scout":  return "/scout";
     case "player": return "/player";
-    case "fan":    return "/fan";
+    case "fan":      return "/fan";
+    case "analyst":  return "/analyst";
   }
 }
 

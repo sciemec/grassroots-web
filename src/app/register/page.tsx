@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, ChevronLeft } from "lucide-react";
-import { SPORTS, SportKey } from "@/config/sports";
+import { SPORTS, SPORT_MAP, SportKey } from "@/config/sports";
 
 const ROLES = [
   {
@@ -65,8 +65,12 @@ const SPORT_FOCUS: Record<string, string> = {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [step, setStep] = useState<"sport" | "role">("sport");
-  const [sport, setSport] = useState<SportKey | null>(null);
+  const searchParams = useSearchParams();
+  const preselected = searchParams.get("sport") as SportKey | null;
+  const validPreselect = preselected && SPORT_MAP[preselected] ? preselected : null;
+
+  const [step, setStep] = useState<"sport" | "role">(validPreselect ? "role" : "sport");
+  const [sport, setSport] = useState<SportKey | null>(validPreselect);
 
   function selectSport(key: SportKey) {
     setSport(key);

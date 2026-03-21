@@ -1652,9 +1652,11 @@ created_at, updated_at
 
 ## 💼 BUSINESS HUB — /business-hub
 
-### Status: BUILT (March 2026)
+### Status: FULLY BUILT + BACKEND CONNECTED (March 2026)
 
-A standalone public page (no auth required) targeting sports business operators in Zimbabwe.
+A public page targeting sports business operators in Zimbabwe.
+- **Guest users** — see demo data + "Sign in to save" banner
+- **Logged-in users** — all data loads from and saves to the Laravel backend
 
 ### Target Users (5 types):
 - **Club Admin** — manage team finances, sponsorships, budgets
@@ -1663,21 +1665,53 @@ A standalone public page (no auth required) targeting sports business operators 
 - **League Manager** — run league finances, prize money, entry fees
 - **Sponsor/Company** — find teams to sponsor, track ROI
 
-### Files:
-- `src/components/layout/public-navbar.tsx` — "Business Hub" link added between "AI Coach" and "Pricing"
-- `src/app/business-hub/page.tsx` — full 670-line page (no auth required, public)
+### Frontend Files:
+- `src/components/layout/public-navbar.tsx` — "Business Hub" link between "AI Coach" and "Pricing"
+- `src/app/business-hub/page.tsx` — full page with API integration
+
+### Backend Files (bhora-ai repo):
+- `database/migrations/2026_03_21_000001_create_business_hub_tables.php` — 3 tables
+- `app/Models/BusinessBudgetItem.php`
+- `app/Models/BusinessTransaction.php`
+- `app/Models/BusinessEvent.php` — `checklist_done` stored as JSON array
+- `app/Http/Controllers/Api/BusinessHubController.php` — 11 endpoints
+- `routes/api.php` — business routes added under `auth:sanctum`
+
+### API Endpoints (all under `/api/v1/business/`, require auth):
+```
+GET    /business/budget           list user's budget items
+POST   /business/budget           create budget item
+PATCH  /business/budget/{id}      update item (category, label, budgeted, spent)
+DELETE /business/budget/{id}      delete item
+
+GET    /business/transactions     list transactions (ordered by date desc)
+POST   /business/transactions     add transaction (description, amount, type, date)
+DELETE /business/transactions/{id} delete transaction
+
+GET    /business/events           list events
+POST   /business/events           create event (name, date_range, sport, teams, icon)
+PATCH  /business/events/{id}      update event / save checklist_done array
+DELETE /business/events/{id}      delete event
+```
+
+### Database Tables:
+```sql
+business_budget_items: id (UUID), user_id, category, label, budgeted, spent
+business_transactions: id (UUID), user_id, description, amount, type (income/expense), date
+business_events:       id (UUID), user_id, name, date_range, sport, teams, status, icon, checklist_done (JSON)
+```
 
 ### Page Structure:
-1. **Hero** — headline, CTA buttons, 4 trust badges (Free plan, No credit card, etc.)
-2. **Who Is This For?** — 5 expandable user-type cards, each listing their specific features
-3. **5 Interactive Tools (tabbed dashboard)**:
-   - Budget Planner — live budget items with progress bars, add categories, remaining balance
-   - Sponsor Finder — searchable Zimbabwe sponsor directory (NetOne, Econet, Delta, CBZ, etc.) with budget ranges
-   - Financial Tracker — income/expense ledger with net balance and PDF export
-   - Event Planner — collapsible event cards with interactive task checklist
-   - Business Skills — 5 articles (sponsorship proposals, gate fees, budgeting, legal registration, revenue streams)
-4. **Pricing** — Free ($0) vs Pro ($5/month) side-by-side cards
-5. **Bottom CTA** — sign up prompt
+1. **Hero** — headline, CTA, trust badges. Shows "Signed in as X" if authenticated.
+2. **Who Is This For?** — 5 expandable user-type cards
+3. **5 Tabbed Tools**:
+   - Budget Planner — CRUD via API, progress bars, delete per item
+   - Sponsor Finder — static directory (NetOne, Econet, Delta, CBZ, etc.), searchable
+   - Financial Tracker — CRUD via API, add transaction form, income/expense/net summary
+   - Event Planner — CRUD via API, checklist toggles auto-save to backend, create event form
+   - Business Skills — 5 static articles (no backend needed)
+4. **Pricing** — Free ($0) vs Pro ($5/month)
+5. **Bottom CTA**
 
 ### Pricing:
 ```
@@ -1686,10 +1720,15 @@ Pro:   $5/month — unlimited events, PDF exports, sponsor matching, priority su
 ```
 
 ### Design:
-- Green/gold Grassroots Sports palette (#1a5c2a, #f0b429)
-- Dark glass cards: `rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm`
+- Green/gold palette (#1a5c2a, #f0b429)
+- Dark glass cards: `rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm`
 - Mobile responsive (375px+)
-- No backend required — all tools are client-side only (no API calls)
+- Loading spinners on all async operations
+- Error banners on API failures (falls back to demo data)
+
+### IMPORTANT — Migration required on Render:
+Run `php artisan migrate --force` on the Render server to create the 3 new tables.
+If `build.sh` already runs migrations on deploy, this happens automatically.
 
 ---
 

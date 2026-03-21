@@ -1,0 +1,337 @@
+{
+  "session_programmes": [
+    {
+      "id": "netball-circle-feeding",
+      "title": "Circle Feeding Combination — WA/GA/GS",
+      "category": "attacking",
+      "key_words": ["circle entry", "feeding", "shooting", "WA", "GA", "GS"],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "Static Feeding — Establishing the Pattern",
+          "objectives": [
+            "WA delivers accurately to GA on the circle edge",
+            "GA holds position and presents a target",
+            "GS times their move to receive from GA"
+          ],
+          "coaching_points": [
+            "WA: deliver the ball flat and to the outside hand of GA — never lob over the defender",
+            "GA: square your body to the ball before you release to GS — no blind passes",
+            "GS: drive toward the post BEFORE the ball arrives — not after"
+          ],
+          "activities": [
+            {
+              "name": "3-Player Static Feed",
+              "instructions": [
+                "Set up WA on the circle edge, GA at the top of the circle, GS inside",
+                "WA passes to GA. GA passes to GS. GS shoots.",
+                "Rotate positions every 10 shots",
+                "No defenders — pure pattern rehearsal"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "Feeding Under Token Pressure",
+          "objectives": [
+            "WA delivers cleanly with a passive defender in place",
+            "GA pivots away from defender before feeding",
+            "Combination flows in under 2 seconds from WA to GS shot"
+          ],
+          "coaching_points": [
+            "GA: pivot on your landing foot — do not drag it",
+            "WA: hold the ball for a count of 1 to draw the defender before delivering",
+            "GS: if GA is crowded, cut across the circle to open a lane"
+          ],
+          "activities": [
+            {
+              "name": "Passive Defender Feeding Drill",
+              "instructions": [
+                "Add one passive (arms-only) defender on GA",
+                "WA must deliver to GA within 3 seconds",
+                "GA pivots and feeds GS — GS shoots",
+                "Score 1 point per goal — defender scores 1 for each 3-second violation"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "Full Combination — Live Defence",
+          "objectives": [
+            "Execute the full WA–GA–GS combination against full-pressure defence",
+            "Develop a second option when the primary route is blocked",
+            "Maintain composure under contested shooting conditions"
+          ],
+          "coaching_points": [
+            "If GA is denied, WA hits the back option — Centre or second GA lead",
+            "GS: do not wait for the perfect pass — contest every ball that enters the circle",
+            "Coach: track goal accuracy — target above 60% from inside the circle"
+          ],
+          "activities": [
+            {
+              "name": "5v5 Circle Entry Game",
+              "instructions": [
+                "5 attackers vs 5 defenders in the attacking two-thirds",
+                "Goal: attackers must get the ball to GS for a shot within 5 passes",
+                "Defenders aim to force a turnover or 3-second violation",
+                "Play 4-minute periods — swap attack and defence"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "netball-centre-pass",
+      "title": "Centre Pass Mastery — 4 Pattern System",
+      "category": "attacking",
+      "key_words": ["centre pass", "restart", "C", "WA", "GS", "timing"],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "Pattern A — Wide Lead",
+          "objectives": [
+            "WA leads wide into the centre third to receive from C",
+            "C delivers accurately to WA's outside hand",
+            "Rehearse timing so WA moves as the whistle blows"
+          ],
+          "coaching_points": [
+            "C: do not look at WA before delivering — draw the defender, then release",
+            "WA: your lead must start BEFORE the whistle — early movement wins the space",
+            "Everyone: know your starting position and secondary role if Pattern A is denied"
+          ],
+          "activities": [
+            {
+              "name": "Walk-Through Pattern A",
+              "instructions": [
+                "No defenders — all 7 players walk through the pattern at half speed",
+                "C passes to WA. WA advances. GA leads. WA feeds GA. GA feeds GS. GS shoots.",
+                "Repeat 10 times at increasing speed",
+                "Coach calls the whistle at different moments to test timing"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "Pattern B — Back Ball Option",
+          "objectives": [
+            "Introduce back-ball option when Pattern A is denied",
+            "C reads the defence and selects between Pattern A and B",
+            "Players know their role in BOTH patterns"
+          ],
+          "coaching_points": [
+            "Pattern B: C turns and hits GD or WD who has broken into the centre third",
+            "WA: if your lead is covered, set a screen for the back option then re-lead",
+            "C: your decision must be made in 1 second — rehearse the read, not just the pass"
+          ],
+          "activities": [
+            {
+              "name": "Two-Pattern Decision Drill",
+              "instructions": [
+                "Coach stands at side and signals A or B JUST before the whistle",
+                "Team executes the called pattern",
+                "Progress to coach NOT signalling — C reads a single passive defender's position to decide",
+                "10 repetitions per pattern"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "Centre Pass Under Match Pressure",
+          "objectives": [
+            "Execute both patterns reliably against full defending seven",
+            "Score from centre pass within 4 passes",
+            "Defenders intercept or force the ball out of the attacking third"
+          ],
+          "coaching_points": [
+            "Track centre pass conversion rate — target 60%+ in training",
+            "If C turns back twice in a row, reset and walk through the pattern again",
+            "Reward the team for a pattern goal — reinforce the system"
+          ],
+          "activities": [
+            {
+              "name": "Centre Pass Conversion Game",
+              "instructions": [
+                "Full 7v7 — each team takes 5 centre passes per set",
+                "Attacking team scores: 2 points for a goal from the centre pass pattern, 1 for any other goal",
+                "Defending team scores: 1 point for each turnover before the attacking third",
+                "Best of 3 sets"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "netball-intercept-defence",
+      "title": "Intercept Defence — GD & GK Training",
+      "category": "defending",
+      "key_words": ["intercept", "GD", "GK", "defensive third", "reads"],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "Reading the Passer — Anticipation Basics",
+          "objectives": [
+            "GD/GK learn to watch the passer's eyes, not the ball",
+            "Identify the 3 telegraphing signs before a pass",
+            "Practice timing the move — too early loses the intercept"
+          ],
+          "coaching_points": [
+            "Watch the passer's shoulder turn — that tells you where the ball is going",
+            "Never turn your back on the ball — shadow the attacker from the inside",
+            "Move on the release, not on the catch — that is 0.5 seconds earlier"
+          ],
+          "activities": [
+            {
+              "name": "Mirror & React Drill",
+              "instructions": [
+                "Pairs: one attacker, one defender, 1.5m apart",
+                "Attacker has the ball and passes to a third player 5m away",
+                "Defender must read the pass and touch the ball line before it arrives",
+                "Count successes out of 10 — target 5+ by end of week"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "1v1 Defence in the Defending Third",
+          "objectives": [
+            "GD/GK apply correct 0.9m positioning consistently",
+            "Force attackers into the sideline or baseline",
+            "Contest every shot with arms raised — no slapping"
+          ],
+          "coaching_points": [
+            "0.9m is measured from the foot on the ground, not from the body — know the distance",
+            "Goal: force the attacker to pass backward — do not lunge",
+            "On a shot: reach high with both arms — hands together above the ball line"
+          ],
+          "activities": [
+            {
+              "name": "Defending Third 1v1",
+              "instructions": [
+                "GA/GS vs GD/GK in the defending third only",
+                "Attacker gets 3 seconds to shoot or pass out",
+                "Defender must maintain 0.9m — any contact is a free pass",
+                "Count how many shots are contested vs uncontested"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "GK–GD Unit Combination",
+          "objectives": [
+            "GK and GD communicate and cover for each other",
+            "One defender pressures the ball; the other covers the second attacker",
+            "No goals conceded from uncontested positions"
+          ],
+          "coaching_points": [
+            "Call 'mine' or 'yours' on every ball that enters the defensive third",
+            "If GD commits, GK shifts to cover — never both chase the same attacker",
+            "After a rebound, outlet quickly — do not hold the ball under pressure"
+          ],
+          "activities": [
+            {
+              "name": "2v2 Defensive Third Game",
+              "instructions": [
+                "GA + GS vs GD + GK in the defending third",
+                "Attackers start with the ball and have 8 seconds to score",
+                "Defenders must communicate out loud before every move",
+                "Play 4-minute sets — rotate pairs every set"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "netball-footwork-discipline",
+      "title": "Footwork Discipline — Zero Penalties Programme",
+      "category": "passing",
+      "key_words": ["footwork", "landing", "pivot", "penalty reduction"],
+      "weeks": [
+        {
+          "week": 1,
+          "title": "Landing & Pivot Mechanics",
+          "objectives": [
+            "Every player can demonstrate a correct 2-foot landing",
+            "All players know which foot becomes the pivot foot",
+            "Pivot movements are smooth and controlled, not rushed"
+          ],
+          "coaching_points": [
+            "Land on 2 feet simultaneously — no step through",
+            "Decide your pivot foot immediately — hesitation causes dragging",
+            "The pivot foot may not leave the ground until the ball is released"
+          ],
+          "activities": [
+            {
+              "name": "Footwork Gate Drill",
+              "instructions": [
+                "Set 4 cones in a square, 2m apart",
+                "Player walks to each cone, receives a pass, lands, pivots 90 degrees, passes to next cone",
+                "Coach watches for any step — call it loudly",
+                "Progress to jog pace, then run pace",
+                "Target: zero foot violations in 3 consecutive circuits"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "Footwork Under Pressure",
+          "objectives": [
+            "Players maintain correct footwork when fatigued",
+            "No footwork violations when receiving under a defender",
+            "3-second rule is met consistently while maintaining footwork"
+          ],
+          "coaching_points": [
+            "Fatigue causes footwork errors — work hardest at the end of training, not the start",
+            "If you are off-balance when receiving, regather before pivoting — do not rush",
+            "Your team loses a free pass every footwork infringement — emphasise the cost"
+          ],
+          "activities": [
+            {
+              "name": "Fatigue Footwork Circuit",
+              "instructions": [
+                "Players complete 30 seconds of high knees, then immediately receive and release under a passive defender",
+                "Coach tracks infringements — team does 5 push-ups per violation (bonds the group)",
+                "3 rounds of 6 players",
+                "Count violations at start vs end — improvement is the metric"
+              ]
+            }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "Match Simulation — Footwork Focus",
+          "objectives": [
+            "Transfer zero-penalty footwork into a full-game context",
+            "Referee all footwork violations in training games",
+            "Team target: fewer than 3 footwork penalties per quarter"
+          ],
+          "coaching_points": [
+            "Assign one coach/analyst to count only footwork violations per team per quarter",
+            "Display the running total to both teams during the game",
+            "Celebrate a clean quarter — team culture around no violations"
+          ],
+          "activities": [
+            {
+              "name": "Footwork-Refereed Scrimmage",
+              "instructions": [
+                "Full 7v7 scrimmage — all footwork violations are called immediately",
+                "No other rules are flagged — footwork only focus for this session",
+                "Track count per team per quarter on a whiteboard",
+                "Team with fewer violations in each quarter wins the quarter"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

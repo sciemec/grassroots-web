@@ -271,9 +271,16 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
 
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
+const SPORT_OPTIONS = [
+  { key: "football", label: "Football", emoji: "⚽", phases: "/data/development_phases.json",         progs: "/data/session_programmes.json" },
+  { key: "netball",  label: "Netball",  emoji: "🏐", phases: "/data/netball_development_phases.json", progs: "/data/netball_session_programmes.json" },
+] as const;
+type SportOption = typeof SPORT_OPTIONS[number]["key"];
+
 export default function TrainingPlansPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const [sport, setSport] = useState<SportOption>("football");
   const [tab, setTab] = useState<"phases" | "programmes">("phases");
   const [phases, setPhases] = useState<Phase[]>([]);
   const [programmes, setProgrammes] = useState<Programme[]>([]);
@@ -285,10 +292,14 @@ export default function TrainingPlansPage() {
   }, [user, router]);
 
   useEffect(() => {
-    const p1 = fetch("/data/development_phases.json").then((r) => r.json()).then((d) => setPhases(d.phases ?? []));
-    const p2 = fetch("/data/session_programmes.json").then((r) => r.json()).then((d) => setProgrammes(d.session_programmes ?? []));
+    const cfg = SPORT_OPTIONS.find((s) => s.key === sport)!;
+    setLoading(true);
+    setPhases([]);
+    setProgrammes([]);
+    const p1 = fetch(cfg.phases).then((r) => r.json()).then((d) => setPhases(d.phases ?? [])).catch(() => {});
+    const p2 = fetch(cfg.progs).then((r) => r.json()).then((d) => setProgrammes(d.session_programmes ?? [])).catch(() => {});
     Promise.all([p1, p2]).finally(() => setLoading(false));
-  }, []);
+  }, [sport]);
 
   const categories = ["all", ...Array.from(new Set(programmes.map((p) => p.category))).sort()];
   const filteredProgs = catFilter === "all" ? programmes : programmes.filter((p) => p.category === catFilter);
@@ -311,8 +322,25 @@ export default function TrainingPlansPage() {
             </div>
           </div>
 
+          {/* Sport selector */}
+          <div className="mt-4 flex gap-2">
+            {SPORT_OPTIONS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => { setSport(s.key); setCatFilter("all"); setTab("phases"); }}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                  sport === s.key
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+                }`}
+              >
+                <span>{s.emoji}</span> {s.label}
+              </button>
+            ))}
+          </div>
+
           {/* Tabs */}
-          <div className="mt-4 flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1 w-fit">
+          <div className="mt-3 flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1 w-fit">
             {(["phases", "programmes"] as const).map((t) => (
               <button
                 key={t}
@@ -335,7 +363,7 @@ export default function TrainingPlansPage() {
           ) : tab === "phases" ? (
             <>
               <p className="text-sm text-muted-foreground">
-                Zimbabwe Grassroots Football Development Framework — 4 phases from U10 to professional.
+                Zimbabwe Grassroots {SPORT_OPTIONS.find((s) => s.key === sport)?.label} Development Framework — player development phases from junior to elite.
               </p>
               {phases.map((phase) => <PhaseCard key={phase.id} phase={phase} />)}
             </>

@@ -1,0 +1,153 @@
+{
+  "phases": [
+    {
+      "id": "foundation",
+      "name": "foundation",
+      "label": "Foundation Phase",
+      "age_range": "U10 – U12",
+      "color": "#16a34a",
+      "focus": "Basic movement, ball familiarisation, footwork fundamentals",
+      "description": "Players at this stage are developing fundamental movement skills and learning the basics of netball. Emphasis is on enjoyment, inclusion, and correct footwork before any tactical concepts are introduced.",
+      "training_guidelines": {
+        "sessions_per_week": 2,
+        "session_duration_minutes": 45,
+        "session_structure": [
+          { "component": "Warm-up & Movement Games",    "duration_minutes": 8 },
+          { "component": "Ball Familiarisation Drills", "duration_minutes": 12 },
+          { "component": "Footwork Stations",           "duration_minutes": 12 },
+          { "component": "Modified Game (4v4)",         "duration_minutes": 10 },
+          { "component": "Cool-down & Review",          "duration_minutes": 3 }
+        ],
+        "ratio": "1 coach per 8 players",
+        "field_size": "Half court",
+        "ball_size": "4"
+      },
+      "physical_milestones": [
+        "Can land on two feet correctly after receiving",
+        "Can pivot without stepping",
+        "Can perform a chest pass with correct hand position",
+        "Can dodge and lead to receive",
+        "Comfortable running and changing direction"
+      ],
+      "technical_milestones": [
+        "Knows the footwork rule and applies it consistently",
+        "Can throw a chest pass to a stationary partner",
+        "Understands that you cannot run with the ball",
+        "Can identify the goal circle",
+        "Knows basic court boundaries"
+      ]
+    },
+    {
+      "id": "development",
+      "name": "development",
+      "label": "Development Phase",
+      "age_range": "U13 – U15",
+      "color": "#d97706",
+      "focus": "Position roles, 0.9m rule, basic attacking combinations",
+      "description": "Players begin learning their specific positions and the rules governing those zones. Attacking and defensive combinations are introduced. Centre pass patterns are drilled repeatedly as the most important restart in the game.",
+      "training_guidelines": {
+        "sessions_per_week": 3,
+        "session_duration_minutes": 60,
+        "session_structure": [
+          { "component": "Warm-up & Dynamic Stretching", "duration_minutes": 8 },
+          { "component": "Position-Specific Skill Work",  "duration_minutes": 15 },
+          { "component": "Combination Drills (2v1, 3v2)", "duration_minutes": 15 },
+          { "component": "Centre Pass Rehearsal",         "duration_minutes": 10 },
+          { "component": "Conditioned Game (7v7)",        "duration_minutes": 10 },
+          { "component": "Cool-down & Debrief",           "duration_minutes": 2 }
+        ],
+        "ratio": "1 coach per 10 players",
+        "field_size": "Full court",
+        "ball_size": "5"
+      },
+      "physical_milestones": [
+        "Consistent 0.9m discipline under match pressure",
+        "Can maintain defensive stance for a full quarter",
+        "Explosive first step from standing position",
+        "Can change direction at speed without losing balance",
+        "Adequate aerobic base for 4 x 10-minute quarters"
+      ],
+      "technical_milestones": [
+        "Understands their position zone and off-side rule",
+        "Can execute a centre pass pattern in role",
+        "Delivers the ball accurately within 3 seconds",
+        "Can intercept a telegraphed pass",
+        "GS/GA can shoot from inside the goal circle under light pressure"
+      ]
+    },
+    {
+      "id": "performance",
+      "name": "performance",
+      "label": "Performance Phase",
+      "age_range": "U16 – U18",
+      "color": "#7c3aed",
+      "focus": "Tactical awareness, intercept patterns, shooting under load",
+      "description": "Players at this level are competing at district and provincial level. Training shifts to game-based scenarios. Defenders focus on reading the ball; shooters focus on composure under contested defence. Centre court players drill timing and width.",
+      "training_guidelines": {
+        "sessions_per_week": 4,
+        "session_duration_minutes": 75,
+        "session_structure": [
+          { "component": "Activation & Movement Prep",       "duration_minutes": 10 },
+          { "component": "Role-Specific Technical Session",   "duration_minutes": 20 },
+          { "component": "Tactical Game Scenarios",           "duration_minutes": 20 },
+          { "component": "Full Game or Intense Conditioned Game", "duration_minutes": 20 },
+          { "component": "Individual Feedback & Cool-down",  "duration_minutes": 5 }
+        ],
+        "ratio": "1 coach per 12 players",
+        "field_size": "Full court",
+        "ball_size": "5"
+      },
+      "physical_milestones": [
+        "Can sustain high-intensity play for a full game",
+        "Reaction time under 0.3s on intercept attempts",
+        "Shooters maintain 70%+ accuracy under contested defence",
+        "Full vertical leap reach for goal-circle contests",
+        "No footwork infringements under match pressure"
+      ],
+      "technical_milestones": [
+        "Reads centre pass options and selects first receiver correctly",
+        "Can execute 3 or more set attacking combinations",
+        "Defenders can apply 0.9m pressure and time movement",
+        "GS can hold position against physical GK/GD",
+        "Centre distributes evenly to both wings and back"
+      ]
+    },
+    {
+      "id": "elite",
+      "name": "elite",
+      "label": "Elite Pathway",
+      "age_range": "U19 – Senior",
+      "color": "#b91c1c",
+      "focus": "Provincial and national selection — consistent high performance",
+      "description": "Players in the elite pathway are being monitored by provincial and national selectors. Training includes video analysis, individual AI feedback on stats, and position-specific high-intensity conditioning. ZINA pathway targets are tracked per session.",
+      "training_guidelines": {
+        "sessions_per_week": 5,
+        "session_duration_minutes": 90,
+        "session_structure": [
+          { "component": "Strength & Conditioning",           "duration_minutes": 20 },
+          { "component": "Technical Position Work",           "duration_minutes": 20 },
+          { "component": "Video Review & Tactical Prep",      "duration_minutes": 15 },
+          { "component": "Full Game (Match Intensity)",       "duration_minutes": 30 },
+          { "component": "Recovery & Individual Debrief",     "duration_minutes": 5 }
+        ],
+        "ratio": "1 coach per 7 players",
+        "field_size": "Full court",
+        "ball_size": "5"
+      },
+      "physical_milestones": [
+        "Elite vertical reach — above national average for position",
+        "Sub-5.5s 40m sprint from standing start",
+        "Can play at full intensity for 4 x 15-minute quarters",
+        "No significant injury in the past 12 months",
+        "Strength benchmarks met for their position group"
+      ],
+      "technical_milestones": [
+        "Consistent selection in provincial training squad",
+        "AI performance score above 75/100 on Grassroots platform",
+        "Can lead a centre pass combination from any position",
+        "Match stats logged and trending upward over 3-month block",
+        "Shortlisted on ZINA national talent database"
+      ]
+    }
+  ]
+}

@@ -150,12 +150,19 @@ export const ANALYSIS_TYPES = [
 export type AnalysisType = typeof ANALYSIS_TYPES[number]["value"];
 
 // Sport-specific video/session analysis system prompt
-// Used by: /video-studio
-export function getSportAnalysisPrompt(sport: SportKey, context: string): string {
+// Used by: /video-studio, /scout/reports, /player/sports/[sport]
+export function getSportAnalysisPrompt(sport: SportKey, context: string, role?: string): string {
+  // Netball is role-specific — different focus per position group
+  const netballFocus: Record<string, string> = {
+    shooter:  "shooting technique under pressure, goal accuracy, circle entry movement, GS/GA positioning and holding, rebounding",
+    midcourt: "centre pass patterns, court width creation, timing of feeds into the circle, 0.9m defensive discipline, WA/C/WD decision-making",
+    defender: "intercept timing, shot-reading, GK/GD communication, defensive rebounding, restricting GA and GS movement",
+  };
+
   const focusMap: Record<SportKey, string> = {
     football:   "pressing triggers, defensive shape, transition moments, set pieces, individual technique",
     rugby:      "tackle technique, line speed, set piece execution, support lines, ruck body position",
-    netball:    "court movement, circle feeding, defensive footwork, centre pass patterns",
+    netball:    role && netballFocus[role] ? netballFocus[role] : "court movement, circle feeding, defensive footwork, centre pass patterns",
     basketball: "spacing, pick-and-roll execution, transition defence, shot selection, help defence",
     cricket:    "batting stance and weight transfer, bowling action, field placement, footwork",
     athletics:  "stride mechanics, arm drive, acceleration phase, body position at finish",

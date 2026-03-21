@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Brain, Save, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
-import { SPORT_MAP, SPORT_STATS, SportKey } from "@/config/sports";
+import { SPORT_MAP, SPORT_STATS, getSportAnalysisPrompt, SportKey } from "@/config/sports";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
@@ -113,12 +113,13 @@ export default function SportStatsPage() {
       .map(([k, v]) => `${k}: ${v}`)
       .join(", ");
 
+    const systemPrompt = getSportAnalysisPrompt(sportKey, statSummary || "No stats provided.", roleKey);
     const message = [
-      statSummary ? `Performance stats: ${statSummary}.` : "No stats provided yet.",
+      systemPrompt,
       context ? `Additional context: ${context}` : "",
     ]
       .filter(Boolean)
-      .join(" ");
+      .join("\n\n");
 
     try {
       const reply = await queryAI(message, "player");
@@ -131,6 +132,77 @@ export default function SportStatsPage() {
   if (!cfg) return null;
 
   const fields = sportRoles[roleKey] ?? [];
+
+  // Netball court diagram — highlights zones for each role
+  const NETBALL_ZONES: Record<string, { thirds: ("defending" | "centre" | "attacking")[]; label: string }> = {
+    shooter:  { thirds: ["attacking"],            label: "Attacking third — GS/GA" },
+    midcourt: { thirds: ["centre"],               label: "Centre third — WA/C/WD" },
+    defender: { thirds: ["defending"],            label: "Defending third — GD/GK" },
+  };
+  const courtZone = NETBALL_ZONES[roleKey];
+
+  function NetballCourt() {
+    const thirds = ["defending", "centre", "attacking"] as const;
+    const thirdColors: Record<string, string> = {
+      defending: "#1E6B3C",
+      centre:    "#D4900A",
+      attacking: "#B5261E",
+    };
+    const active = courtZone?.thirds ?? [];
+    return (
+      <div className="rounded-xl border bg-card p-5">
+        <p className="mb-3 text-sm font-semibold">Court Position Zones</p>
+        <svg viewBox="0 0 240 140" className="w-full max-w-xs mx-auto" style={{ borderRadius: 8, border: "1px solid #ffffff18" }}>
+          {/* Court outline */}
+          <rect x="0" y="0" width="240" height="140" rx="4" fill="#0a150c" />
+          {/* Three thirds */}
+          {thirds.map((t, i) => {
+            const x = i * 80;
+            const isActive = active.includes(t);
+            return (
+              <g key={t}>
+                <rect x={x} y="0" width="80" height="140"
+                  fill={isActive ? `${thirdColors[t]}44` : "#ffffff06"}
+                  stroke={isActive ? thirdColors[t] : "#ffffff15"}
+                  strokeWidth={isActive ? 1.5 : 0.5}
+                />
+                {/* Goal circles */}
+                {i === 0 && <ellipse cx="40" cy="70" rx="22" ry="22" fill="none" stroke={isActive ? thirdColors[t] : "#ffffff20"} strokeWidth="1" />}
+                {i === 2 && <ellipse cx="200" cy="70" rx="22" ry="22" fill="none" stroke={isActive ? thirdColors[t] : "#ffffff20"} strokeWidth="1" />}
+                {/* Centre circle */}
+                {i === 1 && <circle cx="120" cy="70" r="14" fill="none" stroke={isActive ? thirdColors[t] : "#ffffff20"} strokeWidth="1" />}
+                {/* Labels */}
+                <text x={x + 40} y="70" textAnchor="middle" dominantBaseline="middle"
+                  fill={isActive ? "#fff" : "#ffffff40"} fontSize="9" fontWeight={isActive ? "bold" : "normal"}>
+                  {t === "defending" ? "DEF" : t === "centre" ? "MID" : "ATK"}
+                </text>
+                {/* Position abbreviations */}
+                {t === "defending" && <>
+                  <text x="20" y="30" textAnchor="middle" fill={isActive ? "#7fffb0" : "#ffffff25"} fontSize="7">GK</text>
+                  <text x="60" y="50" textAnchor="middle" fill={isActive ? "#7fffb0" : "#ffffff25"} fontSize="7">GD</text>
+                </>}
+                {t === "centre" && <>
+                  <text x="100" y="40" textAnchor="middle" fill={isActive ? "#ffd966" : "#ffffff25"} fontSize="7">WD</text>
+                  <text x="120" y="25" textAnchor="middle" fill={isActive ? "#ffd966" : "#ffffff25"} fontSize="7">C</text>
+                  <text x="140" y="40" textAnchor="middle" fill={isActive ? "#ffd966" : "#ffffff25"} fontSize="7">WA</text>
+                </>}
+                {t === "attacking" && <>
+                  <text x="180" y="50" textAnchor="middle" fill={isActive ? "#ffaaaa" : "#ffffff25"} fontSize="7">GA</text>
+                  <text x="220" y="30" textAnchor="middle" fill={isActive ? "#ffaaaa" : "#ffffff25"} fontSize="7">GS</text>
+                </>}
+              </g>
+            );
+          })}
+          {/* Dividing lines */}
+          <line x1="80" y1="0" x2="80" y2="140" stroke="#ffffff20" strokeWidth="0.5" />
+          <line x1="160" y1="0" x2="160" y2="140" stroke="#ffffff20" strokeWidth="0.5" />
+        </svg>
+        {courtZone && (
+          <p className="mt-2 text-center text-xs text-muted-foreground">{courtZone.label}</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background">
@@ -148,6 +220,8 @@ export default function SportStatsPage() {
               <p className="text-xs text-muted-foreground">{cfg.governingBody} · {cfg.competitions[0]}</p>
             </div>
           </div>
+
+          {sportKey === "netball" && <NetballCourt />}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Stat entry */}
