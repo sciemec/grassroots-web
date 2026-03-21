@@ -68,6 +68,58 @@ Tell the user:
 
 ---
 
+## 📱 AUTH OVERHAUL — PHONE-FIRST PRINCIPLES (PRIORITY)
+
+These rules govern ALL authentication and registration work on this platform.
+Never revert to email/password. Never block access to collect data.
+
+### CORE PRINCIPLE: Never Deny Access
+Always find a way to get the user in. If one method fails, try another.
+The business depends on frictionless onboarding.
+
+### 1. PHONE-FIRST ONLY
+- Email and password are REMOVED from all registration and login forms
+- Auth method: Firebase Phone OTP only
+- Flow: phone number → 6-digit code → you're in
+- Feel: exactly like WhatsApp onboarding
+
+### 2. PROGRESSIVE PROFILING
+- On first login: ask for name and role ONLY (Player/Coach/Scout/Fan)
+- Everything else (province, sport, position, club) collected INSIDE the dashboard
+- Never block dashboard access to collect profile data
+- Profile completion shown as a progress bar, not a gate
+
+### 3. SMART ERROR HANDLING
+- Never show a red blocking error for OTP failures
+- Show friendly bilingual messages:
+  - Sending: "Tirikutuma code... / Sending your code..."
+  - Slow network: "Zviri kutora nguva... / Taking a moment..."
+  - Wrong code: "Code isiriyo. Edza zvakare. / Wrong code. Try again."
+- If Firebase is slow: show spinner, not error
+- Auto-retry OTP send once before showing any message
+
+### 4. OTP FAILURE FALLBACK
+- After 3 failed OTP attempts: offer WhatsApp verification as backup
+- Never leave the user stranded
+
+### 5. REMEMBER ME — FOREVER
+- After first successful login: persist auth token on device indefinitely
+- Never ask a returning user to re-verify on the same device
+- Use Zustand persist + localStorage
+
+### 6. ONE TAP RETURN
+- If user is already authenticated: skip login screen entirely
+- Redirect straight to their dashboard on app load
+- Check auth state before rendering any auth page
+
+### 7. REGISTRATION STEPS (SIMPLIFIED)
+- Step 1: Phone number input → send OTP
+- Step 2: Enter 6-digit code → verified
+- Step 3: Name + Role selection → done
+- Everything else: collected progressively inside dashboard
+
+---
+
 ## 🏗️ PROJECT OVERVIEW
 
 GrassRoots Sports is Zimbabwe's first AI-powered sports management

@@ -28,11 +28,14 @@ export interface AuthUser {
 
 interface AuthState {
   user: AuthUser | null;
+  token: string | null;
   /** Admin-only: which hub is currently being previewed */
   adminHub: UserRole;
   /** True once Zustand has rehydrated from localStorage — prevents premature redirects */
   _hasHydrated: boolean;
   login: (user: AuthUser) => void;
+  /** Set auth from phone OTP flow — token + user stored separately */
+  setAuth: (token: string, user: AuthUser) => void;
   /** Merge profile fields into the stored user (called after /profile fetch) */
   updateUser: (fields: Partial<AuthUser>) => void;
   logout: () => void;
@@ -53,12 +56,18 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       adminHub: "admin",
       _hasHydrated: false,
       login: (user) => {
         setCookie("gs_token", user.token);
         setCookie("gs_role", user.role);
-        set({ user, adminHub: "admin" });
+        set({ user, token: user.token, adminHub: "admin" });
+      },
+      setAuth: (token, user) => {
+        setCookie("gs_token", token, 3650); // 10 years — remember forever
+        setCookie("gs_role", user.role, 3650);
+        set({ user, token, adminHub: "admin" });
       },
       updateUser: (fields) =>
         set((state) => ({
@@ -67,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         clearCookie("gs_token");
         clearCookie("gs_role");
-        set({ user: null, adminHub: "admin" });
+        set({ user: null, token: null, adminHub: "admin" });
       },
       setAdminHub: (hub) => set({ adminHub: hub }),
       setHasHydrated: (val) => set({ _hasHydrated: val }),
