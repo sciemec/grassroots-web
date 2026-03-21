@@ -41,10 +41,12 @@ function LoginForm() {
       const result = await signInWithPhoneNumber(auth, phone.trim(), getVerifier());
       setPendingConfirmation(result);
       router.push(`/verify-phone?phone=${encodeURIComponent(phone.trim())}&mode=login`);
-    } catch {
+    } catch (e: unknown) {
       resetVerifier();
       setStatus("");
-      setError("Zvatadza. Edza zvakare. / Could not send code. Please try again.");
+      const code = (e as { code?: string })?.code ?? "unknown";
+      console.error("[Firebase OTP]", code, e);
+      setError(`Could not send code (${code}). Please try again.`);
       setLoading(false);
     }
   };
