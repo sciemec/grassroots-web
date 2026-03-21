@@ -9,9 +9,10 @@ interface QRProfileCardProps {
   playerName: string;
   ageGroup?: string;
   province?: string;
+  selfieUrl?: string;
 }
 
-export function QRProfileCard({ playerId, playerName, ageGroup, province }: QRProfileCardProps) {
+export function QRProfileCard({ playerId, playerName, ageGroup, province, selfieUrl }: QRProfileCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -63,10 +64,16 @@ export function QRProfileCard({ playerId, playerName, ageGroup, province }: QRPr
 
         {/* Info */}
         <div className="flex-1 space-y-3">
-          <div>
-            <p className="font-bold text-white text-lg leading-tight">{playerName}</p>
-            {ageGroup && <p className="text-sm text-muted-foreground capitalize">{ageGroup.replace("u", "U")} · {province ?? "Zimbabwe"}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">Scan to view full profile & TalentID score</p>
+          <div className="flex items-center gap-3">
+            {selfieUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={selfieUrl} alt={playerName} className="h-12 w-12 rounded-full object-cover border-2 border-primary/40 flex-shrink-0" />
+            ) : null}
+            <div>
+              <p className="font-bold text-white text-lg leading-tight">{playerName}</p>
+              {ageGroup && <p className="text-sm text-muted-foreground capitalize">{ageGroup.replace("u", "U")} · {province ?? "Zimbabwe"}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">Scan to view full profile & TalentID score</p>
+            </div>
           </div>
 
           <div className="flex gap-2">
