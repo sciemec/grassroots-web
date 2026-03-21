@@ -99,6 +99,7 @@ function rolePath(role: UserRole): string {
     case "player":   return "/player";
     case "fan":      return "/fan";
     case "analyst":  return "/analyst";
+    default:         return "/dashboard";
   }
 }
 
