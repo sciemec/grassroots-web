@@ -245,7 +245,7 @@ export default function PlayerVerificationPage() {
                 Submitted {new Date(verif.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })} · Expected review: 1–2 business days
               </p>
             )}
-            {verif?.ai_confidence_score !== null && status === "approved" && (
+            {verif != null && verif.ai_confidence_score !== null && status === "approved" && (
               <p className="mt-2 text-xs text-green-700 font-medium">
                 Identity match: {Math.round((verif.ai_confidence_score ?? 0) * 100)}%
               </p>
