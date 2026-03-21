@@ -2,6 +2,8 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["firebase"],
+
   webpack: (config) => {
     // Disable symlink resolution to avoid Windows readlink EISDIR issues
     config.resolve.symlinks = false;
