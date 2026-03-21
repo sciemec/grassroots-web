@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2 } from "lucide-react";
@@ -27,55 +27,76 @@ const PROVINCES = [
 ];
 
 const AGE_GROUPS = ["u13", "u17", "u20", "senior"];
-
 const PREFERRED_FEET = ["right", "left", "both"];
 
 const schema = z.object({
-  sport: z.string().optional(),
-  position: z.string().min(1, "Position required"),
-  province: z.string().min(1, "Province required"),
-  age_group: z.string().min(1, "Age group required"),
+  sport:          z.string().optional(),
+  position:       z.string().min(1, "Position required"),
+  province:       z.string().min(1, "Province required"),
+  age_group:      z.string().min(1, "Age group required"),
   preferred_foot: z.string().optional(),
-  height_cm: z.string().optional(),
-  weight_kg: z.string().optional(),
-  bio: z.string().max(500).optional(),
+  height_cm:      z.string().optional(),
+  weight_kg:      z.string().optional(),
+  club:           z.string().optional(),
+  school:         z.string().optional(),
+  bio:            z.string().max(500).optional(),
 });
 type FormData = z.infer<typeof schema>;
 
 interface Profile extends FormData {
-  scout_visible: boolean;
+  scout_visible:       boolean;
   verification_status: string;
+  photo_url:           string | null;
+}
+
+function calcCompletion(profile: Profile | null, data: Partial<FormData>): { count: number; total: number; pct: number } {
+  const fields = [
+    data.sport, data.position, data.province, data.age_group,
+    data.preferred_foot, data.height_cm, data.weight_kg,
+    data.club || data.school, data.bio,
+  ];
+  const total = fields.length;
+  const count = fields.filter(Boolean).length;
+  return { count, total, pct: Math.round((count / total) * 100) };
 }
 
 export default function PlayerProfilePage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const [profile, setProfile]           = useState<Profile | null>(null);
+  const [loading, setLoading]           = useState(true);
+  const [saved, setSaved]               = useState(false);
+  const [error, setError]               = useState("");
   const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [selectedSport, setSelectedSport] = useState<SportKey>("football");
+  const [photoUrl, setPhotoUrl]         = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  const watchedValues = watch();
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
     api.get("/profile")
       .then((res) => {
         setProfile(res.data);
+        setPhotoUrl(res.data.photo_url ?? null);
         if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
         reset({
-          sport: res.data.sport ?? "football",
-          position: res.data.position ?? "",
-          province: res.data.province ?? "",
-          age_group: res.data.age_group ?? "",
+          sport:          res.data.sport          ?? "football",
+          position:       res.data.position       ?? "",
+          province:       res.data.province       ?? "",
+          age_group:      res.data.age_group      ?? "",
           preferred_foot: res.data.preferred_foot ?? "",
-          height_cm: res.data.height_cm ?? "",
-          weight_kg: res.data.weight_kg ?? "",
-          bio: res.data.bio ?? "",
+          height_cm:      res.data.height_cm      ?? "",
+          weight_kg:      res.data.weight_kg      ?? "",
+          club:           res.data.club           ?? "",
+          school:         res.data.school         ?? "",
+          bio:            res.data.bio            ?? "",
         });
       })
       .catch(() => {})
@@ -109,6 +130,31 @@ export default function PlayerProfilePage() {
     }
   };
 
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Photo must be under 5MB.");
+      return;
+    }
+    setUploadingPhoto(true);
+    const preview = URL.createObjectURL(file);
+    setPhotoUrl(preview);
+    const formData = new FormData();
+    formData.append("photo", file);
+    try {
+      const res = await api.post("/profile/photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setPhotoUrl(res.data.photo_url ?? preview);
+    } catch {
+      setError("Photo upload failed. Please try again.");
+      setPhotoUrl(null);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   if (!user || loading) {
     return (
       <div className="flex h-screen bg-background">
@@ -123,15 +169,14 @@ export default function PlayerProfilePage() {
                 <div className="h-4 w-48 animate-pulse rounded-lg bg-muted" />
               </div>
             </div>
+            <div className="h-4 animate-pulse rounded-full bg-muted" />
             <div className="h-16 animate-pulse rounded-xl bg-muted" />
             <div className="grid grid-cols-2 gap-4">
               <div className="h-12 animate-pulse rounded-lg bg-muted" />
               <div className="h-12 animate-pulse rounded-lg bg-muted" />
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="h-12 animate-pulse rounded-lg bg-muted" />
-              <div className="h-12 animate-pulse rounded-lg bg-muted" />
-              <div className="h-12 animate-pulse rounded-lg bg-muted" />
+            <div className="grid grid-cols-4 gap-4">
+              {[1,2,3,4].map(i => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}
             </div>
             <div className="h-28 animate-pulse rounded-xl bg-muted" />
             <div className="h-11 animate-pulse rounded-xl bg-muted" />
@@ -141,11 +186,14 @@ export default function PlayerProfilePage() {
     );
   }
 
+  const { count, total, pct } = calcCompletion(profile, watchedValues);
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-2xl">
+
           {/* Header */}
           <div className="mb-8 flex items-center gap-3">
             <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
@@ -158,14 +206,39 @@ export default function PlayerProfilePage() {
           </div>
 
           {/* Avatar + verification badge */}
-          <div className="mb-8 flex items-center gap-5">
+          <div className="mb-6 flex items-center gap-5">
             <div className="relative">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                <User className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <button className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                <Camera className="h-3.5 w-3.5" />
+              {photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoUrl}
+                  alt={user.name}
+                  className="h-20 w-20 rounded-full object-cover border-2 border-primary/30"
+                />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+                  <User className="h-10 w-10 text-muted-foreground" />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors"
+                title="Upload profile photo"
+              >
+                {uploadingPhoto
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  : <Camera className="h-3.5 w-3.5" />
+                }
               </button>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoSelect}
+                className="sr-only"
+              />
             </div>
             <div>
               <p className="text-lg font-bold">{user.name}</p>
@@ -180,11 +253,35 @@ export default function PlayerProfilePage() {
                     href="/player/verification"
                     className="rounded-full border border-yellow-500/40 bg-yellow-500/10 px-2.5 py-1 text-xs font-medium text-yellow-700 hover:bg-yellow-500/20 transition-colors"
                   >
-                    Pending verification →
+                    Get verified →
                   </Link>
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Profile completion progress bar */}
+          <div className="mb-8 rounded-xl border bg-card p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-medium">Profile completion</p>
+              <p className="text-sm font-bold text-primary">{count}/{total} fields · {pct}%</p>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            {pct < 100 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Complete your profile to improve your chances of being discovered by scouts.
+              </p>
+            )}
+            {pct === 100 && (
+              <p className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Profile complete — scouts can see everything about you!
+              </p>
+            )}
           </div>
 
           {/* Scout visibility toggle */}
@@ -207,18 +304,15 @@ export default function PlayerProfilePage() {
             <button
               onClick={toggleVisibility}
               disabled={togglingVisibility}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
-                profile?.scout_visible ? "bg-green-500" : "bg-muted"
-              }`}
+              className={`relative h-6 w-11 rounded-full transition-colors ${profile?.scout_visible ? "bg-green-500" : "bg-muted"}`}
             >
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                profile?.scout_visible ? "translate-x-6" : "translate-x-1"
-              }`} />
+              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${profile?.scout_visible ? "translate-x-6" : "translate-x-1"}`} />
             </button>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
             {/* Primary sport */}
             <div>
               <label className="mb-2 block text-sm font-medium">Primary sport</label>
@@ -226,13 +320,13 @@ export default function PlayerProfilePage() {
                 value={selectedSport}
                 onChange={(v) => {
                   setSelectedSport(v as SportKey);
-                  // Reset position when sport changes
                   reset((prev) => ({ ...prev, sport: v as string, position: "" }));
                 }}
                 size="sm"
               />
             </div>
 
+            {/* Position + Province */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Position</label>
@@ -260,7 +354,8 @@ export default function PlayerProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            {/* Age Group + Preferred Foot + Height + Weight */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Age Group</label>
                 <select
@@ -290,8 +385,44 @@ export default function PlayerProfilePage() {
                   className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Weight (kg)</label>
+                <input
+                  {...register("weight_kg")}
+                  type="number"
+                  placeholder="70"
+                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
             </div>
 
+            {/* Club + School */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Club <span className="font-normal text-muted-foreground">(optional)</span>
+                </label>
+                <input
+                  {...register("club")}
+                  type="text"
+                  placeholder="e.g. Dynamos FC"
+                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  School <span className="font-normal text-muted-foreground">(optional)</span>
+                </label>
+                <input
+                  {...register("school")}
+                  type="text"
+                  placeholder="e.g. Prince Edward High"
+                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                />
+              </div>
+            </div>
+
+            {/* Bio */}
             <div>
               <label className="mb-1.5 block text-sm font-medium">
                 Bio <span className="font-normal text-muted-foreground">(optional, max 500 chars)</span>
@@ -331,12 +462,13 @@ export default function PlayerProfilePage() {
           </form>
 
           {/* QR Profile Card */}
-          <div className="mt-6">
+          <div className="mt-6 mb-8">
             <QRProfileCard
-              playerId={user.id}
+              playerId={String(user.id)}
               playerName={user.name}
-              ageGroup={user.age_group}
-              province={user.province}
+              ageGroup={profile?.age_group ?? user.age_group}
+              province={profile?.province ?? user.province}
+              selfieUrl={photoUrl ?? undefined}
             />
           </div>
         </div>
