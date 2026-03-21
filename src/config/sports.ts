@@ -114,7 +114,9 @@ export const SPORT_STATS: Record<string, Record<string, string[]>> = {
     field: ["eventType", "personalBest", "seasonBest", "attempts", "fouls"],
   },
   netball: {
-    all: ["goals", "attempts", "goalAccuracy", "intercepts", "contacts", "centerPassReceives", "rebounds"],
+    shooter:  ["goals", "attempts", "goalAccuracy", "centerPassReceives", "rebounds", "minutesPlayed"],
+    midcourt: ["centerPassReceives", "intercepts", "contacts", "feeds", "minutesPlayed"],
+    defender: ["intercepts", "contacts", "rebounds", "deflections", "obstructions", "minutesPlayed"],
   },
   basketball: {
     all: ["points", "rebounds", "assists", "steals", "blocks", "turnovers", "fieldGoalPct", "threePointPct", "ftPct"],
