@@ -1486,6 +1486,11 @@ These frontend pages ARE built but the backend/external service is incomplete:
 
 | Feature | Frontend | What's Missing |
 |---|---|---|
+| Fan Hub — Follow System | Done ✅ | Backend DONE (March 2026) — fan_follows table, FanController |
+| Fan Hub — Discover | Done ✅ | Backend DONE — GET /players/discover with province/sport/age_group filters |
+| Fan Hub — Leaderboard | Done ✅ | Backend DONE — GET /scout/players now open to fans (role:scout,fan) |
+| Fan Hub — Provinces | Done ✅ | Backend DONE — GET /stats/provinces counts players per province |
+| Fan Hub — Fixtures | Done (fallback) | GET /matches/upcoming stub returns [] — frontend uses hardcoded PSL fixtures |
 | Push Notifications | Done | Backend needs to store notifications in DB and trigger on events |
 | Payment / Subscriptions | UI exists | PayFast/Stripe integration not wired |
 | Email delivery | UI exists | Laravel mail config (SMTP/Mailgun) not set up |
@@ -1514,11 +1519,11 @@ DAILY_API_KEY       = set in .env.local AND Vercel (live streaming)
 
 ### LAST 5 COMMITS (as of March 2026)
 ```
+42ea2a2  feat: fan hub backend — follow system, discover, leaderboard, provinces (bhora-ai repo)
 67f9d45  feat: split netball stats into position-specific roles (shooter/midcourt/defender)
 774756f  feat: browser push notifications via Web Notification API
 4b53f48  feat: auth hydration guard — add layout.tsx for streaming/video-studio/welcome/sessions/video-analysis
 [prior]  feat: player/coach/scout/fan layout.tsx auth guards + _hasHydrated in auth-store
-[prior]  feat: multi-sport live match — sport selector, SPORT_FORMATIONS, halftime prompt
 ```
 
 ### KNOWN ISSUES (do not waste time re-investigating these)
@@ -1598,6 +1603,50 @@ Ready to apply this fix — shall I proceed?
 ```
 
 Never skip straight to code. Nigel must understand the problem before it is fixed.
+
+---
+
+## 🎉 FAN HUB BACKEND — bhora-ai (Laravel)
+
+### Status: COMPLETE (March 2026)
+
+All fan hub API endpoints are live on the Laravel backend.
+
+### Files created (bhora-ai repo):
+- `database/migrations/2026_03_21_000003_create_fan_follows_table.php`
+- `app/Models/FanFollow.php`
+- `app/Http/Controllers/Api/Fan/FanController.php`
+- `app/Models/User.php` — added `playerSports()` and `fanFollows()` HasMany relationships
+- `routes/api.php` — new fan routes + opened `/scout/players` to fans
+
+### Endpoints:
+
+| Method | Route | Controller method | Notes |
+|---|---|---|---|
+| GET | `/api/v1/players/discover` | `FanController::discover` | Filters: province, sport, age_group. Returns initials (privacy-safe) |
+| POST | `/api/v1/fan/follow/{playerId}` | `FanController::follow` | Idempotent — safe to call twice |
+| DELETE | `/api/v1/fan/follow/{playerId}` | `FanController::unfollow` | By player_id string e.g. HRE-2025-00471 |
+| GET | `/api/v1/fan/following` | `FanController::following` | Returns sessions_count + overall_score |
+| GET | `/api/v1/stats/provinces` | `FanController::provinces` | Player count per province, sorted desc |
+| GET | `/api/v1/matches/upcoming` | `FanController::upcomingMatches` | Stub — returns [] (frontend uses hardcoded PSL fallback) |
+| GET | `/api/v1/scout/players` | `ScoutPlayerController::index` | NOW open to role:scout,fan (was scout only) |
+
+### Auth rules:
+- Fan routes: `role:fan,admin` middleware
+- `/scout/players`: `role:scout,fan` middleware (was `role:scout` only)
+
+### Privacy:
+- Player names never exposed — FanController generates initials (e.g. "T.M.") from first_name + surname
+- `talent_score` = rounded `avg_form_score` from PlayerStat
+
+### fan_follows table schema:
+```sql
+id              UUID  PK
+fan_user_id     UUID  FK → users (cascade delete)
+player_user_id  UUID  FK → users (cascade delete)
+UNIQUE(fan_user_id, player_user_id)
+created_at, updated_at
+```
 
 ---
 
