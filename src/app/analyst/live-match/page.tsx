@@ -360,7 +360,7 @@ function XgScoreboard({
 // Main page
 // ---------------------------------------------------------------------------
 export default function AnalystLiveMatchPage() {
-  const { user } = useAuthStore();
+  useAuthStore();
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [setup, setSetup] = useState<MatchSetup>({
