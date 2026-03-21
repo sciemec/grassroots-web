@@ -80,9 +80,20 @@ export default function PlayerVerificationPage() {
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    if (f.size > 5 * 1024 * 1024) {
+      setSubmitError("File is too large. Maximum size is 5MB. Please use a smaller image.");
+      return;
+    }
+    setSubmitError("");
     setFile(f);
     const url = URL.createObjectURL(f);
     setPreview(url);
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setPreview(null);
+    setSubmitError("");
   };
 
   const submit = async () => {
@@ -156,6 +167,16 @@ export default function PlayerVerificationPage() {
                 <span className="font-medium">Admin note:</span> {verif.admin_notes}
               </div>
             )}
+            {verif?.created_at && status === "pending" && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Submitted {new Date(verif.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })} · Expected review: 1–2 business days
+              </p>
+            )}
+            {verif?.ai_confidence_score !== null && status === "approved" && (
+              <p className="mt-2 text-xs text-green-700 font-medium">
+                Identity match: {Math.round((verif.ai_confidence_score ?? 0) * 100)}%
+              </p>
+            )}
             {verif?.reviewed_at && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Reviewed {new Date(verif.reviewed_at).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}
@@ -215,8 +236,11 @@ export default function PlayerVerificationPage() {
                     className="sr-only"
                   />
                   {preview ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={preview} alt="Document preview" className="max-h-48 rounded-lg object-contain" />
+                    <div className="flex flex-col items-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={preview} alt="Document preview" className="max-h-48 rounded-lg object-contain" />
+                      <span className="text-xs text-primary font-medium">Tap to change photo</span>
+                    </div>
                   ) : (
                     <>
                       <Upload className="h-8 w-8 text-muted-foreground" />
@@ -228,7 +252,16 @@ export default function PlayerVerificationPage() {
                   )}
                 </label>
                 {file && (
-                  <p className="mt-2 text-xs text-muted-foreground">{file.name}</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground truncate">{file.name}</p>
+                    <button
+                      type="button"
+                      onClick={clearFile}
+                      className="ml-2 flex-shrink-0 text-xs text-destructive hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 )}
               </div>
 
