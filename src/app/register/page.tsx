@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, ChevronLeft } from "lucide-react";
@@ -63,7 +63,7 @@ const SPORT_FOCUS: Record<string, string> = {
   hockey:     "Video analysis · Game stats · Coaching insights",
 };
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselected = searchParams.get("sport") as SportKey | null;
@@ -197,5 +197,13 @@ export default function RegisterPage() {
         })()}
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterContent />
+    </Suspense>
   );
 }
