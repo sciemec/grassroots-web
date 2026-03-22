@@ -61,7 +61,7 @@ export default function PlayerStatsPage() {
   // Quick summary stats
   const totalMatches   = entries.filter((e) => e.match_type === "match").length;
   const wins           = entries.filter((e) => e.result === "Win").length;
-  const uniqueSports   = [...new Set(entries.map((e) => e.sport))].length;
+  const uniqueSports   = Array.from(new Set(entries.map((e) => e.sport))).length;
 
   return (
     <div className="flex h-screen bg-background">
@@ -114,7 +114,7 @@ export default function PlayerStatsPage() {
               >
                 All sports
               </button>
-              {[...new Set(entries.map((e) => e.sport))].map((s) => (
+              {Array.from(new Set(entries.map((e) => e.sport))).map((s) => (
                 <button
                   key={s}
                   onClick={() => setSportFilter(s)}
