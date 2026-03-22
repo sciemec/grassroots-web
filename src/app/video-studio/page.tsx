@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Upload, Play, CheckCircle2, Loader2, X, Film,
+  Upload, Play, CheckCircle2, Loader2, X, Film, ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractApiError } from "@/lib/api-error";
 import { SPORTS, ANALYSIS_TYPES, getSportAnalysisPrompt, type SportKey, type AnalysisType } from "@/config/sports";
 import { useFileSystem } from "@/hooks/use-file-system";
@@ -16,6 +17,17 @@ import { PlayerTracker } from "@/components/video/player-tracker";
 import { PoseCamera } from "@/components/video/pose-camera";
 import { ResultsPanel, type AnalysisResult } from "./results-panel";
 import { searchOffline } from "@/lib/offline-ai";
+
+interface SavedAnalysis {
+  id: string;
+  sport: string;
+  analysis_type: string;
+  file_name: string | null;
+  user_question: string | null;
+  ai_feedback: string;
+  frame_count: number;
+  created_at: string;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +117,27 @@ export default function VideoStudioPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [frames, setFrames] = useState<string[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const { data: historyData } = useQuery<{ data: SavedAnalysis[] }>({
+    queryKey: ["video-analyses"],
+    queryFn: () => api.get("/video-analyses").then((r) => r.data),
+    enabled: !!user,
+    retry: false,
+  });
+
+  const saveAnalysis = useMutation({
+    mutationFn: (payload: Partial<SavedAnalysis> & { ai_feedback: string }) =>
+      api.post("/video-analyses", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-analyses"] }),
+  });
+
+  const deleteAnalysis = useMutation({
+    mutationFn: (id: string) => api.delete(`/video-analyses/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-analyses"] }),
+  });
 
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
   useEffect(() => { return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }; }, [previewUrl]);
@@ -155,14 +188,37 @@ export default function VideoStudioPage() {
       const context = `Video: "${sanitize(file.name)}" (${formatBytes(file.size)}). ${frameUrls.length} frames extracted. Analysis: ${analysisType}. ${question.trim() ? `Question: ${sanitize(question.trim())}` : ""}`;
       const prompt = getSportAnalysisPrompt(sport, context);
 
-      // Step 1 — Laravel backend
+      // Step 1 — Claude Vision (sends actual video frames — best quality)
       let raw = "";
       try {
-        const res = await api.post("/ask", { question: prompt, role: user?.role ?? "player", language: "english" });
-        raw = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+        // Strip data URL prefix so we send raw base64 to Claude Vision
+        const base64Frames = frameUrls.map((url) =>
+          url.replace(/^data:image\/[a-z]+;base64,/, "")
+        );
+        const res = await fetch("/api/video-analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            frames: base64Frames,
+            context: prompt,
+            system_prompt: `You are a professional sports analyst for Grassroots Sport, Zimbabwe's AI sports platform. Analyse the video frames provided and give specific, actionable feedback tailored to grassroots athletes in Zimbabwe.`,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json() as { analysis?: string };
+          raw = data.analysis ?? "";
+        }
       } catch { /* fall through */ }
 
-      // Step 2 — Claude proxy
+      // Step 2 — Laravel backend (text-only fallback)
+      if (!raw) {
+        try {
+          const res = await api.post("/ask", { question: prompt, role: user?.role ?? "player", language: "english" });
+          raw = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+        } catch { /* fall through */ }
+      }
+
+      // Step 3 — Claude proxy (text-only fallback)
       if (!raw) {
         try {
           const res = await fetch("/api/ai-coach", {
@@ -171,13 +227,13 @@ export default function VideoStudioPage() {
             body: JSON.stringify({ message: prompt }),
           });
           if (res.ok) {
-            const data = await res.json();
+            const data = await res.json() as { response?: string; reply?: string };
             raw = data.response ?? data.reply ?? "";
           }
         } catch { /* fall through */ }
       }
 
-      // Step 3 — Offline knowledge base
+      // Step 4 — Offline knowledge base
       if (!raw) {
         const offline = await searchOffline(prompt);
         if (offline) raw = `${offline.text}\n\n_📚 Offline: ${offline.source}_`;
@@ -186,8 +242,19 @@ export default function VideoStudioPage() {
       if (!raw) throw new Error("No AI response available. Please check your connection.");
 
       setProgress(100); setStatusMsg("Done");
-      setResult(parseAIResponse(raw));
+      const parsed = parseAIResponse(raw);
+      setResult(parsed);
       setStage("done");
+
+      // Persist to backend (fire-and-forget — don't block UI)
+      saveAnalysis.mutate({
+        sport:         sport || "football",
+        analysis_type: analysisType || "general",
+        file_name:     file?.name ?? null,
+        user_question: question.trim() || null,
+        ai_feedback:   raw,
+        frame_count:   frameUrls.length,
+      });
     } catch (e: unknown) {
       setErrorMsg(extractApiError(e, "Analysis failed. Check your connection and try again."));
       setStage("error"); setProgress(0);
@@ -317,6 +384,66 @@ export default function VideoStudioPage() {
               onReset={reset}
               onDownloadHighlight={downloadHighlight}
             />
+          )}
+
+          {/* Analysis History */}
+          {(historyData?.data?.length ?? 0) > 0 && (
+            <div className="rounded-xl border bg-card p-5">
+              <h2 className="mb-4 text-sm font-semibold flex items-center gap-2">
+                <Film className="h-4 w-4 text-primary" />
+                Recent Analyses
+                <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                  {historyData!.data.length}
+                </span>
+              </h2>
+              <div className="space-y-2">
+                {historyData!.data.map((a) => {
+                  const sportEmoji = SPORTS.find((s) => s.key === a.sport)?.emoji ?? "🎬";
+                  const isOpen = expandedId === a.id;
+                  return (
+                    <div key={a.id} className="rounded-xl border border-white/10 overflow-hidden">
+                      <button
+                        onClick={() => setExpandedId(isOpen ? null : a.id)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
+                      >
+                        <span className="text-lg">{sportEmoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {a.file_name ?? a.analysis_type}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(a.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                            {a.frame_count > 0 && ` · ${a.frame_count} frames`}
+                          </p>
+                        </div>
+                        {isOpen
+                          ? <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                          : <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                        }
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteAnalysis.mutate(a.id); }}
+                          className="rounded-lg p-1 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </button>
+                      {isOpen && (
+                        <div className="border-t px-4 py-3">
+                          {a.user_question && (
+                            <p className="mb-2 text-xs italic text-muted-foreground">
+                              &ldquo;{a.user_question}&rdquo;
+                            </p>
+                          )}
+                          <p className="text-xs leading-relaxed whitespace-pre-wrap text-white/80 max-h-60 overflow-y-auto">
+                            {a.ai_feedback}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       </main>
