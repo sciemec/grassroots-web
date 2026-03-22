@@ -180,7 +180,7 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
               <div className="flex h-48 items-center justify-center text-center text-muted-foreground">
                 <div>
                   <FileText className="mx-auto mb-3 h-8 w-8 opacity-30" />
-                  <p className="text-sm">Fill in the match details and click<br />{'"'}Generate AI Report{'"'}</p>
+                  <p className="text-sm">Fill in the match details and click Generate AI Report</p>
                 </div>
               </div>
             )}
