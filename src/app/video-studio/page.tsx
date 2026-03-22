@@ -118,6 +118,9 @@ export default function VideoStudioPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [frames, setFrames] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "failed">("idle");
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -142,10 +145,47 @@ export default function VideoStudioPage() {
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
   useEffect(() => { return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }; }, [previewUrl]);
 
+  const uploadToR2 = async (f: File) => {
+    setUploadStatus("uploading");
+    setUploadProgress(0);
+    try {
+      // Step 1 — get presigned PUT URL from Next.js server route
+      const presignRes = await fetch("/api/upload/presigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: f.name, content_type: f.type, folder: "videos" }),
+      });
+      if (!presignRes.ok) throw new Error("Could not get upload URL");
+      const { upload_url, public_url } = await presignRes.json() as { upload_url: string; public_url: string | null };
+
+      // Step 2 — PUT directly to R2 (XHR so we get progress events)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", upload_url);
+        xhr.setRequestHeader("Content-Type", f.type);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`R2 upload failed: ${xhr.status}`)));
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(f);
+      });
+
+      setVideoUrl(public_url);
+      setUploadStatus("done");
+    } catch {
+      // Non-blocking — analysis still works without R2
+      setUploadStatus("failed");
+    }
+  };
+
   const acceptFile = (f: File) => {
     if (!VIDEO_TYPES.includes(f.type)) { setErrorMsg("Unsupported file type. Please upload MP4, MOV, AVI, MKV or WebM."); return; }
     if (f.size > MAX_SIZE_MB * 1024 * 1024) { setErrorMsg(`File too large. Max ${MAX_SIZE_MB} MB.`); return; }
     setErrorMsg(""); setFile(f); setPreviewUrl(URL.createObjectURL(f)); setResult(null); setStage("idle"); setFrames([]);
+    setVideoUrl(null); setUploadStatus("idle"); setUploadProgress(0);
+    // Start background upload immediately — runs in parallel while user fills the form
+    uploadToR2(f);
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) acceptFile(f); };
@@ -154,7 +194,8 @@ export default function VideoStudioPage() {
 
   const clearFile = () => {
     setFile(null); setPreviewUrl(null); setResult(null); setStage("idle");
-    setErrorMsg(""); setFrames([]); if (fileInputRef.current) fileInputRef.current.value = "";
+    setErrorMsg(""); setFrames([]); setVideoUrl(null); setUploadStatus("idle"); setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const reset = () => { clearFile(); setSport(""); setAnalysisType(""); setQuestion(""); setResult(null); };

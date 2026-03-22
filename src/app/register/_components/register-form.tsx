@@ -89,6 +89,17 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
         token: t,
       });
       router.replace(roleHomePath(u.role as UserRole));
+
+      // Fire welcome email — non-blocking, don't await
+      fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: form.email.trim().toLowerCase(),
+          type: "welcome",
+          data: { name: form.first_name.trim(), role: roleMeta.label },
+        }),
+      }).catch(() => null);
     } catch (e: unknown) {
       const status = (e as { response?: { status?: number; data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.status;
       const data   = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
