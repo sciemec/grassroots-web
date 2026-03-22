@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Target, TrendingUp, StopCircle, Play,
+  ArrowLeft, Target, StopCircle, Play,
   Zap, Flag, ArrowUpDown, MoveRight, Users,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -196,7 +196,7 @@ function PitchZoneTapper({ onZoneTap, lastZone }: {
 function EventLoggerPanel({
   activeTab, setActiveTab, activeTeam, setActiveTeam,
   markGoal, setMarkGoal, lastZone, onShot,
-  setPieceType, setPieceType: _spt, location, reason,
+  setPieceType, location, reason,
   onPassLog, onPressLog, onSetPieceLog, onSubLog,
   onSetPieceTypeChange, onLocationChange, onOutcomeChange, onReasonChange,
   selectedOutcome, homeTeam, awayTeam,
