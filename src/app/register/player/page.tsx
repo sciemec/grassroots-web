@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { SPORT_MAP, SportKey } from "@/config/sports";
+import { SportKey } from "@/config/sports";
 import { RegisterForm } from "@/app/register/_components/register-form";
 
 function PlayerRegisterInner() {
