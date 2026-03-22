@@ -30,10 +30,16 @@ export default function NotificationsPage() {
 
   const send = useMutation({
     mutationFn: () =>
-      api.post("/admin/notifications/send", {
-        user_id: userId || undefined,
-        title,
-        body,
+      fetch("/api/notifications/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId || undefined, title, body }),
+      }).then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({})) as { error?: string };
+          throw new Error(err.error ?? `Error ${r.status}`);
+        }
+        return r.json();
       }),
     onSuccess: () => {
       setSent(true);
@@ -43,8 +49,8 @@ export default function NotificationsPage() {
       setTimeout(() => setSent(false), 4000);
     },
     onError: (e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? "Failed to send notification.");
+      const msg = e instanceof Error ? e.message : "Failed to send notification.";
+      setError(msg);
     },
   });
 

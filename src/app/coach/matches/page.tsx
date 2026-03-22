@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trophy, X, ChevronDown, ChevronUp, MessageCircle, Loader2, Copy, Check } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
+import api from "@/lib/api";
 
 interface MatchRecord {
   id: string;
@@ -15,11 +16,12 @@ interface MatchRecord {
   date: string;
   our_score: number;
   their_score: number;
-  formation: string;
-  scorers: string;
+  formation: string | null;
+  scorers: string | null;
   yellow_cards: number;
   red_cards: number;
-  notes: string;
+  notes: string | null;
+  outcome: "W" | "D" | "L";
 }
 
 const FORMATIONS = ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "5-3-2"];
@@ -30,59 +32,48 @@ const OUTCOME_STYLES = {
   L: "bg-red-500/15 text-red-700",
 };
 
-function getOutcome(ours: number, theirs: number): "W" | "D" | "L" {
-  return ours > theirs ? "W" : ours === theirs ? "D" : "L";
-}
+const EMPTY_FORM = {
+  opponent: "", venue: "home" as const,
+  match_date: new Date().toISOString().slice(0, 10),
+  our_score: 0, their_score: 0, formation: "4-3-3",
+  scorers: "", yellow_cards: 0, red_cards: 0, notes: "",
+};
 
 export default function CoachMatchesPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
-  const [matches, setMatches] = useState<MatchRecord[]>([]);
+  const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reportLoading, setReportLoading] = useState<string | null>(null);
   const [reports, setReports] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    opponent: "", venue: "home" as "home" | "away" | "neutral",
-    date: new Date().toISOString().slice(0, 10),
-    our_score: 0, their_score: 0, formation: "4-3-3",
-    scorers: "", yellow_cards: 0, red_cards: 0, notes: "",
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  const { data, isLoading } = useQuery<{ data: MatchRecord[] }>({
+    queryKey: ["coach-matches"],
+    queryFn: () => api.get("/matches").then((r) => r.data),
+    enabled: !!user,
   });
 
-  useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-    // Load from localStorage for offline support
-    const saved = localStorage.getItem("coach_matches");
-    if (saved) setMatches(JSON.parse(saved));
-  }, [user, router]);
+  const addMatch = useMutation({
+    mutationFn: (body: typeof EMPTY_FORM) => api.post("/matches", body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["coach-matches"] });
+      setShowForm(false);
+      setForm(EMPTY_FORM);
+    },
+  });
 
-  const saveMatches = (updated: MatchRecord[]) => {
-    setMatches(updated);
-    localStorage.setItem("coach_matches", JSON.stringify(updated));
-  };
-
-  const addMatch = () => {
-    if (!form.opponent.trim()) return;
-    const record: MatchRecord = { ...form, id: Date.now().toString() };
-    saveMatches([record, ...matches]);
-    setShowForm(false);
-    setForm({
-      opponent: "", venue: "home", date: new Date().toISOString().slice(0, 10),
-      our_score: 0, their_score: 0, formation: "4-3-3",
-      scorers: "", yellow_cards: 0, red_cards: 0, notes: "",
-    });
-  };
-
-  const deleteMatch = (id: string) => {
-    if (!confirm("Delete this match record?")) return;
-    saveMatches(matches.filter((m) => m.id !== id));
-  };
+  const deleteMatch = useMutation({
+    mutationFn: (id: string) => api.delete(`/matches/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-matches"] }),
+  });
 
   const generateReport = async (m: MatchRecord) => {
     setReportLoading(m.id);
     try {
-      const reply = await queryAI("Generate the WhatsApp match report now.", "coach");
+      const prompt = `Generate a WhatsApp match report for coach. Match: ${m.our_score}-${m.their_score} vs ${m.opponent} (${m.venue}). Formation: ${m.formation ?? "N/A"}. Scorers: ${m.scorers ?? "none"}. Yellow cards: ${m.yellow_cards}, Red cards: ${m.red_cards}. Notes: ${m.notes ?? "none"}. Keep it short, WhatsApp-friendly with emojis.`;
+      const reply = await queryAI(prompt, "coach");
       setReports((prev) => ({ ...prev, [m.id]: reply }));
     } catch {
       setReports((prev) => ({ ...prev, [m.id]: "Could not generate report. Please try again." }));
@@ -99,9 +90,10 @@ export default function CoachMatchesPage() {
 
   if (!user) return null;
 
-  const wins   = matches.filter((m) => getOutcome(m.our_score, m.their_score) === "W").length;
-  const draws  = matches.filter((m) => getOutcome(m.our_score, m.their_score) === "D").length;
-  const losses = matches.filter((m) => getOutcome(m.our_score, m.their_score) === "L").length;
+  const matches = data?.data ?? [];
+  const wins   = matches.filter((m) => m.outcome === "W").length;
+  const draws  = matches.filter((m) => m.outcome === "D").length;
+  const losses = matches.filter((m) => m.outcome === "L").length;
   const goalsFor     = matches.reduce((s, m) => s + m.our_score, 0);
   const goalsAgainst = matches.reduce((s, m) => s + m.their_score, 0);
 
@@ -165,8 +157,8 @@ export default function CoachMatchesPage() {
                 <label className="mb-1.5 block text-sm font-medium">Date</label>
                 <input
                   type="date"
-                  value={form.date}
-                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                  value={form.match_date}
+                  onChange={(e) => setForm((f) => ({ ...f, match_date: e.target.value }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
@@ -175,18 +167,16 @@ export default function CoachMatchesPage() {
                 <select
                   value={form.venue}
                   onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value as typeof form.venue }))}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring capitalize"
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 >
                   <option value="home">Home</option>
                   <option value="away">Away</option>
                   <option value="neutral">Neutral</option>
                 </select>
               </div>
-
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Our score</label>
-                <input
-                  type="number" min={0}
+                <input type="number" min={0}
                   value={form.our_score}
                   onChange={(e) => setForm((f) => ({ ...f, our_score: Number(e.target.value) }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
@@ -194,15 +184,14 @@ export default function CoachMatchesPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Their score</label>
-                <input
-                  type="number" min={0}
+                <input type="number" min={0}
                   value={form.their_score}
                   onChange={(e) => setForm((f) => ({ ...f, their_score: Number(e.target.value) }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Formation used</label>
+                <label className="mb-1.5 block text-sm font-medium">Formation</label>
                 <select
                   value={form.formation}
                   onChange={(e) => setForm((f) => ({ ...f, formation: e.target.value }))}
@@ -211,22 +200,17 @@ export default function CoachMatchesPage() {
                   {FORMATIONS.map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>
-
               <div className="sm:col-span-2 lg:col-span-3">
                 <label className="mb-1.5 block text-sm font-medium">Goalscorers <span className="font-normal text-muted-foreground">(optional)</span></label>
-                <input
-                  type="text"
-                  placeholder="e.g. Chikwanda 23', Moyo 67'"
+                <input type="text" placeholder="e.g. Chikwanda 23&apos;, Moyo 67&apos;"
                   value={form.scorers}
                   onChange={(e) => setForm((f) => ({ ...f, scorers: e.target.value }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
-
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Yellow cards</label>
-                <input
-                  type="number" min={0}
+                <input type="number" min={0}
                   value={form.yellow_cards}
                   onChange={(e) => setForm((f) => ({ ...f, yellow_cards: Number(e.target.value) }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
@@ -234,38 +218,30 @@ export default function CoachMatchesPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Red cards</label>
-                <input
-                  type="number" min={0}
+                <input type="number" min={0}
                   value={form.red_cards}
                   onChange={(e) => setForm((f) => ({ ...f, red_cards: Number(e.target.value) }))}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
-
               <div className="sm:col-span-2 lg:col-span-3">
                 <label className="mb-1.5 block text-sm font-medium">Match notes <span className="font-normal text-muted-foreground">(optional)</span></label>
-                <textarea
-                  rows={3}
-                  placeholder="Observations, key moments, what worked and what didn't…"
+                <textarea rows={3} placeholder="Observations, key moments…"
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="w-full resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                  className="w-full resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
             </div>
-
             <div className="mt-4 flex gap-2">
               <button
-                onClick={addMatch}
-                disabled={!form.opponent.trim()}
+                onClick={() => addMatch.mutate(form)}
+                disabled={!form.opponent.trim() || addMatch.isPending}
                 className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
-                Save match
+                {addMatch.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : "Save match"}
               </button>
-              <button
-                onClick={() => setShowForm(false)}
-                className="rounded-xl border px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-              >
+              <button onClick={() => setShowForm(false)} className="rounded-xl border px-4 py-2.5 text-sm hover:bg-muted transition-colors">
                 Cancel
               </button>
             </div>
@@ -273,7 +249,11 @@ export default function CoachMatchesPage() {
         )}
 
         {/* Match list */}
-        {matches.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-2">
+            {[...Array(4)].map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />)}
+          </div>
+        ) : matches.length === 0 ? (
           <div className="rounded-xl border border-dashed p-12 text-center">
             <Trophy className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="font-medium">No matches recorded yet</p>
@@ -282,7 +262,6 @@ export default function CoachMatchesPage() {
         ) : (
           <div className="space-y-2">
             {matches.map((m) => {
-              const outcome = getOutcome(m.our_score, m.their_score);
               const isOpen = expanded === m.id;
               return (
                 <div key={m.id} className="overflow-hidden rounded-xl border bg-card">
@@ -290,25 +269,21 @@ export default function CoachMatchesPage() {
                     className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-muted/20 transition-colors"
                     onClick={() => setExpanded(isOpen ? null : m.id)}
                   >
-                    <span className={`w-8 flex-shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-bold ${OUTCOME_STYLES[outcome]}`}>
-                      {outcome}
+                    <span className={`w-8 flex-shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-bold ${OUTCOME_STYLES[m.outcome]}`}>
+                      {m.outcome}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
-                        <p className="font-semibold">
-                          {m.our_score} – {m.their_score} vs {m.opponent}
-                        </p>
+                        <p className="font-semibold">{m.our_score} – {m.their_score} vs {m.opponent}</p>
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize text-muted-foreground">{m.venue}</span>
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{m.formation}</span>
+                        {m.formation && <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{m.formation}</span>}
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {new Date(m.date).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}
                         {m.scorers && ` · ⚽ ${m.scorers}`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                    </div>
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </button>
 
                   {isOpen && (
@@ -332,10 +307,11 @@ export default function CoachMatchesPage() {
                             : <><MessageCircle className="h-3.5 w-3.5" /> WhatsApp report</>}
                         </button>
                         <button
-                          onClick={() => deleteMatch(m.id)}
+                          onClick={() => deleteMatch.mutate(m.id)}
+                          disabled={deleteMatch.isPending}
                           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-red-600 hover:bg-red-500/10 transition-colors"
                         >
-                          <X className="h-3.5 w-3.5" /> Delete record
+                          <X className="h-3.5 w-3.5" /> Delete
                         </button>
                       </div>
                       {reports[m.id] && (

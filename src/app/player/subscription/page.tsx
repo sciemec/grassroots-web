@@ -67,6 +67,19 @@ export default function SubscriptionPage() {
     setPaying(true);
     setPayError("");
     try {
+      if (payMethod === "stripe") {
+        // Stripe card checkout — redirect to Stripe hosted page
+        const res = await fetch("/api/payments/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: selected, user_id: user?.id, email: user?.email }),
+        });
+        const data = await res.json() as { url?: string; error?: string };
+        if (!res.ok || !data.url) throw new Error(data.error ?? "Checkout failed");
+        window.location.href = data.url;
+        return;
+      }
+      // EcoCash / manual payment — existing Laravel flow
       await api.post("/subscription/subscribe", {
         plan_type: selected,
         payment_method: payMethod,
@@ -75,7 +88,9 @@ export default function SubscriptionPage() {
       const res = await api.get("/subscription/status");
       setSub(res.data);
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msg = e instanceof Error
+        ? e.message
+        : (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setPayError(msg ?? "Payment failed. Please try again.");
     } finally {
       setPaying(false);
@@ -154,11 +169,12 @@ export default function SubscriptionPage() {
         {/* Payment method */}
         <div className="mb-6 rounded-xl border bg-card p-5">
           <h3 className="mb-3 font-semibold">Payment Method</h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             {[
-              { id: "ecocash", label: "EcoCash", emoji: "📱" },
+              { id: "ecocash", label: "EcoCash",   emoji: "📱" },
               { id: "onemoney", label: "OneMoney", emoji: "💚" },
-              { id: "card", label: "Visa / MC", emoji: "💳" },
+              { id: "card",    label: "Visa / MC", emoji: "💳" },
+              { id: "stripe",  label: "Card (Int'l)", emoji: "🌍" },
             ].map(({ id, label, emoji }) => (
               <button key={id} onClick={() => setPayMethod(id)}
                 className={`rounded-xl border p-3 text-sm font-medium transition-all ${
@@ -169,6 +185,11 @@ export default function SubscriptionPage() {
               </button>
             ))}
           </div>
+          {payMethod === "stripe" && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Secure card payment via Stripe. You will be redirected to complete payment.
+            </p>
+          )}
         </div>
 
         {payError && (

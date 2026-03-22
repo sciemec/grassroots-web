@@ -1,0 +1,192 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Loader2, Copy, Check, FileText } from "lucide-react";
+import { Sidebar } from "@/components/layout/sidebar";
+import { queryAI } from "@/lib/ai-query";
+
+export default function TacticalReportPage() {
+  const [form, setForm] = useState({
+    homeTeam: "", awayTeam: "",
+    homeScore: 0, awayScore: 0,
+    formation: "4-3-3",
+    possession: 50,
+    shots: 0, onTarget: 0,
+    notes: "",
+  });
+  const [report, setReport] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const generate = async () => {
+    if (!form.homeTeam || !form.awayTeam) return;
+    setLoading(true);
+    setError("");
+    setReport("");
+    try {
+      const prompt = `Generate a professional tactical match report for a grassroots coach.
+
+Match: ${form.homeTeam} ${form.homeScore} - ${form.awayScore} ${form.awayTeam}
+Formation used: ${form.formation}
+Possession: ${form.possession}%
+Shots: ${form.shots} total, ${form.onTarget} on target
+Coach observations: ${form.notes || "None provided"}
+
+Provide a concise report in exactly 3 sections:
+TACTICAL STRENGTHS:
+TACTICAL WEAKNESSES:
+RECOMMENDATIONS FOR NEXT MATCH:
+
+Keep it practical and actionable for a grassroots Zimbabwean coach.`;
+
+      const result = await queryAI(prompt, "analyst");
+      setReport(result);
+    } catch {
+      setError("Could not generate report. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyReport = () => {
+    navigator.clipboard.writeText(report);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const f = form;
+
+  return (
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <main className="gs-watermark flex-1 overflow-auto p-6">
+        <div className="mb-6 flex items-center gap-3">
+          <Link href="/analyst" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-white">AI Tactical Report</h1>
+            <p className="text-sm text-accent/80 italic">Generate a 3-section match report with AI</p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Form */}
+          <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Match Details</h2>
+
+            <div className="space-y-4">
+              {/* Teams + Score */}
+              <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Home Team</label>
+                  <input type="text" placeholder="e.g. Harare City"
+                    value={f.homeTeam} onChange={(e) => setForm((p) => ({ ...p, homeTeam: e.target.value }))}
+                    className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+                <div className="flex gap-1.5 items-center pb-1">
+                  <input type="number" min={0} max={99} value={f.homeScore}
+                    onChange={(e) => setForm((p) => ({ ...p, homeScore: Number(e.target.value) }))}
+                    className="w-14 rounded-lg border bg-background px-2 py-2.5 text-center text-lg font-bold outline-none focus:ring-1 focus:ring-ring" />
+                  <span className="text-muted-foreground font-bold">–</span>
+                  <input type="number" min={0} max={99} value={f.awayScore}
+                    onChange={(e) => setForm((p) => ({ ...p, awayScore: Number(e.target.value) }))}
+                    className="w-14 rounded-lg border bg-background px-2 py-2.5 text-center text-lg font-bold outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Away Team</label>
+                  <input type="text" placeholder="e.g. Dynamos FC"
+                    value={f.awayTeam} onChange={(e) => setForm((p) => ({ ...p, awayTeam: e.target.value }))}
+                    className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+              </div>
+
+              {/* Formation + Possession */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Formation Used</label>
+                  <input type="text" placeholder="4-3-3"
+                    value={f.formation} onChange={(e) => setForm((p) => ({ ...p, formation: e.target.value }))}
+                    className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Possession %</label>
+                  <input type="number" min={0} max={100}
+                    value={f.possession} onChange={(e) => setForm((p) => ({ ...p, possession: Number(e.target.value) }))}
+                    className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+              </div>
+
+              {/* Shots */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Total Shots</label>
+                  <input type="number" min={0}
+                    value={f.shots} onChange={(e) => setForm((p) => ({ ...p, shots: Number(e.target.value) }))}
+                    className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">On Target</label>
+                  <input type="number" min={0}
+                    value={f.onTarget} onChange={(e) => setForm((p) => ({ ...p, onTarget: Number(e.target.value) }))}
+                    className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+              </div>
+
+              {/* Observations */}
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Coach Observations <span className="text-muted-foreground/60">(optional)</span>
+                </label>
+                <textarea rows={4} placeholder="What did you notice? Key moments, players who stood out, problems to fix…"
+                  value={f.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                  className="w-full resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+
+              <button
+                onClick={generate}
+                disabled={loading || !f.homeTeam || !f.awayTeam}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#6c3483] py-3 text-sm font-semibold text-white hover:bg-[#5a2d6e] disabled:opacity-50 transition-colors"
+              >
+                {loading
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating report…</>
+                  : <><FileText className="h-4 w-4" /> Generate AI Report</>}
+              </button>
+            </div>
+          </div>
+
+          {/* Report output */}
+          <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tactical Report</h2>
+              {report && (
+                <button onClick={copyReport} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
+                  {copied ? <><Check className="h-3.5 w-3.5 text-green-500" /> Copied!</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="space-y-3">
+                {[...Array(8)].map((_, i) => <div key={i} className={`h-4 animate-pulse rounded bg-muted ${i % 3 === 2 ? "w-2/3" : "w-full"}`} />)}
+              </div>
+            ) : error ? (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">{error}</div>
+            ) : report ? (
+              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{report}</div>
+            ) : (
+              <div className="flex h-48 items-center justify-center text-center text-muted-foreground">
+                <div>
+                  <FileText className="mx-auto mb-3 h-8 w-8 opacity-30" />
+                  <p className="text-sm">Fill in the match details and click<br />"Generate AI Report"</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
