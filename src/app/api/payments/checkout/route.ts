@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const stripe = new Stripe(secretKey, { apiVersion: "2025-01-27.acacia" });
+  const stripe = new Stripe(secretKey, { apiVersion: "2026-02-25.clover" });
 
   let body: CheckoutBody;
   try {
