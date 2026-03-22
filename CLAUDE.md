@@ -1499,6 +1499,26 @@ These frontend pages ARE built but the backend/external service is incomplete:
 | FCM Push Delivery | Admin UI done | Firebase project + FCM server key needed on Laravel |
 | Streaming | Daily.co UI done | Need DAILY_API_KEY in Vercel env |
 
+### FRONTEND NOT YET BUILT (Phase 2–4)
+
+| Feature | Route | Priority |
+|---|---|---|
+| WhatsApp Match Reports | Backend route + Twilio | High — viral growth |
+| Player Market Value Estimator | `/players/{id}/valuation` | High |
+| AI Injury Prevention Engine | `/injury-tracker` (page exists, not wired) | High |
+| National Talent Database | `/talent-database` | Medium |
+| NASH/NAPH School League Manager | `/school-leagues` | Medium |
+| Player Development Trajectory | `/players/{id}/potential` | Medium |
+| Set Piece & Tactical Analytics | `/matches/{id}/tactics` | Medium |
+| Shona/Ndebele language toggle | i18next across all pages | Low |
+
+### OTHER SPORTS — DEPTH MISSING (same gap netball had)
+Rugby, Basketball, Cricket, Swimming, Tennis, Volleyball, Hockey all work generically
+(stats logging + AI feedback) but lack:
+- Position-specific stat roles
+- Sport-specific training plans JSON
+- Interactive playing-field/court diagrams
+
 ### PACKAGES IN package.json (do not re-install these)
 ```
 jspdf              ^4.2.0   — PDF generation
@@ -1519,11 +1539,11 @@ DAILY_API_KEY       = set in .env.local AND Vercel (live streaming)
 
 ### LAST 5 COMMITS (as of March 2026)
 ```
-42ea2a2  feat: fan hub backend — follow system, discover, leaderboard, provinces (bhora-ai repo)
+0f2fbb5  fix: Array.from(Set) in player/stats/new — TS downlevelIteration
+1eebba3  fix: default case in rolePath middleware switch
+548f7fd  feat: complete netball hub — position-aware AI, court diagram, register pre-select, training plans
 67f9d45  feat: split netball stats into position-specific roles (shooter/midcourt/defender)
 774756f  feat: browser push notifications via Web Notification API
-4b53f48  feat: auth hydration guard — add layout.tsx for streaming/video-studio/welcome/sessions/video-analysis
-[prior]  feat: player/coach/scout/fan layout.tsx auth guards + _hasHydrated in auth-store
 ```
 
 ### KNOWN ISSUES (do not waste time re-investigating these)
