@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, X, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, X, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Loader2, Brain } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
 
 interface InjuryRecord {
   id: string;
@@ -57,6 +58,9 @@ export default function InjuryTrackerPage() {
   const qc = useQueryClient();
   const [hydrated, setHydrated] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [aiReport, setAiReport] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string>("");
   const [form, setForm] = useState({
     player_id: "",
     injury_type: "Muscle strain",
@@ -115,6 +119,35 @@ export default function InjuryTrackerPage() {
       setForm({ player_id: "", injury_type: "Muscle strain", body_part: "Hamstring", severity: "minor", expected_return: "", notes: "" });
     },
   });
+
+  async function runAiRiskCheck() {
+    setAiLoading(true);
+    setAiError("");
+    setAiReport("");
+    try {
+      const activeInjuries = injuries.filter((i) => i.status !== "fit");
+      if (activeInjuries.length === 0) {
+        setAiReport("No active injuries in the squad. All players appear fit. Maintain current training loads and monitor fatigue levels.");
+        setAiLoading(false);
+        return;
+      }
+      const injurySummary = activeInjuries
+        .map((inj) => {
+          const daysSince = Math.floor(
+            (Date.now() - new Date(inj.injured_at).getTime()) / 86400000
+          );
+          return `- Player: ${inj.initials ?? "Unknown"}, Injury: ${inj.injury_type} (${inj.body_part}), Severity: ${inj.severity}, Status: ${inj.status}, Days injured: ${daysSince}${inj.notes ? `, Notes: ${inj.notes}` : ""}`;
+        })
+        .join("\n");
+      const message = `You are a sports medicine AI for Zimbabwe grassroots sport. Given these squad injuries:\n${injurySummary}\n\nProvide:\n1. OVERALL SQUAD INJURY RISK LEVEL: Low / Medium / High (and why in one sentence)\n2. PLAYERS AT RISK: Which players risk aggravating their injuries and why\n3. TRAINING LOAD RECOMMENDATIONS: Specific advice for training sessions this week\n\nKeep it concise and practical for a grassroots coach with limited medical resources.`;
+      const reply = await queryAI(message, "coach");
+      setAiReport(reply);
+    } catch (err: unknown) {
+      setAiError(err instanceof Error ? err.message : "AI check failed. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   if (!hydrated || !user) return null;
 
@@ -305,6 +338,68 @@ export default function InjuryTrackerPage() {
             })}
           </div>
         )}
+
+        {/* ── AI Risk Assessment ── */}
+        <div className="mt-8 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+          <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1a5c2a]">
+                <Brain className="h-5 w-5 text-[#f0b429]" />
+              </div>
+              <div>
+                <h2 className="font-semibold">AI Risk Assessment</h2>
+                <p className="text-xs text-muted-foreground">Powered by Grassroots AI — sports medicine analysis</p>
+              </div>
+            </div>
+            <button
+              onClick={runAiRiskCheck}
+              disabled={aiLoading || isLoading}
+              className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2.5 text-sm font-semibold text-[#1a3a1a] hover:bg-[#f0b429]/90 disabled:opacity-50 transition-colors"
+            >
+              {aiLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Brain className="h-4 w-4" />
+              )}
+              {aiLoading ? "Analysing…" : "Run AI Risk Check"}
+            </button>
+          </div>
+
+          {aiLoading && (
+            <div className="flex items-center gap-3 rounded-xl bg-muted/40 px-5 py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-[#f0b429]" />
+              <p className="text-sm text-muted-foreground">Analysing squad injury data…</p>
+            </div>
+          )}
+
+          {aiError && !aiLoading && (
+            <div className="rounded-xl bg-red-500/10 px-5 py-4 text-sm text-red-700">
+              {aiError}
+            </div>
+          )}
+
+          {aiReport && !aiLoading && (
+            <div className="rounded-xl border border-[#1a5c2a]/30 bg-[#1a5c2a]/10 px-5 py-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#f0b429]">
+                AI Risk Report
+              </p>
+              <div className="space-y-1 text-sm leading-relaxed">
+                {aiReport.split("\n").map((line, i) => (
+                  <p key={i} className={line.trim() === "" ? "mt-2" : ""}>{line}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!aiReport && !aiLoading && !aiError && (
+            <div className="rounded-xl border border-dashed border-white/10 px-5 py-8 text-center">
+              <Brain className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                Click &quot;Run AI Risk Check&quot; to get an AI-powered squad injury analysis
+              </p>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
