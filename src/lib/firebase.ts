@@ -17,13 +17,8 @@ export const auth = getAuth(app);
 // Fire-and-forget — if it fails the standard RecaptchaVerifier still works.
 initializeRecaptchaConfig(auth).catch(() => {});
 
-// Bypass reCAPTCHA widget entirely in non-production so test phone numbers work immediately.
-// Set NEXT_PUBLIC_FIREBASE_TEST_MODE=true in Vercel preview environments if needed.
-if (
-  typeof window !== "undefined" &&
-  (process.env.NODE_ENV !== "production" ||
-    process.env.NEXT_PUBLIC_FIREBASE_TEST_MODE === "true")
-) {
+// Bypass reCAPTCHA widget in development so test phone numbers work without a real widget.
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   auth.settings.appVerificationDisabledForTesting = true;
 }
 
