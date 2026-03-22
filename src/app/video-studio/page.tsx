@@ -295,6 +295,7 @@ export default function VideoStudioPage() {
         user_question: question.trim() || null,
         ai_feedback:   raw,
         frame_count:   frameUrls.length,
+        video_url:     videoUrl ?? undefined,
       });
     } catch (e: unknown) {
       setErrorMsg(extractApiError(e, "Analysis failed. Check your connection and try again."));
@@ -375,6 +376,26 @@ export default function VideoStudioPage() {
                   {(stage === "idle" || stage === "error") && <button onClick={clearFile} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted transition-colors"><X className="h-4 w-4" /></button>}
                 </div>
               </div>
+            )}
+
+            {/* R2 upload progress */}
+            {uploadStatus === "uploading" && (
+              <div className="mt-3 space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Saving to cloud…
+                  </span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-[#f0b429] transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              </div>
+            )}
+            {uploadStatus === "done" && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-green-500">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Saved to cloud
+              </p>
             )}
 
             {/* Frame strip */}
