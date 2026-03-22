@@ -1,58 +1,57 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Phone } from "lucide-react";
-import { signInWithPhoneNumber } from "firebase/auth";
-import { auth, setPendingConfirmation, useRecaptcha } from "@/lib/firebase";
+import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import api from "@/lib/api";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user, token } = useAuthStore();
+  const { user, token, setAuth } = useAuthStore();
 
-  const [phone, setPhone]     = useState("");
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus]   = useState("");
-  const [error, setError]     = useState("");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
 
-  const { getVerifier, resetVerifier } = useRecaptcha("recaptcha-container");
-
-  // ONE-TAP RETURN — skip login if already authenticated
+  // One-tap return — skip login if already authenticated
   useEffect(() => {
-    if (token && user) {
-      router.replace(roleHomePath(user.role));
-    }
+    if (token && user) router.replace(roleHomePath(user.role));
   }, [token, user, router]);
 
-  // Show verified/welcome messages
-  const verified = searchParams.get("verified");
-  const welcome  = verified === "1"
-    ? "Phone verified! Welcome to Grassroots Sport."
-    : null;
+  if (token && user) return null;
 
-  const handleSend = async () => {
-    if (!phone.trim()) { setError("Nyora nhamba yako. / Please enter your phone number."); return; }
-    setLoading(true); setError(""); setStatus("Tirikutuma code... / Sending your code...");
+  const handleSubmit = async () => {
+    if (!email.trim())  { setError("Nyora email yako. / Please enter your email."); return; }
+    if (!password)      { setError("Nyora password yako. / Please enter your password."); return; }
+    setLoading(true); setError("");
 
     try {
-      const result = await signInWithPhoneNumber(auth, phone.trim(), getVerifier());
-      setPendingConfirmation(result);
-      router.push(`/verify-phone?phone=${encodeURIComponent(phone.trim())}&mode=login`);
+      const res = await api.post("/auth/login", {
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      const { token: t, user: u } = res.data;
+      setAuth(t, { id: String(u.id), name: u.name ?? `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim(), email: u.email, role: u.role, token: t });
+      router.replace(roleHomePath(u.role));
     } catch (e: unknown) {
-      resetVerifier();
-      setStatus("");
-      const code = (e as { code?: string })?.code ?? "unknown";
-      console.error("[Firebase OTP]", code, e);
-      setError(`Could not send code (${code}). Please try again.`);
+      const status = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status;
+      const msg    = (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "";
+      if (status === 401 || status === 422) {
+        setError("Email kana password isiriyo. / Incorrect email or password.");
+      } else if (status === 403) {
+        setError("Akaunti yako yakabviswa. / Your account has been suspended.");
+      } else if (!status) {
+        setError("Hapana internet. Tarisa connection yako. / Check your internet connection.");
+      } else {
+        setError(msg || "Senzadza. Edza zvakare. / Something went wrong. Please try again.");
+      }
       setLoading(false);
     }
   };
-
-  // If already logged in, show nothing while redirecting
-  if (token && user) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-800 px-4">
@@ -65,71 +64,70 @@ function LoginForm() {
             <img src="/logo_v2.png" alt="Grassroots Sport" width={64} height={64} className="mx-auto mb-4" />
           </Link>
           <h1 className="text-3xl font-black text-white">Welcome back</h1>
-          <p className="mt-2 text-sm text-green-300">Enter your number to sign in</p>
+          <p className="mt-2 text-sm text-green-300">Sign in to your account</p>
         </div>
-
-        {welcome && (
-          <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/20 px-4 py-3 text-center text-sm text-green-300">
-            {welcome}
-          </div>
-        )}
-
-        <div id="recaptcha-container" />
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm space-y-5">
 
+          {/* Email */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-green-200">
-              Phone / WhatsApp number
-            </label>
+            <label className="mb-2 block text-sm font-medium text-green-200">Email address</label>
             <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-400/70" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-400/70" />
               <input
-                type="tel"
-                placeholder="+263 77 123 4567"
-                value={phone}
-                onChange={(e) => { setPhone(e.target.value); setError(""); }}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                autoComplete="email"
                 className="w-full rounded-xl border border-white/20 bg-white/10 pl-10 pr-4 py-3 text-white placeholder-green-400/50 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 text-sm"
               />
             </div>
-            <p className="mt-1.5 text-xs text-green-400/70">
-              We&apos;ll send a 6-digit code to verify it&apos;s you
-            </p>
           </div>
 
-          {status && (
-            <div className="flex items-center justify-center gap-2 text-sm text-green-300">
-              <Loader2 className="h-4 w-4 animate-spin" /> {status}
+          {/* Password */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-green-200">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-400/70" />
+              <input
+                type={showPw ? "text" : "password"}
+                placeholder="Your password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                autoComplete="current-password"
+                className="w-full rounded-xl border border-white/20 bg-white/10 pl-10 pr-10 py-3 text-white placeholder-green-400/50 outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 text-sm"
+              />
+              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400/50 hover:text-green-300">
+                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-          )}
-          {error && !status && (
+          </div>
+
+          {error && (
             <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-2.5 text-center text-sm text-orange-300">
               {error}
             </div>
           )}
 
           <button
-            onClick={handleSend}
+            onClick={handleSubmit}
             disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-3 text-sm font-bold text-white hover:bg-green-400 disabled:opacity-50 transition-colors"
           >
-            {loading
-              ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
-              : "Send Verification Code →"
-            }
+            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in…</> : "Sign in →"}
           </button>
 
           <p className="text-center text-xs text-green-400/60">
-            Like WhatsApp — phone number, code, you&apos;re in.
+            <Link href="/forgot-password" className="hover:text-green-300 transition-colors">Forgot password?</Link>
           </p>
         </div>
 
         <p className="mt-6 text-center text-sm text-green-400">
           New to Grassroots Sport?{" "}
-          <Link href="/register" className="font-semibold text-white hover:underline">
-            Create account
-          </Link>
+          <Link href="/register" className="font-semibold text-white hover:underline">Create account</Link>
         </p>
       </div>
     </div>
@@ -137,9 +135,5 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
-  );
+  return <Suspense><LoginForm /></Suspense>;
 }
