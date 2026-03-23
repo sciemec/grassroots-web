@@ -31,48 +31,47 @@
 @layer base {
   :root {
     /* ── Background colours ───────────────────────────────────── */
-    /* Main bg: deep dark forest green — like the app's nav */
     --background:          #0c1f10;
     --foreground:          #ffffff;
 
-    /* Cards: slightly lighter green panel */
-    --card:                #163220;
+    /* Cards: vivid forest green panels */
+    --card:                #1a3d26;
     --card-foreground:     #ffffff;
 
     /* Popovers */
-    --popover:             #163220;
+    --popover:             #1a3d26;
     --popover-foreground:  #ffffff;
 
     /* Primary action: bright Zimbabwe green */
-    --primary:             #22c55e;
+    --primary:             #2ecc71;
     --primary-foreground:  #ffffff;
 
     /* Secondary: deep green */
     --secondary:           #0a1a0d;
     --secondary-foreground:#ffffff;
 
-    /* Muted elements */
-    --muted:               #1a3022;
-    --muted-foreground:    #86a891;
+    /* Muted elements — much brighter so labels are readable on dark cards */
+    --muted:               #1e4a2e;
+    --muted-foreground:    #c8edd0;
 
-    /* Accent: Zimbabwe gold */
-    --accent:              #f0b429;
+    /* Accent: Zimbabwe gold — brighter */
+    --accent:              #f5c542;
     --accent-foreground:   #0c1f10;
 
     /* Destructive: Zimbabwe red */
-    --destructive:         #ce1126;
+    --destructive:         #e53e3e;
 
-    /* Borders and inputs */
-    --border:              rgba(255,255,255,0.14);
-    --input:               rgba(255,255,255,0.18);
-    --ring:                #f0b429;
+    /* Borders and inputs — more visible */
+    --border:              rgba(255,255,255,0.28);
+    --input:               rgba(255,255,255,0.28);
+    --ring:                #f5c542;
 
     /* Charts */
-    --chart-1:             #22c55e;
-    --chart-2:             #f0b429;
-    --chart-3:             #ce1126;
-    --chart-4:             #3b82f6;
-    --chart-5:             #f97316;
+    --chart-1:             #2ecc71;
+    --chart-2:             #f5c542;
+    --chart-3:             #e53e3e;
+    --chart-4:             #60a5fa;
+    --chart-5:             #fb923c;
 
     /* Border radius — matches mobile */
     --radius: 1rem;
@@ -80,48 +79,48 @@
     /* Sidebar */
     --sidebar:                    #091508;
     --sidebar-foreground:         #ffffff;
-    --sidebar-primary:            #22c55e;
+    --sidebar-primary:            #2ecc71;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent:             #163220;
+    --sidebar-accent:             #1a3d26;
     --sidebar-accent-foreground:  #ffffff;
-    --sidebar-border:             rgba(255,255,255,0.10);
-    --sidebar-ring:               #f0b429;
+    --sidebar-border:             rgba(255,255,255,0.20);
+    --sidebar-ring:               #f5c542;
   }
 
   .dark {
     /* Mirror :root — single Zimbabwe theme, no light/dark switch */
     --background:          #0c1f10;
     --foreground:          #ffffff;
-    --card:                #163220;
+    --card:                #1a3d26;
     --card-foreground:     #ffffff;
-    --popover:             #163220;
+    --popover:             #1a3d26;
     --popover-foreground:  #ffffff;
-    --primary:             #22c55e;
+    --primary:             #2ecc71;
     --primary-foreground:  #ffffff;
     --secondary:           #0a1a0d;
     --secondary-foreground:#ffffff;
-    --muted:               #1a3022;
-    --muted-foreground:    #86a891;
-    --accent:              #f0b429;
+    --muted:               #1e4a2e;
+    --muted-foreground:    #c8edd0;
+    --accent:              #f5c542;
     --accent-foreground:   #0c1f10;
-    --destructive:         #ce1126;
-    --border:              rgba(255,255,255,0.14);
-    --input:               rgba(255,255,255,0.18);
-    --ring:                #f0b429;
-    --chart-1:             #22c55e;
-    --chart-2:             #f0b429;
-    --chart-3:             #ce1126;
-    --chart-4:             #3b82f6;
-    --chart-5:             #f97316;
+    --destructive:         #e53e3e;
+    --border:              rgba(255,255,255,0.28);
+    --input:               rgba(255,255,255,0.28);
+    --ring:                #f5c542;
+    --chart-1:             #2ecc71;
+    --chart-2:             #f5c542;
+    --chart-3:             #e53e3e;
+    --chart-4:             #60a5fa;
+    --chart-5:             #fb923c;
     --radius:              1rem;
     --sidebar:                    #091508;
     --sidebar-foreground:         #ffffff;
-    --sidebar-primary:            #22c55e;
+    --sidebar-primary:            #2ecc71;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent:             #163220;
+    --sidebar-accent:             #1a3d26;
     --sidebar-accent-foreground:  #ffffff;
-    --sidebar-border:             rgba(255,255,255,0.10);
-    --sidebar-ring:               #f0b429;
+    --sidebar-border:             rgba(255,255,255,0.20);
+    --sidebar-ring:               #f5c542;
   }
 
   .theme {
@@ -142,9 +141,22 @@
   }
 
   body {
-    color: var(--foreground);
+    /* Dark text so labels/headings are readable on the cream African pattern bg */
+    color: #0c1f10;
     background: transparent;
   }
+}
+
+/* ── Cards: ensure solid readable backgrounds, not washed-out transparent ── */
+.bg-card\/60 { background-color: #1a3d26 !important; }
+.bg-card\/70 { background-color: #1e4229 !important; }
+.bg-card\/80 { background-color: #1e4229 !important; }
+
+/* ── Stat/info cards on the cream background ─────────────────────────────── */
+.rounded-xl.border.bg-card,
+.rounded-2xl.border.bg-card {
+  background-color: #1a3d26;
+  border-color: rgba(255,255,255,0.28);
 }
 
 /* ── bg-background: warm African cream base + pattern ────────────────────── */
@@ -152,6 +164,14 @@
   background-color: #EDE0C4;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpolygon points='100,30 120,65 100,100 80,65' fill='none' stroke='%232C2416' stroke-width='1.5' opacity='0.25'/%3E%3Cpolyline points='0,120 12,108 24,120 36,108 48,120 60,108 72,120 84,108 96,120 108,108 120,120 132,108 144,120 156,108 168,120 180,108 192,120 200,112' fill='none' stroke='%232C2416' stroke-width='1' opacity='0.20'/%3E%3Ccircle cx='30' cy='170' r='5' fill='%23C1714A' opacity='0.32'/%3E%3Ccircle cx='100' cy='170' r='5' fill='%23E6A817' opacity='0.32'/%3E%3Ccircle cx='170' cy='170' r='5' fill='%233A7D6B' opacity='0.32'/%3E%3C/svg%3E");
   background-size: 200px 200px;
+}
+
+/* ── Hub card subtitle gold text — brighter ─────────────────────────────── */
+.hub-card .hub-card-sub {
+  font-size: 0.75rem;
+  color: #f5c542;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Warm up pure white and light grey so African pattern colours show ──────
