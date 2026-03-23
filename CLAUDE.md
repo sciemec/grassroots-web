@@ -1414,7 +1414,9 @@ return <>{children}</>;
 /player/sessions/new       New session form
 /player/sports             Sport selector
 /player/sports/[sport]     Sport-specific page
-/player/subscription       Subscription management
+/player/subscription       Subscription management (+ Stripe card option)
+/player/valuation          Player market value estimator (AI-powered, first in Zimbabwe)
+/player/potential          Development trajectory — current rating, projected peak, scout readiness
 /player/talent-id          Talent identification
 /player/training-formats   Training formats hub
 /player/training-formats/[format]   Dynamic format page
@@ -1435,6 +1437,8 @@ return <>{children}</>;
 /coach/stats               Team stats
 /coach/tactical-analysis   Tactical analysis
 /coach/tactics             Tactics board
+/coach/set-pieces          Set piece & tactical analytics (corners, free kicks, AI analysis)
+/coach/training-plans      Training plans (multi-sport — Football + Netball JSON programmes)
 
 /scout                     Scout hub home
 /scout/compare             Player comparison
@@ -1455,6 +1459,14 @@ return <>{children}</>;
 /admin/users               User management
 /admin/verifications       Verification queue
 
+/analyst                   Analyst hub home
+/analyst/live-match        Live match collector — log events in real time
+/analyst/xg-analysis       Expected Goals (xG) analysis
+/analyst/pass-map          Pass map visualisation
+/analyst/heatmaps          Player heatmaps
+/analyst/season            Season statistics overview
+/analyst/tactical-report   AI tactical report generator
+
 /streaming                 Live streaming hub
 /streaming/broadcast       Live broadcast (Daily.co WebRTC)
 /video-studio              Video upload & AI analysis
@@ -1466,7 +1478,9 @@ return <>{children}</>;
 /analytics                 Analytics dashboard
 /community                 Community page
 /tournaments               Tournaments
-/injury-tracker            Injury tracking page
+/injury-tracker            AI injury prevention engine (XGBoost-style risk scoring via Claude)
+/talent-database           National talent database — filter by sport/position/province/age
+/school-leagues            NASH/NAPH school league manager (client-side, pre-loaded tournaments)
 /subscriptions             Subscription plans
 /settings                  User settings
 /privacy                   Privacy policy
@@ -1491,26 +1505,26 @@ These frontend pages ARE built but the backend/external service is incomplete:
 | Fan Hub — Leaderboard | Done ✅ | Backend DONE — GET /scout/players now open to fans (role:scout,fan) |
 | Fan Hub — Provinces | Done ✅ | Backend DONE — GET /stats/provinces counts players per province |
 | Fan Hub — Fixtures | Done (fallback) | GET /matches/upcoming stub returns [] — frontend uses hardcoded PSL fixtures |
-| Push Notifications | Done | Backend needs to store notifications in DB and trigger on events |
-| Payment / Subscriptions | UI exists | PayFast/Stripe integration not wired |
-| Email delivery | UI exists | Laravel mail config (SMTP/Mailgun) not set up |
-| WhatsApp Match Reports | Not built yet | Twilio WhatsApp API key + Laravel route needed |
-| Video Storage | UI exists | AWS S3 or Cloudflare R2 bucket not configured |
-| FCM Push Delivery | Admin UI done | Firebase project + FCM server key needed on Laravel |
+| Push Notifications (browser) | Done ✅ | Works via Web Notification API — no backend needed |
+| FCM Push Delivery | Done ✅ | `POST /api/notifications/send` — Firebase Admin SDK in Next.js (needs FIREBASE_* env vars) |
+| Stripe Payments | Done ✅ | `POST /api/payments/checkout` + webhook — needs STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET |
+| Email delivery | Done ✅ | `POST /api/email` — Resend SDK — needs RESEND_API_KEY + EMAIL_FROM |
+| WhatsApp Match Reports | Done ✅ | `POST /api/whatsapp/report` — Twilio — needs TWILIO_* env vars |
+| Video Storage (R2) | Done ✅ | `POST /api/upload/presigned` — Cloudflare R2 presigned PUT — needs R2_* env vars |
 | Streaming | Daily.co UI done | Need DAILY_API_KEY in Vercel env |
 
-### FRONTEND NOT YET BUILT (Phase 2–4)
+### PHASE 2–4 FEATURES — ALL BUILT ✅
 
-| Feature | Route | Priority |
+| Feature | Route | Status |
 |---|---|---|
-| WhatsApp Match Reports | Backend route + Twilio | High — viral growth |
-| Player Market Value Estimator | `/players/{id}/valuation` | High |
-| AI Injury Prevention Engine | `/injury-tracker` (page exists, not wired) | High |
-| National Talent Database | `/talent-database` | Medium |
-| NASH/NAPH School League Manager | `/school-leagues` | Medium |
-| Player Development Trajectory | `/players/{id}/potential` | Medium |
-| Set Piece & Tactical Analytics | `/matches/{id}/tactics` | Medium |
-| Shona/Ndebele language toggle | i18next across all pages | Low |
+| WhatsApp Match Reports | `POST /api/whatsapp/report` | Built — needs TWILIO_* env vars |
+| Player Market Value Estimator | `/player/valuation` | Built ✅ |
+| AI Injury Prevention Engine | `/injury-tracker` | Built ✅ |
+| National Talent Database | `/talent-database` | Built ✅ |
+| NASH/NAPH School League Manager | `/school-leagues` | Built ✅ |
+| Player Development Trajectory | `/player/potential` | Built ✅ |
+| Set Piece & Tactical Analytics | `/coach/set-pieces` | Built ✅ |
+| Shona/Ndebele language toggle | i18next across all pages | NOT YET BUILT |
 
 ### OTHER SPORTS — DEPTH MISSING (same gap netball had)
 Rugby, Basketball, Cricket, Swimming, Tennis, Volleyball, Hockey all work generically
@@ -1527,7 +1541,16 @@ jspdf-autotable    ^5.0.7   — PDF tables
 zustand                      — global state (auth-store, etc.)
 @daily-co/daily-js           — WebRTC live streaming
 next                 14      — framework
+stripe             ^20.4.1  — Stripe payments
+firebase-admin     ^13.7.0  — FCM push notifications (Next.js server routes)
+firebase           ^10.14.1 — Firebase client SDK
+@aws-sdk/client-s3           — Cloudflare R2 video upload (S3-compatible)
+@aws-sdk/s3-request-presigner — presigned PUT URLs for R2
+resend             ^6.9.4   — transactional email (welcome, subscription, match reports)
+recharts           ^3.8.0   — analytics charts
 ```
+
+Note: Twilio WhatsApp uses native `fetch` to REST API — no npm package needed.
 
 ### ENVIRONMENT VARIABLES (.env.local + Vercel)
 ```
@@ -1535,15 +1558,50 @@ NEXT_PUBLIC_API_URL = https://bhora-ai.onrender.com/api/v1
 ANTHROPIC_API_KEY   = set in both .env.local AND Vercel dashboard
 DEEPSEEK_API_KEY    = set in .env.local (not used by web app, used by Laravel)
 DAILY_API_KEY       = set in .env.local AND Vercel (live streaming)
+
+# Payments (Stripe)
+STRIPE_SECRET_KEY        = sk_live_... or sk_test_...
+STRIPE_WEBHOOK_SECRET    = whsec_... (from Stripe dashboard → Webhooks)
+NEXT_PUBLIC_APP_URL      = https://grassrootssports.live
+
+# Push Notifications (Firebase Admin)
+FIREBASE_PROJECT_ID      = (from Firebase console → Project Settings)
+FIREBASE_CLIENT_EMAIL    = firebase-adminsdk-...@....iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY     = "-----BEGIN PRIVATE KEY-----\n..."
+
+# Video Upload (Cloudflare R2)
+R2_ACCOUNT_ID        = (Cloudflare dashboard → R2)
+R2_ACCESS_KEY_ID     = (R2 API token)
+R2_SECRET_ACCESS_KEY = (R2 API token secret)
+R2_BUCKET            = grassroots-videos
+R2_PUBLIC_URL        = https://pub-xxxx.r2.dev  (or custom domain)
+
+# Email (Resend)
+RESEND_API_KEY = re_...
+EMAIL_FROM     = notifications@grassrootssports.live
+
+# WhatsApp Reports (Twilio)
+TWILIO_ACCOUNT_SID    = ACxxx
+TWILIO_AUTH_TOKEN     = xxx
+TWILIO_WHATSAPP_FROM  = whatsapp:+14155238886  (Twilio sandbox or approved sender)
 ```
 
 ### LAST 5 COMMITS (as of March 2026)
 ```
-0f2fbb5  fix: Array.from(Set) in player/stats/new — TS downlevelIteration
-1eebba3  fix: default case in rolePath middleware switch
+ef7e2e9  fix: add date_of_birth field for player registration — required by backend
+862dc5c  fix: send surname (not last_name) to match Laravel backend field name
+4da1b75  Fix: add video_url to SavedAnalysis interface
+0d28ba2  Fix Set spread iteration error in talent-database page
+f7075c6  Fix Stripe apiVersion to match installed package (2026-02-25.clover)
+```
+
+### RECENT MAJOR FEATURE COMMITS
+```
+ee8bb2e  feat: wire welcome email on registration + Claude Vision for video analysis
+1366d1e  feat: video studio — R2 background upload with progress indicator
+6b5e966  feat: backend wiring — Stripe payments, FCM push, R2 video upload, Resend email
+3dc9bff  feat: Phase 2-4 features — injury AI, valuation, potential, talent DB, school leagues, set pieces, WhatsApp reports
 548f7fd  feat: complete netball hub — position-aware AI, court diagram, register pre-select, training plans
-67f9d45  feat: split netball stats into position-specific roles (shooter/midcourt/defender)
-774756f  feat: browser push notifications via Web Notification API
 ```
 
 ### KNOWN ISSUES (do not waste time re-investigating these)
