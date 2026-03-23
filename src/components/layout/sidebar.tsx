@@ -47,6 +47,8 @@ const navItems: NavItem[] = [
   { href: "/streaming",              label: "Live Matches",   icon: Radio,           roles: ["coach"] },
   { href: "/streaming/broadcast",    label: "Broadcast",      icon: Tv2,             roles: ["coach"] },
   { href: "/tournaments",             label: "Tournaments",    icon: Trophy,          roles: ["coach"] },
+  { href: "/business-hub",           label: "Business Hub",   icon: Briefcase,       roles: ["coach"] },
+  { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["coach"] },
   { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
   { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
@@ -54,6 +56,7 @@ const navItems: NavItem[] = [
   { href: "/scout/shortlist", label: "Shortlist",     icon: Star,        roles: ["scout"] },
   { href: "/scout/reports",   label: "PDF Reports",   icon: FileText,    roles: ["scout"] },
   { href: "/tournaments",     label: "Tournaments",   icon: Trophy,      roles: ["scout"] },
+  { href: "/business-hub",    label: "Business Hub",  icon: Briefcase,   roles: ["scout"] },
   { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
