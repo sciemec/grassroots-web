@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Users, ShieldCheck, Search, CreditCard, BarChart2, Megaphone, Loader2, Globe } from "lucide-react";
+import { Users, ShieldCheck, Search, CreditCard, BarChart2, Megaphone, Loader2, Globe, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -17,6 +17,11 @@ interface AdminStats {
   new_users_this_week: number;
 }
 
+interface PwaQuickStats {
+  total: number;
+  this_week: number;
+}
+
 const HUB_CARDS = [
   { icon: Users,       title: "Users",           subtitle: "Manage all users",        href: "/admin/users",          bg: "bg-blue-600" },
   { icon: ShieldCheck, title: "Verifications",   subtitle: "Document verifications",  href: "/admin/verifications",  bg: "bg-green-600" },
@@ -25,6 +30,7 @@ const HUB_CARDS = [
   { icon: BarChart2,   title: "Platform Stats",  subtitle: "System analytics",        href: "/admin/stats",          bg: "bg-red-600" },
   { icon: Megaphone,   title: "Announcements",   subtitle: "Platform notices",        href: "/admin/announcements",  bg: "bg-teal-600" },
   { icon: Globe,       title: "Sports Content",  subtitle: "Netball info page",       href: "/sports/netball",       bg: "bg-purple-600" },
+  { icon: Download,    title: "PWA Installs",    subtitle: "App install tracker",     href: "/admin/pwa",            bg: "bg-[#1a5c2a]" },
 ];
 
 export default function AdminHubPage() {
@@ -39,6 +45,15 @@ export default function AdminHubPage() {
     enabled: !!user,
   });
 
+  const { data: pwaData } = useQuery<PwaQuickStats>({
+    queryKey: ["admin-pwa-quick"],
+    queryFn: async () => {
+      const res = await api.get("/admin/pwa-stats");
+      return { total: res.data.total, this_week: res.data.this_week };
+    },
+    enabled: !!user,
+  });
+
   const stats = data?.data;
 
   const statCards = [
@@ -48,6 +63,8 @@ export default function AdminHubPage() {
     { label: "Sessions Today",       value: stats?.sessions_today },
     { label: "Scout Requests",       value: stats?.pending_scout_requests },
     { label: "New This Week",        value: stats?.new_users_this_week },
+    { label: "PWA Installs",         value: pwaData?.total },
+    { label: "PWA This Week",        value: pwaData?.this_week },
   ];
 
   return (
