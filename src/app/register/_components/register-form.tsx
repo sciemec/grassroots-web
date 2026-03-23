@@ -45,6 +45,7 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "",
     password: "", password_confirmation: "", province: "",
+    date_of_birth: "",
   });
   const [showPw, setShowPw]   = useState(false);
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,7 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
     if (form.password.length < 8)          return "Password must be at least 8 characters.";
     if (form.password !== form.password_confirmation) return "Passwords do not match. / Mapassword haafanani.";
     if (!form.province)                    return "Please select your province.";
+    if (role === "player" && !form.date_of_birth) return "Date of birth is required for players.";
     return "";
   };
 
@@ -73,6 +75,7 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
       const res = await api.post("/auth/register", {
         first_name: form.first_name.trim(),
         surname:    form.last_name.trim(),
+        ...(role === "player" && { date_of_birth: form.date_of_birth }),
         email:      form.email.trim().toLowerCase(),
         password:   form.password,
         password_confirmation: form.password_confirmation,
@@ -161,6 +164,16 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
               <input type="text" placeholder="Chirwa" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} className={inputCls} />
             </div>
           </div>
+
+          {/* Date of birth — players only */}
+          {role === "player" && (
+            <div>
+              <label className={`mb-1 block text-xs font-medium ${accent.text}`}>Date of birth</label>
+              <input type="date" value={form.date_of_birth}
+                onChange={(e) => set("date_of_birth", e.target.value)}
+                className={inputCls} />
+            </div>
+          )}
 
           {/* Email */}
           <div>
