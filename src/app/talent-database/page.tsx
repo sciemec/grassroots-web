@@ -73,7 +73,7 @@ export default function TalentDatabasePage() {
   async function handleShortlist(playerId: string) {
     try {
       await api.post("/scout/shortlist", { player_id: playerId });
-      setShortlisted((prev) => new Set([...prev, playerId]));
+      setShortlisted((prev) => new Set(Array.from(prev).concat(playerId)));
     } catch {
       // silently fail
     }
