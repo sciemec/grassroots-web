@@ -26,6 +26,7 @@ interface SavedAnalysis {
   user_question: string | null;
   ai_feedback: string;
   frame_count: number;
+  video_url: string | null;
   created_at: string;
 }
 
