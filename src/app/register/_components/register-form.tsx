@@ -72,7 +72,7 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
     try {
       const res = await api.post("/auth/register", {
         first_name: form.first_name.trim(),
-        last_name:  form.last_name.trim(),
+        surname:    form.last_name.trim(),
         email:      form.email.trim().toLowerCase(),
         password:   form.password,
         password_confirmation: form.password_confirmation,
