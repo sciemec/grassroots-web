@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import api from "@/lib/api";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -36,6 +37,23 @@ export function useInstallPrompt() {
     window.addEventListener("appinstalled", () => {
       setIsInstalled(true);
       setInstallPrompt(null);
+      // Track installation on the backend
+      const ua  = navigator.userAgent.toLowerCase();
+      const platform =
+        /android/.test(ua) ? "android" :
+        /iphone|ipad/.test(ua) ? "ios" :
+        /windows/.test(ua) ? "windows" :
+        /mac/.test(ua) ? "macos" :
+        /linux/.test(ua) ? "linux" : "unknown";
+      const browser =
+        /edg\//.test(ua) ? "edge" :
+        /chrome/.test(ua) ? "chrome" :
+        /firefox/.test(ua) ? "firefox" :
+        /safari/.test(ua) ? "safari" : "unknown";
+      const device_type =
+        /mobile|android|iphone/.test(ua) ? "mobile" :
+        /tablet|ipad/.test(ua) ? "tablet" : "desktop";
+      api.post("/pwa-install", { platform, browser, device_type }).catch(() => {});
     });
 
     return () => window.removeEventListener("beforeinstallprompt", handler);

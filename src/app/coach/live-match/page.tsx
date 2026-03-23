@@ -13,6 +13,9 @@ import {
   Brain,
   Mic,
   MicOff,
+  MessageCircle,
+  Send,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -217,6 +220,12 @@ export default function LiveMatchPage() {
   const [halftimeLoading, setHalftimeLoading] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // WhatsApp report state
+  const [waPhone, setWaPhone] = useState("");
+  const [waSending, setWaSending] = useState(false);
+  const [waSent, setWaSent] = useState(false);
+  const [waError, setWaError] = useState("");
+
   useEffect(() => {
     if (!user) router.push("/login");
   }, [user, router]);
@@ -340,6 +349,41 @@ export default function LiveMatchPage() {
     commentary.commentOnEvent(event);
   };
 
+  /** Sends a WhatsApp match report via Twilio. */
+  const sendWhatsAppReport = useCallback(async () => {
+    setWaSending(true);
+    setWaError("");
+    const goals = events.filter((e) => e.type === "goal");
+    const yellows = events.filter((e) => e.type === "yellow_card");
+    const reds = events.filter((e) => e.type === "red_card");
+    const lines: string[] = [];
+    if (goals.length) lines.push(`Goals: ${goals.map((g) => `${g.player || g.team} ${g.minute}ʼ`).join(", ")}`);
+    if (yellows.length) lines.push(`Yellow cards: ${yellows.map((y) => `${y.player || y.team} ${y.minute}ʼ`).join(", ")}`);
+    if (reds.length) lines.push(`Red cards: ${reds.map((r) => `${r.player || r.team} ${r.minute}ʼ`).join(", ")}`);
+    try {
+      const res = await fetch("/api/whatsapp/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: waPhone,
+          home_team: setup.homeTeam,
+          away_team: setup.awayTeam,
+          home_score: homeScore,
+          away_score: awayScore,
+          summary: lines.join(". ") || `${events.length} events logged.`,
+          match_url: `${window.location.origin}/coach/matches`,
+        }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Send failed");
+      setWaSent(true);
+    } catch (e: unknown) {
+      setWaError(e instanceof Error ? e.message : "WhatsApp send failed");
+    } finally {
+      setWaSending(false);
+    }
+  }, [waPhone, setup, homeScore, awayScore, events]);
+
   if (!user) return null;
 
   return (
@@ -429,20 +473,67 @@ export default function LiveMatchPage() {
           )}
 
           {phase === "ended" && (
-            <div className="mx-auto max-w-lg py-8 text-center">
-              <p className="text-xl font-bold">Match Over</p>
-              <p className="mt-2 text-4xl font-black">
-                {homeScore} – {awayScore}
-              </p>
-              <p className="mt-1 text-zinc-400 text-sm">
-                {setup.homeTeam} vs {setup.awayTeam}
-              </p>
-              <Link
-                href="/coach/matches"
-                className="mt-6 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                View Match Records
-              </Link>
+            <div className="mx-auto max-w-lg py-8 space-y-6">
+              {/* Final score */}
+              <div className="text-center">
+                <p className="text-xl font-bold">Match Over</p>
+                <p className="mt-2 text-4xl font-black">
+                  {homeScore} – {awayScore}
+                </p>
+                <p className="mt-1 text-zinc-400 text-sm">
+                  {setup.homeTeam} vs {setup.awayTeam}
+                </p>
+                <Link
+                  href="/coach/matches"
+                  className="mt-6 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  View Match Records
+                </Link>
+              </div>
+
+              {/* WhatsApp Report */}
+              <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-green-500" />
+                  <p className="text-sm font-semibold">Send WhatsApp Match Report</p>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Share the final score and key events via WhatsApp instantly.
+                </p>
+                {waSent ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-green-500/20 px-4 py-3 text-sm text-green-400">
+                    <CheckCircle2 className="h-4 w-4" /> Report sent successfully!
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <input
+                        type="tel"
+                        value={waPhone}
+                        onChange={(e) => setWaPhone(e.target.value)}
+                        placeholder="+263712345678"
+                        className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-green-500/50 placeholder:text-zinc-600"
+                      />
+                      <button
+                        onClick={sendWhatsAppReport}
+                        disabled={waSending || !waPhone.trim()}
+                        className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      >
+                        {waSending
+                          ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending…</>
+                          : <><Send className="h-3.5 w-3.5" /> Send</>
+                        }
+                      </button>
+                    </div>
+                    {waError && (
+                      <p className="text-xs text-red-400">{waError}</p>
+                    )}
+                    <p className="text-xs text-zinc-500">
+                      Enter the recipient&apos;s WhatsApp number with country code.
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           )}
 

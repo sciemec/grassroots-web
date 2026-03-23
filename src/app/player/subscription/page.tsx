@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -46,8 +46,9 @@ const PLANS = [
   },
 ];
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuthStore();
   const [sub, setSub] = useState<SubStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +56,8 @@ export default function SubscriptionPage() {
   const [payMethod, setPayMethod] = useState("ecocash");
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState("");
+  const [stripeSuccess, setStripeSuccess] = useState(false);
+  const emailSentRef = useRef(false);
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
@@ -62,6 +65,25 @@ export default function SubscriptionPage() {
       .then((res) => { if (res) setSub(res.data); })
       .finally(() => setLoading(false));
   }, [user, router]);
+
+  // Stripe redirect back — send confirmation email once
+  useEffect(() => {
+    if (searchParams.get("success") === "1" && user?.email && !emailSentRef.current) {
+      emailSentRef.current = true;
+      setStripeSuccess(true);
+      const plan = searchParams.get("plan") ?? "monthly";
+      fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: user.email,
+          template: "subscription_confirmed",
+          name: user.name ?? user.email,
+          plan,
+        }),
+      }).catch(() => null); // fire-and-forget — don't block UI on email failure
+    }
+  }, [searchParams, user]);
 
   const subscribe = async () => {
     setPaying(true);
@@ -121,6 +143,17 @@ export default function SubscriptionPage() {
             <p className="text-sm text-muted-foreground">Unlock premium features</p>
           </div>
         </div>
+
+        {/* Stripe payment success banner */}
+        {stripeSuccess && (
+          <div className="mb-6 rounded-xl border border-green-500/40 bg-green-500/10 px-5 py-4 flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-green-700">Payment successful!</p>
+              <p className="text-xs text-green-600">Your subscription is now active. A confirmation has been sent to {user?.email}.</p>
+            </div>
+          </div>
+        )}
 
         {/* Current status */}
         {!loading && sub?.is_active && (
@@ -219,5 +252,13 @@ export default function SubscriptionPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense>
+      <SubscriptionContent />
+    </Suspense>
   );
 }

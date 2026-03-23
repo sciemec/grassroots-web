@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore, useEffectiveRole, roleHomePath, UserRole } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
 import { NotificationBell } from "./notification-bell";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 type NavItem = { href: string; label: string; icon: React.ElementType; roles: string[] };
 
@@ -202,6 +203,9 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
             <LogOut className="h-4 w-4" />
             Sign out
           </button>
+          <div className="mt-3 px-1">
+            <LanguageSwitcher compact />
+          </div>
         </div>
       )}
     </>

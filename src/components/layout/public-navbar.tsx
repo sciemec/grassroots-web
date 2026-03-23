@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 export function PublicNavbar() {
   const [open, setOpen] = useState(false);
@@ -54,6 +55,7 @@ export function PublicNavbar() {
 
         {/* CTA */}
         <div className="hidden items-center gap-3 md:flex">
+          <LanguageSwitcher />
           {user ? (
             <Link
               href={roleHomePath(user.role)}
