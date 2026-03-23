@@ -81,6 +81,7 @@ const navItems: NavItem[] = [
   { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
   { href: "/player/sports",               label: "My Sports",       icon: Swords,          roles: ["player"] },
   { href: "/tournaments",                 label: "Tournaments",     icon: Trophy,          roles: ["player"] },
+  { href: "/player/vault",                label: "Highlight Vault", icon: Film,            roles: ["player"] },
   { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },
