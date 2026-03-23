@@ -1590,11 +1590,11 @@ TWILIO_WHATSAPP_FROM  = whatsapp:+14155238886  (Twilio sandbox or approved sende
 
 ### LAST 5 COMMITS (as of March 2026)
 ```
-f640888  feat: Player Highlight Vault — upload, vault dashboard, public reel page
-9bbd0dd  feat: WhatsApp match report, subscription confirmation email, Shona/Ndebele i18n toggle
+8adeb45  fix: restore original multi-step registration wizards for coach, scout, and fan
 864e06f  feat: brighten all dashboard colors — fix invisible text on cream background
-15d7112  feat: pro gate for Business Hub and Analyst Hub — non-pro users see upgrade screen
-d56f49a  feat: complete school leagues, talent database, potential, valuation
+ae92b25  fix: restore original 5-step player registration wizard
+[prior]  feat: player hub — verification QR+selfie, notifications, profile, stats entry
+[prior]  feat: Player Highlight Vault — upload, vault dashboard, public reel page
 ```
 
 ### RECENT MAJOR FEATURE COMMITS
@@ -1645,6 +1645,134 @@ export default function MyPage() {
 **Language persistence:** Stored in `localStorage` key `grassroots_lang`. Survives page refresh and re-login.
 
 **To add more translations:** Edit the 3 JSON files in `public/locales/` — no code changes needed.
+
+---
+
+---
+
+### PLAYER HUB COMPLETION — March 2026
+
+#### Verification Page (`/player/verification`)
+- **Rebuilt from scratch** — now a full 2-step identity verification flow
+- Step 1 (required): Selfie capture via device camera — live circular preview, capture button, retake option
+- Step 2 (required): Document upload (ID/passport) — file picker, 5MB limit validation
+- Submit checklist shows ✅/❌ for selfie and document before submit
+- Pending state: shows submitted date and "under review" badge
+- Approved state: shows QRProfileCard with AI confidence score
+- Selfie uploaded as `selfie_image` field in FormData to `POST /api/v1/verification/submit`
+- File: `src/app/player/verification/page.tsx`
+
+#### Player Public Profile Page (`/player/public/[id]`)
+- **NEW file** — server-side rendered, NO auth required (public URL)
+- Fetched from `GET /api/v1/player/public/{id}` with 60s revalidation
+- Shows: selfie photo, verified badge, sport, position, province, age group, height, bio, stats
+- Zimbabwe green/gold chevron background with "Join GrassRoots Sports" CTA
+- QR code on verification page links to this page — scanning the QR takes scouts/coaches here
+- File: `src/app/player/public/[id]/page.tsx`
+
+#### QR Profile Card (`/components/ui/qr-profile-card.tsx`)
+- Updated to accept `selfieUrl?: string` prop
+- Shows player face photo on the card when selfie has been uploaded
+
+#### Notifications Page (`/player/notifications`)
+- Type icons: Info / CheckCircle2 / AlertTriangle / AlertCircle per notification type
+- Unread blue dot indicator
+- Date grouping: Today / Yesterday / Earlier
+- Clickable notifications — if `n.link` exists, navigates and auto-marks read
+- Dismiss button (Trash2) calls `DELETE /notifications/{id}`
+- 12-hour time format, back arrow to `/player`
+
+#### Profile Page (`/player/profile`)
+- Camera button opens hidden `<input type="file">` → uploads to `POST /profile/photo`
+- Optimistic photo preview in avatar
+- `weight_kg` field added (alongside height_cm)
+- Club and school text inputs added
+- Profile completion progress bar: 9 fields, live-updates via `watch()`
+- QRProfileCard receives `selfieUrl` from uploaded profile photo
+
+#### Match Stats Entry (`/player/stats/new`)
+- **NEW page** — 3-step wizard: Sport & Role → Match Details → Stats Entry
+- All 10 sports, with sport-specific role picker (outfield/goalkeeper for football, etc.)
+- `FIELD_META` record: human-readable labels, input types, placeholders for every stat key
+- Match details: type (match/training/trial), date, opponent, result (W/D/L/N/A), score, competition
+- Stats grid: 2-column dynamic inputs driven by sport + role selection
+- Saves to `POST /api/v1/player/stats`
+- AI feedback button appears after save (calls `queryAI`)
+- File: `src/app/player/stats/new/page.tsx`
+
+#### Stats History Page (`/player/stats`)
+- **NEW page** — summary cards: Total Logged / Matches / Wins
+- Sport filter chips (only shown when player has logged multiple sports)
+- Expandable rows showing full stat breakdown per entry
+- Uses `FIELD_META_LABELS` from sports config for human-readable stat names
+- Fetches from `GET /api/v1/player/stats`
+- File: `src/app/player/stats/page.tsx`
+
+#### Sports Config Update (`/config/sports.ts`)
+- Added `FIELD_META_LABELS` export — `Record<string, string>` mapping all 60+ stat keys to human-readable labels
+- Used by the stats history page to display stat names
+
+---
+
+### REGISTRATION PAGES RESTORED — March 2026
+
+An automated commit (`98e453c`) had replaced all 4 registration pages with a simplified shared `RegisterForm` component, losing the multi-step wizards, extra profile fields, and role-specific data collection.
+
+All 4 pages were restored from git commit `f126c97`:
+
+#### Player Registration (`/register/player`) — RESTORED ✅
+- 5-step wizard: Personal → Account → Playing → Physical → Consent
+- Step 1: first name, surname, DOB (Day/Month/Year dropdowns), phone
+- Step 2: email, password with strength meter, confirm password
+- Step 3: position (sport-specific), province, school/club, age group (auto-calculated)
+- Step 4: height, weight, dominant foot (Right/Left/Both)
+- Step 5: review summary, guardian phone (auto-shown for under-13), T&C checkbox
+- ZIFA safeguarding rules apply for under-13 players
+- File: `src/app/register/player/page.tsx`
+
+#### Coach Registration (`/register/coach`) — RESTORED ✅
+- 4-step wizard: Personal → Account → Professional → Confirm
+- Blue color scheme
+- Professional step: team/club name, sport coached, CAF coaching level, years experience
+- Coaching levels: Grassroots → Level 1 CAF → Level 2 CAF → Level 3 CAF → UEFA equivalent
+- File: `src/app/register/coach/page.tsx`
+
+#### Scout Registration (`/register/scout`) — RESTORED ✅
+- 4-step wizard: Personal → Account → Professional → Confirm
+- Purple color scheme
+- Professional step: organisation, accreditation number (optional), experience years, scouting regions (multi-select province pills)
+- Confirm step: admin review notice ("Scout accounts reviewed within 24 hours")
+- File: `src/app/register/scout/page.tsx`
+
+#### Fan Registration (`/register/fan`) — RESTORED ✅
+- 3-step wizard: Discover → Account → Confirm
+- Amber/orange color scheme
+- Step 1: name, province, favourite sport (10-sport emoji grid selector)
+- Confirm step: review summary + "What you get as a Fan" benefits list
+- File: `src/app/register/fan/page.tsx`
+
+**Rule going forward:** NEVER replace these registration pages with a shared component. The multi-step wizards collect role-specific data that is sent to the backend on registration. Each role has different required fields.
+
+---
+
+### UI COLOR BRIGHTNESS — March 2026
+
+**Problem:** Background is warm cream (`#EDE0C4` African pattern) but `--foreground` was white — white on cream = invisible. `--muted-foreground` was `#86a891` (dim grey-green) — hard to read on dark green cards.
+
+**Fix applied in `src/app/globals.css`:**
+
+| Variable | Before | After | Effect |
+|---|---|---|---|
+| `body color` | `var(--foreground)` = white | `#0c1f10` dark green | Text on cream background readable |
+| `--muted-foreground` | `#86a891` dim grey-green | `#c8edd0` bright mint | Labels/subtitles clearly visible on dark cards |
+| `--card` | `#163220` | `#1a3d26` | More vivid green cards |
+| `--border` | `rgba(255,255,255,0.14)` | `rgba(255,255,255,0.28)` | Card outlines clearly visible |
+| `--accent` (gold) | `#f0b429` | `#f5c542` | Brighter gold |
+| `--primary` (green) | `#22c55e` | `#2ecc71` | More vivid green buttons |
+| `bg-card/60` | 60% opacity dark card | Forced to solid `#1a3d26` | No more washed-out transparent cards |
+
+Background color (`#EDE0C4` cream + African pattern) was NOT changed.
+Commit: `864e06f`
 
 ---
 
