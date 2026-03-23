@@ -127,8 +127,8 @@ export default function AdminSubscriptionsPage() {
             <p className="font-medium text-white">No subscriptions found</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border bg-card">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-xl border bg-card">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">User</th>

@@ -82,7 +82,7 @@ function RegisterContent() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-800 px-4 py-12">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-800 px-3 py-8 sm:px-4 sm:py-12">
       <div className="w-full max-w-2xl">
 
         {/* Logo */}
@@ -107,18 +107,18 @@ function RegisterContent() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
               {SPORTS.map((s) => (
                 <button
                   key={s.key}
                   onClick={() => selectSport(s.key)}
                   className="group flex flex-col items-center gap-2 rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm transition-all duration-200 hover:border-white/40 hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-xl"
                 >
-                  <span className="text-4xl transition-transform duration-200 group-hover:scale-110">
+                  <span className="text-3xl sm:text-4xl transition-transform duration-200 group-hover:scale-110">
                     {s.emoji}
                   </span>
-                  <span className="text-sm font-bold text-white">{s.label}</span>
-                  <span className="text-[10px] leading-tight text-center text-green-400/80">
+                  <span className="text-xs sm:text-sm font-bold text-white">{s.label}</span>
+                  <span className="hidden sm:block text-[10px] leading-tight text-center text-green-400/80">
                     {s.governingBody}
                   </span>
                 </button>
@@ -152,12 +152,12 @@ function RegisterContent() {
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {ROLES.map((role) => (
                   <button
                     key={role.key}
                     onClick={() => goToRegister(role.key)}
-                    className={`group relative flex flex-col rounded-2xl border bg-white/5 p-5 text-left backdrop-blur-sm transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-xl ${role.border}`}
+                    className={`group relative flex flex-col rounded-2xl border bg-white/5 p-3 sm:p-5 text-left backdrop-blur-sm transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-xl ${role.border}`}
                   >
                     <span className={`mb-3 self-start rounded-full px-2.5 py-0.5 text-xs font-medium ${role.badgeColor}`}>
                       {role.badge}

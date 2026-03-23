@@ -125,7 +125,7 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
   const selectCls = `w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:ring-1 ${accent.ring}`;
 
   return (
-    <div className={`flex min-h-screen items-start justify-center bg-gradient-to-br ${accent.bg} px-4 py-10`}>
+    <div className={`flex min-h-screen items-start justify-center bg-gradient-to-br ${accent.bg} px-3 py-8 sm:px-4 sm:py-10`}>
       <div className="w-full max-w-md">
 
         {/* Back + logo */}

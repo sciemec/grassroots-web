@@ -230,9 +230,9 @@ export default function LandingPage() {
         className="relative overflow-hidden pt-16"
         style={{ background: "#1B5E20", backgroundImage: HERO_TILE, backgroundSize: "160px 160px" }}
       >
-        <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:py-24 sm:px-6 lg:px-8">
           {/* 2-column hero: text left, stat cards right */}
-          <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
+          <div className="grid gap-10 lg:gap-16 lg:grid-cols-2 lg:items-center">
 
             {/* Left — copy */}
             <div>
@@ -242,7 +242,7 @@ export default function LandingPage() {
                 Live · Harare Province
               </div>
 
-              <h1 className="mb-5 text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl">
+              <h1 className="mb-5 text-3xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Develop <em className="not-italic text-[#F5C842]">Every</em><br />
                 Athlete in Zimbabwe
               </h1>
@@ -331,7 +331,7 @@ export default function LandingPage() {
           <SectionLabel>10 Sports</SectionLabel>
           <h2 className="mb-10 text-3xl font-bold text-[#1B5E20]">One Platform</h2>
 
-          <div className="grid grid-cols-5 gap-4 sm:grid-cols-10">
+          <div className="grid grid-cols-5 gap-3 sm:grid-cols-10 sm:gap-4">
             {sports.map(({ name, icon, color, href }) => {
               const inner = (
                 <>
