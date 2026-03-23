@@ -247,7 +247,7 @@ export default function PlayerVerificationPage() {
             )}
             {verif != null && verif.ai_confidence_score !== null && status === "approved" && (
               <p className="mt-2 text-xs text-green-700 font-medium">
-                Identity match: {Math.round((verif.ai_confidence_score ?? 0) * 100)}%
+                Identity match: {Math.round((verif!.ai_confidence_score ?? 0) * 100)}%
               </p>
             )}
             {verif?.reviewed_at && (

@@ -111,36 +111,36 @@ export default function CoachAIInsightsPage() {
 
       let reply = "";
 
-      // Step 1 — Laravel backend (DeepSeek)
+      // Step 1 — Claude proxy (primary)
       try {
-        const res = await api.post("/ask", {
-          question: content,
-          role: user?.role ?? "coach",
-          language: "english",
+        const res = await fetch("/api/ai-coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
         });
-        reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+        if (res.ok) {
+          const data = await res.json();
+          reply = data?.response ?? data?.message ?? "";
+        }
       } catch {
-        // Any error → fall through
+        // Network issue → fall through
       }
 
-      // Step 2 — Next.js Claude proxy (requires internet)
+      // Step 2 — Laravel backend (DeepSeek)
       if (!reply) {
         try {
-          const res = await fetch("/api/ai-coach", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
+          const res = await api.post("/ask", {
+            question: content,
+            role: user?.role ?? "coach",
+            language: "english",
           });
-          if (res.ok) {
-            const data = await res.json();
-            reply = data?.response ?? data?.message ?? "";
-          }
+          reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
         } catch {
-          // Network down → fall through to offline AI
+          // fall through
         }
       }
 
-      // Step 3 — Offline knowledge base (no internet required)
+      // Step 3 — Offline knowledge base
       if (!reply) {
         const offline = await searchOffline(content);
         if (offline) {
@@ -150,7 +150,7 @@ export default function CoachAIInsightsPage() {
 
       setMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), role: "assistant", content: reply || "I couldn't find anything for that query. Try rephrasing or check your connection.", timestamp: new Date() },
+        { id: Date.now().toString(), role: "assistant", content: reply || "Sorry, I'm unable to respond right now. Please check your connection and try again.", timestamp: new Date() },
       ]);
     } catch {
       setMessages((prev) => [
