@@ -20,14 +20,15 @@ const SPORT_EMOJIS: Record<string, string> = {
 
 interface Player {
   id: string;
+  player_id: string;
   name: string;
   sport: string;
   position: string;
   province: string;
-  age: number;
+  age: number | null;
   age_group?: string;
   club?: string;
-  rating?: number;
+  rating?: number | null;
 }
 
 export default function TalentDatabasePage() {
@@ -227,20 +228,20 @@ export default function TalentDatabasePage() {
                 </div>
                 <div className="mb-4 flex flex-wrap gap-2">
                   <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs">
-                    <MapPin className="h-3 w-3" /> {player.province}
+                    <MapPin className="h-3 w-3" /> {player.province ?? "—"}
                   </span>
-                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">
-                    Age {player.age}
-                  </span>
-                  {player.club && (
+                  {player.age_group && (
                     <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs">
-                      {player.club}
+                      {player.age_group.toUpperCase()}
                     </span>
                   )}
+                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-mono text-muted-foreground">
+                    {player.player_id ?? player.id}
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <Link
-                    href={`/scout/compare?player=${player.id}`}
+                    href={`/scout/compare?player=${player.player_id ?? player.id}`}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium hover:bg-muted transition-colors"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> View Profile

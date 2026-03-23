@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trophy, BookOpen } from "lucide-react";
+import { Plus, Trophy, BookOpen, RotateCcw } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
@@ -73,15 +73,51 @@ function generateFixtures(schools: string[]): { home: string; away: string }[] {
   return fixtures;
 }
 
+const STORAGE_KEY = "gs_school_league_tables";
+
+function loadSavedTables(): Record<string, LeagueRow[]> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, LeagueRow[]>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveTables(tables: Record<string, LeagueRow[]>) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tables)); } catch { /* quota exceeded */ }
+}
+
 export default function SchoolLeaguesPage() {
   const router = useRouter();
   const { user, _hasHydrated } = useAuthStore();
   const [activeSport, setActiveSport] = useState<SportTab>("Football");
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  const [leagueRows, setLeagueRows] = useState<LeagueRow[]>(makeLeagueTable(SCHOOLS));
+  const [savedTables, setSavedTables] = useState<Record<string, LeagueRow[]>>({});
   const [showResultForm, setShowResultForm] = useState(false);
   const [resultForm, setResultForm] = useState<MatchResult>({ home: SCHOOLS[0], away: SCHOOLS[1], homeScore: "", awayScore: "" });
   const [fixtures, setFixtures] = useState<{ home: string; away: string }[] | null>(null);
+
+  // Load saved tables from localStorage on mount
+  useEffect(() => {
+    setSavedTables(loadSavedTables());
+  }, []);
+
+  const leagueRows = selectedTournament
+    ? (savedTables[selectedTournament.id] ?? makeLeagueTable(SCHOOLS))
+    : makeLeagueTable(SCHOOLS);
+
+  const setLeagueRows = (updater: (prev: LeagueRow[]) => LeagueRow[]) => {
+    if (!selectedTournament) return;
+    setSavedTables((prev) => {
+      const current = prev[selectedTournament.id] ?? makeLeagueTable(SCHOOLS);
+      const next = updater(current);
+      const updated = { ...prev, [selectedTournament.id]: next };
+      saveTables(updated);
+      return updated;
+    });
+  };
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -220,12 +256,28 @@ export default function SchoolLeaguesPage() {
                     <p className="font-semibold">{selectedTournament.name}</p>
                     <p className="text-xs text-muted-foreground">League Table</p>
                   </div>
-                  <button
-                    onClick={() => setShowResultForm((v) => !v)}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#f0b429] px-3 py-1.5 text-xs font-semibold text-[#1a3a1a] hover:bg-[#f0b429]/90 transition-colors"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> Add Result
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (!selectedTournament) return;
+                        setSavedTables((prev) => {
+                          const updated = { ...prev, [selectedTournament.id]: makeLeagueTable(SCHOOLS) };
+                          saveTables(updated);
+                          return updated;
+                        });
+                      }}
+                      className="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+                      title="Reset table"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => setShowResultForm((v) => !v)}
+                      className="flex items-center gap-1.5 rounded-lg bg-[#f0b429] px-3 py-1.5 text-xs font-semibold text-[#1a3a1a] hover:bg-[#f0b429]/90 transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Result
+                    </button>
+                  </div>
                 </div>
 
                 {/* Add Result form */}

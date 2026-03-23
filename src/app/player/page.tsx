@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Layers, Apple, Zap, BookOpen,
+  Layers, Apple, Zap, BookOpen, DollarSign,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -102,7 +102,9 @@ export default function PlayerHubPage() {
     { icon: Zap,      title: "Talent ID",        subtitle: "Get scouted — Verekedza",    href: "/player/talent-id",          bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
     { icon: Apple,    title: "Nutrition",        subtitle: "Sadza, nyama, zeventeen",    href: "/player/nutrition",          bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
     { icon: TrendingUp,title: "My Progress",    subtitle: "Kuvandudzwa — track journey",href: "/player/progress",           bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
-    { icon: BookOpen,  title: "Knowledge Base", subtitle: "Drills, tactics & nutrition", href: "/knowledge",                 bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
+    { icon: BookOpen,  title: "Knowledge Base",  subtitle: "Drills, tactics & nutrition", href: "/knowledge",              bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
+    { icon: TrendingUp,title: "My Potential",    subtitle: "AI development trajectory",   href: "/player/potential",          bg: "bg-[#6c3483]",  gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
+    { icon: DollarSign,title: "Market Value",    subtitle: "Est. USD transfer value",      href: "/player/valuation",          bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
   ];
 
   return (
