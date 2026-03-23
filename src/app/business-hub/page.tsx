@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { useAuthStore } from "@/lib/auth-store";
+import { ProGate } from "@/components/pro-gate";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -1034,6 +1035,7 @@ export default function BusinessHubPage() {
   };
 
   return (
+    <ProGate feature="Business Hub">
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #052e0a 0%, #0a3d10 50%, #0d2f1a 100%)" }}>
       <PublicNavbar />
 
@@ -1156,5 +1158,6 @@ export default function BusinessHubPage() {
         © {new Date().getFullYear()} Grassroots Sport · Business Hub · Zimbabwe
       </footer>
     </div>
+    </ProGate>
   );
 }

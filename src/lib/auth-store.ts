@@ -25,6 +25,7 @@ export interface AuthUser {
   position?: string;
   age_group?: string;
   province?: string;
+  is_pro?: boolean;
 }
 
 interface AuthState {
