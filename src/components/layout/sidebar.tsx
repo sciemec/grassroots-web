@@ -8,7 +8,7 @@ import {
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
   Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
-  Menu, X, ScanSearch,
+  Menu, X, ScanSearch, Briefcase, LineChart,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -27,6 +27,8 @@ const navItems: NavItem[] = [
   { href: "/admin/subscriptions",    label: "Subscriptions",  icon: CreditCard,      roles: ["admin"] },
   { href: "/admin/stats",            label: "Platform Stats", icon: BarChart2,       roles: ["admin"] },
   { href: "/admin/announcements",    label: "Announcements",  icon: Bell,            roles: ["admin"] },
+  { href: "/business-hub",           label: "Business Hub",   icon: Briefcase,       roles: ["admin"] },
+  { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["admin"] },
   // ─── Coach ────────────────────────────────────────────────────────────────
   { href: "/coach",                  label: "Coach Hub",      icon: LayoutDashboard, roles: ["coach"] },
   { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
