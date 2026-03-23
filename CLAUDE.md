@@ -1414,7 +1414,7 @@ return <>{children}</>;
 /player/sessions/new       New session form
 /player/sports             Sport selector
 /player/sports/[sport]     Sport-specific page
-/player/subscription       Subscription management (+ Stripe card option)
+/player/subscription       Subscription management (Stripe card option + success email on ?success=1)
 /player/valuation          Player market value estimator (AI-powered, first in Zimbabwe)
 /player/potential          Development trajectory — current rating, projected peak, scout readiness
 /player/talent-id          Talent identification
@@ -1509,22 +1509,22 @@ These frontend pages ARE built but the backend/external service is incomplete:
 | FCM Push Delivery | Done ✅ | `POST /api/notifications/send` — Firebase Admin SDK in Next.js (needs FIREBASE_* env vars) |
 | Stripe Payments | Done ✅ | `POST /api/payments/checkout` + webhook — needs STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET |
 | Email delivery | Done ✅ | `POST /api/email` — Resend SDK — needs RESEND_API_KEY + EMAIL_FROM |
-| WhatsApp Match Reports | Done ✅ | `POST /api/whatsapp/report` — Twilio — needs TWILIO_* env vars |
+| WhatsApp Match Reports | Done ✅ | API route + Match Over button in live-match — needs TWILIO_* env vars |
 | Video Storage (R2) | Done ✅ | `POST /api/upload/presigned` — Cloudflare R2 presigned PUT — needs R2_* env vars |
-| Streaming | Daily.co UI done | Need DAILY_API_KEY in Vercel env |
+| Streaming | Done ✅ | `useDailyStream` hook, broadcast page fully wired — needs DAILY_API_KEY in Vercel env |
 
 ### PHASE 2–4 FEATURES — ALL BUILT ✅
 
 | Feature | Route | Status |
 |---|---|---|
-| WhatsApp Match Reports | `POST /api/whatsapp/report` | Built — needs TWILIO_* env vars |
+| WhatsApp Match Reports | `POST /api/whatsapp/report` + Match Over UI | Built ✅ — needs TWILIO_* env vars |
 | Player Market Value Estimator | `/player/valuation` | Built ✅ |
 | AI Injury Prevention Engine | `/injury-tracker` | Built ✅ |
 | National Talent Database | `/talent-database` | Built ✅ |
 | NASH/NAPH School League Manager | `/school-leagues` | Built ✅ |
 | Player Development Trajectory | `/player/potential` | Built ✅ |
 | Set Piece & Tactical Analytics | `/coach/set-pieces` | Built ✅ |
-| Shona/Ndebele language toggle | i18next across all pages | NOT YET BUILT |
+| Shona/Ndebele language toggle | `src/lib/i18n.ts` + LanguageSwitcher | Built ✅ |
 
 ### OTHER SPORTS — DEPTH MISSING (same gap netball had)
 Rugby, Basketball, Cricket, Swimming, Tennis, Volleyball, Hockey all work generically
@@ -1548,6 +1548,8 @@ firebase           ^10.14.1 — Firebase client SDK
 @aws-sdk/s3-request-presigner — presigned PUT URLs for R2
 resend             ^6.9.4   — transactional email (welcome, subscription, match reports)
 recharts           ^3.8.0   — analytics charts
+i18next                      — internationalisation core
+react-i18next                — React bindings for i18next
 ```
 
 Note: Twilio WhatsApp uses native `fetch` to REST API — no npm package needed.
@@ -1588,21 +1590,63 @@ TWILIO_WHATSAPP_FROM  = whatsapp:+14155238886  (Twilio sandbox or approved sende
 
 ### LAST 5 COMMITS (as of March 2026)
 ```
-ef7e2e9  fix: add date_of_birth field for player registration — required by backend
-862dc5c  fix: send surname (not last_name) to match Laravel backend field name
-4da1b75  Fix: add video_url to SavedAnalysis interface
-0d28ba2  Fix Set spread iteration error in talent-database page
-f7075c6  Fix Stripe apiVersion to match installed package (2026-02-25.clover)
+f640888  feat: Player Highlight Vault — upload, vault dashboard, public reel page
+9bbd0dd  feat: WhatsApp match report, subscription confirmation email, Shona/Ndebele i18n toggle
+864e06f  feat: brighten all dashboard colors — fix invisible text on cream background
+15d7112  feat: pro gate for Business Hub and Analyst Hub — non-pro users see upgrade screen
+d56f49a  feat: complete school leagues, talent database, potential, valuation
 ```
 
 ### RECENT MAJOR FEATURE COMMITS
 ```
-ee8bb2e  feat: wire welcome email on registration + Claude Vision for video analysis
-1366d1e  feat: video studio — R2 background upload with progress indicator
+9bbd0dd  feat: WhatsApp match report button (Match Over screen), Stripe success email, i18n EN/SN/ND
 6b5e966  feat: backend wiring — Stripe payments, FCM push, R2 video upload, Resend email
-3dc9bff  feat: Phase 2-4 features — injury AI, valuation, potential, talent DB, school leagues, set pieces, WhatsApp reports
+3dc9bff  feat: Phase 2-4 — injury AI, valuation, potential, talent DB, school leagues, set pieces
 548f7fd  feat: complete netball hub — position-aware AI, court diagram, register pre-select, training plans
+774756f  feat: browser push notifications via Web Notification API
 ```
+
+### SHONA / NDEBELE LANGUAGE TOGGLE (i18n)
+
+**Status: BUILT ✅ (March 2026)**
+
+**Files:**
+- `src/lib/i18n.ts` — configures i18next; loads EN/SN/ND from JSON; reads `grassroots_lang` from localStorage
+- `public/locales/en.json` — English strings
+- `public/locales/sn.json` — ChiShona strings
+- `public/locales/nd.json` — isiNdebele strings
+- `src/components/ui/language-switcher.tsx` — dropdown toggle (Globe icon)
+
+**Where it appears:**
+- **Sidebar** — bottom section, below "Sign out" button (compact mode shows EN/SN/ND)
+- **Public Navbar** — desktop header, next to Sign in / Get started buttons
+
+**Usage in any page:**
+```tsx
+import { useTranslation } from "react-i18next";
+import "@/lib/i18n";  // must import once to initialise
+
+export default function MyPage() {
+  const { t } = useTranslation();
+  return <h1>{t("nav.dashboard")}</h1>;  // → "Dashboard" / "Deshboard" / "Ideshibhodi"
+}
+```
+
+**Translation keys available:**
+- `nav.*` — all sidebar navigation labels
+- `auth.*` — login, register, OTP flow
+- `common.*` — loading, save, cancel, error, etc.
+- `player.*` — player hub labels
+- `coach.*` — coach hub labels
+- `scout.*` — scout hub labels
+- `landing.*` — landing page hero text, CTAs
+- `subscription.*` — plan names, payment labels
+
+**Language persistence:** Stored in `localStorage` key `grassroots_lang`. Survives page refresh and re-login.
+
+**To add more translations:** Edit the 3 JSON files in `public/locales/` — no code changes needed.
+
+---
 
 ### KNOWN ISSUES (do not waste time re-investigating these)
 
