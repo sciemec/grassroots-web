@@ -1505,6 +1505,7 @@ These frontend pages ARE built but the backend/external service is incomplete:
 | Fan Hub — Leaderboard | Done ✅ | Backend DONE — GET /scout/players now open to fans (role:scout,fan) |
 | Fan Hub — Provinces | Done ✅ | Backend DONE — GET /stats/provinces counts players per province |
 | Fan Hub — Fixtures | Done (fallback) | GET /matches/upcoming stub returns [] — frontend uses hardcoded PSL fixtures |
+| Business Hub — Members Tab | Done ✅ | No `/business/members` endpoint on Laravel — frontend uses localStorage fallback (activates on 404/405). Data persists in `grassroots_biz_members` localStorage key. |
 | Push Notifications (browser) | Done ✅ | Works via Web Notification API — no backend needed |
 | FCM Push Delivery | Done ✅ | `POST /api/notifications/send` — Firebase Admin SDK in Next.js (needs FIREBASE_* env vars) |
 | Stripe Payments | Done ✅ | `POST /api/payments/checkout` + webhook — needs STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET |
@@ -1590,11 +1591,11 @@ TWILIO_WHATSAPP_FROM  = whatsapp:+14155238886  (Twilio sandbox or approved sende
 
 ### LAST 5 COMMITS (as of March 2026)
 ```
+91ea6c1  fix: business hub members use localStorage fallback when API returns 404
+[prior]  feat: i18next language toggle — English / ChiShona / isiNdebele
+[prior]  fix: subscription page — Stripe success banner + confirmation email
+[prior]  feat: WhatsApp match report panel on coach live-match ended screen
 8adeb45  fix: restore original multi-step registration wizards for coach, scout, and fan
-864e06f  feat: brighten all dashboard colors — fix invisible text on cream background
-ae92b25  fix: restore original 5-step player registration wizard
-[prior]  feat: player hub — verification QR+selfie, notifications, profile, stats entry
-[prior]  feat: Player Highlight Vault — upload, vault dashboard, public reel page
 ```
 
 ### RECENT MAJOR FEATURE COMMITS
