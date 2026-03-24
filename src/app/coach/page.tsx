@@ -48,20 +48,21 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function CoachHubPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, _hasHydrated } = useAuthStore();
   const [squad, setSquad] = useState<SquadMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [aiInsight, setAiInsight] = useState("");
   const [insightLoading, setInsightLoading] = useState(false);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "coach" && user.role !== "admin") { router.push("/dashboard"); return; }
     api.get("/coach/squad")
       .then((res) => setSquad(res.data?.data ?? res.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, router]);
+  }, [user, router, _hasHydrated]);
 
   const fit      = squad.filter((m) => m.status === "fit").length;
   const injured  = squad.filter((m) => m.status === "injured").length;
@@ -104,7 +105,7 @@ export default function CoachHubPage() {
     }
   };
 
-  if (!user || loading) return <PageSkeleton />;
+  if (!_hasHydrated || !user || loading) return <PageSkeleton />;
 
   const hubCards = [
     { icon: Brain,        title: "AI Insights",      subtitle: "Mubatsiri wako — Claude AI",  href: "/coach/ai-insights",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
