@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Target, StopCircle, Play,
+  ArrowLeft, Target, Play,
   Zap, Flag, ArrowUpDown, MoveRight, Users,
+  Save, BarChart2, FileText, Loader2, CheckCircle2,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SPORTS } from "@/config/sports";
+import { saveMatch } from "@/lib/analyst-api";
 
 // ─── xG zone definitions ──────────────────────────────────────────────────────
 interface XgZone { id: string; label: string; xg: number; col: number; row: number; }
@@ -531,11 +533,12 @@ function StatsPanel({
 }
 
 // ─── End screen ───────────────────────────────────────────────────────────────
-function EndScreen({ events, possession, setup, elapsed }: {
+function EndScreen({ events, possession, setup, elapsed, onSaved }: {
   events: MatchEvent[];
   possession: { home: number; away: number };
   setup: MatchSetup;
   elapsed: number;
+  onSaved: (matchId: string) => void;
 }) {
   const homeGoals  = events.filter((e) => e.type === "shot" && e.team === "home" && e.isGoal).length;
   const awayGoals  = events.filter((e) => e.type === "shot" && e.team === "away" && e.isGoal).length;
@@ -552,6 +555,31 @@ function EndScreen({ events, possession, setup, elapsed }: {
   const homePassPct = homePasses.length ? Math.round((homePasses.filter((e) => e.completed).length / homePasses.length) * 100) : null;
   const awayPassPct = awayPasses.length ? Math.round((awayPasses.filter((e) => e.completed).length / awayPasses.length) * 100) : null;
   const totalMins   = Math.floor(elapsed / 60);
+  const [saving, setSaving]     = useState(false);
+  const [savedId, setSavedId]   = useState<string | null>(null);
+  const [saveErr, setSaveErr]   = useState("");
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveErr("");
+    try {
+      const m = await saveMatch({
+        home_team: setup.homeTeam,
+        away_team: setup.awayTeam,
+        sport: setup.sport,
+        events: events as Parameters<typeof saveMatch>[0]["events"],
+        possession_log: [],
+        elapsed,
+        phase: "ended",
+      });
+      setSavedId(m.id);
+      onSaved(m.id);
+    } catch {
+      setSaveErr("Save failed. Check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const perfLabel = (goals: number, xg: number) => {
     const diff = goals - xg;
@@ -622,20 +650,52 @@ function EndScreen({ events, possession, setup, elapsed }: {
         {row("Total Events", `${events.filter((e) => e.team === "home").length}`, `${events.filter((e) => e.team === "away").length}`)}
       </div>
 
-      {/* LSTM data note */}
-      <div className="rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 p-3">
-        <p className="text-[10px] font-semibold text-[#f0b429]">
-          {events.length} events collected — ready for LSTM tactical pattern analysis
-        </p>
-        <p className="mt-0.5 text-[10px] text-zinc-500">
-          This data will feed heatmaps, pass maps, and season intelligence tools as they are built.
-        </p>
-      </div>
-
-      <Link href="/analyst"
-        className="block w-full rounded-xl bg-[#f0b429] py-3 text-center text-sm font-bold text-[#1a3a1a] hover:bg-[#f0b429]/90 transition-colors">
-        Back to Analyst Hub
-      </Link>
+      {/* Save + analyse actions */}
+      {!savedId ? (
+        <div className="space-y-3">
+          {saveErr && (
+            <p className="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400">{saveErr}</p>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-3 text-sm font-bold text-[#1a3a1a] hover:bg-[#f0b429]/90 disabled:opacity-50 transition-colors"
+          >
+            {saving
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving to backend…</>
+              : <><Save className="h-4 w-4" /> Save Match & Analyse</>}
+          </button>
+          <Link href="/analyst"
+            className="block w-full rounded-xl border border-zinc-700 py-2.5 text-center text-sm text-zinc-400 hover:bg-zinc-800 transition-colors">
+            Back without saving
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+            Match saved! Open in an analysis tool:
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href={`/analyst/xg-analysis?match_id=${savedId}`}
+              className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 transition-colors"
+            >
+              <BarChart2 className="h-4 w-4" /> xG Analysis
+            </Link>
+            <Link
+              href={`/analyst/tactical-report?match_id=${savedId}`}
+              className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-500 transition-colors"
+            >
+              <FileText className="h-4 w-4" /> Tactical Report
+            </Link>
+          </div>
+          <Link href="/analyst"
+            className="block w-full rounded-xl border border-zinc-700 py-2.5 text-center text-sm text-zinc-400 hover:bg-zinc-800 transition-colors">
+            Back to Analyst Hub
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -650,7 +710,8 @@ function loadSaved(): SavedMatch | null {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AnalystLiveMatchPage() {
-  const saved = useMemo(() => loadSaved(), []);
+  const router = useRouter();
+  const saved  = useMemo(() => loadSaved(), []);
 
   const [phase, setPhase]               = useState<Phase>(saved?.phase ?? "setup");
   const [setup, setSetup]               = useState<MatchSetup>(saved?.setup ?? { homeTeam: "", awayTeam: "", sport: "football" });
@@ -829,7 +890,13 @@ export default function AnalystLiveMatchPage() {
           )}
 
           {phase === "ended" && (
-            <EndScreen events={events} possession={possession} setup={setup} elapsed={elapsed} />
+            <EndScreen
+              events={events}
+              possession={possession}
+              setup={setup}
+              elapsed={elapsed}
+              onSaved={() => { try { localStorage.removeItem(LS_KEY); } catch {} }}
+            />
           )}
         </div>
 

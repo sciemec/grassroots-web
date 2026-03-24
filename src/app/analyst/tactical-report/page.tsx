@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Copy, Check, FileText } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { ArrowLeft, Loader2, Copy, Check, FileText, Database } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
+import { getMatch, calcPossessionFromLog } from "@/lib/analyst-api";
+import { MatchLoader } from "@/components/analyst/match-loader";
 
 const LS_FORM   = "gs_tactical_form";
 const LS_REPORT = "gs_tactical_report";
 
 const DEFAULT_FORM = { homeTeam: "", awayTeam: "", homeScore: 0, awayScore: 0, formation: "4-3-3", possession: 50, shots: 0, onTarget: 0, notes: "" };
 
-export default function TacticalReportPage() {
+function TacticalReportInner() {
+  const searchParams = useSearchParams();
   const [form, setForm] = useState(() => {
     try { return JSON.parse(localStorage.getItem(LS_FORM) ?? "null") ?? DEFAULT_FORM; }
     catch { return DEFAULT_FORM; }
@@ -22,9 +26,36 @@ export default function TacticalReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showLoader, setShowLoader] = useState(false);
+  const [loadingMatch, setLoadingMatch] = useState(false);
+  const [matchLabel, setMatchLabel] = useState<string | null>(null);
 
   useEffect(() => { try { localStorage.setItem(LS_FORM, JSON.stringify(form)); } catch {} }, [form]);
   useEffect(() => { try { if (report) localStorage.setItem(LS_REPORT, report); } catch {} }, [report]);
+
+  // Auto-load if ?match_id= is in URL
+  useEffect(() => {
+    const mid = searchParams.get("match_id");
+    if (!mid) return;
+    setLoadingMatch(true);
+    getMatch(mid).then((m) => {
+      const poss = calcPossessionFromLog(m.possession_log, m.elapsed);
+      setForm({
+        homeTeam: m.home_team,
+        awayTeam: m.away_team,
+        homeScore: m.stats.home_goals,
+        awayScore: m.stats.away_goals,
+        formation: "4-3-3",
+        possession: poss.home,
+        shots: m.stats.home_shots + m.stats.away_shots,
+        onTarget: 0,
+        notes: "",
+      });
+      setMatchLabel(`${m.home_team} vs ${m.away_team}`);
+      setReport("");
+    }).catch(() => {}).finally(() => setLoadingMatch(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const generate = async () => {
     if (!form.homeTeam || !form.awayTeam) return;
@@ -67,15 +98,48 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
+      {showLoader && (
+        <MatchLoader
+          title="Load Match Data"
+          onClose={() => setShowLoader(false)}
+          onSelect={(m) => {
+            const poss = calcPossessionFromLog(m.possession_log, m.elapsed);
+            setForm({
+              homeTeam: m.home_team,
+              awayTeam: m.away_team,
+              homeScore: m.stats.home_goals,
+              awayScore: m.stats.away_goals,
+              formation: "4-3-3",
+              possession: poss.home,
+              shots: m.stats.home_shots + m.stats.away_shots,
+              onTarget: 0,
+              notes: "",
+            });
+            setMatchLabel(`${m.home_team} vs ${m.away_team}`);
+            setReport("");
+            setShowLoader(false);
+          }}
+        />
+      )}
       <main className="gs-watermark flex-1 overflow-auto p-6">
         <div className="mb-6 flex items-center gap-3">
           <Link href="/analyst" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-white">AI Tactical Report</h1>
-            <p className="text-sm text-accent/80 italic">Generate a 3-section match report with AI</p>
+            <p className="text-sm text-accent/80 italic">
+              {matchLabel ? `Loaded: ${matchLabel}` : "Generate a 3-section match report with AI"}
+            </p>
           </div>
+          <button
+            onClick={() => setShowLoader(true)}
+            disabled={loadingMatch}
+            className="flex items-center gap-2 rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-white"
+          >
+            {loadingMatch ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+            Load Match
+          </button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -194,5 +258,13 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
         </div>
       </main>
     </div>
+  );
+}
+
+export default function TacticalReportPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+      <TacticalReportInner />
+    </Suspense>
   );
 }

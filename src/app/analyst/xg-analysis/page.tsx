@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, Copy, Check } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { ArrowLeft, Plus, Trash2, Copy, Check, Database, Loader2 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { getMatch, extractShots } from "@/lib/analyst-api";
+import { MatchLoader } from "@/components/analyst/match-loader";
 
 const XG_ZONES = [
   { id: "six_yard",        label: "Six-Yard Box",        xg: 0.76 },
@@ -35,17 +38,34 @@ function xgColor(xg: number) {
 
 const LS_KEY = "gs_xg_shots";
 
-export default function XgAnalysisPage() {
+function XgAnalysisInner() {
+  const searchParams = useSearchParams();
   const [shots, setShots] = useState<Shot[]>(() => {
     try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") as Shot[]; } catch { return []; }
   });
-  const [team, setTeam] = useState<"home" | "away">("home");
-  const [zone, setZone] = useState(XG_ZONES[0].id);
-  const [minute, setMinute] = useState(1);
-  const [isGoal, setIsGoal] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [team, setTeam]         = useState<"home" | "away">("home");
+  const [zone, setZone]         = useState(XG_ZONES[0].id);
+  const [minute, setMinute]     = useState(1);
+  const [isGoal, setIsGoal]     = useState(false);
+  const [copied, setCopied]     = useState(false);
+  const [showLoader, setShowLoader] = useState(false);
+  const [loadingMatch, setLoadingMatch] = useState(false);
+  const [matchLabel, setMatchLabel] = useState<string | null>(null);
 
   useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(shots)); } catch {} }, [shots]);
+
+  // Auto-load if ?match_id= is in URL
+  useEffect(() => {
+    const mid = searchParams.get("match_id");
+    if (!mid) return;
+    setLoadingMatch(true);
+    getMatch(mid).then((m) => {
+      const loaded = extractShots(m.events);
+      setShots(loaded);
+      setMatchLabel(`${m.home_team} vs ${m.away_team}`);
+    }).catch(() => {}).finally(() => setLoadingMatch(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addShot = () => {
     const zoneData = XG_ZONES.find((z) => z.id === zone);
@@ -86,15 +106,36 @@ export default function XgAnalysisPage() {
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
+      {showLoader && (
+        <MatchLoader
+          title="Load Shots from Match"
+          onClose={() => setShowLoader(false)}
+          onSelect={(m) => {
+            setShots(extractShots(m.events));
+            setMatchLabel(`${m.home_team} vs ${m.away_team}`);
+            setShowLoader(false);
+          }}
+        />
+      )}
       <main className="gs-watermark flex-1 overflow-auto p-6">
         <div className="mb-6 flex items-center gap-3">
           <Link href="/analyst" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-white">xG & Shot Analysis</h1>
-            <p className="text-sm text-accent/80 italic">Log shots, track expected goals</p>
+            <p className="text-sm text-accent/80 italic">
+              {matchLabel ? `Loaded: ${matchLabel}` : "Log shots, track expected goals"}
+            </p>
           </div>
+          <button
+            onClick={() => setShowLoader(true)}
+            disabled={loadingMatch}
+            className="flex items-center gap-2 rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-white"
+          >
+            {loadingMatch ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+            Load Match
+          </button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -216,5 +257,13 @@ export default function XgAnalysisPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function XgAnalysisPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+      <XgAnalysisInner />
+    </Suspense>
   );
 }
