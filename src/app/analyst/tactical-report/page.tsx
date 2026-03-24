@@ -12,11 +12,16 @@ import { MatchLoader } from "@/components/analyst/match-loader";
 const LS_FORM   = "gs_tactical_form";
 const LS_REPORT = "gs_tactical_report";
 
-const DEFAULT_FORM = { homeTeam: "", awayTeam: "", homeScore: 0, awayScore: 0, formation: "4-3-3", possession: 50, shots: 0, onTarget: 0, notes: "" };
+interface TacticalForm {
+  homeTeam: string; awayTeam: string; homeScore: number; awayScore: number;
+  formation: string; possession: number; shots: number; onTarget: number; notes: string;
+}
+
+const DEFAULT_FORM: TacticalForm = { homeTeam: "", awayTeam: "", homeScore: 0, awayScore: 0, formation: "4-3-3", possession: 50, shots: 0, onTarget: 0, notes: "" };
 
 function TacticalReportInner() {
   const searchParams = useSearchParams();
-  const [form, setForm] = useState(() => {
+  const [form, setForm] = useState<TacticalForm>(() => {
     try { return JSON.parse(localStorage.getItem(LS_FORM) ?? "null") ?? DEFAULT_FORM; }
     catch { return DEFAULT_FORM; }
   });
