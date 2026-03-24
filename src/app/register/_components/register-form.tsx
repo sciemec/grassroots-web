@@ -86,10 +86,13 @@ export function RegisterForm({ role, sport, accentColor }: Props) {
       const { token: t, user: u } = res.data;
       setAuth(t, {
         id: String(u.id),
-        name: u.name ?? `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim(),
+        name: u.name ?? `${u.first_name ?? ""} ${u.surname ?? ""}`.trim(),
         email: u.email,
         role: u.role as UserRole,
         token: t,
+        sport: u.sport ?? undefined,
+        province: u.province ?? undefined,
+        is_pro: u.is_pro ?? false,
       });
       router.replace(roleHomePath(u.role as UserRole));
 

@@ -35,7 +35,16 @@ function LoginForm() {
         password,
       });
       const { token: t, user: u } = res.data;
-      setAuth(t, { id: String(u.id), name: u.name ?? `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim(), email: u.email, role: u.role, token: t });
+      setAuth(t, {
+        id: String(u.id),
+        name: u.name ?? `${u.first_name ?? ""} ${u.surname ?? ""}`.trim(),
+        email: u.email,
+        role: u.role,
+        token: t,
+        sport: u.sport ?? undefined,
+        province: u.province ?? undefined,
+        is_pro: u.is_pro ?? false,
+      });
       router.replace(roleHomePath(u.role));
     } catch (e: unknown) {
       const status = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status;
