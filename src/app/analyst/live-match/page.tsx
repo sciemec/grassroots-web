@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Target, StopCircle, Play,
@@ -640,12 +640,22 @@ function EndScreen({ events, possession, setup, elapsed }: {
   );
 }
 
+// ─── Persistence ─────────────────────────────────────────────────────────────
+const LS_KEY = "gs_live_match";
+interface SavedMatch { phase: Phase; setup: MatchSetup; events: MatchEvent[]; possessionLog: PossessionBlock[]; elapsed: number; }
+function loadSaved(): SavedMatch | null {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "null") as SavedMatch | null; }
+  catch { return null; }
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AnalystLiveMatchPage() {
-  const [phase, setPhase]               = useState<Phase>("setup");
-  const [setup, setSetup]               = useState<MatchSetup>({ homeTeam: "", awayTeam: "", sport: "football" });
-  const [events, setEvents]             = useState<MatchEvent[]>([]);
-  const [elapsed, setElapsed]           = useState(0);
+  const saved = useMemo(() => loadSaved(), []);
+
+  const [phase, setPhase]               = useState<Phase>(saved?.phase ?? "setup");
+  const [setup, setSetup]               = useState<MatchSetup>(saved?.setup ?? { homeTeam: "", awayTeam: "", sport: "football" });
+  const [events, setEvents]             = useState<MatchEvent[]>(saved?.events ?? []);
+  const [elapsed, setElapsed]           = useState(saved?.elapsed ?? 0);
   const [activeTab, setActiveTab]       = useState<ActiveTab>("shot");
   const [activeTeam, setActiveTeam]     = useState<"home" | "away">("home");
   const [markGoal, setMarkGoal]         = useState(false);
@@ -655,8 +665,15 @@ export default function AnalystLiveMatchPage() {
   const [outcome, setOutcome]           = useState<"goal" | "shot_on" | "cleared" | "wasted">("cleared");
   const [subReason, setSubReason]       = useState<"tactical" | "injury" | "fatigue">("tactical");
   const [possessionTeam, setPossessionTeam] = useState<"home" | "away">("home");
-  const [possessionLog, setPossessionLog]   = useState<PossessionBlock[]>([]);
+  const [possessionLog, setPossessionLog]   = useState<PossessionBlock[]>(saved?.possessionLog ?? []);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Persist match state when live or ended
+  useEffect(() => {
+    if (phase === "live" || phase === "ended") {
+      try { localStorage.setItem(LS_KEY, JSON.stringify({ phase, setup, events, possessionLog, elapsed })); } catch {}
+    }
+  }, [phase, setup, events, possessionLog, elapsed]);
 
   // Timer
   useEffect(() => {
@@ -680,6 +697,7 @@ export default function AnalystLiveMatchPage() {
     setElapsed(0);
     setEvents([]);
     setPossessionLog([{ team: "home", startMinute: 1 }]);
+    try { localStorage.removeItem(LS_KEY); } catch {}
   };
 
   const handleShot = useCallback((zone: XgZone) => {

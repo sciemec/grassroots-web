@@ -1,24 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Copy, Check, FileText } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 
+const LS_FORM   = "gs_tactical_form";
+const LS_REPORT = "gs_tactical_report";
+
+const DEFAULT_FORM = { homeTeam: "", awayTeam: "", homeScore: 0, awayScore: 0, formation: "4-3-3", possession: 50, shots: 0, onTarget: 0, notes: "" };
+
 export default function TacticalReportPage() {
-  const [form, setForm] = useState({
-    homeTeam: "", awayTeam: "",
-    homeScore: 0, awayScore: 0,
-    formation: "4-3-3",
-    possession: 50,
-    shots: 0, onTarget: 0,
-    notes: "",
+  const [form, setForm] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_FORM) ?? "null") ?? DEFAULT_FORM; }
+    catch { return DEFAULT_FORM; }
   });
-  const [report, setReport] = useState("");
+  const [report, setReport] = useState(() => {
+    try { return localStorage.getItem(LS_REPORT) ?? ""; } catch { return ""; }
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => { try { localStorage.setItem(LS_FORM, JSON.stringify(form)); } catch {} }, [form]);
+  useEffect(() => { try { if (report) localStorage.setItem(LS_REPORT, report); } catch {} }, [report]);
 
   const generate = async () => {
     if (!form.homeTeam || !form.awayTeam) return;
@@ -50,8 +56,8 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
     }
   };
 
-  const copyReport = () => {
-    navigator.clipboard.writeText(report);
+  const copyReport = async () => {
+    try { await navigator.clipboard.writeText(report); } catch { return; }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -148,7 +154,7 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
               <button
                 onClick={generate}
                 disabled={loading || !f.homeTeam || !f.awayTeam}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#6c3483] py-3 text-sm font-semibold text-white hover:bg-[#5a2d6e] disabled:opacity-50 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-3 text-sm font-semibold text-[#1a3a1a] hover:bg-[#d4a017] disabled:opacity-50 transition-colors"
               >
                 {loading
                   ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating report…</>

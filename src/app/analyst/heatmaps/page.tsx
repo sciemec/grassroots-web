@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -19,10 +19,20 @@ function zoneColor(count: number, maxCount: number): string {
   return "bg-green-500/20";
 }
 
+const LS_KEY = "gs_heatmaps";
+const DEFAULT_SQUAD = "Goalkeeper\nRight Back\nLeft Back\nCentre Back 1\nCentre Back 2\nCentral Midfield\nAttacking Midfield\nRight Wing\nLeft Wing\nStriker 1\nStriker 2";
+
 export default function HeatmapsPage() {
-  const [squadInput, setSquadInput]     = useState("Goalkeeper\nRight Back\nLeft Back\nCentre Back 1\nCentre Back 2\nCentral Midfield\nAttacking Midfield\nRight Wing\nLeft Wing\nStrikerl\nStriker");
+  const [squadInput, setSquadInput] = useState(() => {
+    try { return localStorage.getItem(LS_KEY + "_squad") ?? DEFAULT_SQUAD; } catch { return DEFAULT_SQUAD; }
+  });
   const [selectedPlayer, setSelectedPlayer] = useState(0);
-  const [heatmaps, setHeatmaps]         = useState<Record<number, number[]>>({});
+  const [heatmaps, setHeatmaps] = useState<Record<number, number[]>>(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY + "_data") ?? "{}") as Record<number, number[]>; } catch { return {}; }
+  });
+
+  useEffect(() => { try { localStorage.setItem(LS_KEY + "_squad", squadInput); } catch {} }, [squadInput]);
+  useEffect(() => { try { localStorage.setItem(LS_KEY + "_data", JSON.stringify(heatmaps)); } catch {} }, [heatmaps]);
 
   const players = squadInput.split("\n").map((l) => l.trim()).filter(Boolean);
 
@@ -39,6 +49,11 @@ export default function HeatmapsPage() {
 
   const clearPlayer = () => {
     setHeatmaps((prev) => ({ ...prev, [selectedPlayer]: Array(TOTAL).fill(0) }));
+  };
+
+  const clearAll = () => {
+    setHeatmaps({});
+    try { localStorage.removeItem(LS_KEY + "_data"); } catch {}
   };
 
   const totalClicks = currentMap.reduce((s, v) => s + v, 0);

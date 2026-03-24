@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Trash2, Plus } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -18,12 +18,24 @@ interface PassLink {
   count: number;
 }
 
+const LS_KEY = "gs_pass_map";
+
 export default function PassMapPage() {
-  const [players, setPlayers] = useState<PlayerDot[]>([]);
-  const [links, setLinks] = useState<PassLink[]>([]);
-  const [nextNumber, setNextNumber] = useState(1);
+  const [players, setPlayers] = useState<PlayerDot[]>(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY + "_players") ?? "[]") as PlayerDot[]; } catch { return []; }
+  });
+  const [links, setLinks] = useState<PassLink[]>(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY + "_links") ?? "[]") as PassLink[]; } catch { return []; }
+  });
+  const [nextNumber, setNextNumber] = useState(() => {
+    try { return Number(localStorage.getItem(LS_KEY + "_next") ?? "1"); } catch { return 1; }
+  });
   const [linkForm, setLinkForm] = useState({ from: 1, to: 2, count: 10 });
   const pitchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { try { localStorage.setItem(LS_KEY + "_players", JSON.stringify(players)); } catch {} }, [players]);
+  useEffect(() => { try { localStorage.setItem(LS_KEY + "_links", JSON.stringify(links)); } catch {} }, [links]);
+  useEffect(() => { try { localStorage.setItem(LS_KEY + "_next", String(nextNumber)); } catch {} }, [nextNumber]);
 
   const handlePitchClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (nextNumber > 11) return;
@@ -38,7 +50,7 @@ export default function PassMapPage() {
     const from = players.find((p) => p.number === linkForm.from);
     const to   = players.find((p) => p.number === linkForm.to);
     if (!from || !to || from.number === to.number) return;
-    setLinks((prev) => [...prev, { id: Date.now().toString(), ...linkForm }]);
+    setLinks((prev) => [...prev, { id: crypto.randomUUID(), ...linkForm }]);
   };
 
   const maxCount = Math.max(...links.map((l) => l.count), 1);
@@ -47,6 +59,7 @@ export default function PassMapPage() {
     setPlayers([]);
     setLinks([]);
     setNextNumber(1);
+    try { [LS_KEY + "_players", LS_KEY + "_links", LS_KEY + "_next"].forEach((k) => localStorage.removeItem(k)); } catch {}
   };
 
   return (

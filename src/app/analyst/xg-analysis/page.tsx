@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Copy, Check } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -33,18 +33,25 @@ function xgColor(xg: number) {
   return "bg-zinc-500/60";
 }
 
+const LS_KEY = "gs_xg_shots";
+
 export default function XgAnalysisPage() {
-  const [shots, setShots] = useState<Shot[]>([]);
+  const [shots, setShots] = useState<Shot[]>(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") as Shot[]; } catch { return []; }
+  });
   const [team, setTeam] = useState<"home" | "away">("home");
   const [zone, setZone] = useState(XG_ZONES[0].id);
   const [minute, setMinute] = useState(1);
   const [isGoal, setIsGoal] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(shots)); } catch {} }, [shots]);
+
   const addShot = () => {
-    const zoneData = XG_ZONES.find((z) => z.id === zone)!;
+    const zoneData = XG_ZONES.find((z) => z.id === zone);
+    if (!zoneData) return;
     setShots((prev) => [...prev, {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       team, zone: zoneData.label, xg: zoneData.xg, minute, isGoal,
     }]);
     setIsGoal(false);
