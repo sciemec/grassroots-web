@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { findRelevantSessions } from "@/lib/football-knowledge";
 
 /**
  * POST /api/ai-coach
  *
  * Server-side Anthropic Claude proxy for the AI Coach.
- * Used when the caller has a dev-bypass token (admin testing) or when the
- * Laravel backend returns 401. The ANTHROPIC_API_KEY never leaves the server.
+ * Automatically injects relevant FIFA/FA coaching session knowledge
+ * from the PDF library as context when answering coaching questions.
  *
- * Body: { message: string, system_prompt?: string, history?: { role, content }[] }
+ * Body: { message: string, system_prompt?: string, history?: { role, content }[], role?: string }
  */
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
     message?: string;
     system_prompt?: string;
     history?: { role: string; content: string }[];
+    role?: string;
   };
   try {
     body = await req.json();
@@ -30,6 +32,25 @@ export async function POST(req: NextRequest) {
   if (!message) {
     return NextResponse.json({ error: "message is required." }, { status: 400 });
   }
+
+  // Find relevant sessions from the PDF knowledge base
+  const relevantSessions = findRelevantSessions(message, 2);
+  const knowledgeContext = relevantSessions.length > 0
+    ? "\n\n---\nRELEVANT COACHING SESSIONS FROM YOUR KNOWLEDGE BASE:\n" +
+      relevantSessions.map(s =>
+        `\n[${s.title} | Source: ${s.source} | Category: ${s.category}]\n` +
+        s.content.slice(0, 1200) + (s.content.length > 1200 ? "…" : "")
+      ).join("\n\n") +
+      "\n---\n"
+    : "";
+
+  const baseSystem = system_prompt ??
+    "You are an expert football coach AI on Grassroots Sport — Zimbabwe's sports platform. " +
+    "You help coaches at grassroots, school and Division 1/2 level with tactics, session planning, player development and match analysis. " +
+    "Always relate advice to the Zimbabwean football context (ZIFA, NASH schools, local conditions). " +
+    "Keep answers practical, clear and actionable.";
+
+  const fullSystem = baseSystem + knowledgeContext;
 
   // Build messages array for Anthropic API (user/assistant turns only)
   const messages: { role: "user" | "assistant"; content: string }[] = [
@@ -49,8 +70,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        system: system_prompt ?? "You are an expert sports coach on the Grassroots Sport platform serving athletes in Zimbabwe.",
+        max_tokens: 1500,
+        system: fullSystem,
         messages,
       }),
     });

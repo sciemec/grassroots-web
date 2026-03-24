@@ -115,7 +115,7 @@ export default function CoachHubPage() {
     { icon: Film,         title: "Video Studio",     subtitle: "Record & edit — Vidiyo",      href: "/video-studio",            bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
     { icon: Activity,     title: "Injury Tracker",   subtitle: "Player health status",        href: "/injury-tracker",          bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
     { icon: Radio,        title: "Live Matches",     subtitle: "Stream & broadcast live",     href: "/streaming",               bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
-    { icon: BookOpen,     title: "Knowledge Base",   subtitle: "Drills, tactics & nutrition", href: "/knowledge",               bg: "bg-[#2471a3]", gradient: "bg-gradient-to-br from-[#2e86c1] to-[#1a5276]" },
+    { icon: BookOpen,     title: "Session Library",  subtitle: "FIFA & FA coaching sessions", href: "/coach/session-library",   bg: "bg-[#2471a3]", gradient: "bg-gradient-to-br from-[#2e86c1] to-[#1a5276]" },
     { icon: ScanSearch,   title: "Scouting",         subtitle: "Player TalentID rankings",    href: "/coach/scouting",          bg: "bg-[#4a235a]", gradient: "bg-gradient-to-br from-[#7d3c98] to-[#4a235a]" },
     { icon: Layers,       title: "Training Plans",   subtitle: "Phases & programmes",         href: "/coach/training-plans",    bg: "bg-[#145a32]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#145a32]" },
   ];

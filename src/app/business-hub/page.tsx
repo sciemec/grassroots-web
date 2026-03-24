@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuthStore } from "@/lib/auth-store";
 import { ProGate } from "@/components/pro-gate";
 import api from "@/lib/api";
@@ -202,7 +203,7 @@ function ReceiptScanner({ onConfirm, onClose }: {
 
         {scanning && (
           <div className="flex flex-col items-center gap-3 py-8">
-            {preview && <img src={preview} alt="Receipt" className="h-32 w-auto rounded-lg object-cover opacity-60" />}
+            {preview && <Image src={preview} alt="Receipt" width={128} height={128} unoptimized className="h-32 w-auto rounded-lg object-cover opacity-60" />}
             <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
             <p className="text-sm text-green-300">AI is reading your document...</p>
           </div>

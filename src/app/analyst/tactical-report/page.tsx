@@ -22,7 +22,7 @@ const DEFAULT_FORM: TacticalForm = { homeTeam: "", awayTeam: "", homeScore: 0, a
 function TacticalReportInner() {
   const searchParams = useSearchParams();
   const [form, setForm] = useState<TacticalForm>(() => {
-    try { return JSON.parse(localStorage.getItem(LS_FORM) ?? "null") ?? DEFAULT_FORM; }
+    try { return (JSON.parse(localStorage.getItem(LS_FORM) ?? "null") as TacticalForm | null) ?? DEFAULT_FORM; }
     catch { return DEFAULT_FORM; }
   });
   const [report, setReport] = useState(() => {
