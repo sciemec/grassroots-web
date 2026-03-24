@@ -52,7 +52,7 @@ function SessionCard({ session }: { session: CoachingSession }) {
 
   const exercises = useMemo(() => {
     const text = session.content;
-    const matches = [...text.matchAll(/(?:part\s*\d+|exercise\s*\d+)[:\s–-]+([^\n.]{10,80})/gi)];
+    const matches = Array.from(text.matchAll(/(?:part\s*\d+|exercise\s*\d+)[:\s–-]+([^\n.]{10,80})/gi));
     return matches.slice(0, 6).map(m => m[0].trim());
   }, [session.content]);
 
