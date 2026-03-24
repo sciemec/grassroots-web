@@ -158,22 +158,22 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Home Team</label>
                   <input type="text" placeholder="e.g. Harare City"
-                    value={f.homeTeam} onChange={(e) => setForm((p) => ({ ...p, homeTeam: e.target.value }))}
+                    value={f.homeTeam} onChange={(e) => setForm((p: TacticalForm) => ({ ...p, homeTeam: e.target.value }))}
                     className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
                 </div>
                 <div className="flex gap-1.5 items-center pb-1">
                   <input type="number" min={0} max={99} value={f.homeScore}
-                    onChange={(e) => setForm((p) => ({ ...p, homeScore: Number(e.target.value) }))}
+                    onChange={(e) => setForm((p: TacticalForm) => ({ ...p, homeScore: Number(e.target.value) }))}
                     className="w-14 rounded-lg border bg-background px-2 py-2.5 text-center text-lg font-bold outline-none focus:ring-1 focus:ring-ring" />
                   <span className="text-muted-foreground font-bold">–</span>
                   <input type="number" min={0} max={99} value={f.awayScore}
-                    onChange={(e) => setForm((p) => ({ ...p, awayScore: Number(e.target.value) }))}
+                    onChange={(e) => setForm((p: TacticalForm) => ({ ...p, awayScore: Number(e.target.value) }))}
                     className="w-14 rounded-lg border bg-background px-2 py-2.5 text-center text-lg font-bold outline-none focus:ring-1 focus:ring-ring" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Away Team</label>
                   <input type="text" placeholder="e.g. Dynamos FC"
-                    value={f.awayTeam} onChange={(e) => setForm((p) => ({ ...p, awayTeam: e.target.value }))}
+                    value={f.awayTeam} onChange={(e) => setForm((p: TacticalForm) => ({ ...p, awayTeam: e.target.value }))}
                     className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
                 </div>
               </div>
@@ -183,13 +183,13 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Formation Used</label>
                   <input type="text" placeholder="4-3-3"
-                    value={f.formation} onChange={(e) => setForm((p) => ({ ...p, formation: e.target.value }))}
+                    value={f.formation} onChange={(e) => setForm((p: TacticalForm) => ({ ...p, formation: e.target.value }))}
                     className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Possession %</label>
                   <input type="number" min={0} max={100}
-                    value={f.possession} onChange={(e) => setForm((p) => ({ ...p, possession: Number(e.target.value) }))}
+                    value={f.possession} onChange={(e) => setForm((p: TacticalForm) => ({ ...p, possession: Number(e.target.value) }))}
                     className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
                 </div>
               </div>
@@ -199,13 +199,13 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Total Shots</label>
                   <input type="number" min={0}
-                    value={f.shots} onChange={(e) => setForm((p) => ({ ...p, shots: Number(e.target.value) }))}
+                    value={f.shots} onChange={(e) => setForm((p: TacticalForm) => ({ ...p, shots: Number(e.target.value) }))}
                     className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-muted-foreground">On Target</label>
                   <input type="number" min={0}
-                    value={f.onTarget} onChange={(e) => setForm((p) => ({ ...p, onTarget: Number(e.target.value) }))}
+                    value={f.onTarget} onChange={(e) => setForm((p: TacticalForm) => ({ ...p, onTarget: Number(e.target.value) }))}
                     className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
                 </div>
               </div>
@@ -216,7 +216,7 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
                   Coach Observations <span className="text-muted-foreground/60">(optional)</span>
                 </label>
                 <textarea rows={4} placeholder="What did you notice? Key moments, players who stood out, problems to fix…"
-                  value={f.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                  value={f.notes} onChange={(e) => setForm((p: TacticalForm) => ({ ...p, notes: e.target.value }))}
                   className="w-full resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring" />
               </div>
 
