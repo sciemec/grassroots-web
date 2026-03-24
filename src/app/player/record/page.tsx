@@ -53,7 +53,7 @@ export default function RecordDrillPage() {
   const [tag,         setTag]         = useState<VideoTag>("Skills");
   const [description, setDescription] = useState("");
   const [uploadErr,   setUploadErr]   = useState("");
-  const [shareUrl,    setShareUrl]    = useState<string | null>(null);
+  const [shareUrl] = useState<string | null>(null);
 
   // ── Camera helpers ──────────────────────────────────────────────────────────
 
