@@ -8,7 +8,7 @@ import {
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
   Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
-  Menu, X, ScanSearch, Briefcase, LineChart,
+  Menu, X, ScanSearch, Briefcase, LineChart, Camera,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -82,6 +82,7 @@ const navItems: NavItem[] = [
   { href: "/player/sports",               label: "My Sports",       icon: Swords,          roles: ["player"] },
   { href: "/tournaments",                 label: "Tournaments",     icon: Trophy,          roles: ["player"] },
   { href: "/player/vault",                label: "Highlight Vault", icon: Film,            roles: ["player"] },
+  { href: "/player/record",              label: "Record Drill",    icon: Camera,          roles: ["player"] },
   { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },

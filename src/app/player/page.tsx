@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Layers, Apple, Zap, BookOpen, DollarSign,
+  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -105,6 +105,8 @@ export default function PlayerHubPage() {
     { icon: BookOpen,  title: "Knowledge Base",  subtitle: "Drills, tactics & nutrition", href: "/knowledge",              bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
     { icon: TrendingUp,title: "My Potential",    subtitle: "AI development trajectory",   href: "/player/potential",          bg: "bg-[#6c3483]",  gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
     { icon: DollarSign,title: "Market Value",    subtitle: "Est. USD transfer value",      href: "/player/valuation",          bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
+    { icon: Film,      title: "Highlight Vault", subtitle: "Upload & share your videos",  href: "/player/vault",              bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+    { icon: Camera,    title: "Record Drill",    subtitle: "Record your performance now", href: "/player/record",             bg: "bg-[#7b241c]",  gradient: "bg-gradient-to-br from-[#c0392b] to-[#7b241c]" },
   ];
 
   return (
