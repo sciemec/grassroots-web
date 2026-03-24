@@ -774,6 +774,11 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<"all" | "paid" | "unpaid" | "partial">("all");
   const [form, setForm] = useState({ name: "", role: "Player" as Member["role"], subscription_amount: "", due_date: "", notes: "" });
+  const [localMode, setLocalMode] = useState(false);
+
+  const membersToLocal = (list: Member[]) => {
+    try { localStorage.setItem(MEMBERS_LOCAL_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+  };
 
   const load = useCallback(async () => {
     if (isGuest) { setMembers(DEMO_MEMBERS); setSummary(DEMO_SUMMARY); return; }
@@ -786,6 +791,7 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
       // If endpoint not found (404) or network error, fall back to localStorage
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (!status || status === 404 || status === 405) {
+        setLocalMode(true);
         const local = membersFromLocal();
         setMembers(local.length ? local : DEMO_MEMBERS);
         updateSummary(local.length ? local : DEMO_MEMBERS);
