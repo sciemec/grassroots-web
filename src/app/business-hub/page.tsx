@@ -801,12 +801,12 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
   const toggleStatus = async (member: Member) => {
     const next: Member["status"] = member.status === "unpaid" ? "paid" : member.status === "partial" ? "paid" : "unpaid";
     const updated = { ...member, status: next, paid_date: next === "paid" ? new Date().toISOString().slice(0, 10) : null };
-    setMembers((prev) => prev.map((m) => m.id === member.id ? updated : m));
-    updateSummary(members.map((m) => m.id === member.id ? updated : m));
-    if (!isGuest) {
-      try { await api.patch(`/business/members/${member.id}`, { status: next }); }
-      catch { setMembers((prev) => prev.map((m) => m.id === member.id ? member : m)); }
-    }
+    const newList = members.map((m) => m.id === member.id ? updated : m);
+    setMembers(newList);
+    updateSummary(newList);
+    if (localMode || isGuest) { membersToLocal(newList); return; }
+    try { await api.patch(`/business/members/${member.id}`, { status: next }); }
+    catch { setMembers((prev) => prev.map((m) => m.id === member.id ? member : m)); }
   };
 
   const updateSummary = (list: Member[]) => {
@@ -822,10 +822,11 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
 
   const addMember = async () => {
     if (!form.name.trim()) return;
-    if (isGuest) {
+    if (localMode || isGuest) {
       const m: Member = { id: Date.now().toString(), name: form.name, role: form.role, subscription_amount: Number(form.subscription_amount) || 0, status: "unpaid", due_date: form.due_date || null, paid_date: null, notes: form.notes || null };
       const updated = [...members, m];
-      setMembers(updated); updateSummary(updated); setShowForm(false); return;
+      setMembers(updated); updateSummary(updated); membersToLocal(updated);
+      setShowForm(false); setForm({ name: "", role: "Player", subscription_amount: "", due_date: "", notes: "" }); return;
     }
     try {
       setSaving(true);
@@ -839,8 +840,9 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
   };
 
   const deleteMember = async (id: string) => {
-    if (isGuest) { const updated = members.filter((m) => m.id !== id); setMembers(updated); updateSummary(updated); return; }
-    try { await api.delete(`/business/members/${id}`); const updated = members.filter((m) => m.id !== id); setMembers(updated); updateSummary(updated); }
+    const updated = members.filter((m) => m.id !== id);
+    if (localMode || isGuest) { setMembers(updated); updateSummary(updated); membersToLocal(updated); return; }
+    try { await api.delete(`/business/members/${id}`); setMembers(updated); updateSummary(updated); }
     catch { setError("Could not remove member."); }
   };
 
