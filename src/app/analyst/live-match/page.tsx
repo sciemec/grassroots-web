@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Target, Play,
+  ArrowLeft, Target, Play, StopCircle,
   Zap, Flag, ArrowUpDown, MoveRight, Users,
   Save, BarChart2, FileText, Loader2, CheckCircle2,
 } from "lucide-react";
@@ -710,7 +710,6 @@ function loadSaved(): SavedMatch | null {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AnalystLiveMatchPage() {
-  const router = useRouter();
   const saved  = useMemo(() => loadSaved(), []);
 
   const [phase, setPhase]               = useState<Phase>(saved?.phase ?? "setup");

@@ -1055,7 +1055,6 @@ export default function BusinessHubPage() {
   return (
     <ProGate feature="Business Hub">
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #052e0a 0%, #0a3d10 50%, #0d2f1a 100%)" }}>
-      <PublicNavbar />
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-24 pb-16 px-4">

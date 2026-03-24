@@ -101,10 +101,16 @@ export default function HeatmapsPage() {
               <p className="mt-2 text-xs text-muted-foreground">{totalClicks} zone marks</p>
             </div>
 
-            <button onClick={clearPlayer}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
-              <Trash2 className="h-4 w-4" /> Clear {players[selectedPlayer] ?? "player"}
-            </button>
+            <div className="flex gap-2">
+              <button onClick={clearPlayer}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+                <Trash2 className="h-4 w-4" /> Clear Player
+              </button>
+              <button onClick={clearAll}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-500/30 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors">
+                <Trash2 className="h-4 w-4" /> Clear All
+              </button>
+            </div>
 
             {/* Legend */}
             <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
