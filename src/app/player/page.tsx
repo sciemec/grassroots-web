@@ -75,11 +75,11 @@ export default function PlayerHubPage() {
     if (user.role !== "player" && user.role !== "admin") { router.push("/dashboard"); return; }
 
     Promise.all([
-      api.get("/sessions?per_page=5"),
+      api.get("/sessions?per_page=5").catch(() => null),
       api.get("/profile").catch(() => null),
     ])
       .then(([sessRes, profRes]) => {
-        setSessions(sessRes.data?.data ?? sessRes.data ?? []);
+        if (sessRes) setSessions(sessRes.data?.data ?? sessRes.data ?? []);
         if (profRes) setProfile(profRes.data);
       })
       .catch(() => {})
