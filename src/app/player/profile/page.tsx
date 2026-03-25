@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2 } from "lucide-react";
+import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2, ExternalLink, Brain, Sparkles } from "lucide-react";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,6 +13,34 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { SportSelector } from "@/components/sports/sport-selector";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import api from "@/lib/api";
+import { queryAI } from "@/lib/ai-query";
+
+// ── Player similarity lookup ──────────────────────────────────────────────────
+const PLAYER_SIMILARITIES: Record<string, Record<string, string[]>> = {
+  football: {
+    "centre forward":        ["Knowledge Musona (youth)", "Nyasha Mushekwi"],
+    "striker":               ["Khama Billiat (early career)", "Knowledge Musona"],
+    "right winger":          ["Khama Billiat", "Tino Kadewere (youth)"],
+    "left winger":           ["Tino Kadewere", "Khama Billiat"],
+    "attacking midfielder":  ["Marvelous Nakamba (youth)", "Devon Chafa"],
+    "central midfielder":    ["Marvelous Nakamba", "Marshal Munetsi"],
+    "defensive midfielder":  ["Teenage Hadebe (youth)", "Takudzwa Chimwemwe"],
+    "centre back":           ["Teenage Hadebe", "Hardlife Zvirekwi"],
+    "right back":            ["Method Mwanjali", "Ronald Pfumbidzai"],
+    "left back":             ["Alec Mudimu", "Ronald Pfumbidzai"],
+    "goalkeeper":            ["Talbert Shumba", "Edmore Sibanda"],
+  },
+  netball: {
+    "goal shooter":  ["Perpetua Mujuru (NASH)", "Tendai Mhlanga"],
+    "goal keeper":   ["Chipo Tsomondo", "Faith Mwale"],
+    "centre":        ["Joyce Dhliwayo", "Rumbidzai Chitima"],
+  },
+};
+
+function getComparisons(position: string, sport: string): string[] {
+  const sportMap = PLAYER_SIMILARITIES[sport.toLowerCase()] ?? {};
+  return sportMap[position.toLowerCase()] ?? [];
+}
 
 const POSITIONS = [
   "Goalkeeper", "Right Back", "Left Back", "Centre Back",
@@ -68,6 +96,8 @@ export default function PlayerProfilePage() {
   const [saved, setSaved]               = useState(false);
   const [error, setError]               = useState("");
   const [togglingVisibility, setTogglingVisibility] = useState(false);
+  const [aiNarrative, setAiNarrative]           = useState("");
+  const [generatingNarrative, setGeneratingNarrative] = useState(false);
   const [selectedSport, setSelectedSport] = useState<SportKey>("football");
   const [photoUrl, setPhotoUrl]         = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -115,6 +145,26 @@ export default function PlayerProfilePage() {
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? "Failed to save. Please try again.");
+    }
+  };
+
+  const generateNarrative = async () => {
+    if (!profile) return;
+    setGeneratingNarrative(true);
+    try {
+      const prompt = `Generate a 3-sentence professional scouting profile narrative (third person) for this player:
+Name: ${user?.name}, Sport: ${profile.sport}, Position: ${profile.position},
+Province: ${profile.province}, Age group: ${profile.age_group},
+Club/School: ${profile.club || profile.school || "unattached"}.
+Write like a FIFA scout. Be professional and positive. No bullet points.`;
+      const reply = await queryAI(prompt, "scout");
+      setAiNarrative(reply);
+      // save to profile
+      api.patch("/profile", { ai_narrative: reply }).catch(() => {});
+    } catch {
+      setAiNarrative("Unable to generate narrative. Please try again.");
+    } finally {
+      setGeneratingNarrative(false);
     }
   };
 
@@ -462,7 +512,7 @@ export default function PlayerProfilePage() {
           </form>
 
           {/* QR Profile Card */}
-          <div className="mt-6 mb-8">
+          <div className="mt-6 mb-6">
             <QRProfileCard
               playerId={String(user.id)}
               playerName={user.name}
@@ -471,6 +521,86 @@ export default function PlayerProfilePage() {
               selfieUrl={photoUrl ?? undefined}
             />
           </div>
+
+          {/* View as Scout button */}
+          <Link
+            href="/player/profile/scout-view"
+            className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 py-3 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/10"
+          >
+            <Eye className="h-4 w-4" /> View as Scout
+            <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+          </Link>
+
+          {/* AI Profile Narrative */}
+          <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <Brain className="h-4 w-4 text-[#f0b429]" />
+              <h3 className="font-semibold text-white">AI Scout Narrative</h3>
+            </div>
+            {aiNarrative ? (
+              <>
+                <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{aiNarrative}</p>
+                <button
+                  onClick={generateNarrative}
+                  disabled={generatingNarrative}
+                  className="text-xs text-accent hover:text-white transition-colors"
+                >
+                  {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
+                </p>
+                <button
+                  onClick={generateNarrative}
+                  disabled={generatingNarrative || !profile?.position}
+                  className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-xs font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40"
+                >
+                  {generatingNarrative ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>
+                  )}
+                </button>
+                {!profile?.position && (
+                  <p className="mt-2 text-xs text-muted-foreground">Complete your position above first</p>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Plays Like... */}
+          {(() => {
+            const comparisons = getComparisons(profile?.position ?? "", profile?.sport ?? "football");
+            if (!comparisons.length) return null;
+            return (
+              <div className="mb-8 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[#f0b429]" />
+                  <h3 className="font-semibold text-white">Plays Like…</h3>
+                </div>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Based on your position and sport, scouts may compare you to:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {comparisons.map((name) => (
+                    <span
+                      key={name}
+                      className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-medium text-[#f0b429]"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground italic">
+                  Comparisons are based on playing style and position — not performance level.
+                </p>
+              </div>
+            );
+          })()}
+
         </div>
       </main>
     </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Bell, Check, CheckCheck, Filter, ArrowLeft,
-  Info, CheckCircle2, AlertTriangle, AlertCircle, Trash2,
+  Info, CheckCircle2, AlertTriangle, AlertCircle, Trash2, Star,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -15,35 +15,39 @@ interface Notification {
   id: string;
   title: string;
   body: string;
-  type: "info" | "success" | "warning" | "alert";
+  type: "info" | "success" | "warning" | "alert" | "opportunity";
   read: boolean;
   created_at: string;
   link?: string;
 }
 
 const TYPE_BADGE: Record<string, string> = {
-  info:    "bg-blue-500/15 text-blue-700",
-  success: "bg-green-500/15 text-green-700",
-  warning: "bg-amber-500/15 text-amber-700",
-  alert:   "bg-red-500/15 text-red-700",
+  info:        "bg-blue-500/15 text-blue-700",
+  success:     "bg-green-500/15 text-green-700",
+  warning:     "bg-amber-500/15 text-amber-700",
+  alert:       "bg-red-500/15 text-red-700",
+  opportunity: "bg-[#f0b429]/15 text-[#a07000]",
 };
 
 const TYPE_LABEL: Record<string, string> = {
   info: "Info", success: "Achievement", warning: "Warning", alert: "Alert",
+  opportunity: "Scout Alert",
 };
 
 const TYPE_ICON: Record<string, typeof Bell> = {
-  info:    Info,
-  success: CheckCircle2,
-  warning: AlertTriangle,
-  alert:   AlertCircle,
+  info:        Info,
+  success:     CheckCircle2,
+  warning:     AlertTriangle,
+  alert:       AlertCircle,
+  opportunity: Star,
 };
 
 const TYPE_ICON_COLOR: Record<string, string> = {
-  info:    "text-blue-500",
-  success: "text-green-500",
-  warning: "text-amber-500",
-  alert:   "text-red-500",
+  info:        "text-blue-500",
+  success:     "text-green-500",
+  warning:     "text-amber-500",
+  alert:       "text-red-500",
+  opportunity: "text-[#f0b429]",
 };
 
 function groupByDate(notifications: Notification[]): { label: string; items: Notification[] }[] {
