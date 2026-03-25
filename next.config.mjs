@@ -2,6 +2,10 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    // ESLint errors are caught in CI — don't block Vercel production builds
+    ignoreDuringBuilds: true,
+  },
   transpilePackages: ["firebase"],
 
   webpack: (config) => {
