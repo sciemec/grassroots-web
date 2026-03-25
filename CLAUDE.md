@@ -29,6 +29,38 @@ No need to run `vercel` CLI. Just `git push origin master`.
 
 ---
 
+## 🔁 FULL-STACK PAIRING RULE — MANDATORY ON EVERY FEATURE
+
+Every feature must be complete on BOTH sides before it is considered done.
+Frontend without backend = broken. Backend without frontend = invisible.
+
+### THE RULE:
+- When you finish building a **frontend** page or feature → **immediately generate the full Laravel backend code** (migration, model, controller, routes) without being asked.
+- When you finish building a **backend** endpoint → **immediately check and wire up the frontend** to call it without being asked.
+- Never leave a feature half-built. If the user asks for one side, deliver both.
+
+### WHAT TO GENERATE FOR EVERY BACKEND:
+1. **Migration file** — exact table schema with correct column types, foreign keys, indexes
+2. **Model file** — fillable fields, relationships, casts
+3. **Controller file** — all methods (index, store, show, destroy, any custom actions)
+4. **Routes** — exact lines to add to `routes/api.php` with correct middleware
+5. **Env variables** — list any new env vars needed (R2, Stripe, Twilio, etc.)
+
+### FORMAT — always present backend code as copy-paste ready files:
+```
+FILE: database/migrations/YYYY_MM_DD_HHMMSS_create_X_table.php
+FILE: app/Models/X.php
+FILE: app/Http/Controllers/Api/XController.php
+ROUTES: (lines to add to routes/api.php)
+```
+
+### STORAGE FALLBACK RULE:
+If the Laravel backend is not yet implemented, the frontend MUST have a localStorage fallback
+so the feature works immediately. Pattern: try API → catch 404/405 → use localStorage.
+This is already done for: Business Hub, Showcase, Vault.
+
+---
+
 ## 🏛️ ARCHITECT RULES — MUST FOLLOW ON EVERY TASK
 
 The user is the architect. Claude is the builder. Claude does nothing without approval.
