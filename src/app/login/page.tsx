@@ -82,7 +82,7 @@ function LoginForm() {
         is_pro: u.is_pro ?? false,
       });
       router.replace(roleHomePath(u.role));
-    } catch (e) {
+    } catch {
       setError("Google sign-in failed. Please try again.");
     }
   };
