@@ -68,55 +68,103 @@ Tell the user:
 
 ---
 
-## 📱 AUTH OVERHAUL — PHONE-FIRST PRINCIPLES (PRIORITY)
+## 🔐 AUTH PRINCIPLES — EMAIL + GOOGLE (CURRENT)
 
 These rules govern ALL authentication and registration work on this platform.
-Never revert to email/password. Never block access to collect data.
+Phone OTP has been paused. Current auth methods: Email/Password + Google OAuth.
+Never block access to collect data. Always find a way to get the user in.
 
 ### CORE PRINCIPLE: Never Deny Access
-Always find a way to get the user in. If one method fails, try another.
+Always find a way to get the user in. If one method fails, offer the other.
 The business depends on frictionless onboarding.
 
-### 1. PHONE-FIRST ONLY
-- Email and password are REMOVED from all registration and login forms
-- Auth method: Firebase Phone OTP only
-- Flow: phone number → 6-digit code → you're in
-- Feel: exactly like WhatsApp onboarding
+### 1. AUTH METHODS (CURRENT)
+- **Primary**: Email address + password
+- **Secondary**: Google OAuth ("Continue with Google" button)
+- **Paused**: Firebase Phone OTP — do NOT build or reference until re-enabled
+- **Flow (email)**: email + password → JWT token → dashboard
+- **Flow (Google)**: tap "Continue with Google" → Google consent → JWT token → dashboard
+- Never show phone number fields on any auth page
 
-### 2. PROGRESSIVE PROFILING
+### 2. LOGIN PAGE — `/login`
+```
+UI Elements:
+- Email input field
+- Password input field
+- "Sign In" button (primary — gold bg)
+- Divider: "or"
+- "Continue with Google" button (white bg, Google icon)
+- "Forgot password?" link → /forgot-password
+- "New to Grassroots Sport? Create account" link → /register
+```
+
+### 3. REGISTRATION — `/register/[role]`
+```
+UI Elements:
+- Full name input
+- Email address input
+- Password input (min 8 chars)
+- Role selector: Player / Coach / Scout / Fan
+- "Create Account" button
+- Divider: "or"
+- "Continue with Google" button
+- "Already have an account? Sign in" link → /login
+```
+
+### 4. GOOGLE OAUTH SETUP
+- Provider: Google OAuth 2.0
+- Laravel backend handles token verification:
+  ```php
+  // POST /api/v1/auth/google
+  // Body: { id_token: string }
+  // Verifies token with Google, creates/finds user, returns JWT
+  ```
+- Next.js calls backend after Google sign-in returns id_token
+- Never expose Google client secret on frontend — verify server-side only
+- Env vars needed:
+  ```
+  GOOGLE_CLIENT_ID     = (Google Cloud Console → OAuth 2.0 credentials)
+  GOOGLE_CLIENT_SECRET = (set in Render/Laravel env only — never frontend)
+  ```
+
+### 5. PROGRESSIVE PROFILING
 - On first login: ask for name and role ONLY (Player/Coach/Scout/Fan)
 - Everything else (province, sport, position, club) collected INSIDE the dashboard
 - Never block dashboard access to collect profile data
 - Profile completion shown as a progress bar, not a gate
 
-### 3. SMART ERROR HANDLING
-- Never show a red blocking error for OTP failures
+### 6. SMART ERROR HANDLING
+- Never show a red blocking error
 - Show friendly bilingual messages:
-  - Sending: "Tirikutuma code... / Sending your code..."
+  - Wrong password: "Passwords hazienderani. Edza zvakare. / Incorrect password. Try again."
+  - Email not found: "Email haiwanikwi. Ita account? / Email not found. Create an account?"
+  - Google failure: "Google sign-in yakadontsa. Shandisa email. / Google sign-in failed. Use email instead."
   - Slow network: "Zviri kutora nguva... / Taking a moment..."
-  - Wrong code: "Code isiriyo. Edza zvakare. / Wrong code. Try again."
-- If Firebase is slow: show spinner, not error
-- Auto-retry OTP send once before showing any message
+- Always offer the alternative auth method if one fails
 
-### 4. OTP FAILURE FALLBACK
-- After 3 failed OTP attempts: offer WhatsApp verification as backup
-- Never leave the user stranded
-
-### 5. REMEMBER ME — FOREVER
+### 7. REMEMBER ME — FOREVER
 - After first successful login: persist auth token on device indefinitely
-- Never ask a returning user to re-verify on the same device
-- Use Zustand persist + localStorage
+- Never ask a returning user to re-login on the same device
+- Use Zustand persist + localStorage (already implemented — do not change)
 
-### 6. ONE TAP RETURN
+### 8. ONE TAP RETURN
 - If user is already authenticated: skip login screen entirely
 - Redirect straight to their dashboard on app load
-- Check auth state before rendering any auth page
+- Check auth state before rendering any auth page (hydration fix already in place — DO NOT UNDO)
 
-### 7. REGISTRATION STEPS (SIMPLIFIED)
-- Step 1: Phone number input → send OTP
-- Step 2: Enter 6-digit code → verified
-- Step 3: Name + Role selection → done
-- Everything else: collected progressively inside dashboard
+### 9. REGISTRATION STEPS (CURRENT)
+- Step 1: Name + Email + Password + Role → "Create Account"
+  OR: "Continue with Google" → auto-fills name + email from Google profile
+- Step 2: Redirected to /login?registered=1 → green "Account created!" banner
+- Step 3: Login → dashboard
+- Everything else (sport, club, province): collected progressively inside dashboard
+
+### ⚠️ PHONE OTP — PAUSED
+- Do NOT add phone number fields to any page
+- Do NOT reference Firebase Phone Auth in any new code
+- Do NOT remove existing Zustand auth-store hydration fixes
+- When Phone OTP is re-enabled in future: it will be added as a THIRD option
+  alongside email and Google, not replacing them
 
 ---
 
@@ -2070,3 +2118,479 @@ const XG_ZONES = [
 - Uses `Sidebar` component from `@/components/layout/sidebar`
 - Uses `useAuthStore` for user greeting
 - Does NOT reuse coach live-match components (separate purpose)
+---
+
+## 🌟 PLAYERS HUB — AI TALENT DISCOVERY SYSTEM
+### Inspired by: TEDSports 2025 — "What if the next Messi is out there and no one knows?"
+### Status: INTEGRATION PHASE (April 2026)
+
+The Players Hub transforms GrassRoots Sports from a stats tracker into a
+**global talent discovery engine**. Any player in Zimbabwe — from Hwange
+to Harare — can showcase their skills and be found by scouts worldwide.
+
+**Core philosophy**: The next great Zimbabwean athlete already exists.
+Our job is to make sure the world finds them.
+
+---
+
+### 🗺️ PLAYERS HUB ARCHITECTURE OVERVIEW
+
+```
+Players Hub (/player)
+├── 1. Talent Showcase System      → /player/showcase
+├── 2. Digital Player Profile      → /player/profile (ENHANCED)
+├── 3. AI Scouting Report          → /scout/reports (ENHANCED)
+├── 4. Skill Assessment & Rating   → /player/assessment (ENHANCED)
+├── 5. Scout Discovery Feed        → /scout (ENHANCED)
+└── 6. Opportunity Alerts          → /player/notifications (ENHANCED)
+```
+
+**Existing systems being integrated (DO NOT REBUILD — wire up only):**
+
+| Existing System | Location | Integrate Into |
+|---|---|---|
+| ML Kit Pose Detection | Flutter app | Talent Showcase video analysis |
+| Biomechanics Analysis | Flutter app | Skill Assessment scoring |
+| DeepSeekService.php | Laravel backend | Scouting Report generation |
+| Football PDF Knowledge Base | Laravel RAG | Report enrichment |
+| Scout PDF Reports (jsPDF) | `/scout/reports` | Enhanced AI scouting CV |
+| Player Potential Score | `/player/potential` | Discovery Feed ranking |
+| Player Valuation | `/player/valuation` | Profile display |
+| National Talent Database | `/talent-database` | Discovery Feed source |
+
+---
+
+### 1. 🎬 TALENT SHOWCASE SYSTEM — `/player/showcase`
+
+**What it does**: Any player uploads a skill video from their phone.
+AI analyses the footage and generates a public showcase card that
+scouts can discover. Works offline — syncs when connected.
+
+**Status**: NEW — build on top of existing `/video-studio`
+
+#### User Flow:
+```
+Player opens /player/showcase
+→ Taps "Add Showcase Clip"
+→ Selects skill type: Dribbling | Shooting | Passing | Defending | Freestyle
+→ Records or uploads short clip (max 60 seconds)
+→ AI analyses clip using existing analyseVideo() in src/lib/video-analysis.ts
+→ Generates public showcase card with:
+   - Skill type badge
+   - AI rating (1-10 per attribute)
+   - Key strength highlight (one sentence)
+   - "Open for Scouting" toggle
+→ Card appears in Scout Discovery Feed
+```
+
+#### AI System Used:
+```typescript
+// REUSE existing function — do NOT rewrite:
+// src/lib/video-analysis.ts → analyseVideo()
+// Add showcase-specific prompt:
+
+const SHOWCASE_PROMPT = `
+You are a FIFA-licensed talent scout reviewing a short skill clip.
+The player is from Zimbabwe — grassroots level.
+Assess the clip and return JSON only:
+{
+  "skill_rating": 1-10,
+  "top_strength": "one sentence describing best attribute shown",
+  "position_fit": ["best positions based on what you see"],
+  "scout_note": "2 sentences a scout would write about this player",
+  "development_flag": "one key area to improve"
+}
+`;
+```
+
+#### Frontend File: `src/app/player/showcase/page.tsx`
+```
+UI Elements:
+- Grid of existing showcase clips (max 6 displayed)
+- "Add New Clip" button → opens upload modal
+- Each clip card shows:
+  ├── Video thumbnail
+  ├── Skill type badge (gold)
+  ├── AI rating bar (e.g. "Dribbling: 7.4/10")
+  ├── Scout note excerpt
+  ├── View count (how many scouts viewed)
+  └── "Open for Scouting" toggle
+- If 0 clips: empty state → "Upload your first skill clip"
+- Mobile-first: works at 375px
+```
+
+#### Backend: New Laravel endpoint needed
+```php
+// routes/api.php — add to player routes:
+Route::post('/player/showcase', [ShowcaseController::class, 'store']);
+Route::get('/player/showcase', [ShowcaseController::class, 'index']);
+Route::delete('/player/showcase/{id}', [ShowcaseController::class, 'destroy']);
+Route::patch('/player/showcase/{id}/toggle-scouting', [ShowcaseController::class, 'toggleScouting']);
+// Public (no auth needed — scouts browse these):
+Route::get('/showcase/discover', [ShowcaseController::class, 'discover']);
+```
+
+#### Database Schema (new migration needed):
+```sql
+CREATE TABLE player_showcases (
+  id              UUID PRIMARY KEY,
+  user_id         UUID REFERENCES users(id) ON DELETE CASCADE,
+  skill_type      VARCHAR(50),       -- dribbling, shooting, passing, etc.
+  video_url       TEXT,              -- Cloudflare R2 URL (reuse existing R2 setup)
+  thumbnail_url   TEXT,
+  ai_rating       DECIMAL(3,1),      -- 1.0 to 10.0
+  top_strength    TEXT,
+  position_fit    JSON,              -- array of positions
+  scout_note      TEXT,
+  development_flag TEXT,
+  open_for_scouting BOOLEAN DEFAULT true,
+  view_count      INTEGER DEFAULT 0,
+  created_at      TIMESTAMP,
+  updated_at      TIMESTAMP
+);
+```
+
+---
+
+### 2. 📋 DIGITAL PLAYER PROFILE — `/player/profile` (ENHANCED)
+
+**What it does**: Enhances existing profile with AI-generated narrative,
+player similarity comparisons, and a public "Scouting CV" view.
+
+**Status**: EXISTING page — ADD these features, do not rebuild
+
+#### New elements to add to existing `/player/profile`:
+
+**A. AI Profile Narrative (auto-generated)**
+```typescript
+// Add to profile page — call on first load if narrative is empty:
+// Uses existing POST /api/v1/ask (DeepSeekService) — reuse, do not rebuild
+
+const generateProfileNarrative = async (playerStats: PlayerStats) => {
+  const prompt = `
+    Generate a professional scouting profile narrative for this player.
+    Write in third person. Max 3 sentences. Professional tone.
+    Stats: ${JSON.stringify(playerStats)}
+    Sport: ${playerStats.sport}
+    Position: ${playerStats.position}
+    Age: ${playerStats.age}
+    Club: ${playerStats.club}
+  `;
+  // Use existing /api/ai-coach route (Next.js Claude proxy)
+};
+```
+
+**B. Player Similarity ("Plays Like...")**
+```typescript
+// Add below profile header:
+// Simple string match from a lookup table first (no ML needed yet):
+const PLAYER_SIMILARITIES: Record<string, string[]> = {
+  football: {
+    "striker-fast":     ["Khama Billiat (early career)", "Knowledge Musona"],
+    "midfielder-technical": ["Marvelous Nakamba (youth)", "Tino Kadewere"],
+    "defender-physical": ["Method Mwanjali", "Hardlife Zvirekwi"],
+  }
+  // Expand per sport
+};
+```
+
+**C. Public Scouting CV View**
+```
+Add "View as Scout" button to /player/profile
+→ Opens /player/profile/scout-view (public, shareable link)
+→ Shows: photo, position, age, club, province, key stats,
+         AI narrative, showcase clips, availability status
+→ Share button generates: grassrootssports.live/player/[id]/cv
+→ Scout can download as PDF (reuse existing jsPDF in /scout/reports)
+```
+
+---
+
+### 3. 🤖 AI SCOUTING REPORT GENERATOR — `/scout/reports` (ENHANCED)
+
+**What it does**: Enhances existing jsPDF report with RAG-powered
+analysis using the football PDF knowledge base already in the backend.
+
+**Status**: EXISTING — enhance, do not rebuild
+
+#### Enhancements to add:
+
+**A. RAG Integration (reuse existing PDF knowledge base)**
+```php
+// Laravel: app/Services/DeepSeekService.php already exists
+// Add new method: generateScoutingReport()
+
+public function generateScoutingReport(array $playerData): string
+{
+    // 1. Retrieve relevant chunks from PDF knowledge base
+    // 2. Build context-enriched prompt
+    // 3. Return structured scouting report
+
+    $prompt = "
+        Using FIFA scouting methodology:
+        Player Data: " . json_encode($playerData) . "
+        
+        Generate a structured scouting report with:
+        - Technical Assessment (1-10 per attribute)
+        - Physical Profile
+        - Tactical Understanding
+        - Psychological Traits (based on performance data)
+        - Overall Rating (1-100 FIFA scale)
+        - Recommended Next Step (trials, training focus, etc.)
+        - Comparison to known Zimbabwean players at same level
+    ";
+
+    return $this->ask($prompt, 'scout', 'en');
+}
+```
+
+**B. Percentile Rankings**
+```typescript
+// Add to report generation in /scout/reports/page.tsx:
+// Show: "Top X% of U17 strikers in Harare Province"
+// Data source: existing /api/v1/scout/players endpoint
+// Calculate percentile client-side from the returned player list
+```
+
+**C. Anomaly Detection Flag**
+```typescript
+// Add to report: flag unusually gifted players automatically
+const ANOMALY_THRESHOLDS = {
+  football: {
+    goals_per_game: 0.8,      // flags if > 0.8 goals/game
+    pass_accuracy: 85,         // flags if > 85%
+    distance_covered_km: 11,   // flags if > 11km/game
+  }
+};
+// Show: "⚡ EXCEPTIONAL FLAG: This player's goal rate exceeds 95% of players at this level"
+```
+
+---
+
+### 4. ⭐ SKILL ASSESSMENT & RATING — `/player/assessment` (ENHANCED)
+
+**What it does**: Enhances existing assessment page with position-specific
+scoring, percentile rankings, and ML Kit biomechanics integration.
+
+**Status**: EXISTING page — ADD scoring engine
+
+#### Scoring Engine (add to existing assessment page):
+```typescript
+// src/lib/skill-scoring.ts — NEW file
+
+export const POSITION_WEIGHTS: Record<string, Record<string, number>> = {
+  football: {
+    striker:    { pace: 0.25, finishing: 0.30, heading: 0.15, dribbling: 0.20, positioning: 0.10 },
+    midfielder: { passing: 0.30, vision: 0.25, stamina: 0.20, dribbling: 0.15, tackling: 0.10 },
+    defender:   { tackling: 0.30, heading: 0.25, positioning: 0.25, pace: 0.10, passing: 0.10 },
+    goalkeeper: { reflexes: 0.30, positioning: 0.25, distribution: 0.20, handling: 0.15, communication: 0.10 },
+  },
+  netball: {
+    shooter:    { accuracy: 0.40, movement: 0.20, court_sense: 0.20, strength: 0.20 },
+    defender:   { intercepts: 0.35, footwork: 0.30, anticipation: 0.25, strength: 0.10 },
+  }
+  // Add all sports progressively
+};
+
+export const calculateSkillScore = (
+  attributes: Record<string, number>,
+  position: string,
+  sport: string
+): number => {
+  const weights = POSITION_WEIGHTS[sport]?.[position];
+  if (!weights) return calculateGenericScore(attributes);
+  
+  return Object.entries(weights).reduce((total, [attr, weight]) => {
+    return total + (attributes[attr] || 5) * weight;
+  }, 0) * 10; // Scale to 100
+};
+```
+
+#### ML Kit Integration Hook (bridge Flutter → Web):
+```typescript
+// The Flutter app already has ML Kit pose detection
+// Bridge: Flutter app saves biomechanics data to backend
+// Web reads from: GET /api/v1/players/{id}/biomechanics
+// Display in assessment page as radar chart (reuse recharts — already in package.json)
+```
+
+---
+
+### 5. 🔍 SCOUT DISCOVERY FEED — `/scout` (ENHANCED)
+
+**What it does**: Enhances existing scout hub with recommendation engine,
+semantic search, and showcase clip browsing.
+
+**Status**: EXISTING hub — ADD these features
+
+#### A. Recommendation Engine
+```typescript
+// src/lib/scout-recommendations.ts — NEW file
+// Simple collaborative filtering (no ML server needed yet):
+
+export const getRecommendedPlayers = async (
+  scoutHistory: string[],    // player IDs scout has viewed
+  filters: ScoutFilters
+): Promise<Player[]> => {
+  // 1. Get players scout has viewed + shortlisted
+  // 2. Find common attributes (position, age, province, sport)
+  // 3. Return players with similar attributes not yet viewed
+  // Use existing GET /api/v1/scout/players endpoint
+};
+```
+
+#### B. Semantic Search
+```typescript
+// Add to scout search bar in /scout hub:
+// Natural language → structured filters via Claude API
+
+export const parseScoutQuery = async (query: string): Promise<ScoutFilters> => {
+  // Example: "fast left-footed wingers under 18 in Bulawayo"
+  // Returns: { position: "winger", age_max: 18, province: "Bulawayo", preferred_foot: "left" }
+  
+  const response = await fetch('/api/ai-coach', {
+    method: 'POST',
+    body: JSON.stringify({
+      message: `Parse this scout search query into filters: "${query}"
+      Return JSON only: { position, age_min, age_max, province, sport, preferred_foot }
+      Use null for any field not mentioned.`,
+      system_prompt: 'You are a football scout search parser. Return only valid JSON.'
+    })
+  });
+  // Uses existing /api/ai-coach Next.js proxy — no new API needed
+};
+```
+
+#### C. Discovery Feed UI additions
+```
+Add to existing /scout page:
+- "For You" tab: AI-recommended players based on scout's history
+- "Showcase Clips" tab: Browse latest player showcase videos
+- "Rising Stars" tab: Players with highest improvement rate this month
+- Search bar with natural language: "Find me fast strikers under 17 in Harare"
+```
+
+---
+
+### 6. 🔔 OPPORTUNITY ALERTS — `/player/notifications` (ENHANCED)
+
+**What it does**: Enhances existing notification system so players
+get alerted when scouts view, save, or shortlist their profiles.
+
+**Status**: EXISTING notifications system — ADD these event types
+
+#### New notification types to add:
+
+```typescript
+// Add to notification types in Laravel backend:
+
+// Trigger when:
+// 1. Scout views player profile → "A scout viewed your profile"
+// 2. Scout adds player to shortlist → "You've been shortlisted!"  
+// 3. Showcase clip gets 10+ views → "Your clip is gaining attention"
+// 4. Player matches a scout's saved search → "A scout is looking for players like you"
+// 5. Trial opportunity posted matching player profile → "New trial opportunity near you"
+
+// Bilingual messages:
+const OPPORTUNITY_MESSAGES = {
+  scout_view: {
+    en: "A scout viewed your profile",
+    sn: "Mumwe muvhimi akatarisa profile yako"
+  },
+  shortlisted: {
+    en: "You've been shortlisted by a scout! 🌟",
+    sn: "Wakasarudzwa nemuvhimi! 🌟"
+  },
+  clip_trending: {
+    en: "Your showcase clip is getting noticed",
+    sn: "Video yako iri kuonekwa nevakawanda"
+  }
+};
+```
+
+#### Profile View Tracking (new Laravel middleware):
+```php
+// app/Http/Middleware/TrackProfileView.php — NEW
+// Add to scout player routes:
+// When GET /api/v1/scout/players/{id} is called by a scout:
+// → Log to profile_views table
+// → Trigger notification to player if this scout is new
+
+// Schema:
+// profile_views: id, viewer_id, player_id, viewed_at, viewer_role
+```
+
+---
+
+### 🔗 INTEGRATION MAP — How existing systems connect
+
+```
+Flutter ML Kit Pose Detection
+    ↓ saves biomechanics data
+Laravel API (/api/v1/players/{id}/biomechanics)
+    ↓ read by
+Next.js /player/assessment → radar chart display
+    ↓ feeds into
+Skill Score calculation → stored on player profile
+    ↓ used by
+Scout Discovery Feed ranking algorithm
+
+DeepSeekService.php (existing)
+    ↓ extended with
+generateScoutingReport() method
+    ↓ called by
+/scout/reports enhanced generator
+    ↓ outputs to
+jsPDF report (existing) + profile narrative
+
+analyseVideo() in src/lib/video-analysis.ts (existing)
+    ↓ called with showcase prompt
+/player/showcase upload flow
+    ↓ results stored in
+player_showcases table (new)
+    ↓ displayed in
+Scout Discovery Feed "Showcase Clips" tab
+
+Existing notification bell + Web Notification API
+    ↓ extended with
+Profile view tracking middleware
+    ↓ new event types
+Opportunity alerts (scout views, shortlisting, clip trending)
+```
+
+---
+
+### 📋 PLAYERS HUB BUILD ORDER
+
+Build in this order — each step builds on the previous:
+
+```
+Step 1: player_showcases table migration (Laravel)
+Step 2: ShowcaseController.php (Laravel) — CRUD + discover endpoint
+Step 3: /player/showcase page (Next.js) — upload + grid display
+Step 4: Showcase prompt added to analyseVideo() (reuse existing)
+Step 5: src/lib/skill-scoring.ts — scoring engine
+Step 6: Add scoring to /player/assessment (existing page)
+Step 7: Profile narrative generation on /player/profile (existing page)
+Step 8: Scout semantic search on /scout hub (existing page)
+Step 9: Profile view tracking middleware (Laravel)
+Step 10: Opportunity notification types (extend existing system)
+```
+
+**RULE**: Complete each step fully before moving to the next.
+**RULE**: Never delete existing code — always extend.
+**RULE**: Always explain what existing code is being reused before writing new code.
+**RULE**: Explain every file change before making it (architect rule applies here too).
+
+---
+
+### 🧪 PLAYERS HUB TEST CHECKLIST
+
+Before marking any step complete:
+- [ ] Mobile works at 375px
+- [ ] Shona language strings added for any new UI text
+- [ ] Loading state shown during AI analysis
+- [ ] Error state if AI or API fails (fallback to cached data)
+- [ ] Works on slow connection (2G simulation in DevTools)
+- [ ] Scout can discover the player's showcase on /scout
+- [ ] Player gets notified when relevant scout action occurs
