@@ -66,7 +66,7 @@ function markViewed(id: string) {
   try {
     const viewed = loadViewed();
     viewed.add(id);
-    localStorage.setItem(LS_VIEWED_KEY, JSON.stringify([...viewed]));
+    localStorage.setItem(LS_VIEWED_KEY, JSON.stringify(Array.from(viewed)));
   } catch { /* ok */ }
 }
 
