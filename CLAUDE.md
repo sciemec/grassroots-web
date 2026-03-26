@@ -2626,3 +2626,231 @@ Before marking any step complete:
 - [ ] Works on slow connection (2G simulation in DevTools)
 - [ ] Scout can discover the player's showcase on /scout
 - [ ] Player gets notified when relevant scout action occurs
+
+---
+
+## SESSION LOG — 26 March 2026
+
+### Theme — Full-Stack Pairing Rule + Payments
+
+---
+
+### NEW RULE ADDED: Full-Stack Pairing Rule
+
+Every feature must be complete on BOTH sides before it is considered done.
+- Frontend done → **automatically generate Laravel backend** (migration, model, controller, routes)
+- Backend done → **automatically wire up the frontend**
+- Rule is documented in the `🔁 FULL-STACK PAIRING RULE` section near the top of this file
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Facebook Marketing Kit (`/facebook-kit`)
+
+- **File**: `src/app/facebook-kit/page.tsx`
+- Wrapper page that renders `grassroots-facebook-kit.jsx` inside Next.js
+- Access locally at `localhost:3000/facebook-kit` while running `npm run dev`
+- NOT a public route — for internal marketing use only
+
+#### 2. Laravel Backend — Player Highlight Vault
+
+Frontend at `/player/vault` was already built. Backend code generated for the `bhora-ai` repo:
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_03_26_000001_create_player_videos_table.php` | Videos table — r2_key, video_url, tag, size_mb, duration |
+| `database/migrations/2026_03_26_000002_create_player_reels_table.php` | Reels table — share_token, video_ids (JSON), views |
+| `app/Models/PlayerVideo.php` | Model with UUID primary key |
+| `app/Models/PlayerReel.php` | Model — auto-generates share_token on create |
+| `app/Http/Controllers/Api/PlayerVaultController.php` | index, upload, destroy, createReel, publicReel |
+
+**Endpoints:**
+```
+GET    /player/vault                      — list videos + storage info
+POST   /player/vault/upload               — save R2 key + metadata
+DELETE /player/vault/{id}                 — delete video + R2 object
+POST   /player/vault/reel                 — create reel, returns share_url
+GET    /player/vault/share/{token}        — PUBLIC, no auth, increments views
+```
+
+**Storage limits:** Free = 500MB, Pro = 5GB (expand when billing is live)
+**R2 delete:** Uses AWS SDK S3Client with Cloudflare R2 endpoint
+
+**Required env on Render:**
+```
+R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+```
+
+#### 3. Laravel Backend — Player Showcase
+
+Frontend at `/player/showcase` was already built. Backend code generated:
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_03_26_000003_create_player_showcases_table.php` | skill_type, ai_rating, position_fit (JSON), scout_note, open_for_scouting, view_count |
+| `database/migrations/2026_03_26_000004_add_ai_narrative_to_profiles_table.php` | Adds ai_narrative TEXT column to profiles table |
+| `app/Models/PlayerShowcase.php` | Model with UUID PK, JSON cast for position_fit |
+| `app/Http/Controllers/Api/ShowcaseController.php` | index, store, toggleScouting, destroy, discover |
+
+**Endpoints:**
+```
+GET    /player/showcase                   — player's own clips
+POST   /player/showcase                   — save clip + Claude AI results
+PATCH  /player/showcase/{id}/toggle-scouting — flip open_for_scouting
+DELETE /player/showcase/{id}              — remove clip
+GET    /showcase/discover                 — PUBLIC discovery feed (no auth), paginated 20
+```
+
+**Clip trending notification:** fires when view_count hits 10 (inside `discover()`)
+
+#### 4. Laravel Backend — Scout Hub (Notifications + Shortlist + Profile View Tracking)
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_03_26_000005_create_profile_views_table.php` | viewer_id, player_id, viewer_role, viewed_at |
+| `database/migrations/2026_03_26_000006_create_notifications_table.php` | user_id, title, body, type (info/success/warning/alert/opportunity), read, link |
+| `database/migrations/2026_03_26_000007_create_scout_shortlists_table.php` | scout_id, player_id — UNIQUE pair |
+| `app/Models/Notification.php` | Static `send()` helper for fire-and-forget notifications |
+| `app/Models/ProfileView.php` | No timestamps, has viewed_at |
+| `app/Models/ScoutShortlist.php` | BelongsTo player + scout |
+| `app/Http/Controllers/Api/NotificationController.php` | index, markRead, markAllRead, destroy |
+| `app/Http/Controllers/Api/ScoutShortlistController.php` | index, store (fires shortlisted notification), destroy |
+| `app/Http/Middleware/TrackProfileView.php` | Auto-logs profile views, notifies player when NEW scout views for first time |
+
+**Notification types:**
+- `opportunity` — scout_view, shortlisted, clip_trending (all shown with gold Star icon on frontend)
+- `info`, `success`, `warning`, `alert` — existing types
+
+**Register middleware in `app/Http/Kernel.php`:**
+```php
+'track.profile.view' => \App\Http\Middleware\TrackProfileView::class,
+```
+
+**Endpoints:**
+```
+GET    /notifications                      — last 50, newest first
+PATCH  /notifications/{id}/read            — mark one read
+POST   /notifications/mark-all-read        — mark all read
+DELETE /notifications/{id}                 — dismiss
+GET    /scout/shortlist                    — scout's shortlisted players
+POST   /scout/shortlist                    — add player (fires notification to player)
+DELETE /scout/shortlist/{playerId}         — remove from shortlist
+```
+
+#### 5. Laravel Backend — AI Narrative on Player Profile
+
+- Add `'ai_narrative'` to `$fillable` on `Profile` model
+- Add `'ai_narrative' => 'nullable|string|max:2000'` to `update()` validation in `ProfileController`
+- `GET /profile` returns it automatically once column exists
+- Frontend generates narrative via Claude, saves with `PATCH /profile`
+
+#### 6. Paynow Zimbabwe Integration — FULLY BUILT ✅
+
+Real mobile money payment integration for EcoCash, InnBucks, and OneMoney.
+
+**New Next.js API routes (no Laravel needed):**
+
+| File | Purpose |
+|---|---|
+| `src/app/api/payments/paynow/route.ts` | Initiates Paynow remotetransaction — sends USSD push to customer phone |
+| `src/app/api/payments/paynow/status/route.ts` | Polls Paynow pollUrl — returns `{ paid, status, paynow_ref }` |
+| `src/app/api/payments/paynow/webhook/route.ts` | Receives Paynow POST webhook — notifies Laravel to activate subscription |
+
+**Payment flow:**
+```
+Player selects EcoCash / InnBucks / OneMoney
+  → enters phone number (e.g. 0771 234 567)
+  → Next.js calls Paynow remotetransaction API
+  → Paynow sends USSD push to customer's phone
+  → "Check your phone" banner shows on screen
+  → Page polls /api/payments/paynow/status every 3 seconds
+  → Customer approves on phone
+  → paid=true → Laravel /subscription/paynow-confirm called
+  → Green "Payment received!" banner shown
+```
+
+**Hash algorithm:** SHA512 of concatenated fields including PAYNOW_KEY (uppercase hex)
+**Phone normalisation:** `07XXXXXXX` → `2637XXXXXXX` (international format for Paynow)
+
+**Required env vars (Vercel):**
+```
+PAYNOW_INTEGRATION_ID   = from paynow.co.zw dashboard → Integrations
+PAYNOW_INTEGRATION_KEY  = from paynow.co.zw dashboard → Integrations
+```
+
+**Subscription page updates (`src/app/player/subscription/page.tsx`):**
+- Added InnBucks as 5th payment method (was 4 options, now 5)
+- Phone number input appears when EcoCash / InnBucks / OneMoney is selected
+- `pollUrl` state + `useEffect` polling loop (runs every 3s, clears on paid/cancelled)
+- "Check your phone" amber banner while waiting
+- Green "Payment received!" banner on success
+- Subscribe button disabled while polling (prevents double-pay)
+
+**Laravel endpoint needed to activate subscription on webhook:**
+```php
+Route::post('/subscription/paynow-confirm', [SubscriptionController::class, 'paynowConfirm']);
+// Receives: reference, paynow_ref, amount, status
+// Activates the matching pending subscription record
+```
+
+**Paynow merchant registration:**
+- Register at paynow.co.zw
+- Result URL: `https://grassrootssports.live/api/payments/paynow/webhook`
+- Return URL: `https://grassrootssports.live/player/subscription?paynow=1`
+
+---
+
+### WHAT STILL NEEDS LARAVEL IMPLEMENTATION (bhora-ai repo)
+
+Run `php artisan migrate --force` after adding all 7 migrations above.
+
+| Task | Status |
+|---|---|
+| 7 migration files copied to bhora-ai repo | Pending |
+| `composer require aws/aws-sdk-php` | Pending (for R2 delete) |
+| PlayerVaultController implemented | Pending |
+| ShowcaseController implemented | Pending |
+| NotificationController implemented | Pending |
+| ScoutShortlistController implemented | Pending |
+| TrackProfileView middleware registered | Pending |
+| `ai_narrative` added to Profile model | Pending |
+| `/subscription/paynow-confirm` endpoint | Pending |
+
+---
+
+### ENVIRONMENT VARIABLES — FULL LIST (updated 26 March 2026)
+
+**Vercel (Next.js):**
+```
+NEXT_PUBLIC_API_URL      = https://bhora-ai.onrender.com/api/v1
+ANTHROPIC_API_KEY        = sk-ant-...
+DAILY_API_KEY            = (live streaming)
+STRIPE_SECRET_KEY        = sk_live_... or sk_test_...
+STRIPE_WEBHOOK_SECRET    = whsec_...
+NEXT_PUBLIC_APP_URL      = https://grassrootssports.live
+FIREBASE_PROJECT_ID      = (FCM push)
+FIREBASE_CLIENT_EMAIL    = (FCM push)
+FIREBASE_PRIVATE_KEY     = (FCM push)
+R2_ACCOUNT_ID            = (Cloudflare R2 video storage)
+R2_ACCESS_KEY_ID         = (Cloudflare R2)
+R2_SECRET_ACCESS_KEY     = (Cloudflare R2)
+R2_BUCKET                = grassroots-videos
+R2_PUBLIC_URL            = https://pub-xxxx.r2.dev
+RESEND_API_KEY           = re_... (transactional email)
+EMAIL_FROM               = notifications@grassrootssports.live
+TWILIO_ACCOUNT_SID       = (WhatsApp reports)
+TWILIO_AUTH_TOKEN        = (WhatsApp reports)
+TWILIO_WHATSAPP_FROM     = whatsapp:+14155238886
+PAYNOW_INTEGRATION_ID    = (Paynow Zimbabwe — NEW)
+PAYNOW_INTEGRATION_KEY   = (Paynow Zimbabwe — NEW)
+```
+
+**Render (Laravel):**
+```
+DEEPSEEK_API_KEY         = (AI coach via /ask endpoint)
+R2_ACCOUNT_ID            = (same R2 credentials as Vercel)
+R2_ACCESS_KEY_ID         =
+R2_SECRET_ACCESS_KEY     =
+R2_BUCKET                = grassroots-videos
+```
