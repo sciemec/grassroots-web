@@ -10,6 +10,7 @@ import { playerAiCoachPrompt, ageGroupMatchFeedbackPrompt } from "@/config/promp
 import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
+import { loadPlayerContext, type PlayerContext } from "@/lib/player-context";
 
 interface Message {
   id: string;
@@ -80,22 +81,89 @@ export default function AICoachPage() {
     if (!user) router.push("/login");
   }, [hydrated, user, router]);
 
-  /** Build system prompt from user profile. Falls back to sensible defaults. */
-  const systemPrompt = playerAiCoachPrompt({
-    sport: (user?.sport as SportKey) ?? "football",
-    position: user?.position ?? undefined,
-    ageGroup: user?.age_group ?? undefined,
-    province: user?.province ?? undefined,
-    name: user?.name ?? undefined,
-  });
+  const [playerCtx, setPlayerCtx] = useState<PlayerContext | null>(null);
+  const [ctxLoaded, setCtxLoaded] = useState(false);
+
+  // Load rich player context once user is ready
+  useEffect(() => {
+    if (!user) return;
+    loadPlayerContext({
+      name:      user.name,
+      sport:     user.sport,
+      position:  user.position,
+      age_group: user.age_group,
+      province:  user.province,
+    }).then((ctx) => {
+      setPlayerCtx(ctx);
+      setCtxLoaded(true);
+    }).catch(() => {
+      setCtxLoaded(true); // context failed — proceed with basic info
+    });
+  }, [user]);
+
+  /** Build system prompt — uses rich context when loaded, falls back to basic */
+  const systemPrompt = playerAiCoachPrompt(
+    playerCtx
+      ? {
+          sport:              (playerCtx.sport as SportKey) ?? "football",
+          position:           playerCtx.position,
+          ageGroup:           playerCtx.ageGroup,
+          province:           playerCtx.province,
+          name:               playerCtx.name,
+          club:               playerCtx.club,
+          heightCm:           playerCtx.heightCm,
+          weightKg:           playerCtx.weightKg,
+          preferredFoot:      playerCtx.preferredFoot,
+          skillScore:         playerCtx.skillScore,
+          skillLevel:         playerCtx.skillLevel,
+          showcaseTopSkill:   playerCtx.showcaseTopSkill,
+          showcaseTopRating:  playerCtx.showcaseTopRating,
+          showcaseClipCount:  playerCtx.showcaseClipCount,
+          statsSummary:       playerCtx.statsSummary,
+          sessionsThisWeek:   playerCtx.sessionsThisWeek,
+          lastSessionType:    playerCtx.lastSessionType,
+          totalSessions:      playerCtx.totalSessions,
+        }
+      : {
+          sport:    (user?.sport as SportKey) ?? "football",
+          position: user?.position ?? undefined,
+          ageGroup: user?.age_group ?? undefined,
+          province: user?.province ?? undefined,
+          name:     user?.name ?? undefined,
+        }
+  );
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: "Hello! I'm your AI Coach, powered by Claude. I know your training history and I'm here to help you improve.\n\nAsk me anything about technique, fitness, tactics, nutrition, or recovery. I also understand Shona — ndingakubatsira nerurimi rwechiShona.",
+      content: "Waita! I'm your AI Coach. Loading your profile data...",
       timestamp: new Date(),
     },
   ]);
+
+  // Update welcome message once context is loaded
+  useEffect(() => {
+    if (!ctxLoaded) return;
+    const ctx = playerCtx;
+    let welcome = `Waita, ${ctx?.name ?? user?.name ?? ""}! I'm your AI Coach.\n\n`;
+
+    if (ctx?.skillScore !== null && ctx?.skillScore !== undefined) {
+      welcome += `I can see your skill score is ${ctx.skillScore}/100 (${ctx.skillLevel}). `;
+    }
+    if (ctx?.showcaseTopSkill && ctx?.showcaseTopRating) {
+      welcome += `Your strongest showcase skill is ${ctx.showcaseTopSkill} at ${ctx.showcaseTopRating.toFixed(1)}/10. `;
+    }
+    if (ctx?.statsSummary && ctx.statsSummary !== "No match stats recorded yet.") {
+      welcome += `\n\n${ctx.statsSummary}.`;
+    }
+    if (!ctx?.skillScore && !ctx?.recentStats?.length) {
+      welcome += `I don't see any stats or sessions logged yet — once you start training and upload showcase clips, I can give you much more specific advice.`;
+    }
+    welcome += `\n\nAsk me anything about technique, fitness, tactics, nutrition, or recovery. Ndingakubatsira nerurimi rwechiShona too.`;
+
+    setMessages([{ id: "welcome", role: "assistant", content: welcome, timestamp: new Date() }]);
+  }, [ctxLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -123,12 +191,28 @@ export default function AICoachPage() {
    * handles each message independently (backend limitation — no history param).
    */
   const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
-    // Step 1 — Laravel backend (DeepSeek)
+    // Step 1 — Laravel backend (DeepSeek) — now includes player context
     try {
       const res = await api.post("/ask", {
         question: message,
         role: user?.role ?? "player",
         language: "english",
+        // Player context — Laravel can use this to personalise DeepSeek responses
+        context: playerCtx ? {
+          name:             playerCtx.name,
+          sport:            playerCtx.sport,
+          position:         playerCtx.position,
+          age_group:        playerCtx.ageGroup,
+          province:         playerCtx.province,
+          club:             playerCtx.club,
+          skill_score:      playerCtx.skillScore,
+          skill_level:      playerCtx.skillLevel,
+          top_skill:        playerCtx.showcaseTopSkill,
+          top_rating:       playerCtx.showcaseTopRating,
+          stats_summary:    playerCtx.statsSummary,
+          sessions_week:    playerCtx.sessionsThisWeek,
+          last_session:     playerCtx.lastSessionType,
+        } : undefined,
       });
       const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
       if (reply) return reply;

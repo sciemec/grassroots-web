@@ -1,4 +1,7 @@
 // Grassroots Sport Pro — Service Worker (Workbox-powered)
+// Cache version — bump this string whenever you deploy a breaking change
+// so users immediately get the new JS bundle instead of the stale cached one.
+const CACHE_VERSION = "v20260326-2";
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js");
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
@@ -15,13 +18,24 @@ precaching.precacheAndRoute([
   { url: "/favicon.ico",   revision: null },
 ]);
 
-// Static assets — Stale While Revalidate
+// JS + CSS bundles — NetworkFirst so deployments are picked up immediately.
+// Falls back to cache only when offline. Cache name includes version so old
+// stale bundles are ignored after a CACHE_VERSION bump.
 routing.registerRoute(
-  ({ request }) =>
-    ["script","style","image","font"].includes(request.destination),
+  ({ request }) => ["script", "style"].includes(request.destination),
+  new strategies.NetworkFirst({
+    cacheName: `gs-bundles-${CACHE_VERSION}`,
+    networkTimeoutSeconds: 8,
+    plugins: [new expiration.ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 86400 })],
+  })
+);
+
+// Images and fonts — still fine to serve stale (they don't change often)
+routing.registerRoute(
+  ({ request }) => ["image", "font"].includes(request.destination),
   new strategies.StaleWhileRevalidate({
-    cacheName: "gs-assets",
-    plugins: [new expiration.ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 2592000 })],
+    cacheName: `gs-assets-${CACHE_VERSION}`,
+    plugins: [new expiration.ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 2592000 })],
   })
 );
 
@@ -34,11 +48,12 @@ routing.registerRoute(
   })
 );
 
-// Pages — Stale While Revalidate
+// Pages — NetworkFirst so users always get the freshest HTML shell
 routing.registerRoute(
   ({ request }) => request.mode === "navigate",
-  new strategies.StaleWhileRevalidate({
-    cacheName: "gs-pages",
+  new strategies.NetworkFirst({
+    cacheName: `gs-pages-${CACHE_VERSION}`,
+    networkTimeoutSeconds: 8,
     plugins: [new expiration.ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 86400 })],
   })
 );

@@ -20,47 +20,96 @@ export interface PlayerCoachContext {
   ageGroup?: string;
   province?: string;
   name?: string;
+  // Rich context — populated by loadPlayerContext() in src/lib/player-context.ts
+  club?: string;
+  heightCm?: string;
+  weightKg?: string;
+  preferredFoot?: string;
+  skillScore?: number | null;
+  skillLevel?: string | null;
+  showcaseTopSkill?: string | null;
+  showcaseTopRating?: number | null;
+  showcaseClipCount?: number;
+  statsSummary?: string;
+  sessionsThisWeek?: number;
+  lastSessionType?: string | null;
+  totalSessions?: number;
 }
 
 export function playerAiCoachPrompt(ctx: PlayerCoachContext): string {
-  const sportLine = ctx.sport
-    ? `The player's primary sport is ${ctx.sport}.`
-    : "The player's sport is not yet specified.";
+  // ── Identity block ────────────────────────────────────────────────
+  const identityLines = [
+    `Name: ${ctx.name ?? "Player"}`,
+    `Sport: ${ctx.sport ?? "football"} | Position: ${ctx.position ?? "Unknown"} | Age group: ${ctx.ageGroup ?? "Unknown"}`,
+    `Based in: ${ctx.province ?? "Zimbabwe"}${ctx.club && ctx.club !== "Unknown" ? ` | Club: ${ctx.club}` : ""}`,
+  ].join("\n");
 
-  const positionLine = ctx.position
-    ? `They play as a ${ctx.position}.`
+  // ── Physical block (only if data exists) ─────────────────────────
+  const physicalParts: string[] = [];
+  if (ctx.heightCm) physicalParts.push(`Height: ${ctx.heightCm}cm`);
+  if (ctx.weightKg) physicalParts.push(`Weight: ${ctx.weightKg}kg`);
+  if (ctx.preferredFoot) physicalParts.push(`Preferred foot: ${ctx.preferredFoot}`);
+  const physicalBlock = physicalParts.length
+    ? `\nPHYSICAL PROFILE:\n${physicalParts.join(" | ")}`
     : "";
 
-  const ageLine = ctx.ageGroup
-    ? `Age group: ${ctx.ageGroup}.`
+  // ── Performance block ─────────────────────────────────────────────
+  const perfParts: string[] = [];
+  if (ctx.skillScore !== null && ctx.skillScore !== undefined) {
+    perfParts.push(`Overall skill score: ${ctx.skillScore}/100 (${ctx.skillLevel ?? ""})`);
+  }
+  if (ctx.showcaseTopSkill && ctx.showcaseTopRating) {
+    perfParts.push(`Strongest showcase skill: ${ctx.showcaseTopSkill} — AI rating ${ctx.showcaseTopRating.toFixed(1)}/10`);
+  }
+  if (ctx.showcaseClipCount) {
+    perfParts.push(`Showcase clips uploaded: ${ctx.showcaseClipCount}`);
+  }
+  if (ctx.statsSummary && ctx.statsSummary !== "No match stats recorded yet.") {
+    perfParts.push(ctx.statsSummary);
+  }
+  const perfBlock = perfParts.length
+    ? `\nPERFORMANCE DATA:\n${perfParts.join("\n")}`
+    : "\nPERFORMANCE DATA:\nNo stats or assessment data recorded yet.";
+
+  // ── Activity block ────────────────────────────────────────────────
+  const activityParts: string[] = [];
+  if (ctx.sessionsThisWeek !== undefined) {
+    activityParts.push(`Sessions this week: ${ctx.sessionsThisWeek}`);
+  }
+  if (ctx.lastSessionType) {
+    activityParts.push(`Last session type: ${ctx.lastSessionType}`);
+  }
+  if (ctx.totalSessions) {
+    activityParts.push(`Total sessions logged: ${ctx.totalSessions}`);
+  }
+  const activityBlock = activityParts.length
+    ? `\nTRAINING ACTIVITY:\n${activityParts.join(" | ")}`
     : "";
 
-  const provinceLine = ctx.province
-    ? `Based in ${ctx.province}, Zimbabwe.`
-    : "Based in Zimbabwe.";
+  return `You are an expert AI sports coach on the Grassroots Sport platform — Zimbabwe's first AI-powered grassroots sports development platform.
 
-  return `You are an expert AI sports coach on the Grassroots Sport platform — a professional multi-sport analytics and coaching platform serving athletes and coaches across Zimbabwe.
+You are speaking DIRECTLY to this specific player. You know their data. Use it.
 
 PLAYER PROFILE:
-${sportLine}
-${positionLine}
-${ageLine}
-${provinceLine}
+${identityLines}
+${physicalBlock}
+${perfBlock}
+${activityBlock}
 
 YOUR ROLE:
 - Answer questions about technique, tactics, fitness, nutrition, and recovery
-- Give specific, actionable advice tailored to the player's sport and position
+- Give advice that is SPECIFIC to this player's sport, position, skill level, and recent activity
+- Reference their actual data when relevant — "your dribbling rating of 8.2 shows..." or "with ${ctx.sessionsThisWeek ?? 0} sessions this week..."
 - Keep language clear and encouraging — the player may be young or new to analytics
 - You understand and can respond in Shona when the player writes in Shona
-- Reference real drills, exercises, and training methods used in professional ${ctx.sport} coaching
-- When you don't have enough context, ask one focused follow-up question
+- Reference real drills, exercises, and training methods used in professional ${ctx.sport ?? "football"} coaching
+- When the player asks about a weakness, look at their data first before answering
 
-PLATFORM CONTEXT:
-- This is a paid professional platform used by clubs, coaches, and athletes
-- Players can upload match video and record live sessions for AI analysis
-- You have access to the player's stat history when they share it with you
-
-TONE: Professional, encouraging, direct. No waffle. Short paragraphs.
+RULES:
+- Never be generic. Every answer must feel like it was written for THIS player, not any player.
+- If their data shows a weakness, acknowledge it honestly and give a concrete fix.
+- If they have no data yet, encourage them to log sessions and upload showcase clips.
+- Short paragraphs. No waffle.
 
 Occasionally use Shona phrases naturally: "Waita!" (well done), "Ramba uchishanda" (keep working hard), "Unokwanisa" (you can do it).`;
 }
