@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, googleProvider } from "@/firebase";
 import api from "@/lib/api";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
@@ -79,6 +79,12 @@ function LoginForm() {
       let firebaseIdToken: string | null = null;
       try {
         const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+        // Block unverified email accounts
+        if (!credential.user.emailVerified) {
+          await signOut(auth);
+          router.replace(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
+          return;
+        }
         firebaseIdToken = await credential.user.getIdToken();
       } catch (fbErr: unknown) {
         const fbCode = (fbErr as { code?: string })?.code ?? "";
@@ -123,38 +129,74 @@ function LoginForm() {
 
   const handleGoogleSignIn = async () => {
     setError("");
+    setLoading(true);
     try {
+      // Step 1 — Firebase popup
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
       const idToken = await firebaseUser.getIdToken();
-      const res = await api.post("/auth/google", { id_token: idToken });
-      const { token: t, user: u } = res.data;
-      setAuth(t, {
-        id: String(u.id),
-        name: u.name ?? `${u.first_name ?? ""} ${u.surname ?? ""}`.trim(),
-        email: u.email,
-        role: u.role,
-        token: t,
-        sport: u.sport ?? undefined,
-        province: u.province ?? undefined,
-        is_pro: u.is_pro ?? false,
-      });
-      router.replace(roleHomePath(u.role));
-    } catch (err: unknown) {
-      const fbCode = (err as { code?: string })?.code ?? "";
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (fbCode === "auth/popup-closed-by-user" || fbCode === "auth/cancelled-popup-request") {
-        // User closed the popup — no error needed
+
+      type RawUser = { id: string | number; name?: string; first_name?: string; surname?: string; email: string; role: string; sport?: string; province?: string; is_pro?: boolean };
+
+      const applyGoogleSession = (t: string, u: RawUser) => {
+        setAuth(t, {
+          id: String(u.id),
+          name: u.name ?? `${u.first_name ?? ""} ${u.surname ?? ""}`.trim(),
+          email: u.email,
+          role: u.role as import("@/lib/auth-store").UserRole,
+          token: t,
+          sport: u.sport ?? undefined,
+          province: u.province ?? undefined,
+          is_pro: u.is_pro ?? false,
+        });
+        router.replace(roleHomePath(u.role as import("@/lib/auth-store").UserRole));
+      };
+
+      // Step 2 — Try dedicated Google endpoint
+      try {
+        const res = await api.post("/auth/google", { id_token: idToken });
+        applyGoogleSession(res.data.token, res.data.user);
         return;
+      } catch (googleErr: unknown) {
+        const status = (googleErr as { response?: { status?: number } })?.response?.status;
+        if (status === 403) {
+          setError("Akaunti yako yakabviswa. / Your account has been suspended.");
+          setLoading(false);
+          return;
+        }
+        if (status === 422) {
+          setError("Google sign-in failed. Server could not verify token — check FIREBASE_WEB_API_KEY on Render.");
+          setLoading(false);
+          return;
+        }
+        // 404 / 500 / network — endpoint not ready yet, try firebase-email fallback
+      }
+
+      // Step 3 — Fallback: firebase-email exchange (works for any Firebase-verified user)
+      try {
+        const res = await api.post("/auth/firebase-email", { id_token: idToken });
+        applyGoogleSession(res.data.token, res.data.user);
+        return;
+      } catch {
+        // Neither endpoint is live yet
+      }
+
+      // Step 4 — Both backend endpoints failed: show helpful message
+      setError("Google sign-in reached Google OK, but our server is not responding. Please use email login below, or try again in 30 seconds.");
+      setLoading(false);
+
+    } catch (err: unknown) {
+      setLoading(false);
+      const fbCode = (err as { code?: string })?.code ?? "";
+      if (fbCode === "auth/popup-closed-by-user" || fbCode === "auth/cancelled-popup-request") {
+        return; // User cancelled — no error
       }
       if (fbCode === "auth/unauthorized-domain") {
-        setError("This domain is not authorised for Google sign-in. Contact support.");
-      } else if (status === 422) {
-        setError("Google sign-in failed. Server could not verify token — check FIREBASE_WEB_API_KEY on Render.");
-      } else if (status === 403) {
-        setError("Akaunti yako yakabviswa. / Your account has been suspended.");
+        setError("This domain is not authorised for Google sign-in. Please use email login below.");
+      } else if (fbCode === "auth/popup-blocked") {
+        setError("Popup was blocked by your browser. Allow popups for this site, then try again.");
       } else {
-        setError("Google sign-in failed. Please try again.");
+        setError("Google sign-in failed. Please use email login below.");
       }
     }
   };

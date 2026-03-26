@@ -1,97 +1,103 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, RefreshCw, CheckCircle2, ArrowRight } from "lucide-react";
-import api from "@/lib/api";
+import { MailCheck, Loader2, RefreshCw } from "lucide-react";
+import { sendEmailVerification } from "firebase/auth";
+import { auth } from "@/firebase";
 
 function VerifyEmailContent() {
-  const params = useSearchParams();
-  const email = params.get("email") ?? "";
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") ?? "";
+  const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [resendError, setResendError] = useState("");
 
-  const resend = async () => {
-    setLoading(true);
-    setError("");
+  const handleResend = async () => {
+    setResending(true);
+    setResendError("");
     try {
-      await api.post("/auth/email/resend", { email });
-      setResent(true);
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await sendEmailVerification(currentUser);
+        setResent(true);
+      } else {
+        setResendError("Please go back to login and sign in again to resend.");
+      }
     } catch {
-      setError("Failed to resend. Please try again.");
+      setResendError("Could not resend email. Please try again.");
     } finally {
-      setLoading(false);
+      setResending(false);
     }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-800 px-4">
-      <div className="w-full max-w-md text-center">
-        {/* Icon */}
-        <div className="mb-6 flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20 ring-2 ring-green-500/30">
-            <Mail className="h-9 w-9 text-green-400" />
-          </div>
+      <div className="w-full max-w-sm">
+
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <Link href="/">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo_v2.png" alt="Grassroots Sport" width={64} height={64} className="mx-auto mb-4" />
+          </Link>
         </div>
 
-        <h1 className="text-2xl font-bold text-white">Check your inbox</h1>
-        <p className="mt-3 text-sm text-green-300">We sent a verification link to</p>
-        {email && <p className="mt-1 break-all font-semibold text-white">{email}</p>}
-        <p className="mt-3 text-sm text-green-400">
-          Click the link in the email to activate your account. The link expires in 24 hours.
-        </p>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm text-center space-y-5">
 
-        {/* Resend card */}
-        <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-          <p className="mb-4 text-sm text-green-300">
-            Didn&apos;t receive it? Check your spam folder or resend.
-          </p>
-
-          {resent ? (
-            <div className="flex items-center justify-center gap-2 text-green-400">
-              <CheckCircle2 className="h-5 w-5" />
-              <span className="text-sm font-medium">Verification email sent!</span>
+          <div className="flex justify-center">
+            <div className="rounded-full bg-green-500/20 p-4">
+              <MailCheck className="h-8 w-8 text-green-400" />
             </div>
-          ) : (
-            <button
-              onClick={resend}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-400 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              {loading ? "Sending…" : "Resend verification email"}
-            </button>
-          )}
+          </div>
 
-          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-        </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">Check your email</h1>
+            <p className="mt-3 text-sm text-green-200 leading-relaxed">
+              We have sent you a verification email to{" "}
+              {email && <span className="font-semibold text-white">{email}</span>}.
+              {" "}Please verify it and log in.
+            </p>
+          </div>
 
-        {/* Links */}
-        <div className="mt-6 space-y-3">
           <Link
             href="/login"
-            className="flex items-center justify-center gap-2 text-sm text-green-400 transition-colors hover:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3 text-sm font-bold text-white hover:bg-green-500 transition-colors"
           >
-            Already verified? Sign in <ArrowRight className="h-4 w-4" />
+            Go to Login
           </Link>
-          <p className="text-xs text-green-600">
-            Wrong email?{" "}
-            <Link href="/register" className="text-green-400 hover:underline">
-              Register again
-            </Link>
-          </p>
+
+          <div className="border-t border-white/10 pt-4">
+            <p className="text-xs text-green-400/70 mb-3">Didn&apos;t receive the email?</p>
+
+            {resent ? (
+              <p className="text-sm text-green-400">Email resent! Check your inbox.</p>
+            ) : (
+              <button
+                onClick={handleResend}
+                disabled={resending}
+                className="flex items-center justify-center gap-2 mx-auto text-sm text-green-300 hover:text-white transition-colors disabled:opacity-50"
+              >
+                {resending
+                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Resending&hellip;</>
+                  : <><RefreshCw className="h-3.5 w-3.5" /> Resend verification email</>
+                }
+              </button>
+            )}
+
+            {resendError && (
+              <p className="mt-2 text-xs text-orange-300">{resendError}</p>
+            )}
+          </div>
+
         </div>
+
       </div>
     </div>
   );
 }
 
 export default function VerifyEmailPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-green-950" />}>
-      <VerifyEmailContent />
-    </Suspense>
-  );
+  return <Suspense><VerifyEmailContent /></Suspense>;
 }

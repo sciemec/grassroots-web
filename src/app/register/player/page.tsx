@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff, User, Calendar, MapPin, Dumbbell, Shield } from "lucide-react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import api from "@/lib/api";
 import { extractApiError } from "@/lib/api-error";
@@ -141,8 +141,14 @@ function PlayerRegisterForm() {
       if (isUnder13) payload.guardian_phone = form.guardian_phone.trim();
 
       // Create Firebase account first — before Laravel, so email-already-exists is caught early
+      const normalizedEmail = form.email.trim().toLowerCase();
       try {
-        await createUserWithEmailAndPassword(auth, form.email.trim().toLowerCase(), form.password);
+        const fbCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, form.password);
+        await sendEmailVerification(fbCredential.user);
+        await signOut(auth);
+        await api.post("/auth/register", payload);
+        router.push(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
+        return;
       } catch (fbErr: unknown) {
         const fbCode = (fbErr as { code?: string })?.code ?? "";
         if (fbCode === "auth/email-already-in-use") {

@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import api from "@/lib/api";
 import { extractApiError } from "@/lib/api-error";
@@ -85,8 +85,21 @@ function CoachRegisterForm() {
     setLoading(true);
     setError("");
     try {
+      const normalizedEmail = form.email.trim().toLowerCase();
       try {
-        await createUserWithEmailAndPassword(auth, form.email.trim().toLowerCase(), form.password);
+        const fbCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, form.password);
+        await sendEmailVerification(fbCredential.user);
+        await signOut(auth);
+        await api.post("/auth/register", {
+          role: "coach", first_name: form.first_name, surname: form.surname,
+          email: form.email, phone: form.phone,
+          password: form.password, password_confirmation: form.confirm_password,
+          province: form.province, team_name: form.team_name,
+          coaching_level: form.coaching_level, sport: form.sport,
+          experience_years: form.experience_years,
+        });
+        router.push(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
+        return;
       } catch (fbErr: unknown) {
         const fbCode = (fbErr as { code?: string })?.code ?? "";
         if (fbCode === "auth/email-already-in-use") {

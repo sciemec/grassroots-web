@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import api from "@/lib/api";
 import { extractApiError } from "@/lib/api-error";
@@ -84,8 +84,22 @@ function ScoutRegisterForm() {
     setLoading(true);
     setError("");
     try {
+      const normalizedEmail = form.email.trim().toLowerCase();
       try {
-        await createUserWithEmailAndPassword(auth, form.email.trim().toLowerCase(), form.password);
+        const fbCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, form.password);
+        await sendEmailVerification(fbCredential.user);
+        await signOut(auth);
+        await api.post("/auth/register", {
+          role: "scout", first_name: form.first_name, surname: form.surname,
+          email: form.email, phone: form.phone,
+          password: form.password, password_confirmation: form.confirm_password,
+          province: form.province, organisation: form.organisation,
+          accreditation_no: form.accreditation_no,
+          experience_years: form.experience_years,
+          scouting_regions: form.scouting_regions,
+        });
+        router.push(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
+        return;
       } catch (fbErr: unknown) {
         const fbCode = (fbErr as { code?: string })?.code ?? "";
         if (fbCode === "auth/email-already-in-use") {
