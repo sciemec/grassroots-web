@@ -19,16 +19,18 @@ interface Message {
 }
 
 const SUGGESTED_PROMPTS = [
-  "Analyse my squad fitness and injury risk",
-  "Suggest a training session for this week",
+  "How do I use my full-backs to create and finish attacks?",
+  "Give me a pressing session — how do I press as a unit?",
+  "How should we defend in a high block against a build-up team?",
   "What formation should I use against a 4-3-3?",
-  "How do I improve our set piece attacking?",
-  "Give me warm-up drills for a match day",
-  "Which players need individual development focus?",
-  "How do I motivate a losing team at half time?",
+  "Design a 3-part session on defensive shape and transitions",
+  "How do I improve our pressing triggers and press timing?",
+  "Give me a 1v1 defending drill for my back four",
   "Plan a 4-week pre-season programme",
+  "How do I motivate a losing team at half time?",
   "Recommend 3 drills for a striker with weak finishing",
-  "Give me drills for a defender who loses the ball under pressure",
+  "How do we defend in numerical disadvantage?",
+  "Give me a passing circuit with finishing for U17s",
 ];
 
 function MessageBubble({ msg }: { msg: Message }) {

@@ -138,7 +138,7 @@ export const LEVELS = ['youth','grassroots','intermediate','advanced','all'] as 
 /** Return the top N most relevant sessions for a given coach question */
 export function findRelevantSessions(query: string, topN = 3): CoachingSession[] {
   const q = query.toLowerCase();
-  const keywords = q.split(/s+/).filter(w => w.length > 3);
+  const keywords = q.split(/\s+/).filter(w => w.length > 3);
   const scored = COACHING_SESSIONS.map(s => {
     const haystack = (s.title + ' ' + s.content).toLowerCase();
     const score = keywords.reduce((acc, kw) => {
@@ -147,5 +147,8 @@ export function findRelevantSessions(query: string, topN = 3): CoachingSession[]
     }, 0);
     return { ...s, score };
   });
-  return scored.sort((a,b) => b.score - a.score).slice(0, topN);
+  return scored
+    .filter(s => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN);
 }

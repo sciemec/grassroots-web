@@ -34,15 +34,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Find relevant sessions from the PDF knowledge base
-  const relevantSessions = findRelevantSessions(message, 2);
+  const relevantSessions = findRelevantSessions(message, 3);
   const knowledgeContext = relevantSessions.length > 0
-    ? "\n\n---\nRELEVANT COACHING SESSIONS FROM YOUR KNOWLEDGE BASE:\n" +
+    ? "\n\n---\nRELEVANT COACHING SESSIONS FROM YOUR KNOWLEDGE BASE (FIFA/FA certified sources):\n" +
+      "Reference these sessions directly when answering. Cite the session title when you use it.\n" +
       relevantSessions.map(s =>
-        `\n[${s.title} | Source: ${s.source} | Category: ${s.category}]\n` +
-        s.content.slice(0, 1200) + (s.content.length > 1200 ? "…" : "")
+        `\n[${s.title} | Source: ${s.source} | Level: ${s.level} | Category: ${s.category}]\n` +
+        s.content.slice(0, 1500) + (s.content.length > 1500 ? "…" : "")
       ).join("\n\n") +
       "\n---\n"
-    : "";
+    : "\n\nNo specific session from your knowledge base matched this question — answer from general coaching expertise.";
 
   const baseSystem = system_prompt ??
     "You are an expert football coach AI on Grassroots Sport — Zimbabwe's sports platform. " +
