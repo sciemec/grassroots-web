@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, googleProvider } from "@/firebase";
 import api from "@/lib/api";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
@@ -79,6 +79,12 @@ function LoginForm() {
       let firebaseIdToken: string | null = null;
       try {
         const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+        // Block unverified accounts before proceeding
+        if (!credential.user.emailVerified) {
+          await signOut(auth);
+          router.replace(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
+          return;
+        }
         firebaseIdToken = await credential.user.getIdToken();
       } catch (fbErr: unknown) {
         const fbCode = (fbErr as { code?: string })?.code ?? "";
