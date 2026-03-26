@@ -128,8 +128,22 @@ function LoginForm() {
         is_pro: u.is_pro ?? false,
       });
       router.replace(roleHomePath(u.role));
-    } catch {
-      setError("Google sign-in failed. Please try again.");
+    } catch (err: unknown) {
+      const fbCode = (err as { code?: string })?.code ?? "";
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (fbCode === "auth/popup-closed-by-user" || fbCode === "auth/cancelled-popup-request") {
+        // User closed the popup — no error needed
+        return;
+      }
+      if (fbCode === "auth/unauthorized-domain") {
+        setError("This domain is not authorised for Google sign-in. Contact support.");
+      } else if (status === 422) {
+        setError("Google sign-in failed. Server could not verify token — check FIREBASE_WEB_API_KEY on Render.");
+      } else if (status === 403) {
+        setError("Akaunti yako yakabviswa. / Your account has been suspended.");
+      } else {
+        setError("Google sign-in failed. Please try again.");
+      }
     }
   };
 
