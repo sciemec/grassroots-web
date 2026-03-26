@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   Camera, Plus, Eye, Star, ChevronRight, Upload,
   Loader2, Video, X, ToggleLeft, ToggleRight,
+  Share2, Copy, Check, MessageCircle,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -93,6 +94,7 @@ export default function ShowcasePage() {
   const [phase, setPhase]               = useState<Phase>("idle");
   const [progress, setProgress]         = useState(0);
   const [errorMsg, setErrorMsg]         = useState("");
+  const [shareClipId, setShareClipId]   = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -334,8 +336,13 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
               <ClipCard
                 key={clip.id}
                 clip={clip}
+                playerName={user?.name ?? "Player"}
+                playerId={user?.id ?? ""}
                 onToggleScouting={() => toggleScouting(clip.id)}
                 onDelete={() => deleteClip(clip.id)}
+                shareOpen={shareClipId === clip.id}
+                onShareOpen={() => setShareClipId(clip.id)}
+                onShareClose={() => setShareClipId(null)}
               />
             ))}
           </div>
@@ -485,13 +492,50 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
 
 function ClipCard({
   clip,
+  playerName,
+  playerId,
   onToggleScouting,
   onDelete,
+  shareOpen,
+  onShareOpen,
+  onShareClose,
 }: {
   clip: ShowcaseClip;
+  playerName: string;
+  playerId: string;
   onToggleScouting: () => void;
   onDelete: () => void;
+  shareOpen: boolean;
+  onShareOpen: () => void;
+  onShareClose: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  const profileUrl = `https://grassrootssports.live/player/public/${playerId}`;
+
+  const scoutCardText =
+    `🌟 GrassRoots Sports — Skill Showcase\n` +
+    `Player: ${playerName}\n` +
+    `Skill: ${clip.skill_type.charAt(0).toUpperCase() + clip.skill_type.slice(1)}\n` +
+    `AI Rating: ${clip.ai_rating.toFixed(1)}/10\n` +
+    `Positions: ${clip.position_fit.join(", ")}\n\n` +
+    `Scout Note: "${clip.scout_note}"\n\n` +
+    (clip.video_url ? `Watch clip: ${clip.video_url}\n` : "") +
+    `Full profile: ${profileUrl}`;
+
+  const whatsappUrl =
+    `https://wa.me/?text=${encodeURIComponent(scoutCardText)}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        clip.video_url || profileUrl
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard not available */ }
+  };
+
   return (
     <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
 
@@ -556,6 +600,15 @@ function ClipCard({
           {clip.view_count} views
         </div>
         <div className="flex items-center gap-3">
+          {/* Share button */}
+          <button
+            onClick={shareOpen ? onShareClose : onShareOpen}
+            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-[#f0b429]"
+            title="Share with scout"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+
           <button
             onClick={onToggleScouting}
             className="flex items-center gap-1.5 text-xs"
@@ -579,6 +632,63 @@ function ClipCard({
           </button>
         </div>
       </div>
+
+      {/* Share panel — slides open below footer */}
+      {shareOpen && (
+        <div className="mt-3 rounded-xl border border-[#f0b429]/30 bg-[#1a3d26] p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#f0b429]">
+            Share with Scout
+          </p>
+
+          {/* Video / profile link */}
+          <div className="mb-3 flex items-center gap-2 rounded-lg bg-black/30 px-3 py-2">
+            <p className="flex-1 truncate text-xs text-muted-foreground">
+              {clip.video_url || profileUrl}
+            </p>
+            <button
+              onClick={handleCopy}
+              className="shrink-0 text-muted-foreground transition-colors hover:text-white"
+              title="Copy link"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-400" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleCopy}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? "Copied!" : "Copy Link"}
+            </button>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#25D366] py-2 text-xs font-medium text-white transition-opacity hover:opacity-90"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              WhatsApp
+            </a>
+          </div>
+
+          {/* Scout card preview */}
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-white">
+              Preview scout card message ▾
+            </summary>
+            <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-black/30 p-3 text-xs text-muted-foreground">
+              {scoutCardText}
+            </pre>
+          </details>
+        </div>
+      )}
     </div>
   );
 }
