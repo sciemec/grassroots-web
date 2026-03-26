@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, googleProvider } from "@/firebase";
 import api from "@/lib/api";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
@@ -19,45 +19,91 @@ function LoginForm() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
 
-  useEffect(() => {
-    if (token && user) router.replace(roleHomePath(user.role));
-  }, [token, user, router]);
-
-  if (token && user) return null;
+  // Show a spinner while navigating to the hub — prevents the black-page gap
+  if (token && user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-800">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-400 border-t-transparent" />
+          <p className="text-sm text-green-300">Redirecting to your hub…</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async () => {
-    if (!email.trim())  { setError("Nyora email yako. / Please enter your email."); return; }
-    if (!password)      { setError("Nyora password yako. / Please enter your password."); return; }
+    if (!email.trim()) { setError("Nyora email yako. / Please enter your email."); return; }
+    if (!password)     { setError("Nyora password yako. / Please enter your password."); return; }
     setLoading(true); setError("");
 
-    try {
-      const res = await api.post("/auth/login", {
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      const { token: t, user: u } = res.data;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const applySession = (t: string, u: { id: string | number; name?: string; first_name?: string; surname?: string; email: string; role: string; sport?: string; province?: string; is_pro?: boolean }) => {
       setAuth(t, {
         id: String(u.id),
         name: u.name ?? `${u.first_name ?? ""} ${u.surname ?? ""}`.trim(),
         email: u.email,
-        role: u.role,
+        role: u.role as import("@/lib/auth-store").UserRole,
         token: t,
         sport: u.sport ?? undefined,
         province: u.province ?? undefined,
         is_pro: u.is_pro ?? false,
       });
-      router.replace(roleHomePath(u.role));
-    } catch (e: unknown) {
-      const status = (e as { response?: { status?: number; data?: { message?: string } } })?.response?.status;
-      const msg    = (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "";
-      if (status === 401 || status === 422) {
-        setError("Email kana password isiriyo. / Incorrect email or password.");
-      } else if (status === 403) {
+      router.replace(roleHomePath(u.role as import("@/lib/auth-store").UserRole));
+    };
+
+    try {
+      // Step 1 — Firebase validates the credentials
+      const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+      const idToken = await credential.user.getIdToken();
+
+      // Step 2 — Exchange Firebase id_token for a Laravel JWT + role
+      const res = await api.post("/auth/firebase-email", { id_token: idToken });
+      applySession(res.data.token, res.data.user);
+    } catch (err: unknown) {
+      const fbCode = (err as { code?: string })?.code ?? "";
+
+      if (fbCode === "auth/invalid-credential" || fbCode === "auth/wrong-password") {
+        setError("Email or password is incorrect");
+        setLoading(false);
+        return;
+      }
+
+      // Firebase doesn't know this user yet (existing Laravel-only account) — lazy migration
+      if (fbCode === "auth/user-not-found" || fbCode === "auth/invalid-email") {
+        try {
+          const res = await api.post("/auth/login", { email: normalizedEmail, password });
+          // Laravel validated — silently create Firebase account to complete migration
+          try {
+            await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+          } catch {
+            // Firebase creation best-effort — proceed regardless
+          }
+          applySession(res.data.token, res.data.user);
+        } catch (laravelErr: unknown) {
+          const status = (laravelErr as { response?: { status?: number } })?.response?.status;
+          if (status === 401 || status === 422) {
+            setError("Email or password is incorrect");
+          } else if (status === 403) {
+            setError("Akaunti yako yakabviswa. / Your account has been suspended.");
+          } else if (!status) {
+            setError("Hapana internet. Tarisa connection yako. / Check your internet connection.");
+          } else {
+            setError("Senzadza. Edza zvakare. / Something went wrong. Please try again.");
+          }
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Any other Firebase or network error
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 403) {
         setError("Akaunti yako yakabviswa. / Your account has been suspended.");
-      } else if (!status) {
+      } else if (!status && !fbCode) {
         setError("Hapana internet. Tarisa connection yako. / Check your internet connection.");
       } else {
-        setError(msg || "Senzadza. Edza zvakare. / Something went wrong. Please try again.");
+        setError("Senzadza. Edza zvakare. / Something went wrong. Please try again.");
       }
       setLoading(false);
     }

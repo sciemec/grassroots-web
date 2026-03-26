@@ -17,21 +17,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 — clear session; let the layout's useEffect redirect via React router
+// Do NOT auto-logout on 401.
+// A Render cold-start or any single failing endpoint returns 401 and was wiping
+// the session immediately after login — causing the black page.
+// Pages handle 401s via .catch(() => null). Layouts redirect to /login when
+// the user is genuinely unauthenticated (user === null in the store).
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
-    if (error.response?.status === 401 && typeof window !== "undefined") {
-      const state = useAuthStore.getState();
-      // Only log out if there is an active stored session (don't fire for public endpoints)
-      if (state.token) {
-        state.logout();
-        // Don't hard-navigate with window.location — that flashes a blank page.
-        // The layout's useEffect watches user and will push to /login cleanly.
-      }
-    }
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export default api;

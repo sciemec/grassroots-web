@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SPORT_MAP, SportKey } from "@/config/sports";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2, Eye, EyeOff } from "lucide-react";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebase";
 import api from "@/lib/api";
 import { extractApiError } from "@/lib/api-error";
 
@@ -82,6 +84,17 @@ function ScoutRegisterForm() {
     setLoading(true);
     setError("");
     try {
+      try {
+        await createUserWithEmailAndPassword(auth, form.email.trim().toLowerCase(), form.password);
+      } catch (fbErr: unknown) {
+        const fbCode = (fbErr as { code?: string })?.code ?? "";
+        if (fbCode === "auth/email-already-in-use") {
+          setError("User already exists. Please sign in");
+          setLoading(false);
+          return;
+        }
+      }
+
       await api.post("/auth/register", {
         role: "scout", first_name: form.first_name, surname: form.surname,
         email: form.email, phone: form.phone,

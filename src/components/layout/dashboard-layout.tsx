@@ -29,8 +29,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (!user) router.replace("/login");
   }, [hydrated, user, router]);
 
-  // Render nothing until we know the auth state — prevents flash of redirect
-  if (!hydrated || !user) return null;
+  // Show a spinner while waiting for Zustand to rehydrate — prevents black page
+  if (!hydrated || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">

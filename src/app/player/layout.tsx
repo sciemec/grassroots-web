@@ -28,9 +28,15 @@ export default function PlayerLayout({ children }: { children: React.ReactNode }
     }
   }, [hasHydrated, user, router]);
 
-  // Show nothing until hydrated — middleware already verified the cookie so
-  // there won't be a visible flash for authenticated users.
-  if (!hasHydrated || !user) return null;
+  // Show a spinner while waiting for Zustand to rehydrate from localStorage.
+  // Returning null here was the source of the persistent black page.
+  if (!hasHydrated || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

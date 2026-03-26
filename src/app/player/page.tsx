@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
@@ -64,16 +63,13 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function PlayerHubPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Auth guard is handled by PlayerLayout — this just loads data
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-    if (user.role !== "player" && user.role !== "admin") { router.push("/dashboard"); return; }
-
     Promise.all([
       api.get("/sessions?per_page=5").catch(() => null),
       api.get("/profile").catch(() => null),
@@ -84,7 +80,7 @@ export default function PlayerHubPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, router]);
+  }, []);
 
   if (!user || loading) return <PageSkeleton />;
 
