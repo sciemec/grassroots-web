@@ -20,13 +20,16 @@ interface Message {
 }
 
 const SUGGESTED_PROMPTS = [
-  "How do I improve my shooting accuracy?",
-  "Give me a warm-up routine for today",
-  "Why is my first touch poor?",
+  "Why is pressing important for my position?",
+  "When should I press and when should I hold my shape?",
+  "How do I use my body to win a 1v1 duel?",
+  "Where should I position when my team is attacking?",
+  "Why is my first touch letting me down — and how do I fix it?",
+  "How do full-backs create and finish attacks?",
+  "When should I shoot vs pass in the final third?",
+  "How do I recover properly after an intense session?",
+  "Why do I keep losing the ball under pressure?",
   "Ndisimudze sei pamutambo wefootball?",
-  "What drills should I do for speed?",
-  "How do I recover after an intense session?",
-  "Analyse my last match and give me feedback",
 ];
 
 function MessageBubble({ msg }: { msg: Message }) {
