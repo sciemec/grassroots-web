@@ -19,18 +19,18 @@ interface Message {
 }
 
 const SUGGESTED_PROMPTS = [
-  "How do I use my full-backs to create and finish attacks?",
-  "Give me a pressing session — how do I press as a unit?",
-  "How should we defend in a high block against a build-up team?",
-  "What formation should I use against a 4-3-3?",
+  "Why should my team press high — and when is it the wrong choice?",
+  "How do I adapt the Spain U23 pressing session for 20 grassroots players?",
+  "When should my full-backs overlap vs stay back?",
+  "How do I set up a high block defending session with cones only?",
+  "Why do we keep conceding from set pieces — and how do I fix it?",
   "Design a 3-part session on defensive shape and transitions",
-  "How do I improve our pressing triggers and press timing?",
-  "Give me a 1v1 defending drill for my back four",
-  "Plan a 4-week pre-season programme",
+  "How do I explain pressing triggers to players who have never heard the term?",
+  "When should I use a 4-3-3 vs a 4-2-3-1 against a physical team?",
   "How do I motivate a losing team at half time?",
-  "Recommend 3 drills for a striker with weak finishing",
-  "How do we defend in numerical disadvantage?",
-  "Give me a passing circuit with finishing for U17s",
+  "Why is my striker not scoring despite getting chances — and how do I fix it?",
+  "How do I run a passing circuit with finishing for U17s?",
+  "Plan a 4-week pre-season programme for a Division 2 club",
 ];
 
 function MessageBubble({ msg }: { msg: Message }) {
