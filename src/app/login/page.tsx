@@ -1,22 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
+import { useAuthStore, roleHomePath, type AuthUser } from '@/lib/auth-store';
 
 export default function LoginPage() {
-  const { login, loading, error, clearError } = useAuth();
+  const router     = useRouter();
+  const loginStore = useAuthStore((s) => s.login);
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-
-  useEffect(() => { if (error) clearError(); }, [email, password]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     try {
-      await login(email, password);
-    } catch {
-      // error shown via useAuth state
+      const { data } = await api.post<{ token: string; user: AuthUser }>('/auth/login', { email, password });
+      loginStore({ ...data.user, token: data.token });
+      router.push(roleHomePath(data.user.role));
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? 'Failed to sign in. Please try again.';
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
