@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
+const BACKEND_BASE = 'https://bhora-ai.onrender.com/api';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const response = await fetch(`${BACKEND}/auth/login`, {
+    const response = await fetch(`${BACKEND_BASE}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
