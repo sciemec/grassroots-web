@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
+import GuestBanner from "@/components/ui/guest-banner";
+import { GuestGateProvider } from "@/components/ui/register-modal";
 
 export default function FanLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -11,13 +13,12 @@ export default function FanLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!user) { router.push("/login"); return; }
-    if (user.role !== "fan" && user.role !== "admin") {
+    if (user && user.role !== "fan" && user.role !== "admin") {
       router.push(`/${user.role}`);
     }
   }, [hasHydrated, user, router]);
 
-  if (!hasHydrated || !user) {
+  if (!hasHydrated) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -25,5 +26,10 @@ export default function FanLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <GuestGateProvider>
+      <GuestBanner />
+      {children}
+    </GuestGateProvider>
+  );
 }

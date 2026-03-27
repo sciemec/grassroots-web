@@ -1,71 +1,64 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-/*
-|--------------------------------------------------------------------------
-| GrassRoots Sports - Route Protection Middleware
-| File: middleware.ts (place in project root, next to package.json)
-|--------------------------------------------------------------------------
-*/
-
-// Routes that don't need auth
+// Routes that are fully public — no token needed
 const PUBLIC_ROUTES = [
+  '/',
   '/login',
   '/register',
   '/forgot-password',
   '/reset-password',
-  '/',           // landing page
   '/about',
   '/pricing',
+  '/privacy',
+  '/terms',
+  // All hub routes are open to guests (explore-first model)
+  '/player',
+  '/coach',
+  '/scout',
+  '/fan',
+  '/analyst',
+  '/streaming',
+  '/video-studio',
+  '/video-analysis',
+  '/sessions',
+  '/welcome',
+  '/talent-database',
+  '/school-leagues',
+  '/injury-tracker',
+  '/community',
+  '/tournaments',
+  '/subscriptions',
+  '/analytics',
+  '/settings',
 ];
-
-// Routes restricted by role
-const ROLE_ROUTES: Record<string, string[]> = {
-  '/admin':  ['admin'],
-  '/club':   ['club', 'admin'],
-  '/scout':  ['scout', 'admin'],
-  '/player': ['player', 'admin'],
-};
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public routes
-  if (PUBLIC_ROUTES.some(r => pathname.startsWith(r))) {
+  // Always allow static files and API routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/locales')
+  ) {
     return NextResponse.next();
   }
 
-  // Allow static files and API routes
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api')) {
+  // Allow all public and hub routes for guests
+  if (PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))) {
     return NextResponse.next();
   }
 
-  // Check for token in cookies (more secure than localStorage for middleware)
-  // Note: localStorage is not accessible in middleware — use cookies for SSR auth
-  const token = request.cookies.get('grassroots_token')?.value;
+  // /admin requires auth — check for token cookie (set by auth-store as gs_token)
+  if (pathname.startsWith('/admin')) {
+    const token = request.cookies.get('gs_token')?.value;
+    const role  = request.cookies.get('gs_role')?.value;
 
-  if (!token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Role-based access (requires user role in cookie)
-  const userRole = request.cookies.get('grassroots_role')?.value;
-
-  for (const [routePrefix, allowedRoles] of Object.entries(ROLE_ROUTES)) {
-    if (pathname.startsWith(routePrefix)) {
-      if (!userRole || !allowedRoles.includes(userRole)) {
-        // Redirect to their own dashboard
-        const dashboardMap: Record<string, string> = {
-          admin:  '/admin/dashboard',
-          club:   '/club/dashboard',
-          scout:  '/scout/dashboard',
-          player: '/player/dashboard',
-        };
-        const redirect = dashboardMap[userRole ?? ''] ?? '/login';
-        return NextResponse.redirect(new URL(redirect, request.url));
-      }
+    if (!token || role !== 'admin') {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
