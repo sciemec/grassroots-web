@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Sidebar } from "@/components/layout/sidebar";
 
 /* ─── DESIGN TOKENS ─────────────────────────────────────────────── */
 const C = {
@@ -557,44 +558,59 @@ export default function NetballSportPage() {
   ];
 
   return (
-    <div style={{ background: C.dark, minHeight: "100vh", color: C.text }}>
-      <NetballHero />
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <main className="flex-1 overflow-auto">
 
-      {/* Tab bar */}
-      <div style={{
-        background: C.darkCard,
-        borderBottom: `1px solid ${C.darkBorder}`,
-        display: "flex", padding: "0 16px", overflowX: "auto",
-      }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding: "14px 18px",
-            background: "transparent", border: "none",
-            borderBottom: tab === t.id ? `2px solid ${C.goldLight}` : "2px solid transparent",
-            cursor: "pointer",
-            color: tab === t.id ? C.goldLight : C.muted,
-            fontSize: 12, fontWeight: 700, letterSpacing: 0.5,
-            fontFamily: "'Georgia', serif",
-            display: "flex", alignItems: "center", gap: 6,
-            flexShrink: 0, transition: "all 0.15s",
-          }}>
-            <span>{t.icon}</span> {t.label}
-          </button>
-        ))}
-      </div>
+        {/* Page header */}
+        <div className="border-b border-border px-6 py-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
+               style={{ background: `${C.goldGlow}`, border: `1px solid ${C.gold}44` }}>
+            🏐
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">Netball Hub</h1>
+            <p className="text-xs text-muted-foreground">Zimbabwe Netball — ZINA aligned · U14 to the Gems</p>
+          </div>
+        </div>
 
-      {/* Tab content */}
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        {tab === "positions" && <PositionsTab />}
-        {tab === "drills"    && <DrillsTab />}
-        {tab === "rules"     && <RulesTab />}
-        {tab === "leagues"   && <LeaguesTab />}
-      </div>
+        {/* Tab bar */}
+        <div style={{
+          borderBottom: `1px solid ${C.darkBorder}`,
+          display: "flex", padding: "0 24px", overflowX: "auto",
+          background: "transparent",
+        }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              padding: "14px 18px",
+              background: "transparent", border: "none",
+              borderBottom: tab === t.id ? `2px solid ${C.goldLight}` : "2px solid transparent",
+              cursor: "pointer",
+              color: tab === t.id ? C.goldLight : C.muted,
+              fontSize: 12, fontWeight: 700, letterSpacing: 0.5,
+              fontFamily: "'Georgia', serif",
+              display: "flex", alignItems: "center", gap: 6,
+              flexShrink: 0, transition: "all 0.15s",
+            }}>
+              <span>{t.icon}</span> {t.label}
+            </button>
+          ))}
+        </div>
 
-      {/* Video system */}
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        <VideoSystem />
-      </div>
+        {/* Tab content */}
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          {tab === "positions" && <PositionsTab />}
+          {tab === "drills"    && <DrillsTab />}
+          {tab === "rules"     && <RulesTab />}
+          {tab === "leagues"   && <LeaguesTab />}
+        </div>
+
+        {/* Video system */}
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <VideoSystem />
+        </div>
+
+      </main>
     </div>
   );
 }
