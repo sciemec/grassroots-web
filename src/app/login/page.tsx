@@ -159,17 +159,26 @@ function LoginForm() {
         return;
       } catch (googleErr: unknown) {
         const status = (googleErr as { response?: { status?: number } })?.response?.status;
+        const msg    = (googleErr as { response?: { data?: { message?: string } } })?.response?.data?.message;
         if (status === 403) {
           setError("Akaunti yako yakabviswa. / Your account has been suspended.");
           setLoading(false);
           return;
         }
         if (status === 422) {
-          setError("Google sign-in failed. Server could not verify token — check FIREBASE_WEB_API_KEY on Render.");
+          setError(`Google sign-in failed: ${msg ?? "Server could not verify token — check FIREBASE_WEB_API_KEY on Render."}`);
           setLoading(false);
           return;
         }
-        // 404 / 500 / network — endpoint not ready yet, try firebase-email fallback
+        if (status === 500) {
+          setError(`Server error (500): ${msg ?? "Internal server error on /auth/google — check Render logs."}`);
+          setLoading(false);
+          return;
+        }
+        if (status === 404) {
+          // Endpoint not built yet — fall through to firebase-email fallback silently
+        }
+        // No status = network error or CORS — fall through
       }
 
       // Step 3 — Fallback: firebase-email exchange (works for any Firebase-verified user)
