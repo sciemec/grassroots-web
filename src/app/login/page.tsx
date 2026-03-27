@@ -21,10 +21,10 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.post('/auth/login', {
+      const { data } = await api.post('/api/auth/login', {
         email: identifier,
         password,
-      }, { timeout: 60000 });
+      }, { timeout: 60000, baseURL: '' });
 
       // Handle multiple possible Laravel response formats
       const token: string = data.token ?? data.access_token ?? data.data?.token;

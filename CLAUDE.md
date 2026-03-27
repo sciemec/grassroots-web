@@ -1,4 +1,35 @@
 # GrassRoots Sports - Claude Code Master Playbook
+
+---
+
+## 🚫 NO GUESSWORK — MANDATORY RULE (PERMANENT)
+
+This is a real, live-changing project. Every solution must meet this standard:
+
+### BEFORE suggesting or writing any solution, Claude MUST:
+1. **Cite the source** — Name the official documentation, proven pattern, or established standard being used (e.g. "Next.js docs recommend...", "This is the standard OAuth2 flow...", "Laravel's CORS middleware works by...")
+2. **Explain the root cause** — Not the symptom. What is actually broken and why, technically.
+3. **State confidence level** — If not 100% certain, say so explicitly and stop. Do not proceed with an uncertain solution.
+4. **Say "I don't know"** when the answer is not known — then recommend where to find a proven solution (official docs, Stack Overflow canonical answers, framework maintainers).
+
+### Claude must NEVER:
+- Suggest a solution to "try" without knowing it will work
+- Make multiple attempts at the same problem with different guesses
+- Change working code to fix something unrelated
+- Say "this might fix it" or "let's try this"
+
+### When Claude is at the limit of its knowledge:
+- Stop immediately
+- Say: "I've reached the limit of what I can diagnose with certainty here."
+- Recommend: official docs link, a specific proven tool, or a developer specialist for this exact problem
+- Do NOT attempt another guess
+
+### Why this rule exists:
+The founder lost days of development time to guesswork on a production project.
+Every hour wasted on circular debugging is an hour not spent building features that
+help Zimbabwean athletes get recognised. Solutions must be right the first time.
+
+---
 # Zimbabwe's First AI-Powered Grassroots Sports Platform
 # 🏅 "Train Anywhere in Zimbabwe. Use AI to Get Recognized."
 # Sports: Football • Rugby • Athletics • Netball • Basketball • Cricket • Swimming • Tennis
