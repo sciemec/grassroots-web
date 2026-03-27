@@ -1,209 +1,472 @@
-"use client";
+'use client';
 
-import { Suspense, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ChevronLeft } from "lucide-react";
-import { SPORTS, SPORT_MAP, SportKey } from "@/config/sports";
+import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import api from '@/lib/api';
+import { useAuthStore, roleHomePath, type AuthUser } from '@/lib/auth-store';
 
-const ROLES = [
-  {
-    key: "player",
-    icon: "🏃",
-    label: "Player",
-    desc: "Log your stats, upload match footage, get AI performance feedback and get scouted.",
-    badge: "Free to start",
-    badgeColor: "bg-green-500/20 text-green-300",
-    border: "border-green-500/40 hover:border-green-400",
-    gradient: "from-green-600 to-emerald-500",
-  },
-  {
-    key: "coach",
-    icon: "📋",
-    label: "Coach",
-    desc: "Analyse match video, track squad stats, get AI tactical insights and run live sessions.",
-    badge: "Professional",
-    badgeColor: "bg-blue-500/20 text-blue-300",
-    border: "border-blue-500/40 hover:border-blue-400",
-    gradient: "from-blue-600 to-blue-500",
-  },
-  {
-    key: "scout",
-    icon: "🔍",
-    label: "Scout",
-    desc: "Discover verified talent, compare players and generate AI-powered scouting reports.",
-    badge: "Professional",
-    badgeColor: "bg-purple-500/20 text-purple-300",
-    border: "border-purple-500/40 hover:border-purple-400",
-    gradient: "from-purple-600 to-purple-500",
-  },
-  {
-    key: "fan",
-    icon: "🎉",
-    label: "Fan",
-    desc: "Follow athletes, watch live matches and explore the leaderboard.",
-    badge: "Free forever",
-    badgeColor: "bg-amber-500/20 text-amber-300",
-    border: "border-amber-500/40 hover:border-amber-400",
-    gradient: "from-amber-600 to-orange-500",
-  },
+// ── Constants ────────────────────────────────────────────────────────────────
+
+const PROVINCES = [
+  'Harare', 'Bulawayo', 'Manicaland', 'Mashonaland Central',
+  'Mashonaland East', 'Mashonaland West', 'Masvingo',
+  'Matabeleland North', 'Matabeleland South', 'Midlands',
 ];
 
-// What the platform does per sport — shown on the sport card
-const SPORT_FOCUS: Record<string, string> = {
-  football:   "Player development · Tactics · Scouting",
-  rugby:      "Video analysis · Game stats · Coaching insights",
-  netball:    "Video analysis · Game stats · Coaching insights",
-  basketball: "Video analysis · Game stats · Coaching insights",
-  cricket:    "Video analysis · Match stats · Batting & bowling analytics",
-  athletics:  "Performance tracking · PB records · Event analytics",
-  swimming:   "Performance tracking · Split times · Event analytics",
-  tennis:     "Match analytics · Serve stats · Performance review",
-  volleyball: "Video analysis · Game stats · Coaching insights",
-  hockey:     "Video analysis · Game stats · Coaching insights",
+const SPORTS = [
+  'Football', 'Rugby', 'Netball', 'Basketball',
+  'Cricket', 'Athletics', 'Swimming', 'Tennis', 'Volleyball', 'Hockey',
+];
+
+const POSITIONS: Record<string, string[]> = {
+  Football:   ['Goalkeeper (GK)', 'Centre Back (CB)', 'Full Back (FB)', 'Defensive Mid (CDM)', 'Central Mid (CM)', 'Attacking Mid (CAM)', 'Winger', 'Striker'],
+  Rugby:      ['Prop', 'Hooker', 'Lock', 'Flanker', 'Number 8', 'Scrum Half', 'Fly Half', 'Centre', 'Wing', 'Full Back'],
+  Netball:    ['Goal Shooter (GS)', 'Goal Attack (GA)', 'Wing Attack (WA)', 'Centre (C)', 'Wing Defence (WD)', 'Goal Defence (GD)', 'Goalkeeper (GK)'],
+  Basketball: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Centre'],
+  Cricket:    ['Batsman', 'Bowler', 'All-rounder', 'Wicket Keeper'],
+  Athletics:  ['Sprinter', 'Middle Distance', 'Long Distance', 'Jumper', 'Thrower'],
+  Swimming:   ['Freestyle', 'Backstroke', 'Breaststroke', 'Butterfly', 'Individual Medley'],
+  Tennis:     ['Singles', 'Doubles'],
+  Volleyball: ['Setter', 'Libero', 'Outside Hitter', 'Opposite Hitter', 'Middle Blocker'],
+  Hockey:     ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'],
 };
 
-function RegisterContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const preselected = searchParams.get("sport") as SportKey | null;
-  const validPreselect = preselected && SPORT_MAP[preselected] ? preselected : null;
+const ROLES = ['player', 'coach', 'scout', 'fan'] as const;
+type Role = typeof ROLES[number];
 
-  const [step, setStep] = useState<"sport" | "role">(validPreselect ? "role" : "sport");
-  const [sport, setSport] = useState<SportKey | null>(validPreselect);
+const ROLE_LABELS: Record<Role, { label: string; emoji: string; desc: string }> = {
+  player: { label: 'Player',  emoji: '⚽', desc: 'Track your stats & get scouted' },
+  coach:  { label: 'Coach',   emoji: '📋', desc: 'Manage your squad & tactics' },
+  scout:  { label: 'Scout',   emoji: '🔍', desc: 'Discover & sign talent' },
+  fan:    { label: 'Fan',     emoji: '🏆', desc: 'Follow teams & players' },
+};
 
-  function selectSport(key: SportKey) {
-    setSport(key);
-    setStep("role");
-  }
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-  function goToRegister(roleKey: string) {
-    router.push(`/register/${roleKey}?sport=${sport}`);
-  }
+function getAge(dob: string): number {
+  if (!dob) return 99;
+  const today = new Date();
+  const birth = new Date(dob);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
+
+export default function RegisterPage() {
+  const router     = useRouter();
+  const loginStore = useAuthStore((s) => s.login);
+
+  // Personal
+  const [firstName, setFirstName]       = useState('');
+  const [surname, setSurname]           = useState('');
+  const [phone, setPhone]               = useState('');
+  const [email, setEmail]               = useState('');
+  const [dob, setDob]                   = useState('');
+  const [guardianPhone, setGuardianPhone] = useState('');
+
+  // Role
+  const [role, setRole] = useState<Role>('player');
+
+  // Sport profile
+  const [sport, setSport]             = useState('Football');
+  const [position, setPosition]       = useState('');
+  const [dominantFoot, setDominantFoot] = useState('');
+  const [province, setProvince]       = useState('');
+
+  // Security
+  const [password, setPassword]           = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPass, setShowPass]           = useState(false);
+
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
+  const age       = useMemo(() => getAge(dob), [dob]);
+  const isUnder13 = age < 13 && dob !== '';
+  const isPlayer  = role === 'player';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (isUnder13 && !guardianPhone) {
+      setError('Guardian phone number is required for players under 13.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await api.post('/auth/register', {
+        name:                  `${firstName.trim()} ${surname.trim()}`,
+        first_name:            firstName.trim(),
+        surname:               surname.trim(),
+        email:                 email.trim(),
+        phone:                 phone.trim(),
+        password,
+        password_confirmation: confirmPassword,
+        role,
+        date_of_birth:         dob,
+        sport:                 sport.toLowerCase(),
+        position,
+        dominant_foot:         dominantFoot,
+        province,
+        ...(isUnder13 && guardianPhone ? { guardian_phone: guardianPhone } : {}),
+      }, { timeout: 60000 });
+
+      // Auto-login if backend returns a token
+      const token: string | undefined = data.token ?? data.access_token ?? data.data?.token;
+      const user: AuthUser | undefined = data.user ?? data.data?.user;
+
+      if (token && user) {
+        loginStore({ ...user, token });
+        router.push(roleHomePath(user.role));
+      } else {
+        router.push('/login?registered=1');
+      }
+    } catch (err: unknown) {
+      const e = err as { code?: string; response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
+      const validationErrors = e?.response?.data?.errors;
+      if (validationErrors) {
+        const first = Object.values(validationErrors)[0][0];
+        setError(first);
+      } else {
+        setError(
+          e?.response?.data?.message ??
+          (e?.code === 'ECONNABORTED' ? 'Server is waking up — please try again in 30 seconds.' : null) ??
+          'Registration failed. Please try again.'
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-800 px-3 py-8 sm:px-4 sm:py-12">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-[#0a1a0e] py-8 px-4 relative overflow-hidden">
+
+      {/* Background */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] border-2 border-[#FFD700] rounded-[50%]" />
+        <div className="absolute top-0 left-1/2 -translate-x-px w-px h-full bg-[#FFD700]" />
+      </div>
+
+      <div className="w-full max-w-lg mx-auto relative z-10">
 
         {/* Logo */}
-        <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-white">
-            {sport
-              ? <span className="text-3xl">{SPORTS.find(s => s.key === sport)?.emoji}</span>
-              // eslint-disable-next-line @next/next/no-img-element
-              : <img src="/logo_v2.png" alt="Grassroots Sport" width={40} height={40} />
-            }
-            <span className="text-2xl font-bold tracking-tight">Grassroots Sport</span>
-          </Link>
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1a3a1f] border border-[#FFD700]/30 mb-3">
+            <span className="text-2xl">⚽</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white">
+            GrassRoots <span className="text-[#FFD700]">Sports</span>
+          </h1>
+          <p className="text-green-400/60 text-sm mt-1">Create your free account</p>
         </div>
 
-        {/* ── STEP 1: Pick Sport ── */}
-        {step === "sport" && (
-          <>
-            <div className="mb-8 text-center">
-              <h1 className="text-3xl font-black text-white">Pick your sport</h1>
-              <p className="mt-2 text-green-300">
-                Video analytics, game statistics and AI coaching for 10 sports
-              </p>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
-              {SPORTS.map((s) => (
+          {/* ── Role Selector ── */}
+          <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-6">
+            <h2 className="text-[#FFD700] font-semibold text-sm uppercase tracking-wider mb-4">I am a...</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {ROLES.map(r => (
                 <button
-                  key={s.key}
-                  onClick={() => selectSport(s.key)}
-                  className="group flex flex-col items-center gap-2 rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-sm transition-all duration-200 hover:border-white/40 hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-xl"
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    role === r
+                      ? 'border-[#FFD700] bg-[#FFD700]/10'
+                      : 'border-white/10 bg-white/5 hover:border-white/20'
+                  }`}
                 >
-                  <span className="text-3xl sm:text-4xl transition-transform duration-200 group-hover:scale-110">
-                    {s.emoji}
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-white">{s.label}</span>
-                  <span className="hidden sm:block text-[10px] leading-tight text-center text-green-400/80">
-                    {s.governingBody}
-                  </span>
+                  <div className="text-xl mb-1">{ROLE_LABELS[r].emoji}</div>
+                  <div className="text-white font-medium text-sm">{ROLE_LABELS[r].label}</div>
+                  <div className="text-white/40 text-xs mt-0.5">{ROLE_LABELS[r].desc}</div>
                 </button>
               ))}
             </div>
+          </div>
 
-            <p className="mt-8 text-center text-sm text-green-400">
-              Already have an account?{" "}
-              <Link href="/login" className="font-semibold text-white hover:underline">
+          {/* ── Personal Details ── */}
+          <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-6 space-y-4">
+            <h2 className="text-[#FFD700] font-semibold text-sm uppercase tracking-wider">Personal Details</h2>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-green-300/70 mb-1.5 font-medium">First Name</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder="Tendai"
+                  required
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Surname</label>
+                <input
+                  type="text"
+                  value={surname}
+                  onChange={e => setSurname(e.target.value)}
+                  placeholder="Musona"
+                  required
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Phone Number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="07X XXX XXXX"
+                required
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Date of Birth</label>
+              <input
+                type="date"
+                value={dob}
+                onChange={e => setDob(e.target.value)}
+                max={new Date(Date.now() - 6 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                required
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+              />
+            </div>
+
+            {/* Under-13 guardian field */}
+            {isUnder13 && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
+                <p className="text-amber-400 text-xs font-medium">
+                  ⚠️ Players under 13 require guardian approval. A notification will be sent to the guardian.
+                </p>
+                <div>
+                  <label className="block text-xs text-amber-300/70 mb-1.5 font-medium">Guardian Phone Number</label>
+                  <input
+                    type="tel"
+                    value={guardianPhone}
+                    onChange={e => setGuardianPhone(e.target.value)}
+                    placeholder="Guardian's 07X XXX XXXX"
+                    required
+                    className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-amber-500/30 text-white placeholder-white/20 text-sm focus:outline-none focus:border-amber-500/50 transition-all"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Sport Profile ── */}
+          <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-6 space-y-4">
+            <h2 className="text-[#FFD700] font-semibold text-sm uppercase tracking-wider">Sport Profile</h2>
+
+            <div>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Sport</label>
+              <select
+                value={sport}
+                onChange={e => { setSport(e.target.value); setPosition(''); }}
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+              >
+                {SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            {isPlayer && (
+              <>
+                <div>
+                  <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Primary Position</label>
+                  <select
+                    value={position}
+                    onChange={e => setPosition(e.target.value)}
+                    required
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                  >
+                    <option value="">Select position</option>
+                    {(POSITIONS[sport] || []).map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-green-300/70 mb-2 font-medium">Dominant Foot</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['Left', 'Right', 'Both'].map(f => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setDominantFoot(f)}
+                        className={`py-2 rounded-xl border text-sm font-medium transition-all ${
+                          dominantFoot === f
+                            ? 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]'
+                            : 'border-white/10 text-white/50 hover:border-white/30'
+                        }`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Province</label>
+              <select
+                value={province}
+                onChange={e => setProvince(e.target.value)}
+                required
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+              >
+                <option value="">Select province</option>
+                {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* ── Security ── */}
+          <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-6 space-y-4">
+            <h2 className="text-[#FFD700] font-semibold text-sm uppercase tracking-wider">Security</h2>
+
+            <div>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Password</label>
+              <div className="relative">
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  required
+                  minLength={8}
+                  className="w-full px-3 pr-10 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                >
+                  {showPass ? '🙈' : '👁'}
+                </button>
+              </div>
+              {/* Password strength bar */}
+              {password.length > 0 && (
+                <div className="mt-2 flex gap-1">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-all ${
+                        password.length >= [4, 6, 8, 12][i]
+                          ? ['bg-red-500', 'bg-amber-500', 'bg-[#FFD700]', 'bg-green-500'][i]
+                          : 'bg-white/10'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Confirm Password</label>
+              <input
+                type={showPass ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Repeat your password"
+                required
+                className={`w-full px-3 py-2.5 rounded-xl bg-white/5 border text-white placeholder-white/20 text-sm focus:outline-none transition-all ${
+                  confirmPassword && confirmPassword !== password
+                    ? 'border-red-500/50 focus:border-red-500'
+                    : 'border-white/10 focus:border-[#FFD700]/50'
+                }`}
+              />
+              {confirmPassword && confirmPassword !== password && (
+                <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Error ── */}
+          {error && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* ── Submit ── */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl font-semibold text-sm
+                       bg-[#FFD700] text-[#0a1a0e]
+                       hover:bg-[#FFE44D] active:scale-[0.98]
+                       disabled:opacity-40 disabled:cursor-not-allowed
+                       transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-[#0a1a0e]/30 border-t-[#0a1a0e] rounded-full animate-spin" />
+                Creating account...
+              </>
+            ) : 'Create Account →'}
+          </button>
+
+          {/* Official registration link (players only) */}
+          {isPlayer && (
+            <Link
+              href="/register/official"
+              className="block text-center text-sm text-green-400/60 hover:text-green-400 transition-colors py-2"
+            >
+              Registering a young player officially? →{' '}
+              <span className="text-[#FFD700]">Official Player Registration</span>
+            </Link>
+          )}
+
+          <div className="text-center space-y-2">
+            <p className="text-white/30 text-sm">
+              Already have an account?{' '}
+              <Link href="/login" className="text-[#FFD700] hover:text-[#FFE44D] font-medium transition-colors">
                 Sign in
               </Link>
             </p>
-          </>
-        )}
+            <Link
+              href="/player"
+              className="block text-white/20 text-xs hover:text-white/40 transition-colors"
+            >
+              Continue exploring without registering →
+            </Link>
+          </div>
 
-        {/* ── STEP 2: Pick Role ── */}
-        {step === "role" && sport && (() => {
-          const cfg = SPORTS.find(s => s.key === sport)!;
-          return (
-            <>
-              <div className="mb-6 text-center">
-                <div className="mb-3 flex items-center justify-center gap-3">
-                  <span className="text-4xl">{cfg.emoji}</span>
-                  <div className="text-left">
-                    <h1 className="text-2xl font-black text-white">{cfg.label}</h1>
-                    <p className="text-xs text-green-400">{SPORT_FOCUS[sport]}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-green-300">
-                  What is your role on this platform?
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                {ROLES.map((role) => (
-                  <button
-                    key={role.key}
-                    onClick={() => goToRegister(role.key)}
-                    className={`group relative flex flex-col rounded-2xl border bg-white/5 p-3 sm:p-5 text-left backdrop-blur-sm transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-xl ${role.border}`}
-                  >
-                    <span className={`mb-3 self-start rounded-full px-2.5 py-0.5 text-xs font-medium ${role.badgeColor}`}>
-                      {role.badge}
-                    </span>
-                    <div className="mb-2 flex items-center gap-3">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${role.gradient} text-xl shadow-lg`}>
-                        {role.icon}
-                      </div>
-                      <h2 className="text-lg font-bold text-white">{role.label}</h2>
-                    </div>
-                    <p className="mb-4 flex-1 text-sm leading-relaxed text-green-200">{role.desc}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-white group-hover:underline">
-                        Register as {role.label}
-                      </span>
-                      <ChevronRight className="h-4 w-4 text-green-400" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => setStep("sport")}
-                className="mt-6 flex w-full items-center justify-center gap-2 text-sm text-green-400 hover:text-white transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" /> Change sport
-              </button>
-
-              <p className="mt-4 text-center text-sm text-green-400">
-                Already have an account?{" "}
-                <Link href="/login" className="font-semibold text-white hover:underline">
-                  Sign in
-                </Link>
-              </p>
-            </>
-          );
-        })()}
+        </form>
       </div>
     </div>
-  );
-}
-
-export default function RegisterPage() {
-  return (
-    <Suspense>
-      <RegisterContent />
-    </Suspense>
   );
 }
