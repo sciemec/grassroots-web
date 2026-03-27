@@ -5,6 +5,7 @@ import { Providers } from "@/components/providers";
 import { PwaBanner } from "@/components/pwa/install-banner";
 import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { PushPrompt } from "@/components/ui/push-prompt";
+import { AuthProvider } from "@/hooks/useAuth";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -81,10 +82,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased">
         <Providers>
-          {children}
-          <PwaBanner />
-          <OfflineIndicator />
-          <PushPrompt />
+          <AuthProvider>
+            {children}
+            <PwaBanner />
+            <OfflineIndicator />
+            <PushPrompt />
+          </AuthProvider>
         </Providers>
         <script
           dangerouslySetInnerHTML={{

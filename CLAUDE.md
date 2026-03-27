@@ -1128,6 +1128,30 @@ NAPH (National Association of Primary Heads)
 
 ---
 
+## 🔑 CONFIRMED WORKING TEST CREDENTIALS
+
+These accounts are seeded via `GrassrootsTestSeeder` and run on every Render deploy.
+Passwords are bcrypt-hashed automatically by the User model's `'password' => 'hashed'` cast.
+
+| Email | Password | Role | Dashboard |
+|---|---|---|---|
+| admin@grassrootssports.live | Admin123! | admin | /admin |
+| player@grassrootssports.live | Player123! | player | /player |
+| coach@grassrootssports.live | Coach123! | coach | /coach |
+| scout@grassrootssports.live | Scout123! | scout | /scout |
+
+**Seeder location (Laravel):** `database/seeders/GrassrootsTestSeeder.php`
+**Runs on deploy via:** `start.sh` → `php artisan db:seed --class=GrassrootsTestSeeder --force`
+**Safe to re-run:** uses `updateOrCreate` — no duplicates ever created.
+
+### Dev-Bypass Token (Admin Testing Without Backend)
+- Login: `nnygel@live.com / test1234` → sets `auth_token = "dev-token"` in localStorage
+- Backend always returns 401 for this token — expected behavior
+- Web app skips 401 redirect for this token (see `src/lib/api.ts`)
+- AI Coach routes to Next.js Anthropic proxy instead of Laravel `/ask`
+
+---
+
 ## SESSION PROGRESS LOG — March 2026
 
 ### Theme — Zimbabwe Palette & Chevron Background
@@ -1273,11 +1297,11 @@ Both are needed — they serve different parts of the system.
 
 ### Dev-Bypass Token (Admin Testing)
 
+See the **🔑 CONFIRMED WORKING TEST CREDENTIALS** section above for all accounts.
 - Token value: `"dev-token"` (stored in localStorage as `auth_token`)
 - Backend always returns 401 for this token — that is expected
 - Web app detects this token and skips the 401 redirect
 - AI Coach routes directly to the Next.js Anthropic proxy (bypasses Laravel `/ask`)
-- Login: nnygel@live.com / test1234 (sets dev-bypass session)
 
 ## 🐛 CODE ANALYSIS & DEBUGGING PROTOCOL
 
