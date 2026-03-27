@@ -76,7 +76,6 @@ async function apiCall(endpoint: string, options: RequestInit = {}, token?: stri
   const data = await res.json();
 
   if (!res.ok) {
-    // Laravel validation errors come as { errors: { field: ['message'] } }
     if (data.errors) {
       const firstError = Object.values(data.errors as Record<string, string[]>)[0][0];
       throw new Error(firstError);
@@ -109,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const user = JSON.parse(savedUser) as GrassRootsUser;
         setState({ user, token: savedToken, loading: false, error: null });
-        // Silently verify token is still valid
         verifyToken(savedToken);
       } catch {
         clearSession();
@@ -126,20 +124,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         saveSession(token, data.user);
       }
     } catch {
-      // Token expired or invalid — clear session
       clearSession();
     }
   };
 
+  // ─── Save session to localStorage + cookies ──────────────────────────
   const saveSession = (token: string, user: GrassRootsUser) => {
+    // localStorage — for API calls in components
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+    // Cookies — for middleware route protection
+    const maxAge = 60 * 60 * 24 * 7; // 7 days
+    document.cookie = `grassroots_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    document.cookie = `grassroots_role=${user.role}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
     setState({ user, token, loading: false, error: null });
   };
 
+  // ─── Clear session from localStorage + cookies ───────────────────────
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+
+    // Clear cookies
+    document.cookie = 'grassroots_token=; path=/; max-age=0';
+    document.cookie = 'grassroots_role=; path=/; max-age=0';
+
     setState({ user: null, token: null, loading: false, error: null });
   };
 
@@ -175,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ─── Google Login (Firebase token → Laravel token) ───────────────────
+  // ─── Google Login ────────────────────────────────────────────────────
   const googleLogin = useCallback(async (googleData: GoogleAuthData) => {
     setState(s => ({ ...s, loading: true, error: null }));
     try {

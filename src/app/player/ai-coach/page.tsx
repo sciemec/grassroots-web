@@ -191,36 +191,8 @@ export default function AICoachPage() {
    * handles each message independently (backend limitation — no history param).
    */
   const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
-    // Step 1 — Laravel backend (DeepSeek) — now includes player context
-    try {
-      const res = await api.post("/ask", {
-        question: message,
-        role: user?.role ?? "player",
-        language: "english",
-        // Player context — Laravel can use this to personalise DeepSeek responses
-        context: playerCtx ? {
-          name:             playerCtx.name,
-          sport:            playerCtx.sport,
-          position:         playerCtx.position,
-          age_group:        playerCtx.ageGroup,
-          province:         playerCtx.province,
-          club:             playerCtx.club,
-          skill_score:      playerCtx.skillScore,
-          skill_level:      playerCtx.skillLevel,
-          top_skill:        playerCtx.showcaseTopSkill,
-          top_rating:       playerCtx.showcaseTopRating,
-          stats_summary:    playerCtx.statsSummary,
-          sessions_week:    playerCtx.sessionsThisWeek,
-          last_session:     playerCtx.lastSessionType,
-        } : undefined,
-      });
-      const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
-      if (reply) return reply;
-    } catch {
-      // Any error → fall through to Claude proxy
-    }
-
-    // Step 2 — Next.js Claude proxy (requires internet)
+    // Step 1 — Claude proxy (knowledge base + conversation history + WHY/WHEN/WHERE/HOW/WHOM framework)
+    // This is the primary path — gives the richest, most personalised answer
     try {
       const res = await fetch("/api/ai-coach", {
         method: "POST",
@@ -233,7 +205,35 @@ export default function AICoachPage() {
         if (reply) return reply;
       }
     } catch {
-      // Network down → fall through to offline AI
+      // Claude unavailable → fall through to Laravel
+    }
+
+    // Step 2 — Laravel backend (DeepSeek) — fallback, includes player context
+    try {
+      const res = await api.post("/ask", {
+        question: message,
+        role: user?.role ?? "player",
+        language: "english",
+        context: playerCtx ? {
+          name:          playerCtx.name,
+          sport:         playerCtx.sport,
+          position:      playerCtx.position,
+          age_group:     playerCtx.ageGroup,
+          province:      playerCtx.province,
+          club:          playerCtx.club,
+          skill_score:   playerCtx.skillScore,
+          skill_level:   playerCtx.skillLevel,
+          top_skill:     playerCtx.showcaseTopSkill,
+          top_rating:    playerCtx.showcaseTopRating,
+          stats_summary: playerCtx.statsSummary,
+          sessions_week: playerCtx.sessionsThisWeek,
+          last_session:  playerCtx.lastSessionType,
+        } : undefined,
+      });
+      const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+      if (reply) return reply;
+    } catch {
+      // Laravel unavailable → fall through to offline
     }
 
     // Step 3 — Offline knowledge base (no internet required)
