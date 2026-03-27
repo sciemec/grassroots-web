@@ -35,13 +35,22 @@ export default function LoginPage() {
       loginStore({ ...user, token });
       router.push(roleHomePath(user.role));
     } catch (err: unknown) {
-      const e = err as { code?: string; response?: { data?: { message?: string; error?: string } } };
-      setError(
-        e?.response?.data?.message ??
-        e?.response?.data?.error ??
-        (e?.code === 'ECONNABORTED' ? 'Server is waking up — please try again in 30 seconds.' : null) ??
-        'Could not sign in. Please check your details and try again.'
-      );
+      const e = err as { code?: string; response?: { status?: number; data?: unknown } };
+      if (!e.response) {
+        // No response = network failure (CORS, connection refused, timeout)
+        setError(
+          e?.code === 'ECONNABORTED'
+            ? 'Server is waking up — please try again in 30 seconds.'
+            : `Network error: Cannot reach server. (${e?.code ?? 'no response'})`
+        );
+      } else {
+        const d = e.response.data as Record<string, unknown> | null;
+        setError(
+          (d?.message as string) ??
+          (d?.error as string) ??
+          `Server returned ${e.response.status}: ${JSON.stringify(d)}`
+        );
+      }
     } finally {
       setLoading(false);
     }
