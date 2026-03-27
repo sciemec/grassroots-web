@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/lib/auth-store";
-import { ProGate } from "@/components/pro-gate";
+import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -1048,7 +1048,6 @@ export default function BusinessHubPage() {
   const isGuest = !hasHydrated || !user;
 
   const [activeTab, setActiveTab] = useState<Tab>("budget");
-  const [selectedType, setSelectedType] = useState<string | null>(null);
 
   const tabContent: Record<Tab, React.ReactNode> = {
     budget:   <BudgetPlanner isGuest={isGuest} />,
@@ -1060,128 +1059,46 @@ export default function BusinessHubPage() {
   };
 
   return (
-    <ProGate feature="Business Hub">
-    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #052e0a 0%, #0a3d10 50%, #0d2f1a 100%)" }}>
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <main className="flex-1 overflow-auto p-6">
 
-      {/* Hero */}
-      <section className="relative overflow-hidden pt-24 pb-16 px-4">
-        <div className="pointer-events-none absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpolygon points='60,10 90,50 60,90 30,50' fill='none' stroke='%23E6A817' stroke-width='1'/%3E%3Ccircle cx='60' cy='50' r='8' fill='%23E6A817' opacity='0.4'/%3E%3Cline x1='0' y1='60' x2='120' y2='60' stroke='%23E6A817' stroke-width='0.5'/%3E%3Cline x1='60' y1='0' x2='60' y2='120' stroke='%23E6A817' stroke-width='0.5'/%3E%3C/svg%3E")`, backgroundSize: "120px 120px" }} />
-        <div className="relative mx-auto max-w-5xl text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5">
-            <Building2 className="h-3.5 w-3.5 text-amber-400" />
-            <span className="text-xs font-semibold text-amber-300">Sports Business Hub</span>
-          </div>
-          <h1 className="text-4xl font-black text-white sm:text-5xl lg:text-6xl">Run Your Sports<br /><span style={{ color: "#F5C842" }}>Business Smarter</span></h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base text-green-300/80 sm:text-lg">Budget planning, sponsor discovery, financial tracking, member management and event tools — everything a Zimbabwe sports administrator needs.</p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="#dashboard" className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition hover:opacity-90" style={{ background: "#E6A817", color: "#2C2416" }}>
-              Try the tools free <ArrowRight className="h-4 w-4" />
-            </a>
-            {isGuest ? (
-              <Link href="/register" className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">Create free account</Link>
-            ) : (
-              <span className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-6 py-3 text-sm font-bold text-green-300">
-                <CheckCircle className="h-4 w-4" /> Signed in as {user?.name?.split(" ")[0]}
-              </span>
-            )}
-          </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-green-400/60">
-            {["Free basic plan", "No credit card needed", "Scan receipts with AI", "Stakeholder PDF reports"].map((f) => (
-              <span key={f} className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500" /> {f}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Who is this for */}
-      <section className="px-4 pb-16">
-        <div className="mx-auto max-w-5xl">
-          <p className="mb-6 text-center text-sm font-semibold text-green-400/60 uppercase tracking-widest">Who is this for?</p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {USER_TYPES.map((ut) => (
-              <button key={ut.key} onClick={() => setSelectedType(selectedType === ut.key ? null : ut.key)} className={`rounded-2xl border p-5 text-left transition-all ${selectedType === ut.key ? "border-amber-500/50 bg-amber-500/10 shadow-lg shadow-amber-500/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
-                <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${ut.color} text-white`}>{ut.icon}</div>
-                <p className="font-bold text-white text-sm">{ut.title}</p>
-                <p className="mt-1 text-xs text-green-400/60 leading-relaxed">{ut.description}</p>
-                {selectedType === ut.key && (
-                  <ul className="mt-3 space-y-1">
-                    {ut.features.map((f) => <li key={f} className="flex items-center gap-1.5 text-xs text-green-300"><CheckCircle className="h-3 w-3 text-green-500 shrink-0" /> {f}</li>)}
-                  </ul>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Dashboard */}
-      <section id="dashboard" className="px-4 pb-20">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-black text-white">Your Business Tools</h2>
-            <p className="mt-2 text-sm text-green-400/60">{isGuest ? "Try the tools below — sign in to save your data" : "Your data is saved automatically"}</p>
-          </div>
-          <div className="mb-6 flex flex-wrap gap-2">
-            {TABS.map((t) => (
-              <button key={t.key} onClick={() => setActiveTab(t.key)} className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all ${activeTab === t.key ? "border-amber-500/50 bg-amber-500/15 text-amber-300" : "border-white/10 bg-white/5 text-green-300 hover:bg-white/10"}`}>
-                {t.icon} {t.label}
-              </button>
-            ))}
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-            {tabContent[activeTab]}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="px-4 pb-20">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="mb-8 text-center text-3xl font-black text-white">Simple Pricing</h2>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-7">
-              <p className="text-lg font-black text-white">Free</p>
-              <p className="mt-1 text-4xl font-black text-white">$0<span className="text-lg font-normal text-green-400/60">/mo</span></p>
-              <p className="mt-2 text-xs text-green-400/60">Perfect for getting started</p>
-              <ul className="mt-6 space-y-3">
-                {["Budget Planner (up to 10 items)", "Sponsor directory (names only)", "Basic financial tracker + receipt scan", "1 active event", "Up to 20 members", "5 business skills articles"].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-green-300"><CheckCircle className="mt-0.5 h-4 w-4 text-green-500 shrink-0" /> {f}</li>
-                ))}
-              </ul>
-              <Link href="/register" className="mt-6 flex w-full items-center justify-center rounded-xl border border-white/20 py-2.5 text-sm font-bold text-white hover:bg-white/10 transition-colors">Get started free</Link>
+        {/* Page header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30">
+              <Building2 className="h-5 w-5 text-amber-400" />
             </div>
-            <div className="rounded-2xl border border-amber-500/40 p-7 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(230,168,23,0.12), rgba(230,168,23,0.05))" }}>
-              <div className="absolute top-4 right-4 rounded-full bg-amber-500 px-3 py-0.5 text-[10px] font-black text-amber-950">POPULAR</div>
-              <p className="text-lg font-black text-white">Pro</p>
-              <p className="mt-1 text-4xl font-black" style={{ color: "#F5C842" }}>$5<span className="text-lg font-normal text-amber-400/60">/mo</span></p>
-              <p className="mt-2 text-xs text-amber-400/60">For serious clubs &amp; organisers</p>
-              <ul className="mt-6 space-y-3">
-                {["Unlimited budget items", "Full sponsor directory + contact details", "Advanced financial reports + PDF export", "Unlimited events + checklist export", "Unlimited members + stakeholder reports", "Receipt / paper scanning (AI)", "All business skills articles + templates", "Priority support via WhatsApp"].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-amber-200"><Star className="mt-0.5 h-4 w-4 text-amber-400 shrink-0" /> {f}</li>
-                ))}
-              </ul>
-              <Link href="/register" className="mt-6 flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-bold transition-colors hover:opacity-90" style={{ background: "#E6A817", color: "#2C2416" }}>Start Pro — $5/month</Link>
+            <div>
+              <h1 className="text-2xl font-bold">Business Hub</h1>
+              <p className="text-sm text-muted-foreground">Budget · Sponsors · Finance · Events · Members</p>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* CTA */}
-      <section className="px-4 pb-20">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-amber-500/20 p-10 text-center" style={{ background: "rgba(230,168,23,0.06)" }}>
-          <h2 className="text-3xl font-black text-white">Ready to grow Zimbabwe sport?</h2>
-          <p className="mt-3 text-sm text-green-300/70">Join clubs, schools, and event organisers already using Grassroots Sport Business Hub.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/register" className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition hover:opacity-90" style={{ background: "#E6A817", color: "#2C2416" }}>Register free <ArrowRight className="h-4 w-4" /></Link>
-            <Link href="/login" className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10">Sign in</Link>
-          </div>
+        {/* Tab bar */}
+        <div className="mb-5 flex flex-wrap gap-2">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all ${
+                activeTab === t.key
+                  ? "border-amber-500/50 bg-amber-500/15 text-amber-400"
+                  : "border-muted bg-muted/30 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {t.icon} {t.label}
+            </button>
+          ))}
         </div>
-      </section>
 
-      <footer className="border-t border-white/10 px-4 py-8 text-center text-xs text-green-400/40">
-        © {new Date().getFullYear()} Grassroots Sport · Business Hub · Zimbabwe
-      </footer>
+        {/* Tab content */}
+        <div className="rounded-2xl border bg-card p-6">
+          {tabContent[activeTab]}
+        </div>
+
+      </main>
     </div>
-    </ProGate>
   );
 }
