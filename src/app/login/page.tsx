@@ -19,12 +19,15 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.post<{ token: string; user: AuthUser }>('/auth/login', { email, password });
+      const { data } = await api.post<{ token: string; user: AuthUser }>('/auth/login', { email, password }, { timeout: 60000 });
       loginStore({ ...data.user, token: data.token });
       router.push(roleHomePath(data.user.role));
     } catch (err: unknown) {
+      const e = err as { code?: string; response?: { data?: { message?: string; error?: string } } };
       const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        e?.response?.data?.message
+        ?? e?.response?.data?.error
+        ?? (e?.code === 'ECONNABORTED' ? 'Server is waking up — please try again in 30 seconds.' : null)
         ?? 'Failed to sign in. Please try again.';
       setError(msg);
     } finally {
