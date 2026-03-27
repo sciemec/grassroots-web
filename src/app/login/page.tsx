@@ -23,12 +23,13 @@ export default function LoginPage() {
       loginStore({ ...data.user, token: data.token });
       router.push(roleHomePath(data.user.role));
     } catch (err: unknown) {
-      const e = err as { code?: string; response?: { data?: { message?: string; error?: string } } };
+      const e = err as { code?: string; message?: string; response?: { status?: number; data?: unknown } };
+      const raw = JSON.stringify({ code: e?.code, status: e?.response?.status, data: e?.response?.data });
       const msg =
-        e?.response?.data?.message
-        ?? e?.response?.data?.error
+        (e?.response?.data as { message?: string })?.message
+        ?? (e?.response?.data as { error?: string })?.error
         ?? (e?.code === 'ECONNABORTED' ? 'Server is waking up — please try again in 30 seconds.' : null)
-        ?? 'Failed to sign in. Please try again.';
+        ?? `Debug: ${raw}`;
       setError(msg);
     } finally {
       setLoading(false);
