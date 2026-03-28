@@ -231,6 +231,44 @@ UI Elements:
 
 ---
 
+## 🔒 REGISTRATION FILES — PROTECTED. DO NOT TOUCH WITHOUT PERMISSION.
+
+These files are confirmed working and must NEVER be modified, deleted, or replaced without Nigel's explicit approval.
+
+### PROTECTED FILES:
+- src/app/register/page.tsx — Main registration page. Handles all 4 roles (Player, Coach, Scout, Fan). CONFIRMED WORKING.
+- src/app/register/official/page.tsx — Official ZIFA player registration with guardian consent, ID docs, school details, QR code.
+- src/app/api/auth/login/route.ts — Login proxy to Laravel backend.
+- src/app/login/page.tsx — Login page. CONFIRMED WORKING.
+- src/lib/auth-store.ts — Zustand auth store with hydration fix. CRITICAL — DO NOT TOUCH.
+
+### RULES — NO EXCEPTIONS:
+
+1. NEVER create new registration pages without first reading every existing file in src/app/register/ and reporting what is already there.
+
+2. NEVER delete or overwrite a registration file — not even to restore or fix it. If a file exists, it stays until Nigel says otherwise.
+
+3. NEVER write a registration file without first showing Nigel:
+   - The exact file that already exists and what it does
+   - What is broken or missing
+   - Exactly what you propose to change and why
+   - Then WAIT for Nigel to say yes before touching anything
+
+4. NEVER duplicate registration logic — if /register/page.tsx already handles all roles, do not create /register/player, /register/coach, /register/scout, /register/fan pages.
+
+5. If TypeScript errors point to missing registration pages — the fix is to clear the .next cache (rm -rf .next), NOT to create new pages.
+
+### IF AN UPDATE IS NEEDED:
+- State clearly: which file, which lines, what changes, why
+- Show the exact old code and the exact new code side by side
+- Wait for Nigel to approve before making any edit
+- Make ONE change at a time — never bundle registration changes
+
+### HISTORY — WHY THIS RULE EXISTS:
+In March 2026, Claude created 4 unnecessary registration wizard pages (register/player, register/coach, register/scout, register/fan) without checking that /register/page.tsx already existed and was working. This caused confusion, duplicated code, and required a full cleanup. This rule exists to prevent this from ever happening again.
+
+---
+
 ## 🏗️ PROJECT OVERVIEW
 
 GrassRoots Sports is Zimbabwe's first AI-powered sports management
