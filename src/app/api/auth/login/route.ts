@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_BASE = 'https://bhora-ai.onrender.com/api';
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
 export async function POST(req: NextRequest) {
   try {
