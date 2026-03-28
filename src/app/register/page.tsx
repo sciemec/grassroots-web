@@ -83,8 +83,9 @@ export default function RegisterPage() {
   const [showPass, setShowPass]           = useState(false);
 
   // UI state
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const age       = useMemo(() => getAge(dob), [dob]);
   const isUnder13 = age < 13 && dob !== '';
@@ -231,13 +232,12 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Phone Number</label>
+              <label className="block text-xs text-green-300/70 mb-1.5 font-medium">Phone Number <span className="text-white/30">(optional)</span></label>
               <input
                 type="tel"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 placeholder="07X XXX XXXX"
-                required
                 className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
@@ -421,10 +421,27 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* ── Terms & Conditions ── */}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={e => setTermsAccepted(e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-[#FFD700]"
+            />
+            <span className="text-xs text-white/50">
+              I agree to the{' '}
+              <Link href="/terms" className="text-[#FFD700] hover:underline">Terms of Service</Link>
+              {' '}and{' '}
+              <Link href="/privacy" className="text-[#FFD700] hover:underline">Privacy Policy</Link>.
+              My information will be used to manage my sports profile on GrassRoots Sports.
+            </span>
+          </label>
+
           {/* ── Submit ── */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !termsAccepted}
             className="w-full py-3.5 rounded-xl font-semibold text-sm
                        bg-[#FFD700] text-[#0a1a0e]
                        hover:bg-[#FFE44D] active:scale-[0.98]

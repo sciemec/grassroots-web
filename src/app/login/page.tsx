@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuthStore, roleHomePath, type AuthUser } from '@/lib/auth-store';
 
 export default function LoginPage() {
-  const router     = useRouter();
-  const loginStore = useAuthStore((s) => s.login);
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const loginStore   = useAuthStore((s) => s.login);
+
+  const registered = searchParams.get('registered') === '1';
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword]     = useState('');
@@ -81,6 +84,13 @@ export default function LoginPage() {
         {/* Card */}
         <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-8 shadow-2xl">
           <h2 className="text-white font-semibold text-lg mb-6">Sign in to your account</h2>
+
+          {registered && (
+            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm flex items-center gap-2">
+              <span>✓</span>
+              <span>Account created! Sign in below to get started.</span>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
