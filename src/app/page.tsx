@@ -66,8 +66,8 @@ const roles = [
       "Personal progress charts & milestones",
       "Drill library with 48+ exercises",
     ],
-    cta: "Start as Player",
-    href: "/register/player",
+    cta: "Explore Player Hub",
+    href: "/player",
   },
   {
     id: "coach",
@@ -83,8 +83,8 @@ const roles = [
       "Session drill assignment to players",
       "Export PDF training reports",
     ],
-    cta: "Start as Coach",
-    href: "/register/coach",
+    cta: "Explore Coach Hub",
+    href: "/coach",
   },
   {
     id: "scout",
@@ -100,8 +100,8 @@ const roles = [
       "Shortlist management across multiple teams",
       "Radar chart comparisons",
     ],
-    cta: "Start as Scout",
-    href: "/register/scout",
+    cta: "Explore Scout Hub",
+    href: "/scout",
   },
   {
     id: "fan",
@@ -117,8 +117,8 @@ const roles = [
       "Donation support for community players",
       "Live session highlights feed",
     ],
-    cta: "Start as Fan",
-    href: "/register/fan",
+    cta: "Explore Fan Hub",
+    href: "/fan",
   },
 ];
 
@@ -253,19 +253,19 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <Link
-                  href="/register"
+                <a
+                  href="#features"
                   className="rounded px-7 py-3.5 text-sm font-bold text-[#2C2416] transition hover:-translate-y-px hover:opacity-90"
                   style={{ background: "#E6A817" }}
                 >
-                  Register as Athlete
-                </Link>
+                  Explore the Platform
+                </a>
                 <Link
                   href="/login"
                   className="flex items-center gap-2 rounded border border-white/35 px-7 py-3.5 text-sm font-semibold text-white hover:border-white/70 transition"
                 >
                   <Play className="h-4 w-4" />
-                  Coach Hub →
+                  Sign In →
                 </Link>
               </div>
             </div>
