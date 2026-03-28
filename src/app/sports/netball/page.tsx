@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 
 /* ─── DESIGN TOKENS ─────────────────────────────────────────────── */
@@ -547,6 +547,206 @@ function VideoSystem() {
   );
 }
 
+/* ─── AI NETBALL COACH ──────────────────────────────────────────── */
+const POSITIONS_LIST = ["Goal Shooter (GS)", "Goal Attack (GA)", "Wing Attack (WA)", "Centre (C)", "Wing Defence (WD)", "Goal Defence (GD)", "Goal Keeper (GK)", "Coach", "Player (general)"];
+
+const QUICK_PROMPTS = [
+  "What drills improve my shooting accuracy?",
+  "How do I defend a fast Wing Attack?",
+  "What does a Centre need to do on centre pass?",
+  "How can I improve my footwork for the 3-second rule?",
+  "Give me a 20-minute warm-up routine for netball.",
+  "How do I teach offside rules to beginners?",
+];
+
+interface ChatMsg { role: "user" | "assistant"; text: string; }
+
+function NetballAICoach() {
+  const [position, setPosition] = useState("Player (general)");
+  const [input, setInput]       = useState("");
+  const [history, setHistory]   = useState<ChatMsg[]>([]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [history, loading]);
+
+  const send = async (text: string) => {
+    if (!text.trim() || loading) return;
+    const userMsg: ChatMsg = { role: "user", text: text.trim() };
+    setHistory((h) => [...h, userMsg]);
+    setInput("");
+    setLoading(true);
+    setError("");
+
+    const systemPrompt = `You are an expert netball coach with 15+ years experience coaching in Zimbabwe, working with ZINA (Zimbabwe Netball Association) affiliated clubs and schools.
+
+The player/coach you are speaking to plays as: ${position}.
+
+Your role:
+- Give practical, actionable netball coaching advice
+- Tailor advice to Zimbabwe conditions (outdoor courts, varying surfaces, heat)
+- Reference ZINA rules and structures where relevant
+- For position-specific questions, focus on that position's responsibilities
+- Keep responses concise and structured (use bullet points for drills/tips)
+- Encourage players — grassroots level, many are still learning
+- If asked about drills, give step-by-step instructions with time, players needed, and coaching cues
+- Respond in English (or mix in simple Shona if appropriate)
+
+Court positions for reference: GS (Goal Shooter), GA (Goal Attack), WA (Wing Attack), C (Centre), WD (Wing Defence), GD (Goal Defence), GK (Goal Keeper).`;
+
+    try {
+      const apiHistory = history.slice(-8).map((m) => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.text,
+      }));
+
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text.trim(),
+          system_prompt: systemPrompt,
+          history: apiHistory,
+        }),
+      });
+
+      const data = await res.json() as { response?: string; error?: string };
+      if (!res.ok || !data.response) throw new Error(data.error ?? "No response");
+      setHistory((h) => [...h, { role: "assistant", text: data.response! }]);
+    } catch {
+      setError("AI coach unavailable. Please try again.");
+      setHistory((h) => h.slice(0, -1));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: "24px", maxWidth: 760, margin: "0 auto" }}>
+
+      {/* Position selector */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontWeight: 700 }}>
+          Your position
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {POSITIONS_LIST.map((p) => (
+            <button key={p} onClick={() => setPosition(p)} style={{
+              padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              background: position === p ? C.gold : C.darkCard,
+              color: position === p ? C.dark : C.muted,
+              border: `1px solid ${position === p ? C.gold : C.darkBorder}`,
+              transition: "all 0.15s",
+            }}>{p}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Chat history */}
+      <div style={{
+        background: C.darkCard, border: `1px solid ${C.darkBorder}`,
+        borderRadius: 12, padding: "16px", marginBottom: 16,
+        minHeight: 260, maxHeight: 420, overflowY: "auto",
+        display: "flex", flexDirection: "column", gap: 12,
+      }}>
+        {history.length === 0 && !loading && (
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🏐</div>
+            <div style={{ color: C.muted, fontSize: 13, fontFamily: "'Georgia', serif" }}>
+              Ask your AI Netball Coach anything — drills, positioning, rules, tactics.
+            </div>
+            <div style={{ color: C.muted, fontSize: 11, marginTop: 6 }}>
+              Selected position: <span style={{ color: C.goldLight }}>{position}</span>
+            </div>
+          </div>
+        )}
+        {history.map((msg, i) => (
+          <div key={i} style={{
+            display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+          }}>
+            <div style={{
+              maxWidth: "85%", padding: "10px 14px", borderRadius: 10, fontSize: 13,
+              lineHeight: 1.6, fontFamily: "'Georgia', serif",
+              background: msg.role === "user" ? C.gold : C.surface,
+              color: msg.role === "user" ? C.dark : C.text,
+              border: msg.role === "assistant" ? `1px solid ${C.darkBorder}` : "none",
+              whiteSpace: "pre-wrap",
+            }}>{msg.text}</div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{
+              padding: "10px 14px", borderRadius: 10, fontSize: 13,
+              background: C.surface, border: `1px solid ${C.darkBorder}`,
+              color: C.muted, display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⏳</span>
+              Coach is thinking…
+            </div>
+          </div>
+        )}
+        {error && (
+          <div style={{ color: "#ef4444", fontSize: 12, textAlign: "center", padding: "8px" }}>{error}</div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Quick prompts */}
+      {history.length === 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: C.muted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, fontWeight: 700 }}>
+            Quick questions
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {QUICK_PROMPTS.map((q) => (
+              <button key={q} onClick={() => send(q)} style={{
+                padding: "8px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                background: C.darkCard, color: C.muted,
+                border: `1px solid ${C.darkBorder}`,
+                textAlign: "left", transition: "all 0.15s",
+              }}>{q}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ display: "flex", gap: 10 }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send(input)}
+          placeholder="Ask your netball coach…"
+          style={{
+            flex: 1, padding: "12px 16px", borderRadius: 10, fontSize: 13,
+            background: C.darkCard, border: `1px solid ${C.darkBorder}`,
+            color: C.text, outline: "none",
+            fontFamily: "'Georgia', serif",
+          }}
+        />
+        <button
+          onClick={() => send(input)}
+          disabled={loading || !input.trim()}
+          style={{
+            padding: "12px 20px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+            background: loading || !input.trim() ? C.darkCard : C.gold,
+            color: loading || !input.trim() ? C.muted : C.dark,
+            border: `1px solid ${loading || !input.trim() ? C.darkBorder : C.gold}`,
+            cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+            transition: "all 0.15s",
+          }}
+        >
+          {loading ? "…" : "Ask →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN PAGE ─────────────────────────────────────────────────── */
 export default function NetballSportPage() {
   const [tab, setTab] = useState("positions");
@@ -555,6 +755,7 @@ export default function NetballSportPage() {
     { id: "drills",    label: "Training Drills",  icon: "💪" },
     { id: "rules",     label: "Key Rules",        icon: "📋" },
     { id: "leagues",   label: "Junior Leagues",   icon: "🏆" },
+    { id: "ai-coach",  label: "AI Coach",         icon: "🤖" },
   ];
 
   return (
@@ -603,12 +804,15 @@ export default function NetballSportPage() {
           {tab === "drills"    && <DrillsTab />}
           {tab === "rules"     && <RulesTab />}
           {tab === "leagues"   && <LeaguesTab />}
+          {tab === "ai-coach"  && <NetballAICoach />}
         </div>
 
-        {/* Video system */}
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <VideoSystem />
-        </div>
+        {/* Video system — hide on AI Coach tab */}
+        {tab !== "ai-coach" && (
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <VideoSystem />
+          </div>
+        )}
 
       </main>
     </div>
