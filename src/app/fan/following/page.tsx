@@ -38,7 +38,7 @@ export default function FanFollowingPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    // guests allowed — no login redirect
+    if (!user) return; // guests allowed
     if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
   }, [hydrated, user, router]);
 
