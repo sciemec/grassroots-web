@@ -8,7 +8,7 @@ import {
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
   Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
-  Menu, X, ScanSearch, Briefcase, LineChart, Camera,
+  Menu, X, ScanSearch, Briefcase, LineChart, Camera, Globe2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ const navItems: NavItem[] = [
   { href: "/admin/announcements",    label: "Announcements",  icon: Bell,            roles: ["admin"] },
   { href: "/business-hub",           label: "Business Hub",   icon: Briefcase,       roles: ["admin"] },
   { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["admin"] },
+  { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["admin"] },
   // ─── Coach ────────────────────────────────────────────────────────────────
   { href: "/coach",                  label: "Coach Hub",      icon: LayoutDashboard, roles: ["coach"] },
   { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
@@ -52,6 +53,7 @@ const navItems: NavItem[] = [
   { href: "/tournaments",             label: "Tournaments",    icon: Trophy,          roles: ["coach"] },
   { href: "/business-hub",           label: "Business Hub",   icon: Briefcase,       roles: ["coach"] },
   { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["coach"] },
+  { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["coach"] },
   { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
   { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
@@ -60,6 +62,7 @@ const navItems: NavItem[] = [
   { href: "/scout/reports",   label: "PDF Reports",   icon: FileText,    roles: ["scout"] },
   { href: "/tournaments",     label: "Tournaments",   icon: Trophy,      roles: ["scout"] },
   { href: "/business-hub",    label: "Business Hub",  icon: Briefcase,   roles: ["scout"] },
+  { href: "/sports/netball",  label: "Netball Hub",   icon: Globe2,      roles: ["scout"] },
   { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
@@ -85,6 +88,8 @@ const navItems: NavItem[] = [
   { href: "/tournaments",                 label: "Tournaments",     icon: Trophy,          roles: ["player"] },
   { href: "/player/vault",                label: "Highlight Vault", icon: Film,            roles: ["player"] },
   { href: "/player/record",              label: "Record Drill",    icon: Camera,          roles: ["player"] },
+  { href: "/business-hub",                label: "Business Hub",    icon: Briefcase,       roles: ["player"] },
+  { href: "/sports/netball",              label: "Netball Hub",     icon: Globe2,          roles: ["player"] },
   { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },
@@ -93,6 +98,8 @@ const navItems: NavItem[] = [
   { href: "/fan/leaderboard",    label: "Leaderboard",    icon: Trophy,          roles: ["fan"] },
   { href: "/tournaments",        label: "Tournaments",    icon: Swords,          roles: ["fan"] },
   { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
+  { href: "/sports/netball",     label: "Netball Hub",    icon: Globe2,          roles: ["fan"] },
+  { href: "/business-hub",       label: "Business Hub",   icon: Briefcase,       roles: ["fan"] },
 ];
 
 const HUB_TABS: { role: UserRole; label: string; color: string }[] = [
