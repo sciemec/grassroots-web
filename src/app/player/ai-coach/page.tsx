@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Brain, Send, Mic, Loader2, RotateCcw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { useGuestGate } from "@/components/ui/register-modal";
 import { playerAiCoachPrompt, ageGroupMatchFeedbackPrompt } from "@/config/prompts";
 import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
@@ -64,7 +64,6 @@ function MessageBubble({ msg }: { msg: Message }) {
 }
 
 export default function AICoachPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
 
   // Wait for Zustand persist to rehydrate from localStorage before running the
@@ -79,10 +78,18 @@ export default function AICoachPage() {
     }
   }, []);
 
+  // Guest gate — allow 3 free questions before prompting registration
+  const GUEST_LIMIT = 3;
+  const GUEST_COUNT_KEY = "gs_guest_ai_count";
+  const { requireAuth } = useGuestGate();
+  const [guestCount, setGuestCount] = useState(0);
+
   useEffect(() => {
-    if (!hydrated) return;
-    if (!user) router.push("/login");
-  }, [hydrated, user, router]);
+    if (hydrated && !user) {
+      const stored = parseInt(localStorage.getItem(GUEST_COUNT_KEY) ?? "0", 10);
+      setGuestCount(stored);
+    }
+  }, [hydrated, user]);
 
   const [playerCtx, setPlayerCtx] = useState<PlayerContext | null>(null);
   const [ctxLoaded, setCtxLoaded] = useState(false);
@@ -144,6 +151,19 @@ export default function AICoachPage() {
       timestamp: new Date(),
     },
   ]);
+
+  // Guest welcome — shown instead of the profile-loading message
+  useEffect(() => {
+    if (hydrated && !user) {
+      setMessages([{
+        id: "welcome",
+        role: "assistant",
+        content: `Waita! I'm your AI Coach — Zimbabwe's first AI-powered sports coach.\n\nYou have ${GUEST_LIMIT} free questions. Ask me anything about technique, fitness, tactics, nutrition, or recovery.\n\nNdingakubatsira nerurimi rwechiShona too! 🇿🇼`,
+        timestamp: new Date(),
+      }]);
+      setCtxLoaded(true);
+    }
+  }, [hydrated, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update welcome message once context is loaded
   useEffect(() => {
@@ -268,6 +288,18 @@ export default function AICoachPage() {
   const send = async (text?: string) => {
     const content = (text ?? input).trim();
     if (!content || loading) return;
+
+    // Guest gate: check free question limit before sending
+    if (!user) {
+      if (guestCount >= GUEST_LIMIT) {
+        requireAuth("use unlimited AI coaching");
+        return;
+      }
+      const newCount = guestCount + 1;
+      localStorage.setItem(GUEST_COUNT_KEY, String(newCount));
+      setGuestCount(newCount);
+    }
+
     if (content === "Analyse my last match and give me feedback") {
       sendWithMatchFeedback("No match stats provided — give general post-match feedback advice and ask the player to share their stats.");
       return;
@@ -322,7 +354,7 @@ export default function AICoachPage() {
     }]);
   };
 
-  if (!hydrated || !user) return null;
+  if (!hydrated) return null;
 
   return (
     <div className="flex h-screen bg-background">
@@ -343,13 +375,26 @@ export default function AICoachPage() {
               <p className="text-xs text-muted-foreground">Powered by Claude · Knows your training history</p>
             </div>
           </div>
-          <button
-            onClick={clearChat}
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Clear chat
-          </button>
+          <div className="flex items-center gap-3">
+            {!user && (
+              <div className={`rounded-full px-3 py-1 text-xs font-medium border ${
+                guestCount >= GUEST_LIMIT
+                  ? "bg-red-500/10 border-red-500/30 text-red-400"
+                  : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+              }`}>
+                {guestCount >= GUEST_LIMIT
+                  ? "No questions left — register free"
+                  : `${GUEST_LIMIT - guestCount} free question${GUEST_LIMIT - guestCount !== 1 ? "s" : ""} left`}
+              </div>
+            )}
+            <button
+              onClick={clearChat}
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Clear chat
+            </button>
+          </div>
         </div>
 
         {/* Suggested prompts — show when only welcome message */}
