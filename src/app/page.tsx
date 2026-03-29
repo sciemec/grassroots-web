@@ -177,6 +177,8 @@ const hubGrid = [
   { icon: "👥", title: "Squad",             subtitle: "Register & ID players",    href: "/coach/squad",             color: "#4A148C" },
   { icon: "📈", title: "My Journey",        subtitle: "Progress & scores",        href: "/player/development",      color: "#1B5E20" },
   { icon: "🎖️", title: "Milestones",       subtitle: "Your achievements",        href: "/player/milestones",       color: "#BF360C" },
+  { icon: "💼", title: "Business Hub",      subtitle: "Budgets · Sponsors · Events", href: "/business-hub",         color: "#1A237E" },
+  { icon: "📉", title: "Analyst Hub",       subtitle: "xG · Heatmaps · Tactics", href: "/analyst",                 color: "#004D40", badge: "PRO" },
 ];
 
 // ── Page ──────────────────────────────────────────────────────────────────────

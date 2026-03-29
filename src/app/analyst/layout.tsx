@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
+import GuestBanner from "@/components/ui/guest-banner";
+import { GuestGateProvider } from "@/components/ui/register-modal";
 
 export default function AnalystLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -11,12 +13,18 @@ export default function AnalystLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests allowed — shows GuestBanner
     if (user.role !== "analyst" && user.role !== "admin") {
       router.push(`/${user.role}`);
     }
   }, [hasHydrated, user, router]);
 
-  if (!hasHydrated || !user) return null;
-  return <>{children}</>;
+  if (!hasHydrated) return null;
+
+  return (
+    <GuestGateProvider>
+      <GuestBanner />
+      {children}
+    </GuestGateProvider>
+  );
 }
