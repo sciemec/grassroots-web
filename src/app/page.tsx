@@ -193,7 +193,7 @@ export default function LandingPage() {
         className="pt-16 pb-10 relative overflow-hidden"
         style={{
           backgroundColor: "#F5F7F5",
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,10 12,2 24,10' fill='none' stroke='%231B5E20' stroke-width='1.2'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,10 12,2 24,10' fill='none' stroke='%23E6A817' stroke-width='1.2' opacity='0.35'/%3E%3C/svg%3E")`,
           backgroundSize: "24px 12px",
           backgroundRepeat: "repeat",
         }}
