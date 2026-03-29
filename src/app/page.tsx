@@ -212,7 +212,7 @@ export default function LandingPage() {
               <h1 className="text-xl font-extrabold leading-tight" style={{ color: "#1B5E20" }}>
                 Grassroots <span style={{ color: "#E6A817" }}>Sport</span>
               </h1>
-              <p className="text-[11px] italic" style={{ color: "#1B5E20", opacity: 0.6 }}>Bhora ndeye vanhu vose · Zimbabwe 🇿🇼</p>
+              <p className="text-[11px] italic" style={{ color: "#1B5E20", opacity: 0.6 }}>Zimbabwe&apos;s AI-Powered Sports Platform 🇿🇼</p>
             </div>
           </div>
 
