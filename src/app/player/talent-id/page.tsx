@@ -310,7 +310,7 @@ export default function TalentIDPage() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-2 text-lg font-bold text-white">{user.name?.split(" ")[0] ?? "Player"}</p>
+                  <p className="mt-2 text-lg font-bold text-white">{user?.name?.split(" ")[0] ?? "Player"}</p>
                   <p className="text-sm text-muted-foreground">
                     {completed.length} sessions · {skills.length} skills · {new Set(completed.map((s) => s.focus_area)).size} training areas
                   </p>
