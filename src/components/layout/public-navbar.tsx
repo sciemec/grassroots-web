@@ -66,17 +66,17 @@ export function PublicNavbar() {
           ) : (
             <>
               <Link
-                href="/login"
+                href="/#features"
                 className="text-sm text-green-200 hover:text-white transition-colors"
               >
-                Sign in
+                Explore
               </Link>
               <Link
-                href="/register"
+                href="/login"
                 className="rounded px-4 py-2 text-sm font-bold transition hover:opacity-85"
                 style={{ background: "#E6A817", color: "#2C2416" }}
               >
-                Get started
+                Sign In
               </Link>
             </>
           )}
@@ -113,8 +113,8 @@ export function PublicNavbar() {
               </Link>
             ) : (
               <>
-                <Link href="/login" className="text-sm text-green-200 hover:text-white">Sign in</Link>
-                <Link href="/register" className="text-sm font-semibold text-green-400">Get started free →</Link>
+                <Link href="/#features" className="text-sm text-green-200 hover:text-white">Explore</Link>
+                <Link href="/login" className="text-sm font-semibold text-green-400">Sign In →</Link>
               </>
             )}
           </nav>
