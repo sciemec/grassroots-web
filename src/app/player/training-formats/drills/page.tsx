@@ -29,7 +29,9 @@ export default function DrillsFormatPage() {
 
   const currentDrill = DRILLS.find((d) => d.id === selected)!;
 
-  useEffect(() => { // guests allowed — no login redirect }, [user, router]);
+  useEffect(() => {
+    // guests allowed — no login redirect
+  }, [user, router]);
 
   useEffect(() => {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };

@@ -20,7 +20,9 @@ export default function RondoPage() {
   const [aiReport, setAiReport] = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
 
-  useEffect(() => { // guests allowed — no login redirect }, [user, router]);
+  useEffect(() => {
+    // guests allowed — no login redirect
+  }, [user, router]);
 
   const inc = (k: keyof typeof metrics) => setMetrics((m) => ({ ...m, [k]: m[k] + 1 }));
   const dec = (k: keyof typeof metrics) => setMetrics((m) => ({ ...m, [k]: Math.max(0, m[k] - 1) }));

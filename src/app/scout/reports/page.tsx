@@ -221,7 +221,9 @@ export default function ScoutReportsPage() {
   const [reports, setReports] = useState<GeneratedReport[]>([]);
   const [error, setError] = useState("");
 
-  useEffect(() => { // guests allowed — no login redirect }, [user, router]);
+  useEffect(() => {
+    // guests allowed — no login redirect
+  }, [user, router]);
 
   const { data: players = [], isLoading } = useQuery<ScoutPlayer[]>({
     queryKey: ["scout-players"],
