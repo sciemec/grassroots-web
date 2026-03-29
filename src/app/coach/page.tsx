@@ -56,7 +56,7 @@ export default function CoachHubPage() {
 
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!user) { router.push("/login"); return; }
+    if (!user) { setLoading(false); return; } // guests allowed — layout shows GuestBanner
     if (user.role !== "coach" && user.role !== "admin") { router.push("/dashboard"); return; }
     api.get("/coach/squad")
       .then((res) => setSquad(res.data?.data ?? res.data ?? []))

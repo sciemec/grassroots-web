@@ -127,7 +127,7 @@ export default function ScoutPage() {
   const [loadingRising, setLoadingRising] = useState(false);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests allowed — layout shows GuestBanner
     if (user.role !== "scout" && user.role !== "admin") { router.push("/dashboard"); }
   }, [user, router]);
 
