@@ -227,7 +227,7 @@ export default function LiveMatchPage() {
   const [waError, setWaError] = useState("");
 
   useEffect(() => {
-    if (!user) router.push("/login");
+    // guests allowed — no login redirect
   }, [user, router]);
 
   /** Timer tick. */
@@ -384,7 +384,6 @@ export default function LiveMatchPage() {
     }
   }, [waPhone, setup, homeScore, awayScore, events]);
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background dark">

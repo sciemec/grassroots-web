@@ -29,7 +29,7 @@ export default function ShootingFormatPage() {
   const [loadingReport, setLoadingReport] = useState(false);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
   }, [user, router]);
 
   const update = (zone: string, field: "shots" | "goals", delta: number) => {
@@ -59,7 +59,6 @@ export default function ShootingFormatPage() {
     finally { setLoadingReport(false); }
   };
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

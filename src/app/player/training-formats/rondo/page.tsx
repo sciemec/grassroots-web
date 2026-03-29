@@ -20,7 +20,7 @@ export default function RondoPage() {
   const [aiReport, setAiReport] = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
 
-  useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
+  useEffect(() => { // guests allowed — no login redirect }, [user, router]);
 
   const inc = (k: keyof typeof metrics) => setMetrics((m) => ({ ...m, [k]: m[k] + 1 }));
   const dec = (k: keyof typeof metrics) => setMetrics((m) => ({ ...m, [k]: Math.max(0, m[k] - 1) }));
@@ -48,7 +48,6 @@ export default function RondoPage() {
     finally { setLoadingReport(false); }
   };
 
-  if (!user) return null;
   const total = metrics.passes + metrics.turnovers;
   const retention = total > 0 ? Math.round((metrics.passes / total) * 100) : 0;
 

@@ -24,7 +24,7 @@ export default function SSGPage() {
   const [aiReport, setAiReport] = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
 
-  useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
+  useEffect(() => { // guests allowed — no login redirect }, [user, router]);
 
   const goal = (team: 1 | 2) => setScore((s) => ({ ...s, [`team${team}`]: s[`team${team}` as "team1" | "team2"] + 1 }));
   const foul = (team: 1 | 2) => setStats((s) => ({ ...s, [`team${team}Fouls`]: s[`team${team}Fouls` as "team1Fouls" | "team2Fouls"] + 1 }));
@@ -42,7 +42,6 @@ export default function SSGPage() {
     finally { setLoadingReport(false); }
   };
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

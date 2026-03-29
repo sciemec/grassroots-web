@@ -234,7 +234,7 @@ export default function DrillsPage() {
   const [activeModal, setActiveModal] = useState<TrainingDrill | null>(null);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
 
     api.get("/drills")
       .then((res) => {
@@ -255,7 +255,6 @@ export default function DrillsPage() {
       .finally(() => setLoading(false));
   }, [user, router]);
 
-  if (!user) return null;
 
   const modalCat = activeModal
     ? DRILL_CATEGORIES.find((c) => c.id === activeModal.category) ?? DRILL_CATEGORIES[0]

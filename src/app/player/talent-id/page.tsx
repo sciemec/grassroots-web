@@ -143,7 +143,7 @@ export default function TalentIDPage() {
   const [loadingReport, setLoadingReport] = useState(false);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     api.get("/sessions?per_page=100&status=completed")
       .then((res) => setSessions(res.data?.data ?? res.data ?? []))
       .catch(() => {})
@@ -232,7 +232,6 @@ export default function TalentIDPage() {
     }
   };
 
-  if (!user) return null;
 
   const isBuilding = completed.length < 10;
 

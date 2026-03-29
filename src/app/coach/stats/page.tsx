@@ -187,7 +187,6 @@ export default function StatsPage() {
     }
   }, [user, router]);
 
-  if (!user) return null;
 
   const goalsFor = matches.reduce((s, m) => s + m.our_score, 0);
   const goalsAgainst = matches.reduce((s, m) => s + m.their_score, 0);

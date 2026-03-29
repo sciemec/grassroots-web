@@ -57,7 +57,7 @@ export default function FanDiscoverPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
   }, [hydrated, user, router]);
 
@@ -85,7 +85,7 @@ export default function FanDiscoverPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["discover-players"] }),
   });
 
-  if (!hydrated || !user) return null;
+  if (!hydrated) return null;
 
   const filtered = players.filter((p) =>
     !search || p.initials?.toLowerCase().includes(search.toLowerCase()) ||

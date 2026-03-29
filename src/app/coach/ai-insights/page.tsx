@@ -81,7 +81,7 @@ export default function CoachAIInsightsPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
   }, [user, router]);
 
   // Preload offline knowledge bases as soon as page mounts
@@ -186,7 +186,6 @@ export default function CoachAIInsightsPage() {
     }]);
   };
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

@@ -191,7 +191,6 @@ export default function TacticalAnalysisPage() {
     }
   };
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

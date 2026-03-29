@@ -31,7 +31,7 @@ export default function ScoutShortlistPage() {
   const [loadingAi, setLoadingAi] = useState(false);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     // Attempt to load shortlist from scout API
     api.get("/scout/contact-requests")
       .then((res) => {
@@ -69,7 +69,6 @@ export default function ScoutShortlistPage() {
     finally { setLoadingAi(false); }
   };
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

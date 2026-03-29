@@ -37,7 +37,7 @@ export default function MilestonesPage() {
   const [tab, setTab] = useState<"all" | "achieved" | "pending">("all");
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     Promise.all([
       api.get("/milestones"),
       api.get("/milestones/programme").catch(() => null),
@@ -55,7 +55,6 @@ export default function MilestonesPage() {
   const displayed = tab === "achieved" ? achieved : tab === "pending" ? pending : milestones;
   const totalXP = achieved.reduce((sum, m) => sum + (m.xp_reward ?? 0), 0);
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

@@ -36,7 +36,7 @@ export default function CoachSquadPage() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     fetchSquad();
   }, [user, router]);
 
@@ -90,7 +90,6 @@ export default function CoachSquadPage() {
     return matchSearch && matchStatus;
   });
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

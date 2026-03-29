@@ -221,7 +221,7 @@ export default function ScoutReportsPage() {
   const [reports, setReports] = useState<GeneratedReport[]>([]);
   const [error, setError] = useState("");
 
-  useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
+  useEffect(() => { // guests allowed — no login redirect }, [user, router]);
 
   const { data: players = [], isLoading } = useQuery<ScoutPlayer[]>({
     queryKey: ["scout-players"],
@@ -281,7 +281,6 @@ export default function ScoutReportsPage() {
     setGenerating(false);
   };
 
-  if (!user) return null;
 
   const allCandidates = shortlist.length > 0 ? shortlist : players;
   const filtered = allCandidates.filter(

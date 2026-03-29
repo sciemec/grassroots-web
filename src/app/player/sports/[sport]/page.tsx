@@ -76,7 +76,7 @@ export default function SportStatsPage() {
   }, [sportRoles]);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     if (!cfg) { router.push("/player/sports"); return; }
     initStats(roleKey);
 

@@ -92,10 +92,9 @@ export default function DevelopmentPage() {
   const [expanded, setExpanded] = useState<string | null>("performance");
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
   }, [user, router]);
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

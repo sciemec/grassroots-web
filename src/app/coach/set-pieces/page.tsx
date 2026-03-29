@@ -59,7 +59,7 @@ export default function SetPiecesPage() {
 
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     if (user.role !== "coach" && user.role !== "admin") router.push("/dashboard");
   }, [_hasHydrated, user, router]);
 

@@ -59,10 +59,9 @@ export default function TrainingFormatsPage() {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
   }, [user, router]);
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

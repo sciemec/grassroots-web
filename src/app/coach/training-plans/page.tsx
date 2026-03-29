@@ -288,7 +288,7 @@ export default function TrainingPlansPage() {
   const [catFilter, setCatFilter] = useState("all");
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
   }, [user, router]);
 
   useEffect(() => {

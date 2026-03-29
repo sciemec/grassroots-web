@@ -43,7 +43,7 @@ export default function CoachPlayerDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     Promise.all([
       api.get(`/coach/squad/${memberId}`),
       api.get(`/coach/squad/${memberId}/sessions`).catch(() => ({ data: [] })),
@@ -66,7 +66,6 @@ export default function CoachPlayerDetailPage() {
     finally { setLoadingAi(false); }
   };
 
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

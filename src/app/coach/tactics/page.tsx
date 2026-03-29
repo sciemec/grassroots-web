@@ -107,7 +107,7 @@ export default function TacticsPage() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     api.get("/coach/squad")
       .then((res) => setSquad(res.data?.data ?? res.data ?? []))
       .catch(() => {});
@@ -171,7 +171,6 @@ export default function TacticsPage() {
     finally { setLoadingAi(false); }
   };
 
-  if (!user) return null;
 
   const availableSquad = squad.filter((m) => m.status !== "injured");
 

@@ -29,7 +29,7 @@ export default function MySportsPage() {
   const [pickerPosition, setPickerPosition] = useState("");
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     api.get("/profile/sports")
       .then((r) => setEntries(r.data ?? []))
       .catch(() => {

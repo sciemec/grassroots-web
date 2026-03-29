@@ -167,7 +167,7 @@ export default function TrainingFormatSessionPage() {
   const [volleys, setVolleys] = useState(0);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    // guests allowed — no login redirect
     if (!cfg) { router.push("/player/training-formats"); return; }
   }, [user, router, cfg]);
 
