@@ -384,17 +384,39 @@ function BudgetPlanner({ isGuest }: { isGuest: boolean }) {
 // ─── Sponsor Finder ───────────────────────────────────────────────────────────
 
 const SPONSORS = [
-  { name: "NetOne Zimbabwe", sector: "Telecom", budget: "$5,000–$50,000", sports: ["Football", "Rugby", "Netball"], logo: "📡", status: "Open" },
-  { name: "Econet Wireless", sector: "Telecom", budget: "$10,000–$100,000", sports: ["All sports"], logo: "📶", status: "Open" },
-  { name: "Delta Beverages", sector: "FMCG", budget: "$2,000–$20,000", sports: ["Football", "Athletics"], logo: "🍺", status: "Open" },
-  { name: "CBZ Bank", sector: "Finance", budget: "$5,000–$30,000", sports: ["All sports"], logo: "🏦", status: "Reviewing" },
-  { name: "OK Zimbabwe", sector: "Retail", budget: "$1,000–$10,000", sports: ["Netball", "Basketball"], logo: "🛒", status: "Open" },
-  { name: "Innscor Africa", sector: "Food", budget: "$3,000–$25,000", sports: ["Youth sports"], logo: "🍗", status: "Open" },
+  { name: "NetOne Zimbabwe", sector: "Telecom", budget: "$5,000–$50,000", sports: ["Football", "Rugby", "Netball"], logo: "📡", status: "Open", email: "sponsorships@netone.co.zw" },
+  { name: "Econet Wireless", sector: "Telecom", budget: "$10,000–$100,000", sports: ["All sports"], logo: "📶", status: "Open", email: "csr@econet.co.zw" },
+  { name: "Delta Beverages", sector: "FMCG", budget: "$2,000–$20,000", sports: ["Football", "Athletics"], logo: "🍺", status: "Open", email: "marketing@delta.co.zw" },
+  { name: "CBZ Bank", sector: "Finance", budget: "$5,000–$30,000", sports: ["All sports"], logo: "🏦", status: "Reviewing", email: "info@cbz.co.zw" },
+  { name: "OK Zimbabwe", sector: "Retail", budget: "$1,000–$10,000", sports: ["Netball", "Basketball"], logo: "🛒", status: "Open", email: "marketing@okzim.co.zw" },
+  { name: "Innscor Africa", sector: "Food", budget: "$3,000–$25,000", sports: ["Youth sports"], logo: "🍗", status: "Open", email: "communications@innscor.com" },
 ];
 
 function SponsorFinder() {
+  const user = useAuthStore((s) => s.user);
   const [filter, setFilter] = useState("");
   const filtered = SPONSORS.filter((s) => !filter || s.sector.toLowerCase().includes(filter.toLowerCase()) || s.name.toLowerCase().includes(filter.toLowerCase()) || s.sports.some((sp) => sp.toLowerCase().includes(filter.toLowerCase())));
+
+  const sendProposal = (sponsor: typeof SPONSORS[0]) => {
+    const subject = encodeURIComponent(`Sports Sponsorship Proposal — Grassroots Sport Zimbabwe`);
+    const body = encodeURIComponent(
+`Dear ${sponsor.name} Sponsorship Team,
+
+My name is ${user?.name ?? "[ Your Name ]"} and I represent a sports club registered on the Grassroots Sport platform (grassrootssports.live) — Zimbabwe's AI-powered sports management platform.
+
+We are seeking a sponsorship partner in the ${sponsor.budget} range for our upcoming season. Your company's support of ${sponsor.sports.join(", ")} aligns directly with our programme.
+
+We would love to present a full sponsorship proposal at your convenience.
+
+Please feel free to contact me to arrange a meeting.
+
+Kind regards,
+${user?.name ?? "[ Your Name ]"}
+Grassroots Sport — grassrootssports.live`
+    );
+    window.open(`mailto:${sponsor.email}?subject=${subject}&body=${body}`, "_blank");
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5">
@@ -415,11 +437,17 @@ function SponsorFinder() {
               <p className="text-xs text-green-300/70"><DollarSign className="inline h-3 w-3" /> {s.budget}</p>
               <p className="text-xs text-green-300/70">{s.sports.map((sp) => <span key={sp} className="mr-1 rounded-full bg-white/10 px-2 py-0.5">{sp}</span>)}</p>
             </div>
-            <button className="mt-3 w-full rounded-lg border border-green-500/40 py-1.5 text-xs font-semibold text-green-400 hover:bg-green-500/10 transition-colors">Send proposal →</button>
+            <button
+              onClick={() => sendProposal(s)}
+              disabled={s.status !== "Open"}
+              className="mt-3 w-full rounded-lg border border-green-500/40 py-1.5 text-xs font-semibold text-green-400 hover:bg-green-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {s.status === "Open" ? "Send proposal →" : "Currently not accepting"}
+            </button>
           </div>
         ))}
       </div>
-      <p className="text-center text-xs text-green-400/40">Pro plan unlocks direct contact details and proposal templates</p>
+      <p className="text-center text-xs text-green-400/40">Clicking &quot;Send proposal&quot; opens your email app with a pre-filled sponsorship letter</p>
     </div>
   );
 }
@@ -759,13 +787,13 @@ const DEMO_MEMBERS: Member[] = [
 
 const DEMO_SUMMARY: MemberSummary = { total: 6, paid: 3, unpaid: 2, partial: 1, collected: 150, outstanding: 75 };
 
-const MEMBERS_LOCAL_KEY = "grassroots_biz_members";
+const membersLocalKey = (userId: string) => `grassroots_biz_members_${userId || "guest"}`;
 
-function membersFromLocal(): Member[] {
-  try { return JSON.parse(localStorage.getItem(MEMBERS_LOCAL_KEY) ?? "[]") as Member[]; }
+function membersFromLocal(userId: string): Member[] {
+  try { return JSON.parse(localStorage.getItem(membersLocalKey(userId)) ?? "[]") as Member[]; }
   catch { return []; }
 }
-function MembersDashboard({ isGuest }: { isGuest: boolean }) {
+function MembersDashboard({ isGuest, userId }: { isGuest: boolean; userId: string }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [summary, setSummary] = useState<MemberSummary>(DEMO_SUMMARY);
   const [loading, setLoading] = useState(!isGuest);
@@ -777,7 +805,7 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
   const [localMode, setLocalMode] = useState(false);
 
   const membersToLocal = (list: Member[]) => {
-    try { localStorage.setItem(MEMBERS_LOCAL_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+    try { localStorage.setItem(membersLocalKey(userId), JSON.stringify(list)); } catch { /* ignore */ }
   };
 
   const load = useCallback(async () => {
@@ -792,7 +820,7 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (!status || status === 404 || status === 405) {
         setLocalMode(true);
-        const local = membersFromLocal();
+        const local = membersFromLocal(userId);
         setMembers(local.length ? local : DEMO_MEMBERS);
         updateSummary(local.length ? local : DEMO_MEMBERS);
       } else {
@@ -915,6 +943,15 @@ function MembersDashboard({ isGuest }: { isGuest: boolean }) {
   return (
     <div className="space-y-5">
       {isGuest && <GuestBanner />}
+      {!isGuest && localMode && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-300">Saving to this device only</p>
+            <p className="text-xs text-amber-400/70 mt-0.5">Member data is stored in your browser until the server endpoint is ready. Your data is safe here but won&apos;t sync to other devices.</p>
+          </div>
+        </div>
+      )}
       {error && <ErrorBanner message={error} />}
 
       {/* Summary cards */}
@@ -1054,7 +1091,7 @@ export default function BusinessHubPage() {
     sponsors: <SponsorFinder />,
     tracker:  <FinancialTracker isGuest={isGuest} />,
     events:   <EventPlanner isGuest={isGuest} />,
-    members:  <MembersDashboard isGuest={isGuest} />,
+    members:  <MembersDashboard isGuest={isGuest} userId={user?.id ?? ""} />,
     skills:   <BusinessSkills />,
   };
 

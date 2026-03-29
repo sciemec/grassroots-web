@@ -28,6 +28,7 @@ type FormData = z.infer<typeof schema>;
 export default function NewSessionPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [error, setError] = useState("");
   const [poseOpen, setPoseOpen] = useState(false);
   const [poseScore, setPoseScore] = useState<number | null>(null);
@@ -41,8 +42,9 @@ export default function NewSessionPage() {
   const focusArea = watch("focus_area");
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!user) { router.push("/login"); return; }
-  }, [user, router]);
+  }, [_hasHydrated, user, router]);
 
   const onSubmit = async (data: FormData) => {
     setError("");
@@ -61,7 +63,7 @@ export default function NewSessionPage() {
     }
   };
 
-  if (!user) return null;
+  if (!_hasHydrated || !user) return null;
 
   return (
     <div className="flex h-screen bg-background">

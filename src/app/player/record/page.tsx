@@ -31,6 +31,7 @@ function formatTime(seconds: number) {
 export default function RecordDrillPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const videoRef    = useRef<HTMLVideoElement>(null);
   const previewRef  = useRef<HTMLVideoElement>(null);
@@ -84,9 +85,8 @@ export default function RecordDrillPage() {
     }
   }, [facingMode, muted]);
 
+  // Cleanup on unmount (always runs regardless of auth state)
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-    startCamera();
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
@@ -94,6 +94,14 @@ export default function RecordDrillPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auth + camera start — wait for Zustand hydration before checking user
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (!user) { router.push("/login"); return; }
+    startCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_hasHydrated]);
 
   // Re-init camera when facing mode changes
   useEffect(() => {
