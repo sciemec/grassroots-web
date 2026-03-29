@@ -43,6 +43,7 @@ function generateStreamId(): string {
 export default function BroadcastPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -77,7 +78,10 @@ export default function BroadcastPage() {
   // Daily.co live streaming hook
   const { dailyState, dailyError, roomUrl, startStream, stopStream } = useDailyStream();
 
-  useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (!user) router.push("/login");
+  }, [_hasHydrated, user, router]);
 
   useEffect(() => {
     return () => {

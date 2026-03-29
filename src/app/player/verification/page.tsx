@@ -65,6 +65,7 @@ const DOCUMENT_TYPES = [
 export default function PlayerVerificationPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const [verif, setVerif] = useState<VerificationData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,7 @@ export default function PlayerVerificationPage() {
   const [cameraError, setCameraError] = useState("");
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!user) { router.push("/login"); return; }
     api.get("/verification/status")
       .then((res) => setVerif(res.data))
@@ -98,7 +100,7 @@ export default function PlayerVerificationPage() {
         selfie_url: null,
       }))
       .finally(() => setLoading(false));
-  }, [user, router]);
+  }, [_hasHydrated, user, router]);
 
   // Clean up camera stream on unmount
   useEffect(() => {
