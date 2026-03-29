@@ -33,7 +33,7 @@ function HubSectionLabel({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <div className="w-[3px] h-[18px] rounded-full" style={{ background: "#E6A817" }} />
-      <span className="text-white font-bold text-base">{label}</span>
+      <span className="font-bold text-base" style={{ color: "#1B5E20" }}>{label}</span>
     </div>
   );
 }
@@ -188,19 +188,17 @@ export default function LandingPage() {
     <div className="min-h-screen">
       <PublicNavbar />
 
-      {/* ── Hub Cards section — dark green (replaces hero) ────────────────── */}
+      {/* ── Hub Cards section — Flutter off-white + green chevron ─────────── */}
       <section
         className="pt-16 pb-10 relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #0a2a0a 0%, #1B5E20 60%, #2E7D32 100%)" }}
+        style={{
+          backgroundColor: "#F5F7F5",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,10 12,2 24,10' fill='none' stroke='%231B5E20' stroke-width='1.2'/%3E%3C/svg%3E")`,
+          backgroundSize: "24px 12px",
+          backgroundRepeat: "repeat",
+        }}
       >
-        {/* Chevron pattern overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.07]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='40'%3E%3Cpolyline points='0,30 15,10 30,30 45,10 60,30' fill='none' stroke='%23FFC107' stroke-width='1.5'/%3E%3C/svg%3E")`,
-            backgroundSize: "60px 40px",
-          }}
-        />
+        {/* No extra overlay needed — pattern is already at 6% via SVG stroke opacity */}
         {/* Gold bottom rule */}
         <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: "#E6A817" }} />
 
@@ -211,10 +209,10 @@ export default function LandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo_v2.png" alt="Grassroots Sport" width={40} height={40} className="rounded-lg" />
             <div>
-              <h1 className="text-xl font-extrabold text-white leading-tight">
-                Grassroots <span style={{ color: "#F5C842" }}>Sport</span>
+              <h1 className="text-xl font-extrabold leading-tight" style={{ color: "#1B5E20" }}>
+                Grassroots <span style={{ color: "#E6A817" }}>Sport</span>
               </h1>
-              <p className="text-[11px] text-white/55 italic">Bhora ndeye vanhu vose · Zimbabwe 🇿🇼</p>
+              <p className="text-[11px] italic" style={{ color: "#1B5E20", opacity: 0.6 }}>Bhora ndeye vanhu vose · Zimbabwe 🇿🇼</p>
             </div>
           </div>
 
