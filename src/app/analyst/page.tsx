@@ -4,7 +4,6 @@ import Link from "next/link";
 import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import { ProGate } from "@/components/pro-gate";
 
 const tools = [
   {
@@ -61,7 +60,6 @@ export default function AnalystHubPage() {
   const { user } = useAuthStore();
 
   return (
-    <ProGate feature="Analyst Hub">
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
@@ -126,6 +124,5 @@ export default function AnalystHubPage() {
 
       </main>
     </div>
-    </ProGate>
   );
 }

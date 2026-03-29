@@ -82,7 +82,7 @@ export default function PlayerHubPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (!user || loading) return <PageSkeleton />;
+  if (loading) return <PageSkeleton />;
 
   const completed = sessions.filter((s) => s.status === "completed");
   const avgScore = completed.length

@@ -105,7 +105,7 @@ export default function CoachHubPage() {
     }
   };
 
-  if (!_hasHydrated || !user || loading) return <PageSkeleton />;
+  if (!_hasHydrated || loading) return <PageSkeleton />;
 
   const hubCards = [
     { icon: Brain,        title: "AI Insights",      subtitle: "Mubatsiri wako — Claude AI",  href: "/coach/ai-insights",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
