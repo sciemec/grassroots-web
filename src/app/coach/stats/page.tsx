@@ -173,10 +173,7 @@ export default function StatsPage() {
   const [matches, setMatches] = useState<MatchRecord[]>([]);
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+    if (!user) { setMatches([]); return; } // guests allowed
     const saved = localStorage.getItem("coach_matches");
     if (saved) {
       try {

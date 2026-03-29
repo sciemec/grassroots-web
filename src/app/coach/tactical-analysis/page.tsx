@@ -135,10 +135,7 @@ export default function TacticalAnalysisPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+    if (!user) { setMatches([]); return; } // guests allowed
     const saved = localStorage.getItem("coach_matches");
     if (saved) {
       try {
