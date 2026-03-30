@@ -110,7 +110,7 @@ export default function PlayerProfilePage() {
   const watchedValues = watch();
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests see the form with empty/default values
     api.get("/profile")
       .then((res) => {
         setProfile(res.data);
@@ -131,7 +131,7 @@ export default function PlayerProfilePage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, router, reset]);
+  }, [user, reset]);
 
   const onSubmit = async (data: FormData) => {
     setError("");
@@ -205,7 +205,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.`;
     }
   };
 
-  if (!user || loading) {
+  if (loading) {
     return (
       <div className="flex h-screen bg-background">
         <Sidebar />
@@ -262,7 +262,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.`;
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={photoUrl}
-                  alt={user.name}
+                  alt={user?.name ?? "Player"}
                   className="h-20 w-20 rounded-full object-cover border-2 border-primary/30"
                 />
               ) : (
@@ -291,8 +291,8 @@ Write like a FIFA scout. Be professional and positive. No bullet points.`;
               />
             </div>
             <div>
-              <p className="text-lg font-bold">{user.name}</p>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <p className="text-lg font-bold">{user?.name ?? "Your Profile"}</p>
+              <p className="text-sm text-muted-foreground">{user?.email ?? "Sign in to save your profile"}</p>
               <div className="mt-1 flex items-center gap-2">
                 {profile?.verification_status === "approved" ? (
                   <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-medium text-green-700">
@@ -511,16 +511,18 @@ Write like a FIFA scout. Be professional and positive. No bullet points.`;
             </button>
           </form>
 
-          {/* QR Profile Card */}
-          <div className="mt-6 mb-6">
-            <QRProfileCard
-              playerId={String(user.id)}
-              playerName={user.name}
-              ageGroup={profile?.age_group ?? user.age_group}
-              province={profile?.province ?? user.province}
-              selfieUrl={photoUrl ?? undefined}
-            />
-          </div>
+          {/* QR Profile Card — only shown to logged-in users */}
+          {user && (
+            <div className="mt-6 mb-6">
+              <QRProfileCard
+                playerId={String(user.id)}
+                playerName={user.name}
+                ageGroup={profile?.age_group ?? user.age_group}
+                province={profile?.province ?? user.province}
+                selfieUrl={photoUrl ?? undefined}
+              />
+            </div>
+          )}
 
           {/* View as Scout button */}
           <Link

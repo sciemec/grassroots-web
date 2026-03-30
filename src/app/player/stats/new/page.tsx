@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SPORTS, SPORT_STATS, SportKey } from "@/config/sports";
 import { queryAI } from "@/lib/ai-query";
+import { useGuestGate } from "@/components/ui/register-modal";
 import api from "@/lib/api";
 
 // Human-readable labels + field types for every stat key
@@ -127,6 +128,7 @@ type Step = "sport" | "details" | "stats";
 export default function LogStatsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { requireAuth } = useGuestGate();
 
   const [step, setStep]             = useState<Step>("sport");
   const [sport, setSport]           = useState<SportKey>("football");
@@ -145,10 +147,6 @@ export default function LogStatsPage() {
   const [aiReport, setAiReport]     = useState("");
   const [loadingAI, setLoadingAI]   = useState(false);
 
-  useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-  }, [user, router]);
-
   // Reset role when sport changes
   useEffect(() => {
     const roles = ROLE_OPTIONS[sport];
@@ -164,6 +162,7 @@ export default function LogStatsPage() {
     setStatValues((prev) => ({ ...prev, [key]: val }));
 
   const handleSave = async () => {
+    if (!user) { requireAuth("save your stats"); return; }
     setSaving(true);
     setSaveError("");
     try {
@@ -200,8 +199,6 @@ export default function LogStatsPage() {
       setLoadingAI(false);
     }
   };
-
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

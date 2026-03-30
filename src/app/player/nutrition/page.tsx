@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronRight, Droplets, Flame, Apple, Clock, Brain } from "lucide-react";
-import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
 // Zimbabwe-specific food data
@@ -47,15 +45,7 @@ const HYDRATION_GUIDE = [
 const DAILY_TOTALS = { calories: 2920, protein: 142, carbs: 372, fat: 68 };
 
 export default function NutritionPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
   const [water, setWater] = useState(0); // glasses (250ml each)
-
-  useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-  }, [user, router]);
-
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

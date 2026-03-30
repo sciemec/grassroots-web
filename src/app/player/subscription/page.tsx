@@ -1,11 +1,12 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CreditCard, Loader2, ChevronRight, Smartphone } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { useGuestGate } from "@/components/ui/register-modal";
 import api from "@/lib/api";
 
 interface SubStatus {
@@ -47,9 +48,9 @@ const PLANS = [
 ];
 
 function SubscriptionContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuthStore();
+  const { requireAuth } = useGuestGate();
   const [sub, setSub] = useState<SubStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState("monthly");
@@ -63,11 +64,11 @@ function SubscriptionContent() {
   const emailSentRef = useRef(false);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) { setLoading(false); return; } // guests see pricing without sub status
     api.get("/subscription/status").catch(() => null)
       .then((res) => { if (res) setSub(res.data); })
       .finally(() => setLoading(false));
-  }, [user, router]);
+  }, [user]);
 
   // Stripe redirect back — send confirmation email once
   useEffect(() => {
@@ -121,6 +122,7 @@ function SubscriptionContent() {
   }, [pollUrl, selected, payMethod]);
 
   const subscribe = async () => {
+    if (!user) { requireAuth("subscribe to a plan"); return; }
     setPaying(true);
     setPayError("");
     setPollStatus(null);
@@ -183,8 +185,6 @@ function SubscriptionContent() {
       setSub(res.data);
     } catch {}
   };
-
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

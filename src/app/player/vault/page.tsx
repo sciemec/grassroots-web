@@ -606,7 +606,7 @@ export default function PlayerVaultPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests see empty vault
     if (user.role !== "player" && user.role !== "admin") { router.push("/dashboard"); return; }
     fetchVault();
   }, [user, router, fetchVault]);
@@ -634,8 +634,6 @@ export default function PlayerVaultPage() {
     setShowReelModal(false);
     setShareLink({ url, title });
   }
-
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

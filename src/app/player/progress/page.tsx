@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, Calendar, Star } from "lucide-react";
 import {
@@ -21,20 +20,18 @@ interface Session {
 }
 
 export default function ProgressPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests see empty state with demo charts
+    setLoading(true);
     api.get("/sessions?per_page=50")
       .then((res) => setSessions(res.data?.data ?? res.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, router]);
-
-  if (!user) return null;
+  }, [user]);
 
   const completed = sessions.filter((s) => s.status === "completed" && s.overall_score !== null);
 

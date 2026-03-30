@@ -9,8 +9,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!user) router.push("/login");
+    if (!user) return; // guests allowed
   }, [_hasHydrated, user, router]);
-  if (!_hasHydrated || !user) return null;
+  if (!_hasHydrated) return null;
   return <>{children}</>;
 }

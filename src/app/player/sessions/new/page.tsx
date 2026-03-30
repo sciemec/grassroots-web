@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { PoseCamera } from "@/components/video/pose-camera";
+import { useGuestGate } from "@/components/ui/register-modal";
 import api from "@/lib/api";
 
 const FOCUS_AREAS = [
@@ -29,6 +30,7 @@ export default function NewSessionPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const { requireAuth } = useGuestGate();
   const [error, setError] = useState("");
   const [poseOpen, setPoseOpen] = useState(false);
   const [poseScore, setPoseScore] = useState<number | null>(null);
@@ -43,10 +45,11 @@ export default function NewSessionPage() {
 
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests allowed — form visible, submit requires auth
   }, [_hasHydrated, user, router]);
 
   const onSubmit = async (data: FormData) => {
+    if (!user) { requireAuth("start a session"); return; }
     setError("");
     try {
       const payload = poseScore !== null ? { ...data, pre_session_pose_score: poseScore } : data;
@@ -63,7 +66,7 @@ export default function NewSessionPage() {
     }
   };
 
-  if (!_hasHydrated || !user) return null;
+  if (!_hasHydrated) return null;
 
   return (
     <div className="flex h-screen bg-background">

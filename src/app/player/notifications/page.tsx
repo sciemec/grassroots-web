@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Bell, Check, CheckCheck, Filter, ArrowLeft,
@@ -70,10 +69,9 @@ function groupByDate(notifications: Notification[]): { label: string; items: Not
 }
 
 export default function PlayerNotificationsPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const fetchNotifications = useCallback(async () => {
@@ -85,11 +83,11 @@ export default function PlayerNotificationsPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests see empty notifications state
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30_000);
     return () => clearInterval(interval);
-  }, [user, router, fetchNotifications]);
+  }, [user, fetchNotifications]);
 
   const markRead = (id: string) => {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
@@ -105,8 +103,6 @@ export default function PlayerNotificationsPage() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
     api.delete(`/notifications/${id}`).catch(() => {});
   };
-
-  if (!user) return null;
 
   const unread = notifications.filter((n) => !n.read).length;
   const visible = filter === "unread" ? notifications.filter((n) => !n.read) : notifications;

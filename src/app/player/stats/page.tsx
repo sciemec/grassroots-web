@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, TrendingUp, Trophy, BarChart2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -37,22 +36,20 @@ interface StatEntry {
 }
 
 export default function PlayerStatsPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [entries, setEntries]   = useState<StatEntry[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading]   = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sportFilter, setSportFilter] = useState<SportKey | "all">("all");
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests see empty state
+    setLoading(true);
     api.get("/player/stats")
       .then((res) => setEntries(res.data?.data ?? res.data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, router]);
-
-  if (!user) return null;
+  }, [user]);
 
   const filtered = sportFilter === "all"
     ? entries

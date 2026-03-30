@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Brain, Loader2, RefreshCw } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -20,16 +19,11 @@ interface MealPlan {
 }
 
 export default function NutritionPlanPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [plan, setPlan] = useState<MealPlan[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [goal, setGoal] = useState("performance");
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-  }, [user, router]);
 
   const generatePlan = async () => {
     setLoading(true);
@@ -53,8 +47,6 @@ Return ONLY the JSON array, no markdown.`, "player");
       setLoading(false);
     }
   };
-
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

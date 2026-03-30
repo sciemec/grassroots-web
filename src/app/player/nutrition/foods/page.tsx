@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Search, Loader2 } from "lucide-react";
-import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
 interface Food {
@@ -22,17 +20,11 @@ interface Food {
 }
 
 export default function FoodBrowserPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState<Food | null>(null);
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-  }, [user, router]);
 
   useEffect(() => {
     fetch("/data/zim_foods.json")
@@ -53,8 +45,6 @@ export default function FoodBrowserPage() {
     const matchCat = category === "All" || f.category === category;
     return matchSearch && matchCat;
   });
-
-  if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background">

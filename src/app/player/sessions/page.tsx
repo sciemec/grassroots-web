@@ -46,13 +46,9 @@ export default function SessionsPage() {
   const { user } = useAuthStore();
   const [paged, setPaged] = useState<PaginatedSessions | null>(null);
   const [allCompleted, setAllCompleted] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    if (!user) { router.push("/login"); return; }
-  }, [user, router]);
 
   // Fetch all completed sessions for stats + sparkline (once)
   useEffect(() => {
@@ -78,8 +74,6 @@ export default function SessionsPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, page, statusFilter]);
-
-  if (!user) return null;
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const scored = allCompleted.filter((s) => s.overall_score !== null);
