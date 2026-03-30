@@ -113,32 +113,32 @@ export default function CoachAIInsightsPage() {
 
       let reply = "";
 
-      // Step 1 — Claude proxy (primary)
+      // Step 1 — DeepSeek via Laravel (PRIMARY — cheaper, fast)
       try {
-        const res = await fetch("/api/ai-coach", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
+        const res = await api.post("/ask", {
+          question: content,
+          role: user?.role ?? "coach",
+          language: "english",
         });
-        if (res.ok) {
-          const data = await res.json();
-          reply = data?.response ?? data?.message ?? "";
-        }
+        reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
       } catch {
-        // Network issue → fall through
+        // 401 (guest/dev-bypass) or network error → fall through to Claude
       }
 
-      // Step 2 — Laravel backend (DeepSeek)
+      // Step 2 — Claude Sonnet via Next.js proxy (FALLBACK — handles guests + deep conversations)
       if (!reply) {
         try {
-          const res = await api.post("/ask", {
-            question: content,
-            role: user?.role ?? "coach",
-            language: "english",
+          const res = await fetch("/api/ai-coach", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
           });
-          reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+          if (res.ok) {
+            const data = await res.json();
+            reply = data?.response ?? data?.message ?? "";
+          }
         } catch {
-          // fall through
+          // fall through to offline
         }
       }
 

@@ -214,24 +214,8 @@ export default function AICoachPage() {
    * handles each message independently (backend limitation — no history param).
    */
   const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
-    // Step 1 — Claude proxy (knowledge base + conversation history + WHY/WHEN/WHERE/HOW/WHOM framework)
-    // This is the primary path — gives the richest, most personalised answer
-    try {
-      const res = await fetch("/api/ai-coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, system_prompt: systemP, history }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const reply = data.response ?? data.reply ?? "";
-        if (reply) return reply;
-      }
-    } catch {
-      // Claude unavailable → fall through to Laravel
-    }
-
-    // Step 2 — Laravel backend (DeepSeek) — fallback, includes player context
+    // Step 1 — DeepSeek via Laravel (PRIMARY — cheaper, fast)
+    // Guests and dev-bypass tokens skip this (API returns 401) → fall through to Claude
     try {
       const res = await api.post("/ask", {
         question: message,
@@ -256,7 +240,24 @@ export default function AICoachPage() {
       const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
       if (reply) return reply;
     } catch {
-      // Laravel unavailable → fall through to offline
+      // 401 (guest/dev-bypass) or network error → fall through to Claude
+    }
+
+    // Step 2 — Claude Sonnet via Next.js proxy (FALLBACK — richer, handles guests + deep conversations)
+    // Includes conversation history and FIFA/FA knowledge base
+    try {
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, system_prompt: systemP, history }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data.response ?? data.reply ?? "";
+        if (reply) return reply;
+      }
+    } catch {
+      // Claude unavailable → fall through to offline
     }
 
     // Step 3 — Offline knowledge base (no internet required)
