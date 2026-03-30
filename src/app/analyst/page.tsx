@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock } from "lucide-react";
+import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
@@ -52,6 +52,14 @@ const tools = [
     subtitle: "Rolling xG, form guide, squad depth trends",
     href: "/analyst/season",
     bg: "bg-gradient-to-br from-[#7d6608] to-[#4a3d05]",
+    live: true,
+  },
+  {
+    icon: Layers,
+    title: "Match Map",
+    subtitle: "Tap pitch to log shots & passes together — live or post-match",
+    href: "/analyst/match-map",
+    bg: "bg-gradient-to-br from-[#c0392b] to-[#7b241c]",
     live: true,
   },
 ];
