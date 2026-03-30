@@ -59,14 +59,43 @@ function MessageBubble({ msg }: { msg: Message }) {
   );
 }
 
+interface SquadMember {
+  id: string;
+  player?: { name?: string };
+  position?: string;
+  shirt_no?: number;
+  status?: string;
+}
+
 export default function CoachAIInsightsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
+  const [squad, setSquad] = useState<SquadMember[]>([]);
+
+  // Load squad on mount so AI has context about fitness, injuries, cautions
+  useEffect(() => {
+    if (!user) return;
+    api.get("/coach/squad")
+      .then(res => setSquad(res.data?.data ?? res.data ?? []))
+      .catch(() => {});
+  }, [user]);
+
+  const squadContext = squad.length > 0
+    ? `\n\nCOACH'S SQUAD (${squad.length} players):\n` +
+      `- Fit: ${squad.filter(m => m.status === "fit").length}, ` +
+      `Injured: ${squad.filter(m => m.status === "injured").length}, ` +
+      `Caution: ${squad.filter(m => m.status === "caution").length}\n` +
+      squad.slice(0, 12).map(m =>
+        `- #${m.shirt_no ?? "?"} ${m.player?.name ?? "Unknown"} (${m.position ?? "?"}) — ${m.status ?? "fit"}`
+      ).join("\n")
+    : "";
+
   const systemPrompt = coachAiAssistantPrompt({
     sport: (user?.sport as SportKey) ?? "football",
     coachingLevel: user?.position ?? undefined,
-  });
+  }) + squadContext;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -111,31 +140,66 @@ export default function CoachAIInsightsPage() {
         .slice(-10)
         .map((m) => ({ role: m.role, content: m.content }));
 
-      let reply = "";
+      // Embed recent history into DeepSeek question for context
+      const recentCtx = history.slice(-4).map(m =>
+        `${m.role === "user" ? "Coach" : "AI"}: ${m.content.slice(0, 200)}`
+      ).join("\n");
+      const questionWithHistory = recentCtx
+        ? `[Recent conversation:\n${recentCtx}]\n\nCoach: ${content}`
+        : content;
+
+      // Placeholder bubble for streaming
+      const assistantId = Date.now().toString();
+      setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
+
+      let replied = false;
 
       // Step 1 — DeepSeek via Laravel (PRIMARY — cheaper, fast)
       try {
         const res = await api.post("/ask", {
-          question: content,
+          question: questionWithHistory,
           role: user?.role ?? "coach",
           language: "english",
         });
-        reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+        const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+        if (reply) {
+          setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: reply } : m));
+          replied = true;
+        }
       } catch {
         // 401 (guest/dev-bypass) or network error → fall through to Claude
       }
 
-      // Step 2 — Claude Sonnet via Next.js proxy (FALLBACK — handles guests + deep conversations)
-      if (!reply) {
+      // Step 2 — Claude Sonnet via Next.js proxy (FALLBACK — streaming)
+      if (!replied) {
         try {
           const res = await fetch("/api/ai-coach", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: content, system_prompt: systemPrompt, history }),
+            body: JSON.stringify({ message: content, system_prompt: systemPrompt, history, stream: true }),
           });
-          if (res.ok) {
-            const data = await res.json();
-            reply = data?.response ?? data?.message ?? "";
+          if (res.ok && res.body) {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = "";
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const chunk = decoder.decode(value, { stream: true });
+              for (const line of chunk.split("\n")) {
+                if (!line.startsWith("data: ")) continue;
+                const data = line.slice(6).trim();
+                if (data === "[DONE]") break;
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                    fullText += parsed.delta.text;
+                    setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fullText } : m));
+                  }
+                } catch { /* skip malformed SSE lines */ }
+              }
+            }
+            if (fullText) replied = true;
           }
         } catch {
           // fall through to offline
@@ -143,17 +207,13 @@ export default function CoachAIInsightsPage() {
       }
 
       // Step 3 — Offline knowledge base
-      if (!reply) {
+      if (!replied) {
         const offline = await searchOffline(content);
-        if (offline) {
-          reply = `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`;
-        }
+        const fallback = offline
+          ? `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`
+          : "Sorry, I'm unable to respond right now. Please check your connection and try again.";
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fallback } : m));
       }
-
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now().toString(), role: "assistant", content: reply || "Sorry, I'm unable to respond right now. Please check your connection and try again.", timestamp: new Date() },
-      ]);
     } catch {
       setMessages((prev) => [
         ...prev,

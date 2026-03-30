@@ -5,10 +5,10 @@ import { findRelevantSessions } from "@/lib/football-knowledge";
  * POST /api/ai-coach
  *
  * Server-side Anthropic Claude proxy for the AI Coach.
- * Automatically injects relevant FIFA/FA coaching session knowledge
- * from the PDF library as context when answering coaching questions.
+ * Supports streaming (stream: true in body) and non-streaming modes.
+ * Injects relevant FIFA/FA coaching session knowledge from the PDF library.
  *
- * Body: { message: string, system_prompt?: string, history?: { role, content }[], role?: string }
+ * Body: { message, system_prompt?, history?, stream? }
  */
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     message?: string;
     system_prompt?: string;
     history?: { role: string; content: string }[];
-    role?: string;
+    stream?: boolean;
   };
   try {
     body = await req.json();
@@ -28,12 +28,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { message, system_prompt, history = [] } = body;
+  const { message, system_prompt, history = [], stream = false } = body;
   if (!message) {
     return NextResponse.json({ error: "message is required." }, { status: 400 });
   }
 
-  // Find relevant sessions from the PDF knowledge base
+  // Inject relevant FIFA/FA knowledge base sessions
   const relevantSessions = findRelevantSessions(message, 3);
   const knowledgeContext = relevantSessions.length > 0
     ? "\n\n---\nRELEVANT COACHING SESSIONS FROM YOUR KNOWLEDGE BASE (FIFA/FA certified sources):\n" +
@@ -53,7 +53,6 @@ export async function POST(req: NextRequest) {
 
   const fullSystem = baseSystem + knowledgeContext;
 
-  // Build messages array for Anthropic API (user/assistant turns only)
   const messages: { role: "user" | "assistant"; content: string }[] = [
     ...history
       .filter((m) => m.role === "user" || m.role === "assistant")
@@ -72,6 +71,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 1500,
+        stream,
         system: fullSystem,
         messages,
       }),
@@ -80,12 +80,21 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const errBody = await res.text();
       console.error("Anthropic API error", res.status, errBody);
-      return NextResponse.json(
-        { error: `Anthropic API error (${res.status})` },
-        { status: res.status }
-      );
+      return NextResponse.json({ error: `Anthropic API error (${res.status})` }, { status: res.status });
     }
 
+    // Streaming — pass Anthropic's SSE stream straight through to the browser
+    if (stream && res.body) {
+      return new Response(res.body, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "X-Accel-Buffering": "no",
+        },
+      });
+    }
+
+    // Non-streaming
     const data = await res.json();
     const reply: string = data?.content?.[0]?.text ?? "No response received.";
     return NextResponse.json({ response: reply });

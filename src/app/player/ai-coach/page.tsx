@@ -213,12 +213,29 @@ export default function AICoachPage() {
    * The Next.js route preserves conversation history; the Laravel /ask endpoint
    * handles each message independently (backend limitation — no history param).
    */
-  const callAI = async (message: string, systemP: string, history: { role: string; content: string }[]) => {
+  /** Embed recent history into the question so DeepSeek has conversation context */
+  const buildQuestionWithHistory = (message: string, history: { role: string; content: string }[]) => {
+    const recent = history.slice(-4);
+    if (recent.length === 0) return message;
+    const ctx = recent.map(m => `${m.role === "user" ? "Player" : "AI"}: ${m.content.slice(0, 200)}`).join("\n");
+    return `[Recent conversation:\n${ctx}]\n\nPlayer: ${message}`;
+  };
+
+  /**
+   * callAI — streams Claude or awaits DeepSeek.
+   * Returns a string for DeepSeek/offline.
+   * Returns null when Claude streaming is handled inline (assistantId passed).
+   */
+  const callAI = async (
+    message: string,
+    systemP: string,
+    history: { role: string; content: string }[],
+    streamingMsgId?: string,
+  ): Promise<string | null> => {
     // Step 1 — DeepSeek via Laravel (PRIMARY — cheaper, fast)
-    // Guests and dev-bypass tokens skip this (API returns 401) → fall through to Claude
     try {
       const res = await api.post("/ask", {
-        question: message,
+        question: buildQuestionWithHistory(message, history),
         role: user?.role ?? "player",
         language: "english",
         context: playerCtx ? {
@@ -243,28 +260,45 @@ export default function AICoachPage() {
       // 401 (guest/dev-bypass) or network error → fall through to Claude
     }
 
-    // Step 2 — Claude Sonnet via Next.js proxy (FALLBACK — richer, handles guests + deep conversations)
-    // Includes conversation history and FIFA/FA knowledge base
+    // Step 2 — Claude Sonnet via Next.js proxy (FALLBACK — streaming)
     try {
       const res = await fetch("/api/ai-coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, system_prompt: systemP, history }),
+        body: JSON.stringify({ message, system_prompt: systemP, history, stream: true }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        const reply = data.response ?? data.reply ?? "";
-        if (reply) return reply;
+      if (res.ok && res.body && streamingMsgId) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          for (const line of chunk.split("\n")) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                fullText += parsed.delta.text;
+                setMessages(prev => prev.map(m =>
+                  m.id === streamingMsgId ? { ...m, content: fullText } : m
+                ));
+              }
+            } catch { /* skip malformed SSE lines */ }
+          }
+        }
+        if (fullText) return null; // already streamed into state
       }
     } catch {
       // Claude unavailable → fall through to offline
     }
 
-    // Step 3 — Offline knowledge base (no internet required)
+    // Step 3 — Offline knowledge base
     const offline = await searchOffline(message);
-    if (offline) {
-      return `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`;
-    }
+    if (offline) return `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`;
 
     throw new Error("I couldn't connect to any AI service. Please check your connection and try again.");
   };
@@ -313,7 +347,13 @@ export default function AICoachPage() {
       content,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, userMsg]);
+    // Add placeholder assistant bubble immediately so streaming fills it in
+    const assistantId = crypto.randomUUID();
+    setMessages((prev) => [
+      ...prev,
+      userMsg,
+      { id: assistantId, role: "assistant", content: "", timestamp: new Date() },
+    ]);
     setLoading(true);
 
     try {
@@ -322,17 +362,18 @@ export default function AICoachPage() {
         .slice(-10)
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const reply = await callAI(content, systemPrompt, history);
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: reply || "I couldn't process that. Please try again.", timestamp: new Date() },
-      ]);
+      const reply = await callAI(content, systemPrompt, history, assistantId);
+      // reply is null when Claude streamed directly into state — nothing more to do
+      if (reply !== null) {
+        setMessages((prev) => prev.map(m =>
+          m.id === assistantId ? { ...m, content: reply || "I couldn't process that. Please try again." } : m
+        ));
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Sorry, I'm having trouble connecting right now.";
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: msg, timestamp: new Date() },
-      ]);
+      setMessages((prev) => prev.map(m =>
+        m.id === assistantId ? { ...m, content: msg } : m
+      ));
     } finally {
       setLoading(false);
       inputRef.current?.focus();
