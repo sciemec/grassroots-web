@@ -134,9 +134,9 @@
 
   html {
     font-family: var(--font-sans), sans-serif;
-    /* Flutter app match: off-white base + subtle green chevron at 6% opacity */
+    /* Flutter app match: off-white base + subtle gold chevron */
     background-color: #F5F7F5;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,6 12,0 24,6' fill='none' stroke='%231B5E20' stroke-width='1.5' opacity='0.06'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,6 12,0 24,6' fill='none' stroke='%23E6A817' stroke-width='1.2' opacity='0.35'/%3E%3C/svg%3E");
     background-size: 24px 12px;
   }
 
@@ -158,10 +158,10 @@
   border-color: rgba(255,255,255,0.28);
 }
 
-/* ── bg-background: Flutter app match — off-white + green chevron ─────────── */
+/* ── bg-background: Flutter app match — off-white + gold chevron ─────────── */
 .bg-background {
   background-color: #F5F7F5;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,6 12,0 24,6' fill='none' stroke='%231B5E20' stroke-width='1.5' opacity='0.06'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,6 12,0 24,6' fill='none' stroke='%23E6A817' stroke-width='1.2' opacity='0.35'/%3E%3C/svg%3E");
   background-size: 24px 12px;
 }
 
