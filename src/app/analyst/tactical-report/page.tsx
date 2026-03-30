@@ -3,11 +3,12 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, Copy, Check, FileText, Database } from "lucide-react";
+import { ArrowLeft, Loader2, Copy, Check, FileText, Database, Download } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 import { getMatch, calcPossessionFromLog } from "@/lib/analyst-api";
 import { MatchLoader } from "@/components/analyst/match-loader";
+import jsPDF from "jspdf";
 
 const LS_FORM   = "gs_tactical_form";
 const LS_REPORT = "gs_tactical_report";
@@ -96,6 +97,114 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
     try { await navigator.clipboard.writeText(report); } catch { return; }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.width;
+    const pageH = doc.internal.pageSize.height;
+    const margin = 14;
+    const usableW = pageW - margin * 2;
+
+    // ── Header bar ────────────────────────────────────────────────
+    doc.setFillColor(0, 100, 0);
+    doc.rect(0, 0, pageW, 38, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Grassroots Sport — Tactical Report", margin, 14);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Generated: ${new Date().toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}`,
+      margin, 22
+    );
+
+    // ── Match summary bar ─────────────────────────────────────────
+    const matchLine = f.homeTeam && f.awayTeam
+      ? `${f.homeTeam} ${f.homeScore} – ${f.awayScore} ${f.awayTeam}`
+      : "Match details not provided";
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text(matchLine, margin, 32);
+
+    // ── Stats row ─────────────────────────────────────────────────
+    doc.setTextColor(0, 0, 0);
+    doc.setFillColor(240, 255, 240);
+    doc.rect(0, 38, pageW, 16, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    const stats = [
+      `Formation: ${f.formation}`,
+      `Possession: ${f.possession}%`,
+      `Shots: ${f.shots}`,
+      `On Target: ${f.onTarget}`,
+    ];
+    stats.forEach((s, i) => doc.text(s, margin + i * (usableW / 4), 48));
+
+    // ── Report body ───────────────────────────────────────────────
+    let y = 62;
+    doc.setFontSize(10);
+
+    const lines = report.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) { y += 4; continue; }
+
+      const isSectionHeader = /^[A-Z\s&]+:/.test(trimmed);
+
+      if (isSectionHeader) {
+        if (y > pageH - 30) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(0, 100, 0);
+        doc.text(trimmed, margin, y);
+        y += 6;
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+      } else {
+        const wrapped = doc.splitTextToSize(trimmed, usableW);
+        for (const wrappedLine of wrapped) {
+          if (y > pageH - 20) { doc.addPage(); y = 20; }
+          doc.text(wrappedLine, margin, y);
+          y += 5;
+        }
+        y += 2;
+      }
+    }
+
+    // ── Coach observations ────────────────────────────────────────
+    if (f.notes.trim()) {
+      if (y > pageH - 40) { doc.addPage(); y = 20; }
+      y += 4;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(0, 100, 0);
+      doc.text("COACH OBSERVATIONS:", margin, y);
+      y += 6;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      const noteLines = doc.splitTextToSize(f.notes.trim(), usableW);
+      for (const nl of noteLines) {
+        if (y > pageH - 20) { doc.addPage(); y = 20; }
+        doc.text(nl, margin, y);
+        y += 5;
+      }
+    }
+
+    // ── Footer ────────────────────────────────────────────────────
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont("helvetica", "normal");
+    doc.text("grassrootssports.live  |  Zimbabwe's Sports Management Platform  |  CONFIDENTIAL", margin, pageH - 8);
+
+    const filename = f.homeTeam && f.awayTeam
+      ? `tactical-report-${f.homeTeam.replace(/\s+/g, "-")}-vs-${f.awayTeam.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.pdf`
+      : `tactical-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    doc.save(filename);
   };
 
   const f = form;
@@ -237,9 +346,14 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tactical Report</h2>
               {report && (
-                <button onClick={copyReport} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
-                  {copied ? <><Check className="h-3.5 w-3.5 text-green-500" /> Copied!</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={copyReport} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
+                    {copied ? <><Check className="h-3.5 w-3.5 text-green-500" /> Copied!</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
+                  </button>
+                  <button onClick={exportPDF} className="flex items-center gap-1.5 rounded-lg border border-[#f0b429]/40 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors">
+                    <Download className="h-3.5 w-3.5" /> PDF
+                  </button>
+                </div>
               )}
             </div>
 
