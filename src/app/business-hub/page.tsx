@@ -8,12 +8,13 @@ import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import {
   BarChart3, Calendar, DollarSign, Search, BookOpen,
   Users, Trophy, GraduationCap, Building2, Handshake,
   CheckCircle, ArrowRight, Star, TrendingUp, FileText,
   PiggyBank, Target, Lightbulb, ChevronDown, ChevronUp,
-  Trash2, Plus, Loader2, AlertCircle, Camera, X,
+  Trash2, Plus, Loader2, AlertCircle, Camera, X, Pencil, Check,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -267,6 +268,9 @@ function BudgetPlanner({ isGuest }: { isGuest: boolean }) {
   const [newBudget, setNewBudget] = useState("");
   const [saving, setSaving] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editBudgeted, setEditBudgeted] = useState("");
+  const [editSpent, setEditSpent] = useState("");
 
   const load = useCallback(async () => {
     if (isGuest) { setItems(DEMO_BUDGET); return; }
@@ -299,6 +303,18 @@ function BudgetPlanner({ isGuest }: { isGuest: boolean }) {
     if (isGuest) { setItems((prev) => prev.filter((i) => i.id !== id)); return; }
     try { await api.delete(`/business/budget/${id}`); setItems((prev) => prev.filter((i) => i.id !== id)); }
     catch { setError("Could not delete item."); }
+  };
+
+  const startEdit = (item: BudgetItem) => { setEditingId(item.id); setEditBudgeted(String(item.budgeted)); setEditSpent(String(item.spent)); };
+
+  const saveEdit = async (id: string) => {
+    const updated = items.map((i) => i.id === id ? { ...i, budgeted: Number(editBudgeted) || 0, spent: Number(editSpent) || 0 } : i);
+    setItems(updated);
+    setEditingId(null);
+    if (!isGuest) {
+      try { await api.patch(`/business/budget/${id}`, { budgeted: Number(editBudgeted) || 0, spent: Number(editSpent) || 0 }); }
+      catch { setError("Could not save changes."); load(); }
+    }
   };
 
   const handleScannedBudget = async (scanned: ScannedItem[]) => {
@@ -347,16 +363,33 @@ function BudgetPlanner({ isGuest }: { isGuest: boolean }) {
       <div className="space-y-2">
         {items.map((item) => {
           const itemPct = item.budgeted > 0 ? Math.round((item.spent / item.budgeted) * 100) : 0;
+          const isEditing = editingId === item.id;
           return (
             <div key={item.id} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
               <div className="flex items-center justify-between">
                 <div><p className="text-sm font-semibold text-white">{item.category}</p><p className="text-xs text-green-400/50">{item.label}</p></div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-white">${item.spent} <span className="text-xs font-normal text-green-400/50">/ ${item.budgeted}</span></p>
-                    <p className="text-xs text-green-400/50">{itemPct}% used</p>
-                  </div>
-                  <button onClick={() => deleteItem(item.id)} className="text-red-400/50 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                <div className="flex items-center gap-2">
+                  {isEditing ? (
+                    <>
+                      <div className="flex items-center gap-1 text-xs text-green-300/70">
+                        <span>Spent</span>
+                        <input type="number" value={editSpent} onChange={(e) => setEditSpent(e.target.value)} className="w-16 rounded border border-white/20 bg-white/10 px-2 py-1 text-white outline-none focus:border-green-400" />
+                        <span>/ Budget</span>
+                        <input type="number" value={editBudgeted} onChange={(e) => setEditBudgeted(e.target.value)} className="w-16 rounded border border-white/20 bg-white/10 px-2 py-1 text-white outline-none focus:border-green-400" />
+                      </div>
+                      <button onClick={() => saveEdit(item.id)} className="text-green-400 hover:text-green-300 transition-colors"><Check className="h-4 w-4" /></button>
+                      <button onClick={() => setEditingId(null)} className="text-white/30 hover:text-white/60 transition-colors"><X className="h-4 w-4" /></button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-white">${item.spent} <span className="text-xs font-normal text-green-400/50">/ ${item.budgeted}</span></p>
+                        <p className="text-xs text-green-400/50">{itemPct}% used</p>
+                      </div>
+                      <button onClick={() => startEdit(item)} className="text-green-400/40 hover:text-green-400 transition-colors" title="Edit amounts"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => deleteItem(item.id)} className="text-red-400/50 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="mt-2 h-1 w-full rounded-full bg-white/10">
@@ -585,6 +618,17 @@ function FinancialTracker({ isGuest }: { isGuest: boolean }) {
   const net = income - expense;
   const formatDate = (d: string) => new Date(d).toLocaleDateString("en-ZW", { day: "numeric", month: "short" });
 
+  // Build monthly chart data from transactions
+  const monthlyMap: Record<string, { month: string; income: number; expense: number }> = {};
+  transactions.forEach((t) => {
+    const key = t.date.slice(0, 7); // "YYYY-MM"
+    const label = new Date(t.date + "T00:00:00").toLocaleDateString("en-ZW", { month: "short", year: "2-digit" });
+    if (!monthlyMap[key]) monthlyMap[key] = { month: label, income: 0, expense: 0 };
+    if (t.type === "income") monthlyMap[key].income += Math.abs(t.amount);
+    else monthlyMap[key].expense += Math.abs(t.amount);
+  });
+  const chartData = Object.values(monthlyMap).sort((a, b) => a.month.localeCompare(b.month));
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -601,6 +645,33 @@ function FinancialTracker({ isGuest }: { isGuest: boolean }) {
           </div>
         ))}
       </div>
+
+      {chartData.length > 0 && (
+        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+          <p className="mb-3 text-xs font-semibold text-green-300">Income vs Expenses by Month</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={chartData} barCategoryGap="30%">
+              <XAxis dataKey="month" tick={{ fill: "#86efac", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#86efac", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${v}`} />
+              <Tooltip
+                contentStyle={{ background: "#0a3d10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: "#86efac" }}
+                formatter={(value: number, name: string) => [`$${value}`, name === "income" ? "Income" : "Expenses"]}
+              />
+              <Bar dataKey="income" radius={[4, 4, 0, 0]}>
+                {chartData.map((_, i) => <Cell key={i} fill="#22c55e" />)}
+              </Bar>
+              <Bar dataKey="expense" radius={[4, 4, 0, 0]}>
+                {chartData.map((_, i) => <Cell key={i} fill="#ef4444" />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-2 flex items-center gap-4 justify-center text-xs text-green-300/60">
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-green-500 inline-block" /> Income</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-red-500 inline-block" /> Expenses</span>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="rounded-xl border border-white/20 bg-white/5 p-4 space-y-3">
@@ -1047,32 +1118,205 @@ function MembersDashboard({ isGuest, userId }: { isGuest: boolean; userId: strin
 // ─── Business Skills ──────────────────────────────────────────────────────────
 
 const SKILLS = [
-  { icon: <Target className="h-5 w-5" />, title: "Writing a Winning Sponsorship Proposal", duration: "12 min read", level: "Beginner", color: "text-green-400", excerpt: "Learn how to craft a proposal that gets companies to say yes — including a template for Zimbabwe sports clubs." },
-  { icon: <TrendingUp className="h-5 w-5" />, title: "Setting Gate Fee Prices for Tournaments", duration: "8 min read", level: "Beginner", color: "text-amber-400", excerpt: "How to price entry fees to cover costs, attract crowds, and still make a profit." },
-  { icon: <DollarSign className="h-5 w-5" />, title: "Budgeting for a Multi-Sport School Gala", duration: "15 min read", level: "Intermediate", color: "text-blue-400", excerpt: "A step-by-step budget template for school sports coordinators running holiday galas." },
-  { icon: <Building2 className="h-5 w-5" />, title: "Registering a Sports Club as a Legal Entity", duration: "20 min read", level: "Intermediate", color: "text-purple-400", excerpt: "How to register with ZIMRA, open a club bank account, and stay compliant in Zimbabwe." },
-  { icon: <Lightbulb className="h-5 w-5" />, title: "Generating Revenue Beyond Gate Fees", duration: "10 min read", level: "Advanced", color: "text-orange-400", excerpt: "Merchandise, streaming rights, coaching academies, and 8 other revenue streams for sports clubs." },
+  {
+    icon: <Target className="h-5 w-5" />, title: "Writing a Winning Sponsorship Proposal", duration: "12 min read", level: "Beginner", color: "text-green-400",
+    excerpt: "Learn how to craft a proposal that gets companies to say yes — including a template for Zimbabwe sports clubs.",
+    content: `A sponsorship proposal is a sales document — your goal is to show the sponsor what they get, not just what you need.
+
+**The 5-section formula:**
+
+1. EXECUTIVE SUMMARY (1 page) — who you are, what you do, how many people you reach. Lead with your audience size: "We reach 200+ families in Chitungwiza every weekend."
+
+2. ABOUT YOUR CLUB/EVENT — founding year, achievements, community impact. Include photos. Sponsors want to feel proud of backing you.
+
+3. SPONSORSHIP PACKAGES — offer 3 tiers:
+   • Bronze ($500): logo on kit, social media mention, 2 match banners
+   • Silver ($2,000): all Bronze + PA announcements, programme ad, half-time promo
+   • Gold ($5,000): all Silver + jersey front logo, exclusivity, press release naming rights
+
+4. BENEFITS TO SPONSOR — reach, demographics, community goodwill, brand visibility. Use numbers: "12 home matches × avg 300 fans = 3,600 impressions per season."
+
+5. CALL TO ACTION — one specific ask. "Can we meet on Tuesday to discuss the Silver package?" Never leave it open-ended.
+
+**Zimbabwe-specific tips:**
+- Target companies with CSR budgets (NetOne, Econet, Delta, CBZ all have these)
+- Send to the Marketing Manager or CSR Manager — not the CEO directly
+- Follow up exactly 5 business days later with a polite reminder
+- Reference community impact — urban companies value rural/township reach`,
+  },
+  {
+    icon: <TrendingUp className="h-5 w-5" />, title: "Setting Gate Fee Prices for Tournaments", duration: "8 min read", level: "Beginner", color: "text-amber-400",
+    excerpt: "How to price entry fees to cover costs, attract crowds, and still make a profit.",
+    content: `Gate fees are your most reliable tournament revenue. Price them wrong and you either lose money or lose your crowd.
+
+**The break-even formula:**
+Total costs ÷ Expected attendance = Minimum gate fee
+
+Example: Costs = $800, Expected crowd = 300 people → Minimum = $2.67 per person → Set gate at $3.00
+
+**Zimbabwe-specific pricing guide (2026):**
+
+| Event Type | Recommended Gate | Notes |
+|---|---|---|
+| Primary school match | Free or $0.50 | Parents won't pay more |
+| Club league fixture | $1–$2 | Local derbies can go $3 |
+| Regional tournament | $3–$5 | Friday/Saturday premium |
+| Finals/Gala Day | $5–$10 | Includes programme |
+
+**Revenue multipliers:**
+- VIP seating: charge 3× standard gate for chairs + shade
+- Parking: $1–$2 per vehicle (negotiate with landowner)
+- Food/drinks concession: don't sell yourself — rent pitch to vendors for $20–$50/day
+- Programme booklet: $1 each, include sponsor ads to cover printing costs
+
+**Reducing no-shows:** Sell "early bird" tickets at 20% discount via WhatsApp 2 weeks before. Pre-sold tickets reduce gate day chaos and guarantee minimum revenue.`,
+  },
+  {
+    icon: <DollarSign className="h-5 w-5" />, title: "Budgeting for a Multi-Sport School Gala", duration: "15 min read", level: "Intermediate", color: "text-blue-400",
+    excerpt: "A step-by-step budget template for school sports coordinators running holiday galas.",
+    content: `A school sports gala with 20+ teams and 3+ sports requires careful planning. Most coordinators underestimate costs by 30–40%.
+
+**Standard cost categories:**
+
+VENUE & FACILITIES
+- Ground hire: $50–$200/day
+- Marquee/tent rental: $80–$150
+- Portable toilets (if needed): $30/day each
+- Electricity/generator: $50–$100/day
+
+OFFICIALS & STAFF
+- Referees: $15–$30 per match per referee
+- Timekeepers/scorers: $10–$20 each
+- Medical officer: $50–$100/day (mandatory for NASH events)
+- Security: $20–$40/person/day
+
+EQUIPMENT
+- Balls (replacements): $20–$40 each
+- Bibs, cones, markers: $30–$80
+- First aid kit restock: $30–$60
+- Trophies/medals: $5–$20 per award
+
+CATERING
+- Budget $3–$5 per team member per day for water/snacks
+- VIP tent catering: $10–$15 per person
+
+MARKETING
+- Banners (2m×1m vinyl): $15–$25 each
+- Programme printing (50 copies): $0.50–$1 each
+
+**Template totals (3-day, 16-team gala):**
+Venues: $450 | Officials: $600 | Equipment: $200 | Catering: $400 | Marketing: $150
+Total costs: ~$1,800
+
+Revenue needed: $1,800 ÷ 300 expected crowd = $6 gate fee to break even
+Add 25% profit margin: Set gate at $8, target $2,250 revenue`,
+  },
+  {
+    icon: <Building2 className="h-5 w-5" />, title: "Registering a Sports Club as a Legal Entity", duration: "20 min read", level: "Intermediate", color: "text-purple-400",
+    excerpt: "How to register with ZIMRA, open a club bank account, and stay compliant in Zimbabwe.",
+    content: `Running a sports club as an informal group limits you. You can't open a bank account, can't sign contracts, and can't apply for grants. Formalising takes 2–4 weeks.
+
+**Option 1: Register as a Private Business Corporation (PBC)**
+- Cost: $50–$100 at CIPAZ (Companies and Intellectual Property Authority of Zimbabwe)
+- Required: Club name (check availability at cipaz.co.zw), 2 directors, physical address
+- Timeline: 5–10 business days
+- Best for: Clubs that want to trade, hire staff, sign sponsorship contracts
+
+**Option 2: Register as an Association / NPO**
+- Cost: $30–$60 at Deeds Registry
+- Required: Constitution, 3 founding members, AGM minutes
+- Timeline: 2–4 weeks
+- Best for: Community clubs focused on development, not profit
+
+**Step-by-step (PBC route):**
+1. Check name availability: email cipaz@cipaz.co.zw
+2. Complete CR1 form (download from cipaz.co.zw)
+3. Submit with $50 fee + 2 certified IDs + proof of address
+4. Receive Certificate of Incorporation
+5. Get ZIMRA Business Partner Number (free, same week)
+
+**Opening a club bank account (after incorporation):**
+- Take Certificate of Incorporation + 2 signatories' IDs
+- CBZ and ZB Bank have community club accounts with low fees
+- Require 2 signatures on all transactions above $500 (governance best practice)
+
+**Annual compliance:**
+- File annual returns with CIPAZ: $20/year
+- Keep minutes of AGM on file
+- ZIMRA: file nil returns if no taxable income`,
+  },
+  {
+    icon: <Lightbulb className="h-5 w-5" />, title: "Generating Revenue Beyond Gate Fees", duration: "10 min read", level: "Advanced", color: "text-orange-400",
+    excerpt: "Merchandise, streaming rights, coaching academies, and 8 other revenue streams for sports clubs.",
+    content: `The most financially resilient sports clubs in Zimbabwe have 3–5 revenue streams. Gate fees alone create a fragile business that stops in the off-season.
+
+**8 revenue streams to add this year:**
+
+1. COACHING ACADEMIES ($20–$50/child/month)
+   Run weekend skills sessions for 8–12 year olds. 20 kids × $30 = $600/month. Use your existing coaches and ground. This is the most scalable option.
+
+2. KIT & MERCHANDISE
+   Order 50 printed T-shirts at $4 each, sell at $12. One order = $400 profit. WhatsApp groups are your sales channel — no shop needed.
+
+3. STREAMING RIGHTS
+   Use the Grassroots Sport app to broadcast matches live. Charge viewers $0.50–$1 per match via EcoCash. 200 viewers = $100–$200 per match.
+
+4. GROUND HIRE (if you own/lease the ground)
+   Rent to other clubs/schools on days you don't train: $30–$80/day. 3 days/week = $360–$720/month additional income.
+
+5. TRAINING CAMPS (holidays)
+   School holiday camps: 5 days, $30 per child. 30 kids = $900. All profit after printing a programme and buying water.
+
+6. SPORTS PHOTOGRAPHY
+   Partner with a local photographer. They attend your matches for free; you take 15% of any photo sales to parents/families.
+
+7. CORPORATE TEAM-BUILDING
+   Companies pay $500–$2,000 for a half-day sports day. Approach HR departments of local companies. You provide venue, equipment, and prizes.
+
+8. TOURNAMENT HOSTING FEES
+   Charge visiting clubs an "administration fee" of $10–$20 per team to participate in your tournament. 16 teams = $160–$320 immediate revenue.
+
+**Priority order:** Start with the coaching academy (most recurring income), then merchandise, then ground hire. Only add more streams once the first three are running smoothly.`,
+  },
 ];
 
 function BusinessSkills() {
+  const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="space-y-3">
-      {SKILLS.map((s) => (
-        <div key={s.title} className="rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/[0.08] transition-colors cursor-pointer group">
-          <div className="flex items-start gap-3">
-            <div className={`mt-0.5 ${s.color}`}>{s.icon}</div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <p className="font-bold text-white text-sm group-hover:text-green-300 transition-colors">{s.title}</p>
-                <ArrowRight className="h-4 w-4 text-green-400/40 group-hover:text-green-400 transition-colors shrink-0 ml-2" />
+      {SKILLS.map((s) => {
+        const isOpen = open === s.title;
+        return (
+          <div key={s.title} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+            <button
+              onClick={() => setOpen(isOpen ? null : s.title)}
+              className="w-full p-4 text-left hover:bg-white/[0.04] transition-colors group"
+            >
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 shrink-0 ${s.color}`}>{s.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-bold text-white text-sm group-hover:text-green-300 transition-colors">{s.title}</p>
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-green-400 shrink-0" /> : <ChevronDown className="h-4 w-4 text-green-400/40 group-hover:text-green-400 shrink-0" />}
+                  </div>
+                  <p className="mt-1 text-xs text-green-400/50">{s.duration} · {s.level}</p>
+                  <p className="mt-1.5 text-xs text-green-300/70 leading-relaxed">{s.excerpt}</p>
+                </div>
               </div>
-              <p className="mt-1 text-xs text-green-400/50">{s.duration} · {s.level}</p>
-              <p className="mt-2 text-xs text-green-300/70 leading-relaxed">{s.excerpt}</p>
-            </div>
+            </button>
+            {isOpen && (
+              <div className="border-t border-white/10 px-4 pb-5 pt-4">
+                <div className="prose prose-invert prose-sm max-w-none">
+                  {s.content.split("\n\n").map((para, i) => (
+                    <p key={i} className="text-xs text-green-200/80 leading-relaxed mb-3 whitespace-pre-line">{para}</p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      ))}
-      <p className="text-center text-xs text-green-400/40 pt-2">Pro plan unlocks full articles, templates, and downloadable resources</p>
+        );
+      })}
+      <p className="text-center text-xs text-green-400/40 pt-2">More articles and downloadable templates coming soon</p>
     </div>
   );
 }
