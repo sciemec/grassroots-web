@@ -40,11 +40,11 @@ export default function CoachNotificationsPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests see empty notifications
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30_000);
     return () => clearInterval(interval);
-  }, [user, router, fetchNotifications]);
+  }, [user, fetchNotifications]);
 
   const markRead = async (id: string) => {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));

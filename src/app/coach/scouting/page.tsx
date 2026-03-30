@@ -236,7 +236,7 @@ export default function ScoutingDashboardPage() {
   const [selected, setSelected] = useState<Player | null>(null);
 
   useEffect(() => {
-    if (!user) { router.push("/login"); return; }
+    if (!user) return; // guests allowed — shows empty scouting board
   }, [user, router]);
 
   useEffect(() => {
