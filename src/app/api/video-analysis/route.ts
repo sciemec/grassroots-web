@@ -14,6 +14,17 @@ import { NextRequest, NextResponse } from "next/server";
  * }
  */
 export async function POST(req: NextRequest) {
+  // Auth gate — require a valid session token to prevent anonymous API abuse
+  const token =
+    req.cookies.get("grassroots_token")?.value ??
+    req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) {
+    return NextResponse.json(
+      { error: "Authentication required." },
+      { status: 401 }
+    );
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

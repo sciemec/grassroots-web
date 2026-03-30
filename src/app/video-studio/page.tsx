@@ -398,6 +398,19 @@ export default function VideoStudioPage() {
                 <CheckCircle2 className="h-3.5 w-3.5" /> Saved to cloud
               </p>
             )}
+            {uploadStatus === "failed" && (
+              <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                <p className="text-xs text-amber-400 font-medium">
+                  ⚠ Cloud save failed — your video will not be stored. Analysis will still run, but the video won&apos;t be saved to your history.
+                </p>
+                <button
+                  onClick={() => file && uploadToR2(file)}
+                  className="mt-1.5 text-xs text-amber-300 underline hover:text-amber-200 transition-colors"
+                >
+                  Retry upload
+                </button>
+              </div>
+            )}
 
             {/* Frame strip */}
             {frames.length > 0 && (
