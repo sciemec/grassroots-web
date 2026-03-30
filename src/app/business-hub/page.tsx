@@ -656,7 +656,7 @@ function FinancialTracker({ isGuest }: { isGuest: boolean }) {
               <Tooltip
                 contentStyle={{ background: "#0a3d10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
                 labelStyle={{ color: "#86efac" }}
-                formatter={(value: number, name: string) => [`$${value}`, name === "income" ? "Income" : "Expenses"]}
+                formatter={(value, name) => [`$${value ?? 0}`, name === "income" ? "Income" : "Expenses"]}
               />
               <Bar dataKey="income" radius={[4, 4, 0, 0]}>
                 {chartData.map((_, i) => <Cell key={i} fill="#22c55e" />)}
