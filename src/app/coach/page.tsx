@@ -128,13 +128,13 @@ export default function CoachHubPage() {
 
         {/* Header */}
         <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#1A6B3C]">
             Mhoro — Coach Hub
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-white">
+          <h1 className="mt-1 text-2xl font-bold text-[#0D2B1A]">
             {user?.name?.split(" ")[0] ?? "Coach"} 👋
           </h1>
-          <p className="mt-0.5 text-sm italic text-accent/80">
+          <p className="mt-0.5 text-sm italic text-[#1A6B3C]/80">
             Ramba uchishanda — Manage your squad & tactics
           </p>
         </div>
@@ -157,7 +157,7 @@ export default function CoachHubPage() {
 
         {/* Hub cards grid */}
         <div className="mb-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent/70">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#1A6B3C]">
             Coach Tools
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -209,8 +209,8 @@ export default function CoachHubPage() {
           {/* Squad fitness */}
           <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-widest text-accent/70">Squad Fitness</p>
-              <Link href="/coach/squad" className="flex items-center gap-1 text-xs text-accent hover:text-white transition-colors">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#1A6B3C]">Squad Fitness</p>
+              <Link href="/coach/squad" className="flex items-center gap-1 text-xs text-[#1A6B3C] hover:text-[#0D2B1A] transition-colors">
                 Manage <ChevronRight className="h-3 w-3" />
               </Link>
             </div>

@@ -116,10 +116,29 @@ function ErrorBanner({ message }: { message: string }) {
 
 function GuestBanner() {
   return (
-    <div className="mb-5 flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-      <p className="text-xs text-amber-300">
-        Viewing demo data. <Link href="/login" className="font-bold underline">Sign in</Link> to save your real data.
-      </p>
+    <div className="mb-5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-amber-300">You&apos;re viewing demo data</p>
+          <p className="mt-0.5 text-xs text-amber-300/70">
+            Register free to save your real budgets, sponsors, events and members.
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <Link
+            href="/register"
+            className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400 transition-colors"
+          >
+            Register free
+          </Link>
+          <Link
+            href="/login"
+            className="rounded-lg border border-amber-500/40 px-4 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 transition-colors"
+          >
+            Sign in
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

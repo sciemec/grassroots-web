@@ -138,17 +138,17 @@ export default function RegisterPage() {
         router.push('/login?registered=1');
       }
     } catch (err: unknown) {
-      const e = err as { code?: string; response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
+      const e = err as { code?: string; response?: { status?: number; data?: { message?: string; errors?: Record<string, string[]> } } };
       const validationErrors = e?.response?.data?.errors;
       if (validationErrors) {
         const first = Object.values(validationErrors)[0][0];
         setError(first);
+      } else if (e?.code === 'ECONNABORTED') {
+        setError('Server is waking up — please try again in 30 seconds.');
+      } else if (e?.response?.status && e.response.status >= 500) {
+        setError('Our server ran into an issue. Your account may have been created — please try signing in first. If that fails, try registering again.');
       } else {
-        setError(
-          e?.response?.data?.message ??
-          (e?.code === 'ECONNABORTED' ? 'Server is waking up — please try again in 30 seconds.' : null) ??
-          'Registration failed. Please try again.'
-        );
+        setError(e?.response?.data?.message ?? 'Registration failed. Please try again.');
       }
     } finally {
       setLoading(false);

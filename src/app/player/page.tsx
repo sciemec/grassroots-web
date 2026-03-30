@@ -113,13 +113,13 @@ export default function PlayerHubPage() {
 
         {/* Header */}
         <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#1A6B3C]">
             Mhoro — Player Hub
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-white">
+          <h1 className="mt-1 text-2xl font-bold text-[#0D2B1A]">
             {user?.name?.split(" ")[0] ?? "Player"} 👋
           </h1>
-          <p className="mt-0.5 text-sm italic text-accent/80">
+          <p className="mt-0.5 text-sm italic text-[#1A6B3C]/80">
             {profile?.position
               ? `${profile.position} · ${profile.province ?? ""} · ${profile.age_group?.toUpperCase() ?? ""}`
               : "Ita profile yako — Complete your profile"}
@@ -144,7 +144,7 @@ export default function PlayerHubPage() {
 
         {/* Hub cards grid — mobile-style */}
         <div className="mb-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent/70">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#1A6B3C]">
             Your Hub
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -157,10 +157,10 @@ export default function PlayerHubPage() {
         {/* Recent sessions */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-widest text-accent/70">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#1A6B3C]">
               Recent Sessions
             </p>
-            <Link href="/player/sessions" className="flex items-center gap-1 text-xs text-accent hover:text-white transition-colors">
+            <Link href="/player/sessions" className="flex items-center gap-1 text-xs text-[#1A6B3C] hover:text-[#0D2B1A] transition-colors">
               View all <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
