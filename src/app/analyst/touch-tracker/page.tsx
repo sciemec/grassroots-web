@@ -14,6 +14,7 @@ interface Touch {
   ts: number;  // ms from match start
   min: number;
   sec: number;
+  half: 1 | 2;
 }
 
 interface PassLink {
@@ -38,7 +39,7 @@ interface MatchStats {
   suggestedFormation: { home: string; away: string };
 }
 
-type Phase = "setup" | "live" | "paused" | "ended";
+type Phase = "setup" | "live" | "paused" | "halftime" | "ended";
 type PlayerRole = "GK" | "DEF" | "MID" | "FWD";
 
 const HOME_STARTERS = [1,2,3,4,5,6,7,8,9,10,11];
@@ -205,6 +206,16 @@ function buildAiPrompt(
 
   const zones = stats.zoneEvents.slice(-10).map((z) => z.description).join("\n");
 
+  // Half-by-half breakdown
+  const h1 = touches.filter((t) => t.half === 1);
+  const h2 = touches.filter((t) => t.half === 2);
+  const hasHalves = h1.length > 0 && h2.length > 0;
+
+  const halfSummary = hasHalves ? `
+1st Half: ${h1.filter(t=>t.team==="home").length} home touches, ${h1.filter(t=>t.team==="away").length} away touches
+2nd Half: ${h2.filter(t=>t.team==="home").length} home touches, ${h2.filter(t=>t.team==="away").length} away touches
+Momentum shift: ${h2.filter(t=>t.team==="home").length > h1.filter(t=>t.team==="home").length ? homeTeam : awayTeam} dominated the second half by touch count.` : "";
+
   return `You are a tactical football analyst on the Grassroots Sport platform (Zimbabwe).
 
 Match: ${homeTeam} vs ${awayTeam}
@@ -218,18 +229,18 @@ AWAY assigned roles: ${awayFormation || "not set"}
 AWAY key players by touches: ${topAway || "insufficient data"}
 
 Passing proximity: ${pct}% of consecutive same-team touches happened within 6 seconds (suggesting close player positioning).
-
+${halfSummary}
 Recent zone inferences from turnovers:
 ${zones || "No clear zone data yet"}
 
 Dominant zone so far: ${stats.dominantZone.replace("_", " ")}
 
 Based on this role + touch + proximity data, provide:
-1. **Actual formation** for each team — compare assigned roles vs who is actually touching the ball most. Flag any role mismatches (e.g. a DEF dominating touches in forward areas).
+1. **Actual formation** for each team — compare assigned roles vs who is actually touching the ball most. Flag any role mismatches.
 2. **Key players** controlling the game and why, referencing their role.
 3. **Zone of play** — where is the game being fought?
 4. **Passing channels** — which role partnerships are most active?
-5. **Tactical recommendation** for the coaching staff right now.
+5. ${hasHalves ? "**Half-time comparison** — what changed between the first and second half? Who improved, who faded?" : "**Tactical recommendation** for the coaching staff right now."}
 
 Be concise and direct. Use player numbers and roles (e.g. "#6 MID"). 3-5 sentences per section max.`;
 }
@@ -242,6 +253,8 @@ export default function TouchTrackerPage() {
   const [homeRoles, setHomeRoles] = useState<Record<number, PlayerRole>>(FORMATION_PRESETS["4-4-2"]);
   const [awayRoles, setAwayRoles] = useState<Record<number, PlayerRole>>(FORMATION_PRESETS["4-4-2"]);
   const [phase, setPhase] = useState<Phase>("setup");
+  const [currentHalf, setCurrentHalf] = useState<1 | 2>(1);
+  const [halfBreakAt, setHalfBreakAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0); // ms
   const [touches, setTouches] = useState<Touch[]>([]);
   const [lastHome, setLastHome] = useState<Touch | null>(null);
@@ -266,6 +279,8 @@ export default function TouchTrackerPage() {
         setAwayRoles(d.awayRoles ?? FORMATION_PRESETS["4-4-2"]);
         setTouches(d.touches ?? []);
         setElapsed(d.elapsed ?? 0);
+        setCurrentHalf(d.currentHalf ?? 1);
+        setHalfBreakAt(d.halfBreakAt ?? null);
         if (d.phase === "live" || d.phase === "paused") setPhase("paused");
         else setPhase(d.phase ?? "setup");
       }
@@ -275,7 +290,7 @@ export default function TouchTrackerPage() {
   // Save to storage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ homeTeam, awayTeam, homeRoles, awayRoles, touches, elapsed, phase }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ homeTeam, awayTeam, homeRoles, awayRoles, touches, elapsed, phase, currentHalf, halfBreakAt }));
     } catch {}
   }, [homeTeam, awayTeam, touches, elapsed, phase]);
 
@@ -311,6 +326,18 @@ export default function TouchTrackerPage() {
     }
   };
 
+  const callHalfTime = () => {
+    stopTimer();
+    setHalfBreakAt(elapsed);
+    setPhase("halftime");
+  };
+
+  const startSecondHalf = () => {
+    setCurrentHalf(2);
+    setPhase("live");
+    startTimer();
+  };
+
   const endMatch = () => {
     stopTimer();
     setPhase("ended");
@@ -320,6 +347,8 @@ export default function TouchTrackerPage() {
     stopTimer();
     setTouches([]);
     setElapsed(0);
+    setCurrentHalf(1);
+    setHalfBreakAt(null);
     setPhase("setup");
     setAiAnalysis("");
     setLastHome(null);
@@ -332,7 +361,7 @@ export default function TouchTrackerPage() {
     const ts = elapsed;
     const min = Math.floor(ts / 60000);
     const sec = Math.floor((ts % 60000) / 1000);
-    const touch: Touch = { id: Date.now().toString(), team, num, ts, min, sec };
+    const touch: Touch = { id: Date.now().toString(), team, num, ts, min, sec, half: currentHalf };
     setTouches((prev) => [...prev, touch]);
     if (team === "home") setLastHome(touch);
     else setLastAway(touch);
@@ -475,28 +504,81 @@ export default function TouchTrackerPage() {
         {/* Timer bar */}
         {phase !== "setup" && (
           <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-card/60 p-3">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-black ${phase === "live" ? "bg-green-600 animate-pulse" : phase === "paused" ? "bg-amber-600" : "bg-muted"}`}>
-              {phase === "live" ? "▶" : phase === "paused" ? "⏸" : "■"}
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-black ${phase === "live" ? "bg-green-600 animate-pulse" : phase === "halftime" ? "bg-purple-600" : phase === "paused" ? "bg-amber-600" : "bg-muted"}`}>
+              {phase === "live" ? "▶" : phase === "halftime" ? "½" : phase === "paused" ? "⏸" : "■"}
             </div>
             <div className="flex-1">
-              <p className="text-2xl font-black tracking-widest text-white">{fmtTime(elapsed)}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-2xl font-black tracking-widest text-white">{fmtTime(elapsed)}</p>
+                <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${currentHalf === 1 ? "bg-blue-600 text-white" : "bg-orange-500 text-white"}`}>
+                  {currentHalf === 1 ? "1ST" : "2ND"}
+                </span>
+              </div>
               <p className="text-[10px] text-white/50">{homeTeam} vs {awayTeam} · {touches.length} touches logged</p>
             </div>
-            <div className="flex gap-2">
-              {phase !== "ended" && (
-                <button onClick={togglePause} className="rounded-lg border border-white/20 px-3 py-2 text-xs font-bold text-white hover:bg-white/10">
+            <div className="flex gap-1.5 flex-wrap justify-end">
+              {phase === "live" && currentHalf === 1 && (
+                <button onClick={callHalfTime} className="rounded-lg border border-purple-500/40 bg-purple-500/10 px-2 py-1.5 text-[10px] font-bold text-purple-300 hover:bg-purple-500/20">
+                  HT
+                </button>
+              )}
+              {phase !== "ended" && phase !== "halftime" && (
+                <button onClick={togglePause} className="rounded-lg border border-white/20 px-2 py-1.5 text-xs font-bold text-white hover:bg-white/10">
                   {phase === "live" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </button>
               )}
-              {phase !== "ended" && (
-                <button onClick={endMatch} className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/20">
+              {phase !== "ended" && phase !== "halftime" && (
+                <button onClick={endMatch} className="rounded-lg border border-red-500/40 bg-red-500/10 px-2 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/20">
                   <Square className="h-4 w-4" />
                 </button>
               )}
-              <button onClick={resetAll} className="rounded-lg border border-white/10 px-3 py-2 text-[10px] font-bold text-white/40 hover:text-white/70">
-                Reset
+              <button onClick={resetAll} className="rounded-lg border border-white/10 px-2 py-1.5 text-[10px] font-bold text-white/40 hover:text-white/70">
+                ↺
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Half-time panel */}
+        {phase === "halftime" && (
+          <div className="mb-4 rounded-2xl border-2 border-purple-500/40 bg-purple-500/10 p-4 space-y-4">
+            <div className="text-center">
+              <p className="text-xs font-black uppercase tracking-widest text-purple-400">Half Time</p>
+              <p className="mt-0.5 text-[10px] text-white/50">1st half ended at {fmtTime(halfBreakAt ?? elapsed)}</p>
+            </div>
+            {/* 1st half summary */}
+            <div className="grid grid-cols-2 gap-3">
+              {(["home", "away"] as const).map((team) => {
+                const h1touches = touches.filter(t => t.team === team && t.half === 1);
+                const counts: Record<number, number> = {};
+                h1touches.forEach(t => { counts[t.num] = (counts[t.num] ?? 0) + 1; });
+                const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+                const roles = team === "home" ? homeRoles : awayRoles;
+                const color = team === "home" ? "text-blue-400 border-blue-500/20 bg-blue-500/5" : "text-orange-400 border-orange-500/20 bg-orange-500/5";
+                return (
+                  <div key={team} className={`rounded-xl border p-3 ${color}`}>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase">{team === "home" ? homeTeam : awayTeam}</p>
+                    <p className="text-xl font-black text-white">{h1touches.length} <span className="text-xs font-normal text-white/40">touches</span></p>
+                    <div className="mt-2 space-y-0.5">
+                      {top.map(([num, cnt]) => (
+                        <p key={num} className="text-[10px] text-white/60">
+                          #{num} {roles[parseInt(num)] ?? ""} — {cnt}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              onClick={startSecondHalf}
+              className="w-full rounded-xl bg-[#1A6B3C] py-3 text-sm font-bold text-white hover:bg-[#1A6B3C]/80 flex items-center justify-center gap-2"
+            >
+              <Play className="h-4 w-4" /> Start 2nd Half
+            </button>
+            <button onClick={endMatch} className="w-full rounded-xl border border-red-500/30 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10">
+              End Match Here
+            </button>
           </div>
         )}
 
@@ -662,8 +744,9 @@ export default function TouchTrackerPage() {
               <div className="space-y-1 max-h-96 overflow-y-auto pr-1">
                 {recentTouches.map((t) => (
                   <div key={t.id} className={`flex items-center gap-3 rounded-lg px-3 py-2 ${t.team === "home" ? "bg-blue-500/10 border border-blue-500/20" : "bg-orange-500/10 border border-orange-500/20"}`}>
-                    <span className={`w-16 text-[10px] font-black ${t.team === "home" ? "text-blue-400" : "text-orange-400"}`}>
+                    <span className={`flex items-center gap-1 w-20 text-[10px] font-black ${t.team === "home" ? "text-blue-400" : "text-orange-400"}`}>
                       {t.min.toString().padStart(2,"0")}:{t.sec.toString().padStart(2,"0")}
+                      <span className="text-[7px] text-white/30">{t.half === 2 ? "2H" : "1H"}</span>
                     </span>
                     <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-black ${t.team === "home" ? "bg-blue-600 text-white" : "bg-orange-600 text-white"}`}>
                       {t.num > 11 ? `S${t.num - 11}` : t.num}
@@ -749,6 +832,35 @@ export default function TouchTrackerPage() {
                     <span className="text-xs text-white/40 ml-1">/ {stats.passLinks.length}</span>
                   </p>
                 </div>
+
+                {/* Half comparison */}
+                {touches.some(t => t.half === 2) && (
+                  <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3">
+                    <p className="mb-2 text-xs font-bold text-purple-300">1st vs 2nd Half</p>
+                    {(["home", "away"] as const).map((team) => {
+                      const h1 = touches.filter(t => t.team === team && t.half === 1).length;
+                      const h2 = touches.filter(t => t.team === team && t.half === 2).length;
+                      const total = h1 + h2 || 1;
+                      const color = team === "home" ? "bg-blue-500" : "bg-orange-500";
+                      const label = team === "home" ? homeTeam : awayTeam;
+                      return (
+                        <div key={team} className="mb-2">
+                          <div className="flex justify-between text-[10px] text-white/60 mb-1">
+                            <span>{label}</span>
+                            <span>1st: {h1} · 2nd: {h2} {h2 > h1 ? "↑" : h2 < h1 ? "↓" : "="}</span>
+                          </div>
+                          <div className="flex h-2 rounded-full overflow-hidden bg-white/10">
+                            <div className={`${color} opacity-50`} style={{ width: `${(h1/total)*100}%` }} />
+                            <div className={color} style={{ width: `${(h2/total)*100}%` }} />
+                          </div>
+                          <div className="flex justify-between text-[8px] text-white/30 mt-0.5">
+                            <span>1st half</span><span>2nd half</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
