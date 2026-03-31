@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import AfricanPatternStrip from "@/components/ui/AfricanPatternStrip";
+import { ZimPresidentBanner, ZimIndependenceSection } from "@/components/ui/zim-independence";
 import {
   Users, Dumbbell, Brain, Trophy, Globe, Shield, Zap, Star, ChevronRight,
 } from "lucide-react";
@@ -186,6 +187,7 @@ const hubGrid = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
+      <ZimPresidentBanner />
       <PublicNavbar />
 
       {/* ── Hub Cards section — Flutter off-white + green chevron ─────────── */}
@@ -532,6 +534,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Zimbabwe Independence Day section ──────────────────────────────── */}
+      <ZimIndependenceSection />
 
       {/* ── Final CTA — dark green ─────────────────────────────────────────── */}
       <section className="py-24 relative overflow-hidden" style={{ background: "#1B5E20" }}>
