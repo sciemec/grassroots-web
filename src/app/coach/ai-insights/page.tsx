@@ -10,6 +10,7 @@ import { coachAiAssistantPrompt } from "@/config/prompts";
 import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
+import { classifyQuestion, system2Protocols, type ThinkingSystem } from "@/lib/ai-routing";
 
 interface Message {
   id: string;
@@ -106,6 +107,7 @@ export default function CoachAIInsightsPage() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [thinkingSystem, setThinkingSystem] = useState<ThinkingSystem>("system1");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -140,6 +142,10 @@ export default function CoachAIInsightsPage() {
         .slice(-10)
         .map((m) => ({ role: m.role, content: m.content }));
 
+      // Classify question — Kahneman dual-process routing
+      const { system } = classifyQuestion(content);
+      setThinkingSystem(system);
+
       // Embed recent history into DeepSeek question for context
       const recentCtx = history.slice(-4).map(m =>
         `${m.role === "user" ? "Coach" : "AI"}: ${m.content.slice(0, 200)}`
@@ -154,7 +160,42 @@ export default function CoachAIInsightsPage() {
 
       let replied = false;
 
-      // Step 1 — DeepSeek via Laravel (PRIMARY — cheaper, fast)
+      // System 2 (Slow Thinking) — go straight to Claude with Kahneman protocols
+      if (system === "system2") {
+        const enhancedSystem = systemPrompt + system2Protocols();
+        try {
+          const res = await fetch("/api/ai-coach", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: content, system_prompt: enhancedSystem, history, stream: true }),
+          });
+          if (res.ok && res.body) {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = "";
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const chunk = decoder.decode(value, { stream: true });
+              for (const line of chunk.split("\n")) {
+                if (!line.startsWith("data: ")) continue;
+                const data = line.slice(6).trim();
+                if (data === "[DONE]") break;
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                    fullText += parsed.delta.text;
+                    setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fullText } : m));
+                  }
+                } catch { /* skip malformed SSE lines */ }
+              }
+            }
+            if (fullText) replied = true;
+          }
+        } catch { /* fall through to DeepSeek */ }
+      }
+
+      // System 1 (Fast Thinking) — DeepSeek via Laravel (PRIMARY for simple questions)
       try {
         const res = await api.post("/ask", {
           question: questionWithHistory,
@@ -262,7 +303,17 @@ export default function CoachAIInsightsPage() {
             </div>
             <div>
               <h1 className="text-sm font-semibold">AI Coaching Assistant</h1>
-              <p className="text-xs text-muted-foreground">Powered by Claude · Tactics, training & player development</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {thinkingSystem === "system2" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+                    🧠 Deep Analysis
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-500/20 border border-green-500/30 px-2 py-0.5 text-[10px] font-semibold text-green-300">
+                    ⚡ Fast Response
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button

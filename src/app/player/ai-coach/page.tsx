@@ -11,6 +11,7 @@ import { SportKey } from "@/config/sports";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 import { loadPlayerContext, type PlayerContext } from "@/lib/player-context";
+import { classifyQuestion, system2Protocols, type ThinkingSystem } from "@/lib/ai-routing";
 
 interface Message {
   id: string;
@@ -83,6 +84,7 @@ export default function AICoachPage() {
   const GUEST_COUNT_KEY = "gs_guest_ai_count";
   const { requireAuth } = useGuestGate();
   const [guestCount, setGuestCount] = useState(0);
+  const [thinkingSystem, setThinkingSystem] = useState<ThinkingSystem>("system1");
 
   useEffect(() => {
     if (hydrated && !user) {
@@ -222,9 +224,9 @@ export default function AICoachPage() {
   };
 
   /**
-   * callAI — streams Claude or awaits DeepSeek.
-   * Returns a string for DeepSeek/offline.
-   * Returns null when Claude streaming is handled inline (assistantId passed).
+   * callAI — routes using Kahneman dual-process model.
+   * System 1 (fast) → DeepSeek. System 2 (slow/analytical) → Claude directly.
+   * Returns a string for DeepSeek/offline. Returns null when Claude streamed into state.
    */
   const callAI = async (
     message: string,
@@ -232,7 +234,47 @@ export default function AICoachPage() {
     history: { role: string; content: string }[],
     streamingMsgId?: string,
   ): Promise<string | null> => {
-    // Step 1 — DeepSeek via Laravel (PRIMARY — cheaper, fast)
+    const { system } = classifyQuestion(message);
+    setThinkingSystem(system);
+
+    // System 2 (Slow Thinking) — go straight to Claude with Kahneman protocols
+    if (system === "system2") {
+      const enhancedSystem = systemP + system2Protocols();
+      try {
+        const res = await fetch("/api/ai-coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, system_prompt: enhancedSystem, history, stream: true }),
+        });
+        if (res.ok && res.body && streamingMsgId) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let fullText = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            for (const line of chunk.split("\n")) {
+              if (!line.startsWith("data: ")) continue;
+              const data = line.slice(6).trim();
+              if (data === "[DONE]") break;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                  fullText += parsed.delta.text;
+                  setMessages(prev => prev.map(m =>
+                    m.id === streamingMsgId ? { ...m, content: fullText } : m
+                  ));
+                }
+              } catch { /* skip malformed SSE lines */ }
+            }
+          }
+          if (fullText) return null;
+        }
+      } catch { /* fall through to System 1 as last resort */ }
+    }
+
+    // System 1 (Fast Thinking) — DeepSeek via Laravel (cheap, fast)
     try {
       const res = await api.post("/ask", {
         question: buildQuestionWithHistory(message, history),
@@ -414,7 +456,17 @@ export default function AICoachPage() {
             </div>
             <div>
               <h1 className="text-sm font-semibold">AI Coach</h1>
-              <p className="text-xs text-muted-foreground">Powered by Claude · Knows your training history</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {thinkingSystem === "system2" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+                    🧠 Deep Analysis
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-500/20 border border-green-500/30 px-2 py-0.5 text-[10px] font-semibold text-green-300">
+                    ⚡ Fast Response
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
