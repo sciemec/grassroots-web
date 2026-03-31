@@ -160,6 +160,56 @@ function computeStats(touches: Touch[]): MatchStats {
   return { touchCounts, passLinks, proximityScores, zoneEvents, dominantZone, suggestedFormation };
 }
 
+// ─── Sequence Detection ───────────────────────────────────────────────────────
+
+interface PassSequence {
+  id: string;
+  team: "home" | "away";
+  players: number[];       // player numbers in order
+  durationMs: number;      // total time for the sequence
+  startMin: number;
+  startSec: number;
+}
+
+const SEQ_WINDOW = 20_000; // 20 seconds max between touches in a sequence
+const SEQ_MIN_LEN = 3;     // minimum 3 touches to count as a sequence
+
+function detectSequences(touches: Touch[]): PassSequence[] {
+  const sequences: PassSequence[] = [];
+  let i = 0;
+
+  while (i < touches.length) {
+    const start = touches[i];
+    const seq: Touch[] = [start];
+
+    let j = i + 1;
+    while (j < touches.length) {
+      const prev = touches[j - 1];
+      const curr = touches[j];
+      if (curr.team !== start.team) break;
+      if (curr.ts - prev.ts > SEQ_WINDOW) break;
+      seq.push(curr);
+      j++;
+    }
+
+    if (seq.length >= SEQ_MIN_LEN) {
+      sequences.push({
+        id: start.id,
+        team: start.team,
+        players: seq.map(t => t.num),
+        durationMs: seq[seq.length - 1].ts - seq[0].ts,
+        startMin: start.min,
+        startSec: start.sec,
+      });
+      i = j; // skip past this sequence
+    } else {
+      i++;
+    }
+  }
+
+  return sequences;
+}
+
 function buildAiPrompt(
   stats: MatchStats,
   touches: Touch[],
@@ -235,11 +285,23 @@ ${zones || "No clear zone data yet"}
 
 Dominant zone so far: ${stats.dominantZone.replace("_", " ")}
 
-Based on this role + touch + proximity data, provide:
+Key passing sequences (3+ consecutive touches within 20s):
+${(() => {
+  const seqs = detectSequences(touches).slice(-8);
+  if (seqs.length === 0) return "None detected yet";
+  return seqs.map(s => {
+    const team = s.team === "home" ? homeTeam : awayTeam;
+    const chain = s.players.map(n => `#${n}`).join(" → ");
+    const secs = Math.round(s.durationMs / 1000);
+    return `${team}: ${chain} (${s.players.length} touches, ${secs}s) at ${s.startMin}:${s.startSec.toString().padStart(2,"0")}`;
+  }).join("\n");
+})()}
+
+Based on this role + touch + proximity + sequence data, provide:
 1. **Actual formation** for each team — compare assigned roles vs who is actually touching the ball most. Flag any role mismatches.
 2. **Key players** controlling the game and why, referencing their role.
 3. **Zone of play** — where is the game being fought?
-4. **Passing channels** — which role partnerships are most active?
+4. **Passing channels & sequences** — which combinations are creating the most dangerous moves? Reference specific sequences.
 5. ${hasHalves ? "**Half-time comparison** — what changed between the first and second half? Who improved, who faded?" : "**Tactical recommendation** for the coaching staff right now."}
 
 Be concise and direct. Use player numbers and roles (e.g. "#6 MID"). 3-5 sentences per section max.`;
@@ -368,6 +430,7 @@ export default function TouchTrackerPage() {
   };
 
   const stats = computeStats(touches);
+  const sequences = detectSequences(touches);
 
   // Momentum — touches in the last 5 minutes
   const MOMENTUM_WINDOW = 5 * 60 * 1000;
@@ -870,7 +933,7 @@ export default function TouchTrackerPage() {
                   onClick={() => setActiveTab(t)}
                   className={`flex-1 rounded-lg py-1.5 text-xs font-bold capitalize transition-colors ${activeTab === t ? "bg-accent text-black" : "text-white/50 hover:text-white"}`}
                 >
-                  {t === "ai" ? "AI Analysis" : t === "stats" ? "Stats" : "Touch Log"}
+                  {t === "ai" ? "AI Analysis" : t === "stats" ? `Stats${sequences.length > 0 ? ` · ${sequences.length}` : ""}` : "Touch Log"}
                 </button>
               ))}
             </div>
@@ -995,6 +1058,40 @@ export default function TouchTrackerPage() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* Pass sequences */}
+                {sequences.length > 0 && (
+                  <div className="rounded-xl border border-white/10 bg-card/40 p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-bold text-white">Key Sequences</p>
+                      <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[9px] font-black text-accent">{sequences.length} detected</span>
+                    </div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {[...sequences].reverse().map((seq, i) => {
+                        const isLatest = i === 0;
+                        const secs = Math.round(seq.durationMs / 1000);
+                        const chain = seq.players.map(n => n > 11 ? `S${n-11}` : `#${n}`).join(" → ");
+                        const roles = seq.team === "home" ? homeRoles : awayRoles;
+                        const roleChain = seq.players.map(n => n <= 11 ? (roles[n] ?? "") : "SUB").filter(Boolean).join("-");
+                        return (
+                          <div key={seq.id} className={`rounded-lg border p-2 ${isLatest ? "border-accent/40 bg-accent/5" : "border-white/5 bg-white/2"}`}>
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className={`text-[9px] font-black uppercase ${seq.team === "home" ? "text-blue-400" : "text-orange-400"}`}>
+                                {seq.team === "home" ? homeTeam : awayTeam}
+                                {isLatest && <span className="ml-1 text-accent">· Latest</span>}
+                              </span>
+                              <span className="text-[9px] text-white/40">
+                                {seq.startMin}:{seq.startSec.toString().padStart(2,"0")} · {secs}s · {seq.players.length} touches
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-black text-white tracking-wide">{chain}</p>
+                            {roleChain && <p className="text-[8px] text-white/30 mt-0.5">{roleChain}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
