@@ -239,6 +239,8 @@ Be concise and direct. Use player numbers and roles (e.g. "#6 MID"). 3-5 sentenc
 export default function TouchTrackerPage() {
   const [homeTeam, setHomeTeam] = useState("Home");
   const [awayTeam, setAwayTeam] = useState("Away");
+  const [homeRoles, setHomeRoles] = useState<Record<number, PlayerRole>>(FORMATION_PRESETS["4-4-2"]);
+  const [awayRoles, setAwayRoles] = useState<Record<number, PlayerRole>>(FORMATION_PRESETS["4-4-2"]);
   const [phase, setPhase] = useState<Phase>("setup");
   const [elapsed, setElapsed] = useState(0); // ms
   const [touches, setTouches] = useState<Touch[]>([]);
@@ -260,6 +262,8 @@ export default function TouchTrackerPage() {
         const d = JSON.parse(saved);
         setHomeTeam(d.homeTeam ?? "Home");
         setAwayTeam(d.awayTeam ?? "Away");
+        setHomeRoles(d.homeRoles ?? FORMATION_PRESETS["4-4-2"]);
+        setAwayRoles(d.awayRoles ?? FORMATION_PRESETS["4-4-2"]);
         setTouches(d.touches ?? []);
         setElapsed(d.elapsed ?? 0);
         if (d.phase === "live" || d.phase === "paused") setPhase("paused");
@@ -271,7 +275,7 @@ export default function TouchTrackerPage() {
   // Save to storage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ homeTeam, awayTeam, touches, elapsed, phase }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ homeTeam, awayTeam, homeRoles, awayRoles, touches, elapsed, phase }));
     } catch {}
   }, [homeTeam, awayTeam, touches, elapsed, phase]);
 
@@ -340,7 +344,7 @@ export default function TouchTrackerPage() {
     if (touches.length < 5) return;
     setAiLoading(true);
     setActiveTab("ai");
-    const prompt = buildAiPrompt(stats, touches, homeTeam, awayTeam, elapsed, {}, {});
+    const prompt = buildAiPrompt(stats, touches, homeTeam, awayTeam, elapsed, homeRoles, awayRoles);
     try {
       const res = await fetch("/api/ai-chat", {
         method: "POST",
@@ -411,6 +415,54 @@ export default function TouchTrackerPage() {
                 />
               </div>
             </div>
+            {/* Role assignment */}
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">
+                Player Roles — tap to cycle · GK / DEF / MID / FWD
+              </p>
+              {/* Preset formation buttons */}
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {Object.keys(FORMATION_PRESETS).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => { setHomeRoles(FORMATION_PRESETS[f]); setAwayRoles(FORMATION_PRESETS[f]); }}
+                    className="rounded-lg border border-white/20 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/60 hover:text-white hover:border-white/40 transition-colors"
+                  >
+                    {f}
+                  </button>
+                ))}
+                <span className="text-[10px] text-white/30 self-center ml-1">applies to both teams</span>
+              </div>
+              {/* Role grids */}
+              <div className="grid grid-cols-2 gap-3">
+                {(["home", "away"] as const).map((team) => {
+                  const roles = team === "home" ? homeRoles : awayRoles;
+                  const setRoles = team === "home" ? setHomeRoles : setAwayRoles;
+                  const teamName = team === "home" ? homeTeam : awayTeam;
+                  const color = team === "home" ? "text-blue-400" : "text-orange-400";
+                  return (
+                    <div key={team}>
+                      <p className={`mb-1.5 text-[10px] font-bold uppercase ${color}`}>{teamName}</p>
+                      <div className="grid grid-cols-3 gap-1">
+                        {HOME_STARTERS.map((n) => (
+                          <button
+                            key={n}
+                            onClick={() => setRoles((prev) => ({ ...prev, [n]: cycleRole(prev[n] ?? "DEF") }))}
+                            className="flex flex-col items-center rounded-lg border border-white/10 bg-black/30 py-1.5 hover:border-white/20 transition-colors"
+                          >
+                            <span className="text-[11px] font-black text-white">#{n}</span>
+                            <span className={`mt-0.5 rounded px-1 text-[8px] font-black ${ROLE_COLORS[roles[n] ?? "DEF"]}`}>
+                              {roles[n] ?? "DEF"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <button
               onClick={kickOff}
               className="w-full rounded-xl bg-[#1A6B3C] py-3 text-sm font-bold text-white hover:bg-[#1A6B3C]/80 flex items-center justify-center gap-2"
@@ -464,16 +516,20 @@ export default function TouchTrackerPage() {
               <div className="grid grid-cols-3 gap-1.5 mb-2">
                 {HOME_STARTERS.map((n) => {
                   const count = stats.touchCounts[`home_${n}`] ?? 0;
+                  const role = homeRoles[n] ?? "DEF";
                   return (
                     <button
                       key={n}
                       onPointerDown={() => logTouch("home", n)}
                       disabled={phase !== "live"}
-                      className={`relative rounded-lg py-2.5 text-sm font-black transition-transform active:scale-95 select-none
+                      className={`relative flex flex-col items-center rounded-lg py-1.5 transition-transform active:scale-95 select-none
                         ${phase === "live" ? "bg-blue-600 text-white hover:bg-blue-500 cursor-pointer" : "bg-blue-600/40 text-white/40 cursor-default"}
                       `}
                     >
-                      {n}
+                      <span className="text-sm font-black">{n}</span>
+                      <span className={`rounded px-1 text-[7px] font-black leading-tight ${phase === "live" ? ROLE_COLORS[role] : "bg-white/10 text-white/30"}`}>
+                        {role}
+                      </span>
                       {count > 0 && (
                         <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[8px] font-black text-black">
                           {count > 99 ? "99" : count}
@@ -522,16 +578,20 @@ export default function TouchTrackerPage() {
               <div className="grid grid-cols-3 gap-1.5 mb-2">
                 {AWAY_STARTERS.map((n) => {
                   const count = stats.touchCounts[`away_${n}`] ?? 0;
+                  const role = awayRoles[n] ?? "DEF";
                   return (
                     <button
                       key={n}
                       onPointerDown={() => logTouch("away", n)}
                       disabled={phase !== "live"}
-                      className={`relative rounded-lg py-2.5 text-sm font-black transition-transform active:scale-95 select-none
+                      className={`relative flex flex-col items-center rounded-lg py-1.5 transition-transform active:scale-95 select-none
                         ${phase === "live" ? "bg-orange-600 text-white hover:bg-orange-500 cursor-pointer" : "bg-orange-600/40 text-white/40 cursor-default"}
                       `}
                     >
-                      {n}
+                      <span className="text-sm font-black">{n}</span>
+                      <span className={`rounded px-1 text-[7px] font-black leading-tight ${phase === "live" ? ROLE_COLORS[role] : "bg-white/10 text-white/30"}`}>
+                        {role}
+                      </span>
                       {count > 0 && (
                         <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[8px] font-black text-black">
                           {count > 99 ? "99" : count}
@@ -610,6 +670,11 @@ export default function TouchTrackerPage() {
                     </span>
                     <span className="text-xs text-white/60">
                       {t.team === "home" ? homeTeam : awayTeam} #{t.num > 11 ? `Sub ${t.num-11}` : t.num}
+                      {t.num <= 11 && (
+                        <span className={`ml-1.5 rounded px-1 text-[8px] font-black ${ROLE_COLORS[(t.team === "home" ? homeRoles : awayRoles)[t.num] ?? "DEF"]}`}>
+                          {(t.team === "home" ? homeRoles : awayRoles)[t.num] ?? "DEF"}
+                        </span>
+                      )}
                     </span>
                   </div>
                 ))}
@@ -651,7 +716,14 @@ export default function TouchTrackerPage() {
                           return (
                             <div key={k} className="mb-1.5">
                               <div className="flex justify-between text-[10px] text-white/70 mb-0.5">
-                                <span>#{num > "11" ? `S${parseInt(num)-11}` : num}</span>
+                                <span className="flex items-center gap-1">
+                                  #{parseInt(num) > 11 ? `S${parseInt(num)-11}` : num}
+                                  {parseInt(num) <= 11 && (
+                                    <span className={`rounded px-1 text-[7px] font-black ${ROLE_COLORS[(team === "home" ? homeRoles : awayRoles)[parseInt(num)] ?? "DEF"]}`}>
+                                      {(team === "home" ? homeRoles : awayRoles)[parseInt(num)] ?? "DEF"}
+                                    </span>
+                                  )}
+                                </span>
                                 <span>{v} ({pct}%)</span>
                               </div>
                               <div className="h-1 rounded-full bg-white/10">
