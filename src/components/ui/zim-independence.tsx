@@ -14,7 +14,9 @@ export const ZimPresidentBanner = () => {
 
   useEffect(() => {
     const now = new Date();
-    if (now >= new Date("2026-04-01") && now < new Date("2026-05-01")) {
+    // PREVIEW MODE: always show (remove this line and uncomment date check for production)
+    const inWindow = true; // now >= new Date("2026-04-01") && now < new Date("2026-05-01");
+    if (inWindow) {
       const wasDismissed = sessionStorage.getItem("zim_banner_dismissed");
       if (!wasDismissed) {
         setShouldRender(true);
@@ -458,6 +460,326 @@ export const ZimIndependenceSection = () => {
           <span style={{background:"#DC143C"}}/><span style={{background:"#111"}}/>
           <span style={{background:"#111"}}/>
           <span style={{background:"#DC143C"}}/><span style={{background:"#FFD700"}}/>
+          <span style={{background:"#006400"}}/>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT 3: Sidebar Independence Panel
+// President photo + speech + coat of arms + animated flame
+// Shows in every hub sidebar April 1–30 2026
+// ─────────────────────────────────────────────────────────────────────────────
+export const ZimSidebarPanel = () => {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    // PREVIEW MODE: always show
+    const inWindow = true; // new Date() >= new Date("2026-04-01") && new Date() < new Date("2026-05-01");
+    if (inWindow) setShow(true);
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <>
+      <style>{`
+        /* ── Flame animation ── */
+        @keyframes flicker1 {
+          0%,100% { transform: scaleX(1) scaleY(1) translateY(0); opacity: 1; }
+          25%      { transform: scaleX(0.92) scaleY(1.08) translateY(-2px); opacity: 0.95; }
+          50%      { transform: scaleX(1.06) scaleY(0.96) translateY(1px); opacity: 1; }
+          75%      { transform: scaleX(0.96) scaleY(1.04) translateY(-1px); opacity: 0.97; }
+        }
+        @keyframes flicker2 {
+          0%,100% { transform: scaleX(1) scaleY(1); opacity: 0.85; }
+          33%      { transform: scaleX(0.88) scaleY(1.12) translateY(-3px); opacity: 0.7; }
+          66%      { transform: scaleX(1.08) scaleY(0.94); opacity: 0.9; }
+        }
+        @keyframes flicker3 {
+          0%,100% { transform: scaleY(1) translateY(0); opacity: 0.6; }
+          40%      { transform: scaleY(1.18) translateY(-4px); opacity: 0.5; }
+          70%      { transform: scaleY(0.9) translateY(2px); opacity: 0.65; }
+        }
+        @keyframes torchGlow {
+          0%,100% { box-shadow: 0 0 12px 4px rgba(255,140,0,0.5); }
+          50%      { box-shadow: 0 0 22px 8px rgba(255,80,0,0.7); }
+        }
+        @keyframes shimmerGold {
+          0%   { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+
+        .zsp-wrap {
+          margin: 8px 4px 0;
+          border-radius: 12px;
+          border: 1px solid rgba(255,215,0,0.25);
+          background: linear-gradient(180deg, #071a0b 0%, #0c2410 60%, #071a0b 100%);
+          overflow: hidden;
+          position: relative;
+        }
+
+        /* flag stripe top */
+        .zsp-flag { display: flex; height: 3px; width: 100%; }
+        .zsp-flag span { flex:1; display:block; }
+
+        /* torch container */
+        .zsp-torch-wrap {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 10px 0 4px;
+          gap: 0;
+        }
+        .zsp-flame-stack {
+          position: relative;
+          width: 28px;
+          height: 38px;
+        }
+        .zsp-flame {
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          border-radius: 50% 50% 20% 20%;
+          transform-origin: bottom center;
+        }
+        .zsp-f1 {
+          width: 28px; height: 36px;
+          background: radial-gradient(ellipse at 50% 80%, #ff4500, #ff8c00 40%, #ffd700 80%, transparent);
+          animation: flicker1 1.4s ease-in-out infinite;
+          animation-delay: 0s;
+        }
+        .zsp-f2 {
+          width: 20px; height: 28px;
+          background: radial-gradient(ellipse at 50% 75%, #ff2200, #ff6600 50%, #ffb300 85%, transparent);
+          animation: flicker2 1.1s ease-in-out infinite;
+          animation-delay: 0.2s;
+        }
+        .zsp-f3 {
+          width: 12px; height: 18px;
+          background: radial-gradient(ellipse at 50% 70%, #fff, #fffde0 40%, #ffe066 75%, transparent);
+          animation: flicker3 0.9s ease-in-out infinite;
+          animation-delay: 0.1s;
+        }
+        .zsp-handle {
+          width: 10px; height: 18px;
+          background: linear-gradient(180deg, #8B4513, #5c2d0a);
+          border-radius: 2px 2px 4px 4px;
+          margin-top: -1px;
+          animation: torchGlow 1.6s ease-in-out infinite;
+        }
+
+        /* president section */
+        .zsp-president {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 8px 10px 4px;
+          gap: 6px;
+        }
+        .zsp-photo-ring {
+          width: 72px; height: 72px;
+          border-radius: 50%;
+          padding: 2px;
+          background: linear-gradient(135deg, #FFD700, #ff8c00, #FFD700);
+          animation: torchGlow 2s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        .zsp-photo {
+          width: 100%; height: 100%;
+          border-radius: 50%;
+          object-fit: cover;
+          object-position: top center;
+          border: 2px solid #071a0b;
+        }
+        .zsp-name {
+          text-align: center;
+          color: #FFD700;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+          line-height: 1.3;
+          text-transform: uppercase;
+        }
+        .zsp-title {
+          text-align: center;
+          color: rgba(255,215,0,0.55);
+          font-size: 8px;
+          font-weight: 500;
+          letter-spacing: 0.3px;
+        }
+
+        /* speech */
+        .zsp-speech {
+          margin: 4px 10px 8px;
+          padding: 8px 10px;
+          border-left: 2px solid #FFD700;
+          background: rgba(255,215,0,0.04);
+          border-radius: 0 6px 6px 0;
+        }
+        .zsp-speech p {
+          color: rgba(255,255,255,0.78);
+          font-size: 9px;
+          line-height: 1.55;
+          font-style: italic;
+        }
+        .zsp-speech-attr {
+          margin-top: 4px;
+          color: rgba(255,215,0,0.5);
+          font-size: 8px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+
+        /* coat of arms */
+        .zsp-coa-row {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          padding: 6px 10px 4px;
+        }
+        .zsp-coa-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 3px;
+          flex: 1;
+        }
+        .zsp-coa-img {
+          width: 44px; height: 44px;
+          object-fit: contain;
+          filter: drop-shadow(0 0 4px rgba(255,215,0,0.3));
+        }
+        .zsp-coa-label {
+          color: rgba(255,215,0,0.45);
+          font-size: 7px;
+          font-weight: 700;
+          text-transform: uppercase;
+          text-align: center;
+          letter-spacing: 0.3px;
+        }
+
+        /* birthday message */
+        .zsp-bday {
+          margin: 4px 10px 10px;
+          padding: 7px 10px;
+          border-radius: 8px;
+          background: linear-gradient(90deg, rgba(0,100,0,0.3), rgba(220,20,60,0.15), rgba(0,100,0,0.3));
+          border: 1px solid rgba(255,215,0,0.2);
+          text-align: center;
+        }
+        .zsp-bday-num {
+          font-size: 22px;
+          font-weight: 900;
+          background: linear-gradient(90deg, #FFD700, #ff8c00, #FFD700);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmerGold 2.5s linear infinite;
+          line-height: 1;
+        }
+        .zsp-bday-text {
+          color: rgba(255,255,255,0.8);
+          font-size: 9px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          margin-top: 2px;
+        }
+        .zsp-bday-date {
+          color: rgba(255,215,0,0.5);
+          font-size: 8px;
+          margin-top: 2px;
+        }
+
+        /* bottom flag */
+        .zsp-flag-bottom { display: flex; height: 3px; width: 100%; }
+        .zsp-flag-bottom span { flex:1; display:block; }
+      `}</style>
+
+      <div className="zsp-wrap">
+        {/* Top flag stripe */}
+        <div className="zsp-flag">
+          <span style={{background:"#006400"}}/>
+          <span style={{background:"#FFD700"}}/>
+          <span style={{background:"#DC143C"}}/>
+          <span style={{background:"#111"}}/>
+          <span style={{background:"#DC143C"}}/>
+          <span style={{background:"#FFD700"}}/>
+          <span style={{background:"#006400"}}/>
+        </div>
+
+        {/* Animated torch */}
+        <div className="zsp-torch-wrap">
+          <div className="zsp-flame-stack">
+            <div className="zsp-flame zsp-f1" />
+            <div className="zsp-flame zsp-f2" />
+            <div className="zsp-flame zsp-f3" />
+          </div>
+          <div className="zsp-handle" />
+        </div>
+
+        {/* President */}
+        <div className="zsp-president">
+          <div className="zsp-photo-ring">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/president-ed.jpg"
+              alt="H.E. President E.D. Mnangagwa"
+              className="zsp-photo"
+            />
+          </div>
+          <div>
+            <p className="zsp-name">H.E. Emmerson D. Mnangagwa</p>
+            <p className="zsp-title">President of the Republic of Zimbabwe</p>
+          </div>
+        </div>
+
+        {/* Presidential speech */}
+        <div className="zsp-speech">
+          <p>
+            &ldquo;The name Munhumutapa evokes heritage, continuity, and authority,
+            reminding us that progress is strongest when it is anchored in history,
+            culture, and shared values. This Cup carries that symbolism forward,
+            serving as both a tribute to our past and an investment in our future.&rdquo;
+          </p>
+          <p className="zsp-speech-attr">— Munhumutapa Cup Address</p>
+        </div>
+
+        {/* Coat of arms */}
+        <div className="zsp-coa-row">
+          <div className="zsp-coa-item">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/zim-coa.jpg" alt="Zimbabwe Coat of Arms" className="zsp-coa-img" />
+            <span className="zsp-coa-label">Republic of Zimbabwe</span>
+          </div>
+          <div className="zsp-coa-item">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/munhumutapa-coa.jpg" alt="Munhumutapa" className="zsp-coa-img" />
+            <span className="zsp-coa-label">Munhumutapa Cup</span>
+          </div>
+        </div>
+
+        {/* Birthday message */}
+        <div className="zsp-bday">
+          <div className="zsp-bday-num">46</div>
+          <div className="zsp-bday-text">🇿🇼 Years of Independence</div>
+          <div className="zsp-bday-date">18 April 2026 · Pamberi neZimbabwe</div>
+        </div>
+
+        {/* Bottom flag stripe */}
+        <div className="zsp-flag-bottom">
+          <span style={{background:"#006400"}}/>
+          <span style={{background:"#FFD700"}}/>
+          <span style={{background:"#DC143C"}}/>
+          <span style={{background:"#111"}}/>
+          <span style={{background:"#DC143C"}}/>
+          <span style={{background:"#FFD700"}}/>
           <span style={{background:"#006400"}}/>
         </div>
       </div>
