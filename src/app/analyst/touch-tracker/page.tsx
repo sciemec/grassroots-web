@@ -47,6 +47,22 @@ const AWAY_STARTERS = [1,2,3,4,5,6,7,8,9,10,11];
 const SUBS = [1,2,3,4,5];
 
 const STORAGE_KEY = "gs_touch_tracker";
+const HISTORY_KEY = "gs_touch_tracker_history";
+
+interface MatchRecord {
+  id: string;
+  date: string;
+  homeTeam: string;
+  awayTeam: string;
+  duration: string;
+  homeTouches: number;
+  awayTouches: number;
+  dominantZone: string;
+  topHome: string;
+  topAway: string;
+  aiAnalysis: string;
+  sequences: number;
+}
 
 const ROLE_COLORS: Record<PlayerRole, string> = {
   GK:  "bg-amber-400 text-black",
@@ -56,6 +72,29 @@ const ROLE_COLORS: Record<PlayerRole, string> = {
 };
 
 const ROLE_CYCLE: PlayerRole[] = ["GK", "DEF", "MID", "FWD"];
+
+// ─── xG Zones ─────────────────────────────────────────────────────────────────
+interface ShotEvent {
+  id: string;
+  team: "home" | "away";
+  playerNum: number;
+  zone: string;
+  xg: number;
+  isGoal: boolean;
+  min: number;
+}
+
+const XG_ZONES = [
+  { id: "six_yard",        label: "Six-Yard Box",         xg: 0.76 },
+  { id: "penalty_spot",    label: "Penalty Spot",          xg: 0.45 },
+  { id: "central_box",     label: "Central Box",           xg: 0.35 },
+  { id: "wide_box_left",   label: "Wide Box Left",         xg: 0.12 },
+  { id: "wide_box_right",  label: "Wide Box Right",        xg: 0.12 },
+  { id: "edge_centre",     label: "Edge of Box (Centre)",  xg: 0.18 },
+  { id: "edge_wide_left",  label: "Edge of Box (Left)",    xg: 0.07 },
+  { id: "edge_wide_right", label: "Edge of Box (Right)",   xg: 0.07 },
+  { id: "long_range",      label: "Long Range",            xg: 0.04 },
+];
 
 const FORMATION_PRESETS: Record<string, Record<number, PlayerRole>> = {
   "4-4-2": { 1:"GK", 2:"DEF", 3:"DEF", 4:"DEF", 5:"DEF", 6:"MID", 7:"MID", 8:"MID", 9:"MID", 10:"FWD", 11:"FWD" },
@@ -323,7 +362,11 @@ export default function TouchTrackerPage() {
   const [lastAway, setLastAway] = useState<Touch | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"log" | "stats" | "ai">("log");
+  const [aiQueued, setAiQueued] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [activeTab, setActiveTab] = useState<"log" | "stats" | "ai" | "history">("log");
+  const [history, setHistory] = useState<MatchRecord[]>([]);
+  const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -355,6 +398,21 @@ export default function TouchTrackerPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ homeTeam, awayTeam, homeRoles, awayRoles, touches, elapsed, phase, currentHalf, halfBreakAt }));
     } catch {}
   }, [homeTeam, awayTeam, touches, elapsed, phase]);
+
+  // Load history
+  useEffect(() => {
+    try {
+      const h = localStorage.getItem(HISTORY_KEY);
+      if (h) setHistory(JSON.parse(h));
+    } catch {}
+    setIsOnline(navigator.onLine);
+    const goOnline = () => { setIsOnline(true); if (aiQueued) runAiAnalysis(); };
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => { window.removeEventListener("online", goOnline); window.removeEventListener("offline", goOffline); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Timer
   const startTimer = useCallback(() => {
@@ -403,6 +461,14 @@ export default function TouchTrackerPage() {
   const endMatch = () => {
     stopTimer();
     setPhase("ended");
+    saveToHistory(aiAnalysis);
+  };
+
+  const openInMatchMap = () => {
+    try {
+      localStorage.setItem("gs_matchmap_prefill", JSON.stringify({ homeTeam, awayTeam }));
+    } catch {}
+    window.open("/analyst/match-map", "_blank");
   };
 
   const resetAll = () => {
@@ -444,6 +510,13 @@ export default function TouchTrackerPage() {
 
   const runAiAnalysis = async () => {
     if (touches.length < 5) return;
+    if (!navigator.onLine) {
+      setAiQueued(true);
+      setAiAnalysis("📶 No connection — analysis queued. It will run automatically when you reconnect.");
+      setActiveTab("ai");
+      return;
+    }
+    setAiQueued(false);
     setAiLoading(true);
     setActiveTab("ai");
     const prompt = buildAiPrompt(stats, touches, homeTeam, awayTeam, elapsed, homeRoles, awayRoles);
@@ -456,12 +529,43 @@ export default function TouchTrackerPage() {
       });
       const data = await res.json();
       setAiAnalysis(data.reply ?? data.error ?? "No analysis received.");
-    } catch (e) {
+    } catch {
       setAiAnalysis("AI analysis unavailable. Check your connection.");
     } finally {
       setAiLoading(false);
     }
   };
+
+  const saveToHistory = useCallback((analysis: string) => {
+    if (touches.length < 5) return;
+    const counts: Record<string, Record<number, number>> = { home: {}, away: {} };
+    touches.forEach(t => { counts[t.team][t.num] = (counts[t.team][t.num] ?? 0) + 1; });
+    const topPlayer = (team: "home" | "away") => {
+      const roles = team === "home" ? homeRoles : awayRoles;
+      const top = Object.entries(counts[team]).sort((a,b)=>b[1]-a[1])[0];
+      if (!top) return "-";
+      const num = parseInt(top[0]);
+      return `#${num} ${roles[num] ?? ""} (${top[1]})`;
+    };
+    const record: MatchRecord = {
+      id: Date.now().toString(),
+      date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+      homeTeam, awayTeam,
+      duration: fmtTime(elapsed),
+      homeTouches: touches.filter(t => t.team === "home").length,
+      awayTouches: touches.filter(t => t.team === "away").length,
+      dominantZone: stats.dominantZone.replace(/_/g, " "),
+      topHome: topPlayer("home"),
+      topAway: topPlayer("away"),
+      aiAnalysis: analysis,
+      sequences: sequences.length,
+    };
+    setHistory(prev => {
+      const updated = [record, ...prev].slice(0, 20); // keep last 20
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  }, [touches, homeTeam, awayTeam, elapsed, stats, homeRoles, awayRoles, sequences]);
 
   // Format elapsed time
   const fmtTime = (ms: number) => {
@@ -924,16 +1028,26 @@ export default function TouchTrackerPage() {
         )}
 
         {/* Tabs */}
+        {/* Offline badge */}
+        {!isOnline && (
+          <div className="mb-3 flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
+            <p className="text-[10px] font-bold text-amber-400">
+              No connection — touches are saved. AI will run when you reconnect.
+            </p>
+          </div>
+        )}
+
         {touches.length > 0 && (
           <>
             <div className="mb-3 flex gap-1 rounded-xl border border-white/10 bg-card/40 p-1">
-              {(["log", "stats", "ai"] as const).map((t) => (
+              {(["log", "stats", "ai", "history"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setActiveTab(t)}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-bold capitalize transition-colors ${activeTab === t ? "bg-accent text-black" : "text-white/50 hover:text-white"}`}
+                  className={`flex-1 rounded-lg py-1.5 text-[10px] font-bold transition-colors ${activeTab === t ? "bg-accent text-black" : "text-white/50 hover:text-white"}`}
                 >
-                  {t === "ai" ? "AI Analysis" : t === "stats" ? `Stats${sequences.length > 0 ? ` · ${sequences.length}` : ""}` : "Touch Log"}
+                  {t === "ai" ? "AI" : t === "stats" ? `Stats${sequences.length > 0 ? ` · ${sequences.length}` : ""}` : t === "history" ? `History${history.length > 0 ? ` · ${history.length}` : ""}` : "Log"}
                 </button>
               ))}
             </div>
@@ -1117,6 +1231,66 @@ export default function TouchTrackerPage() {
                 )}
               </div>
             )}
+
+            {/* History tab */}
+            {activeTab === "history" && (
+              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                {history.length === 0 && (
+                  <p className="py-6 text-center text-xs text-white/30">No match history yet — complete a match to save it here.</p>
+                )}
+                {history.map((rec) => (
+                  <div key={rec.id} className="rounded-xl border border-white/10 bg-card/40 overflow-hidden">
+                    <button
+                      onClick={() => setExpandedHistory(expandedHistory === rec.id ? null : rec.id)}
+                      className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-white/5"
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-white">{rec.homeTeam} vs {rec.awayTeam}</p>
+                        <p className="text-[9px] text-white/40">{rec.date} · {rec.duration} · {rec.homeTouches + rec.awayTouches} touches</p>
+                      </div>
+                      <ChevronRight className={`h-3.5 w-3.5 text-white/30 transition-transform ${expandedHistory === rec.id ? "rotate-90" : ""}`} />
+                    </button>
+                    {expandedHistory === rec.id && (
+                      <div className="border-t border-white/10 px-3 py-3 space-y-2">
+                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                          <div className="rounded-lg bg-blue-500/10 p-2">
+                            <p className="font-bold text-blue-400">{rec.homeTeam}</p>
+                            <p className="text-white/70">{rec.homeTouches} touches</p>
+                            <p className="text-white/50">Top: {rec.topHome}</p>
+                          </div>
+                          <div className="rounded-lg bg-orange-500/10 p-2">
+                            <p className="font-bold text-orange-400">{rec.awayTeam}</p>
+                            <p className="text-white/70">{rec.awayTouches} touches</p>
+                            <p className="text-white/50">Top: {rec.topAway}</p>
+                          </div>
+                        </div>
+                        <p className="text-[9px] text-white/40">Zone: {rec.dominantZone} · {rec.sequences} sequences</p>
+                        {rec.aiAnalysis && rec.aiAnalysis.length > 10 && (
+                          <p className="text-[10px] text-white/60 leading-relaxed line-clamp-4">{rec.aiAnalysis}</p>
+                        )}
+                        <button
+                          onClick={() => {
+                            const text = `🟢 MATCH REPORT\n${rec.homeTeam} vs ${rec.awayTeam}\n📅 ${rec.date} | ⏱ ${rec.duration}\n\n🔵 ${rec.homeTeam}: ${rec.homeTouches} touches\n  Top: ${rec.topHome}\n🟠 ${rec.awayTeam}: ${rec.awayTouches} touches\n  Top: ${rec.topAway}\n\n📍 Zone: ${rec.dominantZone}\n\n${rec.aiAnalysis ? `🤖 AI ANALYSIS\n${rec.aiAnalysis.slice(0,400)}` : ""}\n\nPowered by Grassroots Sport 🇿🇼`;
+                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                          }}
+                          className="w-full rounded-lg border border-green-500/30 bg-green-500/10 py-1.5 text-[10px] font-bold text-green-400"
+                        >
+                          Share on WhatsApp
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {history.length > 0 && (
+                  <button
+                    onClick={() => { if (confirm("Clear all match history?")) { setHistory([]); localStorage.removeItem(HISTORY_KEY); }}}
+                    className="w-full rounded-xl border border-red-500/20 py-2 text-[10px] font-bold text-red-400/60 hover:text-red-400"
+                  >
+                    Clear history
+                  </button>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -1128,7 +1302,6 @@ export default function TouchTrackerPage() {
               {[
                 { label: "Pass Map Network", href: "/analyst/pass-map", icon: Users },
                 { label: "Player Heatmaps", href: "/analyst/heatmaps", icon: BarChart2 },
-                { label: "Match Map", href: "/analyst/match-map", icon: Activity },
                 { label: "AI Tactical Report", href: "/analyst/tactical-report", icon: Zap },
               ].map((l) => (
                 <Link key={l.href} href={l.href} className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/40 px-3 py-2.5 text-xs font-semibold text-white/70 hover:text-white hover:border-white/20 transition-colors">
@@ -1137,6 +1310,14 @@ export default function TouchTrackerPage() {
                   <ChevronRight className="ml-auto h-3 w-3" />
                 </Link>
               ))}
+              <button
+                onClick={openInMatchMap}
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/40 px-3 py-2.5 text-xs font-semibold text-white/70 hover:text-white hover:border-white/20 transition-colors"
+              >
+                <Activity className="h-3.5 w-3.5 text-accent shrink-0" />
+                Match Map
+                <ChevronRight className="ml-auto h-3 w-3" />
+              </button>
             </div>
           </div>
         )}
