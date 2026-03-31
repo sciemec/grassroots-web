@@ -1,0 +1,88 @@
+name: GrassRoots Super Test — grassroots-web (Next.js)
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+
+  # ── JOB 1: Syntax & Type Check ───────────────────────────────────────────────
+  syntax-check:
+    name: TypeScript Syntax & Lint Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check (catches syntax & type errors)
+        run: npx tsc --noEmit
+        # Fails immediately if any .ts or .tsx file has a type or syntax error
+
+      - name: ESLint check (catches code quality issues)
+        run: npm run lint
+        # Fails if any linting rule is broken
+
+  # ── JOB 2: Build Check ───────────────────────────────────────────────────────
+  build-check:
+    name: Production Build Check
+    runs-on: ubuntu-latest
+    needs: syntax-check   # Only runs if syntax check passes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://bhora-ai.onrender.com/api/v1
+        # Fails if any page or component has an error that would break the live site
+
+  # ── JOB 3: Registration Unit Tests ───────────────────────────────────────────
+  run-tests:
+    name: Run Registration Tests
+    runs-on: ubuntu-latest
+    needs: build-check    # Only runs if build passes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run registration tests
+        run: npx playwright test tests/registration.spec.ts --reporter=list
+        env:
+          NEXT_PUBLIC_API_URL: https://bhora-ai.onrender.com/api/v1
+        # Any single test failure causes this job to fail
