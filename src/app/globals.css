@@ -26,12 +26,28 @@
   --teal-accent:  #3A7D6B;
   --warm-bg:      #EDE0C4;
   --card-bg:      rgba(255, 248, 230, 0.82);
+
+  /* ── Diamond / herringbone pattern — Zimbabwe gold on green ─────────────
+     Two diagonal gradients crossing at -45° and +45° create interlocking
+     diamond shapes. Applied to EVERY green surface in the app.
+  ──────────────────────────────────────────────────────────────────────── */
+  --diamond:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0px, transparent 8px,
+      rgba(180, 160, 0, 0.12) 8px, rgba(180, 160, 0, 0.12) 10px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0px, transparent 8px,
+      rgba(180, 160, 0, 0.12) 8px, rgba(180, 160, 0, 0.12) 10px
+    );
 }
 
 @layer base {
   :root {
     /* ── Background colours ───────────────────────────────────── */
-    --background:          #0c1f10;
+    --background:          #1a5c2a;
     --foreground:          #ffffff;
 
     /* Cards: vivid forest green panels */
@@ -89,7 +105,7 @@
 
   .dark {
     /* Mirror :root — single Zimbabwe theme, no light/dark switch */
-    --background:          #0c1f10;
+    --background:          #1a5c2a;
     --foreground:          #ffffff;
     --card:                #1a3d26;
     --card-foreground:     #ffffff;
@@ -134,35 +150,40 @@
 
   html {
     font-family: var(--font-sans), sans-serif;
-    /* Flutter app match: off-white base + subtle gold chevron */
-    background-color: #F5F7F5;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,6 12,0 24,6' fill='none' stroke='%23E6A817' stroke-width='1.2' opacity='0.35'/%3E%3C/svg%3E");
-    background-size: 24px 12px;
+    background-color: #1a5c2a;
+    background-image: var(--diamond);
+    background-attachment: fixed;
   }
 
   body {
-    color: #0D2B1A;
+    color: var(--foreground);
     background: transparent;
   }
 }
 
-/* ── Cards: ensure solid readable backgrounds, not washed-out transparent ── */
-.bg-card\/60 { background-color: #1a3d26 !important; }
-.bg-card\/70 { background-color: #1e4229 !important; }
-.bg-card\/80 { background-color: #1e4229 !important; }
+/* ── Cards: solid green + diamond pattern ────────────────────────────────── */
+.bg-card\/60 { background-color: #1a3d26 !important; background-image: var(--diamond) !important; }
+.bg-card\/70 { background-color: #1e4229 !important; background-image: var(--diamond) !important; }
+.bg-card\/80 { background-color: #1e4229 !important; background-image: var(--diamond) !important; }
 
-/* ── Stat/info cards on the cream background ─────────────────────────────── */
 .rounded-xl.border.bg-card,
 .rounded-2xl.border.bg-card {
   background-color: #1a3d26;
+  background-image: var(--diamond);
   border-color: rgba(255,255,255,0.28);
 }
 
-/* ── bg-background: Flutter app match — off-white + gold chevron ─────────── */
+/* ── bg-card anywhere (sidebar, panels) ──────────────────────────────────── */
+.bg-card {
+  background-color: #1a3d26;
+  background-image: var(--diamond);
+}
+
+/* ── bg-background: Zimbabwe green + diamond pattern ─────────────────────── */
 .bg-background {
-  background-color: #F5F7F5;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,6 12,0 24,6' fill='none' stroke='%23E6A817' stroke-width='1.2' opacity='0.35'/%3E%3C/svg%3E");
-  background-size: 24px 12px;
+  background-color: #1a5c2a;
+  background-image: var(--diamond);
+  background-attachment: fixed;
 }
 
 /* ── Hub card subtitle gold text — brighter ─────────────────────────────── */
@@ -173,17 +194,14 @@
   z-index: 1;
 }
 
-/* ── Warm up pure white and light grey so African pattern colours show ──────
-   Pure white and light grey backgrounds wash out the gold/terracotta/teal.
-   Replace with warm cream tones that let the pattern breathe.
-────────────────────────────────────────────────────────────────────────────── */
-.bg-white        { background-color: #FAF8F3 !important; }
-.bg-gray-50      { background-color: #F5EDD8 !important; }
-.bg-gray-100     { background-color: #EDE0C4 !important; }
-.bg-slate-50     { background-color: #F5EDD8 !important; }
-.bg-slate-100    { background-color: #EDE0C4 !important; }
-.bg-zinc-50      { background-color: #F5EDD8 !important; }
-.bg-zinc-100     { background-color: #EDE0C4 !important; }
+/* ── Light utility overrides — keep readable on dark green ───────────────── */
+.bg-white        { background-color: #1e4229 !important; background-image: var(--diamond) !important; }
+.bg-gray-50      { background-color: #1a3d26 !important; background-image: var(--diamond) !important; }
+.bg-gray-100     { background-color: #163220 !important; background-image: var(--diamond) !important; }
+.bg-slate-50     { background-color: #1a3d26 !important; background-image: var(--diamond) !important; }
+.bg-slate-100    { background-color: #163220 !important; background-image: var(--diamond) !important; }
+.bg-zinc-50      { background-color: #1a3d26 !important; background-image: var(--diamond) !important; }
+.bg-zinc-100     { background-color: #163220 !important; background-image: var(--diamond) !important; }
 
 /* ── Grassroots Logo Watermark ───────────────────────────────────────────────
    Apply class="gs-watermark" to any page wrapper for the subtle bottom-right
