@@ -39,12 +39,33 @@ interface MatchStats {
 }
 
 type Phase = "setup" | "live" | "paused" | "ended";
+type PlayerRole = "GK" | "DEF" | "MID" | "FWD";
 
 const HOME_STARTERS = [1,2,3,4,5,6,7,8,9,10,11];
 const AWAY_STARTERS = [1,2,3,4,5,6,7,8,9,10,11];
 const SUBS = [1,2,3,4,5];
 
 const STORAGE_KEY = "gs_touch_tracker";
+
+const ROLE_COLORS: Record<PlayerRole, string> = {
+  GK:  "bg-amber-400 text-black",
+  DEF: "bg-blue-500 text-white",
+  MID: "bg-green-600 text-white",
+  FWD: "bg-red-500 text-white",
+};
+
+const ROLE_CYCLE: PlayerRole[] = ["GK", "DEF", "MID", "FWD"];
+
+const FORMATION_PRESETS: Record<string, Record<number, PlayerRole>> = {
+  "4-4-2": { 1:"GK", 2:"DEF", 3:"DEF", 4:"DEF", 5:"DEF", 6:"MID", 7:"MID", 8:"MID", 9:"MID", 10:"FWD", 11:"FWD" },
+  "4-3-3": { 1:"GK", 2:"DEF", 3:"DEF", 4:"DEF", 5:"DEF", 6:"MID", 7:"MID", 8:"MID", 9:"FWD", 10:"FWD", 11:"FWD" },
+  "3-5-2": { 1:"GK", 2:"DEF", 3:"DEF", 4:"DEF", 5:"MID", 6:"MID", 7:"MID", 8:"MID", 9:"MID", 10:"FWD", 11:"FWD" },
+  "4-2-3-1": { 1:"GK", 2:"DEF", 3:"DEF", 4:"DEF", 5:"DEF", 6:"MID", 7:"MID", 8:"MID", 9:"MID", 10:"MID", 11:"FWD" },
+};
+
+function cycleRole(r: PlayerRole): PlayerRole {
+  return ROLE_CYCLE[(ROLE_CYCLE.indexOf(r) + 1) % ROLE_CYCLE.length];
+}
 
 // ─── Analysis ─────────────────────────────────────────────────────────────────
 
@@ -143,7 +164,9 @@ function buildAiPrompt(
   touches: Touch[],
   homeTeam: string,
   awayTeam: string,
-  elapsed: number
+  elapsed: number,
+  homeRoles: Record<number, PlayerRole>,
+  awayRoles: Record<number, PlayerRole>,
 ): string {
   const min = Math.floor(elapsed / 60000);
 
@@ -151,14 +174,29 @@ function buildAiPrompt(
     .filter(([k]) => k.startsWith("home_"))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
-    .map(([k, v]) => `#${k.split("_")[1]} (${v} touches)`)
+    .map(([k, v]) => {
+      const num = parseInt(k.split("_")[1]);
+      const role = num <= 11 ? (homeRoles[num] ?? "?") : `Sub`;
+      return `#${num} ${role} (${v} touches)`;
+    })
     .join(", ");
 
   const topAway = Object.entries(stats.touchCounts)
     .filter(([k]) => k.startsWith("away_"))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
-    .map(([k, v]) => `#${k.split("_")[1]} (${v} touches)`)
+    .map(([k, v]) => {
+      const num = parseInt(k.split("_")[1]);
+      const role = num <= 11 ? (awayRoles[num] ?? "?") : `Sub`;
+      return `#${num} ${role} (${v} touches)`;
+    })
+    .join(", ");
+
+  const homeFormation = Object.entries(homeRoles)
+    .map(([n, r]) => `#${n}=${r}`)
+    .join(", ");
+  const awayFormation = Object.entries(awayRoles)
+    .map(([n, r]) => `#${n}=${r}`)
     .join(", ");
 
   const quickLinks = stats.passLinks.filter((p) => p.quick).length;
@@ -173,8 +211,11 @@ Match: ${homeTeam} vs ${awayTeam}
 Time elapsed: ${min} minutes
 Total touches logged: ${touches.length}
 
-HOME team key players by touches: ${topHome || "insufficient data"}
-AWAY team key players by touches: ${topAway || "insufficient data"}
+HOME assigned roles: ${homeFormation || "not set"}
+HOME key players by touches: ${topHome || "insufficient data"}
+
+AWAY assigned roles: ${awayFormation || "not set"}
+AWAY key players by touches: ${topAway || "insufficient data"}
 
 Passing proximity: ${pct}% of consecutive same-team touches happened within 6 seconds (suggesting close player positioning).
 
@@ -183,14 +224,14 @@ ${zones || "No clear zone data yet"}
 
 Dominant zone so far: ${stats.dominantZone.replace("_", " ")}
 
-Based on this touch and proximity data, provide:
-1. **Suggested formation** for each team (e.g., 4-3-3, 4-4-2, 3-5-2)
-2. **Key players** who are controlling the game and why
+Based on this role + touch + proximity data, provide:
+1. **Actual formation** for each team — compare assigned roles vs who is actually touching the ball most. Flag any role mismatches (e.g. a DEF dominating touches in forward areas).
+2. **Key players** controlling the game and why, referencing their role.
 3. **Zone of play** — where is the game being fought?
-4. **Passing channels** — which partnerships are most active?
-5. **Tactical recommendation** for the coaching staff right now
+4. **Passing channels** — which role partnerships are most active?
+5. **Tactical recommendation** for the coaching staff right now.
 
-Be concise and direct. Use numbered players only (no names). 3-5 sentences per section max.`;
+Be concise and direct. Use player numbers and roles (e.g. "#6 MID"). 3-5 sentences per section max.`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -299,7 +340,7 @@ export default function TouchTrackerPage() {
     if (touches.length < 5) return;
     setAiLoading(true);
     setActiveTab("ai");
-    const prompt = buildAiPrompt(stats, touches, homeTeam, awayTeam, elapsed);
+    const prompt = buildAiPrompt(stats, touches, homeTeam, awayTeam, elapsed, {}, {});
     try {
       const res = await fetch("/api/ai-chat", {
         method: "POST",
