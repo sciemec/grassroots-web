@@ -1,4 +1,4 @@
-name: Registration Quality Gate — grassroots-web (Next.js)
+name: Full Quality Gate — grassroots-web (Next.js)
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run Registration Tests
-        run: npx playwright test tests/registration.spec.ts
+      - name: Run ALL Tests (registration + auth + public pages)
+        run: npx playwright test tests/
         env:
           NEXT_PUBLIC_API_URL: https://bhora-ai.onrender.com/api/v1
