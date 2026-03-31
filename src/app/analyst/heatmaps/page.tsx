@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Download } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
+import jsPDF from "jspdf";
 
 const COLS = 6;
 const ROWS = 10;
@@ -58,6 +59,129 @@ export default function HeatmapsPage() {
 
   const totalClicks = currentMap.reduce((s, v) => s + v, 0);
 
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.width;
+    const pageH = doc.internal.pageSize.height;
+    const margin = 14;
+
+    // ── Header ────────────────────────────────────────────────────────────
+    doc.setFillColor(0, 100, 0);
+    doc.rect(0, 0, pageW, 36, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Grassroots Sport — Player Heatmaps", margin, 14);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Generated: ${new Date().toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}`,
+      margin, 22
+    );
+    doc.text(`Squad size: ${players.length} players`, margin, 30);
+
+    let yOffset = 46;
+
+    // ── One section per player that has data ──────────────────────────────
+    players.forEach((playerName, playerIdx) => {
+      const map: number[] = heatmaps[playerIdx] ?? Array(TOTAL).fill(0);
+      const totalMarks = map.reduce((s, v) => s + v, 0);
+      if (totalMarks === 0) return; // skip players with no data
+
+      if (yOffset > pageH - 80) { doc.addPage(); yOffset = 20; }
+
+      const maxVal = Math.max(...map, 1);
+
+      // Player name heading
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(0, 100, 0);
+      doc.text(`${playerName}  (${totalMarks} zone marks)`, margin, yOffset);
+      yOffset += 5;
+
+      // Draw pitch grid as coloured rectangles
+      const cellW = 8;
+      const cellH = 6;
+      const pitchW = COLS * cellW;
+      const pitchX = margin;
+
+      // Pitch outline
+      doc.setDrawColor(100, 100, 100);
+      doc.setLineWidth(0.3);
+      doc.rect(pitchX, yOffset, pitchW, ROWS * cellH);
+
+      // "Attack" label
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6);
+      doc.setTextColor(100, 100, 100);
+      doc.text("ATTACK ↑", pitchX + pitchW + 2, yOffset + 4);
+      doc.text("DEFENCE ↓", pitchX + pitchW + 2, yOffset + ROWS * cellH - 2);
+
+      for (let i = 0; i < TOTAL; i++) {
+        const col = i % COLS;
+        const row = Math.floor(i / COLS);
+        const x = pitchX + col * cellW;
+        const y = yOffset + row * cellH;
+        const val = map[i] ?? 0;
+        const ratio = val / maxVal;
+
+        // Colour scale matching the UI: green → yellow → amber → orange → red
+        if (ratio >= 0.8)       { doc.setFillColor(206, 17, 38); }   // red
+        else if (ratio >= 0.6)  { doc.setFillColor(234, 88, 12); }   // orange
+        else if (ratio >= 0.4)  { doc.setFillColor(240, 180, 41); }  // amber
+        else if (ratio >= 0.2)  { doc.setFillColor(253, 224, 71); }  // yellow
+        else if (ratio > 0)     { doc.setFillColor(134, 239, 172); } // light green
+        else                    { doc.setFillColor(240, 255, 240); } // empty
+
+        doc.rect(x, y, cellW, cellH, "F");
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.1);
+        doc.rect(x, y, cellW, cellH, "S");
+
+        // Show count if > 0
+        if (val > 0) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5);
+          doc.setTextColor(0, 0, 0);
+          doc.text(String(val), x + cellW / 2 - 0.8, y + cellH / 2 + 1.5);
+        }
+      }
+
+      yOffset += ROWS * cellH + 10;
+    });
+
+    // ── Legend ────────────────────────────────────────────────────────────
+    if (yOffset > pageH - 30) { doc.addPage(); yOffset = 20; }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Intensity:", margin, yOffset);
+    const legend = [
+      { label: "Very High", r: 206, g: 17,  b: 38  },
+      { label: "High",      r: 234, g: 88,  b: 12  },
+      { label: "Medium",    r: 240, g: 180, b: 41  },
+      { label: "Low",       r: 253, g: 224, b: 71  },
+      { label: "Rare",      r: 134, g: 239, b: 172 },
+    ];
+    let lx = margin + 22;
+    legend.forEach(({ label, r, g, b }) => {
+      doc.setFillColor(r, g, b);
+      doc.rect(lx, yOffset - 4, 5, 5, "F");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(0, 0, 0);
+      doc.text(label, lx + 6, yOffset);
+      lx += 28;
+    });
+
+    // ── Footer ────────────────────────────────────────────────────────────
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text("grassrootssports.live  |  Zimbabwe's Sports Management Platform", margin, pageH - 8);
+
+    doc.save(`heatmaps-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -111,6 +235,11 @@ export default function HeatmapsPage() {
                 <Trash2 className="h-4 w-4" /> Clear All
               </button>
             </div>
+
+            <button onClick={exportPDF}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 py-2.5 text-sm font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors">
+              <Download className="h-4 w-4" /> Export PDF Report
+            </button>
 
             {/* Legend */}
             <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
