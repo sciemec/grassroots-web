@@ -416,20 +416,65 @@ export default function MatchMapPage() {
                 </div>
               )}
 
-              {/* Contextual hint */}
-              <span className="ml-auto text-xs text-muted-foreground">
-                {mode === "shot" && "Tap coloured zone →"}
-                {mode === "pass" && !passStart && "Tap pass origin →"}
-                {mode === "pass" && passStart && (
-                  <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
-                    Tap destination
-                    <button onClick={() => setPassStart(null)}>
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
-                )}
-              </span>
+              {mode === "shot" && (
+                <span className="ml-auto text-xs text-muted-foreground">Tap coloured zone →</span>
+              )}
             </div>
+
+            {/* Pass step guide — shown only in pass mode */}
+            {mode === "pass" && (
+              <div className={`rounded-xl border-2 p-3 transition-all ${
+                passStart
+                  ? "border-amber-400 bg-amber-400/10"
+                  : "border-blue-500/40 bg-blue-500/10"
+              }`}>
+                <div className="flex items-center gap-3">
+                  {/* Step 1 */}
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                    passStart ? "bg-green-500 text-white" : "bg-blue-500 text-white"
+                  }`}>
+                    {passStart ? "✓" : "1"}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-xs font-bold ${passStart ? "text-green-400 line-through opacity-60" : "text-white"}`}>
+                      Tap where the pass started
+                    </p>
+                    {!passStart && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Touch the player&apos;s position on the pitch who played the ball
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                    passStart ? "bg-amber-400 text-black animate-pulse" : "bg-muted text-muted-foreground"
+                  }`}>
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-xs font-bold ${passStart ? "text-amber-400" : "text-muted-foreground"}`}>
+                      Tap where it went
+                    </p>
+                    {passStart && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Touch where the ball ended up — arrow will be drawn
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Cancel button if step 1 done */}
+                  {passStart && (
+                    <button
+                      onClick={() => setPassStart(null)}
+                      className="shrink-0 rounded-lg border border-white/20 px-2 py-1 text-xs text-muted-foreground hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Pitch */}
             <PitchSVG
@@ -442,8 +487,8 @@ export default function MatchMapPage() {
 
             <p className="text-center text-xs text-muted-foreground pb-1">
               {mode === "shot"
-                ? "Zones coloured by danger (🔴 high xG → ⚫ low). Tap existing shot to remove it."
-                : "Solid line = completed pass · Dashed = intercepted. Tap line to remove."}
+                ? "Zones coloured by danger (🔴 high xG → ⚫ low). Tap an existing shot dot to remove it."
+                : "——— solid line = completed pass   - - - dashed = intercepted. Tap a line to remove it."}
             </p>
           </div>
 
