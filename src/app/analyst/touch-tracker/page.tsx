@@ -369,6 +369,16 @@ export default function TouchTrackerPage() {
 
   const stats = computeStats(touches);
 
+  // Momentum — touches in the last 5 minutes
+  const MOMENTUM_WINDOW = 5 * 60 * 1000;
+  const recentWindow = touches.filter(t => t.ts >= elapsed - MOMENTUM_WINDOW);
+  const momentumHome = recentWindow.filter(t => t.team === "home").length;
+  const momentumAway = recentWindow.filter(t => t.team === "away").length;
+  const momentumTotal = momentumHome + momentumAway || 1;
+  const homePct = Math.round((momentumHome / momentumTotal) * 100);
+  const awayPct = 100 - homePct;
+  const momentumLeader = momentumHome > momentumAway ? "home" : momentumHome < momentumAway ? "away" : "even";
+
   const runAiAnalysis = async () => {
     if (touches.length < 5) return;
     setAiLoading(true);
@@ -607,6 +617,43 @@ export default function TouchTrackerPage() {
               <button onClick={resetAll} className="rounded-lg border border-white/10 px-2 py-1.5 text-[10px] font-bold text-white/40 hover:text-white/70">
                 ↺
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Momentum bar */}
+        {(phase === "live" || phase === "paused") && recentWindow.length >= 3 && (
+          <div className="mb-3 rounded-xl border border-white/10 bg-card/40 px-3 py-2.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[9px] font-semibold uppercase tracking-widest text-white/40">Momentum — last 5 min</p>
+              <p className="text-[9px] text-white/40">{recentWindow.length} touches</p>
+            </div>
+            {/* Team labels + counts */}
+            <div className="flex justify-between mb-1">
+              <span className={`text-[10px] font-black ${momentumLeader === "home" ? "text-blue-400" : "text-white/40"}`}>
+                {homeTeam} {momentumHome}
+              </span>
+              {momentumLeader === "even" && (
+                <span className="text-[9px] font-bold text-green-400">EQUAL</span>
+              )}
+              <span className={`text-[10px] font-black ${momentumLeader === "away" ? "text-orange-400" : "text-white/40"}`}>
+                {momentumAway} {awayTeam}
+              </span>
+            </div>
+            {/* Bar */}
+            <div className="flex h-3 rounded-full overflow-hidden gap-px bg-white/5">
+              <div
+                className={`h-full rounded-l-full transition-all duration-500 ${momentumLeader === "home" ? "bg-blue-500" : "bg-blue-500/40"}`}
+                style={{ width: `${homePct}%` }}
+              />
+              <div
+                className={`h-full rounded-r-full transition-all duration-500 ${momentumLeader === "away" ? "bg-orange-500" : "bg-orange-500/40"}`}
+                style={{ width: `${awayPct}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-[8px] text-white/30">{homePct}%</span>
+              <span className="text-[8px] text-white/30">{awayPct}%</span>
             </div>
           </div>
         )}
