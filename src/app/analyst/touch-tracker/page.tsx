@@ -106,7 +106,7 @@ function computeStats(touches: Touch[]): MatchStats {
         }
       }
 
-      if (zone !== "unclear") {
+      if (zone !== null) {
         zoneEvents.push({ ts: curr.ts, zone, description });
       }
     }
