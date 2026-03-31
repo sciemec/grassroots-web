@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers } from "lucide-react";
+import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
@@ -60,6 +60,14 @@ const tools = [
     subtitle: "Tap pitch to log shots & passes together — live or post-match",
     href: "/analyst/match-map",
     bg: "bg-gradient-to-br from-[#c0392b] to-[#7b241c]",
+    live: true,
+  },
+  {
+    icon: Activity,
+    title: "Smart Touch Tracker",
+    subtitle: "Tap player numbers as they touch the ball — AI infers formation, zones & key players",
+    href: "/analyst/touch-tracker",
+    bg: "bg-gradient-to-br from-[#1a3a6b] to-[#0d1f3d]",
     live: true,
   },
 ];
