@@ -79,7 +79,7 @@ function computeStats(touches: Touch[]): MatchStats {
       const awayNum = prev.team === "away" ? prev.num : curr.num;
       const homeHasBall = prev.team === "home";
 
-      let zone: ZoneEvent["zone"] = "unclear";
+      let zone: Exclude<ZoneEvent["zone"], "unclear"> | null = null;
       let description = "";
 
       if (homeHasBall) {
