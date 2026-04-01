@@ -19,6 +19,7 @@ import {
   Zap, Shield, Target, RotateCcw, WifiOff,
 } from "lucide-react";
 import { scorePose, averageScores, type NormalizedLandmark } from "@/lib/pose-scorer";
+import { CameraPermissionHelp } from "@/components/ui/camera-permission-help";
 
 // ─── MediaPipe CDN ────────────────────────────────────────────────────────────
 
@@ -279,11 +280,32 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
       }
       detectorRef.current = detector;
 
-      // 2. Open camera
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false,
-      });
+      // 2. Check camera permission status before trying (avoids silent denial on some browsers)
+      if (navigator.permissions) {
+        try {
+          const perm = await navigator.permissions.query({ name: "camera" as PermissionName });
+          if (perm.state === "denied") {
+            throw new DOMException("Camera permission denied by browser settings.", "NotAllowedError");
+          }
+        } catch (e) {
+          // If permissions API not supported, proceed anyway
+          if (e instanceof DOMException && e.name === "NotAllowedError") throw e;
+        }
+      }
+
+      // 3. Open camera — fall back to basic constraints if ideal constraints fail
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        });
+      } catch (e) {
+        const name = e instanceof DOMException ? e.name : "";
+        if (name === "NotAllowedError" || name === "PermissionDeniedError") throw e;
+        // Retry with minimal constraints for older/restrictive devices
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = stream;
 
       if (videoRef.current) {
@@ -407,18 +429,21 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
 
         {/* Error / no camera */}
         {(poseState === "error" || poseState === "no-camera") && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center bg-black/80">
-            {poseState === "no-camera"
-              ? <WifiOff className="h-8 w-8 text-red-400" />
-              : <AlertTriangle className="h-8 w-8 text-red-400" />
-            }
-            <p className="text-sm text-red-300">{errorMsg}</p>
-            <button
-              onClick={startCamera}
-              className="rounded-xl border border-white/20 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
-            >
-              Try again
-            </button>
+          <div className="absolute inset-0 overflow-y-auto bg-black/90">
+            {poseState === "no-camera" ? (
+              <CameraPermissionHelp onRetry={startCamera} />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4 p-6 text-center h-full">
+                <AlertTriangle className="h-8 w-8 text-red-400" />
+                <p className="text-sm text-red-300">{errorMsg}</p>
+                <button
+                  onClick={startCamera}
+                  className="rounded-xl border border-white/20 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
           </div>
         )}
 

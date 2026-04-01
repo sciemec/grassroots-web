@@ -7,6 +7,7 @@ import {
   ArrowLeft, ShieldCheck, Upload, Clock, CheckCircle2,
   XCircle, Camera, FileText, RefreshCw, Video,
 } from "lucide-react";
+import { CameraPermissionHelp } from "@/components/ui/camera-permission-help";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
@@ -360,16 +361,20 @@ export default function PlayerVerificationPage() {
                     <p className="text-center text-sm text-muted-foreground">
                       We need a photo of your face to match against your ID document.
                     </p>
-                    {cameraError && (
+                    {cameraError && cameraError.includes("permission") ? (
+                      <CameraPermissionHelp onRetry={startCamera} />
+                    ) : cameraError ? (
                       <p className="text-center text-sm text-destructive">{cameraError}</p>
+                    ) : null}
+                    {!cameraError && (
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        <Camera className="h-4 w-4" /> Open Camera
+                      </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={startCamera}
-                      className="flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      <Camera className="h-4 w-4" /> Open Camera
-                    </button>
                   </div>
                 )}
               </div>
