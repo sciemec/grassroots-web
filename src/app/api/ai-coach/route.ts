@@ -17,11 +17,31 @@ import { findRelevantSessions } from "@/lib/football-knowledge";
 // ─── Complexity detector ─────────────────────────────────────────────────────
 // Questions matching these keywords need deep reasoning → Claude
 const COMPLEX_KEYWORDS = [
-  "why", "analyse", "analysis", "explain", "tactical", "tactics",
-  "formation", "pressing", "strategy", "plan", "develop", "potential",
-  "compare", "transition", "position", "movement", "weakness", "injury",
-  "scout", "valuation", "market value", "should i", "how should", "what if",
-  "reason", "purpose", "effect", "impact", "improve my", "work on",
+  // Causality & problem-solving
+  "why", "how do i fix", "how do i improve", "what is wrong", "reason", "cause",
+  // Analysis & evaluation
+  "analyse", "analysis", "explain", "evaluate", "assess", "review", "diagnose",
+  // Strategy & planning
+  "tactical", "tactics", "strategy", "plan", "formation", "programme",
+  // Set pieces & dead ball
+  "set piece", "corner", "free kick", "freekick", "penalty", "dead ball",
+  "defending set", "attack set",
+  // Defensive & attacking systems
+  "defend", "defensive", "attack", "attacking", "pressing", "high press",
+  "low block", "mid block", "counter", "offside", "marking", "zonal",
+  "man mark", "back line", "high line", "compact",
+  // Deep coaching concepts
+  "transition", "position", "movement", "shape", "structure", "overlap",
+  "underlap", "width", "depth", "spacing", "channel", "combination",
+  // Player development
+  "develop", "potential", "long term", "periodis", "pre-season",
+  // Performance
+  "weakness", "injury", "scout", "valuation", "market value",
+  "compare", "versus", "should i", "how should", "what if",
+  "effect", "impact", "improve my", "work on",
+  // Match analysis
+  "half time", "halftime", "game plan", "opponent", "match plan",
+  "substitut", "rotation",
 ];
 
 function isComplex(message: string): boolean {

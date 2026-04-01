@@ -34,6 +34,19 @@ const SYSTEM2_TRIGGERS = [
   // Deep coaching concepts
   "tactical", "pressing trigger", "transition", "shape", "block", "structure",
   "periodisation", "develop", "potential", "long term",
+  // Set pieces & dead ball situations
+  "set piece", "corner", "free kick", "freekick", "penalty", "throw in",
+  "goal kick", "dead ball", "defending set", "attack set",
+  // Defensive & attacking systems
+  "defend", "defensive", "attack", "attacking", "press", "high press",
+  "low block", "mid block", "counter", "offside trap", "marking",
+  "zonal", "man mark", "back line", "high line", "compact",
+  // Player development & position-specific
+  "formation", "position", "movement", "runs", "overlap", "underlap",
+  "width", "depth", "spacing", "channel", "combination play",
+  // Match & performance analysis
+  "half time", "halftime", "game plan", "opponent", "scout report",
+  "match plan", "substitut", "rotation", "fixture",
   // Kahneman-specific requests
   "premortem", "pre-mortem", "failure scenario", "what could go wrong",
   "what am i missing", "blind spot", "challenge my thinking",
