@@ -271,25 +271,15 @@ export const ZimIndependenceSection = () => {
         .zis-coa { display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .zis-coa-ring {
           width: 130px; height: 130px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(0,100,0,0.3) 0%, rgba(0,40,0,0.5) 60%, rgba(0,0,0,0.4) 100%);
-          border: 2px solid rgba(255,215,0,0.4);
-          display: flex; align-items: center; justify-content: center;
-          position: relative;
-          box-shadow: 0 0 40px rgba(0,100,0,0.25), 0 0 80px rgba(0,100,0,0.1), inset 0 0 24px rgba(0,0,0,0.4);
-        }
-        .zis-coa-ring::before {
-          content: ''; position: absolute; inset: 7px;
-          border-radius: 50%; border: 1px solid rgba(255,215,0,0.15);
-        }
-        .zis-coa-ring::after {
-          content: ''; position: absolute; inset: 14px;
-          border-radius: 50%; border: 1px dashed rgba(255,215,0,0.08);
-        }
-
-        .zis-bird {
-          width: 70px; height: 70px;
-          filter: drop-shadow(0 0 12px rgba(255,215,0,0.4));
+          border: 3px solid rgba(255,215,0,0.5);
+          overflow: hidden;
+          box-shadow: 0 0 40px rgba(0,100,0,0.25), 0 0 80px rgba(0,100,0,0.1);
           animation: zis-float 4s ease-in-out infinite;
+        }
+        .zis-coa-img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          object-position: center;
         }
         @keyframes zis-float {
           0%, 100% { transform: translateY(0px); }
@@ -409,19 +399,8 @@ export const ZimIndependenceSection = () => {
 
           <div className="zis-coa" style={fade(0.2)}>
             <div className="zis-coa-ring">
-              <svg className="zis-bird" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M52 22 L55 14 L60 18 L65 14 L68 22 Z" fill="#FFD700" opacity="0.95"/>
-                <ellipse cx="60" cy="30" rx="10" ry="9" fill="#FFD700" opacity="0.9"/>
-                <circle cx="63" cy="28" r="2" fill="#0a1a0f"/>
-                <circle cx="63.5" cy="27.5" r="0.7" fill="#FFD700"/>
-                <path d="M70 30 L76 32 L70 34 Z" fill="#FFD700" opacity="0.8"/>
-                <path d="M55 38 C50 42 46 50 46 58 C46 68 48 76 52 82 L60 78 L68 82 C72 76 74 68 74 58 C74 50 70 42 65 38 Z" fill="#FFD700" opacity="0.85"/>
-                <path d="M46 52 C38 50 30 52 26 58 C24 64 26 70 30 72 L46 66 Z" fill="#FFD700" opacity="0.75"/>
-                <path d="M74 52 C82 50 90 52 94 58 C96 64 94 70 90 72 L74 66 Z" fill="#FFD700" opacity="0.75"/>
-                <path d="M52 82 C50 92 46 100 44 108 C48 108 52 104 54 100 L60 90 L66 100 C68 104 72 108 76 108 C74 100 70 92 68 82 Z" fill="#FFD700" opacity="0.8"/>
-                <path d="M54 108 L52 124 M54 108 L56 120 M66 108 L64 124 M66 108 L68 120" stroke="#FFD700" strokeWidth="2.5" strokeLinecap="round" opacity="0.7"/>
-                <rect x="44" y="124" width="32" height="6" rx="3" fill="#FFD700" opacity="0.5"/>
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/zim-coa.jpg" alt="Zimbabwe Coat of Arms" className="zis-coa-img" />
             </div>
             <span className="zis-coa-label">Zimbabwe · Coat of Arms</span>
           </div>
