@@ -1405,6 +1405,14 @@ export default function BusinessHubPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>("budget");
 
+  // Pre-select tab when arriving from coach hub (?tab=events etc.)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab") as Tab | null;
+    const valid: Tab[] = ["budget", "sponsors", "tracker", "events", "members", "skills"];
+    if (tab && valid.includes(tab)) setActiveTab(tab);
+  }, []);
+
   const tabContent: Record<Tab, React.ReactNode> = {
     budget:   <BudgetPlanner isGuest={isGuest} />,
     sponsors: <SponsorFinder />,

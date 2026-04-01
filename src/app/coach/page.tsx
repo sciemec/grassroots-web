@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Users, Brain, ChevronRight, Flame, Shield, AlertTriangle,
   Trophy, Radio, ClipboardList, Loader2, Film, Activity, Crosshair, BookOpen,
-  Layers, ScanSearch,
+  Layers, ScanSearch, GraduationCap, PiggyBank, Calendar, Heart,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -107,6 +107,13 @@ export default function CoachHubPage() {
 
   if (!_hasHydrated || loading) return <PageSkeleton />;
 
+  const schoolCards = [
+    { icon: Calendar,      title: "Event Planner",       subtitle: "Tournaments & fixtures",   href: "/business-hub?tab=events"  },
+    { icon: PiggyBank,     title: "Budget Planner",      subtitle: "Track income & costs",     href: "/business-hub?tab=budget"  },
+    { icon: Users,         title: "Members & Subs",      subtitle: "Subscriptions & payments", href: "/business-hub?tab=members" },
+    { icon: Heart,         title: "Match Day Fundraiser",subtitle: "EcoCash live donations",   href: "/business-hub?tab=events"  },
+  ];
+
   const hubCards = [
     { icon: Brain,        title: "AI Insights",      subtitle: "Mubatsiri wako — Claude AI",  href: "/coach/ai-insights",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
     { icon: Users,        title: "My Squad",         subtitle: "Timu yako — Manage squad",    href: "/coach/squad",             bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
@@ -163,6 +170,29 @@ export default function CoachHubPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {hubCards.map((card) => (
               <HubCard key={card.href} {...card} />
+            ))}
+          </div>
+        </div>
+
+        {/* School Management section */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-amber-400" />
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">
+              School Management
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {schoolCards.map((card) => (
+              <Link
+                key={card.href + card.title}
+                href={card.href}
+                className="flex flex-col rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-900/40 to-yellow-900/30 p-4 hover:border-amber-500/50 hover:from-amber-800/50 hover:to-yellow-800/40 transition-all"
+              >
+                <card.icon className="mb-2 h-5 w-5 text-amber-400" />
+                <p className="text-sm font-bold text-white leading-tight">{card.title}</p>
+                <p className="mt-0.5 text-[11px] text-amber-200/50 leading-tight">{card.subtitle}</p>
+              </Link>
             ))}
           </div>
         </div>
