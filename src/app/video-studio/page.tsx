@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Upload, Play, CheckCircle2, Loader2, X, Film, ChevronDown, ChevronUp, Trash2,
+  Upload, Play, CheckCircle2, Loader2, X, Film, ChevronDown, ChevronUp, Trash2, Globe, Lock,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -27,6 +27,7 @@ interface SavedAnalysis {
   ai_feedback: string;
   frame_count: number;
   video_url: string | null;
+  is_shared: boolean;
   created_at: string;
 }
 
@@ -140,6 +141,11 @@ export default function VideoStudioPage() {
 
   const deleteAnalysis = useMutation({
     mutationFn: (id: string) => api.delete(`/video-analyses/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-analyses"] }),
+  });
+
+  const toggleShare = useMutation({
+    mutationFn: (id: string) => api.patch(`/video-analyses/${id}/toggle-share`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-analyses"] }),
   });
 
@@ -496,6 +502,13 @@ export default function VideoStudioPage() {
                           ? <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                           : <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                         }
+                        <button
+                          title={a.is_shared ? "Shared to Fan Hub — click to make private" : "Share to Fan Hub"}
+                          onClick={(e) => { e.stopPropagation(); toggleShare.mutate(a.id); }}
+                          className={`rounded-lg p-1 transition-colors ${a.is_shared ? "text-green-400 hover:text-green-300" : "text-muted-foreground hover:text-green-400"}`}
+                        >
+                          {a.is_shared ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                        </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); deleteAnalysis.mutate(a.id); }}
                           className="rounded-lg p-1 text-muted-foreground hover:text-destructive transition-colors"

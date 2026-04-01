@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Building2, MapPin, Users, Mail, Phone, Globe, ChevronLeft, ArrowRight, Trophy } from "lucide-react";
+import { Building2, MapPin, Users, Mail, Phone, Globe, ChevronLeft, ArrowRight, Trophy, Film, Play } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -22,6 +22,16 @@ interface MatchResult {
   their_score: number;
   sport: string;
   competition: string | null;
+}
+
+interface SharedVideo {
+  id: string;
+  sport: string;
+  analysis_type: string;
+  file_name: string | null;
+  ai_feedback: string;
+  video_url: string | null;
+  created_at: string;
 }
 
 interface Org {
@@ -69,6 +79,17 @@ async function getMatches(slug: string): Promise<MatchResult[]> {
   }
 }
 
+async function getVideos(slug: string): Promise<SharedVideo[]> {
+  try {
+    const res = await fetch(`${API}/organisations/${slug}/videos`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function OrgProfilePage({
@@ -76,7 +97,11 @@ export default async function OrgProfilePage({
 }: {
   params: { slug: string };
 }) {
-  const [org, matches] = await Promise.all([getOrg(params.slug), getMatches(params.slug)]);
+  const [org, matches, videos] = await Promise.all([
+    getOrg(params.slug),
+    getMatches(params.slug),
+    getVideos(params.slug),
+  ]);
   if (!org) notFound();
 
   // Group teams by sport
@@ -241,6 +266,53 @@ export default async function OrgProfilePage({
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Shared Training & Match Videos */}
+        {videos.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Film className="h-4 w-4 text-amber-400" />
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-400">
+                Training &amp; Match Videos ({videos.length})
+              </h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {videos.map((v) => (
+                <div key={v.id} className="rounded-xl border border-white/8 bg-white/5 overflow-hidden">
+                  {/* Video player or placeholder */}
+                  {v.video_url ? (
+                    <div className="relative aspect-video bg-black/60">
+                      <video
+                        src={v.video_url}
+                        controls
+                        preload="none"
+                        className="h-full w-full object-contain"
+                        poster=""
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex aspect-video items-center justify-center bg-white/5">
+                      <Play className="h-10 w-10 text-white/20" />
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <p className="text-sm font-medium text-white truncate">
+                      {v.file_name ?? v.analysis_type.replace(/_/g, " ")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-white/40">
+                      {v.sport} · {new Date(v.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                    {v.ai_feedback && (
+                      <p className="mt-1.5 text-xs text-white/50 line-clamp-2 leading-relaxed">
+                        {v.ai_feedback.slice(0, 120)}…
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
