@@ -2218,11 +2218,11 @@ A professional data analytics hub for match analysts. Role-gated to `analyst` an
 | Tool | Status | Route |
 |---|---|---|
 | Live Match Collector | LIVE ✅ | `/analyst/live-match` |
-| xG & Shot Analysis | Coming Soon 🔒 | `#` |
-| AI Tactical Report | Coming Soon 🔒 | `#` |
-| Pass Map Network | Coming Soon 🔒 | `#` |
-| Player Heatmaps | Coming Soon 🔒 | `#` |
-| Season Intelligence | Coming Soon 🔒 | `#` |
+| xG & Shot Analysis | LIVE ✅ | `/analyst/xg-analysis` |
+| AI Tactical Report | LIVE ✅ + PDF export | `/analyst/tactical-report` |
+| Pass Map Network | LIVE ✅ | `/analyst/pass-map` |
+| Player Heatmaps | LIVE ✅ + PDF export | `/analyst/heatmaps` |
+| Season Intelligence | LIVE ✅ | `/analyst/season` |
 
 ### Design:
 - Uses `Sidebar` component + `gs-watermark` class on main
@@ -2765,6 +2765,60 @@ Before marking any step complete:
 - [ ] Works on slow connection (2G simulation in DevTools)
 - [ ] Scout can discover the player's showcase on /scout
 - [ ] Player gets notified when relevant scout action occurs
+
+---
+
+## SESSION LOG — 1 April 2026
+
+### Theme — Analyst Hub PDF Exports + Business Hub Polish
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Tactical Report PDF Export (`/analyst/tactical-report`)
+- Added `import jsPDF from "jspdf"` + `Download` icon
+- Added `exportPDF()` function — green header bar, stats row (formation/possession/shots/on-target), report body with section headers in green bold, coach observations in italic, confidential footer, multi-page support
+- Gold "PDF" button added next to Copy button in the report output panel
+- Filename: `tactical-report-HomeTeam-vs-AwayTeam-YYYY-MM-DD.pdf`
+- File: `src/app/analyst/tactical-report/page.tsx`
+
+#### 2. Heatmaps PDF Export (`/analyst/heatmaps`)
+- Added `import jsPDF from "jspdf"` + `Download` icon
+- Added `exportPDF()` function — green header, one 6×10 coloured grid per player that has data, ATTACK↑/DEFENCE↓ labels, zone counts as numbers, intensity legend, Grassroots footer
+- Gold "Export PDF Report" button added below the Clear Player / Clear All buttons in the controls panel
+- Colour scale matches the UI: green → yellow → amber → orange → red
+- File: `src/app/analyst/heatmaps/page.tsx`
+- Commit: `fcb4af3`
+
+#### 3. Business Hub — Inline Budget Editing
+- Pencil icon per budget row → inline number inputs → Save ✓ / Cancel ✗
+- Saves to `PATCH /business/budget/{id}` (falls back silently if guest)
+- File: `src/app/business-hub/page.tsx`
+
+#### 4. Business Hub — Financial Chart
+- Monthly income vs expense bar chart using recharts `BarChart`
+- Green bars for income, red bars for expenses
+- Calculated from existing transactions state — no new API needed
+- TypeScript fix: `Tooltip formatter` uses `value ?? 0` (no explicit `number` type)
+
+#### 5. Business Hub — Business Skills Articles
+- All 5 articles expanded with real Zimbabwean sports business content (~200 words each)
+- Topics: Sponsorship proposals, Match day revenue, ZIFA grant applications, Player contracts, Social media monetisation
+- Click to expand/collapse each article
+
+#### 6. CLAUDE.md Analyst Hub table updated
+- All 6 Analyst tools now correctly marked LIVE ✅ (were all "Coming Soon 🔒")
+
+---
+
+### WHAT STILL NEEDS DOING IN ANALYST HUB
+
+| Gap | What's needed |
+|---|---|
+| Pass Map PDF export | Add `exportPDF()` + Download button to `/analyst/pass-map` |
+| xG stored per match | Extend `saveMatch()` in Touch Tracker to persist xG totals → unlocks rolling xG chart in Season Intelligence |
+| Analyst user role | Add `analyst` role to Laravel `users` table so non-admin analysts can log in |
 
 ---
 
