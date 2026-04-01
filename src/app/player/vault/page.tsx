@@ -4,11 +4,25 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Film, Upload, Trash2, Play, X, Plus, Copy, Check,
-  HardDrive, Tag, Clock, AlertCircle, ChevronRight, Loader2,
+  HardDrive, Tag, Clock, AlertCircle, ChevronRight, Loader2, WifiOff,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+
+function round1(n: number) { return Math.round(n * 10) / 10; }
+
+// ─── localStorage fallback ────────────────────────────────────────────────────
+
+const LS_KEY = "grassroots_vault_videos";
+
+function loadLocalVideos(): PlayerVideo[] {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]"); } catch { return []; }
+}
+
+function saveLocalVideos(vids: PlayerVideo[]): void {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(vids)); } catch { /* quota */ }
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -97,7 +111,7 @@ interface UploadState {
   dragging: boolean;
 }
 
-function UploadPanel({ onUploaded }: { onUploaded: (v: PlayerVideo) => void }) {
+function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) => void; localMode: boolean }) {
   const [state, setState] = useState<UploadState>({
     file: null, title: "", tag: "Skills", description: "",
     progress: 0, uploading: false, error: "", dragging: false,
@@ -142,6 +156,7 @@ function UploadPanel({ onUploaded }: { onUploaded: (v: PlayerVideo) => void }) {
     if (state.description) form.append("description", state.description);
 
     try {
+      if (localMode) throw new Error("local");
       const res = await api.post("/player/vault/upload", form, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress(evt) {
@@ -157,6 +172,27 @@ function UploadPanel({ onUploaded }: { onUploaded: (v: PlayerVideo) => void }) {
       });
       if (inputRef.current) inputRef.current.value = "";
     } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      // Backend not deployed → save metadata locally so the vault is still usable
+      if ((err as Error)?.message === "local" || !status || status === 404 || status === 405 || status >= 500) {
+        const localVideo: PlayerVideo = {
+          id: `local-${Date.now()}`,
+          title: state.title,
+          description: state.description || undefined,
+          r2_key: "",
+          tag: state.tag,
+          size_mb: round1(state.file!.size / (1024 * 1024)),
+          video_url: URL.createObjectURL(state.file!),
+          created_at: new Date().toISOString(),
+        };
+        onUploaded(localVideo);
+        set({
+          file: null, title: "", tag: "Skills", description: "",
+          progress: 0, uploading: false, error: "",
+        });
+        if (inputRef.current) inputRef.current.value = "";
+        return;
+      }
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         "Upload failed. Please try again.";
@@ -298,11 +334,17 @@ function VideoCard({
     e.stopPropagation();
     if (!confirm(`Delete "${video.title}"?`)) return;
     setDeleting(true);
+    // Local videos (id starts with "local-") don't need an API call
+    if (video.id.startsWith("local-")) {
+      onDelete(video.id);
+      return;
+    }
     try {
       await api.delete(`/player/vault/${video.id}`);
       onDelete(video.id);
     } catch {
-      setDeleting(false);
+      // If delete fails (backend down), remove locally anyway
+      onDelete(video.id);
     }
   }
 
@@ -589,6 +631,7 @@ export default function PlayerVaultPage() {
   const [videos, setVideos] = useState<PlayerVideo[]>([]);
   const [storage, setStorage] = useState<StorageInfo>({ used_mb: 0, limit_mb: 500 });
   const [loading, setLoading] = useState(true);
+  const [localMode, setLocalMode] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<PlayerVideo | null>(null);
   const [showReelModal, setShowReelModal] = useState(false);
   const [shareLink, setShareLink] = useState<{ url: string; title: string } | null>(null);
@@ -598,8 +641,17 @@ export default function PlayerVaultPage() {
       const res = await api.get("/player/vault");
       setVideos(res.data.videos ?? []);
       setStorage(res.data.storage);
-    } catch {
-      // silently fail — empty state shown
+      setLocalMode(false);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      // 404/405 = backend controller not yet deployed → use localStorage
+      if (!status || status === 404 || status === 405 || status >= 500) {
+        const local = loadLocalVideos();
+        setVideos(local);
+        const usedMb = local.reduce((sum, v) => sum + (v.size_mb ?? 0), 0);
+        setStorage({ used_mb: usedMb, limit_mb: 500 });
+        setLocalMode(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -612,7 +664,11 @@ export default function PlayerVaultPage() {
   }, [user, router, fetchVault]);
 
   function handleUploaded(video: PlayerVideo) {
-    setVideos((prev) => [video, ...prev]);
+    setVideos((prev) => {
+      const next = [video, ...prev];
+      if (localMode) saveLocalVideos(next);
+      return next;
+    });
     setStorage((prev) => ({
       ...prev,
       used_mb: round1(prev.used_mb + video.size_mb),
@@ -621,7 +677,11 @@ export default function PlayerVaultPage() {
 
   function handleDeleted(id: string) {
     const deleted = videos.find((v) => v.id === id);
-    setVideos((prev) => prev.filter((v) => v.id !== id));
+    setVideos((prev) => {
+      const next = prev.filter((v) => v.id !== id);
+      if (localMode) saveLocalVideos(next);
+      return next;
+    });
     if (deleted) {
       setStorage((prev) => ({
         ...prev,
@@ -654,6 +714,20 @@ export default function PlayerVaultPage() {
           </p>
         </div>
 
+        {/* Local mode banner */}
+        {localMode && (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <WifiOff className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+            <div>
+              <p className="text-sm font-semibold text-amber-300">Local mode — cloud storage not connected</p>
+              <p className="mt-0.5 text-xs text-amber-400/80">
+                Videos are saved on this device only. Scouts cannot view them yet.
+                Ask Nigel to run <code className="rounded bg-black/30 px-1">php artisan migrate --force</code> on Render to enable cloud storage.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Share link panel */}
         {shareLink && (
           <div className="mb-6">
@@ -669,7 +743,7 @@ export default function PlayerVaultPage() {
           {/* Left column — storage + upload */}
           <div className="space-y-5">
             <StorageBar used={storage.used_mb} limit={storage.limit_mb} />
-            <UploadPanel onUploaded={handleUploaded} />
+            <UploadPanel onUploaded={handleUploaded} localMode={localMode} />
           </div>
 
           {/* Right column — video grid */}
@@ -756,6 +830,3 @@ export default function PlayerVaultPage() {
   );
 }
 
-function round1(n: number) {
-  return Math.round(n * 10) / 10;
-}

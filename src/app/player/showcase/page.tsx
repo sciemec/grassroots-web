@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   Camera, Plus, Eye, Star, ChevronRight, Upload,
   Loader2, Video, X, ToggleLeft, ToggleRight,
-  Share2, Copy, Check, MessageCircle,
+  Share2, Copy, Check, MessageCircle, WifiOff,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -88,6 +88,7 @@ export default function ShowcasePage() {
   const { user } = useAuthStore();
 
   const [clips, setClips]               = useState<ShowcaseClip[]>([]);
+  const [localMode, setLocalMode]       = useState(false);
   const [showModal, setShowModal]       = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillType | null>(null);
   const [videoFile, setVideoFile]       = useState<File | null>(null);
@@ -105,9 +106,13 @@ export default function ShowcasePage() {
       .then((res) => {
         const data: ShowcaseClip[] = res.data?.data ?? res.data ?? [];
         setClips(data);
+        setLocalMode(false);
         saveLocalClips(data);
       })
-      .catch(() => setClips(loadLocalClips()));
+      .catch(() => {
+        setClips(loadLocalClips());
+        setLocalMode(true);
+      });
   }, []);
 
   // ── Modal reset ────────────────────────────────────────────────────────────
@@ -311,6 +316,20 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
             </button>
           )}
         </div>
+
+        {/* Local mode banner */}
+        {localMode && clips.length > 0 && (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <WifiOff className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+            <div>
+              <p className="text-sm font-semibold text-amber-300">Local mode — clips not yet visible to scouts</p>
+              <p className="mt-0.5 text-xs text-amber-400/80">
+                Your clips are saved on this device. Scouts cannot discover them until the backend is deployed.
+                Ask Nigel to run <code className="rounded bg-black/30 px-1">php artisan migrate --force</code> on Render.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Empty state */}
         {clips.length === 0 ? (
