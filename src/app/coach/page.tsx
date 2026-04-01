@@ -107,10 +107,10 @@ export default function CoachHubPage() {
 
   if (!_hasHydrated || loading) return <PageSkeleton />;
 
-  const schoolCards = [
+  const orgCards = [
+    { icon: GraduationCap, title: "My Organisation",     subtitle: "Register & manage org",    href: "/coach/organisation"       },
     { icon: Calendar,      title: "Event Planner",       subtitle: "Tournaments & fixtures",   href: "/business-hub?tab=events"  },
     { icon: PiggyBank,     title: "Budget Planner",      subtitle: "Track income & costs",     href: "/business-hub?tab=budget"  },
-    { icon: Users,         title: "Members & Subs",      subtitle: "Subscriptions & payments", href: "/business-hub?tab=members" },
     { icon: Heart,         title: "Match Day Fundraiser",subtitle: "EcoCash live donations",   href: "/business-hub?tab=events"  },
   ];
 
@@ -174,16 +174,16 @@ export default function CoachHubPage() {
           </div>
         </div>
 
-        {/* School Management section */}
+        {/* My Organisation section */}
         <div className="mb-6">
           <div className="mb-3 flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-amber-400" />
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">
-              School Management
+              My Organisation
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {schoolCards.map((card) => (
+            {orgCards.map((card) => (
               <Link
                 key={card.href + card.title}
                 href={card.href}
@@ -193,6 +193,7 @@ export default function CoachHubPage() {
                 <p className="text-sm font-bold text-white leading-tight">{card.title}</p>
                 <p className="mt-0.5 text-[11px] text-amber-200/50 leading-tight">{card.subtitle}</p>
               </Link>
+
             ))}
           </div>
         </div>
