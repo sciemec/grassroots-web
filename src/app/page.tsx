@@ -207,14 +207,14 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10">
 
           {/* Title row */}
-          <div className="flex items-center gap-3 mb-8 pt-4">
+          <div className="flex items-center gap-4 mb-8 pt-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo_v2.png" alt="Grassroots Sport" width={40} height={40} className="rounded-lg" />
+            <img src="/logo_v2.png" alt="Grassroots Sport" width={56} height={56} className="rounded-xl shadow-md" />
             <div>
-              <h1 className="text-xl font-extrabold leading-tight" style={{ color: "#1B5E20" }}>
+              <h1 className="text-3xl font-extrabold leading-tight" style={{ color: "#1B5E20" }}>
                 Grassroots <span style={{ color: "#E6A817" }}>Sport</span>
               </h1>
-              <p className="text-[11px] italic" style={{ color: "#1B5E20", opacity: 0.6 }}>Zimbabwe&apos;s AI-Powered Sports Platform 🇿🇼</p>
+              <p className="text-sm mt-0.5 font-medium italic" style={{ color: "#1B5E20", opacity: 0.7 }}>Zimbabwe&apos;s AI-Powered Sports Platform 🇿🇼</p>
             </div>
           </div>
 

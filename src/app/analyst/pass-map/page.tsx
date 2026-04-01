@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Download } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
+import jsPDF from "jspdf";
 
 interface PlayerDot {
   number: number;
@@ -60,6 +61,123 @@ export default function PassMapPage() {
     setLinks([]);
     setNextNumber(1);
     try { [LS_KEY + "_players", LS_KEY + "_links", LS_KEY + "_next"].forEach((k) => localStorage.removeItem(k)); } catch {}
+  };
+
+  const exportPDF = () => {
+    if (players.length === 0) return;
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.width;
+    const pageH = doc.internal.pageSize.height;
+    const margin = 14;
+
+    // ── Header ────────────────────────────────────────────────────────────
+    doc.setFillColor(0, 100, 0);
+    doc.rect(0, 0, pageW, 36, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Grassroots Sport — Pass Map Network", margin, 14);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Generated: ${new Date().toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}`,
+      margin, 22
+    );
+    doc.text(`${players.length} players  |  ${links.length} connections`, margin, 30);
+
+    // ── Pitch ──────────────────────────────────────────────────────────────
+    const scale  = 1.75;
+    const pitchW = 68  * scale;
+    const pitchH = 105 * scale;
+    const pitchX = (pageW - pitchW) / 2;
+    const pitchY = 44;
+
+    // Green field
+    doc.setFillColor(45, 106, 45);
+    doc.rect(pitchX, pitchY, pitchW, pitchH, "F");
+
+    // Pitch markings
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.4);
+    doc.rect(pitchX, pitchY, pitchW, pitchH);
+    doc.line(pitchX, pitchY + 52.5 * scale, pitchX + pitchW, pitchY + 52.5 * scale);
+    doc.setLineWidth(0.3);
+    doc.circle(pitchX + 34 * scale, pitchY + 52.5 * scale, 9.15 * scale);
+    doc.setFillColor(255, 255, 255);
+    doc.circle(pitchX + 34 * scale, pitchY + 52.5 * scale, 0.5 * scale, "F");
+    // Penalty areas
+    doc.setDrawColor(255, 255, 255);
+    doc.rect(pitchX + 13.84 * scale, pitchY,             40.32 * scale, 16.5 * scale);
+    doc.rect(pitchX + 13.84 * scale, pitchY + 88.5 * scale, 40.32 * scale, 16.5 * scale);
+    // Goal areas
+    doc.rect(pitchX + 24.84 * scale, pitchY,              18.32 * scale, 5.5 * scale);
+    doc.rect(pitchX + 24.84 * scale, pitchY + 99.5 * scale, 18.32 * scale, 5.5 * scale);
+    // Penalty spots
+    doc.circle(pitchX + 34 * scale, pitchY + 11 * scale, 0.5 * scale, "F");
+    doc.circle(pitchX + 34 * scale, pitchY + 94 * scale, 0.5 * scale, "F");
+
+    // ── Pass links ────────────────────────────────────────────────────────
+    links.forEach((l) => {
+      const from = players.find((p) => p.number === l.from);
+      const to   = players.find((p) => p.number === l.to);
+      if (!from || !to) return;
+      const ratio = l.count / maxCount;
+      const x1 = pitchX + (from.x / 100) * pitchW;
+      const y1 = pitchY + (from.y / 100) * pitchH;
+      const x2 = pitchX + (to.x   / 100) * pitchW;
+      const y2 = pitchY + (to.y   / 100) * pitchH;
+      doc.setDrawColor(240, 180, Math.round(41 + (1 - ratio) * 100)); // gold → lighter
+      doc.setLineWidth(0.4 + ratio * 2.2);
+      doc.line(x1, y1, x2, y2);
+      // Count label at midpoint
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5);
+      doc.setTextColor(255, 240, 100);
+      doc.text(String(l.count), (x1 + x2) / 2, (y1 + y2) / 2 + 1.5, { align: "center" });
+    });
+
+    // ── Player dots ───────────────────────────────────────────────────────
+    players.forEach((p) => {
+      const cx = pitchX + (p.x / 100) * pitchW;
+      const cy = pitchY + (p.y / 100) * pitchH;
+      doc.setFillColor(26, 92, 42);
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.circle(cx, cy, 3.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(p.number), cx, cy + 1.8, { align: "center" });
+    });
+
+    // ── Connections table ─────────────────────────────────────────────────
+    if (links.length > 0) {
+      let ty = pitchY + pitchH + 10;
+      if (ty > pageH - 40) { doc.addPage(); ty = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(0, 100, 0);
+      doc.text("Pass Connections (ranked by volume)", margin, ty);
+      ty += 6;
+      [...links].sort((a, b) => b.count - a.count).forEach((l) => {
+        if (ty > pageH - 14) { doc.addPage(); ty = 20; }
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        const pct = Math.round((l.count / maxCount) * 100);
+        doc.text(`#${l.from} → #${l.to}`, margin, ty);
+        doc.text(`${l.count} passes`, margin + 36, ty);
+        doc.text(`${pct}% of max`, margin + 66, ty);
+        ty += 5.5;
+      });
+    }
+
+    // ── Footer ────────────────────────────────────────────────────────────
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text("grassrootssports.live  |  Zimbabwe's Sports Management Platform", margin, pageH - 8);
+
+    doc.save(`pass-map-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
@@ -152,6 +270,11 @@ export default function PassMapPage() {
             <button onClick={reset}
               className="flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
               <Trash2 className="h-4 w-4" /> Reset Map
+            </button>
+
+            <button onClick={exportPDF} disabled={players.length === 0}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 py-2.5 text-sm font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 disabled:opacity-40 transition-colors">
+              <Download className="h-4 w-4" /> Export PDF
             </button>
           </div>
 

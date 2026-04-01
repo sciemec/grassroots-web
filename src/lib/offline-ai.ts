@@ -230,14 +230,17 @@ function formatPhase(p: Phase): string {
 
 // ─── Query intent detection ──────────────────────────────────────────────────
 
-const NUTRITION_KEYWORDS  = ["eat", "food", "meal", "nutrition", "diet", "sadza", "protein", "energy", "recover", "recovery", "pre", "post", "before", "after", "drink", "water"];
+const NUTRITION_KEYWORDS  = ["eat", "food", "meal", "nutrition", "diet", "sadza", "protein", "energy", "recover", "recovery", "pretraining", "posttraining", "before", "after", "drink", "water", "hydrat", "calori", "carb"];
 const PHASE_KEYWORDS      = ["phase", "foundation", "development", "performance", "elite", "u10", "u12", "u14", "u16", "u18", "under", "age", "group", "programme", "season", "plan"];
-const DRILL_KEYWORDS      = ["drill", "exercise", "practice", "warm", "session", "improve", "train", "speed", "fitness", "dribble", "pass", "shoot", "tackle", "header", "control"];
-const SKILL_KEYWORDS      = ["technique", "skill", "tips", "advice", "teach", "coach", "how", "why", "receiving", "dribbling", "shooting", "passing", "tackling", "heading", "goalkeeping", "fitness"];
+const DRILL_KEYWORDS      = ["drill", "exercise", "practice", "warm", "session", "improve", "train", "speed", "fitness", "dribble", "pass", "shoot", "tackle", "header", "control", "pressing", "press", "defending", "attacking"];
+const SKILL_KEYWORDS      = ["technique", "skill", "tips", "advice", "teach", "coach", "receiving", "dribbling", "shooting", "passing", "tackling", "heading", "goalkeeping", "pressing", "formation", "tactic", "position", "movement", "transition", "block", "shape"];
 
 function detectIntent(tokens: string[]): "nutrition" | "phase" | "drill" | "skill" | "general" {
-  const joined = tokens.join(" ");
-  const hit = (kws: string[]) => kws.some((k) => joined.includes(k));
+  // Use exact token matching (not substring) to prevent false positives.
+  // e.g. "pressing" must not match the keyword "pre".
+  // Allow prefix match only for keywords 6+ characters long.
+  const hit = (kws: string[]) =>
+    kws.some((k) => tokens.some((t) => t === k || (k.length >= 6 && t.startsWith(k))));
   if (hit(NUTRITION_KEYWORDS)) return "nutrition";
   if (hit(PHASE_KEYWORDS))     return "phase";
   if (hit(DRILL_KEYWORDS))     return "drill";
