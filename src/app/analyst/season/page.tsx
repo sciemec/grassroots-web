@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell,
+} from "recharts";
+
+interface XgRecord {
+  id: string;
+  date: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeXg: number;
+  awayXg: number;
+  homeGoals: number;
+  awayGoals: number;
+}
 
 interface CoachMatch {
   id: string;
@@ -31,6 +45,14 @@ function outcomeColor(o: "W" | "D" | "L" | null) {
 export default function SeasonIntelligencePage() {
   const [aiReport, setAiReport] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [xgHistory, setXgHistory] = useState<XgRecord[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("gs_touch_tracker_history");
+      if (raw) setXgHistory(JSON.parse(raw) as XgRecord[]);
+    } catch {}
+  }, []);
 
   const { data, isLoading, isError } = useQuery<{ data: CoachMatch[] }>({
     queryKey: ["coach-matches-season"],
@@ -135,6 +157,62 @@ export default function SeasonIntelligencePage() {
                 <p className="text-xs text-muted-foreground">Goals Conceded</p>
               </div>
             </div>
+
+            {/* xG Performance (from Touch Tracker history) */}
+            {xgHistory.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Expected Goals (xG) vs Actual — Last {Math.min(xgHistory.length, 8)} Matches
+                </p>
+                <p className="mb-4 text-[10px] text-muted-foreground italic">From Touch Tracker match history</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart
+                    data={[...xgHistory].reverse().slice(0, 8).map((r) => ({
+                      name: `${r.homeTeam.slice(0, 6)} v ${r.awayTeam.slice(0, 6)}`,
+                      homeXg: r.homeXg,
+                      awayXg: r.awayXg,
+                      homeGoals: r.homeGoals,
+                      awayGoals: r.awayGoals,
+                    }))}
+                    margin={{ top: 4, right: 4, bottom: 24, left: -10 }}
+                  >
+                    <XAxis dataKey="name" tick={{ fontSize: 8, fill: "#c8edd0" }} angle={-20} textAnchor="end" />
+                    <YAxis tick={{ fontSize: 8, fill: "#c8edd0" }} />
+                    <Tooltip
+                      contentStyle={{ background: "#1a3d26", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 11 }}
+                      labelStyle={{ color: "#f5c542" }}
+                      formatter={(value, name) => [
+                        `${value ?? 0}`,
+                        name === "homeXg" ? "Home xG" : name === "awayXg" ? "Away xG" : name === "homeGoals" ? "Home Goals" : "Away Goals"
+                      ]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 10, color: "#c8edd0" }} />
+                    <Bar dataKey="homeXg"    fill="#2ecc71" name="Home xG"    radius={[3,3,0,0]} />
+                    <Bar dataKey="awayXg"    fill="#60a5fa" name="Away xG"    radius={[3,3,0,0]} />
+                    <Bar dataKey="homeGoals" fill="#f5c542" name="Home Goals" radius={[3,3,0,0]} />
+                    <Bar dataKey="awayGoals" fill="#e53e3e" name="Away Goals" radius={[3,3,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+                {/* Over/under performance table */}
+                <div className="mt-3 divide-y divide-white/5 max-h-40 overflow-y-auto">
+                  {[...xgHistory].reverse().slice(0, 8).map((r) => {
+                    const homeDiff = r.homeGoals - r.homeXg;
+                    const awayDiff = r.awayGoals - r.awayXg;
+                    return (
+                      <div key={r.id} className="flex items-center justify-between py-1.5 text-xs">
+                        <span className="text-white/70 truncate max-w-[120px]">{r.homeTeam} vs {r.awayTeam}</span>
+                        <span className={homeDiff >= 0 ? "text-green-400" : "text-red-400"}>
+                          H: {homeDiff >= 0 ? "+" : ""}{homeDiff.toFixed(2)} xG
+                        </span>
+                        <span className={awayDiff >= 0 ? "text-green-400" : "text-red-400"}>
+                          A: {awayDiff >= 0 ? "+" : ""}{awayDiff.toFixed(2)} xG
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Form guide */}
             <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">

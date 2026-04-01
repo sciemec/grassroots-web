@@ -2814,11 +2814,53 @@ Before marking any step complete:
 
 ### WHAT STILL NEEDS DOING IN ANALYST HUB
 
-| Gap | What's needed |
-|---|---|
-| Pass Map PDF export | Add `exportPDF()` + Download button to `/analyst/pass-map` |
-| xG stored per match | Extend `saveMatch()` in Touch Tracker to persist xG totals → unlocks rolling xG chart in Season Intelligence |
-| Analyst user role | Add `analyst` role to Laravel `users` table so non-admin analysts can log in |
+### COMPLETED (all gaps closed — 1 April 2026)
+
+#### Pass Map PDF Export — DONE ✅
+- `exportPDF()` draws the full pitch (green background + white markings + penalty areas + spots + centre circle) using jsPDF geometry
+- Gold pass lines with thickness proportional to pass count, count labels at midpoints
+- Player dots with numbers
+- Ranked connections table below pitch
+- Disabled when no players placed
+- File: `src/app/analyst/pass-map/page.tsx`
+
+#### xG Rolling Chart in Season Intelligence — DONE ✅
+- Reads Touch Tracker localStorage key `gs_touch_tracker_history` on mount
+- Shows recharts BarChart: Home xG (green) / Away xG (blue) / Home Goals (gold) / Away Goals (red) per match
+- Over/under performance table: positive = overperformed vs xG, negative = underperformed
+- Shows last 8 Touch Tracker matches
+- No backend needed — entirely client-side
+- File: `src/app/analyst/season\page.tsx`
+
+#### Analyst Sidebar Nav — DONE ✅
+- Full nav section added for `analyst` role: Analyst Hub, Live Collector, Touch Tracker, xG Analysis, Tactical Report, Pass Map, Player Heatmaps, Season Intelligence
+- `analyst` tab added to Admin hub switcher (cyan — 6th tab, grid-cols-6)
+- Analyst icons: Flame (live), Activity, Target, ClipboardList, Map, Thermometer, TrendingUp
+- File: `src/components/layout/sidebar.tsx`
+
+### ANALYST ROLE ON LARAVEL — ACTION REQUIRED
+
+The frontend fully supports the `analyst` role. To allow real analyst accounts on the backend:
+
+```php
+// FILE: database/migrations/YYYY_MM_DD_add_analyst_to_users_role_enum.php
+Schema::table('users', function (Blueprint $table) {
+    // If role is an ENUM:
+    DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('admin','coach','scout','player','fan','analyst') NOT NULL DEFAULT 'player'");
+    // If role is a plain VARCHAR — no migration needed, just create the user with role='analyst'
+});
+```
+
+**Or simply create the analyst user manually in Render PostgreSQL:**
+```sql
+UPDATE users SET role = 'analyst' WHERE email = 'analyst@grassrootssports.live';
+-- OR INSERT a new user with role='analyst' via the admin dashboard /admin/users
+```
+
+**Test credentials to create:**
+```
+analyst@grassrootssports.live / Analyst123! / role: analyst
+```
 
 ---
 

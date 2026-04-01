@@ -9,6 +9,7 @@ import {
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
   Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
   Menu, X, ScanSearch, Briefcase, LineChart, Camera, Globe2,
+  Map, Thermometer, TrendingUp as SeasonIcon, Flame,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -101,14 +102,24 @@ const navItems: NavItem[] = [
   { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
   { href: "/sports/netball",     label: "Netball Hub",    icon: Globe2,          roles: ["fan"] },
   { href: "/business-hub",       label: "Business Hub",   icon: Briefcase,       roles: ["fan"] },
+  // ─── Analyst ──────────────────────────────────────────────────────────────
+  { href: "/analyst",                      label: "Analyst Hub",       icon: LineChart,   roles: ["analyst"] },
+  { href: "/analyst/live-match",           label: "Live Collector",    icon: Flame,       roles: ["analyst"] },
+  { href: "/analyst/touch-tracker",        label: "Touch Tracker",     icon: Activity,    roles: ["analyst"] },
+  { href: "/analyst/xg-analysis",          label: "xG Analysis",       icon: Target,      roles: ["analyst"] },
+  { href: "/analyst/tactical-report",      label: "Tactical Report",   icon: ClipboardList, roles: ["analyst"] },
+  { href: "/analyst/pass-map",             label: "Pass Map",          icon: Map,         roles: ["analyst"] },
+  { href: "/analyst/heatmaps",             label: "Player Heatmaps",   icon: Thermometer, roles: ["analyst"] },
+  { href: "/analyst/season",               label: "Season Intelligence", icon: SeasonIcon, roles: ["analyst"] },
 ];
 
 const HUB_TABS: { role: UserRole; label: string; color: string }[] = [
-  { role: "admin",  label: "Admin",  color: "bg-purple-500 text-white" },
-  { role: "player", label: "Player", color: "bg-blue-500 text-white" },
-  { role: "coach",  label: "Coach",  color: "bg-green-500 text-white" },
-  { role: "scout",  label: "Scout",  color: "bg-orange-500 text-white" },
-  { role: "fan",    label: "Fan",    color: "bg-pink-500 text-white" },
+  { role: "admin",    label: "Admin",    color: "bg-purple-500 text-white" },
+  { role: "player",   label: "Player",   color: "bg-blue-500 text-white" },
+  { role: "coach",    label: "Coach",    color: "bg-green-500 text-white" },
+  { role: "scout",    label: "Scout",    color: "bg-orange-500 text-white" },
+  { role: "fan",      label: "Fan",      color: "bg-pink-500 text-white" },
+  { role: "analyst",  label: "Analyst",  color: "bg-cyan-600 text-white" },
 ];
 
 function NavContent({ onNavClick }: { onNavClick?: () => void }) {
@@ -145,7 +156,7 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
           <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             Preview Hub
           </p>
-          <div className="grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-6 gap-1">
             {HUB_TABS.map(({ role, label, color }) => (
               <button
                 key={role}
