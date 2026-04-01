@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Heart, Trophy, Users, Globe, Star, ChevronRight, Search, Calendar, MapPin, Radio,
+  Heart, Trophy, Users, Globe, Star, ChevronRight, Search, Calendar, MapPin, Radio, MessageCircle,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
@@ -147,7 +147,8 @@ export default function FanHubPage() {
     { icon: Star,   title: "Discover",     subtitle: "Tsvaga nyeredzi — Find talent", href: "/fan/discover",    bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
     { icon: Heart,  title: "Following",    subtitle: "Vatambi vaunotevera",           href: "/fan/following",   bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
     { icon: Trophy, title: "Leaderboard",  subtitle: "Top players — Rankings",        href: "/fan/leaderboard", bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
-    { icon: Radio,  title: "Live Matches", subtitle: "Watch live — Tarisai",          href: "/streaming",       bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+    { icon: Radio,  title: "Live Matches",     subtitle: "Watch live — Tarisai",          href: "/streaming",              bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+    { icon: MessageCircle, title: "Live Commentary", subtitle: "Tap events · AI writes it",  href: "/fan/live-commentary",    bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
   ];
 
   return (

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award,
+  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award, Activity,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -104,6 +104,7 @@ export default function PlayerHubPage() {
     { icon: Film,      title: "Highlight Vault", subtitle: "Upload & share your videos",  href: "/player/vault",              bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
     { icon: Camera,    title: "Record Drill",    subtitle: "Record your performance now", href: "/player/record",             bg: "bg-[#7b241c]",  gradient: "bg-gradient-to-br from-[#c0392b] to-[#7b241c]" },
     { icon: Award,     title: "Talent Showcase", subtitle: "Upload clips — get scouted",  href: "/player/showcase",           bg: "bg-[#1a4971]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a4971]" },
+    { icon: Activity,  title: "Session Tracker", subtitle: "Friend logs your actions live", href: "/player/session-tracker",    bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#1e8449] to-[#145a32]" },
   ];
 
   return (

@@ -62,6 +62,10 @@ interface MatchRecord {
   topAway: string;
   aiAnalysis: string;
   sequences: number;
+  homeXg: number;
+  awayXg: number;
+  homeGoals: number;
+  awayGoals: number;
 }
 
 const ROLE_COLORS: Record<PlayerRole, string> = {
@@ -367,6 +371,8 @@ export default function TouchTrackerPage() {
   const [activeTab, setActiveTab] = useState<"log" | "stats" | "ai" | "history">("log");
   const [history, setHistory] = useState<MatchRecord[]>([]);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
+  const [shots, setShots] = useState<ShotEvent[]>([]);
+  const [shotModal, setShotModal] = useState<{ team: "home" | "away"; playerNum: number } | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -383,6 +389,7 @@ export default function TouchTrackerPage() {
         setHomeRoles(d.homeRoles ?? FORMATION_PRESETS["4-4-2"]);
         setAwayRoles(d.awayRoles ?? FORMATION_PRESETS["4-4-2"]);
         setTouches(d.touches ?? []);
+        setShots(d.shots ?? []);
         setElapsed(d.elapsed ?? 0);
         setCurrentHalf(d.currentHalf ?? 1);
         setHalfBreakAt(d.halfBreakAt ?? null);
@@ -395,7 +402,7 @@ export default function TouchTrackerPage() {
   // Save to storage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ homeTeam, awayTeam, homeRoles, awayRoles, touches, elapsed, phase, currentHalf, halfBreakAt }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ homeTeam, awayTeam, homeRoles, awayRoles, touches, shots, elapsed, phase, currentHalf, halfBreakAt }));
     } catch {}
   }, [homeTeam, awayTeam, touches, elapsed, phase]);
 
@@ -474,6 +481,7 @@ export default function TouchTrackerPage() {
   const resetAll = () => {
     stopTimer();
     setTouches([]);
+    setShots([]);
     setElapsed(0);
     setCurrentHalf(1);
     setHalfBreakAt(null);
@@ -481,6 +489,7 @@ export default function TouchTrackerPage() {
     setAiAnalysis("");
     setLastHome(null);
     setLastAway(null);
+    setShotModal(null);
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -494,6 +503,27 @@ export default function TouchTrackerPage() {
     if (team === "home") setLastHome(touch);
     else setLastAway(touch);
   };
+
+  const logShot = (zoneId: string, isGoal: boolean) => {
+    if (!shotModal) return;
+    const zone = XG_ZONES.find(z => z.id === zoneId)!;
+    const shot: ShotEvent = {
+      id: Date.now().toString(),
+      team: shotModal.team,
+      playerNum: shotModal.playerNum,
+      zone: zone.label,
+      xg: zone.xg,
+      isGoal,
+      min: Math.floor(elapsed / 60000),
+    };
+    setShots(prev => [...prev, shot]);
+    setShotModal(null);
+  };
+
+  const homeXg = shots.filter(s => s.team === "home").reduce((a, s) => a + s.xg, 0);
+  const awayXg = shots.filter(s => s.team === "away").reduce((a, s) => a + s.xg, 0);
+  const homeGoals = shots.filter(s => s.team === "home" && s.isGoal).length;
+  const awayGoals = shots.filter(s => s.team === "away" && s.isGoal).length;
 
   const stats = computeStats(touches);
   const sequences = detectSequences(touches);
@@ -519,7 +549,10 @@ export default function TouchTrackerPage() {
     setAiQueued(false);
     setAiLoading(true);
     setActiveTab("ai");
-    const prompt = buildAiPrompt(stats, touches, homeTeam, awayTeam, elapsed, homeRoles, awayRoles);
+    const xgSummary = shots.length > 0
+      ? `\n\nxG SUMMARY:\n${homeTeam}: ${homeGoals} goals / ${homeXg.toFixed(2)} xG (${homeGoals > homeXg ? "overperforming" : "underperforming"})\n${awayTeam}: ${awayGoals} goals / ${awayXg.toFixed(2)} xG (${awayGoals > awayXg ? "overperforming" : "underperforming"})\nShot log:\n${shots.map(s => `  ${s.team === "home" ? homeTeam : awayTeam} #${s.playerNum} — ${s.zone} (xG ${s.xg}) ${s.isGoal ? "⚽ GOAL" : "saved/missed"} @${s.min}'`).join("\n")}`
+      : "";
+    const prompt = buildAiPrompt(stats, touches, homeTeam, awayTeam, elapsed, homeRoles, awayRoles) + xgSummary;
     try {
       const res = await fetch("/api/ai-chat", {
         method: "POST",
@@ -559,13 +592,17 @@ export default function TouchTrackerPage() {
       topAway: topPlayer("away"),
       aiAnalysis: analysis,
       sequences: sequences.length,
+      homeXg: parseFloat(homeXg.toFixed(2)),
+      awayXg: parseFloat(awayXg.toFixed(2)),
+      homeGoals,
+      awayGoals,
     };
     setHistory(prev => {
-      const updated = [record, ...prev].slice(0, 20); // keep last 20
+      const updated = [record, ...prev].slice(0, 20);
       try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch {}
       return updated;
     });
-  }, [touches, homeTeam, awayTeam, elapsed, stats, homeRoles, awayRoles, sequences]);
+  }, [touches, homeTeam, awayTeam, elapsed, stats, homeRoles, awayRoles, sequences, homeXg, awayXg, homeGoals, awayGoals]);
 
   // Format elapsed time
   const fmtTime = (ms: number) => {
@@ -763,7 +800,16 @@ export default function TouchTrackerPage() {
                   {currentHalf === 1 ? "1ST" : "2ND"}
                 </span>
               </div>
-              <p className="text-[10px] text-white/50">{homeTeam} vs {awayTeam} · {touches.length} touches logged</p>
+              <div className="flex items-center gap-3 mt-0.5">
+                <span className="text-[10px] text-white/50">{touches.length} touches</span>
+                {shots.length > 0 && (
+                  <span className="text-[10px] font-black text-blue-300">
+                    {homeTeam} {homeGoals}({homeXg.toFixed(1)}xG)
+                    <span className="text-white/30 mx-1">·</span>
+                    {awayGoals}({awayXg.toFixed(1)}xG) {awayTeam}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-1.5 flex-wrap justify-end">
               {phase === "live" && currentHalf === 1 && (
@@ -932,6 +978,20 @@ export default function TouchTrackerPage() {
                   );
                 })}
               </div>
+              {/* Log Shot */}
+              {phase === "live" && (
+                <button
+                  onClick={() => setShotModal({ team: "home", playerNum: 9 })}
+                  className="mt-2 w-full rounded-lg border border-red-500/40 bg-red-500/10 py-1.5 text-[10px] font-black text-red-400 hover:bg-red-500/20 transition-colors"
+                >
+                  🎯 Log Shot + xG
+                </button>
+              )}
+              {shots.filter(s => s.team === "home").length > 0 && (
+                <p className="mt-1 text-center text-[9px] text-white/40">
+                  {homeGoals}G · {homeXg.toFixed(2)} xG · {shots.filter(s => s.team === "home").length} shots
+                </p>
+              )}
             </div>
 
             {/* Away team */}
@@ -993,6 +1053,71 @@ export default function TouchTrackerPage() {
                     </button>
                   );
                 })}
+              </div>
+              {/* Log Shot */}
+              {phase === "live" && (
+                <button
+                  onClick={() => setShotModal({ team: "away", playerNum: 9 })}
+                  className="mt-2 w-full rounded-lg border border-red-500/40 bg-red-500/10 py-1.5 text-[10px] font-black text-red-400 hover:bg-red-500/20 transition-colors"
+                >
+                  🎯 Log Shot + xG
+                </button>
+              )}
+              {shots.filter(s => s.team === "away").length > 0 && (
+                <p className="mt-1 text-center text-[9px] text-white/40">
+                  {awayGoals}G · {awayXg.toFixed(2)} xG · {shots.filter(s => s.team === "away").length} shots
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* xG Zone Picker Modal */}
+        {shotModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-t-2xl border border-white/10 bg-[#0d2010] p-5 pb-8">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-white">Log Shot — {shotModal.team === "home" ? homeTeam : awayTeam}</p>
+                  <p className="text-[10px] text-white/40">Select the zone the shot came from</p>
+                </div>
+                <button onClick={() => setShotModal(null)} className="rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50 hover:text-white">Cancel</button>
+              </div>
+              {/* Player picker */}
+              <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-white/40">Which player?</p>
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {HOME_STARTERS.map(n => (
+                  <button key={n}
+                    onClick={() => setShotModal(prev => prev ? { ...prev, playerNum: n } : null)}
+                    className={`rounded-lg px-2 py-1 text-[10px] font-black transition-colors ${shotModal.playerNum === n ? "bg-accent text-black" : "border border-white/10 text-white/60 hover:border-white/30"}`}
+                  >#{n}</button>
+                ))}
+              </div>
+              {/* Zone grid */}
+              <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-white/40">Zone (tap to select + log)</p>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {XG_ZONES.map(zone => (
+                  <button key={zone.id}
+                    onClick={() => logShot(zone.id, false)}
+                    className="rounded-xl border border-white/10 bg-white/5 px-2 py-2.5 text-left hover:border-accent/50 hover:bg-accent/10 transition-colors"
+                  >
+                    <p className="text-[9px] font-black text-white leading-tight">{zone.label}</p>
+                    <p className="text-[10px] font-black text-accent mt-0.5">{zone.xg} xG</p>
+                  </button>
+                ))}
+              </div>
+              {/* Goal shortcut */}
+              <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-white/40">Or — was it a goal?</p>
+              <div className="grid grid-cols-3 gap-2">
+                {XG_ZONES.slice(0, 3).map(zone => (
+                  <button key={zone.id}
+                    onClick={() => logShot(zone.id, true)}
+                    className="rounded-xl border border-green-500/40 bg-green-500/10 px-2 py-2 text-center hover:bg-green-500/20 transition-colors"
+                  >
+                    <p className="text-[9px] font-black text-green-400">⚽ GOAL</p>
+                    <p className="text-[9px] text-white/50">{zone.label}</p>
+                  </button>
+                ))}
               </div>
             </div>
           </div>

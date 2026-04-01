@@ -2,6 +2,52 @@
 
 ---
 
+## 🚨 INCOMPLETE WORK ALERT RULE — MANDATORY (PERMANENT)
+
+This rule exists because Nigel discovered in March 2026 that multiple features were
+described as "built" in CLAUDE.md but were silently missing their backend migrations,
+controllers, routes, or middleware — meaning they were broken in production without
+any warning being given.
+
+### THE RULE: Claude MUST alert Nigel to incomplete work AT ALL TIMES.
+
+**At the START of every session, Claude MUST scan for and report:**
+1. Frontend pages that call API endpoints which have no matching Laravel route
+2. Laravel controllers that are listed in routes but whose file does not exist
+3. Database migrations that are referenced in CLAUDE.md "COMPLETED" sections but whose
+   migration file does not exist in `bhora-ai/database/migrations/`
+4. Models referenced in controllers that do not exist in `app/Models/`
+5. Middleware registered in routes that does not exist in `app/Http/Middleware/`
+6. Environment variables listed in CLAUDE.md that are not yet set in Vercel or Render
+
+**When finishing ANY feature, Claude MUST end the response with:**
+
+```
+⚠️  INCOMPLETE WORK CHECKLIST — [Feature Name]
+─────────────────────────────────────────────
+✅ Frontend page: [file path] — DONE
+✅ API route: [route] — DONE
+❌ Migration: [table name] — NOT YET RUN on Render
+❌ Controller: [ControllerName] — FILE MISSING
+❌ Env var: [VAR_NAME] — NOT SET in Vercel/Render
+─────────────────────────────────────────────
+ACTION REQUIRED: [exact steps Nigel must take before this feature works in production]
+```
+
+**Claude must NEVER:**
+- Mark a feature as "DONE ✅" in CLAUDE.md if any part of the backend is missing
+- Use the phrase "fully built" or "complete" if migrations haven't been run on Render
+- Move on to the next feature without telling Nigel what is still broken from the last one
+- Assume that because code was written in a session, it was deployed and working
+
+**Why this rule exists:**
+Nigel is building a production platform serving real Zimbabwean athletes. When a feature
+appears "done" but is actually broken due to a missing migration or controller, real users
+hit errors. Every incomplete connection is a broken promise to the athletes this platform
+is meant to help. Silence about incomplete work is not acceptable.
+
+---
+
 ## 🚫 NO GUESSWORK — MANDATORY RULE (PERMANENT)
 
 This is a real, live-changing project. Every solution must meet this standard:
