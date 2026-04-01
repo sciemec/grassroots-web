@@ -32,9 +32,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ── Hub label (dark bg version) ───────────────────────────────────────────────
 function HubSectionLabel({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-[3px] h-[18px] rounded-full" style={{ background: "#E6A817" }} />
-      <span className="font-bold text-base" style={{ color: "#1B5E20" }}>{label}</span>
+    <div className="flex items-center gap-3 mb-5">
+      <div className="w-[4px] h-[24px] rounded-full" style={{ background: "#E6A817" }} />
+      <span className="font-extrabold text-xl tracking-tight" style={{ color: "#1B5E20" }}>{label}</span>
     </div>
   );
 }
