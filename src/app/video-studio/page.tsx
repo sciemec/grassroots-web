@@ -243,9 +243,13 @@ export default function VideoStudioPage() {
         const base64Frames = frameUrls.map((url) =>
           url.replace(/^data:image\/[a-z]+;base64,/, "")
         );
+        const authToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
         const res = await fetch("/api/video-analysis", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(authToken ? { "Authorization": `Bearer ${authToken}` } : {}),
+          },
           body: JSON.stringify({
             frames: base64Frames,
             context: prompt,

@@ -110,17 +110,31 @@ export default function PlayerVerificationPage() {
   const startCamera = async () => {
     setCameraError("");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-      });
+      // Try with ideal constraints first, fall back to basic video if it fails
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+        });
+      } catch {
+        // Retry with minimal constraints (some older Android phones reject ideal constraints)
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
       setCameraActive(true);
-    } catch {
-      setCameraError("Camera access denied. Please allow camera access and try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("NotFound") || msg.includes("Devices")) {
+        setCameraError("No camera found on this device.");
+      } else if (msg.includes("NotAllowed") || msg.includes("Permission") || msg.includes("denied")) {
+        setCameraError("Camera permission denied. Tap your browser's address bar → Site settings → Allow Camera.");
+      } else {
+        setCameraError("Could not open camera. Try a different browser or check your camera settings.");
+      }
     }
   };
 

@@ -260,14 +260,24 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
       );
 
-      detectorRef.current = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: POSE_MODEL_URL, delegate: "GPU" },
-        runningMode: RunningMode ? RunningMode.VIDEO : "VIDEO",
-        numPoses: 1,
-        minPoseDetectionConfidence: 0.5,
-        minPosePresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
+      // Try GPU first (faster), fall back to CPU (wider device support — especially Android)
+      let detector = null;
+      for (const delegate of ["GPU", "CPU"] as const) {
+        try {
+          detector = await PoseLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: POSE_MODEL_URL, delegate },
+            runningMode: RunningMode ? RunningMode.VIDEO : "VIDEO",
+            numPoses: 1,
+            minPoseDetectionConfidence: 0.5,
+            minPosePresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+          });
+          break;
+        } catch {
+          if (delegate === "CPU") throw new Error("Pose model failed to load. Try a different browser.");
+        }
+      }
+      detectorRef.current = detector;
 
       // 2. Open camera
       const stream = await navigator.mediaDevices.getUserMedia({
