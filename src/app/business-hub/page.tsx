@@ -14,7 +14,7 @@ import {
   Users, Trophy, GraduationCap, Building2, Handshake,
   CheckCircle, ArrowRight, Star, TrendingUp, FileText,
   PiggyBank, Target, Lightbulb, ChevronDown, ChevronUp,
-  Trash2, Plus, Loader2, AlertCircle, Camera, X, Pencil, Check,
+  Trash2, Plus, Loader2, AlertCircle, Camera, X, Pencil, Check, Share2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,6 +46,10 @@ interface BusinessEvent {
   status: "Draft" | "Planning" | "Open" | "Completed";
   icon: string;
   checklist_done: number[];
+  is_fundraiser?: boolean;
+  fundraiser_purpose?: string | null;
+  fundraiser_goal?: number;
+  fundraiser_raised?: number;
 }
 
 interface Member {
@@ -755,7 +759,7 @@ function EventPlanner({ isGuest }: { isGuest: boolean }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", date_range: "", sport: "Multi-sport", teams: "", icon: "🏅" });
+  const [form, setForm] = useState({ name: "", date_range: "", sport: "Multi-sport", teams: "", icon: "🏅", is_fundraiser: false, fundraiser_purpose: "", fundraiser_goal: "" });
 
   const load = useCallback(async () => {
     if (isGuest) { setEvents(DEMO_EVENTS); return; }
@@ -783,15 +787,21 @@ function EventPlanner({ isGuest }: { isGuest: boolean }) {
   const createEvent = async () => {
     if (!form.name.trim()) return;
     if (isGuest) {
-      setEvents((prev) => [...prev, { id: Date.now().toString(), ...form, teams: Number(form.teams) || 0, status: "Planning", checklist_done: [] }]);
+      setEvents((prev) => [...prev, { id: Date.now().toString(), ...form, teams: Number(form.teams) || 0, is_fundraiser: form.is_fundraiser, fundraiser_purpose: form.fundraiser_purpose || null, fundraiser_goal: Number(form.fundraiser_goal) || 0, fundraiser_raised: 0, status: "Planning", checklist_done: [] }]);
       setShowForm(false); return;
     }
     try {
       setSaving(true);
-      const res = await api.post<{ data: BusinessEvent }>("/business/events", { ...form, teams: Number(form.teams) || 0 });
+      const res = await api.post<{ data: BusinessEvent }>("/business/events", {
+        ...form,
+        teams:              Number(form.teams) || 0,
+        is_fundraiser:      form.is_fundraiser,
+        fundraiser_purpose: form.fundraiser_purpose || undefined,
+        fundraiser_goal:    Number(form.fundraiser_goal) || undefined,
+      });
       setEvents((prev) => [...prev, res.data.data]);
       setShowForm(false);
-      setForm({ name: "", date_range: "", sport: "Multi-sport", teams: "", icon: "🏅" });
+      setForm({ name: "", date_range: "", sport: "Multi-sport", teams: "", icon: "🏅", is_fundraiser: false, fundraiser_purpose: "", fundraiser_goal: "" });
     } catch { setError("Could not create event."); }
     finally { setSaving(false); }
   };
@@ -816,6 +826,7 @@ function EventPlanner({ isGuest }: { isGuest: boolean }) {
               <div><p className="font-bold text-white text-sm">{ev.name}</p><p className="text-xs text-green-400/60">{ev.date_range} · {ev.sport} · {ev.teams} teams</p></div>
             </button>
             <div className="flex items-center gap-2">
+              {ev.is_fundraiser && <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400">🎗 Fundraiser</span>}
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${ev.status === "Open" ? "bg-green-500/20 text-green-400" : ev.status === "Planning" ? "bg-amber-500/20 text-amber-400" : "bg-white/10 text-white/50"}`}>{ev.status}</span>
               <button onClick={() => deleteEvent(ev.id)} className="text-red-400/40 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
               {expanded === ev.id ? <ChevronUp className="h-4 w-4 text-green-400" /> : <ChevronDown className="h-4 w-4 text-green-400" />}
@@ -833,6 +844,36 @@ function EventPlanner({ isGuest }: { isGuest: boolean }) {
                 ))}
               </div>
               <p className="mt-3 text-xs text-green-400/50">{ev.checklist_done.length}/{CHECKLIST.length} tasks complete</p>
+              {ev.is_fundraiser && (
+                <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-amber-300">
+                    {ev.fundraiser_purpose ?? "Match Day Fundraiser"}
+                  </p>
+                  {(ev.fundraiser_goal ?? 0) > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-white/50">
+                        <span>${Number(ev.fundraiser_raised ?? 0).toFixed(2)} raised</span>
+                        <span>Goal: ${Number(ev.fundraiser_goal ?? 0).toFixed(2)}</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400"
+                          style={{ width: `${Math.min(100, (ev.fundraiser_goal ?? 0) > 0 ? Math.round((Number(ev.fundraiser_raised ?? 0) / Number(ev.fundraiser_goal)) * 100) : 0)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      const url = `${typeof window !== "undefined" ? window.location.origin : "https://grassrootssports.live"}/match/${ev.id}`;
+                      navigator.clipboard.writeText(url).catch(() => {});
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 transition-colors"
+                  >
+                    <Share2 className="h-3 w-3" /> Copy Match Day Link
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -847,6 +888,21 @@ function EventPlanner({ isGuest }: { isGuest: boolean }) {
             <input type="number" placeholder="No. of teams" value={form.teams} onChange={(e) => setForm((f) => ({ ...f, teams: e.target.value }))} className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-green-400" />
             <input type="text" placeholder="Icon emoji" value={form.icon} onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))} className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-green-400" />
           </div>
+          {/* Fundraiser toggle */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <div className={`relative h-5 w-9 rounded-full transition-colors ${form.is_fundraiser ? "bg-amber-500" : "bg-white/20"}`}>
+              <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${form.is_fundraiser ? "translate-x-4" : "translate-x-0.5"}`} />
+            </div>
+            <input type="checkbox" className="sr-only" checked={form.is_fundraiser} onChange={(e) => setForm((f) => ({ ...f, is_fundraiser: e.target.checked }))} />
+            <span className="text-xs text-white/70">This event has a Match Day fundraiser</span>
+          </label>
+          {form.is_fundraiser && (
+            <div className="grid grid-cols-2 gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+              <input type="text" placeholder="Fundraiser purpose (e.g. Buy jerseys)" value={form.fundraiser_purpose} onChange={(e) => setForm((f) => ({ ...f, fundraiser_purpose: e.target.value }))} className="col-span-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400" />
+              <input type="number" placeholder="Goal amount ($)" value={form.fundraiser_goal} onChange={(e) => setForm((f) => ({ ...f, fundraiser_goal: e.target.value }))} min="0" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400" />
+              <p className="flex items-center text-xs text-amber-300/70 pl-1">Parents donate via EcoCash on match day.</p>
+            </div>
+          )}
           <div className="flex gap-2">
             <button onClick={createEvent} disabled={saving} className="flex items-center gap-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-500 disabled:opacity-50 transition-colors">
               {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : null} Create event
