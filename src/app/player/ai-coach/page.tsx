@@ -13,11 +13,14 @@ import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 import { loadPlayerContext, type PlayerContext } from "@/lib/player-context";
 import { classifyQuestion, system2Protocols, type ThinkingSystem } from "@/lib/ai-routing";
 
+type AIEngine = "deepseek" | "claude" | "offline";
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  engine?: AIEngine;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -33,8 +36,15 @@ const SUGGESTED_PROMPTS = [
   "Ndisimudze sei pamutambo wefootball?",
 ];
 
+const ENGINE_BADGE: Record<AIEngine, { label: string; className: string }> = {
+  deepseek: { label: "⚡ DeepSeek",  className: "bg-blue-500/15 text-blue-400 border border-blue-500/20" },
+  claude:   { label: "🧠 Claude",    className: "bg-purple-500/15 text-purple-400 border border-purple-500/20" },
+  offline:  { label: "📚 Offline",   className: "bg-amber-500/15 text-amber-400 border border-amber-500/20" },
+};
+
 function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === "user";
+  const badge = !isUser && msg.engine ? ENGINE_BADGE[msg.engine] : null;
   return (
     <div className={`flex items-start gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
       {/* Avatar */}
@@ -56,9 +66,16 @@ function MessageBubble({ msg }: { msg: Message }) {
             {i < msg.content.split("\n").length - 1 && <br />}
           </span>
         ))}
-        <p className={`mt-1 text-xs opacity-60 ${isUser ? "text-right" : ""}`}>
-          {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        </p>
+        <div className={`mt-2 flex items-center gap-2 ${isUser ? "justify-end" : ""}`}>
+          {badge && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}>
+              {badge.label}
+            </span>
+          )}
+          <p className="text-xs opacity-60">
+            {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -233,6 +250,7 @@ export default function AICoachPage() {
     systemP: string,
     history: { role: string; content: string }[],
     streamingMsgId?: string,
+    onEngine?: (e: AIEngine) => void,
   ): Promise<string | null> => {
     const { system } = classifyQuestion(message);
     setThinkingSystem(system);
@@ -247,6 +265,7 @@ export default function AICoachPage() {
           body: JSON.stringify({ message, system_prompt: enhancedSystem, history, stream: true }),
         });
         if (res.ok && res.body && streamingMsgId) {
+          onEngine?.("claude");
           const reader = res.body.getReader();
           const decoder = new TextDecoder();
           let fullText = "";
@@ -297,7 +316,7 @@ export default function AICoachPage() {
         } : undefined,
       });
       const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
-      if (reply) return reply;
+      if (reply) { onEngine?.("deepseek"); return reply; }
     } catch {
       // 401 (guest/dev-bypass) or network error → fall through to Claude
     }
@@ -310,6 +329,7 @@ export default function AICoachPage() {
         body: JSON.stringify({ message, system_prompt: systemP, history, stream: true }),
       });
       if (res.ok && res.body && streamingMsgId) {
+        onEngine?.("claude");
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let fullText = "";
@@ -340,7 +360,7 @@ export default function AICoachPage() {
 
     // Step 3 — Offline knowledge base
     const offline = await searchOffline(message);
-    if (offline) return `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`;
+    if (offline) { onEngine?.("offline"); return `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`; }
 
     throw new Error("I couldn't connect to any AI service. Please check your connection and try again.");
   };
@@ -404,7 +424,10 @@ export default function AICoachPage() {
         .slice(-10)
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const reply = await callAI(content, systemPrompt, history, assistantId);
+      const onEngine = (e: AIEngine) => {
+        setMessages((prev) => prev.map(m => m.id === assistantId ? { ...m, engine: e } : m));
+      };
+      const reply = await callAI(content, systemPrompt, history, assistantId, onEngine);
       // reply is null when Claude streamed directly into state — nothing more to do
       if (reply !== null) {
         setMessages((prev) => prev.map(m =>
