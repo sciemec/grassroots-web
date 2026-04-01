@@ -16,6 +16,7 @@ export function PublicNavbar() {
     { href: "/#ai", label: "AI Coach" },
     { href: "/schools", label: "Schools & Clubs" },
     { href: "/business-hub", label: "Business Hub" },
+    { href: "/business-directory", label: "Org Directory" },
     { href: "/#pricing", label: "Pricing" },
   ];
 
