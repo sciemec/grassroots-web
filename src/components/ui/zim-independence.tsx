@@ -95,14 +95,13 @@ export const ZimPresidentBanner = () => {
 
         .zpb-badge { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .zpb-portrait {
-          width: 36px; height: 36px; border-radius: 50%;
-          border: 1.5px solid rgba(255,215,0,0.45);
-          background: linear-gradient(135deg, #0d3014, #1a4a22);
-          display: flex; align-items: center; justify-content: center;
+          width: 42px; height: 42px; border-radius: 50%;
+          border: 2px solid rgba(255,215,0,0.6);
           flex-shrink: 0;
-          box-shadow: 0 0 12px rgba(0,100,0,0.3);
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 14px; color: rgba(255,215,0,0.7); letter-spacing: 1px;
+          box-shadow: 0 0 14px rgba(255,215,0,0.25);
+          overflow: hidden;
+          object-fit: cover;
+          object-position: top center;
         }
         .zpb-title { display: flex; flex-direction: column; gap: 1px; }
         .zpb-name {
@@ -127,11 +126,20 @@ export const ZimPresidentBanner = () => {
 
         .zpb-tag {
           flex-shrink: 0;
-          background: rgba(0,100,0,0.2);
-          border: 1px solid rgba(0,100,0,0.4);
-          border-radius: 3px; padding: 4px 10px;
+          background: rgba(0,100,0,0.25);
+          border: 1px solid rgba(255,215,0,0.3);
+          border-radius: 6px; padding: 5px 12px;
+          display: flex; flex-direction: column; align-items: center; gap: 1px;
+          white-space: nowrap;
+        }
+        .zpb-tag-num {
           font-family: 'Bebas Neue', sans-serif;
-          font-size: 13px; letter-spacing: 2px; color: #FFD700; white-space: nowrap;
+          font-size: 20px; letter-spacing: 2px; color: #FFD700; line-height: 1;
+        }
+        .zpb-tag-text {
+          font-family: 'Barlow Condensed', sans-serif;
+          font-size: 8px; letter-spacing: 2px; color: rgba(255,215,0,0.6);
+          text-transform: uppercase;
         }
 
         .zpb-close {
@@ -163,9 +171,10 @@ export const ZimPresidentBanner = () => {
           </div>
 
           <div className="zpb-badge">
-            <div className="zpb-portrait">ED</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/president-ed.jpg" alt="H.E. President Mnangagwa" className="zpb-portrait" />
             <div className="zpb-title">
-              <span className="zpb-name">H.E. Dr Emmerson Mnangagwa</span>
+              <span className="zpb-name">H.E. Emmerson D. Mnangagwa</span>
               <span className="zpb-role">President of the Republic of Zimbabwe</span>
             </div>
           </div>
@@ -173,10 +182,14 @@ export const ZimPresidentBanner = () => {
           <div className="zpb-pip"/>
 
           <p className="zpb-quote">
-            &ldquo;Talent must be <strong>identified early, nurtured systematically</strong> — afforded opportunity regardless of geography or background.&rdquo;
+            &ldquo;The name <strong>Munhumutapa</strong> evokes heritage, continuity, and authority —
+            progress is strongest when anchored in <strong>history, culture, and shared values.</strong>&rdquo;
           </p>
 
-          <div className="zpb-tag">ZIM @ 46 🇿🇼</div>
+          <div className="zpb-tag">
+            <span className="zpb-tag-num">46</span>
+            <span className="zpb-tag-text">🇿🇼 Zimbabwe</span>
+          </div>
 
           <button className="zpb-close" onClick={dismiss} aria-label="Dismiss">✕</button>
         </div>
