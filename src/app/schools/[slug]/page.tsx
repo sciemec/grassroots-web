@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Building2, MapPin, Users, Mail, Phone, Globe, ChevronLeft, ArrowRight } from "lucide-react";
+import { Building2, MapPin, Users, Mail, Phone, Globe, ChevronLeft, ArrowRight, Trophy } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -11,6 +11,17 @@ interface Team {
   age_group: string | null;
   gender: string;
   season: string | null;
+}
+
+interface MatchResult {
+  id: string;
+  opponent: string;
+  venue: string;
+  match_date: string;
+  our_score: number;
+  their_score: number;
+  sport: string;
+  competition: string | null;
 }
 
 interface Org {
@@ -34,17 +45,27 @@ const TYPE_COLORS: Record<string, string> = {
 
 // ── Data fetching (server component) ─────────────────────────────────────────
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+
 async function getOrg(slug: string): Promise<Org | null> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
-    const res = await fetch(`${apiUrl}/organisations/${slug}`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetch(`${API}/organisations/${slug}`, { next: { revalidate: 60 } });
     if (!res.ok) return null;
     const json = await res.json();
     return json.data ?? null;
   } catch {
     return null;
+  }
+}
+
+async function getMatches(slug: string): Promise<MatchResult[]> {
+  try {
+    const res = await fetch(`${API}/organisations/${slug}/matches`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data ?? [];
+  } catch {
+    return [];
   }
 }
 
@@ -55,7 +76,7 @@ export default async function OrgProfilePage({
 }: {
   params: { slug: string };
 }) {
-  const org = await getOrg(params.slug);
+  const [org, matches] = await Promise.all([getOrg(params.slug), getMatches(params.slug)]);
   if (!org) notFound();
 
   // Group teams by sport
@@ -186,6 +207,41 @@ export default async function OrgProfilePage({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Recent Results */}
+        {matches.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-400" />
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-400">Recent Results</h2>
+            </div>
+            <div className="space-y-2">
+              {matches.map((m) => {
+                const outcome = m.our_score > m.their_score ? "W" : m.our_score === m.their_score ? "D" : "L";
+                const outcomeColor = outcome === "W" ? "bg-green-500/20 text-green-400" : outcome === "D" ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400";
+                return (
+                  <div key={m.id} className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3 gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${outcomeColor}`}>
+                        {outcome}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">vs {m.opponent}</p>
+                        <p className="text-xs text-white/40">
+                          {m.sport}{m.competition ? ` · ${m.competition}` : ""} · {m.venue}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-sm font-bold text-white">{m.our_score}–{m.their_score}</p>
+                      <p className="text-xs text-white/40">{new Date(m.match_date).toLocaleDateString("en-ZW", { day: "numeric", month: "short" })}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
