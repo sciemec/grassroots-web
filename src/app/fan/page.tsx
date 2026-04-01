@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Heart, Trophy, Users, Globe, Star, ChevronRight, Search, Calendar, MapPin, Radio, MessageCircle,
+  Heart, Trophy, Users, Globe, Star, ChevronRight, Search, Calendar, MapPin, Radio, MessageCircle, Building2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
@@ -144,6 +144,7 @@ export default function FanHubPage() {
   const maxProvinceCount = provinces.length > 0 ? provinces[0].count : 1;
 
   const fanCards = [
+    { icon: Building2, title: "Schools & Clubs", subtitle: "Find your org — Fan Hub",   href: "/schools",         bg: "bg-[#795d08]", gradient: "bg-gradient-to-br from-[#9d7a09] to-[#795d08]" },
     { icon: Star,   title: "Discover",     subtitle: "Tsvaga nyeredzi — Find talent", href: "/fan/discover",    bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
     { icon: Heart,  title: "Following",    subtitle: "Vatambi vaunotevera",           href: "/fan/following",   bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
     { icon: Trophy, title: "Leaderboard",  subtitle: "Top players — Rankings",        href: "/fan/leaderboard", bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },

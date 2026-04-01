@@ -14,6 +14,7 @@ export function PublicNavbar() {
     { href: "/#sports", label: "Sports" },
     { href: "/#features", label: "Features" },
     { href: "/#ai", label: "AI Coach" },
+    { href: "/schools", label: "Schools & Clubs" },
     { href: "/business-hub", label: "Business Hub" },
     { href: "/#pricing", label: "Pricing" },
   ];
