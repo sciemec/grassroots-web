@@ -122,6 +122,7 @@ export default function VideoStudioPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "done" | "failed">("idle");
+  const [uploadError, setUploadError] = useState("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -155,6 +156,7 @@ export default function VideoStudioPage() {
   const uploadToR2 = async (f: File) => {
     setUploadStatus("uploading");
     setUploadProgress(0);
+    setUploadError("");
     try {
       // Step 1 — get presigned PUT URL from Next.js server route
       const presignRes = await fetch("/api/upload/presigned", {
@@ -162,7 +164,10 @@ export default function VideoStudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: f.name, content_type: f.type, folder: "videos" }),
       });
-      if (!presignRes.ok) throw new Error("Could not get upload URL");
+      if (!presignRes.ok) {
+        const errJson = await presignRes.json().catch(() => ({})) as { error?: string };
+        throw new Error(errJson.error ?? `Presign failed (${presignRes.status})`);
+      }
       const { upload_url, public_url } = await presignRes.json() as { upload_url: string; public_url: string | null };
 
       // Step 2 — PUT directly to R2 (XHR so we get progress events)
@@ -173,15 +178,16 @@ export default function VideoStudioPage() {
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
         };
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`R2 upload failed: ${xhr.status}`)));
-        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`R2 upload failed (${xhr.status}) — check R2 CORS settings`)));
+        xhr.onerror = () => reject(new Error("Network error uploading to R2"));
         xhr.send(f);
       });
 
       setVideoUrl(public_url);
       setUploadStatus("done");
-    } catch {
-      // Non-blocking — analysis still works without R2
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      setUploadError(msg);
       setUploadStatus("failed");
     }
   };
@@ -411,8 +417,11 @@ export default function VideoStudioPage() {
             {uploadStatus === "failed" && (
               <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                 <p className="text-xs text-amber-400 font-medium">
-                  ⚠ Cloud save failed — your video will not be stored. Analysis will still run, but the video won&apos;t be saved to your history.
+                  ⚠ Cloud save failed — analysis will still run, but the video won&apos;t be stored.
                 </p>
+                {uploadError && (
+                  <p className="mt-1 text-[11px] text-amber-300/70 font-mono break-all">{uploadError}</p>
+                )}
                 <button
                   onClick={() => file && uploadToR2(file)}
                   className="mt-1.5 text-xs text-amber-300 underline hover:text-amber-200 transition-colors"
