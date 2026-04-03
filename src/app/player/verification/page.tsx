@@ -190,10 +190,10 @@ export default function PlayerVerificationPage() {
     setSubmitError("");
     const formData = new FormData();
     formData.append("document_type", docType);
-    formData.append("document_image", file);
+    formData.append("document", file);          // backend expects "document"
     formData.append("selfie_image", selfieBlob, "selfie.jpg");
     try {
-      await api.post("/verification/submit", formData, {
+      await api.post("/verification/upload-document", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setSubmitted(true);
