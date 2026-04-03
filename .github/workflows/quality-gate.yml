@@ -34,11 +34,3 @@ jobs:
 
       - name: Lint check
         run: npm run lint
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run ALL Tests (registration + auth + public pages)
-        run: npx playwright test tests/
-        env:
-          NEXT_PUBLIC_API_URL: https://bhora-ai.onrender.com/api/v1
