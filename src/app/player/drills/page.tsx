@@ -238,17 +238,23 @@ export default function DrillsPage() {
 
     api.get("/drills")
       .then((res) => {
-        const raw: ApiDrill[] = res.data?.data ?? res.data ?? [];
-        if (raw.length > 0) {
-          setDrills(raw.map(mapApiDrill));
-        } else {
-          // API returned empty — use bundled drills
+        try {
+          const payload = res.data?.data ?? res.data;
+          // Guard: backend may return HTML (500 page) or a non-array value
+          const raw: ApiDrill[] = Array.isArray(payload) ? payload : [];
+          if (raw.length > 0) {
+            setDrills(raw.map(mapApiDrill));
+          } else {
+            setDrills(ALL_DRILLS);
+            setUsingFallback(true);
+          }
+        } catch {
           setDrills(ALL_DRILLS);
           setUsingFallback(true);
         }
       })
       .catch(() => {
-        // API unavailable — use bundled drills
+        // API unavailable (500, timeout, network) — use bundled drills
         setDrills(ALL_DRILLS);
         setUsingFallback(true);
       })
@@ -319,7 +325,10 @@ export default function DrillsPage() {
           {usingFallback && !loading && (
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
               <WifiOff className="h-4 w-4 flex-shrink-0" />
-              Showing built-in drill library — connect to load your team&apos;s drills.
+              <span>
+                <span className="font-semibold">Offline library loaded.</span>{" "}
+                {drills.length} built-in drills available — your team&apos;s drills will sync when the server is back.
+              </span>
             </div>
           )}
 
