@@ -316,16 +316,30 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
       setPoseState("running");
       rafRef.current = requestAnimationFrame(runFrameLoop);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("NotAllowed") || msg.includes("Permission")) {
+      const name = err instanceof DOMException ? err.name : "";
+      const msg  = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+      const isDenied =
+        name === "NotAllowedError" ||
+        name === "PermissionDeniedError" ||
+        msg.includes("permission") ||
+        msg.includes("notallowed") ||
+        msg.includes("denied");
+      const isNotFound =
+        name === "NotFoundError" ||
+        name === "DevicesNotFoundError" ||
+        msg.includes("notfound") ||
+        msg.includes("devices");
+
+      if (isDenied) {
         setPoseState("no-camera");
         setErrorMsg("Camera permission denied. Allow camera access and try again.");
-      } else if (msg.includes("NotFound") || msg.includes("Devices")) {
+      } else if (isNotFound) {
         setPoseState("no-camera");
         setErrorMsg("No camera found on this device.");
       } else {
+        const rawMsg = err instanceof Error ? err.message : String(err);
         setPoseState("error");
-        setErrorMsg(msg.length > 120 ? msg.slice(0, 120) + "…" : msg);
+        setErrorMsg(rawMsg.length > 120 ? rawMsg.slice(0, 120) + "…" : rawMsg);
       }
     }
   }, [facingMode, runFrameLoop]);
