@@ -315,7 +315,7 @@ export default function AICoachPage() {
           last_session:  playerCtx.lastSessionType,
         } : undefined,
       });
-      const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+      const reply = res.data?.answer ?? "";
       if (reply) { onEngine?.("deepseek"); return reply; }
     } catch {
       // 401 (guest/dev-bypass) or network error → fall through to Claude
@@ -513,6 +513,15 @@ export default function AICoachPage() {
             </button>
           </div>
         </div>
+
+        {/* Context error banner — shown when profile + stats failed to load */}
+        {playerCtx?.hasContextError && (
+          <div className="border-b border-amber-500/20 bg-amber-500/5 px-6 py-2">
+            <p className="text-xs text-amber-400">
+              ⚠️ Some profile data could not be loaded. AI Coach is working with limited context — check your connection.
+            </p>
+          </div>
+        )}
 
         {/* Suggested prompts — show when only welcome message */}
         {messages.length === 1 && (

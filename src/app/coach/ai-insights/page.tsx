@@ -199,14 +199,14 @@ export default function CoachAIInsightsPage() {
         } catch { /* fall through to DeepSeek */ }
       }
 
-      // System 1 (Fast Thinking) — DeepSeek via Laravel (PRIMARY for simple questions)
-      try {
+      // System 1 (Fast Thinking) — DeepSeek via Laravel (skip if System 2 already replied)
+      if (!replied) try {
         const res = await api.post("/ask", {
           question: questionWithHistory,
           role: user?.role ?? "coach",
           language: "english",
         });
-        const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+        const reply = res.data?.answer ?? "";
         if (reply) {
           setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: reply } : m));
           replied = true;

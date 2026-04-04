@@ -15,7 +15,7 @@ export async function queryAI(
   // Step 1 — Laravel backend
   try {
     const res = await api.post("/ask", { question: message, role, language: "english" });
-    const reply = res.data?.answer ?? res.data?.response ?? res.data?.message ?? "";
+    const reply = res.data?.answer ?? "";
     if (reply) return reply;
   } catch { /* fall through */ }
 

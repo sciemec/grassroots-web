@@ -232,8 +232,62 @@ function formatPhase(p: Phase): string {
 
 const NUTRITION_KEYWORDS  = ["eat", "food", "meal", "nutrition", "diet", "sadza", "protein", "energy", "recover", "recovery", "pretraining", "posttraining", "before", "after", "drink", "water", "hydrat", "calori", "carb"];
 const PHASE_KEYWORDS      = ["phase", "foundation", "development", "performance", "elite", "u10", "u12", "u14", "u16", "u18", "under", "age", "group", "programme", "season", "plan"];
-const DRILL_KEYWORDS      = ["drill", "exercise", "practice", "warm", "session", "improve", "train", "speed", "fitness", "dribble", "pass", "shoot", "tackle", "header", "control", "pressing", "press", "defending", "attacking"];
-const SKILL_KEYWORDS      = ["technique", "skill", "tips", "advice", "teach", "coach", "receiving", "dribbling", "shooting", "passing", "tackling", "heading", "goalkeeping", "pressing", "formation", "tactic", "position", "movement", "transition", "block", "shape"];
+const DRILL_KEYWORDS      = [
+  // football
+  "drill", "exercise", "practice", "warm", "session", "improve", "train",
+  "speed", "fitness", "dribble", "pass", "shoot", "tackle", "header", "control",
+  "pressing", "press", "defending", "attacking",
+  // rugby
+  "ruck", "scrum", "lineout", "maul", "breakdown", "linebreak", "hooker", "prop",
+  // netball
+  "centre pass", "pivot", "dodge", "feed", "intercept", "drive",
+  // athletics
+  "sprint", "hurdle", "relay", "jump", "throw", "shot put", "javelin", "discus", "stride",
+  // cricket
+  "batting", "bowling", "fielding", "crease", "over", "wicket",
+  // basketball
+  "layup", "rebound", "free throw", "crossover", "pick",
+  // swimming
+  "stroke", "lap", "turn", "kick", "flutter", "butterfly", "crawl",
+  // volleyball
+  "serve", "spike", "dig", "set", "block",
+];
+const SKILL_KEYWORDS      = [
+  // football
+  "technique", "skill", "tips", "advice", "teach", "coach", "receiving",
+  "dribbling", "shooting", "passing", "tackling", "heading", "goalkeeping",
+  "pressing", "formation", "tactic", "position", "movement", "transition", "block", "shape",
+  // rugby
+  "try", "carry", "conversion", "penalty kick", "offload", "support",
+  // netball
+  "goal attack", "goal shoot", "goal keep", "wing attack", "wing defence",
+  // athletics
+  "marathon", "long jump", "high jump", "acceleration", "finish", "reaction time",
+  // cricket
+  "bat", "bowl", "spin", "pace", "swing", "seam",
+  // basketball
+  "point guard", "assist", "steal", "three pointer",
+  // swimming
+  "freestyle", "backstroke", "breaststroke", "butterfly stroke", "tumble turn",
+];
+
+/** Detect which sport the query is about (null = football / generic) */
+const SPORT_DETECT: Record<string, string[]> = {
+  rugby:      ["rugby", "ruck", "scrum", "lineout", "maul", "hooker", "try", "conversion"],
+  netball:    ["netball", "centre pass", "goal attack", "goal shoot", "goal keep"],
+  athletics:  ["athletics", "sprint", "hurdle", "marathon", "long jump", "high jump", "discus", "javelin"],
+  cricket:    ["cricket", "batting", "bowling", "wicket", "over", "crease"],
+  basketball: ["basketball", "layup", "rebound", "free throw", "three pointer"],
+  swimming:   ["swimming", "freestyle", "backstroke", "breaststroke", "butterfly stroke"],
+  volleyball: ["volleyball", "spike", "dig"],
+};
+
+function detectSport(tokens: string[]): string | null {
+  for (const [sport, kws] of Object.entries(SPORT_DETECT)) {
+    if (kws.some((k) => tokens.some((t) => t === k || t.includes(k)))) return sport;
+  }
+  return null;
+}
 
 function detectIntent(tokens: string[]): "nutrition" | "phase" | "drill" | "skill" | "general" {
   // Use exact token matching (not substring) to prevent false positives.
@@ -293,6 +347,7 @@ export async function searchOffline(query: string): Promise<OfflineResult | null
   if (tokens.length === 0) return null;
 
   const intent = detectIntent(tokens);
+  const detectedSport = detectSport(tokens);
 
   // ── Nutrition ──
   if (intent === "nutrition") {
@@ -328,8 +383,11 @@ export async function searchOffline(query: string): Promise<OfflineResult | null
 
     if (scored.length) {
       const parts = scored.map((x) => formatDrill(x.d));
+      const sportNote = detectedSport
+        ? `\n\n_Note: These drills are from our football coaching guide. The movement and coordination principles apply to ${detectedSport} — adapt the equipment and rules to your sport._`
+        : "";
       return {
-        text: `Here are ${scored.length} drill${scored.length > 1 ? "s" : ""} for you:\n\n` + parts.join("\n\n---\n\n"),
+        text: `Here are ${scored.length} drill${scored.length > 1 ? "s" : ""} for you:\n\n` + parts.join("\n\n---\n\n") + sportNote,
         source: "Special Olympics Football Coaching Guide",
       };
     }
@@ -352,8 +410,11 @@ export async function searchOffline(query: string): Promise<OfflineResult | null
       .sort((a, b) => b.s - a.s);
 
     if (scored.length) {
+      const sportNote = detectedSport
+        ? `\n\n_Note: This technique guide is from our football coaching library. Adapt the principles to ${detectedSport} as needed._`
+        : "";
       return {
-        text: formatSkill(scored[0].key, scored[0].skill),
+        text: formatSkill(scored[0].key, scored[0].skill) + sportNote,
         source: "Special Olympics Football Coaching Guide",
       };
     }

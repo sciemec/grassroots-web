@@ -59,6 +59,9 @@ export interface PlayerContext {
   sessionsThisWeek: number;
   lastSessionType: string | null;
   totalSessions: number;
+
+  // Diagnostics
+  hasContextError: boolean; // true when profile + stats both failed (network issue)
 }
 
 /** Skill score → label */
@@ -192,5 +195,8 @@ export async function loadPlayerContext(user: {
     sessionsThisWeek,
     lastSessionType: lastSession?.type ?? null,
     totalSessions:   rawSessions.length,
+
+    // Diagnostics
+    hasContextError: profileRes.status === "rejected" && statsRes.status === "rejected",
   };
 }
