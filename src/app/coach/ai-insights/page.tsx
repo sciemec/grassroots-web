@@ -71,6 +71,7 @@ interface SquadMember {
 export default function CoachAIInsightsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const [squad, setSquad] = useState<SquadMember[]>([]);
 
@@ -112,8 +113,11 @@ export default function CoachAIInsightsPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // guests allowed — no login redirect
-  }, [user, router]);
+    if (!_hasHydrated) return;
+    if (!user) router.replace("/login");
+  }, [_hasHydrated, user, router]);
+
+  if (!_hasHydrated || !user) return null;
 
   // Preload offline knowledge bases as soon as page mounts
   useEffect(() => { preloadOfflineAI(); }, []);
@@ -128,7 +132,7 @@ export default function CoachAIInsightsPage() {
     setInput("");
 
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: "user",
       content,
       timestamp: new Date(),
@@ -155,7 +159,7 @@ export default function CoachAIInsightsPage() {
         : content;
 
       // Placeholder bubble for streaming
-      const assistantId = Date.now().toString();
+      const assistantId = crypto.randomUUID();
       setMessages(prev => [...prev, { id: assistantId, role: "assistant", content: "", timestamp: new Date() }]);
 
       let replied = false;
@@ -259,7 +263,7 @@ export default function CoachAIInsightsPage() {
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
           role: "assistant",
           content: "Sorry, I'm having trouble connecting right now. Check your internet connection and try again.",
           timestamp: new Date(),
