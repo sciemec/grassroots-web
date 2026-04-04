@@ -2,7 +2,7 @@
  * Pose Movement Quality Scorer
  *
  * Takes MediaPipe PoseLandmarker NormalizedLandmarks and returns a 0–100
- * movement quality score. The same scoring dimensions used in Bhora AI's
+ * movement quality score. The same scoring dimensions used in THUTO's
  * TalentIdService._calculateMovementQuality() — ported to TypeScript.
  *
  * Dimensions (equal weight):

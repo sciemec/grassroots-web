@@ -1477,7 +1477,7 @@ End with:
 
 When analyzing files, always assume this context unless told otherwise:
 
-### Grassroots Sports (Bhora AI) — Laravel Backend
+### Grassroots Sports (THUTO) — Laravel Backend
 - Framework: Laravel 10+
 - Backend URL: bhora-ai.onrender.com
 - Database: MySQL

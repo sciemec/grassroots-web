@@ -26,9 +26,9 @@ interface Session {
   created_at: string;
 }
 
-// ─── 5-Dimension scoring (ported from Bhora AI TalentIdService) ───────────────
+// ─── 5-Dimension scoring (ported from THUTO TalentIdService) ────────────────
 //
-// Weights (match Bhora AI Section 28.2):
+// Weights (match THUTO Section 28.2):
 //   Physical Trajectory   30%
 //   Movement Quality      25%
 //   Training Commitment   20%
@@ -222,7 +222,7 @@ export default function TalentIDPage() {
   const shareTalentID = async () => {
     const name = user?.name ?? "Athlete";
     const gradeLabel = grade?.label ?? "Building";
-    const text = `🏆 My Grassroots Sport Pro TalentID Score: ${talentScore}/100 (${gradeLabel})\n\n${name} — powered by Bhora AI\n\nTrack your football progress at grassrootssports.live`;
+    const text = `🏆 My Grassroots Sport Pro TalentID Score: ${talentScore}/100 (${gradeLabel})\n\n${name} — powered by THUTO\n\nTrack your football progress at grassrootssports.live`;
     if (typeof navigator !== "undefined" && navigator.share) {
       try { await navigator.share({ title: "My TalentID Score", text }); } catch { /* cancelled */ }
     } else {
@@ -355,7 +355,7 @@ export default function TalentIDPage() {
               <div className="mb-4 flex items-center gap-2">
                 <Activity className="h-4 w-4 text-accent" />
                 <h2 className="font-semibold text-white">5-Dimension Analysis</h2>
-                <span className="ml-auto text-xs text-muted-foreground">Bhora AI scoring model</span>
+                <span className="ml-auto text-xs text-muted-foreground">THUTO scoring model</span>
               </div>
               <div className="space-y-3">
                 {DIM_CONFIG.map(({ key, label, icon: Icon, color, weight, desc }) => {
