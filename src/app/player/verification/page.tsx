@@ -117,8 +117,11 @@ export default function PlayerVerificationPage() {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
         });
-      } catch {
-        // Retry with minimal constraints (some older Android phones reject ideal constraints)
+      } catch (e) {
+        const name = e instanceof DOMException ? e.name : "";
+        // Re-throw permission errors — don't silently retry
+        if (name === "NotAllowedError" || name === "PermissionDeniedError") throw e;
+        // Constraint issue — retry with minimal constraints
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
       }
       streamRef.current = stream;
@@ -128,11 +131,24 @@ export default function PlayerVerificationPage() {
       }
       setCameraActive(true);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("NotFound") || msg.includes("Devices")) {
+      const name = err instanceof DOMException ? err.name : "";
+      const msg  = err instanceof Error ? err.message.toLowerCase() : "";
+      const isDenied =
+        name === "NotAllowedError" ||
+        name === "PermissionDeniedError" ||
+        msg.includes("permission") ||
+        msg.includes("notallowed") ||
+        msg.includes("denied");
+      const isNotFound =
+        name === "NotFoundError" ||
+        name === "DevicesNotFoundError" ||
+        msg.includes("notfound") ||
+        msg.includes("devices");
+
+      if (isDenied) {
+        setCameraError("permission denied");
+      } else if (isNotFound) {
         setCameraError("No camera found on this device.");
-      } else if (msg.includes("NotAllowed") || msg.includes("Permission") || msg.includes("denied")) {
-        setCameraError("Camera permission denied. Tap your browser's address bar → Site settings → Allow Camera.");
       } else {
         setCameraError("Could not open camera. Try a different browser or check your camera settings.");
       }

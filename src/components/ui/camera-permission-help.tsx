@@ -10,14 +10,15 @@ function getInstructions() {
   if (typeof window === "undefined") return null;
 
   const ua = navigator.userAgent;
-  const isIOS     = /iPad|iPhone|iPod/.test(ua);
-  const isAndroid = /Android/.test(ua);
-  const isSafari  = /Safari/.test(ua) && !/Chrome/.test(ua);
-  const isFirefox = /Firefox/.test(ua);
+  const isIOS            = /iPad|iPhone|iPod/.test(ua);
+  const isAndroid        = /Android/.test(ua);
+  const isSafari         = /Safari/.test(ua) && !/Chrome/.test(ua);
+  const isFirefox        = /Firefox/.test(ua);
+  const isSamsungBrowser = /SamsungBrowser/.test(ua);
 
   if (isIOS && isSafari) {
     return {
-      device: "iPhone / iPad",
+      device: "iPhone / iPad (Safari)",
       Icon: Smartphone,
       steps: [
         "Open the iPhone Settings app",
@@ -27,9 +28,22 @@ function getInstructions() {
       ],
     };
   }
+  if (isSamsungBrowser) {
+    return {
+      device: "Samsung Internet",
+      Icon: Smartphone,
+      steps: [
+        "Tap the menu icon (☰) at the bottom of the screen",
+        "Tap Settings → Privacy → Permissions",
+        "Tap Camera",
+        "Find this site and set it to Allow",
+        "Tap Try Again below",
+      ],
+    };
+  }
   if (isAndroid) {
     return {
-      device: "Android",
+      device: "Android (Chrome)",
       Icon: Smartphone,
       steps: [
         "Tap the lock icon (🔒) in the address bar",
@@ -50,9 +64,9 @@ function getInstructions() {
       ],
     };
   }
-  // Default — Chrome desktop
+  // Default — Chrome / Edge desktop
   return {
-    device: "Chrome",
+    device: "Chrome / Edge",
     Icon: Monitor,
     steps: [
       "Click the lock icon (🔒) in the address bar",

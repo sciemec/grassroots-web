@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { CameraPermissionHelp } from "@/components/ui/camera-permission-help";
 import api from "@/lib/api";
 
 type VideoTag = "Goals" | "Skills" | "Assists" | "Defending" | "Full Match";
@@ -42,6 +43,7 @@ export default function RecordDrillPage() {
 
   const [state,      setState]      = useState<RecordState>("idle");
   const [error,      setError]      = useState("");
+  const [permDenied, setPermDenied] = useState(false);
   const [muted,      setMuted]      = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [elapsed,    setElapsed]    = useState(0);
@@ -60,15 +62,25 @@ export default function RecordDrillPage() {
 
   const startCamera = useCallback(async () => {
     setError("");
+    setPermDenied(false);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+    }
     try {
-      const constraints: MediaStreamConstraints = {
-        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: !muted,
-      };
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
+      // Try ideal constraints first; fall back to minimal if they fail
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: !muted,
+        });
+      } catch (e) {
+        const name = e instanceof DOMException ? e.name : "";
+        // Re-throw permission errors immediately — don't retry
+        if (name === "NotAllowedError" || name === "PermissionDeniedError") throw e;
+        // OverconstrainedError or other constraint issue — retry with basic video
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: !muted });
       }
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -76,11 +88,24 @@ export default function RecordDrillPage() {
         await videoRef.current.play().catch(() => null);
       }
     } catch (e) {
-      const msg = (e as Error)?.message ?? "";
-      if (msg.includes("Permission") || msg.includes("NotAllowed")) {
-        setError("Camera access denied. Please allow camera access in your browser settings.");
+      const name = e instanceof DOMException ? e.name : "";
+      const msg  = e instanceof Error ? e.message : "";
+      const isDenied =
+        name === "NotAllowedError" ||
+        name === "PermissionDeniedError" ||
+        msg.toLowerCase().includes("permission") ||
+        msg.toLowerCase().includes("notallowed") ||
+        msg.toLowerCase().includes("denied");
+
+      if (isDenied) {
+        setPermDenied(true);
+        setError("Camera permission denied.");
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setError("No camera found on this device.");
+      } else if (name === "NotReadableError" || name === "TrackStartError") {
+        setError("Camera is in use by another app. Close other apps and try again.");
       } else {
-        setError("Could not access camera. Make sure no other app is using it.");
+        setError("Could not access camera. Try refreshing the page.");
       }
     }
   }, [facingMode, muted]);
@@ -355,7 +380,11 @@ export default function RecordDrillPage() {
           </p>
         </div>
 
-        {error && (
+        {permDenied ? (
+          <div className="mb-4 flex-shrink-0 rounded-2xl border border-red-500/20 bg-red-500/5">
+            <CameraPermissionHelp onRetry={startCamera} />
+          </div>
+        ) : error ? (
           <div className="mb-4 flex-shrink-0 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             {error}
@@ -366,7 +395,7 @@ export default function RecordDrillPage() {
               Retry
             </button>
           </div>
-        )}
+        ) : null}
 
         {/* Camera viewport */}
         <div className="relative flex-1 overflow-hidden rounded-2xl bg-black min-h-0">
@@ -419,7 +448,7 @@ export default function RecordDrillPage() {
             ) : (
               <button
                 onClick={startCountdown}
-                disabled={state === "countdown" || !!error}
+                disabled={state === "countdown" || !!error || permDenied}
                 className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg shadow-red-500/40 transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
               >
                 <Circle className="h-7 w-7 fill-white" />
