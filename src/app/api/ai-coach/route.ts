@@ -14,6 +14,13 @@ import { findRelevantSessions } from "@/lib/football-knowledge";
  * Body: { message, system_prompt?, history?, stream?, userContext? }
  */
 
+// ─── Engine config ───────────────────────────────────────────────────────────
+// Centralised token limits — change here, applies everywhere
+const AI_CONFIG = {
+  deepseek: { max_tokens: 1024, temperature: 0.7 },
+  claude:   { max_tokens: 1500 },
+} as const;
+
 // ─── Complexity detector ─────────────────────────────────────────────────────
 // Questions matching these keywords need deep reasoning → Claude
 const COMPLEX_KEYWORDS = [
@@ -66,8 +73,8 @@ async function callDeepSeek(
     },
     body: JSON.stringify({
       model: "deepseek-chat",
-      max_tokens: 1024,
-      temperature: 0.7,
+      max_tokens: AI_CONFIG.deepseek.max_tokens,
+      temperature: AI_CONFIG.deepseek.temperature,
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
@@ -104,7 +111,7 @@ async function callClaude(
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 1500,
+      max_tokens: AI_CONFIG.claude.max_tokens,
       stream,
       system: systemPrompt,
       messages,

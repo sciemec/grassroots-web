@@ -162,14 +162,7 @@ export default function AICoachPage() {
         }
   );
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "Waita! I'm your AI Coach. Loading your profile data...",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   // Guest welcome — shown instead of the profile-loading message
   useEffect(() => {
@@ -543,6 +536,17 @@ export default function AICoachPage() {
 
         {/* Messages */}
         <div className="flex-1 scroll-smooth overflow-y-auto px-6 py-4 space-y-4">
+          {/* Skeleton — shown while player context is loading for logged-in users */}
+          {!ctxLoaded && user && messages.length === 0 && (
+            <div className="flex items-start gap-3">
+              <div className="h-8 w-8 flex-shrink-0 rounded-full bg-muted animate-pulse" />
+              <div className="space-y-2 flex-1 max-w-xs">
+                <div className="h-3 w-3/4 rounded-full bg-muted animate-pulse" />
+                <div className="h-3 w-1/2 rounded-full bg-muted animate-pulse" />
+                <div className="h-3 w-2/3 rounded-full bg-muted animate-pulse" />
+              </div>
+            </div>
+          )}
           {messages.map((msg) => (
             <MessageBubble key={msg.id} msg={msg} />
           ))}

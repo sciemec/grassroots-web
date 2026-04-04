@@ -12,11 +12,14 @@ import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 import { classifyQuestion, system2Protocols, type ThinkingSystem } from "@/lib/ai-routing";
 
+type AIEngine = "deepseek" | "claude" | "offline";
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  engine?: AIEngine;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -52,6 +55,11 @@ function MessageBubble({ msg }: { msg: Message }) {
             {i < msg.content.split("\n").length - 1 && <br />}
           </span>
         ))}
+        {!isUser && msg.engine && (
+          <p className="mt-1 text-[10px] opacity-50">
+            {msg.engine === "deepseek" ? "⚡ DeepSeek" : msg.engine === "claude" ? "🧠 Claude" : "📚 Offline"}
+          </p>
+        )}
         <p className={`mt-1 text-xs opacity-60 ${isUser ? "text-right" : ""}`}>
           {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </p>
@@ -194,7 +202,10 @@ export default function CoachAIInsightsPage() {
                 } catch { /* skip malformed SSE lines */ }
               }
             }
-            if (fullText) replied = true;
+            if (fullText) {
+              setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, engine: "claude" } : m));
+              replied = true;
+            }
           }
         } catch { /* fall through to DeepSeek */ }
       }
@@ -208,7 +219,7 @@ export default function CoachAIInsightsPage() {
         });
         const reply = res.data?.answer ?? "";
         if (reply) {
-          setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: reply } : m));
+          setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: reply, engine: "deepseek" } : m));
           replied = true;
         }
       } catch {
@@ -244,7 +255,10 @@ export default function CoachAIInsightsPage() {
                 } catch { /* skip malformed SSE lines */ }
               }
             }
-            if (fullText) replied = true;
+            if (fullText) {
+              setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, engine: "claude" } : m));
+              replied = true;
+            }
           }
         } catch {
           // fall through to offline
@@ -257,7 +271,7 @@ export default function CoachAIInsightsPage() {
         const fallback = offline
           ? `${offline.text}\n\n_📚 Offline response from: ${offline.source}_`
           : "Sorry, I'm unable to respond right now. Please check your connection and try again.";
-        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fallback } : m));
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fallback, engine: offline ? "offline" : undefined } : m));
       }
     } catch {
       setMessages((prev) => [
