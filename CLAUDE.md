@@ -277,7 +277,11 @@ UI Elements:
 
 ---
 
-## 🔒 REGISTRATION FILES — PROTECTED. DO NOT TOUCH WITHOUT PERMISSION.
+## 🔒 REGISTRATION FILES — PROTECTED. DO NOT TOUCH WITHOUT NIGEL'S EXPLICIT PERMISSION.
+
+> **NIGEL'S RULE (April 2026):** Registration is working. Real customers are signing up.
+> **You must NEVER change registration without Nigel saying "yes, go ahead" first.**
+> This applies to ALL files listed below — frontend AND backend (AuthController.php).
 
 These files are confirmed working and must NEVER be modified, deleted, or replaced without Nigel's explicit approval.
 
