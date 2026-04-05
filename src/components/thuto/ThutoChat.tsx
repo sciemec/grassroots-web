@@ -83,7 +83,7 @@ function MessageBubble({ msg }: { msg: Message }) {
 // ── DEV FLAG ──────────────────────────────────────────────────────────────────
 // Set to true when THUTO is ready for production use.
 // While false: only a static circle renders — no panel, no onboarding, no clicks.
-const THUTO_ACTIVE = false;
+const THUTO_ACTIVE = true;
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
