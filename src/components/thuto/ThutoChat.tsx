@@ -394,12 +394,16 @@ export default function ThutoChat() {
       )}
 
       {/* ── Floating Trigger Button ─────────────────────────────────────── */}
+      {/* THUTO UI RULE: always a small circle. Grows big only on click.    */}
+      {/* When unread > 0: whole circle turns red. Normal: teal.            */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close THUTO chat" : "Open THUTO chat"}
         className={`fixed bottom-5 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 shadow-xl transition-all duration-200 ${
           open
             ? "border-teal-400/60 bg-gradient-to-br from-teal-700 to-emerald-800 shadow-teal-500/30 scale-95"
+            : unread > 0
+            ? "border-red-400/70 bg-gradient-to-br from-red-600 to-red-700 shadow-red-500/40 hover:scale-105 hover:shadow-red-500/60 animate-pulse"
             : "border-teal-400/50 bg-gradient-to-br from-teal-600 to-emerald-700 shadow-teal-500/20 hover:scale-105 hover:shadow-teal-500/40"
         }`}
       >
@@ -409,9 +413,9 @@ export default function ThutoChat() {
           <span className="text-xl font-bold text-white select-none">T</span>
         )}
 
-        {/* Unread badge */}
+        {/* Unread count badge — shown on top of red circle */}
         {!open && unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#f0b429] text-[10px] font-bold text-[#1a3a1a] shadow">
+          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-red-600 shadow">
             {unread > 9 ? "9+" : unread}
           </span>
         )}

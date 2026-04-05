@@ -48,6 +48,32 @@ is meant to help. Silence about incomplete work is not acceptable.
 
 ---
 
+## 🔴 THUTO UI RULE — PERMANENT (set by Nigel, April 2026)
+
+THUTO always renders as a small circle fixed to the bottom-right corner.
+The circle is always visible. The full chat panel ONLY appears when the user clicks it.
+
+### Rules Claude MUST follow at all times:
+- THUTO default state = small circle. Always. On every page load.
+- Full chat interface = only shown AFTER the user clicks the circle.
+- When the user clicks the circle → panel opens (grows big).
+- When the user clicks X or the circle again → panel closes, returns to small circle.
+- When THUTO has unread messages or notifications → the circle turns RED.
+- When no unread messages → the circle is teal/green (normal).
+
+### Claude must NEVER:
+- Make THUTO auto-open on page load without being clicked
+- Make THUTO expand or show content before the user clicks
+- Use THUTO to block or cover page content
+- Remove or bypass the click-to-open trigger
+- Change this pattern without Nigel's explicit instruction
+
+**This rule is permanent. It does not expire. It applies to all player hub pages.**
+The `THUTO_ACTIVE` flag in `ThutoChat.tsx` must remain `true`.
+To disable THUTO temporarily: set `THUTO_ACTIVE = false` only if Nigel explicitly asks.
+
+---
+
 ## 🚫 NO GUESSWORK — MANDATORY RULE (PERMANENT)
 
 This is a real, live-changing project. Every solution must meet this standard:
