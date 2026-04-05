@@ -12,6 +12,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
+import { getSchedule, saveSchedule, type ScheduleDay } from "@/lib/offlineDB";
 
 // Lazy-load THUTO chat widget (client-only — uses browser APIs)
 const ThutoChat = dynamic(
@@ -82,23 +83,40 @@ export default function PlayerHubPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUbuntuOptIn, setShowUbuntuOptIn] = useState(false);
+  const [todaySession, setTodaySession] = useState<ScheduleDay | null>(null);
 
   // Auth guard is handled by PlayerLayout — this just loads data
   useEffect(() => {
     Promise.all([
       api.get("/sessions?per_page=5").catch(() => null),
       api.get("/profile").catch(() => null),
+      api.get("/training/schedule").catch(() => null),
     ])
-      .then(([sessRes, profRes]) => {
+      .then(async ([sessRes, profRes, schedRes]) => {
         if (sessRes) setSessions(sessRes.data?.data ?? sessRes.data ?? []);
         if (profRes) {
           const prof = profRes.data?.profile ?? profRes.data;
           setProfile(prof);
-          // Show Ubuntu opt-in only after THUTO onboarding is complete
           const hasOnboarded = localStorage.getItem("thuto_onboarded") === "true";
           if (hasOnboarded && prof && !prof.ubuntu_opt_in) {
             setShowUbuntuOptIn(true);
           }
+        }
+
+        // Load today's training session (API or IndexedDB fallback)
+        let schedData = schedRes?.data?.schedule ?? null;
+        if (schedData) {
+          await saveSchedule({ ...schedData, cached_at: Date.now() });
+        } else {
+          const cached = await getSchedule();
+          schedData = cached;
+        }
+        if (schedData?.schedule_json?.days) {
+          const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+          const dayData = schedData.schedule_json.days.find(
+            (d: ScheduleDay) => d.day.toLowerCase() === today.toLowerCase()
+          );
+          if (dayData && !dayData.is_rest) setTodaySession(dayData);
         }
       })
       .catch(() => {})
@@ -176,6 +194,31 @@ export default function PlayerHubPage() {
         {showUbuntuOptIn && (
           <div className="mb-6">
             <UbuntuOptIn onOptIn={() => setShowUbuntuOptIn(false)} />
+          </div>
+        )}
+
+        {/* Today's Session — Pitch Mode entry card */}
+        {todaySession && (
+          <div className="mb-6 rounded-2xl border border-white/10 bg-gradient-to-br from-[#15803d] to-[#0d5c2d] p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/60">
+                  Today&apos;s Session
+                </p>
+                <h2 className="mt-1 text-lg font-bold text-white">{todaySession.focus}</h2>
+                <p className="mt-0.5 text-sm text-white/70">
+                  {todaySession.total_duration_minutes} min · {todaySession.drills?.length ?? 0} drills ·{" "}
+                  <span className="capitalize">{todaySession.intensity}</span> intensity
+                </p>
+              </div>
+              <Zap className="h-6 w-6 flex-shrink-0 text-[#f0b429]" />
+            </div>
+            <Link
+              href="/player/pitch"
+              className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-bold text-[#15803d] transition-opacity hover:opacity-90 active:scale-95"
+            >
+              <Play className="h-4 w-4" /> Start on Pitch →
+            </Link>
           </div>
         )}
 
