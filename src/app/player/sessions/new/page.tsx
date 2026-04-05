@@ -55,6 +55,19 @@ export default function NewSessionPage() {
       const payload = poseScore !== null ? { ...data, pre_session_pose_score: poseScore } : data;
       const res = await api.post("/sessions", payload);
       const sessionId = res.data?.session?.id ?? res.data?.id ?? res.data?.data?.id;
+
+      // Fire THUTO reflection prompt — fire-and-forget, never blocks navigation
+      api.post("/thuto/reflect", { session_summary: `${data.focus_area} session` })
+        .then((r) => {
+          const question = r.data?.answer;
+          if (question) {
+            localStorage.setItem("thuto_preload_message", question);
+            const prev = parseInt(localStorage.getItem("thuto_unread_count") ?? "0", 10);
+            localStorage.setItem("thuto_unread_count", String(prev + 1));
+          }
+        })
+        .catch(() => {}); // never surface to player
+
       if (sessionId) {
         router.push(`/sessions/${sessionId}`);
       } else {

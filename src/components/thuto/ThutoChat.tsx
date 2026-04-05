@@ -118,6 +118,13 @@ export default function ThutoChat() {
     const hasOnboarded = localStorage.getItem("thuto_onboarded") === "true";
     setOnboarded(hasOnboarded);
 
+    // Restore cross-page unread signals (e.g. set by session logging on another page)
+    const bumped = parseInt(localStorage.getItem("thuto_unread_count") ?? "0", 10);
+    if (bumped > 0) {
+      setUnread((n) => n + bumped);
+      localStorage.removeItem("thuto_unread_count");
+    }
+
     api.get("/player/dna")
       .then((res) => {
         setDnaCompleteness(res.data?.data?.profile_completeness ?? 0);

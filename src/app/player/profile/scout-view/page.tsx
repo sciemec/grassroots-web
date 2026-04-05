@@ -25,6 +25,7 @@ interface Profile {
   verification_status: string;
   photo_url:           string | null;
   ai_narrative?:       string;
+  joy_score?:          number;
 }
 
 interface ShowcaseClip {
@@ -208,6 +209,33 @@ export default function ScoutViewPage() {
                   Scout Profile
                 </p>
                 <p className="text-sm leading-relaxed text-white">{profile.ai_narrative}</p>
+              </div>
+            )}
+
+            {/* Beautiful Game Score */}
+            {(profile?.joy_score ?? 0) > 0 && (
+              <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Beautiful Game Score
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-2xl font-bold text-[#f0b429]">{profile.joy_score}</span>
+                      <span className="text-xs text-muted-foreground">/ 100</span>
+                    </div>
+                  </div>
+                  <span className="text-2xl">⚽</span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#f0b429] to-[#f5c542]"
+                    style={{ width: `${profile.joy_score}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Measures passion and consistency — logged joyful training experiences
+                </p>
               </div>
             )}
 

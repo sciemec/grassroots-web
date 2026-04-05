@@ -76,6 +76,7 @@ interface Profile extends FormData {
   verification_status: string;
   photo_url:           string | null;
   leadership_score:    number;
+  joy_score?:          number;
 }
 
 function calcCompletion(profile: Profile | null, data: Partial<FormData>): { count: number; total: number; pct: number } {
@@ -167,11 +168,15 @@ export default function PlayerProfilePage() {
           ` their character as a professional. Frame it as a strength scouts value.`
         : "";
 
+      const joyFlair = (profile.joy_score ?? 0) > 0
+        ? ` This player has a Beautiful Game Score of ${profile.joy_score}/100, reflecting ${profile.joy_score} joyful training experiences logged on the platform. Include one sentence about their evident passion for the game and what that character trait means at professional level.`
+        : "";
+
       const prompt = `Generate a 3-sentence professional scouting profile narrative (third person) for this player:
 Name: ${user?.name}, Sport: ${profile.sport}, Position: ${profile.position},
 Province: ${profile.province}, Age group: ${profile.age_group},
 Club/School: ${profile.club || profile.school || "unattached"}.
-Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntuFlair}`;
+Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntuFlair}${joyFlair}`;
 
       const reply = await queryAI(prompt, "scout");
       setAiNarrative(reply);
