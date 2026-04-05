@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award, Activity, CalendarDays,
+  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award, Activity, CalendarDays, Dna,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -96,6 +96,7 @@ export default function PlayerHubPage() {
     : 0;
 
   const hubCards = [
+    { icon: Dna,          title: "Player DNA",      subtitle: "Tell THUTO your real life",  href: "/player/dna",                bg: "bg-[#1a3a4a]",  gradient: "bg-gradient-to-br from-[#1a6b6b] to-[#0d2b3a]" },
     { icon: CalendarDays, title: "Training Plan",  subtitle: "THUTO 7-day schedule",       href: "/player/training",           bg: "bg-teal-800",   gradient: "bg-gradient-to-br from-teal-600 to-emerald-800" },
     { icon: Brain,    title: "AI Coach",         subtitle: "Mubatsiri wako — Claude AI",  href: "/player/ai-coach",           bg: "bg-[#6c3483]",  gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
     { icon: Play,     title: "Start Session",    subtitle: "Tanga mushandiro",            href: "/player/sessions/new",       bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#27ae60] to-[#1a6b3c]" },
