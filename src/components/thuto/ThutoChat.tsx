@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
+import dynamic from "next/dynamic";
 import api from "@/lib/api";
+
+const ThutoOnboarding = dynamic(() => import("./ThutoOnboarding"), { ssr: false });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -80,6 +83,7 @@ function MessageBubble({ msg }: { msg: Message }) {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ThutoChat() {
+  const [onboarded,       setOnboarded]       = useState(true); // true = skip check until hydrated
   const [open,            setOpen]            = useState(false);
   const [messages,        setMessages]        = useState<Message[]>([]);
   const [input,           setInput]           = useState("");
@@ -90,8 +94,12 @@ export default function ThutoChat() {
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ── Fetch DNA completeness on mount ───────────────────────────────────────
+  // ── Check onboarding status + fetch DNA completeness on mount ────────────
   useEffect(() => {
+    // Check if the player has completed THUTO onboarding
+    const hasOnboarded = localStorage.getItem("thuto_onboarded") === "true";
+    setOnboarded(hasOnboarded);
+
     api.get("/player/dna")
       .then((res) => {
         setDnaCompleteness(res.data?.data?.profile_completeness ?? 0);
@@ -233,7 +241,16 @@ export default function ThutoChat() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  const handleOnboardingComplete = () => {
+    localStorage.setItem("thuto_onboarded", "true");
+    setOnboarded(true);
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
+  if (!onboarded) {
+    return <ThutoOnboarding onComplete={handleOnboardingComplete} />;
+  }
+
   return (
     <>
       {/* ── Chat Panel ─────────────────────────────────────────────────── */}
