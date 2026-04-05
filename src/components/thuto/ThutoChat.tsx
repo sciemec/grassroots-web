@@ -80,6 +80,11 @@ function MessageBubble({ msg }: { msg: Message }) {
   );
 }
 
+// ── DEV FLAG ──────────────────────────────────────────────────────────────────
+// Set to true when THUTO is ready for production use.
+// While false: only a static circle renders — no panel, no onboarding, no clicks.
+const THUTO_ACTIVE = false;
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ThutoChat() {
@@ -93,6 +98,19 @@ export default function ThutoChat() {
 
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // ── THUTO_ACTIVE = false → inert circle only, nothing opens ──────────────
+  if (!THUTO_ACTIVE) {
+    return (
+      <div
+        aria-label="THUTO AI — coming soon"
+        title="THUTO — in development"
+        className="fixed bottom-5 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-teal-400/30 bg-gradient-to-br from-teal-600/60 to-emerald-700/60 shadow-lg shadow-teal-900/20 opacity-50 cursor-default select-none"
+      >
+        <span className="text-xl font-bold text-white">T</span>
+      </div>
+    );
+  }
 
   // ── Check onboarding status + fetch DNA completeness on mount ────────────
   useEffect(() => {
