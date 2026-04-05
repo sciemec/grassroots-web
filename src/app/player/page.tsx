@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award, Activity,
+  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award, Activity, CalendarDays,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -110,6 +110,7 @@ export default function PlayerHubPage() {
     : 0;
 
   const hubCards = [
+    { icon: CalendarDays, title: "Training Plan",  subtitle: "THUTO 7-day schedule",       href: "/player/training",           bg: "bg-teal-800",   gradient: "bg-gradient-to-br from-teal-600 to-emerald-800" },
     { icon: Brain,    title: "AI Coach",         subtitle: "Mubatsiri wako — Claude AI",  href: "/player/ai-coach",           bg: "bg-[#6c3483]",  gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
     { icon: Play,     title: "Start Session",    subtitle: "Tanga mushandiro",            href: "/player/sessions/new",       bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#27ae60] to-[#1a6b3c]" },
     { icon: Dumbbell, title: "Drill Library",    subtitle: "Madrills — 48+ exercises",   href: "/player/drills",             bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },

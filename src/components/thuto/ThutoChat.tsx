@@ -79,7 +79,7 @@ export default function ThutoChat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ── Load last 10 messages from localStorage ───────────────────────────────
+  // ── Load history + auto-open if flagged by another page ─────────────────
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -90,6 +90,21 @@ export default function ThutoChat() {
     } catch {
       // ignore parse errors — start fresh
     }
+    // Auto-open when set before mount (e.g. navigation from another page)
+    if (localStorage.getItem("thuto_chat_open") === "1") {
+      localStorage.removeItem("thuto_chat_open");
+      setOpen(true);
+    }
+
+    // Listen for same-page opens (e.g. training page "Log session" button)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "thuto_chat_open" && e.newValue === "1") {
+        localStorage.removeItem("thuto_chat_open");
+        setOpen(true);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   // ── Persist messages to localStorage ─────────────────────────────────────
@@ -109,11 +124,25 @@ export default function ThutoChat() {
     }
   }, [messages, thinking, open]);
 
-  // ── Focus input when panel opens ─────────────────────────────────────────
+  // ── Focus input + inject preloaded THUTO message when panel opens ─────────
   useEffect(() => {
-    if (open) {
-      setUnread(0);
-      setTimeout(() => inputRef.current?.focus(), 150);
+    if (!open) return;
+    setUnread(0);
+    setTimeout(() => inputRef.current?.focus(), 150);
+
+    // Inject a preloaded assistant message (e.g. post-session reflection from training page)
+    const preloaded = localStorage.getItem("thuto_preload_message");
+    if (preloaded) {
+      localStorage.removeItem("thuto_preload_message");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id:        crypto.randomUUID(),
+          role:      "assistant",
+          content:   preloaded,
+          timestamp: Date.now(),
+        },
+      ]);
     }
   }, [open]);
 
