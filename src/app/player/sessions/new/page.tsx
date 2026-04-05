@@ -21,7 +21,7 @@ const FOCUS_AREAS = [
 
 const schema = z.object({
   focus_area: z.string().min(1, "Pick a focus area"),
-  session_type: z.enum(["programme", "free"]),
+  session_type: z.enum(["programme", "custom"]),
   notes: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
@@ -37,7 +37,7 @@ export default function NewSessionPage() {
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { session_type: "free", focus_area: "" },
+    defaultValues: { session_type: "custom", focus_area: "" },
   });
 
   const sessionType = watch("session_type");
@@ -54,7 +54,7 @@ export default function NewSessionPage() {
     try {
       const payload = poseScore !== null ? { ...data, pre_session_pose_score: poseScore } : data;
       const res = await api.post("/sessions", payload);
-      const sessionId = res.data?.id ?? res.data?.data?.id;
+      const sessionId = res.data?.session?.id ?? res.data?.id ?? res.data?.data?.id;
       if (sessionId) {
         router.push(`/sessions/${sessionId}`);
       } else {
@@ -90,7 +90,7 @@ export default function NewSessionPage() {
               <label className="mb-3 block text-sm font-semibold">Session Type</label>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: "free", label: "Free Training", desc: "Choose any drills you want" },
+                  { value: "custom", label: "Free Training", desc: "Choose any drills you want" },
                   { value: "programme", label: "Programme", desc: "Follow your assigned programme" },
                 ].map(({ value, label, desc }) => (
                   <label
