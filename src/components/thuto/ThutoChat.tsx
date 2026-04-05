@@ -16,6 +16,15 @@ interface Message {
 const STORAGE_KEY = "thuto_chat_history";
 const MAX_STORED  = 10;
 
+// ── DNA session questions injected as THUTO's opening message (sessions 2–5) ─
+
+const DNA_SESSION_OPENERS: Record<number, string> = {
+  2: "Mhoro! While we talk today — how many hours of sleep do you usually get each night? And what do you typically eat in a day? Be honest, I want to build advice around real food you actually have access to.",
+  3: "Welcome back! Quick one — are you currently in school? And does your family know about your football dream? Do they support you?",
+  4: "Good to see you again. When things go wrong in a match — you miss a chance, make an error — how do you usually feel and react? Also, how many days a week can you realistically train?",
+  5: "Last few things I want to know about you — what kind of football do you love to watch? What player's style do you wish you played like? And what is it about the game itself that makes you genuinely happy?",
+};
+
 // ── THUTO Avatar ──────────────────────────────────────────────────────────────
 
 function ThutoAvatar({ size = "sm", pulse = false }: { size?: "sm" | "lg"; pulse?: boolean }) {
@@ -71,15 +80,26 @@ function MessageBubble({ msg }: { msg: Message }) {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ThutoChat() {
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [thinking, setThinking] = useState(false);
-  const [unread, setUnread] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [open,            setOpen]            = useState(false);
+  const [messages,        setMessages]        = useState<Message[]>([]);
+  const [input,           setInput]           = useState("");
+  const [thinking,        setThinking]        = useState(false);
+  const [unread,          setUnread]          = useState(0);
+  const [dnaCompleteness, setDnaCompleteness] = useState(0);
+
+  const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ── Load history + auto-open if flagged by another page ─────────────────
+  // ── Fetch DNA completeness on mount ───────────────────────────────────────
+  useEffect(() => {
+    api.get("/player/dna")
+      .then((res) => {
+        setDnaCompleteness(res.data?.data?.profile_completeness ?? 0);
+      })
+      .catch(() => {}); // non-critical — bar simply stays hidden
+  }, []);
+
+  // ── Load chat history + auto-open if flagged ──────────────────────────────
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -90,13 +110,11 @@ export default function ThutoChat() {
     } catch {
       // ignore parse errors — start fresh
     }
-    // Auto-open when set before mount (e.g. navigation from another page)
     if (localStorage.getItem("thuto_chat_open") === "1") {
       localStorage.removeItem("thuto_chat_open");
       setOpen(true);
     }
 
-    // Listen for same-page opens (e.g. training page "Log session" button)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "thuto_chat_open" && e.newValue === "1") {
         localStorage.removeItem("thuto_chat_open");
@@ -107,43 +125,59 @@ export default function ThutoChat() {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // ── Persist messages to localStorage ─────────────────────────────────────
+  // ── Persist messages ──────────────────────────────────────────────────────
   useEffect(() => {
     if (messages.length === 0) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED)));
     } catch {
-      // storage may be full — ignore
+      // storage full — ignore
     }
   }, [messages]);
 
   // ── Scroll to bottom ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (open) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thinking, open]);
 
-  // ── Focus input + inject preloaded THUTO message when panel opens ─────────
+  // ── On open: clear unread, focus input, inject preloads, inject DNA session
   useEffect(() => {
     if (!open) return;
+
     setUnread(0);
     setTimeout(() => inputRef.current?.focus(), 150);
 
-    // Inject a preloaded assistant message (e.g. post-session reflection from training page)
+    // Inject a preloaded message from another page (e.g. training page)
     const preloaded = localStorage.getItem("thuto_preload_message");
     if (preloaded) {
       localStorage.removeItem("thuto_preload_message");
       setMessages((prev) => [
         ...prev,
-        {
-          id:        crypto.randomUUID(),
-          role:      "assistant",
-          content:   preloaded,
-          timestamp: Date.now(),
-        },
+        { id: crypto.randomUUID(), role: "assistant", content: preloaded, timestamp: Date.now() },
       ]);
     }
+
+    // Inject DNA session questions on first open of a new day (sessions 2–5)
+    const session   = parseInt(localStorage.getItem("thuto_dna_session") ?? "0", 10);
+    const lastAsked = localStorage.getItem("thuto_dna_last_asked") ?? "";
+    const today     = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+    if (session >= 2 && session <= 5 && lastAsked !== today) {
+      const opener = DNA_SESSION_OPENERS[session];
+      if (opener) {
+        localStorage.setItem("thuto_dna_last_asked", today);
+        localStorage.setItem("thuto_dna_session", String(session + 1));
+        setMessages((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: "assistant", content: opener, timestamp: Date.now() },
+        ]);
+      }
+    }
+
+    // Re-fetch DNA completeness so bar reflects latest backend state
+    api.get("/player/dna")
+      .then((res) => setDnaCompleteness(res.data?.data?.profile_completeness ?? 0))
+      .catch(() => {});
   }, [open]);
 
   // ── Send message ──────────────────────────────────────────────────────────
@@ -152,12 +186,8 @@ export default function ThutoChat() {
     if (!text || thinking) return;
 
     const userMsg: Message = {
-      id:        crypto.randomUUID(),
-      role:      "user",
-      content:   text,
-      timestamp: Date.now(),
+      id: crypto.randomUUID(), role: "user", content: text, timestamp: Date.now(),
     };
-
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setThinking(true);
@@ -167,38 +197,35 @@ export default function ThutoChat() {
       const answer: string =
         res.data?.answer ?? res.data?.response ?? "Ndiri here — I'm here, let's talk.";
 
-      const assistantMsg: Message = {
-        id:        crypto.randomUUID(),
-        role:      "assistant",
-        content:   answer,
-        timestamp: Date.now(),
-      };
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", content: answer, timestamp: Date.now() },
+      ]);
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      if (!open) setUnread((n) => n + 1);
 
-      // If panel is closed, increment unread badge
-      if (!open) {
-        setUnread((n) => n + 1);
-      }
+      // Re-fetch DNA completeness — extractDnaFromMessage may have updated it
+      api.get("/player/dna")
+        .then((res) => setDnaCompleteness(res.data?.data?.profile_completeness ?? 0))
+        .catch(() => {});
+
     } catch {
-      const errMsg: Message = {
-        id:        crypto.randomUUID(),
-        role:      "assistant",
-        content:
-          "Ndine dambudziko diki — I have a small issue right now. Please try again in a moment.",
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, errMsg]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Ndine dambudziko diki — I have a small issue right now. Please try again in a moment.",
+          timestamp: Date.now(),
+        },
+      ]);
     } finally {
       setThinking(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
   const clearHistory = () => {
@@ -218,30 +245,48 @@ export default function ThutoChat() {
           aria-label="THUTO AI Chat"
         >
           {/* Header */}
-          <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
-            <ThutoAvatar size="lg" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-white">THUTO</p>
-              <p className="text-xs text-teal-400">AI Player Agent</p>
-            </div>
-            <div className="flex items-center gap-1">
-              {messages.length > 0 && (
+          <div className="flex-shrink-0">
+            <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
+              <ThutoAvatar size="lg" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-white">THUTO</p>
+                <p className="text-xs text-teal-400">AI Player Agent</p>
+              </div>
+              <div className="flex items-center gap-1">
+                {messages.length > 0 && (
+                  <button
+                    onClick={clearHistory}
+                    className="rounded-lg px-2 py-1 text-xs text-white/30 transition-colors hover:bg-white/10 hover:text-white/60"
+                    title="Clear chat history"
+                  >
+                    Clear
+                  </button>
+                )}
                 <button
-                  onClick={clearHistory}
-                  className="rounded-lg px-2 py-1 text-xs text-white/30 transition-colors hover:bg-white/10 hover:text-white/60"
-                  title="Clear chat history"
+                  onClick={() => setOpen(false)}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="Close THUTO chat"
                 >
-                  Clear
+                  <ChevronDown className="h-4 w-4" />
                 </button>
-              )}
-              <button
-                onClick={() => setOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                aria-label="Close THUTO chat"
-              >
-                <ChevronDown className="h-4 w-4" />
-              </button>
+              </div>
             </div>
+
+            {/* DNA completeness bar — visible when 0 < completeness < 100 */}
+            {dnaCompleteness > 0 && dnaCompleteness < 100 && (
+              <div className="border-b border-white/5 px-4 pt-2 pb-2">
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-[10px] text-white/40">THUTO is getting to know you</p>
+                  <p className="text-[10px] font-medium text-teal-400">{dnaCompleteness}% complete</p>
+                </div>
+                <div className="h-1 w-full overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="h-full rounded-full bg-teal-500/60 transition-all duration-500"
+                    style={{ width: `${dnaCompleteness}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Messages */}
@@ -288,7 +333,7 @@ export default function ThutoChat() {
           </div>
 
           {/* Input */}
-          <div className="border-t border-white/10 px-3 py-2.5">
+          <div className="flex-shrink-0 border-t border-white/10 px-3 py-2.5">
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/50 transition-colors">
               <input
                 ref={inputRef}
