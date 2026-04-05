@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
@@ -10,6 +11,16 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
+
+// Lazy-load THUTO components (client-only — use browser APIs)
+const ThutoOnboarding = dynamic(
+  () => import("@/components/thuto/ThutoOnboarding"),
+  { ssr: false }
+);
+const ThutoChat = dynamic(
+  () => import("@/components/thuto/ThutoChat"),
+  { ssr: false }
+);
 
 interface Session {
   id: string;
@@ -67,6 +78,15 @@ export default function PlayerHubPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if THUTO onboarding has been completed
+  useEffect(() => {
+    const onboarded = localStorage.getItem("thuto_onboarded");
+    if (!onboarded) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   // Auth guard is handled by PlayerLayout — this just loads data
   useEffect(() => {
@@ -109,6 +129,14 @@ export default function PlayerHubPage() {
 
   return (
     <div className="flex h-screen bg-background">
+      {/* THUTO Onboarding modal — shown only on first visit */}
+      {showOnboarding && (
+        <ThutoOnboarding onComplete={() => setShowOnboarding(false)} />
+      )}
+
+      {/* THUTO floating chat widget — always available on player pages */}
+      <ThutoChat />
+
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
 
