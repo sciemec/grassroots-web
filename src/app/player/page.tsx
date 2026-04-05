@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import type { ComponentType } from "react";
 import {
   Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
   Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award, Activity, CalendarDays, Dna, Users,
@@ -15,6 +16,11 @@ import api from "@/lib/api";
 // Lazy-load THUTO chat widget (client-only — uses browser APIs)
 const ThutoChat = dynamic(
   () => import("@/components/thuto/ThutoChat"),
+  { ssr: false }
+);
+
+const UbuntuOptIn = dynamic(
+  () => import("@/components/ubuntu/UbuntuOptIn") as Promise<{ default: ComponentType<{ onOptIn: () => void }> }>,
   { ssr: false }
 );
 
@@ -31,6 +37,7 @@ interface Profile {
   province: string;
   age_group: string;
   scout_visible: boolean;
+  ubuntu_opt_in: boolean;
 }
 
 function PageSkeleton() {
@@ -74,6 +81,8 @@ export default function PlayerHubPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showUbuntuOptIn, setShowUbuntuOptIn] = useState(false);
+
   // Auth guard is handled by PlayerLayout — this just loads data
   useEffect(() => {
     Promise.all([
@@ -82,7 +91,15 @@ export default function PlayerHubPage() {
     ])
       .then(([sessRes, profRes]) => {
         if (sessRes) setSessions(sessRes.data?.data ?? sessRes.data ?? []);
-        if (profRes) setProfile(profRes.data);
+        if (profRes) {
+          const prof = profRes.data?.profile ?? profRes.data;
+          setProfile(prof);
+          // Show Ubuntu opt-in only after THUTO onboarding is complete
+          const hasOnboarded = localStorage.getItem("thuto_onboarded") === "true";
+          if (hasOnboarded && prof && !prof.ubuntu_opt_in) {
+            setShowUbuntuOptIn(true);
+          }
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -154,6 +171,13 @@ export default function PlayerHubPage() {
             </div>
           ))}
         </div>
+
+        {/* Ubuntu opt-in — shown after THUTO onboarding, before first Ubuntu join */}
+        {showUbuntuOptIn && (
+          <div className="mb-6">
+            <UbuntuOptIn onOptIn={() => setShowUbuntuOptIn(false)} />
+          </div>
+        )}
 
         {/* Hub cards grid — mobile-style */}
         <div className="mb-6">
