@@ -125,14 +125,14 @@ export default function CoachAIInsightsPage() {
     if (!user) router.replace("/login");
   }, [_hasHydrated, user, router]);
 
-  if (!_hasHydrated || !user) return null;
-
   // Preload offline knowledge bases as soon as page mounts
   useEffect(() => { preloadOfflineAI(); }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  if (!_hasHydrated || !user) return null;
 
   const send = async (text?: string) => {
     const content = (text ?? input).trim();
