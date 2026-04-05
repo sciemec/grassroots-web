@@ -75,6 +75,7 @@ interface Profile extends FormData {
   scout_visible:       boolean;
   verification_status: string;
   photo_url:           string | null;
+  leadership_score:    number;
 }
 
 function calcCompletion(profile: Profile | null, data: Partial<FormData>): { count: number; total: number; pct: number } {
@@ -152,14 +153,28 @@ export default function PlayerProfilePage() {
     if (!profile) return;
     setGeneratingNarrative(true);
     try {
+      // Fetch Ubuntu stats alongside narrative generation
+      const ubuntuRes    = await api.get("/ubuntu/connections").catch(() => null);
+      const partnerCount = ((ubuntuRes?.data?.data ?? []) as unknown[]).length;
+      const sessionsLed  = (ubuntuRes?.data?.sessions_led ?? 0) as number;
+      const leaderScore  = profile.leadership_score ?? 0;
+
+      const ubuntuFlair = leaderScore > 0
+        ? ` This player has a leadership score of ${leaderScore} on the Ubuntu Network.` +
+          ` They have ${partnerCount} training partner${partnerCount !== 1 ? "s" : ""}` +
+          ` and have led ${sessionsLed} group session${sessionsLed !== 1 ? "s" : ""}.` +
+          ` Include one sentence about their community leadership and what it says about` +
+          ` their character as a professional. Frame it as a strength scouts value.`
+        : "";
+
       const prompt = `Generate a 3-sentence professional scouting profile narrative (third person) for this player:
 Name: ${user?.name}, Sport: ${profile.sport}, Position: ${profile.position},
 Province: ${profile.province}, Age group: ${profile.age_group},
 Club/School: ${profile.club || profile.school || "unattached"}.
-Write like a FIFA scout. Be professional and positive. No bullet points.`;
+Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntuFlair}`;
+
       const reply = await queryAI(prompt, "scout");
       setAiNarrative(reply);
-      // save to profile
       api.patch("/profile", { ai_narrative: reply }).catch(() => {});
     } catch {
       setAiNarrative("Unable to generate narrative. Please try again.");
