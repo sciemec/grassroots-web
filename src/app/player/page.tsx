@@ -12,7 +12,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
-import { getSchedule, saveSchedule, type ScheduleDay } from "@/lib/offlineDB";
+import { getSchedule, saveSchedule, getPendingSessions, clearPendingSession, type ScheduleDay } from "@/lib/offlineDB";
 
 // Lazy-load THUTO chat widget (client-only — uses browser APIs)
 const ThutoChat = dynamic(
@@ -39,6 +39,7 @@ interface Profile {
   age_group: string;
   scout_visible: boolean;
   ubuntu_opt_in: boolean;
+  joy_score?: number;
 }
 
 function PageSkeleton() {
@@ -123,6 +124,33 @@ export default function PlayerHubPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Sync any pitch sessions that completed while offline
+  useEffect(() => {
+    async function syncOfflineSessions() {
+      try {
+        const pending = await getPendingSessions();
+        for (const s of pending) {
+          try {
+            await api.post("/training/sessions", {
+              schedule_id: s.schedule_id,
+              day_name: s.day_name,
+              drills_completed: s.drills_completed,
+              total_drills: s.total_drills,
+              feeling: s.feeling,
+              completed_at: s.completed_at,
+            });
+            await clearPendingSession(s.localId);
+          } catch {
+            // Still offline — leave in queue for next time
+          }
+        }
+      } catch {
+        // IndexedDB not available
+      }
+    }
+    syncOfflineSessions();
+  }, []);
+
   if (loading) return <PageSkeleton />;
 
   const completed = sessions.filter((s) => s.status === "completed");
@@ -194,6 +222,42 @@ export default function PlayerHubPage() {
         {showUbuntuOptIn && (
           <div className="mb-6">
             <UbuntuOptIn onOptIn={() => setShowUbuntuOptIn(false)} />
+          </div>
+        )}
+
+        {/* Beautiful Game Score */}
+        {profile && (profile.joy_score ?? 0) > 0 && (
+          <div className="mb-6 rounded-2xl border border-[#f0b429]/30 bg-gradient-to-br from-[#1a3a1a] to-[#0d2b0d] p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#f0b429]/80">
+                  Your Beautiful Game Score
+                </p>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-[#f0b429]">{profile.joy_score}</span>
+                  <span className="text-sm text-white/50">/ 100</span>
+                </div>
+                <p className="mt-1 text-xs text-white/60">
+                  {(profile.joy_score ?? 0) >= 50
+                    ? "Exceptional joy for the game — scouts notice this energy"
+                    : (profile.joy_score ?? 0) >= 25
+                    ? "Your love for the game is growing — keep it up!"
+                    : "Every session adds to your story — keep going!"}
+                </p>
+              </div>
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#f0b429]/10 text-2xl">
+                ⚽
+              </div>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#f0b429] to-[#f5c542] transition-all duration-500"
+                style={{ width: `${profile.joy_score ?? 0}%` }}
+              />
+            </div>
+            <div className="mt-2 flex justify-between text-[10px] text-white/30">
+              <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+            </div>
           </div>
         )}
 
