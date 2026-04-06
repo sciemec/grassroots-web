@@ -473,9 +473,18 @@ export default function PitchModePage() {
           >
             START SESSION →
           </button>
+
+          {/* Toggle to Voice Mode */}
+          <button
+            onClick={() => router.push("/player/session")}
+            className="mt-3 w-full rounded-2xl border border-white/20 py-3 text-sm text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
+          >
+            🎙 Switch to Voice Mode (THUTO speaks)
+          </button>
+
           <button
             onClick={() => router.push("/player")}
-            className="mt-4 text-sm text-white/50 underline"
+            className="mt-3 text-sm text-white/50 underline"
           >
             Cancel
           </button>

@@ -286,12 +286,20 @@ export default function PlayerHubPage() {
               </div>
               <Zap className="h-6 w-6 flex-shrink-0 text-[#f0b429]" />
             </div>
-            <Link
-              href="/player/pitch"
-              className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-bold text-[#15803d] transition-opacity hover:opacity-90 active:scale-95"
-            >
-              <Play className="h-4 w-4" /> Start on Pitch →
-            </Link>
+            <div className="mt-4 flex gap-2">
+              <Link
+                href="/player/pitch"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-bold text-[#15803d] transition-opacity hover:opacity-90 active:scale-95"
+              >
+                <Play className="h-4 w-4" /> Pitch Mode
+              </Link>
+              <Link
+                href="/player/session"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/30 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10 active:scale-95"
+              >
+                🎙 THUTO Voice
+              </Link>
+            </div>
           </div>
         )}
 
