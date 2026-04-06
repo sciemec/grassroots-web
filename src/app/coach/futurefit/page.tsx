@@ -237,13 +237,13 @@ function PathwayTab() {
     <div className="px-4 pb-8 pt-4 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Development Pathway</p>
-          <h2 className="text-xl font-bold text-white">From ECD to 11v11</h2>
-          <p className="text-xs text-white/40 mt-0.5">Zimbabwe&apos;s full football development pathway, age 3 to Open Age</p>
+          <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Development Pathway</p>
+          <h2 className="text-2xl font-bold text-white">From ECD to 11v11</h2>
+          <p className="text-sm text-white/40 mt-0.5">Zimbabwe&apos;s full football development pathway, age 3 to Open Age</p>
         </div>
         <button
           onClick={() => setShowShona((v) => !v)}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${showShona ? "bg-[#f0b429] text-[#1a3a1a]" : "bg-white/10 text-white/60 hover:bg-white/15"}`}
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-all ${showShona ? "bg-[#f0b429] text-[#1a3a1a]" : "bg-white/10 text-white/60 hover:bg-white/15"}`}
         >
           <Globe className="h-3.5 w-3.5" />
           {showShona ? "English" : "Shona 🇿🇼"}
@@ -257,10 +257,10 @@ function PathwayTab() {
             <div key={i} className="flex items-center gap-1">
               <div className="rounded-xl border p-3 text-center min-w-[80px]"
                 style={{ borderColor: step.color + "60", borderTopWidth: 3, borderTopColor: step.color, background: step.isEcd ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)" }}>
-                <div className="text-xl mb-1">{step.icon}</div>
-                <div className="text-[11px] font-bold" style={{ color: step.color }}>{step.age}</div>
-                <div className="text-[9px] text-white/50 uppercase tracking-wide mt-0.5">{step.label}</div>
-                <div className="text-[10px] text-white/70 mt-0.5">{showShona ? step.shona : step.sub}</div>
+                <div className="text-2xl mb-1">{step.icon}</div>
+                <div className="text-xs font-bold" style={{ color: step.color }}>{step.age}</div>
+                <div className="text-xs text-white/50 uppercase tracking-wide mt-0.5">{step.label}</div>
+                <div className="text-sm text-white/70 mt-0.5">{showShona ? step.shona : step.sub}</div>
               </div>
               {i < PATHWAY_STEPS.length - 1 && <ChevronRight className="h-3 w-3 text-white/20 shrink-0" />}
             </div>
@@ -270,8 +270,8 @@ function PathwayTab() {
 
       {/* ECD section */}
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-2">Early Childhood Development</p>
-        <p className="text-xs text-white/50 mb-4 leading-relaxed">
+        <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-2">Early Childhood Development</p>
+        <p className="text-sm text-white/50 mb-4 leading-relaxed">
           {showShona
             ? "Nzira yepamusoro yekudzidzisa bhora muZimbabwe inotanga kuECD. Vana vane makore 3–6 vanogona kudzidza kutamba bhora usati wapinda muchidzidzo chikuru."
             : "The most powerful football pathway in Zimbabwe starts at ECD. Children aged 3–6 can begin their football journey long before organised school sport begins."}
@@ -281,9 +281,9 @@ function PathwayTab() {
             <button key={s.id} onClick={() => { setActiveStage(s.id); setActiveActivity(null); }}
               className="rounded-xl border p-3 text-center transition-all"
               style={{ background: activeStage === s.id ? s.color : "rgba(255,255,255,0.05)", borderColor: activeStage === s.id ? s.color : "rgba(255,255,255,0.1)" }}>
-              <div className="text-xl mb-1">{s.icon}</div>
-              <div className="text-xs font-bold text-white">{showShona ? s.shona : s.stage}</div>
-              <div className="text-[10px] text-white/60 mt-0.5">{showShona ? s.ageShona : s.age}</div>
+              <div className="text-2xl mb-1">{s.icon}</div>
+              <div className="text-sm font-bold text-white">{showShona ? s.shona : s.stage}</div>
+              <div className="text-sm text-white/60 mt-0.5">{showShona ? s.ageShona : s.age}</div>
             </button>
           ))}
         </div>
@@ -295,13 +295,13 @@ function PathwayTab() {
               { label: "DURATION",                             val: stage.duration                                     },
             ].map((item, i) => (
               <div key={i}>
-                <p className="text-[9px] uppercase tracking-widest font-semibold mb-1" style={{ color: stage.color }}>{item.label}</p>
-                <p className="text-xs text-white/70 leading-relaxed">{item.val}</p>
+                <p className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: stage.color }}>{item.label}</p>
+                <p className="text-sm text-white/70 leading-relaxed">{item.val}</p>
               </div>
             ))}
           </div>
           <div className="border-t border-white/10 pt-3 space-y-2">
-            <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: stage.color }}>
+            <p className="text-sm uppercase tracking-widest font-semibold" style={{ color: stage.color }}>
               {showShona ? "MAITIRO EMITAMBO" : "ACTIVITY CARDS"}
             </p>
             {stage.activities.map((act, i) => (
@@ -310,19 +310,19 @@ function PathwayTab() {
                 onClick={() => setActiveActivity(activeActivity === i ? null : i)}>
                 <div className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] uppercase tracking-widest font-semibold" style={{ color: stage.color }}>ACT {i + 1}</span>
-                    <span className="text-sm font-semibold text-white">{showShona ? act.shona : act.name}</span>
+                    <span className="text-xs uppercase tracking-widest font-semibold" style={{ color: stage.color }}>ACT {i + 1}</span>
+                    <span className="text-base font-semibold text-white">{showShona ? act.shona : act.name}</span>
                   </div>
                   {activeActivity === i ? <ChevronUp className="h-4 w-4 text-white/30" /> : <ChevronDown className="h-4 w-4 text-white/30" />}
                 </div>
                 {activeActivity === i && (
                   <div className="px-3 pb-3 border-t border-white/10 pt-3 space-y-3">
-                    <p className="text-xs text-white/70 leading-relaxed">{showShona ? act.shonaDesc : act.desc}</p>
+                    <p className="text-sm text-white/70 leading-relaxed">{showShona ? act.shonaDesc : act.desc}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {(showShona ? act.cuesShona : act.cues).map((cue, j) => (
                         <div key={j} className="flex gap-2 items-start">
-                          <span className="text-xs mt-0.5 shrink-0" style={{ color: stage.color }}>›</span>
-                          <span className="text-xs text-white/60 leading-relaxed">{cue}</span>
+                          <span className="text-sm mt-0.5 shrink-0" style={{ color: stage.color }}>›</span>
+                          <span className="text-sm text-white/60 leading-relaxed">{cue}</span>
                         </div>
                       ))}
                     </div>
@@ -335,13 +335,13 @@ function PathwayTab() {
       </div>
 
       <div className="rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4">
-        <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-1">
+        <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-1">
           {showShona ? "NYORESA NZVIMBO YAKO YECD" : "REGISTER YOUR ECD CENTRE"}
         </p>
-        <p className="text-sm font-bold text-white mb-0.5">
+        <p className="text-base font-bold text-white mb-0.5">
           {showShona ? "Nzvimbo yako yeECD inogona kutanga nzira yebhora nhasi." : "Your ECD centre can start Zimbabwe's football pipeline today."}
         </p>
-        <p className="text-xs text-white/40">
+        <p className="text-sm text-white/40">
           {showShona ? "Mahara. Bhora rimwe nemakoni mana zvakakwana." : "Free to join. One ball and four cones is enough."}
         </p>
       </div>
@@ -356,14 +356,14 @@ function ThreeVThreeTab() {
   return (
     <div className="px-4 pb-8 pt-4 space-y-4">
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Featured Format — U7</p>
-        <h2 className="text-xl font-bold text-white mb-1">3v3 — The Entry Format</h2>
-        <p className="text-xs text-white/40 leading-relaxed">The recommended format for Under 7s. Fast, fun, and proven to develop better players from day one.</p>
+        <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Featured Format — U7</p>
+        <h2 className="text-2xl font-bold text-white mb-1">3v3 — The Entry Format</h2>
+        <p className="text-sm text-white/40 leading-relaxed">The recommended format for Under 7s. Fast, fun, and proven to develop better players from day one.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         {(["why", "setup", "rules", "coaching"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`rounded-xl px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-all ${tab === t ? "bg-[#006400] text-white" : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"}`}>
+            className={`rounded-xl px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all ${tab === t ? "bg-[#006400] text-white" : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"}`}>
             {t === "why" ? "Why 3v3?" : t === "setup" ? "Pitch Setup" : t === "rules" ? "Rules" : "Coaching Tips"}
           </button>
         ))}
@@ -371,7 +371,7 @@ function ThreeVThreeTab() {
       {tab === "why" && (
         <div className="space-y-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
-            <p className="text-sm text-white/80 leading-relaxed">3v3 gives young players the best introduction to football — more chances to learn, play, make decisions, score and stop goals. Research shows it encourages more physical activity and increases technical actions, meaning more touches on the ball and more play on the pitch.</p>
+            <p className="text-base text-white/80 leading-relaxed">3v3 gives young players the best introduction to football — more chances to learn, play, make decisions, score and stop goals. Research shows it encourages more physical activity and increases technical actions, meaning more touches on the ball and more play on the pitch.</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -380,8 +380,8 @@ function ThreeVThreeTab() {
               { n: "MORE FUN",     sub: "every child plays always" },
             ].map((s, i) => (
               <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center" style={{ borderTop: "3px solid #006400" }}>
-                <p className="text-xs font-bold text-[#006400] mb-1">{s.n}</p>
-                <p className="text-[10px] text-white/40 leading-snug">{s.sub}</p>
+                <p className="text-sm font-bold text-[#006400] mb-1">{s.n}</p>
+                <p className="text-sm text-white/40 leading-snug">{s.sub}</p>
               </div>
             ))}
           </div>
@@ -397,8 +397,8 @@ function ThreeVThreeTab() {
           ].map((s, i) => (
             <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
               <div className="text-2xl mb-2">{s.icon}</div>
-              <p className="text-[10px] uppercase tracking-widest font-bold text-[#006400] mb-1.5">{s.title}</p>
-              <p className="text-xs text-white/60 leading-relaxed">{s.body}</p>
+              <p className="text-sm uppercase tracking-widest font-bold text-[#006400] mb-1.5">{s.title}</p>
+              <p className="text-sm text-white/60 leading-relaxed">{s.body}</p>
             </div>
           ))}
         </div>
@@ -407,20 +407,20 @@ function ThreeVThreeTab() {
         <div className="space-y-2">
           {THREE_V_THREE_RULES.map((r, i) => (
             <div key={i} className="flex gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <span className="text-[9px] uppercase tracking-widest font-bold text-[#006400] min-w-[90px] shrink-0 pt-0.5">{r.rule}</span>
-              <span className="text-xs text-white/70 leading-relaxed">{r.detail}</span>
+              <span className="text-xs uppercase tracking-widest font-bold text-[#006400] min-w-[90px] shrink-0 pt-0.5">{r.rule}</span>
+              <span className="text-sm text-white/70 leading-relaxed">{r.detail}</span>
             </div>
           ))}
         </div>
       )}
       {tab === "coaching" && (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
-          <p className="text-[9px] uppercase tracking-widest font-bold text-[#006400] mb-3">Coaching Principles for U7 3v3</p>
+          <p className="text-xs uppercase tracking-widest font-bold text-[#006400] mb-3">Coaching Principles for U7 3v3</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {THREE_V_THREE_COACHING_TIPS.map((tip, i) => (
               <div key={i} className="flex gap-2 items-start">
                 <span className="text-[#006400] text-base shrink-0">›</span>
-                <span className="text-xs text-white/70 leading-relaxed">{tip}</span>
+                <span className="text-sm text-white/70 leading-relaxed">{tip}</span>
               </div>
             ))}
           </div>
@@ -460,29 +460,29 @@ function FormatsTab({
     <div className="px-4 pb-8 pt-4 space-y-6">
       {/* Pitch Size Table */}
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Official Formats</p>
-        <h2 className="text-xl font-bold text-white mb-1">Age Group Formats & Pitch Sizes</h2>
-        <p className="text-xs text-white/40 mb-3 leading-relaxed">All pitch sizes in metres. Min 3m run-off required. * 24×8 also permitted &nbsp;** 21×7 also permitted</p>
+        <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Official Formats</p>
+        <h2 className="text-2xl font-bold text-white mb-1">Age Group Formats & Pitch Sizes</h2>
+        <p className="text-sm text-white/40 mb-3 leading-relaxed">All pitch sizes in metres. Min 3m run-off required. * 24×8 also permitted &nbsp;** 21×7 also permitted</p>
         <div className="flex flex-wrap gap-2 mb-3">
           {Object.entries(FORMAT_COLORS).map(([f, color]) => (
             <button key={f} onClick={() => setFilterFormat(filterFormat === f ? null : f)}
-              className="rounded-lg px-3 py-1.5 text-xs font-bold border transition-all"
+              className="rounded-lg px-3 py-1.5 text-sm font-bold border transition-all"
               style={{ background: filterFormat === f ? color : "transparent", borderColor: color, color: filterFormat === f ? "#fff" : color }}>
               {f}
             </button>
           ))}
           {filterFormat && (
-            <button onClick={() => setFilterFormat(null)} className="rounded-lg px-3 py-1.5 text-xs text-white/30 border border-white/10 hover:text-white/60 transition-colors">
+            <button onClick={() => setFilterFormat(null)} className="rounded-lg px-3 py-1.5 text-sm text-white/30 border border-white/10 hover:text-white/60 transition-colors">
               ✕ Clear
             </button>
           )}
         </div>
         <div className="overflow-x-auto rounded-2xl border border-white/10">
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-white/5">
                 {["Age Group","Format","Ball","Rec. Pitch (m)","Min (m)","Max (m)","Goal (ft)"].map((h) => (
-                  <th key={h} className="px-3 py-2.5 text-left text-[9px] uppercase tracking-widest text-[#f0b429] font-semibold whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-3 py-2.5 text-left text-xs uppercase tracking-widest text-[#f0b429] font-semibold whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -492,7 +492,7 @@ function FormatsTab({
                 return (
                   <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors" style={{ borderLeft: `3px solid ${color}` }}>
                     <td className="px-3 py-2.5 text-white/80 whitespace-nowrap">{row.age}</td>
-                    <td className="px-3 py-2.5"><span className="rounded px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: color }}>{row.format}</span></td>
+                    <td className="px-3 py-2.5"><span className="rounded px-2 py-0.5 text-sm font-bold text-white" style={{ background: color }}>{row.format}</span></td>
                     <td className="px-3 py-2.5 text-white/60">{row.ball}</td>
                     <td className="px-3 py-2.5 font-bold text-white">{row.recommended}</td>
                     <td className="px-3 py-2.5 text-white/40">{row.min}</td>
@@ -508,9 +508,9 @@ function FormatsTab({
 
       {/* Session Plans */}
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Session Plans by Format</p>
-        <h2 className="text-xl font-bold text-white mb-1">Training Drills & Plans</h2>
-        <p className="text-xs text-white/40 mb-4 leading-relaxed">Complete session plans with warm-up, drills, coaching cues, and progressions.</p>
+        <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Session Plans by Format</p>
+        <h2 className="text-2xl font-bold text-white mb-1">Training Drills & Plans</h2>
+        <p className="text-sm text-white/40 mb-4 leading-relaxed">Complete session plans with warm-up, drills, coaching cues, and progressions.</p>
 
         {/* Format selector */}
         <div className="grid grid-cols-4 gap-2 mb-4">
@@ -518,9 +518,9 @@ function FormatsTab({
             <button key={f.id} onClick={() => { setActiveFormat(f.id); setOpenDrill(null); setShowWarmup(false); }}
               className="rounded-xl border p-3 text-center transition-all"
               style={{ background: activeFormat === f.id ? f.color : "rgba(255,255,255,0.03)", borderColor: activeFormat === f.id ? f.color : "rgba(255,255,255,0.1)" }}>
-              <div className="text-xl mb-1">{f.icon}</div>
-              <div className="text-sm font-bold text-white">{f.format}</div>
-              <div className="text-[9px] text-white/50 mt-0.5">{f.ages}</div>
+              <div className="text-2xl mb-1">{f.icon}</div>
+              <div className="text-base font-bold text-white">{f.format}</div>
+              <div className="text-xs text-white/50 mt-0.5">{f.ages}</div>
             </button>
           ))}
         </div>
@@ -528,11 +528,11 @@ function FormatsTab({
         {/* Action bar — Print, Log, Save format */}
         <div className="flex flex-wrap gap-2 mb-3">
           <button onClick={() => onPrint(fmt)}
-            className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white/70 hover:bg-white/15 hover:text-white transition-all">
+            className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/15 hover:text-white transition-all">
             <Printer className="h-3.5 w-3.5" /> Print PDF
           </button>
           <button onClick={() => onLogSession(fmt)}
-            className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white/70 hover:bg-white/15 hover:text-white transition-all">
+            className="flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/15 hover:text-white transition-all">
             <ClipboardList className="h-3.5 w-3.5" /> Log This Session
           </button>
         </div>
@@ -548,12 +548,12 @@ function FormatsTab({
               { label: "FREQUENCY",      value: fmt.frequency     },
             ].map((s, i) => (
               <div key={i}>
-                <p className="text-[9px] uppercase tracking-widest font-semibold mb-1" style={{ color: fmt.color }}>{s.label}</p>
-                <p className="text-xs text-white/70 leading-relaxed">{s.value}</p>
+                <p className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: fmt.color }}>{s.label}</p>
+                <p className="text-sm text-white/70 leading-relaxed">{s.value}</p>
               </div>
             ))}
           </div>
-          <p className="text-xs text-white/60 leading-relaxed">{fmt.overview}</p>
+          <p className="text-sm text-white/60 leading-relaxed">{fmt.overview}</p>
         </div>
 
         {/* Warm-up card */}
@@ -561,9 +561,9 @@ function FormatsTab({
           style={{ borderColor: showWarmup ? fmt.color : "rgba(255,255,255,0.1)", borderLeftColor: fmt.color, borderLeftWidth: 4 }}>
           <div className="flex items-center justify-between px-4 py-3 cursor-pointer" onClick={() => setShowWarmup((v) => !v)}>
             <div className="flex items-center gap-3">
-              <span className="text-[9px] uppercase tracking-widest font-bold border rounded px-2 py-0.5" style={{ color: fmt.color, borderColor: fmt.color }}>WARM-UP</span>
-              <span className="text-sm font-semibold text-white">{fmt.warmup.name}</span>
-              <span className="text-[10px] text-white/30 hidden sm:inline">· {fmt.warmup.duration}</span>
+              <span className="text-xs uppercase tracking-widest font-bold border rounded px-2 py-0.5" style={{ color: fmt.color, borderColor: fmt.color }}>WARM-UP</span>
+              <span className="text-base font-semibold text-white">{fmt.warmup.name}</span>
+              <span className="text-sm text-white/30 hidden sm:inline">· {fmt.warmup.duration}</span>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={(e) => { e.stopPropagation(); onToggleSave({ id: warmupId, type: "warmup", formatId: fmt.id, formatLabel: fmt.format, name: fmt.warmup.name, duration: fmt.warmup.duration, players: fmt.warmup.players, savedAt: new Date().toISOString() }); }}
@@ -575,14 +575,14 @@ function FormatsTab({
           </div>
           {showWarmup && (
             <div className="border-t border-white/10 px-4 pb-4 pt-3 space-y-3">
-              <p className="text-xs text-white/70 leading-relaxed">{fmt.warmup.setup}</p>
+              <p className="text-sm text-white/70 leading-relaxed">{fmt.warmup.setup}</p>
               <div>
-                <p className="text-[9px] uppercase tracking-widest font-semibold mb-2" style={{ color: fmt.color }}>COACHING CUES</p>
+                <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: fmt.color }}>COACHING CUES</p>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3">
                   {fmt.warmup.cues.map((c, i) => (
                     <div key={i} className="flex gap-2 items-start">
-                      <span style={{ color: fmt.color }} className="shrink-0 text-sm">›</span>
-                      <span className="text-xs text-white/60 leading-relaxed">{c}</span>
+                      <span style={{ color: fmt.color }} className="shrink-0 text-base">›</span>
+                      <span className="text-sm text-white/60 leading-relaxed">{c}</span>
                     </div>
                   ))}
                 </div>
@@ -597,9 +597,9 @@ function FormatsTab({
             style={{ borderColor: openDrill === i ? fmt.color : "rgba(255,255,255,0.1)" }}>
             <div className="flex items-center justify-between px-4 py-3 cursor-pointer" onClick={() => setOpenDrill(openDrill === i ? null : i)}>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[9px] uppercase tracking-widest font-bold border rounded px-2 py-0.5" style={{ color: fmt.color, borderColor: fmt.color + "50" }}>DRILL {i + 1}</span>
-                <span className="text-sm font-semibold text-white">{drill.name}</span>
-                <span className="text-[10px] text-white/30 hidden sm:inline">· {drill.duration} · {drill.players}</span>
+                <span className="text-xs uppercase tracking-widest font-bold border rounded px-2 py-0.5" style={{ color: fmt.color, borderColor: fmt.color + "50" }}>DRILL {i + 1}</span>
+                <span className="text-base font-semibold text-white">{drill.name}</span>
+                <span className="text-sm text-white/30 hidden sm:inline">· {drill.duration} · {drill.players}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-2">
                 <button onClick={(e) => { e.stopPropagation(); onToggleSave({ id: drillId(i), type: "drill", formatId: fmt.id, formatLabel: fmt.format, name: drill.name, duration: drill.duration, players: drill.players, savedAt: new Date().toISOString() }); }}
@@ -616,28 +616,28 @@ function FormatsTab({
             {openDrill === i && (
               <div className="border-t border-white/10 px-4 pb-4 pt-3 space-y-3">
                 <div className="rounded-xl bg-white/5 px-3 py-2">
-                  <span className="text-[9px] uppercase tracking-widest font-semibold" style={{ color: fmt.color }}>OBJECTIVE: </span>
-                  <span className="text-xs text-white/60">{drill.objective}</span>
+                  <span className="text-xs uppercase tracking-widest font-semibold" style={{ color: fmt.color }}>OBJECTIVE: </span>
+                  <span className="text-sm text-white/60">{drill.objective}</span>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-widest font-semibold mb-1.5" style={{ color: fmt.color }}>SETUP</p>
-                  <p className="text-xs text-white/70 leading-relaxed">{drill.setup}</p>
+                  <p className="text-xs uppercase tracking-widest font-semibold mb-1.5" style={{ color: fmt.color }}>SETUP</p>
+                  <p className="text-sm text-white/70 leading-relaxed">{drill.setup}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-widest font-semibold mb-2" style={{ color: fmt.color }}>COACHING CUES</p>
+                  <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: fmt.color }}>COACHING CUES</p>
                   <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3">
                     {drill.cues.map((c, j) => (
                       <div key={j} className="flex gap-2 items-start rounded-lg bg-white/5 px-2.5 py-2">
-                        <span style={{ color: fmt.color }} className="shrink-0 text-sm mt-0.5">›</span>
-                        <span className="text-xs text-white/60 leading-relaxed">{c}</span>
+                        <span style={{ color: fmt.color }} className="shrink-0 text-base mt-0.5">›</span>
+                        <span className="text-sm text-white/60 leading-relaxed">{c}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="rounded-xl border px-3 py-2.5 flex gap-2 items-start"
                   style={{ borderColor: fmt.color + "40", background: fmt.color + "10" }}>
-                  <span className="text-[9px] uppercase tracking-widest font-bold shrink-0 pt-0.5" style={{ color: fmt.color }}>PROGRESSION →</span>
-                  <span className="text-xs text-white/70 leading-relaxed">{drill.progression}</span>
+                  <span className="text-xs uppercase tracking-widest font-bold shrink-0 pt-0.5" style={{ color: fmt.color }}>PROGRESSION →</span>
+                  <span className="text-sm text-white/70 leading-relaxed">{drill.progression}</span>
                 </div>
               </div>
             )}
@@ -646,7 +646,7 @@ function FormatsTab({
 
         {/* Session total */}
         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex flex-wrap gap-4 items-center mt-2">
-          <span className="text-[9px] uppercase tracking-widest font-semibold shrink-0" style={{ color: fmt.color }}>SESSION TOTAL →</span>
+          <span className="text-xs uppercase tracking-widest font-semibold shrink-0" style={{ color: fmt.color }}>SESSION TOTAL →</span>
           {[
             { label: "Warm-Up",       val: fmt.warmup.duration          },
             { label: "Drills",        val: `${fmt.drills.length} drills` },
@@ -654,8 +654,8 @@ function FormatsTab({
             { label: "Total",         val: fmt.sessionLength             },
           ].map((s, i) => (
             <div key={i} className="text-center border-l border-white/10 pl-4">
-              <p className="text-[8px] uppercase tracking-widest text-white/30 mb-0.5">{s.label}</p>
-              <p className="text-xs font-bold text-white">{s.val}</p>
+              <p className="text-xs uppercase tracking-widest text-white/30 mb-0.5">{s.label}</p>
+              <p className="text-sm font-bold text-white">{s.val}</p>
             </div>
           ))}
         </div>
@@ -671,8 +671,8 @@ function SavedTab({ saved, onRemove }: { saved: SavedItem[]; onRemove: (id: stri
     return (
       <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
         <Star className="h-10 w-10 text-white/10 mb-4" />
-        <p className="text-sm font-semibold text-white/40">No saved drills yet</p>
-        <p className="mt-1 text-xs text-white/25">Tap the ⭐ on any drill or warm-up in the Formats tab to save it here</p>
+        <p className="text-base font-semibold text-white/40">No saved drills yet</p>
+        <p className="mt-1 text-sm text-white/25">Tap the ⭐ on any drill or warm-up in the Formats tab to save it here</p>
       </div>
     );
   }
@@ -687,25 +687,25 @@ function SavedTab({ saved, onRemove }: { saved: SavedItem[]; onRemove: (id: stri
   return (
     <div className="px-4 pb-8 pt-4 space-y-5">
       <div>
-        <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Saved Drills</p>
-        <h2 className="text-xl font-bold text-white mb-0.5">Your Favourites</h2>
-        <p className="text-xs text-white/40">{saved.length} item{saved.length !== 1 ? "s" : ""} saved</p>
+        <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Saved Drills</p>
+        <h2 className="text-2xl font-bold text-white mb-0.5">Your Favourites</h2>
+        <p className="text-sm text-white/40">{saved.length} item{saved.length !== 1 ? "s" : ""} saved</p>
       </div>
       {Object.entries(groups).map(([formatLabel, items]) => {
         const color = FORMAT_COLORS[formatLabel] ?? "#f0b429";
         return (
           <div key={formatLabel}>
             <div className="flex items-center gap-2 mb-2">
-              <span className="rounded px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: color }}>{formatLabel}</span>
-              <span className="text-[10px] text-white/30">{items.length} saved</span>
+              <span className="rounded px-2 py-0.5 text-sm font-bold text-white" style={{ background: color }}>{formatLabel}</span>
+              <span className="text-sm text-white/30">{items.length} saved</span>
             </div>
             <div className="space-y-2">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                   <Star className="h-4 w-4 shrink-0 text-[#f0b429]" fill="currentColor" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">{item.name}</p>
-                    <p className="text-[10px] text-white/40">{item.type === "warmup" ? "Warm-Up" : "Drill"} · {item.duration} · {item.players}</p>
+                    <p className="text-base font-semibold text-white truncate">{item.name}</p>
+                    <p className="text-sm text-white/40">{item.type === "warmup" ? "Warm-Up" : "Drill"} · {item.duration} · {item.players}</p>
                   </div>
                   <button onClick={() => onRemove(item.id)} className="rounded-lg p-1.5 text-white/20 hover:text-red-400 transition-colors">
                     <Trash2 className="h-4 w-4" />
@@ -727,9 +727,9 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
     return (
       <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
         <ClipboardList className="h-10 w-10 text-white/10 mb-4" />
-        <p className="text-sm font-semibold text-white/40">No sessions logged yet</p>
-        <p className="mt-1 text-xs text-white/25">Click &quot;Log This Session&quot; in the Formats tab after running a session</p>
-        <button onClick={onAdd} className="mt-5 flex items-center gap-1.5 rounded-xl bg-[#f0b429] px-4 py-2.5 text-xs font-bold text-[#1a3a1a] transition-opacity hover:opacity-90">
+        <p className="text-base font-semibold text-white/40">No sessions logged yet</p>
+        <p className="mt-1 text-sm text-white/25">Click &quot;Log This Session&quot; in the Formats tab after running a session</p>
+        <button onClick={onAdd} className="mt-5 flex items-center gap-1.5 rounded-xl bg-[#f0b429] px-4 py-2.5 text-sm font-bold text-[#1a3a1a] transition-opacity hover:opacity-90">
           <ClipboardList className="h-3.5 w-3.5" /> Log a Session
         </button>
       </div>
@@ -754,11 +754,11 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
     <div className="px-4 pb-8 pt-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Session Log</p>
-          <h2 className="text-xl font-bold text-white mb-0.5">Training History</h2>
-          <p className="text-xs text-white/40">{logs.length} session{logs.length !== 1 ? "s" : ""} logged</p>
+          <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold mb-1">Session Log</p>
+          <h2 className="text-2xl font-bold text-white mb-0.5">Training History</h2>
+          <p className="text-sm text-white/40">{logs.length} session{logs.length !== 1 ? "s" : ""} logged</p>
         </div>
-        <button onClick={onAdd} className="flex items-center gap-1.5 rounded-xl bg-[#f0b429] px-3 py-2 text-xs font-bold text-[#1a3a1a]">
+        <button onClick={onAdd} className="flex items-center gap-1.5 rounded-xl bg-[#f0b429] px-3 py-2 text-sm font-bold text-[#1a3a1a]">
           <ClipboardList className="h-3.5 w-3.5" /> Log Session
         </button>
       </div>
@@ -774,16 +774,16 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
               { label: "Squads",       value: squadSet.size,            unit: "groups"        },
             ].map((s, i) => (
               <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-                <p className="text-[9px] uppercase tracking-widest text-white/30 mb-0.5">{s.label}</p>
+                <p className="text-xs uppercase tracking-widest text-white/30 mb-0.5">{s.label}</p>
                 <p className="text-lg font-bold text-white leading-none">{s.value}</p>
-                <p className="text-[9px] text-white/30 mt-0.5">{s.unit}</p>
+                <p className="text-xs text-white/30 mt-0.5">{s.unit}</p>
               </div>
             ))}
           </div>
 
           {/* Format breakdown bars */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-[9px] uppercase tracking-widest text-[#f0b429] font-semibold mb-3">Format Breakdown</p>
+            <p className="text-xs uppercase tracking-widest text-[#f0b429] font-semibold mb-3">Format Breakdown</p>
             <div className="space-y-2">
               {Object.entries(formatCounts)
                 .sort((a, b) => b[1] - a[1])
@@ -792,18 +792,18 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
                   const pct   = Math.round((count / maxCount) * 100);
                   return (
                     <div key={fmt} className="flex items-center gap-3">
-                      <span className="w-8 text-right text-[10px] font-bold shrink-0" style={{ color }}>{fmt}</span>
+                      <span className="w-8 text-right text-sm font-bold shrink-0" style={{ color }}>{fmt}</span>
                       <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
                       </div>
-                      <span className="text-[10px] text-white/40 shrink-0 w-16">
+                      <span className="text-sm text-white/40 shrink-0 w-16">
                         {count} session{count !== 1 ? "s" : ""}
                       </span>
                     </div>
                   );
                 })}
             </div>
-            <p className="mt-3 text-[10px] text-white/30">
+            <p className="mt-3 text-sm text-white/30">
               Most used: <span className="font-bold" style={{ color: FORMAT_COLORS[topFormat] ?? "#f0b429" }}>{topFormat}</span>
               {" "}· avg rating <span className="font-bold text-white/60">{avgRating.toFixed(1)} ⭐</span>
             </p>
@@ -820,17 +820,17 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="rounded px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: color }}>{log.formatLabel}</span>
-                    <span className="text-[10px] text-white/40">{log.formatAges}</span>
-                    <span className="text-[10px] text-white/30">{new Date(log.date).toLocaleDateString()}</span>
+                    <span className="rounded px-2 py-0.5 text-sm font-bold text-white" style={{ background: color }}>{log.formatLabel}</span>
+                    <span className="text-sm text-white/40">{log.formatAges}</span>
+                    <span className="text-sm text-white/30">{new Date(log.date).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-sm font-semibold text-white">{log.squadName}</p>
+                  <p className="text-base font-semibold text-white">{log.squadName}</p>
                   <div className="flex gap-0.5 mt-1">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <Star key={n} className={`h-3.5 w-3.5 ${n <= log.rating ? "text-[#f0b429]" : "text-white/15"}`} fill={n <= log.rating ? "currentColor" : "none"} />
                     ))}
                   </div>
-                  {log.notes && <p className="mt-1.5 text-xs text-white/50 leading-relaxed">{log.notes}</p>}
+                  {log.notes && <p className="mt-1.5 text-sm text-white/50 leading-relaxed">{log.notes}</p>}
                 </div>
                 <button onClick={() => onDelete(log.id)} className="shrink-0 rounded-lg p-1.5 text-white/20 hover:text-red-400 transition-colors">
                   <Trash2 className="h-4 w-4" />
@@ -883,7 +883,7 @@ function LogModal({
       <div className="w-full max-w-md rounded-t-3xl border border-white/10 bg-[#0f2318] p-6 sm:rounded-3xl">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold">Session Log</p>
+            <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold">Session Log</p>
             <h3 className="text-lg font-bold text-white">Log This Session</h3>
           </div>
           <button onClick={onClose} className="rounded-xl p-2 text-white/30 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
@@ -891,11 +891,11 @@ function LogModal({
         <div className="space-y-4">
           {/* Format */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/50 font-semibold">Format</label>
+            <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Format</label>
             <div className="mt-1.5 grid grid-cols-4 gap-1.5">
               {formats.map((f) => (
                 <button key={f.id} onClick={() => setFormatId(f.id)}
-                  className="rounded-xl border py-2 text-xs font-bold text-white transition-all"
+                  className="rounded-xl border py-2 text-sm font-bold text-white transition-all"
                   style={{ background: formatId === f.id ? FORMAT_COLORS[f.format] : "rgba(255,255,255,0.05)", borderColor: formatId === f.id ? FORMAT_COLORS[f.format] : "rgba(255,255,255,0.1)" }}>
                   {f.format}
                 </button>
@@ -904,19 +904,19 @@ function LogModal({
           </div>
           {/* Squad */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/50 font-semibold">Squad / Group Name</label>
+            <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Squad / Group Name</label>
             <input value={squadName} onChange={(e) => setSquadName(e.target.value)} placeholder="e.g. U12 Lions"
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
+              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
           </div>
           {/* Date */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/50 font-semibold">Date</label>
+            <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Date</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#f0b429]/40 transition-all" />
+              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white outline-none focus:border-[#f0b429]/40 transition-all" />
           </div>
           {/* Rating */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/50 font-semibold">Session Rating</label>
+            <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Session Rating</label>
             <div className="mt-1.5 flex gap-2">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button key={n} onClick={() => setRating(n)}>
@@ -927,15 +927,15 @@ function LogModal({
           </div>
           {/* Notes */}
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-white/50 font-semibold">Notes (optional)</label>
+            <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Notes (optional)</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="What went well? What needs work next session?"
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
+              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
           </div>
         </div>
         <div className="mt-5 flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm text-white/50 hover:text-white transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-base text-white/50 hover:text-white transition-colors">Cancel</button>
           <button onClick={handleSave} disabled={!squadName.trim()}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-2.5 text-sm font-bold text-[#1a3a1a] disabled:opacity-40 transition-opacity">
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-2.5 text-base font-bold text-[#1a3a1a] disabled:opacity-40 transition-opacity">
             <Check className="h-4 w-4" /> Save Log
           </button>
         </div>
@@ -991,39 +991,39 @@ function AssignModal({
               <Check className="h-7 w-7 text-green-400" />
             </div>
             <p className="text-lg font-bold text-white">Drill Assigned!</p>
-            <p className="mt-1 text-xs text-white/40">Players will see it in their training feed</p>
+            <p className="mt-1 text-sm text-white/40">Players will see it in their training feed</p>
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-[#f0b429] font-semibold">Assign Drill</p>
+                <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold">Assign Drill</p>
                 <h3 className="text-base font-bold text-white leading-snug">{drillName}</h3>
-                <p className="text-xs text-white/40">{formatLabel} format</p>
+                <p className="text-sm text-white/40">{formatLabel} format</p>
               </div>
               <button onClick={onClose} className="rounded-xl p-2 text-white/30 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
             </div>
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 flex gap-2 mb-4">
               <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-300/80 leading-relaxed">Players will receive this drill as a recommendation in their Training tab.</p>
+              <p className="text-sm text-amber-300/80 leading-relaxed">Players will receive this drill as a recommendation in their Training tab.</p>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] uppercase tracking-widest text-white/50 font-semibold">Player Names</label>
+                <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Player Names</label>
                 <textarea value={playerNames} onChange={(e) => setPlayerNames(e.target.value)} rows={3}
                   placeholder="One per line or comma-separated&#10;e.g. Tinashe Moyo, Farai Dube"
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-widest text-white/50 font-semibold">Message to Players (optional)</label>
+                <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Message to Players (optional)</label>
                 <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="e.g. Focus on your first touch this week"
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
               </div>
             </div>
             <div className="mt-5 flex gap-2">
-              <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm text-white/50 hover:text-white transition-colors">Cancel</button>
+              <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-base text-white/50 hover:text-white transition-colors">Cancel</button>
               <button onClick={handleSend} disabled={!playerNames.trim()}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-2.5 text-sm font-bold text-[#1a3a1a] disabled:opacity-40 transition-opacity">
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-2.5 text-base font-bold text-[#1a3a1a] disabled:opacity-40 transition-opacity">
                 <UserPlus className="h-4 w-4" /> Assign Drill
               </button>
             </div>
@@ -1189,8 +1189,8 @@ export default function FutureFitPage() {
             </Link>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="rounded-full bg-[#f0b429]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#f0b429]">FutureFit</span>
-                <span className="text-[10px] text-white/30 uppercase tracking-wider">Junior Development</span>
+                <span className="rounded-full bg-[#f0b429]/20 px-2 py-0.5 text-sm font-bold uppercase tracking-wider text-[#f0b429]">FutureFit</span>
+                <span className="text-sm text-white/30 uppercase tracking-wider">Junior Development</span>
               </div>
               <h1 className="text-lg font-bold text-white leading-tight">Junior Football Hub</h1>
             </div>
@@ -1200,13 +1200,13 @@ export default function FutureFitPage() {
           <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-hide">
             {tabs.map(({ key, label, icon: Icon, badge }) => (
               <button key={key} onClick={() => setActiveTab(key)}
-                className={`relative flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                className={`relative flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-all ${
                   activeTab === key ? "bg-[#f0b429] text-[#1a3a1a]" : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white"
                 }`}>
                 <Icon className="h-3.5 w-3.5" />
                 {label}
                 {badge !== undefined && badge > 0 && (
-                  <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${activeTab === key ? "bg-[#1a3a1a]/30 text-[#1a3a1a]" : "bg-[#f0b429]/20 text-[#f0b429]"}`}>
+                  <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-xs font-bold ${activeTab === key ? "bg-[#1a3a1a]/30 text-[#1a3a1a]" : "bg-[#f0b429]/20 text-[#f0b429]"}`}>
                     {badge}
                   </span>
                 )}
@@ -1238,14 +1238,14 @@ export default function FutureFitPage() {
                 <Sparkles className="h-4 w-4 text-[#f0b429]" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white">THUTO — Junior Coach AI</p>
-                <p className="text-xs text-white/40">Searches FIFA, FCRF & FA knowledge base first</p>
+                <p className="text-base font-bold text-white">THUTO — Junior Coach AI</p>
+                <p className="text-sm text-white/40">Searches FIFA, FCRF & FA knowledge base first</p>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {chatHistory.length === 0 && (
                 <div className="space-y-3 pt-4">
-                  <p className="text-center text-xs text-white/30 uppercase tracking-wider">Suggested questions</p>
+                  <p className="text-center text-sm text-white/30 uppercase tracking-wider">Suggested questions</p>
                   {[
                     "How do I coach pressing for U14 boys?",
                     "What are the best fundamentals drills for 10-12 year olds?",
@@ -1253,7 +1253,7 @@ export default function FutureFitPage() {
                     "Give me a 45-minute session plan for youth attacking",
                   ].map((q) => (
                     <button key={q} onClick={() => setChatInput(q)}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left text-xs text-white/70 hover:border-[#f0b429]/30 hover:text-white transition-all">
+                      className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left text-sm text-white/70 hover:border-[#f0b429]/30 hover:text-white transition-all">
                       {q}
                     </button>
                   ))}
@@ -1266,7 +1266,7 @@ export default function FutureFitPage() {
                       <Sparkles className="h-3.5 w-3.5 text-[#f0b429]" />
                     </div>
                   )}
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${msg.role === "user" ? "bg-[#f0b429] text-[#1a3a1a] font-medium" : "bg-white/10 text-white"}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-base leading-relaxed ${msg.role === "user" ? "bg-[#f0b429] text-[#1a3a1a] font-medium" : "bg-white/10 text-white"}`}>
                     {msg.text.split("\n").map((line, j) => (
                       <span key={j}>{line}{j < msg.text.split("\n").length - 1 && <br />}</span>
                     ))}
@@ -1280,7 +1280,7 @@ export default function FutureFitPage() {
                   </div>
                   <div className="flex items-center gap-1.5 rounded-2xl bg-white/10 px-4 py-2.5">
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-white/50" />
-                    <span className="text-xs text-white/50">Searching knowledge base…</span>
+                    <span className="text-sm text-white/50">Searching knowledge base…</span>
                   </div>
                 </div>
               )}
@@ -1291,7 +1291,7 @@ export default function FutureFitPage() {
                 <input value={chatInput} onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }}}
                   placeholder="Ask about junior coaching…"
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all"
                   disabled={chatLoading} />
                 <button onClick={sendMessage} disabled={!chatInput.trim() || chatLoading}
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f0b429] text-[#1a3a1a] disabled:opacity-40 transition-opacity">
