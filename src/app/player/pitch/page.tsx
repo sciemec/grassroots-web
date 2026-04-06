@@ -17,6 +17,7 @@ import {
   type ScheduleDay,
   type Drill,
 } from "@/lib/offlineDB";
+import warmupKnowledge from "@/data/warmup-knowledge.json";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -484,11 +485,27 @@ export default function PitchModePage() {
             <p className="text-5xl font-bold tabular-nums">{formatTime(secondsLeft)}</p>
           </div>
         </div>
-        <p className="mt-8 text-xl font-bold uppercase tracking-widest">Warm Up</p>
-        <p className="mt-3 max-w-xs px-6 text-center text-sm text-white/70 italic">
-          {session?.day.pre_session_warmup ?? "Light jog, dynamic stretching, high knees."}
-        </p>
-        <p className="mt-6 max-w-xs px-6 text-center text-base text-white/80 italic">
+        <p className="mt-6 text-xl font-bold uppercase tracking-widest">Warm Up</p>
+
+        {/* Show THUTO's generated warmup if specific, else show structured phases */}
+        {session?.day.pre_session_warmup ? (
+          <p className="mt-2 max-w-xs px-6 text-center text-sm text-white/70 italic">
+            {session.day.pre_session_warmup}
+          </p>
+        ) : (
+          <div className="mt-3 w-full max-w-xs space-y-1 px-6">
+            {warmupKnowledge.warmup_phases.slice(0, 3).map((ph) => (
+              <div key={ph.phase} className="flex items-start gap-2 text-xs text-white/60">
+                <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
+                  {ph.phase}
+                </span>
+                <span><span className="font-semibold text-white/80">{ph.name}</span> · {ph.duration_minutes} min</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="mt-5 max-w-xs px-6 text-center text-sm italic text-white/60">
           "{motivationMsg}"
         </p>
       </div>

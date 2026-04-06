@@ -1,0 +1,144 @@
+{
+  "source": "Warm-up Essentials by Jimson Lee, IAAF New Studies in Athletics 29:1, 2014",
+  "principles": [
+    "Progress slow to fast",
+    "Progress active to dynamic",
+    "Progress general to specific",
+    "Progress simple to more complex",
+    "The warm-up IS part of the workout — not optional",
+    "Warmer ambient temperature = shorter warm-up needed",
+    "Static stretching before training can inhibit performance — use dynamic stretching instead",
+    "Mental preparation during warm-up is as important as physical"
+  ],
+  "why_warmup_matters": {
+    "muscle_pliability": "Raises muscle length to optimal state for performance",
+    "activation_mobilisation": "Activates motor neurons and mobilises joints through full range of motion",
+    "potentiation": "Strengthens nerve impulses leading to faster, stronger muscle contraction",
+    "oxygen_delivery": "Increases blood flow to active muscles, delays fatigue",
+    "injury_prevention": "Warmer, looser muscle is less likely to cramp or pull under maximal effort",
+    "mental_preparation": "Focuses the athlete's mind before the session begins"
+  },
+  "warmup_phases": [
+    {
+      "phase": 1,
+      "name": "Raise Core Temperature",
+      "duration_minutes": 5,
+      "intensity": "low",
+      "description": "Light jogging, skipping, shuffling. The goal is to warm the body — not to fatigue it.",
+      "exercises": [
+        { "name": "Light jog", "duration_seconds": 120, "cue": "Easy pace, land softly, arms relaxed" },
+        { "name": "Side shuffle", "duration_seconds": 30, "cue": "Both directions, stay light on feet" },
+        { "name": "Skipping (forward)", "duration_seconds": 30, "cue": "Lift knees, pump arms gently" },
+        { "name": "Backward jog", "duration_seconds": 30, "cue": "Look over shoulder, small steps" }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Dynamic Flexibility",
+      "duration_minutes": 4,
+      "intensity": "low-medium",
+      "description": "Mobility work for all major joints. NOT static stretching — keep moving.",
+      "exercises": [
+        { "name": "Leg swings (forward-back)", "reps": 10, "cue": "Hold wall for balance, swing from hip — don't force range" },
+        { "name": "Leg swings (side-to-side)", "reps": 10, "cue": "Controlled, not ballistic — feel the hip open" },
+        { "name": "Hip circles", "reps": 8, "cue": "Both directions, hands on hips, big circles" },
+        { "name": "Arm circles", "reps": 10, "cue": "Both directions, start small and grow bigger" },
+        { "name": "Torso rotations", "reps": 10, "cue": "Feet planted, rotate from shoulders" },
+        { "name": "Ankle rolls", "reps": 8, "cue": "Both feet, both directions — prep the ankle joint" }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Activation Drills (Gerard Mach Method)",
+      "duration_minutes": 5,
+      "intensity": "medium",
+      "description": "Sprint drills that activate the correct muscle patterns and nerve pathways. Used by elite track athletes globally. Do over 20-30m each.",
+      "exercises": [
+        {
+          "name": "A-Skip",
+          "distance_metres": 20,
+          "reps": 2,
+          "cue": "Drive knee up to hip height, foot dorsiflexed (toes up), push off ground with opposite foot. Rhythmic and controlled.",
+          "muscle_focus": ["hip flexors", "glutes", "calves"]
+        },
+        {
+          "name": "B-Skip",
+          "distance_metres": 20,
+          "reps": 2,
+          "cue": "A-skip with added knee extension — kick leg forward then pull back down. Slow and deliberate.",
+          "muscle_focus": ["hamstrings", "hip flexors", "coordination"]
+        },
+        {
+          "name": "Butt Kicks (C-Drill)",
+          "distance_metres": 20,
+          "reps": 2,
+          "cue": "Heels kick up to glutes fast. Stay on toes. Short ground contact time.",
+          "muscle_focus": ["hamstrings", "glutes", "calf endurance"]
+        },
+        {
+          "name": "High Knees",
+          "distance_metres": 20,
+          "reps": 2,
+          "cue": "Drive knees above hip height fast. Pump arms. Lean slightly forward.",
+          "muscle_focus": ["hip flexors", "core", "cardiovascular"]
+        },
+        {
+          "name": "Walking Lunges",
+          "reps": 10,
+          "cue": "Step forward into deep lunge, back knee near ground. Keep chest tall. Alternate legs.",
+          "muscle_focus": ["quads", "glutes", "hip flexors", "balance"]
+        },
+        {
+          "name": "Lateral Shuffle",
+          "distance_metres": 10,
+          "reps": 4,
+          "cue": "Stay low, don't cross feet, push off outside foot. Good for football — covers defensive movement.",
+          "muscle_focus": ["glutes", "quads", "adductors"]
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Acceleration Strides",
+      "duration_minutes": 4,
+      "intensity": "medium-high",
+      "description": "Progressive runs to prime the nervous system for match/training speed. Full walk back between each.",
+      "exercises": [
+        { "name": "Stride 1", "distance_metres": 40, "target_speed_pct": 50, "cue": "Start easy, build to half speed by 40m. Controlled." },
+        { "name": "Stride 2", "distance_metres": 60, "target_speed_pct": 70, "cue": "Build to 70% by end. Smooth, relaxed form." },
+        { "name": "Stride 3", "distance_metres": 80, "target_speed_pct": 85, "cue": "Near full pace by the end. Feel the power — don't force it." }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Potentiation (Optional — Competition Days)",
+      "duration_minutes": 3,
+      "intensity": "high",
+      "description": "Explosive movements that prime the central nervous system for peak output. PAP effect lasts 2-30 minutes. Use before important training or matches.",
+      "exercises": [
+        { "name": "Tuck jumps", "reps": 6, "cue": "Jump and pull both knees to chest at peak. Land soft. Rest 30s between sets." },
+        { "name": "Vertical jump-ups", "reps": 8, "cue": "Jump as high as possible, reach up. Absorb landing through knees." },
+        { "name": "Bounds (long jumps running)", "reps": 6, "cue": "Cover maximum ground each stride. Drive off back foot hard." }
+      ]
+    }
+  ],
+  "football_specific_warmup": {
+    "total_duration_minutes": 15,
+    "phases_to_include": [1, 2, 3, 4],
+    "notes": [
+      "Football requires full lower body activation — do all 4 phases",
+      "Add ball work after Phase 3 if balls are available (passing circles, rondos at low intensity)",
+      "Goalkeepers: add shoulder rolls, wrist circles, and lateral dives at low intensity after Phase 2",
+      "Hot Zimbabwe weather: Phase 1 can be 3 minutes instead of 5",
+      "Cold morning sessions: extend Phase 1 to 7-8 minutes before moving to drills"
+    ]
+  },
+  "common_mistakes": [
+    "Static stretching before activity — saves this for AFTER training (cool-down)",
+    "Skipping the warm-up entirely when tired — this is when injury risk is highest",
+    "Warming up too intensely — you should feel warm and ready, not fatigued",
+    "Rushing through drills without correct technique — a sloppy A-skip teaches sloppy running patterns",
+    "Not matching warm-up to the session — a sprint session needs more activation than a technical ball session"
+  ],
+  "cool_down_note": "Static stretching belongs in the cool-down, not the warm-up. After training: hold each major muscle group 30-45 seconds. Focus on quads, hamstrings, hip flexors, calves, and lower back."
+}
