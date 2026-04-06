@@ -221,7 +221,7 @@ export default function ScoutViewPage() {
                       Beautiful Game Score
                     </p>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold text-[#f0b429]">{profile.joy_score}</span>
+                      <span className="text-2xl font-bold text-[#f0b429]">{profile?.joy_score}</span>
                       <span className="text-xs text-muted-foreground">/ 100</span>
                     </div>
                   </div>
@@ -230,7 +230,7 @@ export default function ScoutViewPage() {
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[#f0b429] to-[#f5c542]"
-                    style={{ width: `${profile.joy_score}%` }}
+                    style={{ width: `${profile?.joy_score ?? 0}%` }}
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-muted-foreground">
