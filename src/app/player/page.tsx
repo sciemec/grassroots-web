@@ -182,6 +182,7 @@ export default function PlayerHubPage() {
     { icon: Camera,    title: "Record Drill",    subtitle: "Record your performance now", href: "/player/record",             bg: "bg-[#7b241c]",  gradient: "bg-gradient-to-br from-[#c0392b] to-[#7b241c]" },
     { icon: Award,     title: "Talent Showcase", subtitle: "Upload clips — get scouted",  href: "/player/showcase",           bg: "bg-[#1a4971]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a4971]" },
     { icon: Activity,  title: "Session Tracker", subtitle: "Friend logs your actions live", href: "/player/session-tracker",    bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#1e8449] to-[#145a32]" },
+    { icon: Zap,       title: "Pitch Mode",      subtitle: "Train full-screen, anywhere",  href: "/player/pitch",              bg: "bg-[#15803d]",  gradient: "bg-gradient-to-br from-[#15803d] to-[#0d5c2d]" },
   ];
 
   return (
