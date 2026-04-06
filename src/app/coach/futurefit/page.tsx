@@ -736,6 +736,20 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
     );
   }
 
+  // ── Analytics ────────────────────────────────────────────────────────────
+  const thisMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const monthCount = logs.filter((l) => l.date.startsWith(thisMonth)).length;
+  const avgRating  = (logs.reduce((s, l) => s + l.rating, 0) / logs.length);
+
+  // Format breakdown
+  const formatCounts: Record<string, number> = {};
+  logs.forEach((l) => { formatCounts[l.formatLabel] = (formatCounts[l.formatLabel] ?? 0) + 1; });
+  const maxCount = Math.max(...Object.values(formatCounts));
+  const topFormat = Object.entries(formatCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+
+  // Squad breakdown (unique squads)
+  const squadSet = new Set(logs.map((l) => l.squadName));
+
   return (
     <div className="px-4 pb-8 pt-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -748,6 +762,56 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
           <ClipboardList className="h-3.5 w-3.5" /> Log Session
         </button>
       </div>
+
+      {/* ── Stats Summary ── */}
+      {logs.length >= 2 && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: "Total",        value: logs.length,              unit: "sessions"      },
+              { label: "This Month",   value: monthCount,               unit: "sessions"      },
+              { label: "Avg Rating",   value: avgRating.toFixed(1),     unit: "/ 5"           },
+              { label: "Squads",       value: squadSet.size,            unit: "groups"        },
+            ].map((s, i) => (
+              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
+                <p className="text-[9px] uppercase tracking-widest text-white/30 mb-0.5">{s.label}</p>
+                <p className="text-lg font-bold text-white leading-none">{s.value}</p>
+                <p className="text-[9px] text-white/30 mt-0.5">{s.unit}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Format breakdown bars */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-[9px] uppercase tracking-widest text-[#f0b429] font-semibold mb-3">Format Breakdown</p>
+            <div className="space-y-2">
+              {Object.entries(formatCounts)
+                .sort((a, b) => b[1] - a[1])
+                .map(([fmt, count]) => {
+                  const color = FORMAT_COLORS[fmt] ?? "#f0b429";
+                  const pct   = Math.round((count / maxCount) * 100);
+                  return (
+                    <div key={fmt} className="flex items-center gap-3">
+                      <span className="w-8 text-right text-[10px] font-bold shrink-0" style={{ color }}>{fmt}</span>
+                      <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+                      </div>
+                      <span className="text-[10px] text-white/40 shrink-0 w-16">
+                        {count} session{count !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+            <p className="mt-3 text-[10px] text-white/30">
+              Most used: <span className="font-bold" style={{ color: FORMAT_COLORS[topFormat] ?? "#f0b429" }}>{topFormat}</span>
+              {" "}· avg rating <span className="font-bold text-white/60">{avgRating.toFixed(1)} ⭐</span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Session Cards ── */}
       <div className="space-y-3">
         {[...logs].reverse().map((log) => {
           const color = FORMAT_COLORS[log.formatLabel] ?? "#f0b429";

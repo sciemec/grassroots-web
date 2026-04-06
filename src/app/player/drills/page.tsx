@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, Clock, ChevronDown, ChevronUp, ArrowLeft,
-  Wrench, Eye, MessageSquare, Package, X, WifiOff,
+  Wrench, Eye, MessageSquare, Package, X, WifiOff, UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
@@ -14,6 +14,16 @@ import {
   type TrainingDrill, type DrillCategory,
 } from "@/data/training-drills";
 import api from "@/lib/api";
+
+// ─── Assigned drill shape (from FutureFit coach assignment) ───────────────────
+interface AssignedDrill {
+  id: string;
+  drillName: string;
+  formatLabel: string;
+  playerNames: string;
+  message: string;
+  assignedAt: string;
+}
 
 // ─── API drill shape ───────────────────────────────────────────────────────────
 interface ApiDrill {
@@ -232,6 +242,40 @@ export default function DrillsPage() {
   const [usingFallback, setUsingFallback] = useState(false);
   const [search, setSearch] = useState("");
   const [activeModal, setActiveModal] = useState<TrainingDrill | null>(null);
+  const [assignedDrills, setAssignedDrills] = useState<AssignedDrill[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  // Load coach-assigned drills — tries API first, falls back to localStorage
+  useEffect(() => {
+    const fetchAssigned = async () => {
+      try {
+        const res = await api.get("/player/assigned-drills");
+        const payload = res.data?.data ?? res.data;
+        if (Array.isArray(payload) && payload.length > 0) {
+          setAssignedDrills(payload as AssignedDrill[]);
+          return;
+        }
+      } catch { /* fall through to localStorage */ }
+      // localStorage fallback — same device demo (coach + player on same browser)
+      try {
+        const raw = localStorage.getItem("gs_futurefit_assignments");
+        if (raw) setAssignedDrills(JSON.parse(raw) as AssignedDrill[]);
+      } catch { /* ignore */ }
+    };
+    fetchAssigned();
+
+    const dismissed = localStorage.getItem("gs_dismissed_assignments");
+    if (dismissed) setDismissedIds(new Set(JSON.parse(dismissed) as string[]));
+  }, []);
+
+  const dismissAssignment = (id: string) => {
+    setDismissedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      try { localStorage.setItem("gs_dismissed_assignments", JSON.stringify(Array.from(next))); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   useEffect(() => {
     // guests allowed — no login redirect
@@ -321,6 +365,43 @@ export default function DrillsPage() {
         </div>
 
         <div className="p-6 space-y-4">
+          {/* Coach-assigned drills */}
+          {assignedDrills.filter((a) => !dismissedIds.has(a.id)).length > 0 && (
+            <div className="rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-[#f0b429]" />
+                <p className="text-sm font-bold text-white">Assigned by Your Coach</p>
+                <span className="ml-auto rounded-full bg-[#f0b429]/20 px-2 py-0.5 text-[10px] font-bold text-[#f0b429]">
+                  {assignedDrills.filter((a) => !dismissedIds.has(a.id)).length} new
+                </span>
+              </div>
+              <div className="space-y-2">
+                {assignedDrills
+                  .filter((a) => !dismissedIds.has(a.id))
+                  .slice()
+                  .reverse()
+                  .map((a) => (
+                    <div key={a.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{a.drillName}</p>
+                        <p className="text-[10px] text-white/40 mt-0.5">{a.formatLabel} format · {new Date(a.assignedAt).toLocaleDateString()}</p>
+                        {a.message && (
+                          <p className="mt-1 text-xs text-[#f0b429]/80 italic">&ldquo;{a.message}&rdquo;</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => dismissAssignment(a.id)}
+                        className="shrink-0 rounded-lg p-1 text-white/20 hover:text-white/50 transition-colors mt-0.5"
+                        aria-label="Dismiss"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           {/* Fallback notice */}
           {usingFallback && !loading && (
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
