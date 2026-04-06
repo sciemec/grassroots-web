@@ -213,9 +213,23 @@ export default function ThutoChat() {
     setThinking(true);
 
     try {
-      const res = await api.post("/thuto/chat", { message: text });
-      const answer: string =
-        res.data?.answer ?? res.data?.response ?? "Ndiri here — I'm here, let's talk.";
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          system_prompt:
+            "You are THUTO, a personal AI player agent on GrassRoots Sports — Zimbabwe's AI sports platform. " +
+            "You are warm, encouraging, and knowledgeable about grassroots sport in Zimbabwe. " +
+            "Speak to the player like a trusted mentor on the pitch. Help with training, nutrition, " +
+            "mindset, tactics, and player development. Keep answers concise and practical. " +
+            "Use occasional Shona phrases naturally. End with encouragement.",
+          history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      if (!res.ok) throw new Error(`AI error ${res.status}`);
+      const data = await res.json();
+      const answer: string = data?.response ?? data?.answer ?? "Ndiri here — I'm here, let's talk.";
 
       setMessages((prev) => [
         ...prev,
