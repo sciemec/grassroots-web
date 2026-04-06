@@ -272,14 +272,17 @@ export default function ThutoChat() {
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
-  if (!onboarded) {
-    return <ThutoOnboarding onComplete={handleOnboardingComplete} />;
-  }
-
+  // THUTO UI RULE: always a small circle. NEVER auto-opens.
+  // Onboarding modal only appears when the player CLICKS the circle.
   return (
     <>
-      {/* ── Chat Panel ─────────────────────────────────────────────────── */}
-      {open && (
+      {/* ── Onboarding modal — only on click, only if not yet onboarded ── */}
+      {!onboarded && open && (
+        <ThutoOnboarding onComplete={handleOnboardingComplete} />
+      )}
+
+      {/* ── Chat Panel — only after onboarding is complete ─────────────── */}
+      {onboarded && open && (
         <div
           className="fixed bottom-20 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40"
           style={{ width: "min(400px, calc(100vw - 2rem))", height: "min(500px, calc(100vh - 7rem))" }}
