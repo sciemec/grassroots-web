@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Send, ArrowRight, Sparkles } from "lucide-react";
-import api from "@/lib/api";
 
 interface Props {
   onComplete: () => void;
@@ -158,10 +157,26 @@ export default function ThutoOnboarding({ onComplete }: Props) {
   const fetchGreeting = () => {
     setError("");
     setStage("loading");
-    api
-      .post("/thuto/onboard")
+    fetch("/api/ai-coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message:
+          "Introduce yourself as THUTO, a personal AI player agent on GrassRoots Sports — Zimbabwe's first AI sports platform. " +
+          "Be warm and encouraging. Tell the player you are here to help them train, improve, and get recognised. " +
+          "Then ask: what is their biggest goal as an athlete right now? Keep it to 2-3 sentences.",
+        system_prompt:
+          "You are THUTO, a personal AI player agent on GrassRoots Sports. " +
+          "Speak like a trusted mentor on the pitch in Zimbabwe. Be warm, direct, and encouraging. " +
+          "Use occasional Shona naturally. Keep responses concise.",
+      }),
+    })
       .then((res) => {
-        const text: string = res.data?.answer ?? res.data?.response ?? "";
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        const text: string = data?.response ?? data?.answer ?? "";
         if (text) {
           setGreeting(text);
           setTypingText(text);
@@ -170,15 +185,8 @@ export default function ThutoOnboarding({ onComplete }: Props) {
           setError("THUTO could not load. Please try again.");
         }
       })
-      .catch((err: { response?: { status?: number } }) => {
-        const status = err?.response?.status;
-        if (status === 503) {
-          setError("THUTO is waking up — this can take up to 30 seconds on first load. Try again.");
-        } else if (status === 500) {
-          setError("THUTO is not configured yet. Please contact support or try again later.");
-        } else {
-          setError("Could not connect to THUTO. Check your connection and try again.");
-        }
+      .catch(() => {
+        setError("Could not connect to THUTO. Check your connection and try again.");
       });
   };
 
@@ -225,9 +233,22 @@ export default function ThutoOnboarding({ onComplete }: Props) {
         setPlayerGoal(msg);
         setStage("goal_thinking");
         try {
-          const res = await api.post("/thuto/chat", { message: msg });
+          const res = await fetch("/api/ai-coach", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: msg,
+              system_prompt:
+                "You are THUTO, a personal AI player agent on GrassRoots Sports. " +
+                "The player just told you their main athletic goal. Respond warmly in 2-3 sentences. " +
+                "Acknowledge their goal specifically and show you understand it. " +
+                "Then say you want to learn a bit more about their training situation to coach them properly.",
+            }),
+          });
+          if (!res.ok) throw new Error(`${res.status}`);
+          const data = await res.json();
           const text: string =
-            res.data?.answer ?? res.data?.response ??
+            data?.response ?? data?.answer ??
             "Zvakanaka! Your goal is clear. Let me learn a bit more about you so I can coach you properly.";
           setGoalResponse(text);
           setTypingText(text);
@@ -243,19 +264,15 @@ export default function ThutoOnboarding({ onComplete }: Props) {
       }
 
       case "dna1_input": {
-        // Save answer + send silently for DNA extraction
         setPlayerDna1(msg);
-        api.post("/thuto/chat", { message: msg }).catch(() => {});
-        // Immediately ask DNA Q2
+        // Immediately ask DNA Q2 (no API call needed — answer stored locally)
         setTypingText(DNA_QUESTIONS[1]);
         setStage("dna2_question");
         break;
       }
 
       case "dna2_input": {
-        // Save answer + send silently for DNA extraction
         setPlayerDna2(msg);
-        api.post("/thuto/chat", { message: msg }).catch(() => {});
         // Mark Session 1 complete — Session 2 starts next login
         localStorage.setItem("thuto_onboarded", "true");
         localStorage.setItem("thuto_dna_session", "2");
