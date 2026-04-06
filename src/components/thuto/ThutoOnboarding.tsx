@@ -172,8 +172,10 @@ export default function ThutoOnboarding({ onComplete }: Props) {
       })
       .catch((err: { response?: { status?: number } }) => {
         const status = err?.response?.status;
-        if (status === 503 || status === 500) {
+        if (status === 503) {
           setError("THUTO is waking up — this can take up to 30 seconds on first load. Try again.");
+        } else if (status === 500) {
+          setError("THUTO is not configured yet. Please contact support or try again later.");
         } else {
           setError("Could not connect to THUTO. Check your connection and try again.");
         }
@@ -326,7 +328,7 @@ export default function ThutoOnboarding({ onComplete }: Props) {
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-teal-900/40 px-2.5 py-1 text-xs font-medium text-teal-300">
             <Sparkles className="h-3 w-3" />
-            Powered by Claude AI
+            Powered by DeepSeek
           </div>
         </div>
 
