@@ -144,6 +144,137 @@ export function scorePose(landmarks: NormalizedLandmark[]): {
   };
 }
 
+// ─── Warmup Exercise–Specific Scoring ────────────────────────────────────────
+
+/**
+ * Returns a 0–100 score and a coaching cue for a specific warmup exercise.
+ * Uses the same landmark indices as scorePose().
+ * Called each frame during the Pitch Mode warmup camera check.
+ */
+export function scoreWarmupExercise(
+  lm: NormalizedLandmark[],
+  exercise: string
+): { score: number; cue: string } {
+  const ex = exercise.toLowerCase();
+
+  // A-Skip / High Knees — check if drive knee is at or above hip height
+  if (ex.includes("a-skip") || ex.includes("high knee") || ex.includes("skip")) {
+    // In normalised coords: smaller y = higher on screen
+    // Check whichever knee is currently higher (mid-stride)
+    const lHip  = lm[IDX.L_HIP];
+    const rHip  = lm[IDX.R_HIP];
+    const lKnee = lm[IDX.L_KNEE];
+    const rKnee = lm[IDX.R_KNEE];
+    if (!visible(lHip) || !visible(lKnee)) return { score: 50, cue: "Step back so your full body is visible." };
+
+    const driveKneeY = Math.min(lKnee.y, rKnee.y); // whichever knee is higher
+    const hipY       = (lHip.y + rHip.y) / 2;
+
+    // Perfect: drive knee Y <= hip Y (knee at or above hip)
+    const diff = driveKneeY - hipY; // positive = knee below hip
+    if (diff <= 0)    return { score: 95, cue: "Perfect knee drive — hip height achieved!" };
+    if (diff <= 0.05) return { score: 80, cue: "Nearly there — drive that knee just a little higher." };
+    if (diff <= 0.12) return { score: 60, cue: "Aim to get your knee level with your hip." };
+    return { score: 35, cue: "Drive the knee up more — think 'knee to hip' each step." };
+  }
+
+  // B-Skip — check knee extension (leg should extend forward then snap back)
+  if (ex.includes("b-skip")) {
+    const lKnee  = lm[IDX.L_KNEE];
+    const rKnee  = lm[IDX.R_KNEE];
+    const lAnkle = lm[IDX.L_ANKLE];
+    const rAnkle = lm[IDX.R_ANKLE];
+    if (!visible(lKnee) || !visible(lAnkle)) return { score: 50, cue: "Step back so your full body is visible." };
+
+    // Calculate knee angle for the extended leg
+    const calcAngle = (hip: NormalizedLandmark, knee: NormalizedLandmark, ankle: NormalizedLandmark) => {
+      const v1 = { x: hip.x - knee.x, y: hip.y - knee.y };
+      const v2 = { x: ankle.x - knee.x, y: ankle.y - knee.y };
+      const dot = v1.x * v2.x + v1.y * v2.y;
+      const mag = Math.sqrt(v1.x ** 2 + v1.y ** 2) * Math.sqrt(v2.x ** 2 + v2.y ** 2);
+      if (mag === 0) return 90;
+      return (Math.acos(Math.min(1, Math.max(-1, dot / mag))) * 180) / Math.PI;
+    };
+    const lAngle = calcAngle(lm[IDX.L_HIP], lKnee, lAnkle);
+    const rAngle = calcAngle(lm[IDX.R_HIP], rKnee, rAnkle);
+    const maxAngle = Math.max(lAngle, rAngle);
+
+    if (maxAngle >= 160) return { score: 92, cue: "Great extension — leg nearly straight. Controlled." };
+    if (maxAngle >= 130) return { score: 72, cue: "Extend the leg further forward before pulling back." };
+    return { score: 45, cue: "After the knee drive, kick the leg out straight then snap back." };
+  }
+
+  // Butt Kicks — heel should reach glute height
+  if (ex.includes("butt") || ex.includes("kick") || ex.includes("c-drill")) {
+    const lHip   = lm[IDX.L_HIP];
+    const lAnkle = lm[IDX.L_ANKLE];
+    const rAnkle = lm[IDX.R_ANKLE];
+    if (!visible(lHip) || !visible(lAnkle)) return { score: 50, cue: "Step back so your full body is visible." };
+
+    const hipY    = lHip.y;
+    const heelY   = Math.min(lAnkle.y, rAnkle.y); // higher heel (smaller y)
+    const diff    = heelY - hipY; // how far heel is from hip height
+
+    if (diff <= 0.05) return { score: 93, cue: "Heels right at glute height — excellent!" };
+    if (diff <= 0.15) return { score: 70, cue: "Good — try to bring heels a little higher." };
+    if (diff <= 0.25) return { score: 50, cue: "Kick the heel up higher — aim for glute height." };
+    return { score: 30, cue: "Stay on toes and snap the heel up fast — short ground contact." };
+  }
+
+  // Walking Lunges — back knee should be close to ground, chest tall
+  if (ex.includes("lunge")) {
+    const lKnee  = lm[IDX.L_KNEE];
+    const rKnee  = lm[IDX.R_KNEE];
+    const lAnkle = lm[IDX.L_ANKLE];
+    const rAnkle = lm[IDX.R_ANKLE];
+    const lShld  = lm[IDX.L_SHOULDER];
+    const rShld  = lm[IDX.R_SHOULDER];
+    const lHip   = lm[IDX.L_HIP];
+    const rHip   = lm[IDX.R_HIP];
+    if (!visible(lKnee) || !visible(rAnkle)) return { score: 50, cue: "Step back so your full body is visible." };
+
+    // Back knee = the lower knee (larger y = lower on screen)
+    const backKneeY  = Math.max(lKnee.y, rKnee.y);
+    const frontAnkY  = Math.min(lAnkle.y, rAnkle.y);
+    const kneeToFloor = Math.abs(backKneeY - frontAnkY); // should be small when knee near ground
+
+    // Chest upright: shoulder x should be over hip x
+    const chestDrift = Math.abs(
+      ((lShld.x + rShld.x) / 2) - ((lHip.x + rHip.x) / 2)
+    );
+    const chestScore = Math.max(0, 100 - chestDrift * 300);
+    const depthScore = kneeToFloor <= 0.08 ? 100 : Math.max(0, 100 - (kneeToFloor - 0.08) * 400);
+    const combined   = Math.round((chestScore + depthScore) / 2);
+
+    if (combined >= 80) return { score: combined, cue: "Great lunge — deep and chest tall!" };
+    if (chestDrift > 0.15) return { score: combined, cue: "Keep your chest up — don't lean forward." };
+    return { score: combined, cue: "Step deeper — back knee should nearly touch the ground." };
+  }
+
+  // Lateral Shuffle — check low hip position (hips lower = better athletic stance)
+  if (ex.includes("shuffle") || ex.includes("lateral")) {
+    const lHip   = lm[IDX.L_HIP];
+    const rHip   = lm[IDX.R_HIP];
+    const lAnkle = lm[IDX.L_ANKLE];
+    const rAnkle = lm[IDX.R_ANKLE];
+    if (!visible(lHip) || !visible(lAnkle)) return { score: 50, cue: "Step back so your full body is visible." };
+
+    const hipY    = (lHip.y + rHip.y) / 2;
+    const ankleY  = (lAnkle.y + rAnkle.y) / 2;
+    const hipRatio = (ankleY - hipY); // bigger = lower squat
+
+    if (hipRatio >= 0.4)  return { score: 90, cue: "Athletic stance — hips low. Good!" };
+    if (hipRatio >= 0.30) return { score: 70, cue: "Stay lower — bend the knees more." };
+    return { score: 45, cue: "Get lower! Knees bent, hips down. Don't stand up straight." };
+  }
+
+  // Leg Swings / Arm Circles — just score general symmetry and balance
+  return {
+    score: Math.round((symmetryScore(lm) + balanceScore(lm)) / 2),
+    cue:   "Keep the movement controlled and feel the range of motion.",
+  };
+}
+
 /** Average multiple frame scores into one stable reading */
 export function averageScores(scores: ReturnType<typeof scorePose>[]): ReturnType<typeof scorePose> {
   if (scores.length === 0) return { overall: 0, symmetry: 0, balance: 0, posture: 0, jointAngles: 0 };

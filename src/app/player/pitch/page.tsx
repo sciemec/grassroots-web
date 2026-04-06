@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import {
@@ -18,6 +19,12 @@ import {
   type Drill,
 } from "@/lib/offlineDB";
 import warmupKnowledge from "@/data/warmup-knowledge.json";
+
+// Lazy-load pose checker — loads MediaPipe (~8 MB) only when player taps "Check form"
+const PitchPoseCheck = dynamic(
+  () => import("@/components/video/PitchPoseCheck").then((m) => ({ default: m.PitchPoseCheck })),
+  { ssr: false }
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -122,6 +129,8 @@ export default function PitchModePage() {
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [motivationMsg, setMotivationMsg] = useState("");
   const [offline, setOffline] = useState(false);
+  const [showFormCheck, setShowFormCheck] = useState(false);
+  const [warmupExerciseIdx, setWarmupExerciseIdx] = useState(0);
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -487,27 +496,44 @@ export default function PitchModePage() {
         </div>
         <p className="mt-6 text-xl font-bold uppercase tracking-widest">Warm Up</p>
 
-        {/* Show THUTO's generated warmup if specific, else show structured phases */}
-        {session?.day.pre_session_warmup ? (
-          <p className="mt-2 max-w-xs px-6 text-center text-sm text-white/70 italic">
+        {/* Exercise list — tap one to check form */}
+        <div className="mt-3 w-full max-w-xs space-y-1 px-6">
+          {warmupKnowledge.warmup_phases[2].exercises.map((ex, i) => (
+            <button
+              key={i}
+              onClick={() => { setWarmupExerciseIdx(i); setShowFormCheck(true); }}
+              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs transition-colors ${
+                warmupExerciseIdx === i && showFormCheck
+                  ? "bg-white/25 text-white"
+                  : "bg-white/10 text-white/70 hover:bg-white/15"
+              }`}
+            >
+              <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold text-white">
+                {i + 1}
+              </span>
+              <span className="font-medium">{(ex as { name: string }).name}</span>
+              <span className="ml-auto text-white/40 text-[10px]">tap to check form</span>
+            </button>
+          ))}
+        </div>
+
+        {session?.day.pre_session_warmup && (
+          <p className="mt-3 max-w-xs px-6 text-center text-xs text-white/50 italic">
             {session.day.pre_session_warmup}
           </p>
-        ) : (
-          <div className="mt-3 w-full max-w-xs space-y-1 px-6">
-            {warmupKnowledge.warmup_phases.slice(0, 3).map((ph) => (
-              <div key={ph.phase} className="flex items-start gap-2 text-xs text-white/60">
-                <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
-                  {ph.phase}
-                </span>
-                <span><span className="font-semibold text-white/80">{ph.name}</span> · {ph.duration_minutes} min</span>
-              </div>
-            ))}
-          </div>
         )}
 
-        <p className="mt-5 max-w-xs px-6 text-center text-sm italic text-white/60">
+        <p className="mt-4 max-w-xs px-6 text-center text-sm italic text-white/60">
           "{motivationMsg}"
         </p>
+
+        {/* THUTO form checker — slides up from bottom */}
+        {showFormCheck && (
+          <PitchPoseCheck
+            currentExercise={(warmupKnowledge.warmup_phases[2].exercises[warmupExerciseIdx] as { name: string }).name}
+            onClose={() => setShowFormCheck(false)}
+          />
+        )}
       </div>
     );
   }
