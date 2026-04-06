@@ -239,7 +239,7 @@ export default function UbuntuPage() {
             )}
           </div>
           <p className="pl-11 text-xs italic text-white/30">
-            "Umuntu ngumuntu ngabantu" — I am because we are
+            &quot;Umuntu ngumuntu ngabantu&quot; — I am because we are
           </p>
         </div>
       </div>
@@ -276,7 +276,7 @@ export default function UbuntuPage() {
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-teal-400/40 bg-gradient-to-br from-teal-600 to-emerald-700">
                         <span className="text-xs font-bold text-white">T</span>
                       </div>
-                      <p className="text-sm leading-relaxed text-white/70 italic">"{s.match_reason}"</p>
+                      <p className="text-sm leading-relaxed text-white/70 italic">&quot;{s.match_reason}&quot;</p>
                     </div>
                     <div className="ml-11 flex items-center gap-2 text-sm text-white/50">
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-800/50 text-xs font-bold text-teal-300">
@@ -465,7 +465,7 @@ export default function UbuntuPage() {
               </button>
             ) : (
               <div className="rounded-2xl border border-teal-500/20 bg-teal-900/10 p-4 space-y-3">
-                <p className="text-sm font-semibold text-white">Today's session</p>
+                <p className="text-sm font-semibold text-white">Today&apos;s session</p>
                 <input
                   type="date"
                   value={sessionDate}

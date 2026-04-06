@@ -46,7 +46,7 @@ export default function UbuntuOptIn({ onOptIn }: Props) {
           <div className="rounded-2xl rounded-tl-sm border border-teal-500/20 bg-teal-900/40 px-4 py-3 text-sm leading-relaxed text-white">
             Welcome to the Ubuntu Network, {areaLabel}! 🌍
             <br />
-            I'll find training partners near you. Check back tomorrow morning — I run matches at 08:00.
+            I&apos;ll find training partners near you. Check back tomorrow morning — I run matches at 08:00.
           </div>
         </div>
       </div>
@@ -68,10 +68,10 @@ export default function UbuntuOptIn({ onOptIn }: Props) {
 
       {/* Body copy */}
       <p className="mb-4 text-sm leading-relaxed text-white/60">
-        Train with players near you. Share what you have. Learn what you don't.
+        Train with players near you. Share what you have. Learn what you don&apos;t.
         <br />
         <span className="mt-1 block text-xs italic text-white/35">
-          "Umuntu ngumuntu ngabantu" — I am because we are
+          &quot;Umuntu ngumuntu ngabantu&quot; — I am because we are
         </span>
       </p>
 

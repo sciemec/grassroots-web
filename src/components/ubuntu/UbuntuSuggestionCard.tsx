@@ -54,7 +54,7 @@ export default function UbuntuSuggestionCard({
             Ubuntu! 🤝 You and {matchName} are now training partners.
             <br />
             <span className="text-xs text-teal-300/80">
-              Check WhatsApp — I've sent you both a message with your first drill.
+              Check WhatsApp — I&apos;ve sent you both a message with your first drill.
             </span>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function UbuntuSuggestionCard({
           ) : (
             <CheckCircle2 className="h-4 w-4" />
           )}
-          Yes, let's train
+          Yes, let&apos;s train
         </button>
         <button
           onClick={() => respond("declined")}

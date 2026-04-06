@@ -417,7 +417,7 @@ export default function PitchModePage() {
             Today is recovery. Eat well. Sleep. Come back stronger.
           </p>
           <p className="mt-2 text-base italic text-white/60">
-            "Zororo ndirwo ruzivo — rest is wisdom."
+            &quot;Zororo ndirwo ruzivo — rest is wisdom.&quot;
           </p>
           <button
             onClick={() => router.push("/player")}
@@ -524,7 +524,7 @@ export default function PitchModePage() {
         )}
 
         <p className="mt-4 max-w-xs px-6 text-center text-sm italic text-white/60">
-          "{motivationMsg}"
+          &quot;{motivationMsg}&quot;
         </p>
 
         {/* THUTO form checker — slides up from bottom */}
@@ -562,7 +562,7 @@ export default function PitchModePage() {
         )}
 
         <p className="absolute bottom-8 max-w-xs px-6 text-center text-sm italic text-white/60">
-          "{motivationMsg}"
+          &quot;{motivationMsg}&quot;
         </p>
       </div>
     );
@@ -620,7 +620,7 @@ export default function PitchModePage() {
             {drillsTotal} drill{drillsTotal !== 1 ? "s" : ""} done — {session?.day.total_duration_minutes} min
           </p>
           <p className="mt-4 text-base italic text-white/60">
-            "Zvakanaka zvakaitwa — well done!"
+            &quot;Zvakanaka zvakaitwa — well done!&quot;
           </p>
 
           <p className="mt-8 text-sm font-semibold uppercase tracking-widest text-white/60">
