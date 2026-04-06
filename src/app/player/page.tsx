@@ -25,6 +25,11 @@ const UbuntuOptIn = dynamic(
   { ssr: false }
 );
 
+const BeautifulMoment = dynamic(
+  () => import("@/components/thuto/BeautifulMoment"),
+  { ssr: false }
+);
+
 interface Session {
   id: string;
   focus_area: string;
@@ -260,6 +265,9 @@ export default function PlayerHubPage() {
             </div>
           </div>
         )}
+
+        {/* Beautiful Moment — memory archive */}
+        <BeautifulMoment />
 
         {/* Today's Session — Pitch Mode entry card */}
         {todaySession && (
