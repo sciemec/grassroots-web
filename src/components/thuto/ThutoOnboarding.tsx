@@ -186,6 +186,7 @@ export default function ThutoOnboarding({ onComplete }: Props) {
         }
       })
       .catch(() => {
+        setStage("goal_input"); // allow canSkip = true so X button appears
         setError("Could not connect to THUTO. Check your connection and try again.");
       });
   };

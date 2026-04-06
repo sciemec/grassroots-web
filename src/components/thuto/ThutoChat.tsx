@@ -88,7 +88,8 @@ const THUTO_ACTIVE = true;
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ThutoChat() {
-  const [onboarded,       setOnboarded]       = useState(true); // true = skip check until hydrated
+  const [onboarded,       setOnboarded]       = useState(false);
+  const [hydrated,        setHydrated]        = useState(false);
   const [open,            setOpen]            = useState(false);
   const [messages,        setMessages]        = useState<Message[]>([]);
   const [input,           setInput]           = useState("");
@@ -104,6 +105,7 @@ export default function ThutoChat() {
     // Check if the player has completed THUTO onboarding
     const hasOnboarded = localStorage.getItem("thuto_onboarded") === "true";
     setOnboarded(hasOnboarded);
+    setHydrated(true);
 
     // Restore cross-page unread signals (e.g. set by session logging on another page)
     const bumped = parseInt(localStorage.getItem("thuto_unread_count") ?? "0", 10);
@@ -290,13 +292,13 @@ export default function ThutoChat() {
   // Onboarding modal only appears when the player CLICKS the circle.
   return (
     <>
-      {/* ── Onboarding modal — only on click, only if not yet onboarded ── */}
-      {!onboarded && open && (
+      {/* ── Onboarding modal — only after hydration confirms not onboarded ── */}
+      {hydrated && !onboarded && open && (
         <ThutoOnboarding onComplete={handleOnboardingComplete} />
       )}
 
-      {/* ── Chat Panel — only after onboarding is complete ─────────────── */}
-      {onboarded && open && (
+      {/* ── Chat Panel — only after hydration confirms onboarded ─────────── */}
+      {hydrated && onboarded && open && (
         <div
           className="fixed bottom-20 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40"
           style={{ width: "min(400px, calc(100vw - 2rem))", height: "min(500px, calc(100vh - 7rem))" }}
