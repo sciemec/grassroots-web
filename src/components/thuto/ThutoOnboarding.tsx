@@ -154,8 +154,10 @@ export default function ThutoOnboarding({ onComplete }: Props) {
     }
   }, [stage]);
 
-  // ── Fetch onboarding greeting on mount ────────────────────────────────────
-  useEffect(() => {
+  // ── Fetch onboarding greeting — retryable ─────────────────────────────────
+  const fetchGreeting = () => {
+    setError("");
+    setStage("loading");
     api
       .post("/thuto/onboard")
       .then((res) => {
@@ -165,13 +167,20 @@ export default function ThutoOnboarding({ onComplete }: Props) {
           setTypingText(text);
           setStage("greeting");
         } else {
-          setError("THUTO could not load. Please refresh.");
+          setError("THUTO could not load. Please try again.");
         }
       })
-      .catch(() => {
-        setError("Could not connect to THUTO. Check your connection.");
+      .catch((err: { response?: { status?: number } }) => {
+        const status = err?.response?.status;
+        if (status === 503 || status === 500) {
+          setError("THUTO is waking up — this can take up to 30 seconds on first load. Try again.");
+        } else {
+          setError("Could not connect to THUTO. Check your connection and try again.");
+        }
       });
-  }, []);
+  };
+
+  useEffect(() => { fetchGreeting(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Advance stage when typewriter finishes ────────────────────────────────
   useEffect(() => {
@@ -338,8 +347,14 @@ export default function ThutoOnboarding({ onComplete }: Props) {
 
           {/* Error */}
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-300">
-              {error}
+            <div className="rounded-xl border border-red-500/30 bg-red-900/20 p-4">
+              <p className="text-sm text-red-300">{error}</p>
+              <button
+                onClick={fetchGreeting}
+                className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/30"
+              >
+                Try again
+              </button>
             </div>
           )}
 
