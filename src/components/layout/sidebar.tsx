@@ -42,7 +42,6 @@ const navItems: NavItem[] = [
   { href: "/coach/training-plans",   label: "Training Plans", icon: Layers,          roles: ["coach"] },
   { href: "/coach/tactics",          label: "Tactics Board",  icon: ClipboardList,   roles: ["coach"] },
   { href: "/coach/matches",             label: "Matches",          icon: Trophy,      roles: ["coach"] },
-  { href: "/coach/ai-insights",        label: "AI Insights",      icon: Brain,       roles: ["coach"] },
   { href: "/knowledge",               label: "Knowledge Base",   icon: BookOpen,    roles: ["coach"] },
   { href: "/coach/tactical-analysis",  label: "Tactical Analysis", icon: Crosshair,  roles: ["coach"] },
   { href: "/coach/live-match",          label: "Live Match",       icon: Tv2,         roles: ["coach"] },
@@ -68,7 +67,6 @@ const navItems: NavItem[] = [
   { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
-  { href: "/player/ai-coach",             label: "AI Coach",        icon: Brain,           roles: ["player"] },
   { href: "/knowledge",                   label: "Knowledge Base",  icon: BookOpen,        roles: ["player"] },
   { href: "/player/drills",               label: "Drills",          icon: Dumbbell,        roles: ["player"] },
   { href: "/player/training-formats",     label: "Training Formats",icon: Layers,          roles: ["player"] },

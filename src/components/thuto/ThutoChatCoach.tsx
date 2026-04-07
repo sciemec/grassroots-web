@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
+import api from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -99,15 +100,41 @@ function MessageBubble({ msg }: { msg: Message }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+interface SquadMember {
+  player?: { name?: string };
+  position?: string;
+  shirt_no?: number;
+  status?: string;
+}
+
 export default function ThutoChatCoach() {
   const [open,     setOpen]     = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input,    setInput]    = useState("");
   const [thinking, setThinking] = useState(false);
   const [unread,   setUnread]   = useState(0);
+  const [squad,    setSquad]    = useState<SquadMember[]>([]);
 
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // ── Load squad for context ───────────────────────────────────────────────
+  useEffect(() => {
+    api.get("/coach/squad")
+      .then((res) => setSquad(res.data?.data ?? res.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  // ── Build squad context string injected into every prompt ────────────────
+  const squadContext = squad.length > 0
+    ? `\n\nCOACH'S SQUAD (${squad.length} players): ` +
+      `Fit: ${squad.filter(m => m.status === "fit").length}, ` +
+      `Injured: ${squad.filter(m => m.status === "injured").length}, ` +
+      `Caution: ${squad.filter(m => m.status === "caution").length}. ` +
+      squad.slice(0, 12).map(m =>
+        `#${m.shirt_no ?? "?"} ${m.player?.name ?? "Unknown"} (${m.position ?? "?"}) — ${m.status ?? "fit"}`
+      ).join("; ")
+    : "";
 
   // ── Load chat history ────────────────────────────────────────────────────
   useEffect(() => {
@@ -159,7 +186,7 @@ export default function ThutoChatCoach() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message:       text,
-          system_prompt: COACH_SYSTEM_PROMPT,
+          system_prompt: COACH_SYSTEM_PROMPT + squadContext,
           history:       messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
