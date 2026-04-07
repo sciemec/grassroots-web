@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { HubCard } from "@/components/ui/hub-card";
+import { useGuestGate } from "@/components/ui/register-modal";
 import api from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -98,6 +99,8 @@ function PageSkeleton() {
 export default function ScoutPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+
+  const { requireAuth } = useGuestGate();
 
   const [tab, setTab]             = useState<Tab>("search");
   const [players, setPlayers]     = useState<ScoutPlayer[] | null>(null);
@@ -232,6 +235,7 @@ Use null for any field not mentioned. Position should be a short code like GK, C
   // ── Contact ───────────────────────────────────────────────────────────────
 
   const sendContact = async (playerId: string) => {
+    if (!requireAuth("contact a player")) return;
     if (!contactReason[playerId]?.trim()) return;
     setSending((s) => ({ ...s, [playerId]: true }));
     try {
@@ -243,8 +247,6 @@ Use null for any field not mentioned. Position should be a short code like GK, C
     } catch { /* keep form open */ }
     finally { setSending((s) => ({ ...s, [playerId]: false })); }
   };
-
-  if (!user) return <PageSkeleton />;
 
   const scoutCards = [
     { icon: UserSearch,    title: "Find Players",   subtitle: "Tsvaga vatambi — Search talent", href: "#search",          bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
