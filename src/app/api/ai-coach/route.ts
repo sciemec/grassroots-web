@@ -5,15 +5,15 @@ import { findRelevantSessions } from "@/lib/football-knowledge";
  * POST /api/ai-coach
  *
  * TWO-ENGINE RULE:
- *   1. DeepSeek first  — fast, cheap, handles most questions
- *   2. Groq second     — complex/analytical questions only, or when DeepSeek fails
+ *   1. DeepSeek first  — fast, cheap, handles simple questions
+ *   2. Anthropic second — complex/analytical questions, or when DeepSeek fails
  *
  * Body: { message, system_prompt?, history?, stream?, userContext? }
  */
 
 const AI_CONFIG = {
-  deepseek: { max_tokens: 1024, temperature: 0.7 },
-  groq:     { max_tokens: 1500 },
+  deepseek:  { max_tokens: 1024, temperature: 0.7 },
+  anthropic: { max_tokens: 1500, model: "claude-sonnet-4-6" },
 } as const;
 
 const COMPLEX_KEYWORDS = [
@@ -75,37 +75,36 @@ async function callDeepSeek(
   return reply;
 }
 
-async function callGroq(
+async function callAnthropic(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error("GROQ_API_KEY not configured");
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: AI_CONFIG.groq.max_tokens,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+      model: AI_CONFIG.anthropic.model,
+      max_tokens: AI_CONFIG.anthropic.max_tokens,
+      system: systemPrompt,
+      messages,
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Groq error ${res.status}: ${err}`);
+    throw new Error(`Anthropic error ${res.status}: ${err}`);
   }
 
   const data = await res.json();
-  const reply = data?.choices?.[0]?.message?.content;
-  if (!reply) throw new Error("Groq returned empty response");
+  const reply = data?.content?.[0]?.text;
+  if (!reply) throw new Error("Anthropic returned empty response");
   return reply;
 }
 
@@ -170,26 +169,37 @@ export async function POST(req: NextRequest) {
   ];
 
   const complex = isComplex(message);
-  const engine = complex ? "groq" : "deepseek";
 
+  // Simple messages: DeepSeek first (fast, cheap)
   if (!complex) {
     try {
       const reply = await callDeepSeek(fullSystem, messages);
-      return NextResponse.json({ response: reply, engine });
+      return NextResponse.json({ response: reply, engine: "deepseek" });
     } catch (err) {
-      console.error("DeepSeek failed, escalating to Groq:", err);
+      console.error("DeepSeek failed, escalating to Anthropic:", err);
     }
   }
 
+  // Complex messages (or DeepSeek failure): Anthropic Claude
   try {
-    const result = await callGroq(fullSystem, messages);
-    return NextResponse.json({ response: result, engine: "groq" });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Coach is offline";
-    console.error("Both engines failed:", msg);
-    return NextResponse.json(
-      { error: "Coach is temporarily offline. Check your connection." },
-      { status: 500 },
-    );
+    const result = await callAnthropic(fullSystem, messages);
+    return NextResponse.json({ response: result, engine: "anthropic" });
+  } catch (anthropicErr) {
+    console.error("Anthropic failed, trying DeepSeek as last resort:", anthropicErr);
   }
+
+  // Last resort: DeepSeek for complex messages when Anthropic fails
+  if (complex) {
+    try {
+      const result = await callDeepSeek(fullSystem, messages);
+      return NextResponse.json({ response: result, engine: "deepseek" });
+    } catch (err) {
+      console.error("DeepSeek last-resort also failed:", err);
+    }
+  }
+
+  return NextResponse.json(
+    { error: "Coach is temporarily offline. Check your connection." },
+    { status: 500 },
+  );
 }
