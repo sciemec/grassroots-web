@@ -728,7 +728,7 @@ export default function UbuntuLivePage() {
         )}
 
         {/* ── Skip / Next button (host only, during drill / feedback / rest) ── */}
-        {myRole === "A" && phase !== "waiting" && phase !== "intro" && phase !== "done" && (
+        {myRole === "A" && (
           <button
             onClick={advancePhase}
             className="mt-auto flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-xs text-white/40 transition-colors hover:bg-white/10"
