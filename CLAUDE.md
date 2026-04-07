@@ -2798,6 +2798,706 @@ Before marking any step complete:
 
 ---
 
+## SESSION LOG — 7 April 2026
+
+### Theme — THUTO AI Fixes + Backend Audit + Groq Migration
+
+---
+
+### AI PROVIDER CHANGE — GROQ (PERMANENT)
+
+The platform has migrated from DeepSeek + Claude to **Groq** as the AI provider.
+- `/api/ai-coach` Next.js route now uses Groq (not DeepSeek/Claude)
+- All THUTO chat, onboarding, training schedule generation routes through `/api/ai-coach`
+- Update any future AI references to use Groq, not DeepSeek or Claude
+- Required env var: `GROQ_API_KEY` (Vercel + .env.local)
+
+### THUTO AI — ALL FIXED (7 April 2026)
+
+THUTO was broken because it called Laravel endpoints that were never built.
+All fixed by routing to `/api/ai-coach` (Next.js Groq proxy).
+
+#### Fixes applied:
+
+| File | Was calling | Now calls |
+|---|---|---|
+| `ThutoChat.tsx` | `POST /thuto/chat` (Laravel 404) | `POST /api/ai-coach` ✅ |
+| `ThutoOnboarding.tsx` | `POST /thuto/onboard` (Laravel 404) | `POST /api/ai-coach` ✅ |
+| `ThutoOnboarding.tsx` | `POST /thuto/chat` (Laravel 404) | `POST /api/ai-coach` ✅ |
+| `player/training/page.tsx` | `POST /training/schedule/generate` (Laravel 404) | `POST /api/ai-coach` ✅ |
+| `player/training/page.tsx` | `POST /thuto/reflect` (Laravel 404) | `POST /api/ai-coach` ✅ |
+
+#### Bug fixes:
+- `ThutoChat.tsx` — `onboarded` initialized to `false` + `hydrated` flag added.
+  Prevents new users bypassing onboarding due to useState(true) race condition.
+- `ThutoOnboarding.tsx` — `.catch()` now sets `stage = "goal_input"` so `canSkip = true`.
+  User can now close the modal after an API error instead of being permanently stuck.
+- Training schedule saves to `localStorage` key `thuto_training_schedule` for persistence
+  when `/training/schedule` Laravel endpoint returns 404.
+
+#### Build fix:
+- `src/app/player/ubuntu/live/[sessionId]/page.tsx` — removed redundant
+  `phase !== "waiting" && phase !== "intro" && phase !== "done"` checks at line 731.
+  TypeScript correctly narrowed `phase` to `"drill"|"feedback"|"rest"` via early returns,
+  making those comparisons unintentional errors that blocked all builds.
+
+---
+
+### LARAVEL BACKEND AUDIT — 7 April 2026
+
+Tested all frontend API calls against `https://bhora-ai.onrender.com/api/v1`.
+
+#### ✅ CONFIRMED BUILT (returns 401 — route exists, needs auth token)
+
+```
+GET  /profile
+GET  /coach/squad
+GET  /matches
+GET  /notifications
+GET  /training/schedule
+GET  /player/dna
+GET  /player/stats
+GET  /player/showcase
+GET  /player/vault
+GET  /scout/players
+GET  /scout/shortlist
+GET  /fan/following
+GET  /players/discover
+GET  /stats/provinces
+GET  /business/budget
+GET  /business/transactions
+GET  /business/events
+GET  /organisation
+GET  /admin/stats
+GET  /admin/users
+GET  /admin/verifications
+GET  /admin/subscriptions
+GET  /sessions
+GET  /matches/upcoming
+POST /ask
+GET  /verification/status
+GET  /showcase/discover   ← public, returns 200
+```
+
+#### ❌ MISSING ON LARAVEL (returns 404 — never built)
+
+```
+GET  /auth/user
+GET  /coach/training-plans
+GET  /player/sessions
+GET  /player/milestones
+GET  /player/nutrition
+GET  /injury-tracker/risk
+GET  /talent-database
+GET  /school-leagues
+GET  /coach/set-pieces
+```
+
+Laravel backend code for all 9 missing routes is in the section below.
+Run `php artisan migrate --force` after copying migration files.
+
+---
+
+### MISSING LARAVEL ROUTES — COPY-PASTE READY
+
+---
+
+#### 1. GET /auth/user
+
+Add to `routes/api.php`:
+```php
+Route::get('/auth/user', function (Request $request) {
+    return response()->json(['data' => $request->user()]);
+})->middleware('auth:sanctum');
+```
+
+---
+
+#### 2. GET /coach/training-plans
+
+```
+FILE: app/Http/Controllers/Api/Coach/TrainingPlanController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api\Coach;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class TrainingPlanController extends Controller
+{
+    public function index(Request $request)
+    {
+        // Returns plans for the coach's squad
+        $plans = \DB::table('training_plans')
+            ->where('coach_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->get();
+        return response()->json(['data' => $plans]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'title'       => 'required|string|max:255',
+            'sport'       => 'required|string',
+            'description' => 'nullable|string',
+            'drills'      => 'nullable|array',
+            'duration'    => 'nullable|integer',
+        ]);
+        $data['coach_id'] = $request->user()->id;
+        $data['id'] = \Str::uuid();
+        \DB::table('training_plans')->insert($data + ['created_at' => now(), 'updated_at' => now()]);
+        return response()->json(['data' => $data], 201);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        \DB::table('training_plans')
+            ->where('id', $id)->where('coach_id', $request->user()->id)
+            ->delete();
+        return response()->json(['message' => 'Deleted']);
+    }
+}
+```
+
+Migration:
+```php
+Schema::create('training_plans', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('coach_id')->index();
+    $table->string('title');
+    $table->string('sport')->default('football');
+    $table->text('description')->nullable();
+    $table->json('drills')->nullable();
+    $table->integer('duration')->nullable(); // minutes
+    $table->timestamps();
+});
+```
+
+Routes:
+```php
+Route::middleware(['auth:sanctum', 'role:coach,admin'])->group(function () {
+    Route::get('/coach/training-plans',       [TrainingPlanController::class, 'index']);
+    Route::post('/coach/training-plans',      [TrainingPlanController::class, 'store']);
+    Route::delete('/coach/training-plans/{id}', [TrainingPlanController::class, 'destroy']);
+});
+```
+
+---
+
+#### 3. GET /player/sessions
+
+```
+FILE: app/Http/Controllers/Api/Player/PlayerSessionController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api\Player;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class PlayerSessionController extends Controller
+{
+    public function index(Request $request)
+    {
+        $sessions = \DB::table('player_sessions')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('session_date')
+            ->paginate(20);
+        return response()->json($sessions);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'session_date'  => 'required|date',
+            'duration'      => 'required|integer',
+            'type'          => 'required|string',
+            'notes'         => 'nullable|string',
+            'intensity'     => 'nullable|string',
+            'drills_done'   => 'nullable|array',
+        ]);
+        $data['id']      = \Str::uuid();
+        $data['user_id'] = $request->user()->id;
+        \DB::table('player_sessions')->insert($data + ['created_at' => now(), 'updated_at' => now()]);
+        return response()->json(['data' => $data], 201);
+    }
+}
+```
+
+Migration:
+```php
+Schema::create('player_sessions', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('user_id')->index();
+    $table->date('session_date');
+    $table->integer('duration'); // minutes
+    $table->string('type');      // training, match, recovery
+    $table->string('intensity')->nullable(); // low, medium, high
+    $table->text('notes')->nullable();
+    $table->json('drills_done')->nullable();
+    $table->timestamps();
+});
+```
+
+Routes:
+```php
+Route::middleware(['auth:sanctum', 'role:player,admin'])->group(function () {
+    Route::get('/player/sessions',  [PlayerSessionController::class, 'index']);
+    Route::post('/player/sessions', [PlayerSessionController::class, 'store']);
+});
+```
+
+---
+
+#### 4. GET /player/milestones
+
+```
+FILE: app/Http/Controllers/Api/Player/MilestoneController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api\Player;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class MilestoneController extends Controller
+{
+    public function index(Request $request)
+    {
+        $milestones = \DB::table('player_milestones')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('achieved_at')
+            ->get();
+        return response()->json(['data' => $milestones]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category'    => 'nullable|string', // fitness, skill, match, personal
+            'achieved_at' => 'required|date',
+        ]);
+        $data['id']      = \Str::uuid();
+        $data['user_id'] = $request->user()->id;
+        \DB::table('player_milestones')->insert($data + ['created_at' => now()]);
+        return response()->json(['data' => $data], 201);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        \DB::table('player_milestones')
+            ->where('id', $id)->where('user_id', $request->user()->id)
+            ->delete();
+        return response()->json(['message' => 'Deleted']);
+    }
+}
+```
+
+Migration:
+```php
+Schema::create('player_milestones', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('user_id')->index();
+    $table->string('title');
+    $table->text('description')->nullable();
+    $table->string('category')->nullable();
+    $table->date('achieved_at');
+    $table->timestamp('created_at')->useCurrent();
+});
+```
+
+Routes:
+```php
+Route::middleware(['auth:sanctum', 'role:player,admin'])->group(function () {
+    Route::get('/player/milestones',       [MilestoneController::class, 'index']);
+    Route::post('/player/milestones',      [MilestoneController::class, 'store']);
+    Route::delete('/player/milestones/{id}', [MilestoneController::class, 'destroy']);
+});
+```
+
+---
+
+#### 5. GET /player/nutrition
+
+```
+FILE: app/Http/Controllers/Api/Player/NutritionController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api\Player;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class NutritionController extends Controller
+{
+    public function index(Request $request)
+    {
+        $plan = \DB::table('nutrition_plans')
+            ->where('user_id', $request->user()->id)
+            ->where('is_active', true)
+            ->first();
+        $logs = \DB::table('nutrition_logs')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('logged_at')
+            ->limit(30)
+            ->get();
+        return response()->json(['data' => ['plan' => $plan, 'logs' => $logs]]);
+    }
+
+    public function log(Request $request)
+    {
+        $data = $request->validate([
+            'meal_type'   => 'required|string', // breakfast, lunch, dinner, snack
+            'description' => 'required|string',
+            'calories'    => 'nullable|integer',
+            'logged_at'   => 'nullable|date',
+        ]);
+        $data['id']        = \Str::uuid();
+        $data['user_id']   = $request->user()->id;
+        $data['logged_at'] = $data['logged_at'] ?? now();
+        \DB::table('nutrition_logs')->insert($data + ['created_at' => now()]);
+        return response()->json(['data' => $data], 201);
+    }
+}
+```
+
+Migration:
+```php
+Schema::create('nutrition_plans', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('user_id')->index();
+    $table->json('plan_json'); // AI-generated plan
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+});
+
+Schema::create('nutrition_logs', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('user_id')->index();
+    $table->string('meal_type');
+    $table->text('description');
+    $table->integer('calories')->nullable();
+    $table->timestamp('logged_at');
+    $table->timestamp('created_at')->useCurrent();
+});
+```
+
+Routes:
+```php
+Route::middleware(['auth:sanctum', 'role:player,admin'])->group(function () {
+    Route::get('/player/nutrition',      [NutritionController::class, 'index']);
+    Route::post('/player/nutrition/log', [NutritionController::class, 'log']);
+});
+```
+
+---
+
+#### 6. GET /injury-tracker/risk
+
+```
+FILE: app/Http/Controllers/Api/InjuryTrackerController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class InjuryTrackerController extends Controller
+{
+    public function risk(Request $request)
+    {
+        $userId = $request->user()->id;
+        $logs = \DB::table('injury_logs')
+            ->where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->get();
+        return response()->json(['data' => [
+            'logs'        => $logs,
+            'risk_score'  => null, // calculated by AI on frontend
+            'risk_level'  => null,
+        ]]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'sessions_per_week' => 'required|integer',
+            'intensity'         => 'required|integer|min:1|max:10',
+            'rest_days'         => 'required|integer',
+            'match_minutes'     => 'nullable|integer',
+            'previous_injury'   => 'nullable|string',
+            'injury_body_part'  => 'nullable|string',
+            'age'               => 'nullable|integer',
+            'position'          => 'nullable|string',
+        ]);
+        $data['id']      = \Str::uuid();
+        $data['user_id'] = $request->user()->id;
+        \DB::table('injury_logs')->insert($data + ['created_at' => now()]);
+        return response()->json(['data' => $data], 201);
+    }
+}
+```
+
+Migration:
+```php
+Schema::create('injury_logs', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('user_id')->index();
+    $table->integer('sessions_per_week');
+    $table->integer('intensity');
+    $table->integer('rest_days');
+    $table->integer('match_minutes')->nullable();
+    $table->string('previous_injury')->nullable();
+    $table->string('injury_body_part')->nullable();
+    $table->integer('age')->nullable();
+    $table->string('position')->nullable();
+    $table->timestamp('created_at')->useCurrent();
+});
+```
+
+Routes:
+```php
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/injury-tracker/risk',  [InjuryTrackerController::class, 'risk']);
+    Route::post('/injury-tracker/risk', [InjuryTrackerController::class, 'store']);
+});
+```
+
+---
+
+#### 7. GET /talent-database
+
+```
+FILE: app/Http/Controllers/Api/TalentDatabaseController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class TalentDatabaseController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = \DB::table('users')
+            ->join('profiles', 'users.id', '=', 'profiles.user_id')
+            ->where('users.role', 'player')
+            ->where('profiles.open_for_scouting', true)
+            ->select(
+                'users.id', 'profiles.first_name', 'profiles.surname',
+                'profiles.position', 'profiles.sport', 'profiles.province',
+                'profiles.age_group', 'profiles.overall_score',
+                'profiles.avatar_url'
+            );
+
+        if ($request->sport)     $query->where('profiles.sport', $request->sport);
+        if ($request->province)  $query->where('profiles.province', $request->province);
+        if ($request->position)  $query->where('profiles.position', $request->position);
+        if ($request->age_group) $query->where('profiles.age_group', $request->age_group);
+
+        $players = $query->orderByDesc('profiles.overall_score')->paginate(20);
+        return response()->json($players);
+    }
+}
+```
+
+Routes:
+```php
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/talent-database', [TalentDatabaseController::class, 'index']);
+});
+```
+
+---
+
+#### 8. GET /school-leagues
+
+```
+FILE: app/Http/Controllers/Api/SchoolLeagueController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class SchoolLeagueController extends Controller
+{
+    public function index(Request $request)
+    {
+        $leagues = \DB::table('school_leagues')
+            ->orderBy('name')
+            ->get();
+        return response()->json(['data' => $leagues]);
+    }
+
+    public function results(Request $request, $leagueId)
+    {
+        $results = \DB::table('school_league_results')
+            ->where('league_id', $leagueId)
+            ->orderByDesc('match_date')
+            ->get();
+        return response()->json(['data' => $results]);
+    }
+
+    public function submitResult(Request $request)
+    {
+        $data = $request->validate([
+            'league_id'    => 'required|string',
+            'home_team'    => 'required|string',
+            'away_team'    => 'required|string',
+            'home_score'   => 'required|integer',
+            'away_score'   => 'required|integer',
+            'match_date'   => 'required|date',
+        ]);
+        $data['id']         = \Str::uuid();
+        $data['coach_id']   = $request->user()->id;
+        \DB::table('school_league_results')->insert($data + ['created_at' => now()]);
+        return response()->json(['data' => $data], 201);
+    }
+}
+```
+
+Migration:
+```php
+Schema::create('school_leagues', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->string('name');
+    $table->string('sport');
+    $table->string('organiser'); // NASH, NAPH, ZIFA
+    $table->string('season');
+    $table->enum('status', ['active', 'upcoming', 'completed'])->default('active');
+    $table->timestamps();
+});
+
+Schema::create('school_league_results', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('league_id')->index();
+    $table->string('home_team');
+    $table->string('away_team');
+    $table->integer('home_score');
+    $table->integer('away_score');
+    $table->date('match_date');
+    $table->uuid('coach_id')->nullable();
+    $table->timestamp('created_at')->useCurrent();
+});
+```
+
+Routes:
+```php
+Route::get('/school-leagues', [SchoolLeagueController::class, 'index']);
+Route::get('/school-leagues/{id}/results', [SchoolLeagueController::class, 'results']);
+Route::middleware(['auth:sanctum', 'role:coach,admin'])->group(function () {
+    Route::post('/school-leagues/results', [SchoolLeagueController::class, 'submitResult']);
+});
+```
+
+---
+
+#### 9. GET /coach/set-pieces
+
+```
+FILE: app/Http/Controllers/Api/Coach/SetPieceController.php
+```
+```php
+<?php
+namespace App\Http\Controllers\Api\Coach;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class SetPieceController extends Controller
+{
+    public function index(Request $request)
+    {
+        $data = \DB::table('set_pieces')
+            ->where('coach_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->get();
+        return response()->json(['data' => $data]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'type'         => 'required|string', // corner, free_kick, penalty, throw_in
+            'situation'    => 'required|string', // attacking, defending
+            'title'        => 'required|string',
+            'description'  => 'nullable|string',
+            'success_rate' => 'nullable|numeric',
+            'times_used'   => 'nullable|integer',
+        ]);
+        $data['id']       = \Str::uuid();
+        $data['coach_id'] = $request->user()->id;
+        \DB::table('set_pieces')->insert($data + ['created_at' => now(), 'updated_at' => now()]);
+        return response()->json(['data' => $data], 201);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            'success_rate' => 'nullable|numeric',
+            'times_used'   => 'nullable|integer',
+            'description'  => 'nullable|string',
+        ]);
+        \DB::table('set_pieces')
+            ->where('id', $id)->where('coach_id', $request->user()->id)
+            ->update($data + ['updated_at' => now()]);
+        return response()->json(['message' => 'Updated']);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        \DB::table('set_pieces')
+            ->where('id', $id)->where('coach_id', $request->user()->id)
+            ->delete();
+        return response()->json(['message' => 'Deleted']);
+    }
+}
+```
+
+Migration:
+```php
+Schema::create('set_pieces', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('coach_id')->index();
+    $table->string('type');       // corner, free_kick, penalty, throw_in
+    $table->string('situation');  // attacking, defending
+    $table->string('title');
+    $table->text('description')->nullable();
+    $table->decimal('success_rate', 5, 2)->nullable();
+    $table->integer('times_used')->default(0);
+    $table->timestamps();
+});
+```
+
+Routes:
+```php
+Route::middleware(['auth:sanctum', 'role:coach,admin'])->group(function () {
+    Route::get('/coach/set-pieces',        [SetPieceController::class, 'index']);
+    Route::post('/coach/set-pieces',       [SetPieceController::class, 'store']);
+    Route::patch('/coach/set-pieces/{id}', [SetPieceController::class, 'update']);
+    Route::delete('/coach/set-pieces/{id}', [SetPieceController::class, 'destroy']);
+});
+```
+
+---
+
+### ACTION REQUIRED — LARAVEL (bhora-ai repo)
+
+1. Copy all controller files above to their respective paths
+2. Copy all migration files
+3. Add all routes to `routes/api.php`
+4. Run: `php artisan migrate --force` on Render
+5. Seed school_leagues table with NASH/NAPH pre-loaded data (see Zimbabwe-Specific Features section)
+
+---
+
 ## SESSION LOG — 1 April 2026
 
 ### Theme — Analyst Hub PDF Exports + Business Hub Polish
