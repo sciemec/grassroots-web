@@ -191,17 +191,23 @@ export default function ThutoChatCoach() {
         }),
       });
 
-      if (!res.ok) throw new Error(`AI error ${res.status}`);
       const data = await res.json();
+
+      if (!res.ok) {
+        const errMsg = data?.error ?? `Error ${res.status}`;
+        throw new Error(errMsg);
+      }
+
       const answer: string = data?.response ?? data?.answer ?? "Let me think on that — try again in a moment, Coach.";
 
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: answer, timestamp: Date.now() }]);
       if (!open) setUnread((n) => n + 1);
 
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Connection issue";
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: "Connection issue — please try again, Coach.", timestamp: Date.now() },
+        { id: crypto.randomUUID(), role: "assistant", content: `⚠️ ${msg}`, timestamp: Date.now() },
       ]);
     } finally {
       setThinking(false);
