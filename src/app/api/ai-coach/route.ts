@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
     { role: "user", content: message },
   ];
 
-  const complex = isComplex(message);
+  const complex = true;
   const engine = complex ? "claude" : "deepseek";
 
   // ── Engine selection ──────────────────────────────────────────────────────
