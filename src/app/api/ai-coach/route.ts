@@ -4,60 +4,42 @@ import { findRelevantSessions } from "@/lib/football-knowledge";
 /**
  * POST /api/ai-coach
  *
- * TWO-ENGINE RULE (permanent):
+ * TWO-ENGINE RULE:
  *   1. DeepSeek first  — fast, cheap, handles most questions
- *   2. Claude second   — complex/analytical questions only, or when DeepSeek fails
- *
- * Complexity is detected from keywords in the message.
- * DeepSeek failure always escalates to Claude automatically.
+ *   2. Groq second     — complex/analytical questions only, or when DeepSeek fails
  *
  * Body: { message, system_prompt?, history?, stream?, userContext? }
  */
 
-// ─── Engine config ───────────────────────────────────────────────────────────
-// Centralised token limits — change here, applies everywhere
 const AI_CONFIG = {
   deepseek: { max_tokens: 1024, temperature: 0.7 },
-  claude:   { max_tokens: 1500 },
+  groq:     { max_tokens: 1500 },
 } as const;
 
-// ─── Complexity detector ─────────────────────────────────────────────────────
-// Questions matching these keywords need deep reasoning → Claude
 const COMPLEX_KEYWORDS = [
-  // Causality & problem-solving
   "why", "how do i fix", "how do i improve", "what is wrong", "reason", "cause",
-  // Analysis & evaluation
   "analyse", "analysis", "explain", "evaluate", "assess", "review", "diagnose",
-  // Strategy & planning
   "tactical", "tactics", "strategy", "plan", "formation", "programme",
-  // Set pieces & dead ball
   "set piece", "corner", "free kick", "freekick", "penalty", "dead ball",
   "defending set", "attack set",
-  // Defensive & attacking systems
   "defend", "defensive", "attack", "attacking", "pressing", "high press",
   "low block", "mid block", "counter", "offside", "marking", "zonal",
   "man mark", "back line", "high line", "compact",
-  // Deep coaching concepts
   "transition", "position", "movement", "shape", "structure", "overlap",
   "underlap", "width", "depth", "spacing", "channel", "combination",
-  // Player development
   "develop", "potential", "long term", "periodis", "pre-season",
-  // Performance
   "weakness", "injury", "scout", "valuation", "market value",
   "compare", "versus", "should i", "how should", "what if",
   "effect", "impact", "improve my", "work on",
-  // Match analysis
   "half time", "halftime", "game plan", "opponent", "match plan",
   "substitut", "rotation",
 ];
 
 function isComplex(message: string): boolean {
   const lower = message.toLowerCase();
-  // Complex if: contains analytical keyword OR message is long (likely multi-part)
   return COMPLEX_KEYWORDS.some((k) => lower.includes(k)) || message.length > 150;
 }
 
-// ─── DeepSeek call ───────────────────────────────────────────────────────────
 async function callDeepSeek(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
@@ -93,44 +75,40 @@ async function callDeepSeek(
   return reply;
 }
 
-// ─── Claude call ─────────────────────────────────────────────────────────────
-async function callClaude(
+async function callGroq(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
-  stream: boolean,
-): Promise<Response | string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
+): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error("GROQ_API_KEY not configured");
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: AI_CONFIG.claude.max_tokens,
-      stream,
-      system: systemPrompt,
-      messages,
+      model: "llama-3.3-70b-versatile",
+      max_tokens: AI_CONFIG.groq.max_tokens,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Claude error ${res.status}: ${err}`);
+    throw new Error(`Groq error ${res.status}: ${err}`);
   }
 
-  if (stream && res.body) return res; // caller handles the stream
   const data = await res.json();
-  const reply = data?.content?.[0]?.text;
-  if (!reply) throw new Error("Claude returned empty response");
+  const reply = data?.choices?.[0]?.message?.content;
+  if (!reply) throw new Error("Groq returned empty response");
   return reply;
 }
 
-// ─── Route handler ───────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   let body: {
     message?: string;
@@ -151,12 +129,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { message, system_prompt, history = [], stream = false, userContext } = body;
+  const { message, system_prompt, history = [], userContext } = body;
   if (!message) {
     return NextResponse.json({ error: "message is required." }, { status: 400 });
   }
 
-  // Build knowledge context from FIFA/FA coaching library
   const relevantSessions = findRelevantSessions(message, 3);
   const knowledgeContext = relevantSessions.length > 0
     ? "\n\n---\nRELEVANT COACHING SESSIONS (FIFA/FA certified):\n" +
@@ -167,7 +144,6 @@ export async function POST(req: NextRequest) {
       "\n---\n"
     : "";
 
-  // Build system prompt — inject player context if provided
   const playerContext = userContext
     ? `\nYou are speaking with ${userContext.name || "a player"}, ` +
       `a ${userContext.age || "young"}-year-old ${userContext.position || "athlete"}. ` +
@@ -188,45 +164,26 @@ export async function POST(req: NextRequest) {
   const messages: { role: "user" | "assistant"; content: string }[] = [
     ...history
       .filter((m) => m.role === "user" || m.role === "assistant")
-      .slice(-6) // keep last 6 for context
+      .slice(-6)
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     { role: "user", content: message },
   ];
 
-  const complex = true;
-  const engine = complex ? "claude" : "deepseek";
-
-  // ── Engine selection ──────────────────────────────────────────────────────
-  // Simple question → DeepSeek. Complex → Claude. DeepSeek failure → Claude.
+  const complex = isComplex(message);
+  const engine = complex ? "groq" : "deepseek";
 
   if (!complex) {
-    // SYSTEM 1: DeepSeek — fast, cheap, good for drills/basic advice
     try {
       const reply = await callDeepSeek(fullSystem, messages);
       return NextResponse.json({ response: reply, engine });
     } catch (err) {
-      // DeepSeek failed — escalate to Claude silently
-      console.error("DeepSeek failed, escalating to Claude:", err);
+      console.error("DeepSeek failed, escalating to Groq:", err);
     }
   }
 
-  // SYSTEM 2: Claude — complex/analytical questions, or DeepSeek fallback
   try {
-    const result = await callClaude(fullSystem, messages, stream);
-
-    if (stream && result instanceof Response) {
-      return new Response((result as Response).body, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "X-Accel-Buffering": "no",
-          "X-Engine": "claude",
-        },
-      });
-    }
-
-    return NextResponse.json({ response: result as string, engine: "claude" });
-
+    const result = await callGroq(fullSystem, messages);
+    return NextResponse.json({ response: result, engine: "groq" });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Coach is offline";
     console.error("Both engines failed:", msg);
