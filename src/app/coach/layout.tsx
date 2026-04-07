@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
+import ThutoChatCoach from "@/components/thuto/ThutoChatCoach";
 
 export default function CoachLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -30,6 +31,7 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
     <GuestGateProvider>
       <GuestBanner />
       {children}
+      <ThutoChatCoach />
     </GuestGateProvider>
   );
 }
