@@ -177,11 +177,16 @@ export default function UbuntuPage() {
     if (!groupId || loadingDrills) return;
     setLoadingDrills(true);
     try {
-      // Ask THUTO for a group drill suggestion
-      const res = await api.post("/thuto/chat", {
-        message: `Suggest one specific drill for our Ubuntu training group to do together at our next session. Keep it short — one drill, one sentence why it helps the group grow together.`,
+      // Ask THUTO for a group drill suggestion via Next.js AI proxy
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "Suggest one specific drill for our Ubuntu training group to do together at our next session. Keep it short — one drill, one sentence why it helps the group grow together.",
+        }),
       });
-      setDrillSuggestion(res.data?.answer ?? res.data?.response ?? null);
+      const data = await res.json();
+      setDrillSuggestion(data?.response ?? null);
     } catch {
       // silently fail
     } finally {
