@@ -57,9 +57,17 @@ export default function NewSessionPage() {
       const sessionId = res.data?.session?.id ?? res.data?.id ?? res.data?.data?.id;
 
       // Fire THUTO reflection prompt — fire-and-forget, never blocks navigation
-      api.post("/thuto/reflect", { session_summary: `${data.focus_area} session` })
-        .then((r) => {
-          const question = r.data?.answer;
+      fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `I just completed a ${data.focus_area} session. Ask me one short reflection question about it.`,
+          system_prompt: "You are THUTO, a supportive AI coach. Ask exactly one short, encouraging reflection question after a training session. Max 1 sentence.",
+        }),
+      })
+        .then((r) => r.json())
+        .then((json) => {
+          const question = json?.response;
           if (question) {
             localStorage.setItem("thuto_preload_message", question);
             const prev = parseInt(localStorage.getItem("thuto_unread_count") ?? "0", 10);
