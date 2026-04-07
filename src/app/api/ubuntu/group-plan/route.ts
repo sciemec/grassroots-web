@@ -16,6 +16,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { groqText } from "@/lib/groq";
 
 export interface GroupDrill {
   order:        number;
@@ -43,8 +44,6 @@ interface PlanBody {
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-
   let body: PlanBody;
   try {
     body = (await req.json()) as PlanBody;
@@ -103,11 +102,7 @@ export async function POST(req: NextRequest) {
     ],
   };
 
-  if (!apiKey) {
-    return NextResponse.json(fallback);
-  }
-
-  // ── Ask Claude to build the plan ──────────────────────────────────────────
+  // ── Ask Groq to build the plan ───────────────────────────────────────────
   const systemPrompt =
     "You are THUTO — a personal football development AI for grassroots players in Zimbabwe. " +
     "You believe that players learn faster when they train together and teach each other. " +
@@ -143,25 +138,7 @@ Each object must have exactly these fields:
 ]`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method:  "POST",
-      headers: {
-        "x-api-key":         apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type":      "application/json",
-      },
-      body: JSON.stringify({
-        model:      "claude-sonnet-4-6",
-        max_tokens: 1200,
-        system:     systemPrompt,
-        messages:   [{ role: "user", content: userPrompt }],
-      }),
-    });
-
-    if (!res.ok) throw new Error(`Claude error ${res.status}`);
-
-    const data = await res.json();
-    const raw  = (data?.content?.[0]?.text ?? "").trim();
+    const raw = await groqText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 1200 });
 
     const cleaned = raw
       .replace(/^```(?:json)?\s*/i, "")

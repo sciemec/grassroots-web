@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findRelevantSessions } from "@/lib/football-knowledge";
+import { groqText } from "@/lib/groq";
 
 /**
  * POST /api/ai-coach
@@ -75,37 +76,11 @@ async function callDeepSeek(
   return reply;
 }
 
-async function callAnthropic(
+async function callGroq(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: AI_CONFIG.anthropic.model,
-      max_tokens: AI_CONFIG.anthropic.max_tokens,
-      system: systemPrompt,
-      messages,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Anthropic error ${res.status}: ${err}`);
-  }
-
-  const data = await res.json();
-  const reply = data?.content?.[0]?.text;
-  if (!reply) throw new Error("Anthropic returned empty response");
-  return reply;
+  return groqText(systemPrompt, messages, { max_tokens: AI_CONFIG.anthropic.max_tokens });
 }
 
 export async function POST(req: NextRequest) {
@@ -176,19 +151,19 @@ export async function POST(req: NextRequest) {
       const reply = await callDeepSeek(fullSystem, messages);
       return NextResponse.json({ response: reply, engine: "deepseek" });
     } catch (err) {
-      console.error("DeepSeek failed, escalating to Anthropic:", err);
+      console.error("DeepSeek failed, escalating to Groq:", err);
     }
   }
 
-  // Complex messages (or DeepSeek failure): Anthropic Claude
+  // Complex messages (or DeepSeek failure): Groq
   try {
-    const result = await callAnthropic(fullSystem, messages);
-    return NextResponse.json({ response: result, engine: "anthropic" });
-  } catch (anthropicErr) {
-    console.error("Anthropic failed, trying DeepSeek as last resort:", anthropicErr);
+    const result = await callGroq(fullSystem, messages);
+    return NextResponse.json({ response: result, engine: "groq" });
+  } catch (groqErr) {
+    console.error("Groq failed, trying DeepSeek as last resort:", groqErr);
   }
 
-  // Last resort: DeepSeek for complex messages when Anthropic fails
+  // Last resort: DeepSeek for complex messages when Groq fails
   if (complex) {
     try {
       const result = await callDeepSeek(fullSystem, messages);
