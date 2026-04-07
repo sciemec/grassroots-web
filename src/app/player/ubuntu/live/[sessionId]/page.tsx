@@ -291,19 +291,49 @@ export default function UbuntuLivePage() {
     }
   }, [phase, drillIndex, drill, myDemoRole]);
 
+  // ── Persist leadership score to Laravel on session end ──────────────────────
+  const submitScore = useCallback(async (points: number) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token || token === "dev-token") return;
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/ubuntu/leadership-score`,
+        {
+          method: "POST",
+          headers: {
+            "content-type":  "application/json",
+            "authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            session_id:   sessionId,
+            partner_name: partnerName,
+            focus,
+            points_earned: points,
+          }),
+        },
+      );
+    } catch { /* non-critical — score will still show locally */ }
+  }, [sessionId, partnerName, focus]);
+
   const goNextDrill = useCallback(async () => {
     startAtRef.current = Date.now();
     if (!plan) return;
     if (drillIndex + 1 >= plan.drills.length) {
       setPhase("done");
       await pushPhase("done", drillIndex, startAtRef.current);
+      // Award final drill points then persist
+      setMyPoints((prev) => {
+        const finalPts = prev + (myDemoRole ? DEMO_PTS : OBS_PTS);
+        submitScore(finalPts);
+        return finalPts;
+      });
       return;
     }
     const next = drillIndex + 1;
     setDrillIndex(next);
     setPhase("drill");
     await pushPhase("drill", next, startAtRef.current);
-  }, [plan, drillIndex]);
+  }, [plan, drillIndex, myDemoRole, submitScore]);
 
   const pushPhase = async (newPhase: SessionPhase, idx: number, startAt: number) => {
     try {
