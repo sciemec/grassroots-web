@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { saveSchedule } from "@/lib/offlineDB";
 
 const ThutoChat = dynamic(() => import("@/components/thuto/ThutoChat"), { ssr: false });
 
@@ -271,53 +272,88 @@ export default function TrainingPage() {
   const generateSchedule = async () => {
     setGenerating(true);
     setError("");
-    try {
-      const weekStart = new Date().toISOString().slice(0, 10);
-      const restDays  = 7 - prefs.days;
+    const weekStart = new Date().toISOString().slice(0, 10);
 
+    // Zimbabwe grassroots fallback — always works, no internet needed
+    const buildFallbackDays = (): ScheduleDay[] => {
+      let count = 0;
+      const focuses = ["Ball Control", "Fitness & Endurance", "Passing & Movement", "Shooting", "Defending", "Small-Sided Games"];
+      return ORDERED_DAYS.map((day) => {
+        if (count >= prefs.days) return { day, is_rest: true };
+        const focus = focuses[count % focuses.length];
+        count++;
+        return {
+          day, is_rest: false, focus,
+          intensity: "medium" as const,
+          total_duration_minutes: 60,
+          pre_session_warmup: "5 min jog + dynamic stretches",
+          post_session_cooldown: "5 min static stretch",
+          drills: [
+            { name: `${focus} — Foundations`, duration_minutes: 20, instructions: "Work on core technique. Quality over speed. Repeat 10 times.", equipment_needed: "Ball, cones" },
+            { name: `${focus} — Game Pace`, duration_minutes: 20, instructions: "Repeat at match intensity. Push yourself.", equipment_needed: "Ball" },
+            { name: "Sprint Intervals", duration_minutes: 15, instructions: "8 × 30m sprints. Rest 30s between each. Keep form tight.", equipment_needed: "None" },
+          ],
+        };
+      });
+    };
+
+    let days: ScheduleDay[] = [];
+    let aiGenerated = false;
+
+    try {
       const res = await fetch("/api/ai-coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message:
             `Generate a ${prefs.days}-day grassroots football training schedule for this week. ` +
-            `Time preference: ${prefs.time_preference}. Rest days: ${restDays}. ` +
-            `Return ONLY valid JSON — no markdown, no explanation — in this exact structure: ` +
+            `Time preference: ${prefs.time_preference}. Rest days: ${7 - prefs.days}. ` +
+            `Return ONLY valid JSON with no markdown or extra text, in this exact structure: ` +
             `{"days":[{"day":"Monday","is_rest":false,"focus":"Ball Control","intensity":"medium","total_duration_minutes":60,` +
             `"pre_session_warmup":"5 min jog","post_session_cooldown":"5 min stretch",` +
-            `"drills":[{"name":"Drill Name","duration_minutes":15,"instructions":"What to do","equipment_needed":"Ball"}]},` +
+            `"drills":[{"name":"Drill","duration_minutes":15,"instructions":"Instructions","equipment_needed":"Ball"}]},` +
             `{"day":"Tuesday","is_rest":true}]}. ` +
-            `Include exactly 7 days Monday–Sunday. Use realistic Zimbabwe grassroots drills with minimal equipment.`,
+            `Include all 7 days Monday–Sunday. Use Zimbabwe grassroots context with minimal equipment.`,
           system_prompt:
-            "You are a grassroots football coach in Zimbabwe generating weekly training schedules. " +
-            "Return ONLY valid JSON with no markdown fences, no extra text before or after.",
+            "You are THUTO, a grassroots football coach AI in Zimbabwe. " +
+            "Return ONLY valid JSON with no markdown fences or extra text.",
         }),
       });
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json();
-      const text: string = data?.response ?? data?.answer ?? "";
 
-      // Extract JSON object from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No JSON in response");
-      const parsed = JSON.parse(jsonMatch[0]) as { days: ScheduleDay[] };
+      if (res.ok) {
+        const data = await res.json();
+        const raw: string = data?.response ?? data?.answer ?? "";
+        // Strip markdown fences if Claude wrapped the JSON
+        const cleaned = raw.replace(/```json?\n?/gi, "").replace(/```\n?/gi, "").trim();
+        const m = cleaned.match(/\{[\s\S]*\}/);
+        if (m) {
+          try {
+            const parsed = JSON.parse(m[0]) as { days?: ScheduleDay[] };
+            if (Array.isArray(parsed.days) && parsed.days.length > 0) {
+              days = parsed.days;
+              aiGenerated = true;
+            }
+          } catch { /* JSON malformed — use fallback */ }
+        }
+      }
+    } catch { /* network error — use fallback */ }
 
-      const built: Schedule = {
-        id:            crypto.randomUUID(),
-        week_start:    weekStart,
-        schedule_json: { week_start: weekStart, days: parsed.days },
-        ai_generated:  true,
-        is_active:     true,
-      };
+    if (days.length === 0) days = buildFallbackDays();
 
-      setSchedule(built);
-      localStorage.setItem("thuto_training_schedule", JSON.stringify(built));
-      setShowSettings(false);
-    } catch {
-      setError("THUTO could not generate your schedule right now. Please try again.");
-    } finally {
-      setGenerating(false);
-    }
+    const built: Schedule = {
+      id:            crypto.randomUUID(),
+      week_start:    weekStart,
+      schedule_json: { week_start: weekStart, days },
+      ai_generated:  aiGenerated,
+      is_active:     true,
+    };
+
+    setSchedule(built);
+    // Save to localStorage (training page fallback) AND IndexedDB (pitch mode offline)
+    localStorage.setItem("thuto_training_schedule", JSON.stringify(built));
+    saveSchedule({ ...built, cached_at: Date.now() }).catch(() => {});
+    setShowSettings(false);
+    setGenerating(false);
   };
 
   const logSession = async (day: ScheduleDay) => {
