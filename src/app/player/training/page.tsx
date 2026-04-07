@@ -249,11 +249,16 @@ export default function TrainingPage() {
     setPrefs(loadPrefs());
   }, []);
 
-  // Fetch active schedule on mount
+  // Fetch active schedule on mount — try backend, fall back to localStorage
   useEffect(() => {
     api.get("/training/schedule")
       .then((res) => setSchedule(res.data?.schedule ?? null))
-      .catch(() => {})
+      .catch(() => {
+        try {
+          const stored = localStorage.getItem("thuto_training_schedule");
+          if (stored) setSchedule(JSON.parse(stored));
+        } catch { /* ignore */ }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -267,16 +272,49 @@ export default function TrainingPage() {
     setGenerating(true);
     setError("");
     try {
-      const res = await api.post("/training/schedule/generate", {
-        days:             prefs.days,
-        hours_per_session: 1,
-        time_preference:  prefs.time_preference,
+      const weekStart = new Date().toISOString().slice(0, 10);
+      const restDays  = 7 - prefs.days;
+
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message:
+            `Generate a ${prefs.days}-day grassroots football training schedule for this week. ` +
+            `Time preference: ${prefs.time_preference}. Rest days: ${restDays}. ` +
+            `Return ONLY valid JSON — no markdown, no explanation — in this exact structure: ` +
+            `{"days":[{"day":"Monday","is_rest":false,"focus":"Ball Control","intensity":"medium","total_duration_minutes":60,` +
+            `"pre_session_warmup":"5 min jog","post_session_cooldown":"5 min stretch",` +
+            `"drills":[{"name":"Drill Name","duration_minutes":15,"instructions":"What to do","equipment_needed":"Ball"}]},` +
+            `{"day":"Tuesday","is_rest":true}]}. ` +
+            `Include exactly 7 days Monday–Sunday. Use realistic Zimbabwe grassroots drills with minimal equipment.`,
+          system_prompt:
+            "You are a grassroots football coach in Zimbabwe generating weekly training schedules. " +
+            "Return ONLY valid JSON with no markdown fences, no extra text before or after.",
+        }),
       });
-      setSchedule(res.data?.schedule ?? null);
+      if (!res.ok) throw new Error(`${res.status}`);
+      const data = await res.json();
+      const text: string = data?.response ?? data?.answer ?? "";
+
+      // Extract JSON object from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON in response");
+      const parsed = JSON.parse(jsonMatch[0]) as { days: ScheduleDay[] };
+
+      const built: Schedule = {
+        id:            crypto.randomUUID(),
+        week_start:    weekStart,
+        schedule_json: { week_start: weekStart, days: parsed.days },
+        ai_generated:  true,
+        is_active:     true,
+      };
+
+      setSchedule(built);
+      localStorage.setItem("thuto_training_schedule", JSON.stringify(built));
       setShowSettings(false);
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg ?? "Could not generate schedule. Please try again.");
+    } catch {
+      setError("THUTO could not generate your schedule right now. Please try again.");
     } finally {
       setGenerating(false);
     }
@@ -288,8 +326,18 @@ export default function TrainingPage() {
       ? `${day.day} session: ${day.focus}. ${day.drills?.map((d) => d.name).join(", ") ?? ""}`
       : `${day.day} training session`;
     try {
-      const res = await api.post("/thuto/reflect", { session_summary: summary });
-      const question: string = res.data?.answer ?? res.data?.response ?? "";
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `The player just completed this training session: ${summary}. Ask them one short, encouraging reflection question about how it went.`,
+          system_prompt:
+            "You are THUTO, a personal AI player agent on GrassRoots Sports. " +
+            "Ask one warm, specific reflection question in 1-2 sentences. Use occasional Shona naturally.",
+        }),
+      });
+      const data = await res.json();
+      const question: string = data?.response ?? data?.answer ?? "";
       if (question) {
         localStorage.setItem("thuto_preload_message", question);
       }
