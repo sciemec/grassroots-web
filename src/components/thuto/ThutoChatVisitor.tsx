@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
+import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -184,6 +185,9 @@ export default function ThutoChatVisitor() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thinking, open]);
 
+  // Preload offline knowledge base on mount
+  useEffect(() => { preloadOfflineAI(); }, []);
+
   // Focus input when panel opens
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 150);
@@ -218,13 +222,15 @@ export default function ThutoChatVisitor() {
         { id: crypto.randomUUID(), role: "assistant", content: answer },
       ]);
     } catch {
+      // Groq failed — try offline knowledge base before showing an error
+      const offline = await searchOffline(body);
+      const content = offline
+        ? `${offline.text}\n\n📚 _Offline mode — from ${offline.source}_`
+        : "Ndine dambudziko diki — I have a small issue right now. Please try again in a moment.";
+
       setMessages((prev) => [
         ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "Ndine dambudziko diki — I have a small issue right now. Please try again in a moment.",
-        },
+        { id: crypto.randomUUID(), role: "assistant", content },
       ]);
     } finally {
       setThinking(false);

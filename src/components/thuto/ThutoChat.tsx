@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
 import dynamic from "next/dynamic";
 import api from "@/lib/api";
+import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
 const ThutoOnboarding = dynamic(() => import("./ThutoOnboarding"), { ssr: false });
 
@@ -106,6 +107,9 @@ export default function ThutoChat() {
     const hasOnboarded = localStorage.getItem("thuto_onboarded") === "true";
     setOnboarded(hasOnboarded);
     setHydrated(true);
+
+    // Preload offline knowledge base in the background so it's ready if connection drops
+    preloadOfflineAI();
 
     // Restore cross-page unread signals (e.g. set by session logging on another page)
     const bumped = parseInt(localStorage.getItem("thuto_unread_count") ?? "0", 10);
@@ -246,14 +250,15 @@ export default function ThutoChat() {
         .catch(() => {});
 
     } catch {
+      // Groq failed — try offline knowledge base before showing an error
+      const offline = await searchOffline(text);
+      const content = offline
+        ? `${offline.text}\n\n📚 _Offline mode — from ${offline.source}_`
+        : "Ndine dambudziko diki — I have a small issue right now. Please try again in a moment.";
+
       setMessages((prev) => [
         ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "Ndine dambudziko diki — I have a small issue right now. Please try again in a moment.",
-          timestamp: Date.now(),
-        },
+        { id: crypto.randomUUID(), role: "assistant", content, timestamp: Date.now() },
       ]);
     } finally {
       setThinking(false);

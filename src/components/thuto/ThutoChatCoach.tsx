@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
 import api from "@/lib/api";
+import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,8 @@ export default function ThutoChatCoach() {
     api.get("/coach/squad")
       .then((res) => setSquad(res.data?.data ?? res.data ?? []))
       .catch(() => {});
+    // Preload offline knowledge base so it's ready if connection drops
+    preloadOfflineAI();
   }, []);
 
   // ── Build squad context string injected into every prompt ────────────────
@@ -203,11 +206,16 @@ export default function ThutoChatCoach() {
       setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: answer, timestamp: Date.now() }]);
       if (!open) setUnread((n) => n + 1);
 
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Connection issue";
+    } catch {
+      // Groq failed — try offline knowledge base before showing an error
+      const offline = await searchOffline(text);
+      const content = offline
+        ? `${offline.text}\n\n📚 _Offline mode — from ${offline.source}_`
+        : "⚠️ Connection issue — please check your network and try again.";
+
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: `⚠️ ${msg}`, timestamp: Date.now() },
+        { id: crypto.randomUUID(), role: "assistant", content, timestamp: Date.now() },
       ]);
     } finally {
       setThinking(false);
