@@ -3,6 +3,7 @@ import { PublicNavbar } from "@/components/layout/public-navbar";
 import AfricanPatternStrip from "@/components/ui/AfricanPatternStrip";
 import { ZimPresidentBanner, ZimIndependenceSection } from "@/components/ui/zim-independence";
 import ThutoChatVisitor from "@/components/thuto/ThutoChatVisitor";
+import { ApkDownloadButton } from "@/components/ui/apk-download-button";
 import {
   Users, Dumbbell, Brain, Trophy, Globe, Shield, Zap, Star, ChevronRight,
 } from "lucide-react";
@@ -538,6 +539,93 @@ export default function LandingPage() {
 
       {/* ── Zimbabwe Independence Day section ──────────────────────────────── */}
       <ZimIndependenceSection />
+
+      {/* ── Download App ───────────────────────────────────────────────────── */}
+      <section id="download" className="py-20 relative overflow-hidden" style={{ background: "#0f2a1a" }}>
+        {/* subtle chevron pattern */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Cpolyline points='0,15 10,5 20,15 30,5 40,15' fill='none' stroke='%23E6A817' stroke-width='1.5'/%3E%3C/svg%3E")`,
+            backgroundSize: "40px 20px",
+          }}
+        />
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-12">
+
+            {/* Left — text */}
+            <div className="flex-1 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest mb-5"
+                style={{ background: "rgba(230,168,23,0.15)", color: "#E6A817", border: "1px solid rgba(230,168,23,0.3)" }}>
+                📱 Beta — Free to download
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 leading-tight">
+                Take Grassroots Sport<br />
+                <span style={{ color: "#E6A817" }}>everywhere you train</span>
+              </h2>
+              <p className="text-white/60 text-base mb-8 max-w-md mx-auto lg:mx-0">
+                The full platform in your pocket. Log sessions, get AI coaching, track your stats — even on a slow connection.
+              </p>
+
+              {/* Download button */}
+              <ApkDownloadButton size="lg" className="mb-6" />
+
+              {/* Install steps */}
+              <div className="mt-2 space-y-2 text-sm text-white/50 max-w-sm mx-auto lg:mx-0">
+                <p className="font-semibold text-white/70 mb-3">How to install (30 seconds):</p>
+                {[
+                  "Tap Download — the .apk file saves to your phone",
+                  "Open your Downloads folder and tap the file",
+                  'If Android warns you → tap "Install anyway"',
+                  "App opens — create your free account",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black text-[#1a1a1a] mt-0.5"
+                      style={{ background: "#E6A817" }}>
+                      {i + 1}
+                    </span>
+                    <span>{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right — phone mockup */}
+            <div className="flex-shrink-0 flex flex-col items-center gap-4">
+              <div className="relative w-[200px] h-[380px] rounded-[32px] overflow-hidden shadow-2xl"
+                style={{
+                  background: "linear-gradient(135deg, #1a3d26, #0f2a1a)",
+                  border: "2px solid rgba(230,168,23,0.3)",
+                  boxShadow: "0 0 60px rgba(230,168,23,0.15)",
+                }}>
+                {/* Screen content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo_v2.png" alt="Grassroots Sport" width={64} height={64} className="rounded-2xl shadow-lg" />
+                  <p className="text-white font-extrabold text-lg text-center leading-tight">Grassroots<br/>Sport</p>
+                  <p className="text-white/50 text-[10px] text-center">Zimbabwe&apos;s AI Sports Platform</p>
+                  <div className="mt-4 w-full space-y-2">
+                    {["⚽  AI Coach", "📊  My Stats", "🎯  Drills", "🏆  Scout Ready"].map((item) => (
+                      <div key={item} className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-white font-medium"
+                        style={{ background: "rgba(255,255,255,0.07)" }}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Notch */}
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-16 h-1.5 rounded-full bg-black/50" />
+              </div>
+
+              {/* Version badge */}
+              <div className="text-center">
+                <p className="text-white/40 text-xs">Android 8.0+ · ~45 MB</p>
+                <p className="text-white/25 text-[10px] mt-1">Version 1.0 Beta</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
 
       {/* ── Final CTA — dark green ─────────────────────────────────────────── */}
       <section className="py-24 relative overflow-hidden" style={{ background: "#1B5E20" }}>

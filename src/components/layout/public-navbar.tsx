@@ -18,6 +18,7 @@ export function PublicNavbar() {
     { href: "/business-hub", label: "Business Hub" },
     { href: "/business-directory", label: "Org Directory" },
     { href: "/#pricing", label: "Pricing" },
+    { href: "/#download", label: "📱 Download App" },
   ];
 
   return (
