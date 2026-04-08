@@ -134,10 +134,18 @@ export default function VideoStudioPage() {
     retry: false,
   });
 
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [savedShared, setSavedShared] = useState(false);
+
   const saveAnalysis = useMutation({
     mutationFn: (payload: Partial<SavedAnalysis> & { ai_feedback: string }) =>
       api.post("/video-analyses", payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-analyses"] }),
+    onSuccess: (res) => {
+      const id = res.data?.data?.id ?? null;
+      setSavedId(id);
+      setSavedShared(false);
+      queryClient.invalidateQueries({ queryKey: ["video-analyses"] });
+    },
   });
 
   const deleteAnalysis = useMutation({
@@ -211,7 +219,7 @@ export default function VideoStudioPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const reset = () => { clearFile(); setSport(""); setAnalysisType(""); setQuestion(""); setResult(null); };
+  const reset = () => { clearFile(); setSport(""); setAnalysisType(""); setQuestion(""); setResult(null); setSavedId(null); setSavedShared(false); };
 
   const downloadHighlight = async () => {
     if (!file) return;
@@ -481,6 +489,38 @@ export default function VideoStudioPage() {
             />
           )}
 
+          {/* Share to school/org page — appears after analysis is saved */}
+          {stage === "done" && savedId && (
+            <div className="rounded-xl border border-white/10 bg-card p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {savedShared
+                  ? <Globe className="h-4 w-4 text-green-400 flex-shrink-0" />
+                  : <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                <div>
+                  <p className="text-sm font-medium">
+                    {savedShared ? "Visible on your school/org page" : "Share this analysis to your school page"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {savedShared ? "Scouts and fans can see this video on your organisation profile." : "Let scouts and fans find this video on your organisation's public profile."}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  toggleShare.mutate(savedId);
+                  setSavedShared((v) => !v);
+                }}
+                className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  savedShared
+                    ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                }`}
+              >
+                {savedShared ? "Unshare" : "Share"}
+              </button>
+            </div>
+          )}
+
           {/* Analysis History */}
           {(historyData?.data?.length ?? 0) > 0 && (
             <div className="rounded-xl border bg-card p-5">
@@ -516,7 +556,7 @@ export default function VideoStudioPage() {
                           : <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                         }
                         <button
-                          title={a.is_shared ? "Shared to Fan Hub — click to make private" : "Share to Fan Hub"}
+                          title={a.is_shared ? "Visible on your school/org page — click to make private" : "Share to your school/org page"}
                           onClick={(e) => { e.stopPropagation(); toggleShare.mutate(a.id); }}
                           className={`rounded-lg p-1 transition-colors ${a.is_shared ? "text-green-400 hover:text-green-300" : "text-muted-foreground hover:text-green-400"}`}
                         >

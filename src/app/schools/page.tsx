@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, Building2, MapPin, Users, ChevronRight, Loader2, Filter } from "lucide-react";
+import { Search, Building2, MapPin, Users, ChevronRight, Loader2, Filter, Film } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -15,6 +15,12 @@ interface Team {
   gender: string;
 }
 
+const SPORT_EMOJI: Record<string, string> = {
+  Football: "⚽", Rugby: "🏉", Athletics: "🏃", Netball: "🏐",
+  Basketball: "🏀", Cricket: "🏏", Swimming: "🏊", Tennis: "🎾",
+  Volleyball: "🏐", Hockey: "🏑",
+};
+
 interface Org {
   id: string;
   name: string;
@@ -24,6 +30,7 @@ interface Org {
   description: string | null;
   slug: string;
   teams: Team[];
+  video_count?: number;
 }
 
 interface PageMeta {
@@ -190,9 +197,11 @@ export default function SchoolsPage() {
                 className="flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 hover:border-amber-500/30 hover:bg-white/8 transition-all"
               >
                 <div className="flex items-start gap-4 min-w-0">
-                  {/* Icon */}
-                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15">
-                    <Building2 className="h-5 w-5 text-amber-400" />
+                  {/* Sport emoji avatar — uses the primary sport, falls back to building icon */}
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-xl">
+                    {org.sports[0] && SPORT_EMOJI[org.sports[0]]
+                      ? SPORT_EMOJI[org.sports[0]]
+                      : <Building2 className="h-5 w-5 text-amber-400" />}
                   </div>
 
                   <div className="min-w-0">
@@ -201,6 +210,12 @@ export default function SchoolsPage() {
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_COLORS[org.type] ?? "bg-white/10 text-white/60"}`}>
                         {org.type}
                       </span>
+                      {(org.video_count ?? 0) > 0 && (
+                        <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                          <Film className="h-2.5 w-2.5" />
+                          {org.video_count} video{org.video_count !== 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-white/50">
