@@ -133,6 +133,16 @@ export default function RegisterPage() {
 
       if (token && user) {
         loginStore({ ...user, token });
+        // Fire welcome email — non-blocking, ignore failures
+        fetch('/api/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to:   email.trim(),
+            type: 'welcome',
+            data: { name: `${firstName.trim()} ${surname.trim()}`, role },
+          }),
+        }).catch(() => {});
         router.push(roleHomePath(user.role));
       } else {
         router.push('/login?registered=1');
