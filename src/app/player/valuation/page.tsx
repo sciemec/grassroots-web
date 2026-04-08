@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, TrendingUp, Share2, Save, Loader2, DollarSign, Brain } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ProGate } from "@/components/ui/pro-gate";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 
@@ -125,6 +126,7 @@ Base your valuation on Zimbabwe grassroots market realities (Division 1/2 transf
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
+        <ProGate feature="Player Market Valuation" preview={false}>
 
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
@@ -240,6 +242,7 @@ Base your valuation on Zimbabwe grassroots market realities (Division 1/2 transf
             Valuations are AI estimates based on Zimbabwe grassroots market data. Division 1/2 transfer fees typically range $500–$5,000 USD. Premier League fees range $2,000–$20,000 USD. Use this as a guide for contract negotiations and scouting conversations.
           </p>
         </div>
+        </ProGate>
       </main>
     </div>
   );

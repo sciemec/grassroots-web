@@ -10,6 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ProGate } from "@/components/ui/pro-gate";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 import { SPORT_STATS, getSportAnalysisPrompt, type SportKey } from "@/config/sports";
@@ -297,6 +298,7 @@ export default function ScoutReportsPage() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-auto p-6">
+        <ProGate feature="AI Scouting Reports (PDF)" preview={false}>
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
           <Link
@@ -515,6 +517,7 @@ export default function ScoutReportsPage() {
             )}
           </div>
         </div>
+        </ProGate>
       </main>
     </div>
   );

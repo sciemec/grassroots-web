@@ -17,6 +17,7 @@ import { PlayerTracker } from "@/components/video/player-tracker";
 import { PoseCamera } from "@/components/video/pose-camera";
 import { ResultsPanel, type AnalysisResult } from "./results-panel";
 import { searchOffline } from "@/lib/offline-ai";
+import { ProGate } from "@/components/ui/pro-gate";
 
 interface SavedAnalysis {
   id: string;
@@ -338,6 +339,7 @@ export default function VideoStudioPage() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-auto">
+        <ProGate feature="AI Video Studio" preview={false}>
         <div className="border-b bg-card px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10"><Film className="h-5 w-5 text-primary" /></div>
@@ -588,6 +590,7 @@ export default function VideoStudioPage() {
             </div>
           )}
         </div>
+        </ProGate>
       </main>
     </div>
   );

@@ -26,6 +26,7 @@ export interface AuthUser {
   age_group?: string;
   province?: string;
   is_pro?: boolean;
+  subscription?: string; // 'free' | 'basic' | 'pro' | 'elite'
 }
 
 interface AuthState {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, TrendingUp, Loader2, Star, Target, Clock, ChevronUp } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ProGate } from "@/components/ui/pro-gate";
 import { queryAI } from "@/lib/ai-query";
 
 const POSITIONS = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
@@ -119,6 +120,7 @@ Keep it motivating but honest. Zimbabwe grassroots context.`;
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
+        <ProGate feature="Player Development Trajectory" preview={false}>
 
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
@@ -313,6 +315,7 @@ Keep it motivating but honest. Zimbabwe grassroots context.`;
             )}
           </div>
         </div>
+        </ProGate>
       </main>
     </div>
   );
