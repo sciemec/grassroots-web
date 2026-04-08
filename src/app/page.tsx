@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import AfricanPatternStrip from "@/components/ui/AfricanPatternStrip";
 import { ZimPresidentBanner, ZimIndependenceSection } from "@/components/ui/zim-independence";
+import ThutoChatVisitor from "@/components/thuto/ThutoChatVisitor";
 import {
   Users, Dumbbell, Brain, Trophy, Globe, Shield, Zap, Star, ChevronRight,
 } from "lucide-react";
@@ -614,6 +615,9 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* THUTO visitor guide — fixed bottom-right circle */}
+      <ThutoChatVisitor />
     </div>
   );
 }
