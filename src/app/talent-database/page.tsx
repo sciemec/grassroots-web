@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Search, Users, Globe, MapPin, Loader2, UserPlus, ExternalLink, Trophy } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ProGate } from "@/components/ui/pro-gate";
 import api from "@/lib/api";
 
 const SPORTS = ["All", "Football", "Rugby", "Athletics", "Netball", "Basketball", "Cricket", "Swimming", "Tennis", "Volleyball", "Hockey"];
@@ -86,6 +87,7 @@ export default function TalentDatabasePage() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
+        <ProGate feature="National Talent Database" preview={false}>
 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
@@ -259,6 +261,7 @@ export default function TalentDatabasePage() {
             ))}
           </div>
         )}
+        </ProGate>
       </main>
     </div>
   );

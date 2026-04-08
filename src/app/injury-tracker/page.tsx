@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, X, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Loader2, Brain } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ProGate } from "@/components/ui/pro-gate";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 
@@ -159,6 +160,7 @@ export default function InjuryTrackerPage() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
+        <ProGate feature="AI Injury Prevention Engine" preview={false}>
 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -400,6 +402,7 @@ export default function InjuryTrackerPage() {
             </div>
           )}
         </div>
+        </ProGate>
       </main>
     </div>
   );

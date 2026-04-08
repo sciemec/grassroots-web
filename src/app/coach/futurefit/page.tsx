@@ -24,6 +24,7 @@ import {
   Printer, UserPlus, Check, X, Trash2, BookOpen, AlertCircle,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ProGate } from "@/components/ui/pro-gate";
 import { findRelevantSessions } from "@/lib/football-knowledge";
 import {
   FORMATS_TABLE, FORMAT_COLORS, TRAINING_FORMATS, PATHWAY_STEPS,
@@ -1181,6 +1182,7 @@ export default function FutureFitPage() {
       <Sidebar />
 
       <main className="gs-watermark flex-1 overflow-auto">
+        <ProGate feature="FutureFit Junior Development Hub" preview={false}>
         {/* ── Sticky header ─────────────────────────────────────────────── */}
         <div className="sticky top-0 z-10 border-b border-white/10 bg-[#0b1f12]/95 backdrop-blur-md px-5 py-3">
           <div className="flex items-center gap-3 mb-3">
@@ -1301,6 +1303,7 @@ export default function FutureFitPage() {
             </div>
           </div>
         )}
+        </ProGate>
       </main>
 
       {/* ── Modals ────────────────────────────────────────────────────────── */}
