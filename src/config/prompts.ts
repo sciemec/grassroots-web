@@ -183,6 +183,9 @@ EXPERTISE AREAS:
 - Motivational psychology and team culture
 - Youth development methodology
 
+COACHING KNOWLEDGE (use when answering tactics, systems, or training questions):
+${TACTICS_KNOWLEDGE_BASE}
+
 TONE: Knowledgeable, direct, collegial. Like a conversation between two professional coaches.
 FORMAT: Use numbered lists or bullet points for HOW sections. Keep WHY/WHEN/WHERE brief — one sentence each. Bold the section labels.`;
 }
@@ -525,6 +528,95 @@ RULES:
 - The drill must be doable alone or with one partner
 - Total response: under 200 words`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. TACTICS, STRATEGIES & SYSTEMS — KNOWLEDGE BASE
+// Injected into coachAiAssistantPrompt and playerAiCoachPrompt when relevant.
+// Source: FA-certified coaching curriculum, adapted for Zimbabwe grassroots.
+// ─────────────────────────────────────────────────────────────────────────────
+export const TACTICS_KNOWLEDGE_BASE = `
+COACHING KNOWLEDGE BASE — TACTICS, STRATEGIES & SYSTEMS
+========================================================
+
+## SELECTING THE RIGHT TACTICS, STRATEGIES & SYSTEMS
+
+### Player-First Principle
+- Always match your tactics to the players you have — build around their strengths, not a system you prefer
+- When working with a new team, you will not yet know what players do best — observe first before committing to a system
+- Once you understand your players, adapt your approach to them: if you have wide players who win 1v1s consistently, choose tactics and a system that gets them the ball wide as often as possible
+- Never force players into a system they are not suited for
+
+### Consistency & Patience
+- Changing your approach every week confuses players — they need repetition to understand their roles
+- Commit to a tactic or system for several weeks before judging it
+- Let players get to grips with the demands of a system before introducing something new
+- Only switch systems when you have clear evidence it is not working, not just after one bad result
+
+### Judging Effectiveness of Systems
+- Evaluate systems by watching your own team on matchday — are players in the right positions? Are the intended patterns happening?
+- Watch other football matches (live, TV, or online) to understand how different formations and systems work in practice
+- Research the strengths and weaknesses of systems before adopting them:
+  - 4-3-3: width, high press, requires fit wide players and a mobile front three
+  - 4-4-2: defensive solidity, simple roles, works well with limited technical depth
+  - 3-5-2: midfield control, wing-backs need high fitness, good against wide teams
+  - 4-2-3-1: central control, protects defence, requires a reliable number 10
+- Understanding what a system demands tells you whether your squad can execute it
+
+---
+
+## WORKING ON TACTICS AT TRAINING
+
+### Game-Realistic Practices
+- Every drill must match the demands of your matchday system — do not train one way and play another
+- If your tactic uses width, design practices that use wide areas, include opposition, and have goals
+- If you play a high press, build drills where players practise pressing triggers and cover shadows in game-realistic numbers
+- Add incentives that reward the style of play you want — e.g. bonus points for goals scored after winning the ball in the opponent's half
+
+### Realistic Numbers
+- In a match, attackers are almost always outnumbered — train for this reality
+- Avoid always training in equal numbers (3v3, 4v4) — use 3v4, 4v5, 5v6 to mirror match conditions
+- Add a goalkeeper to practices whenever the drill is within shooting range — it makes finishing and decision-making more realistic
+
+### Opposition Preparation
+- When you have information about the opposition, use it
+- Build specific practices around what the opponent does: if they play out from the back, practise pressing their goalkeeper and centre-backs
+- Keep opposition-specific work simple — one or two key points that every player understands
+
+---
+
+## WORKING ON TACTICS ON MATCHDAY
+
+### Warm-Up Strategy
+- Do not waste the warm-up on generic shooting or unopposed rondos — use it to reinforce your matchday approach
+- Use a smaller version of a practice from the week's training — it reminds players of the patterns before kick-off
+- A purposeful warm-up activates the tactical mindset you want to see in the match
+
+### Pre-Match Instructions
+- Do not overload players with information — give them 1 or 2 clear objectives to focus on
+- Give each unit (defenders, midfielders, attackers) one specific challenge or instruction:
+  - Example for defenders: "When they play the ball wide, get three players behind the ball immediately"
+  - Example for strikers: "Press their number 6 as soon as the goalkeeper has the ball"
+- A player remembering one thing clearly is better than a player half-remembering five things
+
+### Half-Time Adjustments
+- Discuss with the team what is working and what is not — ask players as well as telling them
+- Identify what the opposition is trying to do: are they overloading one side? Are they targeting a specific player?
+- Make one or two tactical tweaks — not a full system change at half-time
+- Reinforce what is going well: tell the team what to keep doing, not just what to stop doing
+
+### Adapting During the Match
+- Read the game and be willing to adapt — formations and tactics are tools, not rules
+- Common in-game adjustments: shifting from 4-3-3 to 4-4-2 when defending a lead; pushing a defensive midfielder forward when chasing a goal
+- Make substitutions with a tactical purpose — tell the incoming player exactly what you need from them
+
+---
+
+## ZIMBABWE GRASSROOTS CONTEXT
+- Most grassroots teams in Zimbabwe have 18–25 players but limited tactical training time — keep systems simple
+- Favour systems with clear, repeatable roles over complex patterns requiring high technical precision
+- 4-4-2 and 4-3-3 are the most common and best-understood systems at Division 1/2 and school level
+- Prioritise player understanding over tactical sophistication — a well-executed simple system beats a poorly understood complex one every time
+`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 12. LIVE MATCH COMMENTARY
