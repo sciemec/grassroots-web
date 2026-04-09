@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import api from '@/lib/api';
-import { useAuthStore, roleHomePath, type AuthUser } from '@/lib/auth-store';
+import { useAuthStore, roleHomePath, type AuthUser, type UserRole } from '@/lib/auth-store';
 
 function LoginForm() {
   const router       = useRouter();
@@ -18,9 +18,15 @@ function LoginForm() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword]     = useState('');
   const [showPass, setShowPass]     = useState(false);
-  const [loading, setLoading]         = useState(false);
+  const [loading, setLoading]             = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError]             = useState<string | null>(null);
+  const [roleLoading, setRoleLoading]     = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
+
+  // Holds new Google user waiting for role selection
+  const [pendingGoogle, setPendingGoogle] = useState<{
+    user: AuthUser; token: string; name: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,28 +76,104 @@ function LoginForm() {
       const result   = await signInWithPopup(auth, provider);
       const gUser    = result.user;
 
-      const { data } = await api.post('/auth/google', {
+      const res = await api.post('/auth/google', {
         email:        gUser.email,
         name:         gUser.displayName ?? gUser.email,
         firebase_uid: gUser.uid,
         photo_url:    gUser.photoURL ?? undefined,
       });
 
-      const token: string  = data.token ?? data.access_token ?? data.data?.token;
-      const user: AuthUser = data.user  ?? data.data?.user   ?? data.data;
+      const token: string  = res.data.token ?? res.data.access_token ?? res.data.data?.token;
+      const user: AuthUser = res.data.user  ?? res.data.data?.user   ?? res.data.data;
       if (!token || !user) throw new Error('Unexpected response from server.');
 
-      loginStore({ ...user, token });
-      router.push(roleHomePath(user.role));
+      const isNew = res.status === 201;
+
+      if (isNew) {
+        // New user — show role picker before logging them in
+        setPendingGoogle({ user, token, name: gUser.displayName ?? user.name ?? 'there' });
+      } else {
+        // Returning user — straight to dashboard
+        loginStore({ ...user, token });
+        router.push(roleHomePath(user.role));
+      }
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string };
-      // User closed the popup — not an error
       if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
       setError(e.message ?? 'Google sign-in failed. Please use email and password instead.');
     } finally {
       setGoogleLoading(false);
     }
   };
+
+  const handleRolePick = async (role: UserRole) => {
+    if (!pendingGoogle) return;
+    setRoleLoading(true);
+    try {
+      // Temporarily store token so api can make the PATCH call
+      loginStore({ ...pendingGoogle.user, token: pendingGoogle.token });
+      await api.patch('/profile', { role });
+      // Update local user with chosen role and redirect
+      loginStore({ ...pendingGoogle.user, token: pendingGoogle.token, role });
+      router.push(roleHomePath(role));
+    } catch {
+      // If PATCH fails, still let them in with default player role
+      loginStore({ ...pendingGoogle.user, token: pendingGoogle.token });
+      router.push(roleHomePath(pendingGoogle.user.role));
+    } finally {
+      setRoleLoading(false);
+      setPendingGoogle(null);
+    }
+  };
+
+  // ── Role picker — shown to new Google users only ─────────────────────────
+  if (pendingGoogle) {
+    const roles = [
+      { id: 'player' as UserRole, icon: '⚽', label: 'Player',  desc: 'Track my training & get scouted' },
+      { id: 'coach'  as UserRole, icon: '🎽', label: 'Coach',   desc: 'Manage my squad & tactics' },
+      { id: 'scout'  as UserRole, icon: '🔍', label: 'Scout',   desc: 'Discover & report on talent' },
+      { id: 'fan'    as UserRole, icon: '👥', label: 'Fan',     desc: 'Follow players & teams' },
+    ];
+    return (
+      <div className="min-h-screen bg-[#0a1a0e] flex items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-3">👋</div>
+            <h1 className="text-2xl font-bold text-white">
+              Welcome, {pendingGoogle.name.split(' ')[0]}!
+            </h1>
+            <p className="text-white/50 text-sm mt-2">One quick question before you start</p>
+          </div>
+
+          <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-6">
+            <p className="text-white/70 text-sm font-medium mb-4 text-center">I am a…</p>
+            <div className="grid grid-cols-2 gap-3">
+              {roles.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => handleRolePick(r.id)}
+                  disabled={roleLoading}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-white/10
+                             bg-white/5 hover:bg-[#FFD700]/10 hover:border-[#FFD700]/40
+                             disabled:opacity-40 transition-all text-center"
+                >
+                  <span className="text-3xl">{r.icon}</span>
+                  <span className="text-white font-semibold text-sm">{r.label}</span>
+                  <span className="text-white/40 text-[11px] leading-tight">{r.desc}</span>
+                </button>
+              ))}
+            </div>
+            {roleLoading && (
+              <div className="flex items-center justify-center gap-2 mt-4 text-white/40 text-sm">
+                <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                Setting up your account…
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a1a0e] flex items-center justify-center p-4 relative overflow-hidden">
