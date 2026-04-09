@@ -11,7 +11,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { saveSchedule } from "@/lib/offlineDB";
 
-const ThutoChat = dynamic(() => import("@/components/thuto/ThutoChat"), { ssr: false });
+// ThutoChat is now mounted in player/layout.tsx — covers all player pages
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -571,8 +571,6 @@ export default function TrainingPage() {
         )}
       </main>
 
-      {/* THUTO chat widget — available on this page */}
-      <ThutoChat />
     </div>
   );
 }

@@ -14,11 +14,7 @@ import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
 import { getSchedule, saveSchedule, getPendingSessions, clearPendingSession, type ScheduleDay } from "@/lib/offlineDB";
 
-// Lazy-load THUTO chat widget (client-only — uses browser APIs)
-const ThutoChat = dynamic(
-  () => import("@/components/thuto/ThutoChat"),
-  { ssr: false }
-);
+// ThutoChat is now mounted in player/layout.tsx — covers all player pages
 
 const UbuntuOptIn = dynamic(
   () => import("@/components/ubuntu/UbuntuOptIn") as Promise<{ default: ComponentType<{ onOptIn: () => void }> }>,
@@ -187,9 +183,6 @@ export default function PlayerHubPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* THUTO floating chat widget — bottom-right corner */}
-      <ThutoChat />
-
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
 

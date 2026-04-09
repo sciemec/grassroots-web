@@ -79,26 +79,33 @@ Slogan: "Train Anywhere in Zimbabwe. Use AI to Get Recognized."
 == HUB CARDS & FEATURES ==
 
 PLAYER HUB (/player)
-- AI Coach (THUTO) — personalised coaching advice, training plans, nutrition
-- Pitch Mode — solo training sessions with focus area selection and pose-camera form check
-- Ubuntu Training — train with your community group; AI suggests drills for the group
-- Training Formats — Rondo, Small-Sided Games, Shooting, Drills library
-- Milestones — track personal achievements and goals
-- My Journey / DNA — builds a full player DNA profile over time (sleep, mindset, goals)
-- Showcase — upload short skill clips; AI rates the clip and makes it discoverable by scouts
-- Vault — personal highlight video library with shareable reels
-- Player Valuation — AI estimates the player's market value in USD
-- Potential Score — projects the player's peak rating and development trajectory
-- Verification — identity verification that unlocks a scannable QR scouting profile
+- AI Coach / THUTO — personalised coaching advice, training plans, nutrition, mindset
+- Player DNA — THUTO builds a complete player profile over 5 sessions: sleep, diet, mindset, goals, inspiration
+- Pitch Mode — solo training with camera form feedback; choose a focus area and train anywhere
+- Ubuntu Training — group community sessions; AI suggests drills for the whole group
+- Training Formats — Rondo, Small-Sided Games, Shooting drills, full drill library
+- My Sessions — log training sessions, track load, frequency, and recovery
+- My Stats — record match performance: goals, assists, pass accuracy, and more; all 10 sports
+- Assessment — position-specific skill ratings and radar chart
+- Progress Tracker — charts showing improvement over time
+- Milestones — celebrate and track personal achievements
+- Nutrition — personalised meal plans and food logging for Zimbabwe-based athletes
+- Showcase — upload 60-second skill clips; AI rates the clip and makes it discoverable by scouts worldwide
+- Vault — personal highlight video library with shareable reels coaches and scouts can browse
+- Player Valuation — AI estimates the player's market value in USD; first of its kind in Zimbabwe
+- Potential Score — projects the player's peak rating at age 22 and development trajectory
+- Verification — selfie + ID upload unlocks a scannable QR scouting profile
+- Subscription — Free plan available; Pro plan ($5/month) unlocks all features
 
 COACH HUB (/coach)
 - Squad Manager — add up to 23 players, track fitness status (fit / caution / injured)
-- FutureFit — long-term player development and progression tracking
+- FutureFit — long-term junior player development tracking; assign drills, monitor progress
 - Live Match Dashboard — real-time multi-sport match events, AI half-time analysis
-- Tactics Board — formations and tactical planning
+- Weekly Coach Report — AI-generated report covering squad form, concerns, and training focus
+- Tactics Board — drag-and-drop formation builder with saved lineup and notes
 - Set Piece Analytics — corner and free kick success rates, AI recommendations
-- Training Plans — multi-sport structured training programmes
-- AI Insights — AI-generated team performance insights
+- Training Plans — multi-sport structured programmes for Football, Netball, and more
+- AI Insights — AI-generated team performance analysis
 
 SCOUT HUB (/scout)
 - Player Discovery Feed — browse verified players by province, sport, position, age

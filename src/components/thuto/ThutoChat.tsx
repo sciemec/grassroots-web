@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
@@ -27,6 +28,139 @@ const DNA_SESSION_OPENERS: Record<number, string> = {
   3: "Welcome back! Quick one — are you currently in school? And does your family know about your football dream? Do they support you?",
   4: "Good to see you again. When things go wrong in a match — you miss a chance, make an error — how do you usually feel and react? Also, how many days a week can you realistically train?",
   5: "Last few things I want to know about you — what kind of football do you love to watch? What player's style do you wish you played like? And what is it about the game itself that makes you genuinely happy?",
+};
+
+// ── Base system prompt ────────────────────────────────────────────────────────
+
+const BASE_PROMPT =
+  "You are THUTO, a personal AI player agent on GrassRoots Sports — Zimbabwe's AI sports platform. " +
+  "You are warm, encouraging, and knowledgeable about grassroots sport in Zimbabwe. " +
+  "Speak to the player like a trusted mentor on the pitch. Help with training, nutrition, " +
+  "mindset, tactics, and player development. Keep answers concise and practical. " +
+  "Use occasional Shona phrases naturally. End with encouragement.\n\n" +
+  "== PLATFORM OVERVIEW ==\n" +
+  "GrassRoots Sports is Zimbabwe's first AI-powered sports platform covering Football, Rugby, " +
+  "Athletics, Netball, Basketball, Cricket, Swimming, Tennis, Volleyball, and Hockey. " +
+  "It helps players get discovered, coaches manage squads, and scouts find talent.\n\n" +
+  "== ALL PLAYER HUB FEATURES ==\n" +
+  "• Hub Home (/player) — overview dashboard: stats, quick links to all tools, THUTO chat\n" +
+  "• AI Coach (/player/ai-coach) — dedicated full-screen chat with THUTO for deep coaching sessions\n" +
+  "• Pitch Mode (/player/pitch-mode) — solo training session: pick focus area, use camera for form feedback\n" +
+  "• Ubuntu Training (/player/ubuntu) — group training with community; AI suggests drills for the whole group\n" +
+  "• Training Formats (/player/training-formats) — Rondo, Small-Sided Games, Shooting drills, full drill library\n" +
+  "• Drills (/player/drills) — searchable library of training drills by skill level and sport\n" +
+  "• My Sessions (/player/sessions) — log and review training sessions; track frequency and load\n" +
+  "• My Profile (/player/profile) — update personal info, position, club, height, weight; upload photo\n" +
+  "• My Stats (/player/stats) — view full match stats history across all sports\n" +
+  "• Log Match Stats (/player/stats/new) — record stats from a match or training (goals, assists, etc.)\n" +
+  "• Milestones (/player/milestones) — celebrate and track personal achievements\n" +
+  "• Assessment (/player/assessment) — skill ratings by position with radar chart; position-specific scoring\n" +
+  "• Progress Tracker (/player/progress) — track improvement over time with charts\n" +
+  "• Development (/player/development) — structured long-term development plan\n" +
+  "• My Journey / DNA (/player/ai-coach) — THUTO builds a full player DNA profile over 5 sessions (sleep, mindset, goals, nutrition, inspiration)\n" +
+  "• Nutrition (/player/nutrition) — personalised meal plans and food logging for athlete performance\n" +
+  "• Sports (/player/sports) — switch between sports; view sport-specific resources\n" +
+  "• Showcase (/player/showcase) — upload 60-second skill clips; AI rates the clip and makes it discoverable by scouts\n" +
+  "• Vault (/player/vault) — personal highlight video library; create shareable reels for scouts\n" +
+  "• Player Valuation (/player/valuation) — AI estimates market value in USD; first of its kind in Zimbabwe\n" +
+  "• Potential Score (/player/potential) — AI projects peak rating and development trajectory\n" +
+  "• Talent ID (/player/talent-id) — talent identification tools to understand natural strengths\n" +
+  "• Verification (/player/verification) — selfie + ID upload; unlocks scannable QR scouting profile\n" +
+  "• Subscription (/player/subscription) — manage plan (Free / Pro); pay via EcoCash, InnBucks, or card";
+
+// ── Page context map ──────────────────────────────────────────────────────────
+
+interface PageCtx { description: string; suggested: string[] }
+
+const PAGE_CONTEXT: Record<string, PageCtx> = {
+  "/player": {
+    description: "Player Hub Home — your central dashboard for all training tools",
+    suggested: ["What can I do here?", "Help me build a training plan", "How do I get scouted?"],
+  },
+  "/player/ai-coach": {
+    description: "AI Coach & Player DNA — deep coaching sessions with THUTO",
+    suggested: ["Build my player DNA", "Give me a personalised training plan", "How do I improve my weaknesses?"],
+  },
+  "/player/pitch-mode": {
+    description: "Pitch Mode — solo training with camera form feedback",
+    suggested: ["What should I focus on today?", "How do I use the camera for form check?", "Best drills for solo training"],
+  },
+  "/player/ubuntu": {
+    description: "Ubuntu Training — group sessions with AI drill suggestions",
+    suggested: ["What drills work best for a group?", "How does Ubuntu training help me?", "Suggest a warm-up for my group"],
+  },
+  "/player/training-formats": {
+    description: "Training Formats — Rondo, SSGs, Shooting, Drills library",
+    suggested: ["What is a rondo drill?", "Best small-sided games for forwards", "Recommend a shooting session"],
+  },
+  "/player/drills": {
+    description: "Drills Library — searchable drills by skill and sport",
+    suggested: ["Find drills for my position", "Best fitness drills for pre-season", "Drills to improve my first touch"],
+  },
+  "/player/sessions": {
+    description: "My Sessions — log and track your training frequency and load",
+    suggested: ["How often should I train?", "What should I log after a session?", "Am I overtraining?"],
+  },
+  "/player/sessions/new": {
+    description: "Log New Session — record today's training",
+    suggested: ["What details should I include?", "How do I rate session intensity?", "What counts as a session?"],
+  },
+  "/player/profile": {
+    description: "My Profile — personal info, position, club, photo",
+    suggested: ["Why is my profile important for scouts?", "What should I fill in first?", "How do scouts find me?"],
+  },
+  "/player/stats": {
+    description: "My Stats History — all your match and training stats",
+    suggested: ["How do I read my stats?", "What stats matter most to scouts?", "How do I improve my pass accuracy?"],
+  },
+  "/player/stats/new": {
+    description: "Log Match Stats — record goals, assists and performance data",
+    suggested: ["What stats should I track?", "How do I log a match?", "Does this help with scouting?"],
+  },
+  "/player/milestones": {
+    description: "Milestones — celebrate personal achievements and goals",
+    suggested: ["What milestones should I set?", "How do I stay motivated?", "Suggest a 3-month goal for me"],
+  },
+  "/player/assessment": {
+    description: "Skill Assessment — position-specific ratings and radar chart",
+    suggested: ["What does my radar chart mean?", "Which skills should I work on most?", "How is my score calculated?"],
+  },
+  "/player/progress": {
+    description: "Progress Tracker — charts showing improvement over time",
+    suggested: ["Am I improving?", "How long to see real progress?", "What should I measure every month?"],
+  },
+  "/player/development": {
+    description: "Development Plan — structured long-term player development",
+    suggested: ["Build me a development plan", "What should a 16-year-old focus on?", "How do I develop into a pro?"],
+  },
+  "/player/nutrition": {
+    description: "Nutrition Hub — personalised meal plans for athletes",
+    suggested: ["What should I eat before training?", "Cheap high-protein meals in Zimbabwe", "Help me log my meals"],
+  },
+  "/player/showcase": {
+    description: "Showcase — upload skill clips for scouts to discover you",
+    suggested: ["What makes a good showcase clip?", "How do scouts find my videos?", "What skill should I film?"],
+  },
+  "/player/vault": {
+    description: "Highlight Vault — personal video library and shareable reels",
+    suggested: ["How do I create a reel?", "Can scouts see my vault?", "What highlights should I keep?"],
+  },
+  "/player/valuation": {
+    description: "Player Valuation — AI estimates your market value in USD",
+    suggested: ["How is my value calculated?", "How do I increase my value?", "What do scouts look for?"],
+  },
+  "/player/potential": {
+    description: "Potential Score — AI projects your peak rating and trajectory",
+    suggested: ["What is my potential score?", "How do I reach my projected peak?", "Am I developing fast enough?"],
+  },
+  "/player/verification": {
+    description: "Verification — upload selfie and ID to unlock your QR scouting profile",
+    suggested: ["Why should I verify?", "What is a QR scouting profile?", "How do scouts use my QR code?"],
+  },
+  "/player/subscription": {
+    description: "Subscription — manage your plan and payment",
+    suggested: ["What does Pro include?", "How do I pay with EcoCash?", "Is the free plan enough to get scouted?"],
+  },
 };
 
 // ── THUTO Avatar ──────────────────────────────────────────────────────────────
@@ -89,6 +223,26 @@ const THUTO_ACTIVE = true;
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function ThutoChat() {
+  const pathname = usePathname();
+
+  // Resolve page context — exact match first, then prefix match, then fallback
+  const pageCtx: PageCtx =
+    PAGE_CONTEXT[pathname] ??
+    Object.entries(PAGE_CONTEXT)
+      .filter(([k]) => k !== "/player" && pathname.startsWith(k))
+      .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ??
+    PAGE_CONTEXT["/player"];
+
+  const buildContext = () => {
+    const parts: string[] = [];
+    parts.push(`\nCURRENT PAGE: ${pageCtx.description}`);
+    try {
+      const pageData = localStorage.getItem("thuto_page_data");
+      if (pageData) parts.push(`\nPAGE DATA: ${pageData}`);
+    } catch { /* ignore */ }
+    return parts.join("");
+  };
+
   const [onboarded,       setOnboarded]       = useState(false);
   const [hydrated,        setHydrated]        = useState(false);
   const [open,            setOpen]            = useState(false);
@@ -224,12 +378,7 @@ export default function ThutoChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
-          system_prompt:
-            "You are THUTO, a personal AI player agent on GrassRoots Sports — Zimbabwe's AI sports platform. " +
-            "You are warm, encouraging, and knowledgeable about grassroots sport in Zimbabwe. " +
-            "Speak to the player like a trusted mentor on the pitch. Help with training, nutrition, " +
-            "mindset, tactics, and player development. Keep answers concise and practical. " +
-            "Use occasional Shona phrases naturally. End with encouragement.",
+          system_prompt: BASE_PROMPT + buildContext(),
           history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -316,7 +465,9 @@ export default function ThutoChat() {
               <ThutoAvatar size="lg" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-white">THUTO</p>
-                <p className="text-xs text-teal-400">AI Player Agent</p>
+                <p className="text-xs text-teal-400 truncate" title={pageCtx.description}>
+                  {pageCtx.description.split("—")[0].trim()}
+                </p>
               </div>
               <div className="flex items-center gap-1">
                 {messages.length > 0 && (
@@ -365,11 +516,11 @@ export default function ThutoChat() {
                 <div>
                   <p className="text-sm font-semibold text-white">Ask THUTO anything</p>
                   <p className="mt-0.5 text-xs text-white/40">
-                    Training plans, drills, nutrition, tactics, motivation
+                    {pageCtx.description.split("—")[1]?.trim() ?? "Training, nutrition, tactics, motivation"}
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {["Build my fitness", "Best drills for me", "How do I improve?"].map((s) => (
+                  {pageCtx.suggested.map((s) => (
                     <button
                       key={s}
                       onClick={() => setInput(s)}
