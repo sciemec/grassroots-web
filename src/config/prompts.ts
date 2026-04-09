@@ -112,6 +112,10 @@ ANSWERING FRAMEWORK — for every coaching question, address these dimensions:
 - HOW: Give clear step-by-step instructions — not vague advice. What exactly should they do with their body, feet, eyes?
 - WHOM: Relate it to their role — what is specifically expected of a ${ctx.position ?? "player"} in ${ctx.sport ?? "football"} at their level?
 
+EMOTIONAL INTELLIGENCE AWARENESS:
+${EMOTIONAL_INTELLIGENCE_KNOWLEDGE_BASE}
+Apply this knowledge when the player expresses frustration, low confidence, fear of failure, lack of motivation, or conflict with teammates or coaches.
+
 THEORY ↔ PRACTICE BRIDGE:
 When FIFA or FA certified coaching sessions are provided in your context, you MUST connect them to this player's real situation:
 - Translate the session principle into what THIS player should do at their next training session
@@ -185,6 +189,9 @@ EXPERTISE AREAS:
 
 COACHING KNOWLEDGE (use when answering tactics, systems, or training questions):
 ${TACTICS_KNOWLEDGE_BASE}
+
+EMOTIONAL INTELLIGENCE KNOWLEDGE (use when answering questions about players, motivation, team culture, conflict, or behaviour):
+${EMOTIONAL_INTELLIGENCE_KNOWLEDGE_BASE}
 
 TONE: Knowledgeable, direct, collegial. Like a conversation between two professional coaches.
 FORMAT: Use numbered lists or bullet points for HOW sections. Keep WHY/WHEN/WHERE brief — one sentence each. Bold the section labels.`;
@@ -619,7 +626,228 @@ COACHING KNOWLEDGE BASE — TACTICS, STRATEGIES & SYSTEMS
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 12. LIVE MATCH COMMENTARY
+// 12. EMOTIONAL INTELLIGENCE — KNOWLEDGE BASE
+// Injected into coach and player prompts.
+// Based on Daniel Goleman's EI framework applied to sports coaching.
+// ─────────────────────────────────────────────────────────────────────────────
+export const EMOTIONAL_INTELLIGENCE_KNOWLEDGE_BASE = `
+COACHING KNOWLEDGE BASE — EMOTIONAL INTELLIGENCE (EI) IN SPORT
+===============================================================
+Source framework: Daniel Goleman's Five Components of Emotional Intelligence,
+applied to grassroots sports coaching and player development in Zimbabwe.
+
+## WHAT EMOTIONAL INTELLIGENCE IS (AND WHY IT MATTERS IN SPORT)
+
+Emotional intelligence is the ability to recognise, understand, manage, and
+effectively use emotions — in yourself and in others. In sport, EI is what
+separates a technically capable coach from a truly transformational one.
+
+A player's performance is never just physical or technical. Fear of failure,
+lack of confidence, family pressure, hunger, exhaustion, and embarrassment all
+live in the body during training and matchday. A coach who cannot read these
+emotions cannot fully develop the player.
+
+---
+
+## THE FIVE COMPONENTS (GOLEMAN) — APPLIED TO COACHING
+
+### 1. SELF-AWARENESS
+What it is: Knowing your own emotions, triggers, and how your mood affects others.
+
+For coaches:
+- Recognise when you are frustrated — your tone changes and players sense it immediately
+- Know which player situations trigger your impatience (e.g. repeated mistakes, poor effort)
+- Ask yourself after every session: did my emotional state help or hurt my team today?
+- A coach who loses their temper in front of players teaches players to lose theirs
+
+For players:
+- Help players name what they feel: "Are you nervous? Angry? Tired? Embarrassed?"
+- A player who cannot name their emotion cannot manage it
+- Encourage players to journal or self-report after matches — "How did I feel when I missed that chance?"
+- Self-aware players recover faster from mistakes
+
+Shona cultural note: In Zimbabwe, many players — especially young men — are taught
+that showing emotion is weakness. Help players understand that naming an emotion
+is strength, not vulnerability.
+
+---
+
+### 2. SELF-REGULATION
+What it is: The ability to manage disruptive emotions and impulses — staying in control.
+
+For coaches:
+- Pause before reacting to a player's mistake — count to three before speaking
+- Replace punishment reactions with curiosity: "What happened there?" instead of "What were you thinking?"
+- Model the composure you want from your players — if you panic on the touchline, they panic on the pitch
+- Set clear behavioural standards for the group, then hold them calmly and consistently
+
+For players:
+- Teach a physical reset routine: deep breath, look up, reset body posture — use this after a mistake
+- Help players build a "reset phrase" they say to themselves: e.g. "Next ball. My job."
+- Yellow cards, arguments with opponents, and loss of concentration are often self-regulation failures — not tactical ones
+- Practice composure under pressure in training: add consequences to drills (e.g. losing team does 10 press-ups) so players practise managing pressure emotions
+
+Matchday example: A player who has just given away a penalty needs a self-regulation
+intervention from the coach immediately — not tactical instructions, not criticism.
+Walk to them calmly and say: "Breathe. It happened. Now protect your team. I trust you."
+
+---
+
+### 3. MOTIVATION (INTRINSIC)
+What it is: A passion to work for internal reasons beyond money or status — resilience, drive, optimism.
+
+For coaches:
+- Find out why each player plays — their intrinsic motivation is your most powerful coaching tool
+- Common intrinsic motivators in Zimbabwe grassroots: family pride, escaping poverty, proving doubters wrong, love of the game, representing their province
+- When a player's motivation drops, ask — do not assume. Often the cause is not football: school pressure, food insecurity, family conflict
+- Set process goals alongside outcome goals: "This week, win 7 of 10 headers" not just "Win the match"
+- Celebrate effort, not just results — "You outran their midfield today" is more motivating than "Well done on the win"
+
+For players:
+- Help players build a personal why: why does this sport matter to them?
+- Short-term motivation (being picked) wears off — long-term motivation (becoming the best version of yourself) sustains through hard times
+- Use the Grassroots platform itself as motivation: "Your showcase clip was viewed by 3 scouts this week"
+
+Zimbabwean context: Many grassroots players have enormous intrinsic motivation born
+from adversity. Acknowledge it. "You trained three times this week after school on an empty
+stomach. That is the character of a professional."
+
+---
+
+### 4. EMPATHY
+What it is: Sensing and understanding other people's emotions and perspectives.
+
+For coaches:
+- Before every team talk, scan the room: who looks flat? Who is distracted? Who seems anxious?
+- Adjust your message based on what you see — a team carrying fear needs reassurance before tactics
+- Individual empathy: know each player's home situation, school pressures, physical state
+  - A player who is hungry trains differently to one who is fed
+  - A player who walked 5km to training is physically different to one who was dropped off
+- After a loss, lead with empathy before analysis: "I know that hurt. It hurt me too."
+- When a player makes a repeated mistake, ask yourself: what is making this hard for them?
+  — Is it technical? Confidence? Fear of you? Exhaustion?
+
+For players:
+- Empathetic players are better teammates — they sense when a teammate needs encouragement vs space
+- In captain/leadership development, teach players to read their teammates before a match
+- Ubuntu philosophy aligns directly with empathy: "I am because we are" — the team's emotional health is every player's responsibility
+
+Reading player emotions on matchday:
+- Head down after a mistake = shame, needs reassurance
+- Avoiding eye contact with coach = fear of being substituted or criticised
+- Arguing with teammates = frustration that needs calm redirection
+- Distracted, glazed look = overwhelmed, needs simplification of their task
+- Chest out, loud voice = confidence — give them responsibility
+
+---
+
+### 5. SOCIAL SKILLS
+What it is: Managing relationships, building rapport, inspiring and influencing others.
+
+For coaches:
+- Build individual relationships with every player — know their name, their story, their dream
+- Create rituals that bond the group: pre-match circles, shared warm-up chants, post-training acknowledgements
+- Handle conflict directly and privately — never embarrass a player in front of teammates
+- Use praise publicly, correct privately: shout out what someone did well in front of everyone;
+  pull them aside for corrections
+- Communication styles differ by player: some need direct instruction, some need questions,
+  some need encouragement — read each player and flex your style
+
+Team culture building:
+- Set non-negotiables together as a group — when players help set the standards, they own them
+- Acknowledge off-pitch contributions: punctuality, supporting a teammate, attitude in defeat
+- Build a safe environment where players can admit mistakes without fear — psychological safety
+  is the foundation of team performance
+
+Captains and player leaders:
+- Develop players with high social skills as informal leaders before making them captain
+- A captain with low EI can damage team chemistry even when technically strong
+- Rotate leadership responsibilities in training: different players run warm-ups, give team talks,
+  set up drills — this builds social and emotional capacity across the squad
+
+---
+
+## EI IN SPECIFIC COACHING MOMENTS
+
+### When a player is dropped from the starting XI:
+- Speak to them privately before the team announcement — never let them find out with the group
+- Explain with empathy and honesty: "You have been working hard. This week I need X from the
+  starting position, and I think Y gives us that. Your role today is critical."
+- Give them a specific responsibility: "I need you ready to change this game from the bench."
+- Follow up after the match regardless of outcome
+
+### When a player makes a costly mistake:
+- Do not react immediately in anger — wait for a break in play or half-time
+- First response must be emotional support, not tactical analysis
+- Separate the mistake from the person: "That decision cost us. You are not defined by that decision."
+- Give them a chance to recover — substituting immediately after a mistake crushes confidence
+
+### After a heavy defeat:
+- Let players feel the emotion — do not rush them to analyse or move on
+- Acknowledge the pain before opening any tactical discussion
+- Short, honest, forward-looking message: "That was hard. We will fix it. I know what you are capable of."
+- Avoid sarcasm, blame, or public humiliation — these create fear-based environments where players hide mistakes
+
+### Before a high-stakes match:
+- Read the room in warm-up — is the team too tense or not focused enough?
+- Calm an over-anxious team with slow breathing, quiet voices, and simple familiar tasks
+- Energise an under-aroused team with music, fast movements, and challenge-based warm-up drills
+- Pre-match talk: address emotions first ("I know what this match means to you"),
+  then identity ("This is what we stand for"), then tactics last and briefly
+
+---
+
+## EI & PLAYER DEVELOPMENT IN ZIMBABWE
+
+Cultural considerations:
+- Respect for authority is deeply embedded — players may not disagree with a coach openly
+  even when confused. Ask questions rather than waiting for pushback: "Does that make sense? Show me."
+- Ubuntu ("I am because we are") makes Zimbabwean players naturally team-oriented —
+  build on this rather than importing Western individualist development models
+- Emotional expression norms vary between Shona and Ndebele communities and between
+  urban and rural players — do not assume silence means understanding or agreement
+
+Signs of low EI in a team environment to watch for:
+- Players blame each other openly for mistakes
+- Players avoid eye contact with the coach
+- Attendance and punctuality drop without explanation
+- Players play safe and avoid risk — fear of making mistakes
+- Cliques form and quiet players are excluded
+
+Signs of high EI in a team environment:
+- Players encourage each other after mistakes without being prompted
+- Players communicate clearly and early on the pitch
+- Players recover quickly from setbacks in a match
+- Players hold each other to standards without the coach needing to intervene
+- New players are welcomed and integrated naturally
+
+---
+
+## PRACTICAL EI EXERCISES FOR TRAINING SESSIONS
+
+### Post-Session Check-In (2 minutes)
+Ask three players to complete these sentences out loud:
+- "Today I felt _____ when _____."
+- "One thing I am proud of today: _____."
+- "One thing I will do differently next session: _____."
+
+### Pre-Match Confidence Circle
+Players stand in a circle. Each player says one specific strength of the player to their left.
+Keep it genuine and specific — not "you are good" but "your first touch under pressure is excellent."
+
+### Mistake Recovery Drill
+After a player makes a mistake in a drill, the coach stops play and asks:
+"What happened? What do you feel right now? What will you do differently in 5 seconds?"
+This trains players to process and reset in real time.
+
+### Captain's Challenge
+Give a different player captain's responsibilities each week in training.
+Brief them privately: "This session, your job is to notice when a teammate needs encouragement.
+Do it naturally, in the moment." Debrief them after: what did they notice? What did they do?
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 13. LIVE MATCH COMMENTARY
 // Used by: /coach/live-match (AI commentary toggle)
 // ─────────────────────────────────────────────────────────────────────────────
 export function liveCommentaryPrompt(): string {
