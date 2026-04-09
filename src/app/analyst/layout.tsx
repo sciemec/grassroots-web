@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
+import dynamic from "next/dynamic";
+
+const ThutoChatAnalyst = dynamic(
+  () => import("@/components/thuto/ThutoChatAnalyst"),
+  { ssr: false }
+);
 
 export default function AnalystLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -25,6 +31,7 @@ export default function AnalystLayout({ children }: { children: React.ReactNode 
     <GuestGateProvider>
       <GuestBanner />
       {children}
+      <ThutoChatAnalyst />
     </GuestGateProvider>
   );
 }
