@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
@@ -30,27 +31,135 @@ interface Message {
 const STORAGE_KEY = "thuto_coach_chat_history";
 const MAX_STORED  = 10;
 
-// ── Coaching suggested prompts ────────────────────────────────────────────────
+// ── Base system prompt ────────────────────────────────────────────────────────
 
-const SUGGESTED = [
-  "Design a 60-min pressing session with cones only",
-  "Why do we keep conceding from set pieces?",
-  "How do I motivate a losing team at half time?",
-  "Best formation against a physical direct team",
-];
-
-// ── Coach system prompt ───────────────────────────────────────────────────────
-
-const COACH_SYSTEM_PROMPT =
+const BASE_PROMPT =
   "You are THUTO — an AI coaching assistant on GrassRoots Sports, Zimbabwe's AI sports platform. " +
   "You speak directly to the coach. You are knowledgeable, practical, and confident. " +
   "You understand the realities of grassroots coaching in Zimbabwe: limited equipment, " +
   "large squads, no physio, no video analysis suite, uneven pitches, and players who " +
   "train on passion alone. Your advice is always realistic and immediately usable. " +
-  "Help the coach with: session design, tactics, formation selection, squad motivation, " +
-  "set pieces, player development, half-time team talks, and weekly planning. " +
   "Be direct — coaches need answers, not essays. Keep responses focused and practical. " +
   "Occasionally use football language naturally. End with a specific action the coach can take today.";
+
+// ── Page-aware context map ────────────────────────────────────────────────────
+// Maps each coach route to: what the coach is doing + relevant suggested questions
+
+interface PageCtx {
+  description: string;
+  suggested:   string[];
+}
+
+const PAGE_CONTEXT: Record<string, PageCtx> = {
+  "/coach": {
+    description: "The coach is on their main Coach Hub home page — overview of squad, tools, and AI insights.",
+    suggested: [
+      "Give me today's training session based on my squad fitness",
+      "How do I build team morale before a big match?",
+      "Generate my full weekly coaching report",
+      "Best formation against a physical direct team",
+    ],
+  },
+  "/coach/squad": {
+    description: "The coach is on the Squad Management page — managing player fitness, positions, shirt numbers, and status (fit/injured/caution).",
+    suggested: [
+      "Which positions am I weakest at based on my squad?",
+      "How do I manage an injured striker returning to fitness?",
+      "Best way to handle a player who keeps picking up yellow cards?",
+      "How do I rotate my squad to avoid fatigue?",
+    ],
+  },
+  "/coach/matches": {
+    description: "The coach is on the Matches page — logging match results, reviewing fixtures, and tracking win/loss record.",
+    suggested: [
+      "We lost 3 of our last 4 games — what could be going wrong tactically?",
+      "How do I analyse an opponent before a match?",
+      "What should I log after every match to improve next time?",
+      "Help me write a match report for my club committee",
+    ],
+  },
+  "/coach/tactics": {
+    description: "The coach is on the Tactics Board — setting formations, assigning players to positions, and planning set pieces.",
+    suggested: [
+      "Explain the difference between 4-3-3 and 4-2-3-1 for pressing",
+      "How do I coach a high defensive line at grassroots level?",
+      "Best set piece routines with limited training time",
+      "How do I adapt my formation at half time when we're losing?",
+    ],
+  },
+  "/coach/tactical-analysis": {
+    description: "The coach is on the AI Tactical Analysis page — using AI to analyse match patterns, possession, and tactical shape.",
+    suggested: [
+      "What does 'compactness' mean in defensive shape?",
+      "How do I identify where my team is losing the ball most?",
+      "Explain gegenpressing to me simply",
+      "How do I coach transitions from defence to attack?",
+    ],
+  },
+  "/coach/training-plans": {
+    description: "The coach is on the Training Plans page — building weekly and monthly training programmes for their squad.",
+    suggested: [
+      "Build me a 4-week pre-season training plan",
+      "What should a typical match-day minus 2 session look like?",
+      "How do I periodise training across a school term?",
+      "Design a recovery session for the day after a match",
+    ],
+  },
+  "/coach/set-pieces": {
+    description: "The coach is on the Set Pieces & Tactical Analytics page — tracking corner kick success, free kick positions, and dead ball routines.",
+    suggested: [
+      "What is the most effective corner kick routine at grassroots level?",
+      "How do I defend against a team that is strong from set pieces?",
+      "Design 3 free kick routines for different positions on the pitch",
+      "How do I track set piece effectiveness during a season?",
+    ],
+  },
+  "/coach/session-library": {
+    description: "The coach is on the Session Library — browsing FIFA and FA certified coaching sessions and drills.",
+    suggested: [
+      "What session should I run if my strikers aren't scoring?",
+      "Design a 45-min rondo session for 16 players",
+      "What warm-up drills work best on a cramped pitch?",
+      "How do I keep training sessions competitive and fun?",
+    ],
+  },
+  "/coach/futurefit": {
+    description: "The coach is on FutureFit — the junior football development hub for U6–U17 coaching, training formats, and 3v3 games.",
+    suggested: [
+      "What is the right training format for U10 players?",
+      "How do I introduce tactics to children under 12?",
+      "Design a 3v3 session for 8-year-olds with no goalkeeper",
+      "What skills should U14 players have mastered?",
+    ],
+  },
+  "/coach/scouting": {
+    description: "The coach is on the Scouting page — viewing player TalentID rankings and identifying talent in their squad.",
+    suggested: [
+      "What attributes should I look for in a holding midfielder?",
+      "How do I write a scout report on a player I've watched?",
+      "What makes a player 'ready' for a higher level?",
+      "How do I spot potential in an unpolished player?",
+    ],
+  },
+  "/injury-tracker": {
+    description: "The coach is on the AI Injury Prevention Engine — tracking player training load, injury history, and risk scores.",
+    suggested: [
+      "My striker played 90 mins Saturday and trained hard Monday — is that risky?",
+      "How do I manage a player returning from a hamstring injury?",
+      "What are the early signs of overtraining I should watch for?",
+      "How many sessions per week is too many for a 16-year-old?",
+    ],
+  },
+  "/coach/live-match": {
+    description: "The coach is on the Live Match Dashboard — logging real-time events, goals, cards, and substitutions during a match.",
+    suggested: [
+      "We're 0-2 down at half time — what do I say in the team talk?",
+      "I need to make 2 substitutions — what tactical changes should I consider?",
+      "We're winning 1-0 with 20 mins left — how do I set up defensively?",
+      "My striker hasn't touched the ball — what instructions do I give?",
+    ],
+  },
+};
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -109,6 +218,7 @@ interface SquadMember {
 }
 
 export default function ThutoChatCoach() {
+  const pathname = usePathname();
   const [open,     setOpen]     = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input,    setInput]    = useState("");
@@ -119,6 +229,11 @@ export default function ThutoChatCoach() {
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Resolve current page context — exact match first, then prefix match
+  const pageCtx: PageCtx = PAGE_CONTEXT[pathname]
+    ?? Object.entries(PAGE_CONTEXT).find(([k]) => pathname.startsWith(k) && k !== "/coach")?.[1]
+    ?? PAGE_CONTEXT["/coach"];
+
   // ── Load squad for context ───────────────────────────────────────────────
   useEffect(() => {
     api.get("/coach/squad")
@@ -128,16 +243,34 @@ export default function ThutoChatCoach() {
     preloadOfflineAI();
   }, []);
 
-  // ── Build squad context string injected into every prompt ────────────────
-  const squadContext = squad.length > 0
-    ? `\n\nCOACH'S SQUAD (${squad.length} players): ` +
-      `Fit: ${squad.filter(m => m.status === "fit").length}, ` +
-      `Injured: ${squad.filter(m => m.status === "injured").length}, ` +
-      `Caution: ${squad.filter(m => m.status === "caution").length}. ` +
-      squad.slice(0, 12).map(m =>
-        `#${m.shirt_no ?? "?"} ${m.player?.name ?? "Unknown"} (${m.position ?? "?"}) — ${m.status ?? "fit"}`
-      ).join("; ")
-    : "";
+  // ── Build full context string: page + squad + any page data ─────────────
+  const buildContext = () => {
+    const parts: string[] = [];
+
+    // 1. Page context
+    parts.push(`\n\nCURRENT PAGE: ${pageCtx.description}`);
+
+    // 2. Squad summary
+    if (squad.length > 0) {
+      parts.push(
+        `\nCOACH'S SQUAD (${squad.length} players — ` +
+        `${squad.filter(m => m.status === "fit").length} fit, ` +
+        `${squad.filter(m => m.status === "injured").length} injured, ` +
+        `${squad.filter(m => m.status === "caution").length} caution): ` +
+        squad.slice(0, 12).map(m =>
+          `#${m.shirt_no ?? "?"} ${m.player?.name ?? "Unknown"} (${m.position ?? "?"}, ${m.status ?? "fit"})`
+        ).join("; ")
+      );
+    }
+
+    // 3. Page-specific data written by individual pages (optional)
+    try {
+      const pageData = localStorage.getItem("thuto_page_data");
+      if (pageData) parts.push(`\nPAGE DATA: ${pageData}`);
+    } catch { /* ignore */ }
+
+    return parts.join("");
+  };
 
   // ── Load chat history ────────────────────────────────────────────────────
   useEffect(() => {
@@ -189,7 +322,7 @@ export default function ThutoChatCoach() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message:       text,
-          system_prompt: COACH_SYSTEM_PROMPT + squadContext,
+          system_prompt: BASE_PROMPT + buildContext(),
           history:       messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -247,7 +380,9 @@ export default function ThutoChatCoach() {
             <ThutoAvatar size="lg" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-white">THUTO</p>
-              <p className="text-xs text-teal-400">AI Coaching Assistant</p>
+              <p className="text-xs text-teal-400 truncate">
+                {pageCtx.description.split("—")[0].replace("The coach is on", "").replace("the", "").trim().replace(/^./, c => c.toUpperCase())}
+              </p>
             </div>
             <div className="flex items-center gap-1">
               {messages.length > 0 && (
@@ -279,11 +414,11 @@ export default function ThutoChatCoach() {
                 <div>
                   <p className="text-sm font-semibold text-white">Ask THUTO anything, Coach</p>
                   <p className="mt-0.5 text-xs text-white/40">
-                    Tactics, sessions, motivation, squad management
+                    {pageCtx.description.split("—")[1]?.trim() ?? "Tactics, sessions, motivation, squad management"}
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {SUGGESTED.map((s) => (
+                  {pageCtx.suggested.map((s) => (
                     <button
                       key={s}
                       onClick={() => setInput(s)}

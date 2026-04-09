@@ -7,6 +7,7 @@ import {
   Users, Brain, ChevronRight, Flame, Shield, AlertTriangle,
   Trophy, Radio, ClipboardList, Loader2, Film, Activity, Crosshair, BookOpen,
   Layers, ScanSearch, GraduationCap, PiggyBank, Calendar, Heart, Sprout,
+  FileText, RefreshCw,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -53,6 +54,8 @@ export default function CoachHubPage() {
   const [loading, setLoading] = useState(true);
   const [aiInsight, setAiInsight] = useState("");
   const [insightLoading, setInsightLoading] = useState(false);
+  const [report, setReport] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -102,6 +105,59 @@ export default function CoachHubPage() {
       setAiInsight("Unable to load insights. Check your connection.");
     } finally {
       setInsightLoading(false);
+    }
+  };
+
+  const generateCoachReport = async () => {
+    setReportLoading(true);
+    setReport("");
+    try {
+      // Fetch recent matches for the report
+      let matchSummary = "No match data available.";
+      try {
+        const mRes = await api.get("/matches");
+        const matches = mRes.data?.data ?? mRes.data ?? [];
+        if (matches.length > 0) {
+          const recent = matches.slice(0, 5);
+          const wins   = recent.filter((m: { result?: string }) => m.result === "W").length;
+          const draws  = recent.filter((m: { result?: string }) => m.result === "D").length;
+          const losses = recent.filter((m: { result?: string }) => m.result === "L").length;
+          matchSummary = `Last ${recent.length} matches: ${wins}W ${draws}D ${losses}L.`;
+        }
+      } catch { /* silently use default */ }
+
+      const squadSummary = squad.length > 0
+        ? `Squad of ${squad.length} players — ${fit} fit, ${injured} injured, ${caution} on caution. ` +
+          `Key players: ${squad.slice(0, 6).map(m => `${m.player?.name ?? "Unknown"} (${m.position ?? "?"}, ${m.status ?? "fit"})`).join(", ")}.`
+        : "No squad data.";
+
+      const prompt = `You are THUTO — AI coaching analyst for GrassRoots Sports Zimbabwe.
+Generate a structured WEEKLY COACH REPORT for ${user?.name ?? "the coach"}.
+
+DATA:
+- ${squadSummary}
+- ${matchSummary}
+
+Generate a report with these EXACT sections:
+1. SQUAD STATUS — summary of fitness, who is available, who needs rest
+2. RECENT FORM — analysis of results and what they indicate tactically
+3. KEY CONCERNS — top 2-3 things the coach must address this week
+4. TRAINING FOCUS — specific recommendation for what to train this week and why
+5. MOTIVATIONAL NOTE — one sentence to inspire the squad this week
+
+Keep each section to 2-3 sentences. Be specific and actionable. Zimbabwe grassroots context.`;
+
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt }),
+      });
+      const data = await res.json();
+      setReport(data.response ?? data.answer ?? "Report generation failed — try again.");
+    } catch {
+      setReport("Unable to generate report. Check your connection and try again.");
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -281,6 +337,62 @@ export default function CoachHubPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ── Weekly Coach Report ───────────────────────────────────────────── */}
+        <div className="mt-4 rounded-2xl border border-[#f0b429]/20 bg-gradient-to-br from-[#1a3a1f] to-[#0a1a0e] p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#f0b429]" />
+              <span className="text-xs font-semibold text-[#f0b429] uppercase tracking-wide">Weekly Coach Report</span>
+            </div>
+            <button
+              onClick={generateCoachReport}
+              disabled={reportLoading}
+              className="flex items-center gap-1.5 rounded-xl border border-[#f0b429]/30 px-3 py-1.5 text-xs font-semibold text-[#f0b429] hover:bg-[#f0b429]/10 disabled:opacity-50 transition-colors"
+            >
+              {reportLoading
+                ? <><Loader2 className="h-3 w-3 animate-spin" /> Generating…</>
+                : <><RefreshCw className="h-3 w-3" /> {report ? "Regenerate" : "Generate Report"}</>
+              }
+            </button>
+          </div>
+
+          {!report && !reportLoading && (
+            <div className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center">
+              <Brain className="mx-auto mb-2 h-6 w-6 text-white/20" />
+              <p className="text-sm text-white/40">
+                THUTO analyses your squad, recent results, and training data to generate a full weekly report.
+              </p>
+              <p className="mt-1 text-xs text-white/25">Click &quot;Generate Report&quot; above — takes about 10 seconds.</p>
+            </div>
+          )}
+
+          {reportLoading && (
+            <div className="flex items-center justify-center gap-3 py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-[#f0b429]" />
+              <p className="text-sm text-white/50">THUTO is analysing your season data…</p>
+            </div>
+          )}
+
+          {report && !reportLoading && (
+            <div className="rounded-xl bg-black/20 px-4 py-4 space-y-2">
+              {report.split("\n").map((line, i) => {
+                const isHeading = /^\d+\.|^[A-Z\s]+:/.test(line.trim());
+                return line.trim() ? (
+                  <p key={i} className={isHeading
+                    ? "text-xs font-bold text-[#f0b429] uppercase tracking-wide mt-3 first:mt-0"
+                    : "text-xs leading-relaxed text-white/80"
+                  }>
+                    {line}
+                  </p>
+                ) : <div key={i} className="h-1" />;
+              })}
+              <p className="mt-3 text-[10px] text-white/25 border-t border-white/10 pt-2">
+                Generated by THUTO AI · {new Date().toLocaleDateString("en-ZW", { weekday: "long", day: "numeric", month: "long" })}
+              </p>
+            </div>
+          )}
         </div>
 
       </main>
