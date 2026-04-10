@@ -713,7 +713,7 @@ ${dailyScore === 3 ? "They completed everything — celebrate them!" : dailyScor
                     contentStyle={{ background: "#1a2e1a", border: "1px solid #2a4a2a", borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: "#aaa" }}
                     itemStyle={{ color: "#10b981" }}
-                    formatter={(v: number) => [`${v}/10 — ${moodLabel(v)}`, "Mood"]}
+                    formatter={(v) => [`${v}/10 — ${moodLabel(Number(v))}`, "Mood"]}
                   />
                   <Area type="monotone" dataKey="mood"
                     stroke={moodHistory.length ? moodChartColor(moodHistory[moodHistory.length - 1].mood) : "#10b981"}
