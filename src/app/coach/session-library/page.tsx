@@ -40,20 +40,29 @@ function SessionCard({ session }: { session: CoachingSession }) {
 
   const keyPoints = useMemo(() => {
     const text = session.content;
+    // Try standard "Key Coaching Points" heading first
     const kpIdx = text.toLowerCase().indexOf("key coaching points");
-    if (kpIdx === -1) return [];
-    const section = text.slice(kpIdx + 20, kpIdx + 1200);
-    return section
-      .split(/[•\n]/)
-      .map(s => s.trim())
-      .filter(s => s.length > 20 && s.length < 300)
-      .slice(0, 6);
+    if (kpIdx !== -1) {
+      const section = text.slice(kpIdx + 20, kpIdx + 1200);
+      return section
+        .split(/[•\n]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 20 && s.length < 300)
+        .slice(0, 6);
+    }
+    // Fallback: extract --- SECTION HEADING --- lines (new PDF format)
+    const headings = Array.from(text.matchAll(/---\s+([A-Z][^-\n]{5,60}?)\s+---/g));
+    return headings.slice(0, 6).map(m => m[1].trim());
   }, [session.content]);
 
   const exercises = useMemo(() => {
     const text = session.content;
+    // Try "Part N:" / "Exercise N:" pattern first
     const matches = Array.from(text.matchAll(/(?:part\s*\d+|exercise\s*\d+)[:\s–-]+([^\n.]{10,80})/gi));
-    return matches.slice(0, 6).map(m => m[0].trim());
+    if (matches.length > 0) return matches.slice(0, 6).map(m => m[0].trim());
+    // Fallback: extract numbered items "N. TITLE" or "DRILL N:" from new PDF format
+    const drills = Array.from(text.matchAll(/(?:drill\s*\d+|step\s*\d+|\d+\.\s+[A-Z])[:\s–-]+([^\n]{10,80})/gi));
+    return drills.slice(0, 6).map(m => m[0].trim());
   }, [session.content]);
 
   return (
@@ -186,7 +195,7 @@ export default function SessionLibraryPage() {
 
           {/* Source badges */}
           <div className="mb-5 flex flex-wrap gap-2">
-            {["FIFA Elite Academy Sessions", "FCRF Talent Development", "The FA Guidelines"].map(badge => (
+            {["FIFA Elite Academy Sessions", "FCRF Talent Development", "The FA Guidelines", "Special Olympics Coaching Guide 2021"].map(badge => (
               <span key={badge} className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/70">
                 {badge}
               </span>
