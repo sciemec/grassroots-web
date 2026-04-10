@@ -3,105 +3,127 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-  Flame, Target, CheckCircle2, Circle, Bell, BellOff,
-  Trophy, TrendingUp, ChevronLeft, Pencil, Save, X, Plus, Trash2, Clock,
+  Flame, Target, CheckCircle2, Circle, Bell, BellOff, Trophy,
+  TrendingUp, ChevronLeft, Pencil, Save, X, Plus, Trash2,
+  Clock, CalendarDays, Zap, Brain,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { Sidebar } from "@/components/layout/sidebar";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types — mirror SuccessDatabase entities ───────────────────────────────────
 
-interface CheckIn {
-  mood: number;
-  note: string;
-  ts: string;
-}
-
+/** Mirrors Goal.java entity */
 interface Goal {
-  text: string;
-  done: boolean;
+  id: string;
+  goalText: string;
+  targetDate: string;      // YYYY-MM-DD
+  createdAt: string;
+  isActive: boolean;
+  successProbability: number; // 0-100, recalculated on each check-in
 }
 
-/** Recurring daily habit — same label every day, just tick done/not done.
- *  Equivalent to DailyAction entity in SuccessDatabase.java */
+/** Mirrors DailyAction entity — recurring habits */
 interface DailyAction {
   id: string;
   label: string;
 }
 
-interface DailyActionLog {
-  [id: string]: boolean; // true = done today
+/** Mirrors CheckIn.java entity:
+ *  goalId links check-in to the active goal.
+ *  action1/2/3Completed are the 3 DailyActions ticked off.
+ *  dailyScore = count of actions done (0-3).
+ *  thutoMessage = AI response for the day. */
+interface CheckIn {
+  goalId: string;
+  date: string;
+  action1Completed: boolean;
+  action2Completed: boolean;
+  action3Completed: boolean;
+  dailyScore: number;       // 0-3
+  thutoMessage: string;
+  mood: number;             // 1-10 (kept alongside goal check-in)
+  moodNote: string;
+  timestamp: string;
 }
 
 // ── localStorage keys ─────────────────────────────────────────────────────────
 
-const STREAK_KEY      = "thuto_streak";
-const BEST_KEY        = "thuto_streak_best";
-const TOTAL_KEY       = "thuto_checkin_total";
-const NOTIF_KEY       = "thuto_notif_enabled";
-/** Preferred notification time — equivalent to NotificationScheduler hourOfDay/minute */
-const NOTIF_TIME_KEY  = "thuto_notif_time";   // "HH:MM" 24h
-const ACTIONS_DEF_KEY = "thuto_daily_actions"; // DailyAction[] definitions
+const GOALS_KEY      = "thuto_goals_list";      // Goal[]
+const ACTIVE_KEY     = "thuto_active_goal_id";  // string
+const ACTIONS_KEY    = "thuto_daily_actions";   // DailyAction[]
+const STREAK_KEY     = "thuto_streak";
+const BEST_KEY       = "thuto_streak_best";
+const TOTAL_KEY      = "thuto_checkin_total";
+const NOTIF_KEY      = "thuto_notif_enabled";
+const NOTIF_TIME_KEY = "thuto_notif_time";
 
-function checkinKey(d: string)     { return `thuto_checkin_${d}`; }
-function goalsKey(d: string)       { return `thuto_goals_${d}`; }
-function actionsLogKey(d: string)  { return `thuto_actions_log_${d}`; }
-function notifSentKey(d: string)   { return `thuto_notif_sent_${d}`; }
+function checkinKey(date: string) { return `thuto_checkin_${date}`; }
+function notifSentKey(date: string) { return `thuto_notif_sent_${date}`; }
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
-function todayStr(): string {
-  return new Date().toISOString().split("T")[0];
-}
-
-function daysAgoStr(n: number): string {
+function todayStr() { return new Date().toISOString().split("T")[0]; }
+function daysAgoStr(n: number) {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return d.toISOString().split("T")[0];
 }
-
-function shortDate(dateStr: string): string {
+function daysRemaining(targetDate: string): number {
+  const diff = new Date(targetDate).getTime() - new Date(todayStr()).getTime();
+  return Math.max(0, Math.ceil(diff / 86_400_000));
+}
+function shortDate(dateStr: string) {
   const d = new Date(dateStr + "T12:00:00");
-  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return `${weekdays[d.getDay()]} ${d.getDate()}`;
+  return `${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]} ${d.getDate()}`;
 }
 
-// ── Streak calculator ─────────────────────────────────────────────────────────
+// ── Streak ────────────────────────────────────────────────────────────────────
 
 function recalcStreak(): number {
-  let streak = 0;
+  let s = 0;
   for (let i = 0; i < 365; i++) {
-    if (localStorage.getItem(checkinKey(daysAgoStr(i)))) streak++;
+    if (localStorage.getItem(checkinKey(daysAgoStr(i)))) s++;
     else break;
   }
-  return streak;
+  return s;
 }
 
-// ── Notification time helpers — equivalent to NotificationScheduler.calculateDelay ──
+// ── Success probability — mirrors the field in Goal.java ─────────────────────
+// Formula: (check-ins done / total days since goal created) * consistency bonus
 
-/** Returns milliseconds until the next occurrence of HH:MM today or tomorrow.
- *  Mirrors NotificationScheduler.calculateDelay(hourOfDay, minute). */
-function msUntilTime(hhmm: string): number {
-  const [h, m] = hhmm.split(":").map(Number);
-  const now = new Date();
-  const target = new Date(now);
-  target.setHours(h, m, 0, 0);
-  if (target <= now) target.setDate(target.getDate() + 1); // already passed today → tomorrow
-  return target.getTime() - now.getTime();
-}
+function calcSuccessProbability(goal: Goal): number {
+  const created  = new Date(goal.createdAt);
+  const target   = new Date(goal.targetDate);
+  const today    = new Date(todayStr());
+  const totalDays = Math.max(1, Math.ceil((target.getTime() - created.getTime()) / 86_400_000));
+  const elapsed   = Math.max(0, Math.ceil((today.getTime() - created.getTime()) / 86_400_000));
 
-/** True if current time has reached or passed the user's preferred notification time. */
-function isPastNotifTime(hhmm: string): boolean {
-  const [h, m] = hhmm.split(":").map(Number);
-  const now = new Date();
-  return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+  let checkedIn = 0;
+  let totalScore = 0;
+  for (let i = 0; i < elapsed; i++) {
+    const raw = localStorage.getItem(checkinKey(daysAgoStr(i)));
+    if (raw) {
+      const ci: CheckIn = JSON.parse(raw);
+      if (ci.goalId === goal.id) {
+        checkedIn++;
+        totalScore += ci.dailyScore;
+      }
+    }
+  }
+
+  if (elapsed === 0) return 50; // neutral on day 0
+  const consistency  = checkedIn / elapsed;           // 0-1
+  const avgScore     = checkedIn > 0 ? totalScore / (checkedIn * 3) : 0; // 0-1
+  const timeLeft     = daysRemaining(goal.targetDate) / Math.max(1, totalDays);
+  const raw = (consistency * 0.5 + avgScore * 0.3 + (timeLeft > 0 ? 0.2 : 0)) * 100;
+  return Math.min(99, Math.max(1, Math.round(raw)));
 }
 
 // ── Motivational messages ─────────────────────────────────────────────────────
 
-function getMotivationalMessage(streak: number): string {
+function getBannerMessage(streak: number): string {
   if (streak === 0)
     return "Your daily check-in is ready. 30 seconds to keep your goal alive. Mangwanani!";
   if (streak < 7)
@@ -142,25 +164,36 @@ function moodChartColor(s: number) {
   return "#10b981";
 }
 
-// ── Browser notification helper ───────────────────────────────────────────────
+// ── Notification helpers ──────────────────────────────────────────────────────
 
+function msUntilTime(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  const now = new Date();
+  const t = new Date(now);
+  t.setHours(h, m, 0, 0);
+  if (t <= now) t.setDate(t.getDate() + 1);
+  return t.getTime() - now.getTime();
+}
+function isPastNotifTime(hhmm: string): boolean {
+  const [h, m] = hhmm.split(":").map(Number);
+  const now = new Date();
+  return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+}
 async function fireNotif(streak: number): Promise<void> {
   if (typeof Notification === "undefined") return;
   if (Notification.permission === "denied") return;
   if (localStorage.getItem(notifSentKey(todayStr()))) return;
-
-  let perm = Notification.permission;
-  if (perm === "default") perm = await Notification.requestPermission();
-  if (perm !== "granted") return;
-
+  let p = Notification.permission;
+  if (p === "default") p = await Notification.requestPermission();
+  if (p !== "granted") return;
   new Notification("THUTO Daily Check-In ⚽", {
-    body: getMotivationalMessage(streak),
+    body: getBannerMessage(streak),
     icon: "/icons/icon-192x192.png",
   });
   localStorage.setItem(notifSentKey(todayStr()), "1");
 }
 
-// ── Suggested daily actions (defaults for new users) ─────────────────────────
+// ── Default daily actions ─────────────────────────────────────────────────────
 
 const DEFAULT_ACTIONS: DailyAction[] = [
   { id: "a1", label: "Morning stretch (10 min)" },
@@ -168,178 +201,234 @@ const DEFAULT_ACTIONS: DailyAction[] = [
   { id: "a3", label: "Watch 1 training video" },
 ];
 
+// ── Probability colour ────────────────────────────────────────────────────────
+
+function probColor(p: number) {
+  if (p >= 75) return "bg-emerald-500";
+  if (p >= 50) return "bg-yellow-500";
+  if (p >= 25) return "bg-orange-500";
+  return "bg-red-500";
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SuccessEnginePage() {
   const today = todayStr();
 
-  // ── State ────────────────────────────────────────────────────────────────
-  const [hydrated,      setHydrated]      = useState(false);
-  const [streak,        setStreak]        = useState(0);
-  const [bestStreak,    setBestStreak]    = useState(0);
-  const [totalCheckIns, setTotal]         = useState(0);
+  const [hydrated,    setHydrated]    = useState(false);
+  const [streak,      setStreak]      = useState(0);
+  const [bestStreak,  setBestStreak]  = useState(0);
+  const [totalCIs,    setTotalCIs]    = useState(0);
 
-  // Check-in
-  const [todayCheckIn,  setTodayCheckIn]  = useState<CheckIn | null>(null);
-  const [moodScore,     setMoodScore]     = useState(7);
-  const [moodNote,      setMoodNote]      = useState("");
-  const [savingMood,    setSavingMood]    = useState(false);
-  const [moodSaved,     setMoodSaved]     = useState(false);
+  // Goals
+  const [goals,       setGoals]       = useState<Goal[]>([]);
+  const [activeGoal,  setActiveGoal]  = useState<Goal | null>(null);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [newGoalText, setNewGoalText] = useState("");
+  const [newGoalDate, setNewGoalDate] = useState("");
 
-  // Goals (custom, set fresh daily)
-  const [goals,         setGoals]         = useState<Goal[]>([
-    { text: "", done: false }, { text: "", done: false }, { text: "", done: false },
-  ]);
-  const [editingGoals,  setEditingGoals]  = useState(false);
-  const [draftGoals,    setDraftGoals]    = useState<string[]>(["", "", ""]);
-  const [celebration,   setCelebration]   = useState(false);
+  // Daily actions
+  const [actions,      setActions]      = useState<DailyAction[]>([]);
+  const [editActions,  setEditActions]  = useState(false);
+  const [newActText,   setNewActText]   = useState("");
 
-  // Daily actions (recurring habits)
-  const [actions,       setActions]       = useState<DailyAction[]>([]);
-  const [actionLog,     setActionLog]     = useState<DailyActionLog>({});
-  const [editingActions, setEditingActions] = useState(false);
-  const [newActionText, setNewActionText] = useState("");
+  // Today's check-in
+  const [todayCi,    setTodayCi]     = useState<CheckIn | null>(null);
+  const [moodScore,  setMoodScore]   = useState(7);
+  const [moodNote,   setMoodNote]    = useState("");
+  const [actDone,    setActDone]     = useState<boolean[]>([false, false, false]);
+  const [submitting, setSubmitting]  = useState(false);
+  const [thutoTyping, setThutoTyping] = useState(false);
 
-  // Mood history chart
-  const [moodHistory, setMoodHistory]     = useState<{ date: string; mood: number; label: string }[]>([]);
+  // Mood history
+  const [moodHistory, setMoodHistory] = useState<{ date: string; mood: number; label: string }[]>([]);
 
   // Notification settings
-  const [notifEnabled,  setNotifEnabled]  = useState(false);
-  const [notifTime,     setNotifTime]     = useState("07:00");
-  const [showSettings,  setShowSettings]  = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifTime,    setNotifTime]    = useState("07:00");
+  const [showSettings, setShowSettings] = useState(false);
 
   // ── Load ─────────────────────────────────────────────────────────────────
 
   const load = useCallback(() => {
     setStreak(parseInt(localStorage.getItem(STREAK_KEY) ?? "0", 10));
     setBestStreak(parseInt(localStorage.getItem(BEST_KEY) ?? "0", 10));
-    setTotal(parseInt(localStorage.getItem(TOTAL_KEY) ?? "0", 10));
+    setTotalCIs(parseInt(localStorage.getItem(TOTAL_KEY) ?? "0", 10));
     setNotifEnabled(localStorage.getItem(NOTIF_KEY) === "1");
     setNotifTime(localStorage.getItem(NOTIF_TIME_KEY) ?? "07:00");
 
-    const ci = localStorage.getItem(checkinKey(today));
-    if (ci) { setTodayCheckIn(JSON.parse(ci)); setMoodSaved(true); }
+    // Goals
+    const rawGoals = localStorage.getItem(GOALS_KEY);
+    const allGoals: Goal[] = rawGoals ? JSON.parse(rawGoals) : [];
+    setGoals(allGoals);
+    const activeId = localStorage.getItem(ACTIVE_KEY);
+    const active = allGoals.find((g) => g.id === activeId && g.isActive) ?? null;
+    setActiveGoal(active);
 
-    const gs = localStorage.getItem(goalsKey(today));
-    if (gs) {
-      const parsed: Goal[] = JSON.parse(gs);
-      while (parsed.length < 3) parsed.push({ text: "", done: false });
-      setGoals(parsed);
-      setDraftGoals(parsed.map((g) => g.text));
-    }
+    // Actions
+    const rawActs = localStorage.getItem(ACTIONS_KEY);
+    setActions(rawActs ? JSON.parse(rawActs) : DEFAULT_ACTIONS);
 
-    // Daily actions definitions
-    const raw = localStorage.getItem(ACTIONS_DEF_KEY);
-    const defs: DailyAction[] = raw ? JSON.parse(raw) : DEFAULT_ACTIONS;
-    setActions(defs);
-
-    // Today's action log
-    const log = localStorage.getItem(actionsLogKey(today));
-    setActionLog(log ? JSON.parse(log) : {});
+    // Today's check-in
+    const rawCi = localStorage.getItem(checkinKey(today));
+    if (rawCi) setTodayCi(JSON.parse(rawCi));
 
     // 7-day mood history
-    const history = Array.from({ length: 7 }, (_, i) => {
-      const raw2 = localStorage.getItem(checkinKey(daysAgoStr(i)));
-      if (!raw2) return null;
-      const c: CheckIn = JSON.parse(raw2);
+    const hist = Array.from({ length: 7 }, (_, i) => {
+      const r = localStorage.getItem(checkinKey(daysAgoStr(i)));
+      if (!r) return null;
+      const c: CheckIn = JSON.parse(r);
       return { date: shortDate(daysAgoStr(i)), mood: c.mood, label: moodLabel(c.mood) };
     }).filter(Boolean).reverse() as { date: string; mood: number; label: string }[];
-    setMoodHistory(history);
+    setMoodHistory(hist);
 
     setHydrated(true);
   }, [today]);
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Auto-fire notification at user's chosen time ──────────────────────────
-  // Web equivalent of NotificationScheduler.scheduleDailyCheckIn(context, hour, minute)
+  // Auto-fire notification
   useEffect(() => {
-    if (!hydrated || todayCheckIn) return;
+    if (!hydrated || todayCi) return;
     const time = localStorage.getItem(NOTIF_TIME_KEY) ?? "07:00";
     if (localStorage.getItem(NOTIF_KEY) !== "1") return;
-    if (!isPastNotifTime(time)) return;
-    fireNotif(streak);
-  }, [hydrated, todayCheckIn, streak]);
+    if (isPastNotifTime(time)) fireNotif(streak);
+  }, [hydrated, todayCi, streak]);
 
-  // ── Celebration when all goals done ──────────────────────────────────────
-  useEffect(() => {
-    const active = goals.filter((g) => g.text.trim());
-    setCelebration(active.length > 0 && active.every((g) => g.done));
-  }, [goals]);
+  // ── Create goal ───────────────────────────────────────────────────────────
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  function createGoal() {
+    if (!newGoalText.trim() || !newGoalDate) return;
+    // Deactivate previous active goal
+    const updated = goals.map((g) => ({ ...g, isActive: false }));
+    const goal: Goal = {
+      id: Date.now().toString(),
+      goalText: newGoalText.trim(),
+      targetDate: newGoalDate,
+      createdAt: todayStr(),
+      isActive: true,
+      successProbability: 50,
+    };
+    const next = [...updated, goal];
+    localStorage.setItem(GOALS_KEY, JSON.stringify(next));
+    localStorage.setItem(ACTIVE_KEY, goal.id);
+    setGoals(next); setActiveGoal(goal);
+    setNewGoalText(""); setNewGoalDate("");
+    setEditingGoal(false);
+  }
 
-  function saveCheckIn() {
-    setSavingMood(true);
-    const ci: CheckIn = { mood: moodScore, note: moodNote, ts: new Date().toISOString() };
+  // ── Submit check-in (mirrors CheckInDao.insert) ───────────────────────────
+
+  async function submitCheckIn() {
+    if (!activeGoal) return;
+    setSubmitting(true);
+
+    const dailyScore = actDone.filter(Boolean).length;
+
+    // Build CheckIn record (matches CheckIn.java fields)
+    const ci: CheckIn = {
+      goalId: activeGoal.id,
+      date: today,
+      action1Completed: actDone[0],
+      action2Completed: actDone[1],
+      action3Completed: actDone[2],
+      dailyScore,
+      thutoMessage: "",        // filled by AI below
+      mood: moodScore,
+      moodNote: moodNote,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Persist immediately — AI response fills in thutoMessage after
     localStorage.setItem(checkinKey(today), JSON.stringify(ci));
+
+    // Streak + totals
     const ns = recalcStreak();
     const nb = Math.max(ns, bestStreak);
-    const nt = totalCheckIns + 1;
+    const nt = totalCIs + 1;
     localStorage.setItem(STREAK_KEY, String(ns));
     localStorage.setItem(BEST_KEY,   String(nb));
     localStorage.setItem(TOTAL_KEY,  String(nt));
-    setTodayCheckIn(ci); setStreak(ns); setBestStreak(nb);
-    setTotal(nt); setMoodSaved(true); setSavingMood(false);
-    load();
+    setStreak(ns); setBestStreak(nb); setTotalCIs(nt);
+
+    // Update successProbability on the goal
+    const newProb = calcSuccessProbability(activeGoal);
+    const updatedGoals = goals.map((g) =>
+      g.id === activeGoal.id ? { ...g, successProbability: newProb } : g
+    );
+    localStorage.setItem(GOALS_KEY, JSON.stringify(updatedGoals));
+    setGoals(updatedGoals);
+    setActiveGoal((g) => g ? { ...g, successProbability: newProb } : null);
+
+    setTodayCi(ci);
+    setSubmitting(false);
+
+    // ── Get THUTO's message for the day (mirrors thutoMessage field) ──────
+    setThutoTyping(true);
+    try {
+      const actionLabels = [0, 1, 2].map((i) => ({
+        label: actions[i]?.label ?? `Action ${i + 1}`,
+        done: actDone[i],
+      }));
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `The player just completed their daily THUTO check-in.
+Goal: "${activeGoal.goalText}" (due ${activeGoal.targetDate}, ${daysRemaining(activeGoal.targetDate)} days left)
+Today's score: ${dailyScore}/3
+Actions: ${actionLabels.map((a) => `${a.done ? "✓" : "✗"} ${a.label}`).join(", ")}
+Mood: ${moodScore}/10 (${moodLabel(moodScore)})
+Streak: ${ns} days
+Success probability: ${newProb}%
+
+Give a short, personalised THUTO coaching response (2-3 sentences max).
+Be warm, direct, Zimbabwean in spirit. Use one Shona word naturally if it fits.
+${dailyScore === 3 ? "They completed everything — celebrate them!" : dailyScore === 0 ? "They checked in but didn't complete actions — be supportive, not harsh." : "They did some actions — acknowledge what they did and encourage the rest."}`,
+          system_prompt:
+            "You are THUTO, a Zimbabwean AI sports coach. You are warm, direct, and genuinely care about the athlete. Keep responses short — 2-3 sentences. Never use bullet points.",
+        }),
+      });
+      const data = await res.json();
+      const msg: string = data.response ?? data.answer ?? "";
+      if (msg) {
+        const withMsg = { ...ci, thutoMessage: msg };
+        localStorage.setItem(checkinKey(today), JSON.stringify(withMsg));
+        setTodayCi(withMsg);
+      }
+    } catch {
+      // thutoMessage stays empty — non-critical
+    } finally {
+      setThutoTyping(false);
+    }
   }
 
-  function saveGoals() {
-    const updated: Goal[] = draftGoals.map((text, i) => ({
-      text, done: goals[i]?.done ?? false,
-    }));
-    localStorage.setItem(goalsKey(today), JSON.stringify(updated));
-    setGoals(updated); setEditingGoals(false);
-  }
-
-  function toggleGoal(i: number) {
-    const updated = goals.map((g, idx) => idx === i ? { ...g, done: !g.done } : g);
-    localStorage.setItem(goalsKey(today), JSON.stringify(updated));
-    setGoals(updated);
-  }
-
-  function toggleAction(id: string) {
-    const updated = { ...actionLog, [id]: !actionLog[id] };
-    localStorage.setItem(actionsLogKey(today), JSON.stringify(updated));
-    setActionLog(updated);
-  }
+  // ── Actions CRUD ──────────────────────────────────────────────────────────
 
   function addAction() {
-    if (!newActionText.trim()) return;
-    const updated = [...actions, { id: Date.now().toString(), label: newActionText.trim() }];
-    localStorage.setItem(ACTIONS_DEF_KEY, JSON.stringify(updated));
-    setActions(updated); setNewActionText("");
+    if (!newActText.trim()) return;
+    const updated = [...actions, { id: Date.now().toString(), label: newActText.trim() }];
+    localStorage.setItem(ACTIONS_KEY, JSON.stringify(updated));
+    setActions(updated); setNewActText("");
   }
-
   function removeAction(id: string) {
     const updated = actions.filter((a) => a.id !== id);
-    localStorage.setItem(ACTIONS_DEF_KEY, JSON.stringify(updated));
+    localStorage.setItem(ACTIONS_KEY, JSON.stringify(updated));
     setActions(updated);
-    const log = { ...actionLog };
-    delete log[id];
-    localStorage.setItem(actionsLogKey(today), JSON.stringify(log));
-    setActionLog(log);
   }
 
-  /** Save notification time — equivalent to NotificationScheduler.scheduleDailyCheckIn(ctx, h, m) */
+  // ── Notification settings ─────────────────────────────────────────────────
+
   function saveNotifSettings(enabled: boolean, time: string) {
     if (enabled) {
       localStorage.setItem(NOTIF_KEY, "1");
       localStorage.setItem(NOTIF_TIME_KEY, time);
-      // Clear today's sent flag so the notification fires again at the new time if needed
-      if (isPastNotifTime(time)) {
-        fireNotif(streak);
-      } else {
-        // Schedule: calculate delay (mirrors calculateDelay), use setTimeout for tab session
-        const delay = msUntilTime(time);
-        setTimeout(() => fireNotif(streak), delay);
-      }
+      if (isPastNotifTime(time)) fireNotif(streak);
+      else setTimeout(() => fireNotif(streak), msUntilTime(time));
     } else {
-      // Equivalent to NotificationScheduler.cancelCheckIn(context)
       localStorage.removeItem(NOTIF_KEY);
     }
-    setNotifEnabled(enabled);
-    setNotifTime(time);
+    setNotifEnabled(enabled); setNotifTime(time);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -349,22 +438,19 @@ export default function SuccessEnginePage() {
       <div className="flex h-screen bg-background">
         <Sidebar />
         <main className="flex-1 overflow-auto p-6 space-y-4">
-          {[28, 40, 48, 48, 120, 32].map((h, i) => (
-            <div key={i} className={`h-${h} animate-pulse rounded-2xl bg-muted`} />
+          {[28, 40, 80, 60, 48, 120].map((h, i) => (
+            <div key={i} style={{ height: h }} className="animate-pulse rounded-2xl bg-muted" />
           ))}
         </main>
       </div>
     );
   }
 
-  const activeGoals = goals.filter((g) => g.text.trim());
-  const doneGoals   = activeGoals.filter((g) => g.done).length;
-  const doneActions = actions.filter((a) => actionLog[a.id]).length;
+  const days = activeGoal ? daysRemaining(activeGoal.targetDate) : 0;
 
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
-
       <main className="flex-1 overflow-auto">
         <div className="mx-auto max-w-2xl px-4 py-6">
 
@@ -375,103 +461,176 @@ export default function SuccessEnginePage() {
             </Link>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-foreground">THUTO Success Engine</h1>
-              <p className="text-xs text-muted-foreground">Daily check-in · Goals · Habits · Streak</p>
+              <p className="text-xs text-muted-foreground">Goal · Daily actions · Check-in · Streak</p>
             </div>
-            <button
-              onClick={() => setShowSettings((v) => !v)}
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {notifEnabled
-                ? <Bell className="h-3.5 w-3.5 text-emerald-400" />
-                : <BellOff className="h-3.5 w-3.5" />}
+            <button onClick={() => setShowSettings((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              {notifEnabled ? <Bell className="h-3.5 w-3.5 text-emerald-400" /> : <BellOff className="h-3.5 w-3.5" />}
               Reminders
             </button>
           </div>
 
-          {/* ── Notification settings panel ────────────────── */}
+          {/* ── Notification settings ──────────────────────── */}
           {showSettings && (
             <div className="mb-5 rounded-2xl border border-white/10 bg-card px-5 py-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Daily Reminder Settings
-              </p>
-              <div className="flex items-center gap-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Daily Reminder</p>
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <label className="text-sm text-foreground">Time</label>
-                  <input
-                    type="time"
-                    value={notifTime}
-                    onChange={(e) => setNotifTime(e.target.value)}
-                    className="rounded-lg border border-border bg-background px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
+                  <input type="time" value={notifTime} onChange={(e) => setNotifTime(e.target.value)}
+                    className="rounded-lg border border-border bg-background px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-emerald-500" />
                 </div>
-                <button
-                  onClick={() => saveNotifSettings(true, notifTime)}
-                  className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors"
-                >
+                <button onClick={() => saveNotifSettings(true, notifTime)}
+                  className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors">
                   Save &amp; Enable
                 </button>
                 {notifEnabled && (
-                  <button
-                    onClick={() => saveNotifSettings(false, notifTime)}
-                    className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <button onClick={() => saveNotifSettings(false, notifTime)}
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                     Disable
                   </button>
                 )}
               </div>
-              {notifEnabled && (
-                <p className="mt-2 text-xs text-emerald-400">
-                  ✓ Reminder set for {notifTime} daily
-                </p>
-              )}
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Notification fires when you open the app after this time each day.
-              </p>
+              {notifEnabled && <p className="mt-2 text-xs text-emerald-400">✓ Reminder set for {notifTime} daily</p>}
             </div>
           )}
 
           {/* ── Motivational banner ────────────────────────── */}
           <div className="mb-5 rounded-2xl border border-emerald-800/40 bg-gradient-to-br from-[#1a3d26] to-[#0f2019] px-5 py-4">
-            <p className="text-sm font-medium text-emerald-100">
-              {getMotivationalMessage(streak)}
-            </p>
+            <p className="text-sm font-medium text-emerald-100">{getBannerMessage(streak)}</p>
           </div>
 
           {/* ── Stats strip ────────────────────────────────── */}
           <div className="mb-5 grid grid-cols-3 gap-3">
             <StatCard icon={<Flame className="h-4 w-4 text-orange-400" />} value={streak} label="Day streak" />
             <StatCard icon={<Trophy className="h-4 w-4 text-yellow-400" />} value={bestStreak} label="Best streak" />
-            <StatCard icon={<TrendingUp className="h-4 w-4 text-emerald-400" />} value={totalCheckIns} label="Total check-ins" />
+            <StatCard icon={<TrendingUp className="h-4 w-4 text-emerald-400" />} value={totalCIs} label="Total check-ins" />
           </div>
 
-          {/* ── Mood check-in ──────────────────────────────── */}
-          {moodSaved && todayCheckIn ? (
-            <div className={`mb-5 rounded-2xl border border-white/10 bg-gradient-to-br ${moodBg(todayCheckIn.mood)} px-5 py-4`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Today&apos;s Mood</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-3xl">{moodEmoji(todayCheckIn.mood)}</span>
-                    <div>
-                      <span className="text-2xl font-bold text-foreground">{todayCheckIn.mood}</span>
-                      <span className="ml-1 text-xs text-muted-foreground">/10 — {moodLabel(todayCheckIn.mood)}</span>
-                    </div>
-                  </div>
-                  {todayCheckIn.note && (
-                    <p className="mt-1.5 text-xs italic text-muted-foreground">&ldquo;{todayCheckIn.note}&rdquo;</p>
-                  )}
+          {/* ── Active goal card (Goal entity) ─────────────── */}
+          <div className="mb-5 rounded-2xl border border-white/10 bg-card px-5 py-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active Goal</p>
+              <button onClick={() => setEditingGoal((v) => !v)}
+                className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                {editingGoal ? <><X className="h-3 w-3" />Cancel</> : <><Plus className="h-3 w-3" />New goal</>}
+              </button>
+            </div>
+
+            {editingGoal ? (
+              <div className="space-y-3">
+                <input value={newGoalText} onChange={(e) => setNewGoalText(e.target.value)}
+                  placeholder="My goal is…"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <label className="text-sm text-muted-foreground">Target date</label>
+                  <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)}
+                    min={todayStr()}
+                    className="flex-1 rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-emerald-500" />
                 </div>
-                <button onClick={() => { setMoodSaved(false); setTodayCheckIn(null); }} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Edit">
-                  <Pencil className="h-4 w-4" />
+                <button onClick={createGoal} disabled={!newGoalText.trim() || !newGoalDate}
+                  className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-40">
+                  Set Goal
                 </button>
               </div>
+            ) : activeGoal ? (
+              <div>
+                <p className="mb-3 text-base font-semibold text-foreground">&ldquo;{activeGoal.goalText}&rdquo;</p>
+                <div className="mb-3 flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {days > 0 ? `${days} days left` : "Deadline today"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Zap className="h-3.5 w-3.5 text-yellow-400" />
+                    {activeGoal.successProbability}% success probability
+                  </span>
+                </div>
+                {/* successProbability bar */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${probColor(activeGoal.successProbability)}`}
+                    style={{ width: `${activeGoal.successProbability}%` }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setEditingGoal(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-5 text-sm text-muted-foreground hover:border-emerald-700 hover:text-foreground transition-colors">
+                <Target className="h-4 w-4" />Set your first goal
+              </button>
+            )}
+          </div>
+
+          {/* ── Daily check-in (CheckIn entity) ───────────── */}
+          {todayCi ? (
+            /* Already checked in — show result */
+            <div className={`mb-5 rounded-2xl border border-white/10 bg-gradient-to-br ${moodBg(todayCi.mood)} px-5 py-4`}>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Today&apos;s Check-In</p>
+                <span className="rounded-full bg-emerald-900/50 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+                  {todayCi.dailyScore}/3 done
+                </span>
+              </div>
+              {/* Daily score dots */}
+              <div className="mb-3 flex gap-2">
+                {[todayCi.action1Completed, todayCi.action2Completed, todayCi.action3Completed].map((done, i) => (
+                  <div key={i} className={`flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-xs ${done ? "bg-emerald-900/40 text-emerald-300" : "bg-muted/30 text-muted-foreground line-through"}`}>
+                    {done ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <Circle className="h-4 w-4 shrink-0" />}
+                    <span className="truncate">{actions[i]?.label ?? `Action ${i + 1}`}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Mood */}
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-xl">{moodEmoji(todayCi.mood)}</span>
+                <span className="text-sm text-foreground">{todayCi.mood}/10 — {moodLabel(todayCi.mood)}</span>
+                {todayCi.moodNote && <span className="ml-1 text-xs italic text-muted-foreground">&ldquo;{todayCi.moodNote}&rdquo;</span>}
+              </div>
+              {/* THUTO message (thutoMessage field) */}
+              {thutoTyping ? (
+                <div className="flex items-center gap-2 rounded-xl bg-black/20 px-4 py-3">
+                  <Brain className="h-4 w-4 shrink-0 text-teal-400 animate-pulse" />
+                  <span className="text-xs text-teal-300">THUTO is writing…</span>
+                </div>
+              ) : todayCi.thutoMessage ? (
+                <div className="rounded-xl bg-black/20 px-4 py-3">
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <Brain className="h-3.5 w-3.5 text-teal-400" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-teal-400">THUTO</span>
+                  </div>
+                  <p className="text-sm text-foreground">{todayCi.thutoMessage}</p>
+                </div>
+              ) : null}
             </div>
           ) : (
+            /* Check-in form */
             <div className="mb-5 rounded-2xl border border-white/10 bg-card px-5 py-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">How are you feeling today? (1–10)</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Today&apos;s Check-In
+              </p>
+
+              {/* Daily actions (action1/2/3Completed in CheckIn.java) */}
+              <p className="mb-2 text-xs text-muted-foreground">Daily actions</p>
+              <div className="mb-4 space-y-2">
+                {[0, 1, 2].map((i) => (
+                  <button key={i} onClick={() => setActDone((prev) => { const n = [...prev]; n[i] = !n[i]; return n; })}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                      actDone[i] ? "bg-emerald-900/30 text-emerald-200" : "bg-muted/40 text-foreground hover:bg-muted/60"
+                    }`}>
+                    {actDone[i]
+                      ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+                      : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
+                    <span className="text-sm">{actions[i]?.label ?? `Action ${i + 1}`}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Mood */}
+              <p className="mb-2 text-xs text-muted-foreground">How are you feeling? (1–10)</p>
               <div className="mb-3 flex items-center gap-3">
-                <span className="text-3xl">{moodEmoji(moodScore)}</span>
+                <span className="text-2xl">{moodEmoji(moodScore)}</span>
                 <div className="flex-1">
                   <input type="range" min={1} max={10} value={moodScore} onChange={(e) => setMoodScore(Number(e.target.value))}
                     className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-emerald-500" />
@@ -487,57 +646,40 @@ export default function SuccessEnginePage() {
                   placeholder="What's on your mind? (optional)" rows={2}
                   className="mb-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-muted-foreground" />
               )}
-              <button onClick={saveCheckIn} disabled={savingMood}
+
+              <button onClick={submitCheckIn} disabled={submitting || !activeGoal}
                 className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
-                {savingMood ? "Saving…" : "Save Check-In"}
+                {submitting ? "Saving…" : !activeGoal ? "Set a goal first" : `Submit Check-In (${actDone.filter(Boolean).length}/3)`}
               </button>
             </div>
           )}
 
-          {/* ── Daily Actions (DailyAction entity) ────────── */}
+          {/* ── Daily actions editor ───────────────────────── */}
           <div className="mb-5 rounded-2xl border border-white/10 bg-card px-5 py-4">
             <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Daily Habits</p>
-                {actions.length > 0 && (
-                  <p className="text-xs text-muted-foreground">{doneActions}/{actions.length} done today</p>
-                )}
-              </div>
-              <button onClick={() => setEditingActions((v) => !v)}
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Daily Actions</p>
+              <button onClick={() => setEditActions((v) => !v)}
                 className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                {editingActions ? <><X className="h-3 w-3" />Done</> : <><Pencil className="h-3 w-3" />Edit</>}
+                {editActions ? <><X className="h-3 w-3" />Done</> : <><Pencil className="h-3 w-3" />Edit</>}
               </button>
             </div>
-
             <div className="space-y-2">
-              {actions.map((a) =>
-                editingActions ? (
-                  <div key={a.id} className="flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2">
-                    <span className="flex-1 text-sm text-foreground">{a.label}</span>
+              {actions.map((a, i) => (
+                <div key={a.id} className="flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2">
+                  <span className="w-5 text-xs text-muted-foreground">{i + 1}.</span>
+                  <span className="flex-1 text-sm text-foreground">{a.label}</span>
+                  {editActions && (
                     <button onClick={() => removeAction(a.id)} className="text-muted-foreground hover:text-red-400 transition-colors">
                       <Trash2 className="h-4 w-4" />
                     </button>
-                  </div>
-                ) : (
-                  <button key={a.id} onClick={() => toggleAction(a.id)}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                      actionLog[a.id]
-                        ? "bg-emerald-900/30 text-muted-foreground line-through"
-                        : "bg-muted/40 text-foreground hover:bg-muted/60"
-                    }`}>
-                    {actionLog[a.id]
-                      ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
-                      : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
-                    <span className="text-sm">{a.label}</span>
-                  </button>
-                )
-              )}
-
-              {editingActions && (
+                  )}
+                </div>
+              ))}
+              {editActions && (
                 <div className="flex gap-2 pt-1">
-                  <input value={newActionText} onChange={(e) => setNewActionText(e.target.value)}
+                  <input value={newActText} onChange={(e) => setNewActText(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addAction()}
-                    placeholder="New daily habit…"
+                    placeholder="New daily action…"
                     className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-muted-foreground" />
                   <button onClick={addAction}
                     className="rounded-lg bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-500 transition-colors">
@@ -545,83 +687,10 @@ export default function SuccessEnginePage() {
                   </button>
                 </div>
               )}
-
-              {actions.length === 0 && !editingActions && (
-                <button onClick={() => setEditingActions(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-sm text-muted-foreground hover:border-emerald-700 hover:text-foreground transition-colors">
-                  <Plus className="h-4 w-4" />Add daily habits
-                </button>
-              )}
             </div>
-          </div>
-
-          {/* ── Daily Goals (custom, set fresh each day) ───── */}
-          <div className="mb-5 rounded-2xl border border-white/10 bg-card px-5 py-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Today&apos;s 3 Goals</p>
-                {activeGoals.length > 0 && (
-                  <p className="text-xs text-muted-foreground">{doneGoals}/{activeGoals.length} complete</p>
-                )}
-              </div>
-              {editingGoals ? (
-                <div className="flex gap-2">
-                  <button onClick={() => setEditingGoals(false)} className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-                    <X className="h-4 w-4" />
-                  </button>
-                  <button onClick={saveGoals} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 transition-colors">
-                    <Save className="mr-1 inline h-3.5 w-3.5" />Save
-                  </button>
-                </div>
-              ) : (
-                <button onClick={() => setEditingGoals(true)}
-                  className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  <Pencil className="h-3 w-3" />Set goals
-                </button>
-              )}
-            </div>
-
-            {editingGoals ? (
-              <div className="space-y-2">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Target className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <input value={draftGoals[i]}
-                      onChange={(e) => { const n = [...draftGoals]; n[i] = e.target.value; setDraftGoals(n); }}
-                      placeholder={`Goal ${i + 1}…`}
-                      className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-muted-foreground" />
-                  </div>
-                ))}
-              </div>
-            ) : activeGoals.length === 0 ? (
-              <button onClick={() => setEditingGoals(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-4 text-sm text-muted-foreground hover:border-emerald-700 hover:text-foreground transition-colors">
-                <Target className="h-4 w-4" />Set 3 goals for today
-              </button>
-            ) : (
-              <div className="space-y-2">
-                {goals.map((g, i) =>
-                  g.text.trim() ? (
-                    <button key={i} onClick={() => toggleGoal(i)}
-                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                        g.done ? "bg-emerald-900/30 text-muted-foreground line-through" : "bg-muted/40 text-foreground hover:bg-muted/60"
-                      }`}>
-                      {g.done
-                        ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
-                        : <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />}
-                      <span className="text-sm">{g.text}</span>
-                    </button>
-                  ) : null
-                )}
-              </div>
-            )}
-
-            {celebration && (
-              <div className="mt-3 rounded-xl bg-gradient-to-r from-yellow-900/40 to-amber-900/20 px-4 py-3 text-center">
-                <p className="text-sm font-bold text-yellow-300">🏆 Waita! All goals done today!</p>
-                <p className="text-xs text-yellow-400/80">Unokwanisa — you&apos;re unstoppable.</p>
-              </div>
-            )}
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              These 3 actions are checked off in every daily check-in.
+            </p>
           </div>
 
           {/* ── 7-day mood chart ───────────────────────────── */}
@@ -653,24 +722,11 @@ export default function SuccessEnginePage() {
             </div>
           )}
 
-          {/* ── Footer tips ────────────────────────────────── */}
-          <div className="rounded-2xl border border-white/5 bg-card/50 px-5 py-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">THUTO reminds you</p>
-            <ul className="space-y-1.5 text-xs text-muted-foreground">
-              <li>• Daily Habits repeat every day — tick them off to build consistency</li>
-              <li>• Today&apos;s Goals are set fresh — different focus each day</li>
-              <li>• Low mood? Tap the THUTO circle (bottom right) to talk it through</li>
-              <li>• Set your reminder time above — THUTO will notify you daily</li>
-            </ul>
-          </div>
-
         </div>
       </main>
     </div>
   );
 }
-
-// ── StatCard ──────────────────────────────────────────────────────────────────
 
 function StatCard({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
   return (
