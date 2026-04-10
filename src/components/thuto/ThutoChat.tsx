@@ -204,6 +204,134 @@ const PAGE_CONTEXT: Record<string, PageCtx> = {
   },
 };
 
+// ── Formation data (same coordinates as /coach/tactics) ──────────────────────
+
+const FORMATIONS: Record<string, { label: string; positions: { id: string; role: string; x: number; y: number }[] }> = {
+  "4-3-3": {
+    label: "4-3-3",
+    positions: [
+      { id: "gk",  role: "GK",  x: 50, y: 90 },
+      { id: "rb",  role: "RB",  x: 82, y: 72 },
+      { id: "rcb", role: "RCB", x: 62, y: 75 },
+      { id: "lcb", role: "LCB", x: 38, y: 75 },
+      { id: "lb",  role: "LB",  x: 18, y: 72 },
+      { id: "rm",  role: "RM",  x: 75, y: 52 },
+      { id: "cm",  role: "CM",  x: 50, y: 50 },
+      { id: "lm",  role: "LM",  x: 25, y: 52 },
+      { id: "rw",  role: "RW",  x: 78, y: 24 },
+      { id: "st",  role: "ST",  x: 50, y: 18 },
+      { id: "lw",  role: "LW",  x: 22, y: 24 },
+    ],
+  },
+  "4-4-2": {
+    label: "4-4-2",
+    positions: [
+      { id: "gk",  role: "GK",  x: 50, y: 90 },
+      { id: "rb",  role: "RB",  x: 82, y: 72 },
+      { id: "rcb", role: "RCB", x: 62, y: 75 },
+      { id: "lcb", role: "LCB", x: 38, y: 75 },
+      { id: "lb",  role: "LB",  x: 18, y: 72 },
+      { id: "rm",  role: "RM",  x: 82, y: 50 },
+      { id: "rcm", role: "RCM", x: 60, y: 50 },
+      { id: "lcm", role: "LCM", x: 40, y: 50 },
+      { id: "lm",  role: "LM",  x: 18, y: 50 },
+      { id: "rs",  role: "RS",  x: 65, y: 20 },
+      { id: "ls",  role: "LS",  x: 35, y: 20 },
+    ],
+  },
+  "4-2-3-1": {
+    label: "4-2-3-1",
+    positions: [
+      { id: "gk",  role: "GK",  x: 50, y: 90 },
+      { id: "rb",  role: "RB",  x: 82, y: 72 },
+      { id: "rcb", role: "RCB", x: 62, y: 75 },
+      { id: "lcb", role: "LCB", x: 38, y: 75 },
+      { id: "lb",  role: "LB",  x: 18, y: 72 },
+      { id: "rdm", role: "RDM", x: 62, y: 58 },
+      { id: "ldm", role: "LDM", x: 38, y: 58 },
+      { id: "ram", role: "RAM", x: 75, y: 38 },
+      { id: "cam", role: "CAM", x: 50, y: 35 },
+      { id: "lam", role: "LAM", x: 25, y: 38 },
+      { id: "st",  role: "ST",  x: 50, y: 16 },
+    ],
+  },
+  "3-5-2": {
+    label: "3-5-2",
+    positions: [
+      { id: "gk",  role: "GK",  x: 50, y: 90 },
+      { id: "rcb", role: "RCB", x: 70, y: 75 },
+      { id: "cb",  role: "CB",  x: 50, y: 78 },
+      { id: "lcb", role: "LCB", x: 30, y: 75 },
+      { id: "rwb", role: "RWB", x: 85, y: 55 },
+      { id: "rm",  role: "RM",  x: 67, y: 50 },
+      { id: "cm",  role: "CM",  x: 50, y: 48 },
+      { id: "lm",  role: "LM",  x: 33, y: 50 },
+      { id: "lwb", role: "LWB", x: 15, y: 55 },
+      { id: "rs",  role: "RS",  x: 65, y: 20 },
+      { id: "ls",  role: "LS",  x: 35, y: 20 },
+    ],
+  },
+  "5-3-2": {
+    label: "5-3-2",
+    positions: [
+      { id: "gk",  role: "GK",  x: 50, y: 90 },
+      { id: "rwb", role: "RWB", x: 88, y: 68 },
+      { id: "rcb", role: "RCB", x: 72, y: 76 },
+      { id: "cb",  role: "CB",  x: 50, y: 80 },
+      { id: "lcb", role: "LCB", x: 28, y: 76 },
+      { id: "lwb", role: "LWB", x: 12, y: 68 },
+      { id: "rm",  role: "RM",  x: 68, y: 50 },
+      { id: "cm",  role: "CM",  x: 50, y: 48 },
+      { id: "lm",  role: "LM",  x: 32, y: 50 },
+      { id: "rs",  role: "RS",  x: 65, y: 20 },
+      { id: "ls",  role: "LS",  x: 35, y: 20 },
+    ],
+  },
+};
+
+const FORMATION_PATTERN = /\b(4-3-3|4-4-2|4-2-3-1|3-5-2|5-3-2)\b/;
+
+// ── Formation Diagram (mini read-only SVG pitch) ──────────────────────────────
+
+function FormationDiagram({ formation }: { formation: string }) {
+  const data = FORMATIONS[formation];
+  if (!data) return null;
+  return (
+    <div className="mt-2 rounded-xl overflow-hidden border border-teal-500/20 bg-[#1a3d20]">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/10">
+        <span className="text-xs font-bold text-white/70">Formation</span>
+        <span className="text-xs font-bold text-teal-400">{formation}</span>
+      </div>
+      <div className="flex justify-center p-2">
+        <svg viewBox="0 0 100 140" className="w-full max-w-[180px]" style={{ aspectRatio: "100/140" }}>
+          {/* Grass */}
+          <rect width="100" height="140" fill="#2d6a2d" />
+          {/* Pitch markings */}
+          <rect x="5" y="5" width="90" height="130" fill="none" stroke="#4a9a4a" strokeWidth="0.8" />
+          <line x1="5" y1="70" x2="95" y2="70" stroke="#4a9a4a" strokeWidth="0.6" />
+          <circle cx="50" cy="70" r="12" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
+          <circle cx="50" cy="70" r="0.8" fill="#4a9a4a" />
+          <rect x="24" y="5" width="52" height="20" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
+          <rect x="24" y="115" width="52" height="20" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
+          <rect x="36" y="5" width="28" height="10" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
+          <rect x="36" y="125" width="28" height="10" fill="none" stroke="#4a9a4a" strokeWidth="0.6" />
+          <rect x="42" y="2" width="16" height="4" fill="none" stroke="#fff" strokeWidth="0.8" />
+          <rect x="42" y="134" width="16" height="4" fill="none" stroke="#fff" strokeWidth="0.8" />
+          {/* Player positions */}
+          {data.positions.map((pos) => (
+            <g key={pos.id}>
+              <circle cx={pos.x} cy={pos.y} r="5.5" fill="#0d9488" stroke="#5eead4" strokeWidth="0.8" />
+              <text x={pos.x} y={pos.y + 0.8} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="3.2" fontWeight="bold">
+                {pos.role}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ── THUTO Avatar ──────────────────────────────────────────────────────────────
 
 function ThutoAvatar({ size = "sm", pulse = false }: { size?: "sm" | "lg"; pulse?: boolean }) {
@@ -240,17 +368,22 @@ function ThinkingDots() {
 
 function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === "user";
+  const formationMatch = !isUser ? msg.content.match(FORMATION_PATTERN) : null;
+  const detectedFormation = formationMatch ? formationMatch[1] : null;
   return (
     <div className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && <ThutoAvatar />}
-      <div
-        className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
-          isUser
-            ? "rounded-br-sm bg-[#1a6b3c]/70 text-white"
-            : "rounded-bl-sm bg-teal-900/50 text-white border border-teal-500/20"
-        }`}
-      >
-        {msg.content}
+      <div className={`max-w-[78%] ${isUser ? "" : "w-[78%]"}`}>
+        <div
+          className={`rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+            isUser
+              ? "rounded-br-sm bg-[#1a6b3c]/70 text-white"
+              : "rounded-bl-sm bg-teal-900/50 text-white border border-teal-500/20"
+          }`}
+        >
+          {msg.content}
+        </div>
+        {detectedFormation && <FormationDiagram formation={detectedFormation} />}
       </div>
     </div>
   );
