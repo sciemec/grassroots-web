@@ -3819,3 +3819,148 @@ R2_ACCESS_KEY_ID         =
 R2_SECRET_ACCESS_KEY     =
 R2_BUCKET                = grassroots-videos
 ```
+
+---
+
+## SESSION LOG — 10 April 2026
+
+### Theme — Mission Mode, THUTO EQ, Football Knowledge, Showcase Audit
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Mission Mode / Goal Engine — FULLY BUILT ✅
+
+**Frontend:** `src/app/player/goal/page.tsx`
+- 3-stage UI: setup → plan review → active dashboard
+- 6 preset goal types (Division 1, scouted, fitness, school team, skill, custom)
+- Timeline picker: 3 / 6 / 12 / 18 months
+- AI plan generation via `/api/ai-coach` → returns 3 phases with milestones + daily missions
+- JSON extracted via regex (handles markdown-wrapped AI responses)
+- Active dashboard: overall progress bar, adherence %, missions done, days left
+- Today's mission card: Mark Complete / Skip buttons
+- Phase timeline with NOW indicator and milestones for active phase
+- localStorage keys: `gs_player_goal` + `gs_goal_missions`
+- Non-blocking API calls: `POST /player/goal` + `POST /player/goal/mission`
+
+**Hub card:** Added to `src/app/player/page.tsx`
+Note: Linter subsequently renamed card to "Success Engine" → `/player/success-engine`.
+The actual page lives at `/player/goal`. If `/player/success-engine` is needed as an alias,
+create it or update the hub card href.
+
+**Laravel backend (bhora-ai repo):**
+- `database/migrations/2026_04_09_000002_create_player_goals_table.php`
+  - Tables: `player_goals` (id, user_id, goal_type, goal_text, timeline_months, sport, position, target_date, committed, phases JSON)
+  - Tables: `goal_missions` (id, user_id, goal_id, mission_date, status — UNIQUE per day)
+- `app/Models/PlayerGoal.php` — UUID PK, phases cast as array, committed as boolean
+- `app/Http/Controllers/Api/Player/GoalController.php`
+  - `GET /player/goal` — fetch current committed goal
+  - `POST /player/goal` — upsert (localStorage syncs here)
+  - `POST /player/goal/mission` — log done/skip with updateOrInsert
+- Routes added to `routes/api.php` under `role:player,admin` middleware
+
+**Migration status:** Will run automatically on next Render deploy via `start.sh`.
+
+---
+
+#### 2. THUTO Emotional Intelligence Knowledge Base — INJECTED ✅
+
+**Source:** `THUTO_Emotional_Intelligence_Knowledge_Base (2).docx` (Goleman + Salovey framework)
+
+**Files updated:**
+- `src/components/thuto/ThutoChat.tsx` — full EQ knowledge injected into BASE_PROMPT:
+  - 5 domains: self-awareness, managing emotions, self-motivation, empathy, relationship skills
+  - THUTO conversation framework (5 steps: check-in → listen → validate → connect → close)
+  - 3 player emotional profiles: Self-Aware / Engulfed / Accepting — different coaching approach each
+  - Emotional hijacking section: 5-step Anti-Hijacking Protocol
+  - Zimbabwe-specific pressures: load-shedding, economic pressure, cultural mask of toughness
+  - Shona phrases: Kuziva wega, Kushanda, Kujatisa, Bhora pasi
+  - Flow state coaching
+  - Mission Mode added to BASE_PROMPT feature list + PAGE_CONTEXT map
+
+- `src/components/thuto/ThutoChatCoach.tsx` — EQ coaching layer:
+  - How to identify and manage each player profile type
+  - Recognise emotional hijacking on the pitch
+  - Zimbabwe coaching realities
+
+- `src/components/thuto/ThutoChatAnalyst.tsx` — confidence framing:
+  - "One clear insight delivered well is worth more than 20 confusing stats"
+
+**Auto-added by linter (same session):**
+- `ThutoChat.tsx` also received a `FormationDiagram` SVG component — when THUTO mentions
+  "4-3-3", "4-4-2", "4-2-3-1", "3-5-2", or "5-3-2" in a response, a mini interactive pitch
+  diagram renders inline below the message bubble.
+
+---
+
+#### 3. Football Knowledge Base — Front Foot Passing Added ✅
+
+**Source:** `Why it's important to work on front foot passing.docx` (FA / Paul McGuinness)
+
+**File updated:** `src/lib/football-knowledge.ts`
+- New entry id: `"front-foot-passing"`
+- Category: `fundamentals`, Level: `all`
+- Covers: why it beats defenders, technique (toes down, locked ankle), game-based development,
+  Zimbabwe grassroots drill (no equipment), Paul McGuinness method, coaching philosophy
+- Now surfaces via `findRelevantSessions()` when THUTO is asked about passing, tight areas,
+  beating defenders, or skill development
+
+---
+
+#### 4. FutureFit Page — CONFIRMED CLEAN ✅
+
+`src/app/coach/futurefit/page.tsx` — no uncommitted changes. Fully built and committed.
+Deleted stale `page.tsx.bak` leftover file.
+
+---
+
+#### 5. Showcase End-to-End — AUDITED ✅
+
+`src/app/player/showcase/page.tsx` flow:
+- `GET /player/showcase` → backend live, returns real clips ✅
+- Video upload → R2 presigned URL (silently skipped if `R2_*` env vars not set; clip saves without video_url) ✅
+- AI analysis → text-only prompt to Groq/DeepSeek via `/api/ai-coach`
+  NOTE: showcase sends `images: frames[]` but `/api/ai-coach` route ignores images field —
+  Groq is text-only. AI rates clips based on the text prompt ("Skill: Dribbling") not actual video.
+  Uses FALLBACK values if API key missing. ✅
+- `POST /player/showcase` → backend live ✅
+- localStorage fallback at every stage ✅
+
+**Blockers (Nigel must action):**
+- `GROQ_API_KEY` not set in Vercel → all THUTO chat + showcase AI ratings broken on live site
+- `R2_*` env vars not set → clips save without video_url (functional but no playback)
+
+---
+
+#### 6. Google OAuth — REMOVED FROM LOGIN ✅
+
+`src/app/login/page.tsx` — all Google/Firebase code removed. Pure email + password login only.
+Reason: Google OAuth was causing "invalid email or password" errors during registration.
+
+---
+
+### ⚠️ CRITICAL — ACTION REQUIRED FROM NIGEL
+
+| Item | What | Where |
+|---|---|---|
+| `GROQ_API_KEY` | Add to Vercel env vars | Vercel dashboard → Environment Variables |
+| `R2_*` vars (5 vars) | Add to Vercel for video storage | Vercel dashboard |
+| `DEEPSEEK_API_KEY` | Add to Render env vars | Render dashboard |
+| Goal Engine migration | Runs automatically on next Render deploy | No action if bhora-ai has been pushed |
+| `/player/success-engine` | Hub card points here but page is at `/player/goal` | Either create alias or fix href |
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (10 April 2026)
+
+```
+/player/goal           Mission Mode — goal engine, AI plan, daily missions, adherence
+```
+
+### ENVIRONMENT VARIABLES — UPDATED (add GROQ_API_KEY)
+
+**Vercel (add this):**
+```
+GROQ_API_KEY = (from console.groq.com → API Keys)
+```
