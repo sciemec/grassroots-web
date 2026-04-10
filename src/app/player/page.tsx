@@ -160,6 +160,7 @@ export default function PlayerHubPage() {
     : 0;
 
   const hubCards = [
+    { icon: Flame,        title: "Success Engine",  subtitle: "Daily check-in · Goals · Streak", href: "/player/success-engine", bg: "bg-[#1a3d26]",  gradient: "bg-gradient-to-br from-[#1a6b3c] to-[#0d2b1a]" },
     { icon: Dna,          title: "Player DNA",      subtitle: "Tell THUTO your real life",  href: "/player/dna",                bg: "bg-[#1a3a4a]",  gradient: "bg-gradient-to-br from-[#1a6b6b] to-[#0d2b3a]" },
     { icon: Users,        title: "Ubuntu",          subtitle: "Train together — vanhu pamwe", href: "/player/ubuntu",             bg: "bg-[#1a3a2a]",  gradient: "bg-gradient-to-br from-[#1a6b4a] to-[#0d2b1a]" },
     { icon: CalendarDays, title: "Training Plan",  subtitle: "THUTO 7-day schedule",       href: "/player/training",           bg: "bg-teal-800",   gradient: "bg-gradient-to-br from-teal-600 to-emerald-800" },
