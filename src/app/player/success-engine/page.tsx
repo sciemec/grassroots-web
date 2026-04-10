@@ -183,8 +183,10 @@ async function fireNotif(streak: number): Promise<void> {
   if (typeof Notification === "undefined") return;
   if (Notification.permission === "denied") return;
   if (localStorage.getItem(notifSentKey(todayStr()))) return;
-  let p = Notification.permission;
-  if (p === "default") p = await Notification.requestPermission();
+  const p: NotificationPermission =
+    Notification.permission === "default"
+      ? await Notification.requestPermission()
+      : Notification.permission;
   if (p !== "granted") return;
   new Notification("THUTO Daily Check-In ⚽", {
     body: getBannerMessage(streak),
