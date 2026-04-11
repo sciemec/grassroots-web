@@ -19,6 +19,9 @@ export interface CheckIn {
   action3: boolean;
   score: number;        // 0–3 (count of actions done)
   timestamp: number;
+  mood?: number;        // 1-10
+  moodNote?: string;
+  thutoMessage?: string;
 }
 
 // ── Goal ──────────────────────────────────────────────────────────────────────
