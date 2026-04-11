@@ -21,6 +21,8 @@ type Annotation =
   | { id: string; type: "arrow"; x1: number; y1: number; x2: number; y2: number }
   | { id: string; type: "circle"; cx: number; cy: number; r: number };
 
+type PosOffsets = Record<string, { x: number; y: number }>;
+
 type SavedBoard = {
   id: string;
   name: string;
@@ -28,6 +30,8 @@ type SavedBoard = {
   lineup: Record<string, string>;
   notes: string;
   annotations: Annotation[];
+  posOffsets: PosOffsets;
+  oppPosOffsets: PosOffsets;
   savedAt: string;
 };
 
@@ -123,6 +127,8 @@ const mirrorPos = (p: { id: string; role: string; x: number; y: number }) => ({
   y: 140 - p.y,
 });
 
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
 export default function TacticsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -153,6 +159,14 @@ export default function TacticsPage() {
   const [showOpposition, setShowOpposition] = useState(false);
   const [oppFormation, setOppFormation] = useState("4-4-2");
 
+  // Freely draggable position offsets
+  const [posOffsets, setPosOffsets] = useState<PosOffsets>({});
+  const [oppPosOffsets, setOppPosOffsets] = useState<PosOffsets>({});
+
+  // Drag tracking refs (avoid re-renders during drag)
+  const draggingRef = useRef<{ team: "home" | "opp"; id: string; svgX: number; svgY: number; baseX: number; baseY: number } | null>(null);
+  const dragMovedRef = useRef(false);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
@@ -169,6 +183,8 @@ export default function TacticsPage() {
       y: ((e.clientY - rect.top) / rect.height) * 140,
     };
   };
+
+  // ── Drawing overlay handlers ───────────────────────────────────────────────
 
   const onOverlayPointerDown = (e: React.PointerEvent<SVGRectElement>) => {
     e.preventDefault();
@@ -205,6 +221,45 @@ export default function TacticsPage() {
   const pointsToPath = (points: number[][]): string =>
     points.map((p, i) => `${i === 0 ? "M" : "L"} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
 
+  // ── SVG-level pointer handlers for position dragging ──────────────────────
+
+  const onSVGPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const d = draggingRef.current;
+    if (!d) return;
+    const { x, y } = getSVGPoint(e);
+    const dx = x - d.svgX;
+    const dy = y - d.svgY;
+    if (Math.abs(dx) > 1.5 || Math.abs(dy) > 1.5) dragMovedRef.current = true;
+    const nx = clamp(d.baseX + dx, 4, 96);
+    const ny = clamp(d.baseY + dy, 4, 136);
+    if (d.team === "home") {
+      setPosOffsets(prev => ({ ...prev, [d.id]: { x: nx, y: ny } }));
+    } else {
+      setOppPosOffsets(prev => ({ ...prev, [d.id]: { x: nx, y: ny } }));
+    }
+  };
+
+  const onSVGPointerUp = () => {
+    draggingRef.current = null;
+  };
+
+  const startPosDrag = (
+    e: React.PointerEvent,
+    team: "home" | "opp",
+    id: string,
+    effX: number,
+    effY: number,
+  ) => {
+    if (activeTool !== "none" || selectedMemberId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const { x, y } = getSVGPoint(e);
+    draggingRef.current = { team, id, svgX: x, svgY: y, baseX: effX, baseY: effY };
+    dragMovedRef.current = false;
+  };
+
+  // ── Squad helpers ──────────────────────────────────────────────────────────
+
   useEffect(() => {
     api.get("/coach/squad")
       .then((res) => setSquad(res.data?.data ?? res.data ?? []))
@@ -212,7 +267,12 @@ export default function TacticsPage() {
   }, [user, router]);
 
   const positions = FORMATIONS[formation].positions;
-  const oppPositions = FORMATIONS[oppFormation].positions.map(mirrorPos);
+  const oppBasePositions = FORMATIONS[oppFormation].positions.map(mirrorPos);
+
+  const getEffPos = (pos: { id: string; x: number; y: number }, offsets: PosOffsets) => ({
+    x: offsets[pos.id]?.x ?? pos.x,
+    y: offsets[pos.id]?.y ?? pos.y,
+  });
 
   const assign = (posId: string, memberId: string) => {
     setLineup((prev) => {
@@ -224,13 +284,14 @@ export default function TacticsPage() {
     });
   };
 
-  const getMember = (memberId: string) => squad.find((s) => s.id === memberId);
   const getMemberName = useCallback((memberId: string) => {
     const m = squad.find((s) => s.id === memberId);
     return m ? `#${m.shirt_no} ${m.player?.name?.split(" ")[0] ?? "—"}` : "";
   }, [squad]);
 
   const assignedIds = new Set(Object.values(lineup));
+
+  // ── Drag-and-drop squad assignment ────────────────────────────────────────
 
   const onDragStart = (e: React.DragEvent, memberId: string) => {
     e.dataTransfer.setData("memberId", memberId);
@@ -250,7 +311,9 @@ export default function TacticsPage() {
     setDragOver(posId);
   };
 
+  // Mobile tap-to-assign
   const onPositionClick = (posId: string, isAssigned: boolean) => {
+    if (dragMovedRef.current) { dragMovedRef.current = false; return; }
     if (selectedMemberId && !isAssigned) {
       assign(posId, selectedMemberId);
       setSelectedMemberId(null);
@@ -258,6 +321,8 @@ export default function TacticsPage() {
       assign(posId, "");
     }
   };
+
+  // ── Save / load ───────────────────────────────────────────────────────────
 
   const saveTactics = () => {
     const name = tacticsName.trim() || `${formation} — ${new Date().toLocaleDateString()}`;
@@ -268,6 +333,8 @@ export default function TacticsPage() {
       lineup,
       notes,
       annotations,
+      posOffsets,
+      oppPosOffsets,
       savedAt: new Date().toISOString(),
     };
     const updated = [board, ...savedBoards].slice(0, 20);
@@ -284,6 +351,8 @@ export default function TacticsPage() {
     setNotes(board.notes);
     setAnnotations(board.annotations);
     setTacticsName(board.name);
+    setPosOffsets(board.posOffsets ?? {});
+    setOppPosOffsets(board.oppPosOffsets ?? {});
     setShowSaved(false);
   };
 
@@ -292,6 +361,8 @@ export default function TacticsPage() {
     setSavedBoards(updated);
     localStorage.setItem(LS_KEY, JSON.stringify(updated));
   };
+
+  // ── Export ────────────────────────────────────────────────────────────────
 
   const exportPNG = useCallback(() => {
     const svg = svgRef.current;
@@ -390,11 +461,12 @@ export default function TacticsPage() {
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
       doc.text("GrassRoots Sports — grassrootssports.live — CONFIDENTIAL", pageW / 2, pageH - 8, { align: "center" });
-
       doc.save(`tactics-${formation}-${Date.now()}.pdf`);
     };
     img.src = url;
   }, [formation, lineup, notes, positions, getMemberName, tacticsName]);
+
+  // ── AI ────────────────────────────────────────────────────────────────────
 
   const getAiAdvice = async () => {
     setLoadingAi(true);
@@ -412,10 +484,8 @@ export default function TacticsPage() {
     finally { setLoadingAi(false); }
   };
 
-  // suppress unused warning — getMember used via getMemberName closure
-  void getMember;
-
   const availableSquad = squad.filter((m) => m.status !== "injured");
+  const isDraggingMode = activeTool === "none" && !selectedMemberId;
 
   return (
     <div className="flex h-screen bg-background">
@@ -428,7 +498,9 @@ export default function TacticsPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold">Tactics Board</h1>
-            <p className="text-sm text-muted-foreground">Drag or tap players onto the pitch · Draw runs and zones</p>
+            <p className="text-sm text-muted-foreground">
+              Drag position circles freely · Assign players · Draw runs and zones
+            </p>
           </div>
         </div>
 
@@ -443,7 +515,7 @@ export default function TacticsPage() {
                 {Object.keys(FORMATIONS).map((f) => (
                   <button
                     key={f}
-                    onClick={() => { setFormation(f); setLineup({}); }}
+                    onClick={() => { setFormation(f); setLineup({}); setPosOffsets({}); }}
                     className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                       formation === f ? "bg-primary text-primary-foreground" : "border bg-card hover:bg-muted"
                     }`}
@@ -469,7 +541,7 @@ export default function TacticsPage() {
                   {Object.keys(FORMATIONS).map((f) => (
                     <button
                       key={f}
-                      onClick={() => setOppFormation(f)}
+                      onClick={() => { setOppFormation(f); setOppPosOffsets({}); }}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                         oppFormation === f
                           ? "bg-red-600 text-white"
@@ -538,6 +610,10 @@ export default function TacticsPage() {
                   viewBox="0 0 100 140"
                   className="h-full w-full"
                   preserveAspectRatio="xMidYMid meet"
+                  onPointerMove={onSVGPointerMove}
+                  onPointerUp={onSVGPointerUp}
+                  onPointerLeave={onSVGPointerUp}
+                  style={{ touchAction: "none" }}
                 >
                   <defs>
                     <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5.5" refY="2" orient="auto">
@@ -561,28 +637,42 @@ export default function TacticsPage() {
                   <circle cx="50" cy="22"  r="0.8" fill="#4a9a4a" />
                   <circle cx="50" cy="118" r="0.8" fill="#4a9a4a" />
 
-                  {/* Opposition positions (red) */}
-                  {showOpposition && oppPositions.map((pos) => (
-                    <g key={`opp-${pos.id}`}>
-                      <circle cx={pos.x} cy={pos.y} r="5.5" fill="rgba(239,68,68,0.75)" stroke="#dc2626" strokeWidth="0.8" />
-                      <text
-                        x={pos.x} y={pos.y + 0.8}
-                        textAnchor="middle" dominantBaseline="middle"
-                        fill="white" fontSize="3.2" fontWeight="bold"
-                        style={{ pointerEvents: "none" }}
+                  {/* Opposition positions (red) — freely draggable */}
+                  {showOpposition && oppBasePositions.map((pos) => {
+                    const { x, y } = getEffPos(pos, oppPosOffsets);
+                    return (
+                      <g
+                        key={`opp-${pos.id}`}
+                        style={{ cursor: isDraggingMode ? "grab" : "default" }}
+                        onPointerDown={(e) => startPosDrag(e, "opp", pos.id, x, y)}
                       >
-                        {pos.role}
-                      </text>
-                    </g>
-                  ))}
+                        <circle cx={x} cy={y} r="9" fill="transparent" />
+                        <circle
+                          cx={x} cy={y} r="5.5"
+                          fill="rgba(239,68,68,0.75)"
+                          stroke="#dc2626"
+                          strokeWidth="0.8"
+                        />
+                        <text
+                          x={x} y={y + 0.8}
+                          textAnchor="middle" dominantBaseline="middle"
+                          fill="white" fontSize="3.2" fontWeight="bold"
+                          style={{ pointerEvents: "none" }}
+                        >
+                          {pos.role}
+                        </text>
+                      </g>
+                    );
+                  })}
 
-                  {/* Home player positions */}
+                  {/* Home player positions — freely draggable */}
                   {positions.map((pos) => {
+                    const { x, y } = getEffPos(pos, posOffsets);
                     const memberId = lineup[pos.id];
                     const memberName = memberId ? getMemberName(memberId) : null;
                     const isAssigned = !!memberId;
                     const isOver = dragOver === pos.id;
-                    const canDrop = selectedMemberId && !isAssigned;
+                    const canDrop = !!(selectedMemberId && !isAssigned);
                     return (
                       <g
                         key={pos.id}
@@ -590,13 +680,18 @@ export default function TacticsPage() {
                         onDragLeave={() => setDragOver(null)}
                         onDrop={(e) => onDropPosition(e, pos.id)}
                         onClick={() => onPositionClick(pos.id, isAssigned)}
-                        style={{ cursor: canDrop || isAssigned ? "pointer" : "default" }}
+                        onPointerDown={(e) => startPosDrag(e, "home", pos.id, x, y)}
+                        style={{
+                          cursor: isDraggingMode
+                            ? "grab"
+                            : canDrop || isAssigned
+                            ? "pointer"
+                            : "default",
+                        }}
                       >
-                        <circle cx={pos.x} cy={pos.y} r="9" fill="transparent" />
+                        <circle cx={x} cy={y} r="9" fill="transparent" />
                         <circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r="5.5"
+                          cx={x} cy={y} r="5.5"
                           fill={
                             isOver    ? "#facc15"
                             : canDrop  ? "rgba(240,180,41,0.4)"
@@ -612,7 +707,7 @@ export default function TacticsPage() {
                           strokeWidth="0.8"
                         />
                         <text
-                          x={pos.x} y={pos.y + 0.8}
+                          x={x} y={y + 0.8}
                           textAnchor="middle" dominantBaseline="middle"
                           fill="white" fontSize="3.2" fontWeight="bold"
                           style={{ pointerEvents: "none" }}
@@ -621,7 +716,7 @@ export default function TacticsPage() {
                         </text>
                         {memberName && (
                           <text
-                            x={pos.x} y={pos.y + 7.5}
+                            x={x} y={y + 7.5}
                             textAnchor="middle" fill="white" fontSize="2.8"
                             style={{ pointerEvents: "none" }}
                           >
@@ -654,6 +749,7 @@ export default function TacticsPage() {
                     )
                   )}
 
+                  {/* Drawing overlay — only active when a draw tool is selected */}
                   {activeTool !== "none" && (
                     <rect
                       x="0" y="0" width="100" height="140"
@@ -669,7 +765,7 @@ export default function TacticsPage() {
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
-              Desktop: drag players onto circles · Mobile: tap a player then tap a position · Click filled circle to remove
+              Drag position circles freely · Assign players by drag or tap · Click filled circle to remove
             </p>
 
             {/* Actions */}
@@ -682,10 +778,10 @@ export default function TacticsPage() {
                 {saved ? "Saved!" : "Save"}
               </button>
               <button
-                onClick={() => setLineup({})}
+                onClick={() => { setLineup({}); setPosOffsets({}); setOppPosOffsets({}); }}
                 className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm hover:bg-muted transition-colors"
               >
-                <RotateCcw className="h-4 w-4" /> Clear
+                <RotateCcw className="h-4 w-4" /> Reset
               </button>
               <button
                 onClick={getAiAdvice}
