@@ -90,3 +90,47 @@ routing.setCatchHandler(async ({ request }) => {
   if (request.destination === "document") return caches.match(OFFLINE_URL);
   return Response.error();
 });
+
+// ── THUTO Success Engine — periodic sync ──────────────────────────────────────
+// Fires approximately once every 24 hours on Chrome (requires periodic-background-sync permission)
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "thuto-daily-checkin") {
+    event.waitUntil(fireThutoDailyNotification());
+  }
+});
+
+async function fireThutoDailyNotification() {
+  // Check if user has already checked in today (read from IDB/cache if needed)
+  // Simple approach: always fire; app page suppresses the banner once checked in
+  const streak = 0; // can't read localStorage from SW — keep message generic
+  const messages = [
+    { title: "THUTO Daily Check-In ⚽", body: "Time to log your training. 30 seconds — keep your goal alive. Pamberi! 🔥" },
+    { title: "THUTO Daily Check-In ⚽", body: "Champions show up every day. Tap to log your check-in. Ramba uchishanda!" },
+    { title: "THUTO Daily Check-In ⚽", body: "Your goal is waiting. Did you train today? Tap to log it now. Unokwanisa! 🌟" },
+  ];
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+  await self.registration.showNotification(msg.title, {
+    body: msg.body,
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    data: { url: "/player/success/checkin" },
+  });
+}
+
+// Open check-in page when notification is clicked
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/player/success/checkin";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          client.focus();
+          client.navigate(url);
+          return;
+        }
+      }
+      clients.openWindow(url);
+    })
+  );
+});
