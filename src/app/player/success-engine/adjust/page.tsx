@@ -22,17 +22,11 @@ export default function AdjustmentEnginePage() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
   const goal = getGoal();
-  if (!goal) {
-    router.replace("/player/success/goal");
-    return null;
-  }
+  if (!goal) { router.replace("/player/success-engine/goal"); return null; }
 
   async function handleSubmit() {
     if (selectedReason === null) return;
@@ -61,16 +55,12 @@ export default function AdjustmentEnginePage() {
     }
   }
 
-  function handleContinue() {
-    router.push("/player/success");
-  }
-
   return (
     <div className="min-h-screen bg-[#121212] text-white pb-10">
       {/* Header */}
       <div className="px-5 pt-10 pb-5 flex items-center gap-3">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/player/success-engine")}
           className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
         >
           <ChevronLeft size={16} />
@@ -86,29 +76,21 @@ export default function AdjustmentEnginePage() {
       <div className="px-5 space-y-4">
         {!done ? (
           <>
-            {/* Intro */}
             <div className="rounded-2xl border border-[#F9A825]/20 bg-[#F9A825]/5 p-5">
               <p className="text-sm text-white/90 leading-relaxed">
                 THUTO noticed you&apos;ve had a tough few days.{" "}
                 <span className="text-[#F9A825] font-semibold">That&apos;s normal.</span> Every
-                champion hits walls. Let&apos;s figure out what&apos;s getting in the way and
-                adjust your plan so you can keep moving forward.
+                champion hits walls. Let&apos;s figure out what&apos;s getting in the way.
               </p>
             </div>
 
-            {/* Goal reminder */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-1">
-                Your Goal
-              </p>
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-1">Your Goal</p>
               <p className="text-sm text-white/80 leading-relaxed">&ldquo;{goal.goalText}&rdquo;</p>
             </div>
 
-            {/* Reason selector */}
             <div>
-              <p className="text-sm font-semibold text-white mb-3">
-                What&apos;s making it hard right now?
-              </p>
+              <p className="text-sm font-semibold text-white mb-3">What&apos;s making it hard right now?</p>
               <div className="space-y-2.5">
                 {STRUGGLE_REASONS.map((reason, i) => (
                   <button
@@ -122,9 +104,7 @@ export default function AdjustmentEnginePage() {
                   >
                     <span
                       className={`inline-block w-4 h-4 rounded-full border mr-2 align-middle ${
-                        selectedReason === i
-                          ? "border-[#F9A825] bg-[#F9A825]"
-                          : "border-white/20"
+                        selectedReason === i ? "border-[#F9A825] bg-[#F9A825]" : "border-white/20"
                       }`}
                     />
                     {reason}
@@ -138,54 +118,41 @@ export default function AdjustmentEnginePage() {
             <button
               onClick={handleSubmit}
               disabled={selectedReason === null || loading}
-              className="w-full rounded-xl bg-[#F9A825] text-[#121212] py-3.5 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+              className="w-full rounded-xl bg-[#F9A825] text-[#121212] py-3.5 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:opacity-90 transition-opacity"
             >
-              {loading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" /> THUTO is thinking…
-                </>
-              ) : (
-                "Get THUTO&apos;s Advice"
-              )}
+              {loading ? <><Loader2 size={16} className="animate-spin" /> THUTO is thinking…</> : "Get THUTO's Advice"}
             </button>
 
             <button
-              onClick={handleContinue}
+              onClick={() => router.push("/player/success-engine")}
               className="w-full rounded-xl border border-white/10 py-3 text-sm text-white/50 hover:text-white/80 hover:bg-white/5 transition-colors"
             >
               Skip — I&apos;ll push through
             </button>
           </>
         ) : (
-          /* Response state */
           <div className="space-y-4">
             <div className="rounded-2xl border border-[#F9A825]/20 bg-[#F9A825]/5 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <RefreshCcw size={16} className="text-[#F9A825]" />
-                <p className="text-xs font-semibold text-[#F9A825] uppercase tracking-wide">
-                  THUTO&apos;s Adjustment
-                </p>
+                <p className="text-xs font-semibold text-[#F9A825] uppercase tracking-wide">THUTO&apos;s Adjustment</p>
               </div>
-              <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line">
-                {response}
-              </p>
+              <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line">{response}</p>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-2">
-                Your Struggle
-              </p>
+              <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-2">Your Struggle</p>
               <p className="text-xs text-white/60 italic">
                 &ldquo;{selectedReason !== null ? STRUGGLE_REASONS[selectedReason] : ""}&rdquo;
               </p>
             </div>
 
-            <p className="text-xs text-white/30 text-center leading-relaxed">
+            <p className="text-xs text-white/30 text-center">
               THUTO won&apos;t ask about this again this week. Focus on tomorrow.
             </p>
 
             <button
-              onClick={handleContinue}
+              onClick={() => router.push("/player/success-engine")}
               className="w-full rounded-xl bg-[#1B5E20] py-3.5 text-sm font-semibold hover:bg-[#2e7d32] transition-colors"
             >
               Back to Dashboard — Pamberi! 🔥

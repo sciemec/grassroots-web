@@ -27,6 +27,7 @@ export default function GoalSetupPage() {
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = [0, 15, 30, 45];
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   async function handleCommit() {
     if (!goalText.trim() || !whyText.trim() || !targetDate) return;
@@ -46,13 +47,11 @@ export default function GoalSetupPage() {
       saveGoal(goal);
       const granted = await requestNotificationPermission();
       if (granted) await scheduleDailyReminder(reminderHour, reminderMinute);
-      router.push("/player/success");
+      router.push("/player/success-engine");
     } finally {
       setSaving(false);
     }
   }
-
-  const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col">
@@ -61,11 +60,10 @@ export default function GoalSetupPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-[#F9A825] mb-1">
           THUTO Success Engine
         </p>
-        <h1 className="text-2xl font-bold text-balance">Set Your Goal</h1>
+        <h1 className="text-2xl font-bold">Set Your Goal</h1>
         <p className="text-sm text-white/50 mt-1">
           Step {step} of 3 — {step === 1 ? "Your goal" : step === 2 ? "Your why" : "Reminder"}
         </p>
-        {/* Progress bar */}
         <div className="mt-4 h-1 rounded-full bg-white/10">
           <div
             className="h-1 rounded-full bg-[#F9A825] transition-all duration-300"
@@ -75,7 +73,7 @@ export default function GoalSetupPage() {
       </div>
 
       <div className="flex-1 px-5 pb-8">
-        {/* Step 1 — Goal */}
+        {/* Step 1 — Goal + date */}
         {step === 1 && (
           <div className="space-y-5">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -84,7 +82,7 @@ export default function GoalSetupPage() {
                 <span className="text-sm font-semibold text-[#F9A825]">Your Goal</span>
               </div>
               <p className="text-xs text-white/50 mb-3 leading-relaxed">
-                Write your goal as a specific, ambitious statement. What do you want to achieve?
+                Write a specific, ambitious statement. What do you want to achieve?
               </p>
               <textarea
                 className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#F9A825] resize-none leading-relaxed"
@@ -102,9 +100,6 @@ export default function GoalSetupPage() {
                 <Calendar size={18} className="text-[#F9A825]" />
                 <span className="text-sm font-semibold text-[#F9A825]">Target Date</span>
               </div>
-              <p className="text-xs text-white/50 mb-3">
-                When do you want to achieve this? Be realistic but ambitious.
-              </p>
               <input
                 type="date"
                 className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:ring-1 focus:ring-[#F9A825] [color-scheme:dark]"
@@ -118,7 +113,7 @@ export default function GoalSetupPage() {
             <button
               onClick={() => setStep(2)}
               disabled={!goalText.trim() || !targetDate}
-              className="w-full rounded-xl bg-[#1B5E20] py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#2e7d32] transition-colors"
+              className="w-full rounded-xl bg-[#1B5E20] py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 hover:bg-[#2e7d32] transition-colors"
             >
               Continue <ChevronRight size={16} />
             </button>
@@ -134,14 +129,13 @@ export default function GoalSetupPage() {
                 <span className="text-sm font-semibold text-[#F9A825]">Your Why</span>
               </div>
               <p className="text-xs text-white/50 mb-3 leading-relaxed">
-                Why does this goal matter to you? Your &quot;why&quot; keeps you going on hard days.
-                Write from the heart.
+                Why does this goal matter? Your &ldquo;why&rdquo; keeps you going on hard days.
               </p>
               <textarea
                 className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#F9A825] resize-none leading-relaxed"
                 rows={5}
                 maxLength={300}
-                placeholder="e.g. My family sacrificed so much for me to train. I want to make them proud and show every kid from our area that we can make it."
+                placeholder="e.g. My family sacrificed so much for me to train. I want to make them proud."
                 value={whyText}
                 onChange={(e) => setWhyText(e.target.value)}
               />
@@ -158,7 +152,7 @@ export default function GoalSetupPage() {
               <button
                 onClick={() => setStep(3)}
                 disabled={!whyText.trim()}
-                className="flex-[2] rounded-xl bg-[#1B5E20] py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#2e7d32] transition-colors"
+                className="flex-[2] rounded-xl bg-[#1B5E20] py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 hover:bg-[#2e7d32] transition-colors"
               >
                 Continue <ChevronRight size={16} />
               </button>
@@ -176,7 +170,6 @@ export default function GoalSetupPage() {
               </div>
               <p className="text-xs text-white/50 mb-4 leading-relaxed">
                 THUTO will remind you to check in every day at this time.
-                Champions show up even when they don&apos;t feel like it.
               </p>
 
               <div className="flex gap-3 mb-2">
@@ -188,9 +181,7 @@ export default function GoalSetupPage() {
                     onChange={(e) => setReminderHour(Number(e.target.value))}
                   >
                     {hours.map((h) => (
-                      <option key={h} value={h} className="bg-[#1a1a1a]">
-                        {pad(h)}:00
-                      </option>
+                      <option key={h} value={h} className="bg-[#1a1a1a]">{pad(h)}:00</option>
                     ))}
                   </select>
                 </div>
@@ -202,25 +193,22 @@ export default function GoalSetupPage() {
                     onChange={(e) => setReminderMinute(Number(e.target.value))}
                   >
                     {minutes.map((m) => (
-                      <option key={m} value={m} className="bg-[#1a1a1a]">
-                        :{pad(m)}
-                      </option>
+                      <option key={m} value={m} className="bg-[#1a1a1a]">:{pad(m)}</option>
                     ))}
                   </select>
                 </div>
               </div>
               <p className="text-sm text-center text-[#F9A825] font-semibold mt-3">
-                Reminder set for {pad(reminderHour)}:{pad(reminderMinute)}
+                {pad(reminderHour)}:{pad(reminderMinute)} daily
               </p>
             </div>
 
-            {/* Goal summary */}
+            {/* Summary */}
             <div className="rounded-2xl border border-[#1B5E20]/60 bg-[#1B5E20]/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#F9A825] mb-2">
-                Your Commitment
-              </p>
-              <p className="text-sm text-white/90 leading-relaxed mb-2">&ldquo;{goalText}&rdquo;</p>
-              <p className="text-xs text-white/50">Target: {targetDate}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#F9A825] mb-2">Your Commitment</p>
+              <p className="text-sm text-white/90 leading-relaxed mb-1">&ldquo;{goalText}&rdquo;</p>
+              <p className="text-xs text-white/40 italic mb-2">&ldquo;{whyText}&rdquo;</p>
+              <p className="text-xs text-white/30">Target: {targetDate}</p>
             </div>
 
             <div className="flex gap-3">
@@ -233,7 +221,7 @@ export default function GoalSetupPage() {
               <button
                 onClick={handleCommit}
                 disabled={saving}
-                className="flex-[2] rounded-xl bg-[#F9A825] text-[#121212] py-3.5 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60 hover:opacity-90 transition-opacity"
+                className="flex-[2] rounded-xl bg-[#F9A825] text-[#121212] py-3.5 text-sm font-bold disabled:opacity-60 hover:opacity-90 transition-opacity"
               >
                 {saving ? "Saving…" : "I COMMIT 🔥"}
               </button>
