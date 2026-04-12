@@ -5,8 +5,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { ComponentType } from "react";
 import {
-  Dumbbell, Brain, Trophy, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Layers, Apple, Zap, BookOpen, DollarSign, Film, Camera, Award, Activity, CalendarDays, Dna, Users,
+  Dumbbell, Brain, ChevronRight, Play, Flame, Target, TrendingUp, Star,
+  Apple, Zap, Film, Award, CalendarDays, Dna, Users,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -160,26 +160,17 @@ export default function PlayerHubPage() {
     : 0;
 
   const hubCards = [
-    { icon: Flame,        title: "Success Engine",  subtitle: "Daily check-in · Goals · Streak", href: "/player/success-engine", bg: "bg-[#1a3d26]",  gradient: "bg-gradient-to-br from-[#1a6b3c] to-[#0d2b1a]" },
-    { icon: Dna,          title: "Player DNA",      subtitle: "Tell THUTO your real life",  href: "/player/dna",                bg: "bg-[#1a3a4a]",  gradient: "bg-gradient-to-br from-[#1a6b6b] to-[#0d2b3a]" },
-    { icon: Users,        title: "Ubuntu",          subtitle: "Train together — vanhu pamwe", href: "/player/ubuntu",             bg: "bg-[#1a3a2a]",  gradient: "bg-gradient-to-br from-[#1a6b4a] to-[#0d2b1a]" },
-    { icon: CalendarDays, title: "Training Plan",  subtitle: "THUTO 7-day schedule",       href: "/player/training",           bg: "bg-teal-800",   gradient: "bg-gradient-to-br from-teal-600 to-emerald-800" },
-    { icon: Brain,    title: "AI Coach",         subtitle: "Mubatsiri wako — Claude AI",  href: "/player/ai-coach",           bg: "bg-[#6c3483]",  gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
-    { icon: Play,     title: "Start Session",    subtitle: "Tanga mushandiro",            href: "/player/sessions/new",       bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#27ae60] to-[#1a6b3c]" },
-    { icon: Dumbbell, title: "Drill Library",    subtitle: "Madrills — 48+ exercises",   href: "/player/drills",             bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
-    { icon: Layers,   title: "Training Formats", subtitle: "Rondo, SSG, Shooting",       href: "/player/training-formats",   bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#7d6608] to-[#5a4b06]" },
-    { icon: Trophy,   title: "Milestones",       subtitle: "Zvikumbiro zvako",            href: "/player/milestones",         bg: "bg-[#d35400]",  gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
-    { icon: Zap,      title: "Talent ID",        subtitle: "Get scouted — Verekedza",    href: "/player/talent-id",          bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
-    { icon: Apple,    title: "Nutrition",        subtitle: "Sadza, nyama, zeventeen",    href: "/player/nutrition",          bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
-    { icon: TrendingUp,title: "My Progress",    subtitle: "Kuvandudzwa — track journey",href: "/player/progress",           bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
-    { icon: BookOpen,  title: "Knowledge Base",  subtitle: "Drills, tactics & nutrition", href: "/knowledge",              bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
-    { icon: TrendingUp,title: "My Potential",    subtitle: "AI development trajectory",   href: "/player/potential",          bg: "bg-[#6c3483]",  gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
-    { icon: DollarSign,title: "Market Value",    subtitle: "Est. USD transfer value",      href: "/player/valuation",          bg: "bg-[#7d6608]",  gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
-    { icon: Film,      title: "Highlight Vault", subtitle: "Upload & share your videos",  href: "/player/vault",              bg: "bg-[#1a5276]",  gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
-    { icon: Camera,    title: "Moment Capture",  subtitle: "Record & get THUTO coached",  href: "/player/capture",            bg: "bg-[#7b241c]",  gradient: "bg-gradient-to-br from-[#c0392b] to-[#7b241c]" },
-    { icon: Award,     title: "Talent Showcase", subtitle: "Upload clips — get scouted",  href: "/player/showcase",           bg: "bg-[#1a4971]",  gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a4971]" },
-    { icon: Activity,  title: "Session Tracker", subtitle: "Friend logs your actions live", href: "/player/session-tracker",    bg: "bg-[#1a6b3c]",  gradient: "bg-gradient-to-br from-[#1e8449] to-[#145a32]" },
-    { icon: Zap,       title: "Pitch Mode",      subtitle: "Train full-screen, anywhere",  href: "/player/pitch",              bg: "bg-[#15803d]",  gradient: "bg-gradient-to-br from-[#15803d] to-[#0d5c2d]" },
+    { icon: Flame,        title: "Success Engine",  subtitle: "Daily check-in · Goals · Streak",           href: "/player/success-engine", bg: "bg-[#1a3d26]", gradient: "bg-gradient-to-br from-[#1a6b3c] to-[#0d2b1a]" },
+    { icon: Dna,          title: "Player DNA",      subtitle: "Tell THUTO your real life",                 href: "/player/dna",            bg: "bg-[#1a3a4a]", gradient: "bg-gradient-to-br from-[#1a6b6b] to-[#0d2b3a]" },
+    { icon: Brain,        title: "AI Coach",        subtitle: "Deep coaching with THUTO",                  href: "/player/ai-coach",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
+    { icon: CalendarDays, title: "Training Plan",   subtitle: "THUTO 7-day FIFA schedule",                 href: "/player/training",       bg: "bg-teal-800",  gradient: "bg-gradient-to-br from-teal-600 to-emerald-800" },
+    { icon: Zap,          title: "Train Now",       subtitle: "Pitch Mode · Log Session · Tracker",        href: "/player/pitch",          bg: "bg-[#15803d]", gradient: "bg-gradient-to-br from-[#15803d] to-[#0d5c2d]" },
+    { icon: Dumbbell,     title: "Drills & Formats",subtitle: "Library · Rondo · SSG · Shooting",          href: "/player/drills",         bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+    { icon: Film,         title: "My Videos",       subtitle: "Vault · Showcase · Capture",                href: "/player/vault",          bg: "bg-[#1a4971]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
+    { icon: Award,        title: "Scout Profile",   subtitle: "Talent ID · Potential · Market Value",      href: "/player/talent-id",      bg: "bg-[#1a3a4a]", gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
+    { icon: TrendingUp,   title: "My Journey",      subtitle: "Progress charts · Milestones",              href: "/player/progress",       bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
+    { icon: Apple,        title: "Nutrition",       subtitle: "Meal plans · Performance fuel",             href: "/player/nutrition",      bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
+    { icon: Users,        title: "Ubuntu",          subtitle: "Train together — vanhu pamwe",              href: "/player/ubuntu",         bg: "bg-[#1a3a2a]", gradient: "bg-gradient-to-br from-[#1a6b4a] to-[#0d2b1a]" },
   ];
 
   return (
