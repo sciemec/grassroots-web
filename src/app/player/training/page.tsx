@@ -188,7 +188,7 @@ function DayCard({
           {day.session_intention && (
             <div className="flex items-start gap-2 rounded-xl bg-teal-900/30 border border-teal-500/20 p-3">
               <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">T</span>
-              <p className="text-sm text-teal-200 italic leading-relaxed">"{day.session_intention}"</p>
+              <p className="text-sm text-teal-200 italic leading-relaxed">&quot;{day.session_intention}&quot;</p>
             </div>
           )}
 
@@ -210,7 +210,7 @@ function DayCard({
                   {day.warm_up.coaching_question && (
                     <div className="flex items-start gap-2 rounded-lg bg-teal-900/20 border border-teal-500/15 px-3 py-2 mt-1">
                       <HelpCircle className="h-3.5 w-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-teal-300 italic">"{day.warm_up.coaching_question}"</p>
+                      <p className="text-xs text-teal-300 italic">&quot;{day.warm_up.coaching_question}&quot;</p>
                     </div>
                   )}
                 </div>
@@ -237,7 +237,7 @@ function DayCard({
                   {day.main_drill.coaching_question && (
                     <div className="flex items-start gap-2 rounded-lg bg-teal-900/20 border border-teal-500/15 px-3 py-2">
                       <HelpCircle className="h-3.5 w-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-teal-300 italic">"{day.main_drill.coaching_question}"</p>
+                      <p className="text-xs text-teal-300 italic">&quot;{day.main_drill.coaching_question}&quot;</p>
                     </div>
                   )}
                   {day.main_drill.success_looks_like && (
@@ -306,7 +306,7 @@ function DayCard({
           {day.joy_prompt && (
             <div className="flex items-start gap-2 rounded-xl bg-teal-900/20 border border-teal-500/15 p-3">
               <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">T</span>
-              <p className="text-sm text-teal-200 italic leading-relaxed">"{day.joy_prompt}"</p>
+              <p className="text-sm text-teal-200 italic leading-relaxed">&quot;{day.joy_prompt}&quot;</p>
             </div>
           )}
 
@@ -640,7 +640,7 @@ Include all 7 days. Set is_rest: true for ${7 - prefs.days} days. Adapt drills f
             <p className="text-xs font-medium uppercase tracking-widest text-[#1A6B3C]">THUTO Training</p>
             <h1 className="mt-1 text-2xl font-bold text-[#0D2B1A]">My Schedule</h1>
             {weekStart && <p className="mt-0.5 text-xs text-[#1A6B3C]/60">Week of {weekStart}</p>}
-            {theme && <p className="mt-1 text-xs text-teal-600 font-medium italic">"{theme}"</p>}
+            {theme && <p className="mt-1 text-xs text-teal-600 font-medium italic">&quot;{theme}&quot;</p>}
             {fw && (
               <span className="mt-1 inline-block rounded-full bg-teal-100 px-2 py-0.5 text-xs font-semibold text-teal-700">
                 {fw} Framework
