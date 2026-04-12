@@ -1,1 +1,17 @@
-{"framework":"nextjs","buildCommand":"rm -rf .next && npm run build","outputDirectory":".next","build":{"env":{"NEXT_PUBLIC_API_URL":"https://bhora-ai.onrender.com/api/v1"}},"headers":[{"source":"/_next/static/(.*).js","headers":[{"key":"Content-Type","value":"application/javascript"}]}]}
+{
+  "framework": "nextjs",
+  "buildCommand": "rm -rf .next tsconfig.tsbuildinfo && npm run build",
+  "outputDirectory": ".next",
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": "https://bhora-ai.onrender.com/api/v1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "headers": [
+    {
+      "source": "/_next/static/(.*).js",
+      "headers": [{ "key": "Content-Type", "value": "application/javascript" }]
+    }
+  ]
+}

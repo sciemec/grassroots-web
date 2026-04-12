@@ -1,5 +1,5 @@
 "use client";
-
+// v2 — refactored Apr 2026 (fireNotif/notifSentKey removed, moved to lib/success/notifications)
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
