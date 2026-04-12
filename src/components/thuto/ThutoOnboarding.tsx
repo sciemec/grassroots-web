@@ -274,6 +274,13 @@ export default function ThutoOnboarding({ onComplete }: Props) {
 
       case "dna2_input": {
         setPlayerDna2(msg);
+        // Save DNA for training schedule generator
+        const hasBall = /yes|have|got|i do|ndine/i.test(playerDna1);
+        localStorage.setItem("thuto_dna", JSON.stringify({
+          has_ball: hasBall,
+          equipment: hasBall ? "football" : "no ball — use wall or round object",
+          environment: msg,
+        }));
         // Mark Session 1 complete — Session 2 starts next login
         localStorage.setItem("thuto_onboarded", "true");
         localStorage.setItem("thuto_dna_session", "2");

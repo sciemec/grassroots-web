@@ -34,7 +34,7 @@ export interface Drill {
   name: string;
   duration_minutes: number;
   instructions: string;
-  equipment_needed: string;
+  equipment_needed?: string;
 }
 
 export interface PendingSession {
