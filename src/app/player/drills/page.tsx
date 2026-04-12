@@ -284,13 +284,15 @@ export default function DrillsPage() {
       .then((res) => {
         try {
           const payload = res.data?.data ?? res.data;
-          // Guard: backend may return HTML (500 page) or a non-array value
           const raw: ApiDrill[] = Array.isArray(payload) ? payload : [];
-          if (raw.length > 0) {
+          // Only use API drills if the backend has a fuller library than the built-in set.
+          // If the API returns fewer drills than ALL_DRILLS it means the DB isn't seeded yet —
+          // fall back to the built-in library so all 9 categories are populated.
+          if (raw.length >= ALL_DRILLS.length) {
             setDrills(raw.map(mapApiDrill));
           } else {
             setDrills(ALL_DRILLS);
-            setUsingFallback(true);
+            setUsingFallback(raw.length > 0); // only show offline banner if API returned partial data
           }
         } catch {
           setDrills(ALL_DRILLS);
@@ -298,7 +300,6 @@ export default function DrillsPage() {
         }
       })
       .catch(() => {
-        // API unavailable (500, timeout, network) — use bundled drills
         setDrills(ALL_DRILLS);
         setUsingFallback(true);
       })
@@ -448,7 +449,7 @@ export default function DrillsPage() {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: "Total Drills",  value: drills.length },
-                  { label: "Categories",    value: DRILL_CATEGORIES.length },
+                  { label: "Categories",    value: grouped.filter(g => g.drills.length > 0).length },
                   { label: "Duration",      value: "1 min each" },
                 ].map(({ label, value }) => (
                   <div key={label} className="rounded-xl border bg-card p-3 text-center">
