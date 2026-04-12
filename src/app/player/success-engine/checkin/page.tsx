@@ -99,9 +99,9 @@ export default function CheckInPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: `A Zimbabwean athlete just completed their daily THUTO check-in.
-Goal: "${goal.goalText}" (target: ${goal.targetDate})
+Goal: "${goal!.goalText}" (target: ${goal!.targetDate})
 Today's score: ${score}/3
-Actions done: ${[goal.actions[0], goal.actions[1], goal.actions[2]]
+Actions done: ${[goal!.actions[0], goal!.actions[1], goal!.actions[2]]
   .filter((_, i) => [action1, action2, action3][i])
   .join(", ") || "none"}
 Mood: ${mood}/10 (${moodLabel(mood)})
