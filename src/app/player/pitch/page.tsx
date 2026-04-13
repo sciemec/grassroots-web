@@ -11,6 +11,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import {
@@ -745,6 +746,14 @@ export default function PitchModePage() {
                   ))}
                 </div>
               </div>
+
+              {/* Browse library link */}
+              <Link
+                href="/player/conditioning"
+                className="block text-center text-xs text-white/40 underline underline-offset-2 hover:text-white/60"
+              >
+                Browse full exercise library →
+              </Link>
 
               {/* Selected count + Start */}
               {condCards.length > 0 && (
