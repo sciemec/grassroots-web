@@ -197,21 +197,25 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
       let analysis: AIAnalysis = { ...FALLBACK };
 
       try {
-        const body: { message: string; system_prompt: string; images?: string[] } = {
-          message:       PROMPT,
-          system_prompt: "You are a FIFA talent scout. Respond with valid JSON only.",
-          images:        frames.slice(0, 10),
-        };
-
-        const aiRes = await fetch("/api/ai-coach", {
+        const token = typeof window !== "undefined"
+          ? localStorage.getItem("auth_token") ?? ""
+          : "";
+        const aiRes = await fetch("/api/video-analysis", {
           method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify(body),
+          headers: {
+            "Content-Type":  "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body:    JSON.stringify({
+            frames:        frames.slice(0, 10),
+            context:       PROMPT,
+            system_prompt: "You are a FIFA talent scout. Respond with valid JSON only.",
+          }),
         });
 
         if (aiRes.ok) {
           const aiData = await aiRes.json();
-          const raw    = aiData.response ?? aiData.reply ?? "";
+          const raw    = aiData.analysis ?? "";
           const match  = raw.match(/\{[\s\S]*\}/);
           if (match) {
             const parsed = JSON.parse(match[0]) as Partial<AIAnalysis>;
