@@ -697,6 +697,14 @@ export default function PitchModePage() {
                   </button>
                 </>
               )}
+
+              {/* Browse drill library link */}
+              <Link
+                href="/player/drills"
+                className="block text-center text-xs text-white/40 underline underline-offset-2 hover:text-white/60"
+              >
+                Browse drills &amp; formats library →
+              </Link>
             </>
           )}
 
