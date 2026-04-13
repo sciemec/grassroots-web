@@ -467,6 +467,29 @@ export default function TalentIDPage() {
               </div>
             )}
 
+            {/* Scout Profile — Potential + Valuation */}
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Also in Scout Profile
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <Link href="/player/potential" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-card/60 px-4 py-3 transition-colors hover:bg-white/5">
+                  <TrendingUp className="h-5 w-5 flex-shrink-0 text-purple-400" />
+                  <div>
+                    <p className="text-sm font-semibold text-white">My Potential</p>
+                    <p className="text-xs text-muted-foreground">AI peak projection</p>
+                  </div>
+                </Link>
+                <Link href="/player/valuation" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-card/60 px-4 py-3 transition-colors hover:bg-white/5">
+                  <Star className="h-5 w-5 flex-shrink-0 text-yellow-400" />
+                  <div>
+                    <p className="text-sm font-semibold text-white">Market Value</p>
+                    <p className="text-xs text-muted-foreground">Est. USD transfer value</p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
             {/* Knowledge base CTA */}
             <Link
               href="/knowledge"

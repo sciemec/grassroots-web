@@ -459,6 +459,29 @@ export default function DrillsPage() {
                 ))}
               </div>
 
+              {/* Training Formats quick-access */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Training Formats
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Rondo",       href: "/player/training-formats/rondo",    emoji: "⭕" },
+                    { label: "Small-Sided", href: "/player/training-formats/ssg",      emoji: "⚽" },
+                    { label: "Shooting",    href: "/player/training-formats/shooting", emoji: "🎯" },
+                  ].map(({ label, href, emoji }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="rounded-xl border border-white/10 bg-card/60 p-3 text-center transition-colors hover:bg-white/5"
+                    >
+                      <p className="text-xl">{emoji}</p>
+                      <p className="mt-1 text-xs font-semibold text-white">{label}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
               {grouped.map(({ cat, drills: catDrills }) => (
                 <CategorySection
                   key={cat.id}

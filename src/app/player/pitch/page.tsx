@@ -395,6 +395,22 @@ export default function PitchModePage() {
           >
             Go to Training Plan
           </button>
+          <div className="mt-6 grid grid-cols-2 gap-3 text-left">
+            <button
+              onClick={() => router.push("/player/sessions/new")}
+              className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
+            >
+              <p className="text-sm font-bold text-white">📝 Log Session</p>
+              <p className="mt-0.5 text-xs text-white/60">Record manually</p>
+            </button>
+            <button
+              onClick={() => router.push("/player/session-tracker")}
+              className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
+            >
+              <p className="text-sm font-bold text-white">📊 Tracker</p>
+              <p className="mt-0.5 text-xs text-white/60">Friend logs live</p>
+            </button>
+          </div>
           <button
             onClick={() => router.push("/player")}
             className="mt-4 block w-full text-center text-white/60 underline"
@@ -419,9 +435,25 @@ export default function PitchModePage() {
           <p className="mt-2 text-base italic text-white/60">
             &quot;Zororo ndirwo ruzivo — rest is wisdom.&quot;
           </p>
+          <div className="mt-8 grid grid-cols-2 gap-3 text-left">
+            <button
+              onClick={() => router.push("/player/sessions/new")}
+              className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
+            >
+              <p className="text-sm font-bold text-white">📝 Log Session</p>
+              <p className="mt-0.5 text-xs text-white/60">Record manually</p>
+            </button>
+            <button
+              onClick={() => router.push("/player/session-tracker")}
+              className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3"
+            >
+              <p className="text-sm font-bold text-white">📊 Tracker</p>
+              <p className="mt-0.5 text-xs text-white/60">Friend logs live</p>
+            </button>
+          </div>
           <button
             onClick={() => router.push("/player")}
-            className="mt-10 rounded-2xl bg-white px-8 py-4 text-lg font-bold text-[#15803d]"
+            className="mt-4 rounded-2xl bg-white px-8 py-4 text-lg font-bold text-[#15803d]"
           >
             Back to Hub
           </button>

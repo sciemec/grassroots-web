@@ -714,6 +714,24 @@ export default function PlayerVaultPage() {
           </p>
         </div>
 
+        {/* My Videos — quick access to Showcase and Capture */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <a href="/player/showcase" className="flex items-center gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3 transition-colors hover:bg-white/5">
+            <span className="text-xl">🏅</span>
+            <div>
+              <p className="text-sm font-semibold text-white">Talent Showcase</p>
+              <p className="text-xs text-muted-foreground">Upload skill clips for scouts</p>
+            </div>
+          </a>
+          <a href="/player/capture" className="flex items-center gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3 transition-colors hover:bg-white/5">
+            <span className="text-xl">📷</span>
+            <div>
+              <p className="text-sm font-semibold text-white">Moment Capture</p>
+              <p className="text-xs text-muted-foreground">Record &amp; get THUTO feedback</p>
+            </div>
+          </a>
+        </div>
+
         {/* Local mode banner */}
         {localMode && (
           <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">

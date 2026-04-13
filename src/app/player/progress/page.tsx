@@ -192,6 +192,21 @@ export default function ProgressPage() {
                 </div>
               </div>
             </div>
+          {/* Milestones link */}
+          <Link
+            href="/player/milestones"
+            className="flex items-center justify-between rounded-xl border bg-card px-5 py-4 transition-colors hover:bg-muted/40"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/20">
+                <Star className="h-4 w-4 text-orange-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">My Milestones</p>
+                <p className="text-xs text-muted-foreground">Celebrate your personal achievements →</p>
+              </div>
+            </div>
+          </Link>
           </div>
         )}
       </main>
