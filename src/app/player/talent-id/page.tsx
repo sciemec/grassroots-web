@@ -32,15 +32,19 @@ interface Profile {
   first_name?: string;
   surname?: string;
   position?: string;
+  position_primary?: string;
   sport?: string;
   province?: string;
   club?: string;
   school?: string;
   bio?: string;
   avatar_url?: string;
+  photo_url?: string;
   open_for_scouting?: boolean;
+  scout_visible?: boolean;
   age_group?: string;
   preferred_foot?: string;
+  dominant_foot?: string;
 }
 
 // ─── 5-Dimension scoring (ported from THUTO TalentIdService) ────────────────
@@ -181,9 +185,11 @@ export default function TalentIDPage() {
           setSessions(sessRes.value.data?.data ?? sessRes.value.data ?? []);
         }
         if (profRes.status === "fulfilled") {
-          const p: Profile = profRes.value.data?.data ?? profRes.value.data ?? {};
+          const raw = profRes.value.data?.profile ?? profRes.value.data?.data ?? profRes.value.data ?? {};
+          const p: Profile = raw;
           setProfile(p);
-          setOpenForScouting(p.open_for_scouting ?? false);
+          // Backend returns both open_for_scouting (alias) and scout_visible (column)
+          setOpenForScouting(p.open_for_scouting ?? p.scout_visible ?? false);
         }
       } finally {
         setLoading(false);
@@ -228,7 +234,9 @@ export default function TalentIDPage() {
     date: new Date(s.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short" }),
   }));
 
-  const playsLike = getPlaysLike(profile?.position);
+  const position = profile?.position ?? profile?.position_primary;
+  const avatarSrc = profile?.avatar_url ?? profile?.photo_url;
+  const playsLike = getPlaysLike(position);
 
   const generateScoutReport = async () => {
     setLoadingReport(true);
@@ -336,9 +344,9 @@ export default function TalentIDPage() {
               <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div className="flex-shrink-0">
-                  {profile?.avatar_url ? (
+                  {avatarSrc ? (
                     <img
-                      src={profile.avatar_url}
+                      src={avatarSrc}
                       alt={displayName}
                       className="h-20 w-20 rounded-2xl object-cover border-2 border-white/20"
                     />
@@ -355,9 +363,9 @@ export default function TalentIDPage() {
                     <div>
                       <h2 className="text-lg font-bold text-white leading-tight">{displayName}</h2>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        {profile?.position && (
+                        {position && (
                           <span className="flex items-center gap-1">
-                            <Shirt className="h-3 w-3" /> {profile.position}
+                            <Shirt className="h-3 w-3" /> {position}
                           </span>
                         )}
                         {profile?.sport && (
@@ -410,7 +418,7 @@ export default function TalentIDPage() {
               </div>
 
               {/* Edit profile prompt if incomplete */}
-              {!profile?.position && (
+              {!position && (
                 <Link
                   href="/player/profile"
                   className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-white/15 px-4 py-2.5 text-xs text-muted-foreground hover:border-white/30 hover:text-white transition-colors"
@@ -428,7 +436,7 @@ export default function TalentIDPage() {
                 <div className="mb-3 flex items-center gap-2">
                   <Users className="h-4 w-4 text-accent" />
                   <h2 className="font-semibold text-white">Plays Like</h2>
-                  <span className="ml-auto text-xs text-muted-foreground">based on {profile?.position}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">based on {position}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {playsLike.map(({ name, note }) => (
