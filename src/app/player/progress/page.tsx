@@ -28,7 +28,10 @@ export default function ProgressPage() {
     if (!user) return; // guests see empty state with demo charts
     setLoading(true);
     api.get("/sessions?per_page=50")
-      .then((res) => setSessions(res.data?.data ?? res.data ?? []))
+      .then((res) => {
+        const raw = res.data?.data ?? res.data;
+        setSessions(Array.isArray(raw) ? raw : []);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);

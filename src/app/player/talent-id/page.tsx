@@ -182,11 +182,12 @@ export default function TalentIDPage() {
           api.get("/profile"),
         ]);
         if (sessRes.status === "fulfilled") {
-          setSessions(sessRes.value.data?.data ?? sessRes.value.data ?? []);
+          const sessRaw = sessRes.value.data?.data ?? sessRes.value.data;
+          setSessions(Array.isArray(sessRaw) ? sessRaw : []);
         }
         if (profRes.status === "fulfilled") {
-          const raw = profRes.value.data?.profile ?? profRes.value.data?.data ?? profRes.value.data ?? {};
-          const p: Profile = raw;
+          const profRaw = profRes.value.data?.profile ?? profRes.value.data?.data ?? profRes.value.data;
+          const p: Profile = (profRaw && typeof profRaw === "object" && !Array.isArray(profRaw)) ? profRaw : {};
           setProfile(p);
           // Backend returns both open_for_scouting (alias) and scout_visible (column)
           setOpenForScouting(p.open_for_scouting ?? p.scout_visible ?? false);

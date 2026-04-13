@@ -95,7 +95,7 @@ export default function PlayerHubPage() {
       api.get("/training/schedule").catch(() => null),
     ])
       .then(async ([sessRes, profRes, schedRes]) => {
-        if (sessRes) setSessions(sessRes.data?.data ?? sessRes.data ?? []);
+        if (sessRes) { const _r = sessRes.data?.data ?? sessRes.data; setSessions(Array.isArray(_r) ? _r : []); }
         if (profRes) {
           const prof = profRes.data?.profile ?? profRes.data;
           setProfile(prof);
