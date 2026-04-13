@@ -70,6 +70,7 @@ const navItems: NavItem[] = [
   { href: "/player/success",              label: "Success Engine",  icon: Flame,           roles: ["player"] },
   { href: "/knowledge",                   label: "Knowledge Base",  icon: BookOpen,        roles: ["player"] },
   { href: "/player/drills",               label: "Drills",          icon: Dumbbell,        roles: ["player"] },
+  { href: "/player/conditioning",         label: "Conditioning",    icon: Activity,        roles: ["player"] },
   { href: "/player/training-formats",     label: "Training Formats",icon: Layers,          roles: ["player"] },
   { href: "/player/sessions",             label: "Sessions",        icon: Target,          roles: ["player"] },
   { href: "/player/milestones",           label: "Milestones",      icon: Trophy,          roles: ["player"] },
