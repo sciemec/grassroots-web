@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { ComponentType } from "react";
 import {
   Dumbbell, Brain, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Apple, Zap, Film, Award, CalendarDays, Dna, Users,
+  Apple, Zap, Film, Award, CalendarDays, Dna, Users, Activity,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -165,6 +165,7 @@ export default function PlayerHubPage() {
     { icon: Brain,        title: "AI Coach",        subtitle: "Deep coaching with THUTO",                  href: "/player/ai-coach",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
     { icon: CalendarDays, title: "Training Plan",   subtitle: "THUTO 7-day FIFA schedule",                 href: "/player/training",       bg: "bg-teal-800",  gradient: "bg-gradient-to-br from-teal-600 to-emerald-800" },
     { icon: Zap,          title: "Train Now",       subtitle: "Pitch Mode · Log Session · Tracker",        href: "/player/pitch",          bg: "bg-[#15803d]", gradient: "bg-gradient-to-br from-[#15803d] to-[#0d5c2d]" },
+    { icon: Activity,     title: "Conditioning",    subtitle: "FIFA 11+ · HIIT · Strength · Agility",      href: "/player/conditioning",   bg: "bg-[#0d4a5c]", gradient: "bg-gradient-to-br from-[#0d6b7a] to-[#0d3a4a]" },
     { icon: Dumbbell,     title: "Drills & Formats",subtitle: "Library · Rondo · SSG · Shooting",          href: "/player/drills",         bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
     { icon: Film,         title: "My Videos",       subtitle: "Vault · Showcase · Capture",                href: "/player/vault",          bg: "bg-[#1a4971]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
     { icon: Award,        title: "Scout Profile",   subtitle: "Talent ID · Potential · Market Value",      href: "/player/talent-id",      bg: "bg-[#1a3a4a]", gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
