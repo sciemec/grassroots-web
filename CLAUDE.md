@@ -2,6 +2,36 @@
 
 ---
 
+## 📝 CLAUDE.md UPDATE RULE — MANDATORY (PERMANENT)
+
+This rule exists because CLAUDE.md is the single source of truth for everything built on this platform.
+If a feature is not documented here, it effectively does not exist for future sessions.
+
+### THE RULE: Claude MUST update CLAUDE.md after EVERY feature or workflow change.
+
+**After completing ANY work, Claude MUST:**
+1. Add the feature/route to the "ALL BUILT ROUTES" list if a new page was created
+2. Add any new environment variables to the "ENVIRONMENT VARIABLES" section
+3. Add backend files (migration, model, controller, routes) to the relevant session log
+4. Update the "WHAT STILL NEEDS BACKEND / EXTERNAL WORK" table — mark completed items or add new missing items
+5. Record the session under a "SESSION LOG — [date]" heading with: what was built, files changed, what still needs doing
+
+**The update must happen IN THE SAME COMMIT as the feature — not as a separate step.**
+
+**Claude must NEVER:**
+- Finish a feature without updating CLAUDE.md
+- Say "I'll update CLAUDE.md later"
+- Leave a new route undocumented
+- Leave a new env variable undocumented
+- Mark backend work as done if the migration has not been confirmed on Render
+
+**Why this rule exists:**
+Every session starts by reading CLAUDE.md. If it is out of date, Claude starts with a false picture
+of what exists, builds things that already exist, or misses dependencies. An up-to-date CLAUDE.md
+saves hours of re-investigation at the start of every session.
+
+---
+
 ## 🚨 INCOMPLETE WORK ALERT RULE — MANDATORY (PERMANENT)
 
 This rule exists because Nigel discovered in March 2026 that multiple features were
@@ -3963,4 +3993,119 @@ Reason: Google OAuth was causing "invalid email or password" errors during regis
 **Vercel (add this):**
 ```
 GROQ_API_KEY = (from console.groq.com → API Keys)
+```
+---
+
+## SESSION LOG — 13 April 2026
+
+### Theme — Scout Profile New Features + CLAUDE.md Update Rule + FIFA Coaching Methodology
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. CLAUDE.md Update Rule — ADDED (Permanent)
+New permanent rule at top of CLAUDE.md: Claude MUST update CLAUDE.md in the same commit as every feature.
+Covers: new routes, env vars, backend files, session logs, incomplete work table.
+
+#### 2. FIFA Coaching Methodology — Injected into THUTO
+Full FIFA age-appropriate frameworks injected into BASE_PROMPT in ThutoChat.tsx and ThutoChatCoach.tsx.
+GAG (under 12), Progressive Methodology (12-15), Play-Practice-Play (15+).
+Six non-negotiables: Fun, Safety, Clear purpose, Inclusion, Game-based learning, Maximum touches.
+
+#### 3. Player Hub Consolidation — 20 cards to 11 cards
+Merged redundant cards. File: src/app/player/page.tsx
+- Train Now (/player/pitch) — merged: Start Session, Pitch Mode, Session Tracker
+- Drills & Formats (/player/drills) — merged: Drill Library, Training Formats
+- My Videos (/player/vault) — merged: Highlight Vault, Moment Capture, Talent Showcase
+- Scout Profile (/player/talent-id) — merged: Talent ID, My Potential, Market Value
+- My Journey (/player/progress) — merged: My Progress, Milestones
+
+#### 4. Drill Library Fix
+- Fixed API fallback: threshold changed from raw.length > 0 to raw.length >= ALL_DRILLS.length
+- Fixed categories stat tile: shows active count not hardcoded 9
+- Added Training Formats quick-access row (Rondo, Small-Sided, Shooting)
+- File: src/app/player/drills/page.tsx
+
+#### 5. Pitch Mode (Train Now) Fix
+- Added Log Session + Session Tracker buttons on no_schedule and rest_day phases
+- File: src/app/player/pitch/page.tsx
+
+#### 6. Cross-links on All Merged Hub Cards
+- /player/vault — added Showcase + Moment Capture tiles
+- /player/talent-id — added My Potential + Market Value cards
+- /player/progress — added Milestones link
+- /lib/offlineDB.ts — made equipment_needed optional (TypeScript fix)
+
+#### 7. Scout Profile Full Rebuild (/player/talent-id)
+New features added to existing page (all scoring logic preserved):
+- Profile identity card: avatar, name, position, sport, province, club, bio (from GET /profile)
+- Open for Scouting toggle: saves to PATCH /profile, green when on / grey when off
+- Plays Like section: Zimbabwean player comparisons by position
+  Winger → Khama Billiat | Midfielder → Nakamba/Munetsi | CB → Teenage Hadebe | GK → Mkuruva
+- Share Public CV button: copies grassrootssports.live/player/[id]/cv to clipboard
+- Showcase Clips tile linking to /player/showcase
+- Prompt to complete profile if position/sport missing
+- Profile + sessions loaded in parallel (Promise.allSettled)
+- File: src/app/player/talent-id/page.tsx
+
+#### 8. open_for_scouting Column — Migration Code (needs running on Render)
+
+FILE: database/migrations/2026_04_13_000001_add_open_for_scouting_to_profiles_table.php
+
+```php
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::table('profiles', function (Blueprint $table) {
+            $table->boolean('open_for_scouting')->default(false)->after('bio');
+        });
+    }
+    public function down(): void
+    {
+        Schema::table('profiles', function (Blueprint $table) {
+            $table->dropColumn('open_for_scouting');
+        });
+    }
+};
+```
+
+Add to ProfileController update() validation:
+```php
+'open_for_scouting' => 'nullable|boolean',
+```
+
+Add to Profile model $fillable:
+```php
+'open_for_scouting',
+```
+
+Fallback SQL (run on Render PostgreSQL directly if needed):
+```sql
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS open_for_scouting BOOLEAN DEFAULT false;
+```
+
+---
+
+### WHAT STILL NEEDS DOING (13 April 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| open_for_scouting column | Code written — NOT YET RUN on Render | Copy migration to bhora-ai + php artisan migrate |
+| GROQ_API_KEY | NOT set in Vercel | Add to Vercel env vars — all THUTO AI broken without this |
+| R2_* vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+| /player/success-engine | Hub card href mismatch — page lives at /player/goal | Fix href in player/page.tsx |
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (13 April 2026)
+
+No new routes this session. Enhanced existing:
+```
+/player/talent-id   Scout Profile — profile header, scouting toggle, Plays Like, public CV share
 ```
