@@ -120,7 +120,7 @@ export default function ConditioningLibraryPage() {
     fetch(`${API}/exercise-cards?per_page=100`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (Array.isArray(data?.data)) setCards(data.data as ExerciseCard[]);
+        if (Array.isArray(data?.data) && data.data.length > 0) setCards(data.data as ExerciseCard[]);
       })
       .catch(() => {/* keep seeds */});
   }, []);
