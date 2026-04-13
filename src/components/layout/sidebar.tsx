@@ -40,6 +40,7 @@ const navItems: NavItem[] = [
   { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
   { href: "/coach/scouting",         label: "Scouting",       icon: ScanSearch,      roles: ["coach"] },
   { href: "/coach/training-plans",   label: "Training Plans", icon: Layers,          roles: ["coach"] },
+  { href: "/coach/conditioning",     label: "Conditioning",   icon: Activity,        roles: ["coach"] },
   { href: "/coach/tactics",          label: "Tactics Board",  icon: ClipboardList,   roles: ["coach"] },
   { href: "/coach/matches",             label: "Matches",          icon: Trophy,      roles: ["coach"] },
   { href: "/knowledge",               label: "Knowledge Base",   icon: BookOpen,    roles: ["coach"] },
