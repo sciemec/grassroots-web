@@ -230,7 +230,8 @@ export default function ScoutReportsPage() {
     queryKey: ["scout-players"],
     queryFn: async () => {
       const res = await api.get("/scout/players");
-      return res.data?.data ?? res.data ?? [];
+      const raw = res.data?.data ?? res.data ?? [];
+      return Array.isArray(raw) ? raw : [];
     },
     enabled: !!user,
   });
@@ -239,7 +240,8 @@ export default function ScoutReportsPage() {
     queryKey: ["scout-shortlist"],
     queryFn: async () => {
       const res = await api.get("/scout/shortlist");
-      return res.data?.data ?? res.data ?? [];
+      const raw = res.data?.data ?? res.data ?? [];
+      return Array.isArray(raw) ? raw : [];
     },
     enabled: !!user,
   });

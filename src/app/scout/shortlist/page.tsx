@@ -36,7 +36,8 @@ export default function ScoutShortlistPage() {
     api.get("/scout/contact-requests")
       .then((res) => {
         // Map contact request data to shortlist format
-        const raw = res.data?.data ?? res.data ?? [];
+        const rawData = res.data?.data ?? res.data ?? [];
+        const raw = Array.isArray(rawData) ? rawData : [];
         setShortlist(raw.map((r: { id: string; player?: { id?: string; initials?: string; position?: string; region?: string; age_group?: string; overall_score?: number }; created_at: string }) => ({
           id: r.id,
           initials: r.player?.initials ?? "?",

@@ -140,7 +140,8 @@ export default function ScoutPage() {
     setLoadingForYou(true);
     try {
       const res = await api.get("/scout/players");
-      const all: ScoutPlayer[] = res.data?.data ?? res.data ?? [];
+      const raw = res.data?.data ?? res.data ?? [];
+      const all: ScoutPlayer[] = Array.isArray(raw) ? raw : [];
       const viewed = loadViewed();
       // Prioritise unviewed players, then show all
       const unviewed = all.filter((p) => !viewed.has(p.id));
@@ -163,7 +164,8 @@ export default function ScoutPage() {
     setLoadingRising(true);
     try {
       const res = await api.get("/scout/players");
-      const all: ScoutPlayer[] = res.data?.data ?? res.data ?? [];
+      const raw2 = res.data?.data ?? res.data ?? [];
+      const all: ScoutPlayer[] = Array.isArray(raw2) ? raw2 : [];
       const sorted = [...all]
         .filter((p) => p.overall_score !== null)
         .sort((a, b) => (b.overall_score ?? 0) - (a.overall_score ?? 0));
@@ -191,7 +193,8 @@ export default function ScoutPage() {
           age_group: ageGroup  || undefined,
         },
       });
-      const results: ScoutPlayer[] = res.data?.data ?? res.data ?? [];
+      const rawResults = res.data?.data ?? res.data ?? [];
+      const results: ScoutPlayer[] = Array.isArray(rawResults) ? rawResults : [];
       setPlayers(results);
       // Track viewed
       results.forEach((p) => markViewed(p.id));
