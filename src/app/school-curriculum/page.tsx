@@ -270,6 +270,67 @@ export default function SchoolCurriculumPage() {
           </div>
         </section>
 
+        {/* ── Once-a-Week Session ───────────────────────────────────────────── */}
+        <section className="rounded-3xl border border-teal-500/20 bg-gradient-to-br from-teal-950/60 to-[#0d2b1a] p-8">
+          <div className="mb-1 text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-teal-500/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-teal-300">
+              <Users className="h-3.5 w-3.5" /> FIFA Once-a-Week Training
+            </span>
+          </div>
+          <h2 className="mb-3 text-center text-3xl font-bold text-white">
+            Only Train Once a Week? There&apos;s a Plan for That.
+          </h2>
+          <p className="mx-auto mb-8 max-w-xl text-center text-sm text-white/60">
+            Most Zimbabwean schools only access their sports field once a week.
+            FIFA&apos;s Once-a-Week methodology makes every single session count — three phases,
+            60 minutes, maximum impact. THUTO generates it in one tap.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              {
+                phase: "Phase 1",
+                label: "Fun Warm-up",
+                time: "15 min",
+                color: "border-green-500/30 bg-green-900/20",
+                labelColor: "text-green-400",
+                desc: "Ball is involved from the very first second. High-energy competitive activities. No standing in lines.",
+                rule: "Ball always at feet. Fun always on.",
+              },
+              {
+                phase: "Phase 2",
+                label: "Mini-Games 3v3 / 4v4",
+                time: "25 min",
+                color: "border-[#f0b429]/30 bg-[#f0b429]/5",
+                labelColor: "text-[#f0b429]",
+                desc: "Small-sided games that maximise touches and decision-making. One coaching theme per session.",
+                rule: "Maximum touches. Maximum decisions.",
+              },
+              {
+                phase: "Phase 3",
+                label: "Real-Game Application",
+                time: "20 min",
+                color: "border-purple-500/30 bg-purple-900/20",
+                labelColor: "text-purple-400",
+                desc: "Unscripted free play. Larger teams. No coach intervention. The game is the teacher.",
+                rule: "No coaching. Let them play.",
+              },
+            ].map(({ phase, label, time, color, labelColor, desc, rule }) => (
+              <div key={phase} className={`rounded-2xl border p-5 ${color}`}>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${labelColor}`}>{phase}</span>
+                  <span className="text-[10px] text-white/40">{time}</span>
+                </div>
+                <p className="text-sm font-bold text-white">{label}</p>
+                <p className="mt-2 text-xs leading-relaxed text-white/60">{desc}</p>
+                <p className={`mt-3 text-[11px] font-semibold italic ${labelColor}`}>&quot;{rule}&quot;</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs text-white/40">
+            THUTO generates a full Once-a-Week session personalised to your students&apos; age group and position — available inside the Training page.
+          </p>
+        </section>
+
         {/* ── School Benefits ───────────────────────────────────────────────── */}
         <section>
           <div className="mb-2 text-center">
