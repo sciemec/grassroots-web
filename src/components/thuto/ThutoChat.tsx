@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
@@ -362,6 +363,200 @@ function FormationDiagram({ formation }: { formation: string }) {
   );
 }
 
+// ── Daily Journey ─────────────────────────────────────────────────────────────
+
+const journeyDateKey = () => `gs_thuto_journey_${new Date().toISOString().slice(0, 10)}`;
+const journeyDoneKey = () => `gs_thuto_done_${new Date().toISOString().slice(0, 10)}`;
+
+interface JourneyStep { id: string; title: string; subtitle: string; href: string; emoji: string; }
+interface Journey     { greeting: string; steps: JourneyStep[]; }
+
+const DEFAULT_JOURNEY: Journey = {
+  greeting: "Mhoro! Here is your plan for today — let us make every minute count. 🇿🇼",
+  steps: [
+    { id: "checkin",   title: "Success Check-In",  subtitle: "Your daily goal mission",           href: "/player/success-engine", emoji: "🎯" },
+    { id: "dna",       title: "Player DNA",         subtitle: "Help THUTO know you better",        href: "/player/dna",            emoji: "🧬" },
+    { id: "train",     title: "Train Now",          subtitle: "Hit the pitch — drills + fitness",  href: "/player/pitch",          emoji: "⚡" },
+    { id: "nutrition", title: "Log Your Meals",     subtitle: "Fuel is part of training",          href: "/player/nutrition",      emoji: "🍎" },
+    { id: "showcase",  title: "Showcase Clip",      subtitle: "Let scouts find you",               href: "/player/showcase",       emoji: "🎬" },
+  ],
+};
+
+async function generateJourney(): Promise<Journey> {
+  try {
+    const goalRaw  = localStorage.getItem("gs_player_goal");
+    const goal     = goalRaw ? JSON.parse(goalRaw) : null;
+    const today    = new Date().toLocaleDateString("en-US", { weekday: "long" });
+    const hour     = new Date().getHours();
+    const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+
+    const prompt =
+      `You are THUTO, Zimbabwe's AI sports coach. Generate a personalized daily journey.\n\n` +
+      `Player: goal="${goal?.goal_text ?? "improve as a footballer"}", position="${goal?.position ?? "player"}", ` +
+      `timeline=${goal?.timeline_months ?? "?"} months, today=${today} ${timeOfDay}.\n\n` +
+      `Pick the 5 most relevant steps from this list in logical order:\n` +
+      `success-engine=/player/success-engine (daily goal check-in — always include first)\n` +
+      `dna=/player/dna (build player profile with THUTO)\n` +
+      `ai-coach=/player/ai-coach (deep coaching session)\n` +
+      `training=/player/training (review/build 7-day schedule)\n` +
+      `train=/player/pitch (pitch mode — drills + conditioning — always include)\n` +
+      `stats=/player/stats/new (log match or training stats)\n` +
+      `nutrition=/player/nutrition (meal plan + food log)\n` +
+      `showcase=/player/showcase (upload skill clip for scouts — always include last)\n` +
+      `vault=/player/vault (highlight reel)\n` +
+      `assessment=/player/assessment (skill ratings radar chart)\n` +
+      `progress=/player/progress (improvement charts)\n` +
+      `milestones=/player/milestones (log achievements)\n` +
+      `verification=/player/verification (unlock QR scouting profile)\n` +
+      `ubuntu=/player/ubuntu (group training session)\n\n` +
+      `Rules: start with success-engine. include train. end with showcase or stats. ` +
+      `Make subtitles personal to the player goal (max 6 words each).\n\n` +
+      `Return ONLY valid JSON, no markdown:\n` +
+      `{"greeting":"One ${timeOfDay} greeting sentence with a Shona word","steps":[{"id":"key","title":"Title","subtitle":"Why today","href":"/player/route","emoji":"emoji"}]}`;
+
+    const res  = await fetch("/api/ai-coach", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ message: prompt, system_prompt: "Return valid JSON only. No markdown fences. No extra text." }),
+    });
+    const data  = await res.json();
+    const text: string = data?.response ?? data?.answer ?? "";
+    const clean = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed: Journey = JSON.parse(clean);
+    if (parsed?.steps?.length > 0) return parsed;
+  } catch { /* fall through */ }
+  return DEFAULT_JOURNEY;
+}
+
+function DailyJourney() {
+  const [journey,   setJourney]   = useState<Journey | null>(null);
+  const [doneIds,   setDoneIds]   = useState<string[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(journeyDoneKey());
+      if (raw) setDoneIds(JSON.parse(raw));
+    } catch { /* ignore */ }
+
+    try {
+      const cached = localStorage.getItem(journeyDateKey());
+      if (cached) { setJourney(JSON.parse(cached)); setLoading(false); return; }
+    } catch { /* ignore */ }
+
+    generateJourney().then((j) => {
+      setJourney(j);
+      try { localStorage.setItem(journeyDateKey(), JSON.stringify(j)); } catch { /* ignore */ }
+      setLoading(false);
+    });
+  }, []);
+
+  const markDone = (id: string) => {
+    const next = Array.from(new Set([...doneIds, id]));
+    setDoneIds(next);
+    try { localStorage.setItem(journeyDoneKey(), JSON.stringify(next)); } catch { /* ignore */ }
+  };
+
+  if (loading) {
+    return (
+      <div className="mb-3 rounded-xl border border-teal-500/20 bg-teal-900/20 p-3">
+        <div className="mb-2 h-3 w-28 animate-pulse rounded bg-white/10" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="mb-1.5 h-8 animate-pulse rounded-lg bg-white/5" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!journey) return null;
+
+  const doneCount = journey.steps.filter((s) => doneIds.includes(s.id)).length;
+  const allDone   = doneCount === journey.steps.length;
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-xl border border-teal-500/20 bg-teal-900/20">
+      {/* Header — tap to collapse */}
+      <button
+        onClick={() => setCollapsed((v) => !v)}
+        className="flex w-full items-center justify-between px-3 py-2.5 text-left"
+      >
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-teal-300">
+            Today&apos;s Journey
+          </p>
+          <p className="mt-0.5 text-[10px] text-white/40">
+            {allDone ? "Complete! 🏆" : `${doneCount} of ${journey.steps.length} done`}
+          </p>
+        </div>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-white/30 transition-transform ${collapsed ? "-rotate-90" : ""}`}
+        />
+      </button>
+
+      {!collapsed && (
+        <div className="px-3 pb-3">
+          {/* Progress bar */}
+          <div className="mb-2 h-0.5 w-full overflow-hidden rounded-full bg-white/5">
+            <div
+              className="h-full rounded-full bg-teal-500 transition-all duration-500"
+              style={{ width: `${(doneCount / journey.steps.length) * 100}%` }}
+            />
+          </div>
+
+          {/* THUTO greeting */}
+          <p className="mb-2.5 px-0.5 text-[11px] italic text-white/50">{journey.greeting}</p>
+
+          {/* Steps */}
+          <div className="space-y-1.5">
+            {journey.steps.map((step, i) => {
+              const done   = doneIds.includes(step.id);
+              const isNext = !done && journey.steps.slice(0, i).every((s) => doneIds.includes(s.id));
+              return (
+                <div
+                  key={step.id}
+                  className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all ${
+                    done   ? "opacity-40"
+                    : isNext ? "border border-teal-500/30 bg-teal-900/40"
+                    : "opacity-60"
+                  }`}
+                >
+                  <span className="flex-shrink-0 text-sm">{done ? "✅" : step.emoji}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs font-semibold leading-tight ${done ? "line-through text-white/30" : "text-white"}`}>
+                      {step.title}
+                    </p>
+                    <p className="truncate text-[10px] text-white/35">{step.subtitle}</p>
+                  </div>
+                  {!done && (
+                    <Link
+                      href={step.href}
+                      onClick={() => markDone(step.id)}
+                      className={`flex-shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${
+                        isNext
+                          ? "bg-[#f0b429] text-[#1a3a1a] hover:bg-[#f5c542]"
+                          : "bg-white/8 text-white/40 hover:bg-white/15"
+                      }`}
+                    >
+                      Go →
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {allDone && (
+            <p className="mt-2.5 text-center text-[11px] text-teal-400">
+              Kushanda kwako kwakanaka — great work today! 🇿🇼
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── THUTO Avatar ──────────────────────────────────────────────────────────────
 
 function ThutoAvatar({ size = "sm", pulse = false }: { size?: "sm" | "lg"; pulse?: boolean }) {
@@ -712,6 +907,9 @@ export default function ThutoChat() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {/* Daily Journey — always shown at top, collapses when chatting */}
+            <DailyJourney />
+
             {messages.length === 0 && !thinking && (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full border border-teal-400/30 bg-teal-900/30">
