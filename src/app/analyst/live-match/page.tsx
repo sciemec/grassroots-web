@@ -452,13 +452,15 @@ function EventRow({ evt, homeTeam, awayTeam }: {
 
 // ─── Stats sidebar ────────────────────────────────────────────────────────────
 function StatsPanel({
-  events, possession, homeTeam, awayTeam, elapsed, onEnd,
+  events, possession, homeTeam, awayTeam, elapsed, onEnd, ballTimeSecs, deadTimeSecs,
 }: {
   events: MatchEvent[];
   possession: { home: number; away: number };
   homeTeam: string; awayTeam: string;
   elapsed: number;
   onEnd: () => void;
+  ballTimeSecs: number;
+  deadTimeSecs: number;
 }) {
   const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
   const ss = String(elapsed % 60).padStart(2, "0");
@@ -522,6 +524,20 @@ function StatsPanel({
         {stat("Corners",     homeCorners,         awayCorners)}
         {stat("Pass %",      typeof homePassPct === "number" ? `${homePassPct}%` : homePassPct,
                              typeof awayPassPct === "number" ? `${awayPassPct}%` : awayPassPct)}
+        {/* Ball Time % */}
+        {(() => {
+          const total = ballTimeSecs + deadTimeSecs;
+          if (total === 0) return null;
+          const pct = Math.round((ballTimeSecs / total) * 100);
+          const col = pct >= 60 ? "text-teal-400" : pct >= 40 ? "text-amber-400" : "text-red-400";
+          return (
+            <div className="flex items-center justify-between text-xs">
+              <span className={`font-bold ${col}`}>{pct}%</span>
+              <span className="text-zinc-500 text-[10px] uppercase tracking-widest">Ball Time</span>
+              <span className={`font-bold text-[10px] ${col}`}>{pct >= 60 ? "✓ Good" : pct >= 40 ? "⚠ Low" : "✗ Poor"}</span>
+            </div>
+          );
+        })()}
       </div>
 
       <button onClick={onEnd}
@@ -533,12 +549,14 @@ function StatsPanel({
 }
 
 // ─── End screen ───────────────────────────────────────────────────────────────
-function EndScreen({ events, possession, setup, elapsed, onSaved }: {
+function EndScreen({ events, possession, setup, elapsed, onSaved, ballTimeSecs, deadTimeSecs }: {
   events: MatchEvent[];
   possession: { home: number; away: number };
   setup: MatchSetup;
   elapsed: number;
   onSaved: (matchId: string) => void;
+  ballTimeSecs: number;
+  deadTimeSecs: number;
 }) {
   const homeGoals  = events.filter((e) => e.type === "shot" && e.team === "home" && e.isGoal).length;
   const awayGoals  = events.filter((e) => e.type === "shot" && e.team === "away" && e.isGoal).length;
@@ -648,6 +666,20 @@ function EndScreen({ events, possession, setup, elapsed, onSaved }: {
         {row("Corners",     `${homeCorners}`,    `${awayCorners}`)}
         {row("Pass %",      homePassPct !== null ? `${homePassPct}%` : "N/A", awayPassPct !== null ? `${awayPassPct}%` : "N/A")}
         {row("Total Events", `${events.filter((e) => e.team === "home").length}`, `${events.filter((e) => e.team === "away").length}`)}
+        {(() => {
+          const total = ballTimeSecs + deadTimeSecs;
+          if (total === 0) return null;
+          const pct = Math.round((ballTimeSecs / total) * 100);
+          const col = pct >= 60 ? "text-teal-400" : pct >= 40 ? "text-amber-400" : "text-red-400";
+          const label = pct >= 60 ? "✓ Excellent (FIFA target)" : pct >= 40 ? "⚠ Below target" : "✗ Poor — too many lines";
+          return (
+            <div className="flex items-center justify-between text-xs py-1.5">
+              <span className={`font-bold ${col}`}>{pct}%</span>
+              <span className="text-zinc-500 text-[10px] uppercase tracking-widest">Ball Time</span>
+              <span className={`font-semibold text-[10px] ${col}`}>{label}</span>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Save + analyse actions */}
@@ -702,7 +734,7 @@ function EndScreen({ events, possession, setup, elapsed, onSaved }: {
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 const LS_KEY = "gs_live_match";
-interface SavedMatch { phase: Phase; setup: MatchSetup; events: MatchEvent[]; possessionLog: PossessionBlock[]; elapsed: number; }
+interface SavedMatch { phase: Phase; setup: MatchSetup; events: MatchEvent[]; possessionLog: PossessionBlock[]; elapsed: number; ballTimeSecs?: number; deadTimeSecs?: number; }
 function loadSaved(): SavedMatch | null {
   try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "null") as SavedMatch | null; }
   catch { return null; }
@@ -726,19 +758,27 @@ export default function AnalystLiveMatchPage() {
   const [subReason, setSubReason]       = useState<"tactical" | "injury" | "fatigue">("tactical");
   const [possessionTeam, setPossessionTeam] = useState<"home" | "away">("home");
   const [possessionLog, setPossessionLog]   = useState<PossessionBlock[]>(saved?.possessionLog ?? []);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ballInPlayRef  = useRef(false);
+  const [ballInPlay,   setBallInPlay]   = useState(false);
+  const [ballTimeSecs, setBallTimeSecs] = useState(saved?.ballTimeSecs ?? 0);
+  const [deadTimeSecs, setDeadTimeSecs] = useState(saved?.deadTimeSecs ?? 0);
 
   // Persist match state when live or ended
   useEffect(() => {
     if (phase === "live" || phase === "ended") {
-      try { localStorage.setItem(LS_KEY, JSON.stringify({ phase, setup, events, possessionLog, elapsed })); } catch {}
+      try { localStorage.setItem(LS_KEY, JSON.stringify({ phase, setup, events, possessionLog, elapsed, ballTimeSecs, deadTimeSecs })); } catch {}
     }
   }, [phase, setup, events, possessionLog, elapsed]);
 
-  // Timer
+  // Timer + ball time accumulator
   useEffect(() => {
     if (phase === "live") {
-      intervalRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
+      intervalRef.current = setInterval(() => {
+        setElapsed((s) => s + 1);
+        if (ballInPlayRef.current) setBallTimeSecs((s) => s + 1);
+        else setDeadTimeSecs((s) => s + 1);
+      }, 1000);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
@@ -756,6 +796,10 @@ export default function AnalystLiveMatchPage() {
     setPhase("live");
     setElapsed(0);
     setEvents([]);
+    setBallTimeSecs(0);
+    setDeadTimeSecs(0);
+    setBallInPlay(false);
+    ballInPlayRef.current = false;
     setPossessionLog([{ team: "home", startMinute: 1 }]);
     try { localStorage.removeItem(LS_KEY); } catch {}
   };
@@ -838,6 +882,46 @@ export default function AnalystLiveMatchPage() {
                   awayTeam={setup.awayTeam}
                   onSwitch={handlePossessionSwitch}
                 />
+                {/* ── Active Ball Time tracker ── */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Active Ball Time</p>
+                    {(() => {
+                      const total = ballTimeSecs + deadTimeSecs;
+                      const pct   = total > 0 ? Math.round((ballTimeSecs / total) * 100) : 0;
+                      const col   = pct >= 60 ? "text-teal-400" : pct >= 40 ? "text-amber-400" : total > 0 ? "text-red-400" : "text-zinc-600";
+                      return <span className={`text-sm font-black ${col}`}>{total > 0 ? `${pct}%` : "--"}</span>;
+                    })()}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setBallInPlay(true); ballInPlayRef.current = true; }}
+                      className={`flex-1 rounded-lg py-2 text-xs font-bold transition-colors ${
+                        ballInPlay
+                          ? "bg-teal-600 text-white"
+                          : "border border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      }`}>
+                      ⚽ Ball In Play
+                    </button>
+                    <button
+                      onClick={() => { setBallInPlay(false); ballInPlayRef.current = false; }}
+                      className={`flex-1 rounded-lg py-2 text-xs font-bold transition-colors ${
+                        !ballInPlay
+                          ? "bg-red-600/70 text-white"
+                          : "border border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                      }`}>
+                      ✋ Ball Dead
+                    </button>
+                  </div>
+                  {(ballTimeSecs + deadTimeSecs) > 0 && (
+                    <div className="flex h-1 overflow-hidden rounded-full bg-zinc-800">
+                      <div
+                        className="bg-teal-600 transition-all duration-500"
+                        style={{ width: `${Math.round((ballTimeSecs / (ballTimeSecs + deadTimeSecs)) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
                 <EventLoggerPanel
                   activeTab={activeTab} setActiveTab={setActiveTab}
                   activeTeam={activeTeam} setActiveTeam={setActiveTeam}
@@ -884,6 +968,8 @@ export default function AnalystLiveMatchPage() {
                 awayTeam={setup.awayTeam}
                 elapsed={elapsed}
                 onEnd={handleEnd}
+                ballTimeSecs={ballTimeSecs}
+                deadTimeSecs={deadTimeSecs}
               />
             </div>
           )}
@@ -895,6 +981,8 @@ export default function AnalystLiveMatchPage() {
               setup={setup}
               elapsed={elapsed}
               onSaved={() => { try { localStorage.removeItem(LS_KEY); } catch {} }}
+              ballTimeSecs={ballTimeSecs}
+              deadTimeSecs={deadTimeSecs}
             />
           )}
         </div>
