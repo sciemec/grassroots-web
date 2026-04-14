@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   Calendar, RefreshCw, Settings2, ChevronDown, ChevronUp,
   Moon, Clock, Dumbbell, Loader2, MessageCircle, HelpCircle,
-  Target, Play, Star, Zap,
+  Target, Play, Star, Zap, Users,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
@@ -332,12 +332,14 @@ function DayCard({
 
 export default function TrainingPage() {
   const { user } = useAuthStore();
-  const [schedule, setSchedule]         = useState<Schedule | null>(null);
-  const [loading, setLoading]           = useState(true);
-  const [generating, setGenerating]     = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [prefs, setPrefs]               = useState<TrainingPrefs>({ time_preference: "morning", days: 4, hours: 1, age: 15, position: "midfielder" });
-  const [loggingDay, setLoggingDay]     = useState<string | null>(null);
+  const [schedule, setSchedule]           = useState<Schedule | null>(null);
+  const [loading, setLoading]             = useState(true);
+  const [generating, setGenerating]       = useState(false);
+  const [generatingOnce, setGeneratingOnce] = useState(false);
+  const [onceSession, setOnceSession]     = useState<ScheduleDay | null>(null);
+  const [showSettings, setShowSettings]   = useState(false);
+  const [prefs, setPrefs]                 = useState<TrainingPrefs>({ time_preference: "morning", days: 4, hours: 1, age: 15, position: "midfielder" });
+  const [loggingDay, setLoggingDay]       = useState<string | null>(null);
   const [frameworkUsed, setFrameworkUsed] = useState("");
 
   useEffect(() => {
@@ -580,6 +582,136 @@ Include all 7 days. Set is_rest: true for ${7 - prefs.days} days. Adapt drills f
     setGenerating(false);
   };
 
+  // ── Generate Once-a-Week session ─────────────────────────────────────────────
+
+  const generateOnceSession = async () => {
+    setGeneratingOnce(true);
+    const dna = loadDNA();
+    let age = prefs.age;
+    let position = prefs.position;
+
+    try {
+      const res = await api.get("/profile");
+      const p = res.data?.data ?? res.data ?? {};
+      if (p.date_of_birth) {
+        const dob = new Date(p.date_of_birth);
+        age = new Date().getFullYear() - dob.getFullYear();
+      }
+      if (p.position) position = p.position;
+    } catch { /* use defaults */ }
+
+    const prompt = `You are THUTO generating a single 60-minute FIFA Once-a-Week training session.
+Player: age ${age}, position ${position}, Zimbabwe grassroots level.
+Equipment: ${dna.equipment}. Environment: ${dna.environment}.
+
+This is a FIFA-structured Once-a-Week session with exactly 3 phases:
+
+PHASE 1 — Fun Warm-up (15 minutes):
+High-energy, competitive. THE BALL IS ALWAYS INVOLVED from the first second.
+Keep players engaged immediately. No standing in lines. Fun competitions.
+
+PHASE 2 — Mini-Games (25 minutes):
+3v3 or 4v4 small-sided games ONLY. Maximize ball touches and decision-making.
+One clear coaching theme (e.g. receiving on the front foot, pressing triggers).
+Ask leading questions — never just tell. Keep it competitive.
+
+PHASE 3 — Real-Game Application (20 minutes):
+Unscripted free play. Larger teams (5v5 or more). No coach intervention.
+Player applies what they learned under match pressure. Let the game teach.
+
+Return ONLY valid JSON matching this shape exactly:
+{
+  "day": "Today",
+  "is_rest": false,
+  "focus": "one-line theme for the whole session",
+  "session_intention": "one sentence THUTO says to open the session",
+  "warm_up": {
+    "name": "drill name",
+    "duration_minutes": 15,
+    "instructions": "step-by-step instructions",
+    "coaching_question": "question THUTO asks"
+  },
+  "main_drill": {
+    "name": "Mini-Game name",
+    "duration_minutes": 25,
+    "instructions": "3v3 or 4v4 setup + rules",
+    "equipment_needed": "...",
+    "coaching_question": "leading question for the theme",
+    "success_looks_like": "what good play looks like"
+  },
+  "game_application": {
+    "name": "Free Game",
+    "duration_minutes": 20,
+    "setup": "5v5 or more, full pitch area",
+    "instructions": "Unscripted free play. No restrictions. Player applies the session theme naturally.",
+    "thuto_observes": "what THUTO watches for",
+    "coaching_intervention": "none"
+  },
+  "cooldown": "3 min static stretch",
+  "joy_prompt": "reflection question THUTO asks after"
+}`;
+
+    try {
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: prompt,
+          system_prompt: "You are THUTO, a grassroots coach AI following FIFA Once-a-Week methodology. Return ONLY valid JSON — no markdown, no explanation.",
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const raw: string = data?.response ?? data?.answer ?? "";
+        const cleaned = raw.replace(/```json?\n?/gi, "").replace(/```\n?/gi, "").trim();
+        const m = cleaned.match(/\{[\s\S]*\}/);
+        if (m) {
+          try {
+            const parsed = JSON.parse(m[0]) as ScheduleDay;
+            if (parsed.warm_up && parsed.main_drill && parsed.game_application) {
+              setOnceSession(parsed);
+              setGeneratingOnce(false);
+              return;
+            }
+          } catch { /* fall through to fallback */ }
+        }
+      }
+    } catch { /* fall through */ }
+
+    // Fallback session
+    setOnceSession({
+      day: "Today",
+      is_rest: false,
+      focus: "Ball Mastery & Decision-Making",
+      session_intention: "One session, full intensity — let's make every touch count today.",
+      warm_up: {
+        name: "Dribble Tag",
+        duration_minutes: 15,
+        instructions: "Everyone has a ball. 3–4 players are 'it'. Dribble to avoid being tagged. If tagged, do 5 quick toe-taps and rejoin. Ball always at your feet — no stopping.",
+        coaching_question: "How do you use your body to protect the ball when someone is close?",
+      },
+      main_drill: {
+        name: "3v3 Pressing Game",
+        duration_minutes: 25,
+        instructions: "3v3 in a 20×15m box. Team scores by dribbling over the opponent's end line. If ball goes out — instant restart. Winning team stays on. Rotate every 4 minutes.",
+        equipment_needed: "Ball, 4 cones",
+        coaching_question: "When your team wins the ball, what is the first thing you look for?",
+        success_looks_like: "Players scanning before receiving, quick decisions, no hesitation on the ball",
+      },
+      game_application: {
+        name: "5v5 Free Game",
+        duration_minutes: 20,
+        setup: "5v5 on a large area with small goals",
+        instructions: "Unscripted free play. No rules except no handball. THUTO watches — no coaching. Let the game be the teacher.",
+        thuto_observes: "Whether players naturally apply the pressing and scanning from the drill phase",
+        coaching_intervention: "none",
+      },
+      cooldown: "3 min: shake out legs, slow breathing, hydrate. Ask your teammate one thing they did well.",
+      joy_prompt: "What moment in today's game made you feel most alive as a player?",
+    });
+    setGeneratingOnce(false);
+  };
+
   // ── Log session ──────────────────────────────────────────────────────────────
 
   const logSession = async (day: ScheduleDay) => {
@@ -647,12 +779,20 @@ Include all 7 days. Set is_rest: true for ${7 - prefs.days} days. Adapt drills f
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               onClick={() => setShowSettings(v => !v)}
               className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-card/60 px-3 py-2 text-xs font-medium text-white/70 transition-colors hover:bg-card"
             >
               <Settings2 className="h-3.5 w-3.5" /> Settings
+            </button>
+            <button
+              onClick={generateOnceSession}
+              disabled={generatingOnce || generating}
+              className="flex items-center gap-1.5 rounded-xl border border-teal-500/40 bg-teal-900/30 px-3 py-2 text-xs font-bold text-teal-300 transition-colors hover:bg-teal-900/50 disabled:opacity-60"
+            >
+              {generatingOnce ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Users className="h-3.5 w-3.5" />}
+              Once-a-Week
             </button>
             <button
               onClick={generateSchedule}
@@ -770,6 +910,143 @@ Include all 7 days. Set is_rest: true for ${7 - prefs.days} days. Adapt drills f
                 : <><RefreshCw className="h-4 w-4" /> Build my schedule</>
               }
             </button>
+          </div>
+        )}
+
+        {/* Once-a-Week Session */}
+        {generatingOnce && (
+          <div className="mb-5 flex items-center justify-center gap-3 rounded-2xl border border-teal-500/20 bg-teal-900/20 py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-teal-400" />
+            <p className="text-sm text-teal-300">THUTO is building your once-a-week session...</p>
+          </div>
+        )}
+
+        {!generatingOnce && onceSession && (
+          <div className="mb-6 overflow-hidden rounded-2xl border border-teal-500/30 bg-teal-900/10">
+            {/* Banner */}
+            <div className="flex items-center justify-between bg-teal-900/40 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-teal-400" />
+                <p className="text-xs font-bold uppercase tracking-widest text-teal-300">FIFA Once-a-Week Session · 60 min</p>
+              </div>
+              <button
+                onClick={() => setOnceSession(null)}
+                className="text-xs text-white/30 hover:text-white/60"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <div className="px-4 pb-4 pt-3 space-y-3">
+              {/* THUTO opens */}
+              {onceSession.session_intention && (
+                <div className="flex items-start gap-2 rounded-xl bg-teal-900/30 border border-teal-500/20 p-3">
+                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">T</span>
+                  <p className="text-sm text-teal-200 italic leading-relaxed">&quot;{onceSession.session_intention}&quot;</p>
+                </div>
+              )}
+
+              {/* Focus badge */}
+              {onceSession.focus && (
+                <p className="text-sm font-semibold text-white">
+                  Theme: <span className="text-teal-300">{onceSession.focus}</span>
+                </p>
+              )}
+
+              {/* Phase 1 — Fun Warm-up */}
+              {onceSession.warm_up && (
+                <div className="rounded-xl border border-green-500/20 bg-green-900/10 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Play className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-green-400">Phase 1 — Fun Warm-up</p>
+                    <span className="ml-auto text-xs text-white/30 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />{onceSession.warm_up.duration_minutes} min
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-white">{onceSession.warm_up.name}</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{onceSession.warm_up.instructions}</p>
+                  {onceSession.warm_up.coaching_question && (
+                    <div className="flex items-start gap-2 rounded-lg bg-teal-900/20 border border-teal-500/15 px-3 py-2">
+                      <HelpCircle className="h-3.5 w-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-teal-300 italic">&quot;{onceSession.warm_up.coaching_question}&quot;</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Phase 2 — Mini-Games */}
+              {onceSession.main_drill && (
+                <div className="rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-3.5 w-3.5 text-[#f0b429] flex-shrink-0" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]">Phase 2 — Mini-Games (3v3 / 4v4)</p>
+                    <span className="ml-auto text-xs text-white/30 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />{onceSession.main_drill.duration_minutes} min
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-white">{onceSession.main_drill.name}</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{onceSession.main_drill.instructions}</p>
+                  {onceSession.main_drill.equipment_needed && (
+                    <p className="text-xs text-white/30">Equipment: {onceSession.main_drill.equipment_needed}</p>
+                  )}
+                  {onceSession.main_drill.coaching_question && (
+                    <div className="flex items-start gap-2 rounded-lg bg-teal-900/20 border border-teal-500/15 px-3 py-2">
+                      <HelpCircle className="h-3.5 w-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-teal-300 italic">&quot;{onceSession.main_drill.coaching_question}&quot;</p>
+                    </div>
+                  )}
+                  {onceSession.main_drill.success_looks_like && (
+                    <div className="flex items-start gap-2 rounded-lg bg-green-900/20 border border-green-500/15 px-3 py-2">
+                      <Star className="h-3.5 w-3.5 text-green-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-green-300">Success: {onceSession.main_drill.success_looks_like}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Phase 3 — Real-Game Application */}
+              {onceSession.game_application && (
+                <div className="rounded-xl border border-purple-500/20 bg-purple-900/10 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Dumbbell className="h-3.5 w-3.5 text-purple-400 flex-shrink-0" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-purple-400">Phase 3 — Real-Game Application</p>
+                    <span className="ml-auto text-xs text-white/30 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />{onceSession.game_application.duration_minutes} min
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-white">{onceSession.game_application.name}</p>
+                  {onceSession.game_application.setup && (
+                    <p className="text-xs text-white/40">Setup: {onceSession.game_application.setup}</p>
+                  )}
+                  <p className="text-sm text-white/60 leading-relaxed">{onceSession.game_application.instructions}</p>
+                  {onceSession.game_application.thuto_observes && (
+                    <p className="text-xs text-purple-300/70 italic">
+                      THUTO watches for: {onceSession.game_application.thuto_observes}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Cooldown */}
+              {onceSession.cooldown && (
+                <div className="rounded-xl bg-blue-900/20 border border-blue-500/20 p-3">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-blue-400">Cooldown</p>
+                  <p className="text-sm text-white/70">{onceSession.cooldown}</p>
+                </div>
+              )}
+
+              {/* Log session */}
+              <button
+                onClick={() => logSession(onceSession)}
+                disabled={loggingDay === "Today"}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-teal-500/30 bg-teal-900/30 py-2.5 text-sm font-semibold text-teal-300 transition-colors hover:bg-teal-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loggingDay === "Today"
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Asking THUTO...</>
+                  : <><MessageCircle className="h-4 w-4" /> Log this session with THUTO</>
+                }
+              </button>
+            </div>
           </div>
         )}
 
