@@ -208,6 +208,23 @@ export default function PlayerHubPage() {
           ))}
         </div>
 
+        {/* Age group reminder — THUTO needs this to give personalised advice */}
+        {profile && !profile.age_group && (
+          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#f0b429]/40 bg-[#f0b429]/10 px-4 py-3">
+            <span className="text-xl">⚠️</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[#f0b429]">Complete your profile — THUTO needs your age group</p>
+              <p className="text-xs text-white/60">Without your age group, THUTO gives generic advice instead of advice for your level.</p>
+            </div>
+            <a
+              href="/player/profile"
+              className="shrink-0 rounded-lg bg-[#f0b429] px-3 py-1.5 text-xs font-bold text-[#1a3a1a] hover:bg-[#f5c542]"
+            >
+              Fix now
+            </a>
+          </div>
+        )}
+
         {/* Ubuntu opt-in — shown after THUTO onboarding, before first Ubuntu join */}
         {showUbuntuOptIn && (
           <div className="mb-6">
