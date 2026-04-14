@@ -291,7 +291,7 @@ export default function PitchModePage() {
       fetch(`${API}/exercise-cards?per_page=100`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
-          const loaded: ExerciseCard[] = Array.isArray(data?.data) ? data.data : SEED_CARDS;
+          const loaded: ExerciseCard[] = (Array.isArray(data?.data) && data.data.length > 0) ? data.data : SEED_CARDS;
           setAllCondCards(loaded);
 
           // Load today's cards from week plan
@@ -698,13 +698,34 @@ export default function PitchModePage() {
                 </>
               )}
 
-              {/* Browse drill library link */}
-              <Link
-                href="/player/drills"
-                className="block text-center text-xs text-white/40 underline underline-offset-2 hover:text-white/60"
-              >
-                Browse drills &amp; formats library →
-              </Link>
+              {/* Drill formats — always visible */}
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
+                  Drill Formats
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { emoji: "🔄", label: "Rondo",       href: "/player/training-formats/rondo",    color: "border-teal-400/40 bg-teal-400/10" },
+                    { emoji: "⚽", label: "Small-Sided", href: "/player/training-formats/ssg",      color: "border-amber-400/40 bg-amber-400/10" },
+                    { emoji: "🎯", label: "Shooting",    href: "/player/training-formats/shooting", color: "border-red-400/40 bg-red-400/10" },
+                  ].map(({ emoji, label, href, color }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={`rounded-2xl border px-2 py-3 text-center transition-all hover:opacity-80 ${color}`}
+                    >
+                      <span className="block text-xl">{emoji}</span>
+                      <span className="mt-1 block text-[11px] font-bold text-white">{label}</span>
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  href="/player/drills"
+                  className="mt-2 block text-center text-xs text-white/40 underline underline-offset-2 hover:text-white/60"
+                >
+                  All drills &amp; formats →
+                </Link>
+              </div>
             </>
           )}
 
