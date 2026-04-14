@@ -46,7 +46,7 @@ export default function PlayerStatsPage() {
     if (!user) return; // guests see empty state
     setLoading(true);
     api.get("/player/stats")
-      .then((res) => setEntries(res.data?.data ?? res.data ?? []))
+      .then((res) => { const _r = res.data?.data ?? res.data; setEntries(Array.isArray(_r) ? _r : []); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);

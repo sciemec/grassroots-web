@@ -34,7 +34,7 @@ export default function CoachNotificationsPage() {
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await api.get("/notifications");
-      setNotifications(res.data?.data ?? res.data ?? []);
+      const _rn = res.data?.data ?? res.data; setNotifications(Array.isArray(_rn) ? _rn : []);
     } catch { /* keep existing */ }
     finally { setLoading(false); }
   }, []);

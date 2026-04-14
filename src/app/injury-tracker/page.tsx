@@ -90,7 +90,7 @@ export default function InjuryTrackerPage() {
     queryKey: ["coach-injuries"],
     queryFn: async () => {
       const res = await api.get("/coach/injuries");
-      return res.data?.data ?? res.data ?? [];
+      const _r = res.data?.data ?? res.data; return Array.isArray(_r) ? _r : [];
     },
     enabled: hydrated && !!user,
   });
@@ -99,7 +99,7 @@ export default function InjuryTrackerPage() {
     queryKey: ["coach-squad"],
     queryFn: async () => {
       const res = await api.get("/coach/squad");
-      return res.data?.data ?? res.data ?? [];
+      const _r = res.data?.data ?? res.data; return Array.isArray(_r) ? _r : [];
     },
     enabled: hydrated && !!user,
   });

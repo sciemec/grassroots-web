@@ -77,7 +77,7 @@ export default function PlayerNotificationsPage() {
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await api.get("/notifications");
-      setNotifications(res.data?.data ?? res.data ?? []);
+      const _rn = res.data?.data ?? res.data; setNotifications(Array.isArray(_rn) ? _rn : []);
     } catch { /* network error — keep existing */ }
     finally { setLoading(false); }
   }, []);

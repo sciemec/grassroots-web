@@ -62,7 +62,7 @@ export default function CoachHubPage() {
     if (!user) { setLoading(false); return; } // guests allowed — layout shows GuestBanner
     if (user.role !== "coach" && user.role !== "admin") { router.push("/dashboard"); return; }
     api.get("/coach/squad")
-      .then((res) => setSquad(res.data?.data ?? res.data ?? []))
+      .then((res) => { const _r = res.data?.data ?? res.data; setSquad(Array.isArray(_r) ? _r : []); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, router, _hasHydrated]);

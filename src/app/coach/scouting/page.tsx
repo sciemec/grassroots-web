@@ -243,7 +243,8 @@ export default function ScoutingDashboardPage() {
     // Fetch squad members with their session data
     api.get("/coach/squad")
       .then(async (res) => {
-        const squad = res.data?.data ?? res.data ?? [];
+        const _sq = res.data?.data ?? res.data;
+        const squad = Array.isArray(_sq) ? _sq : [];
         // Enrich each player with session data
         const enriched: Player[] = await Promise.all(
           squad.map(async (member: { player: Player; player_id: string }) => {

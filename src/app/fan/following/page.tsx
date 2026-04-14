@@ -46,7 +46,7 @@ export default function FanFollowingPage() {
     queryKey: ["fan-following"],
     queryFn: async () => {
       const res = await api.get("/fan/following");
-      return res.data?.data ?? res.data ?? [];
+      const _r = res.data?.data ?? res.data; return Array.isArray(_r) ? _r : [];
     },
     enabled: hydrated && !!user,
   });

@@ -43,7 +43,7 @@ export default function MilestonesPage() {
       api.get("/milestones/programme").catch(() => null),
     ])
       .then(([msRes, progRes]) => {
-        setMilestones(msRes.data?.data ?? msRes.data ?? []);
+        const _rm = msRes.data?.data ?? msRes.data; setMilestones(Array.isArray(_rm) ? _rm : []);
         if (progRes) setProgramme(progRes.data);
       })
       .catch(() => {})

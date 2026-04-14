@@ -43,7 +43,7 @@ export default function CoachSquadPage() {
   const fetchSquad = () => {
     setLoading(true);
     api.get("/coach/squad")
-      .then((res) => setSquad(res.data?.data ?? res.data ?? []))
+      .then((res) => { const _r = res.data?.data ?? res.data; setSquad(Array.isArray(_r) ? _r : []); })
       .catch(() => {})
       .finally(() => setLoading(false));
   };

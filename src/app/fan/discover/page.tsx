@@ -71,7 +71,7 @@ export default function FanDiscoverPage() {
           age_group: ageGroup !== "All Ages" ? ageGroup.toLowerCase() : undefined,
         },
       });
-      return res.data?.data ?? res.data ?? [];
+      const _r = res.data?.data ?? res.data; return Array.isArray(_r) ? _r : [];
     },
     enabled: hydrated && !!user,
   });

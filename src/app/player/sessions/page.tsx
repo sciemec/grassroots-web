@@ -54,7 +54,7 @@ export default function SessionsPage() {
   useEffect(() => {
     if (!user) return;
     api.get("/sessions?per_page=100&status=completed")
-      .then((res) => setAllCompleted(res.data?.data ?? res.data ?? []))
+      .then((res) => { const _r = res.data?.data ?? res.data; setAllCompleted(Array.isArray(_r) ? _r : []); })
       .catch(() => {});
   }, [user]);
 

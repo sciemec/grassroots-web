@@ -262,7 +262,7 @@ export default function TacticsPage() {
 
   useEffect(() => {
     api.get("/coach/squad")
-      .then((res) => setSquad(res.data?.data ?? res.data ?? []))
+      .then((res) => { const _r = res.data?.data ?? res.data; setSquad(Array.isArray(_r) ? _r : []); })
       .catch(() => {});
   }, [user, router]);
 

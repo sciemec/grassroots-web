@@ -104,7 +104,7 @@ export default function ShowcasePage() {
     api
       .get("/player/showcase")
       .then((res) => {
-        const data: ShowcaseClip[] = res.data?.data ?? res.data ?? [];
+        const _r = res.data?.data ?? res.data; const data: ShowcaseClip[] = Array.isArray(_r) ? _r : [];
         setClips(data);
         setLocalMode(false);
         saveLocalClips(data);

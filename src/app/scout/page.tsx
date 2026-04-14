@@ -154,7 +154,7 @@ export default function ScoutPage() {
     setLoadingShowcase(true);
     try {
       const res = await api.get("/showcase/discover");
-      const clips: ShowcaseClip[] = res.data?.data ?? res.data ?? [];
+      const _rc = res.data?.data ?? res.data; const clips: ShowcaseClip[] = Array.isArray(_rc) ? _rc : [];
       setShowcaseClips(clips.length ? clips : loadLocalShowcase());
     } catch { setShowcaseClips(loadLocalShowcase()); }
     finally { setLoadingShowcase(false); }

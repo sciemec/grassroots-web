@@ -40,7 +40,7 @@ export default function ScoutComparePage() {
     queryKey: ["shortlist"],
     queryFn: async () => {
       const res = await api.get("/scout/shortlist");
-      return res.data?.data ?? res.data ?? [];
+      const _r = res.data?.data ?? res.data; return Array.isArray(_r) ? _r : [];
     },
   });
 

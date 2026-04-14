@@ -186,7 +186,7 @@ export default function StreamingPage() {
         status: "live" | "upcoming";
         commentary: string;
         stream_url?: string;
-      }> = res.data?.data ?? [];
+      }> = (() => { const _r = res.data?.data ?? res.data; return Array.isArray(_r) ? _r : []; })();
       if (raw.length === 0) return MOCK_LIVE;
       return raw.map((item) => ({
         id: item.id,
@@ -223,7 +223,7 @@ export default function StreamingPage() {
         venue: string;
         province: string;
         age_group: string;
-      }> = res.data?.data ?? [];
+      }> = (() => { const _r = res.data?.data ?? res.data; return Array.isArray(_r) ? _r : []; })();
       if (raw.length === 0) return MOCK_UPCOMING;
       return raw.map((item) => ({
         id: item.id,

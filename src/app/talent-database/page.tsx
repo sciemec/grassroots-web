@@ -62,7 +62,8 @@ export default function TalentDatabasePage() {
       if (ageGroup !== "All") params.age_group = ageGroup;
 
       const res = await api.get("/scout/players", { params });
-      const data: Player[] = res.data?.data ?? res.data ?? [];
+      const _r = res.data?.data ?? res.data;
+      const data: Player[] = Array.isArray(_r) ? _r : [];
       setPlayers(data);
     } catch {
       setPlayers([]);
