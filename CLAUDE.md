@@ -4109,3 +4109,134 @@ No new routes this session. Enhanced existing:
 ```
 /player/talent-id   Scout Profile — profile header, scouting toggle, Plays Like, public CV share
 ```
+
+---
+
+## SESSION LOG — 14 April 2026
+
+### Theme — t.map/filter crash fix + safeArray utility (codebase-wide)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `t.map is not a function` / `filter is not a function` — FIXED CODEBASE-WIDE ✅
+
+**Root cause:**
+Laravel can return API data in three shapes:
+- Direct array: `[...]`
+- Paginated: `{ data: [...], total, per_page, ... }`
+- Wrapped: `{ data: { data: [...], ... } }`
+
+The unsafe pattern used everywhere was:
+```typescript
+res.data?.data ?? res.data ?? []
+```
+When Laravel returns a pagination wrapper with `data: null` (e.g. `{ data: null, total: 0 }`),
+`res.data` is a truthy object, so `?? []` never fires. Calling `.map()` or `.filter()`
+on a plain object throws at runtime.
+
+**Fix applied to every affected file:**
+```typescript
+const _r = res.data?.data ?? res.data;
+Array.isArray(_r) ? _r : []
+```
+
+**Files fixed (18 files):**
+- `src/app/player/sessions/page.tsx`
+- `src/app/player/notifications/page.tsx`
+- `src/app/player/stats/page.tsx`
+- `src/app/player/milestones/page.tsx`
+- `src/app/player/showcase/page.tsx`
+- `src/app/player/progress/page.tsx`
+- `src/app/player/page.tsx`
+- `src/app/coach/page.tsx`
+- `src/app/coach/squad/page.tsx`
+- `src/app/coach/notifications/page.tsx`
+- `src/app/coach/scouting/page.tsx`
+- `src/app/coach/tactics/page.tsx`
+- `src/app/scout/page.tsx`
+- `src/app/scout/compare/page.tsx`
+- `src/app/fan/discover/page.tsx`
+- `src/app/fan/following/page.tsx`
+- `src/app/injury-tracker/page.tsx`
+- `src/app/streaming/page.tsx` (two queryFns fixed)
+- `src/app/talent-database/page.tsx`
+
+#### 2. `src/lib/safe-array.ts` — NEW UTILITY ✅
+
+Created a reusable helper for all future API array extraction:
+```typescript
+export function safeArray<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data !== null && typeof data === "object") {
+    const inner = (data as Record<string, unknown>).data;
+    if (Array.isArray(inner)) return inner as T[];
+  }
+  return [];
+}
+```
+Usage: `import { safeArray } from "@/lib/safe-array"; setSessions(safeArray(res.data));`
+
+#### 3. Scout Profile (`/player/talent-id`) — REBUILT ✅ (13 April 2026)
+
+- Profile identity card: avatar, name, position, sport, province, club, bio
+- Open for Scouting toggle — saves to `PATCH /profile` with `open_for_scouting` field
+- "Plays Like" section — Zimbabwean player comparisons by position (lookup table)
+- Share Public CV button — copies `grassrootssports.live/player/[id]/cv` to clipboard
+- Showcase Clips tile — links to `/player/showcase`
+- Safe array extraction for sessions data
+
+#### 4. Laravel `open_for_scouting` field mapping — FIXED ✅ (13 April 2026)
+
+No new migration needed. Existing column is `scout_visible`.
+`PlayerProfileController.php` was updated to:
+- `show()`: appends `open_for_scouting` alias: `array_merge($profile->toArray(), ['open_for_scouting' => (bool) $profile->scout_visible])`
+- `update()`: accepts `open_for_scouting` and maps to `scout_visible`
+
+**File:** `app/Http/Controllers/Api/PlayerProfileController.php` (bhora-ai repo)
+**Migration status:** No migration required — using existing `scout_visible` column.
+
+---
+
+### COMMITS THIS SESSION
+
+```
+9ef3878  fix: eliminate t.map/filter is not a function across entire codebase
+e9a137d  feat: rebuild scout profile (/player/talent-id) with identity card, scouting toggle, Plays Like, CV share
+2bb97eb  fix: align open_for_scouting field — no migration, map to existing scout_visible column
+e704a4c  docs(claude): CLAUDE.md update rule + session log 13 April 2026
+55859eb  fix: Array.isArray guards for player pages — sessions, notifications, stats, milestones
+```
+
+---
+
+### WHAT STILL NEEDS DOING
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — all THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+| `/player/success-engine` | Hub card href mismatch — page lives at `/player/goal` | Fix href in `src/app/player/page.tsx` or create alias page |
+| `scout_visible` on Render DB | Column already exists — confirmed no migration needed | Nothing — working as-is |
+
+---
+
+### RULE ADDED — SAFE ARRAY PATTERN (PERMANENT)
+
+When extracting arrays from any API response in this codebase:
+
+**NEVER use:**
+```typescript
+res.data?.data ?? res.data ?? []
+```
+
+**ALWAYS use:**
+```typescript
+const _r = res.data?.data ?? res.data;
+Array.isArray(_r) ? _r : []
+// OR:
+import { safeArray } from "@/lib/safe-array";
+safeArray(res.data)
+```
+
