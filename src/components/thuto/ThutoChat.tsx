@@ -639,6 +639,48 @@ export default function ThutoChat() {
       const pageData = localStorage.getItem("thuto_page_data");
       if (pageData) parts.push(`\nPAGE DATA: ${pageData}`);
     } catch { /* ignore */ }
+
+    // Inject FIFA age-bracket coaching rules based on player's actual age group
+    try {
+      const raw = localStorage.getItem("thuto_player_context");
+      if (raw) {
+        const ctx = JSON.parse(raw) as { age_group: string; position: string; sport: string; province: string };
+        const ag  = (ctx.age_group ?? "").toLowerCase();
+
+        // Map age group string to FIFA bracket
+        const is8to12  = ["u9","u10","u11","u12","under-9","under-10","under-11","under-12"].some(x => ag.includes(x));
+        const is12to15 = ["u13","u14","u15","under-13","under-14","under-15"].some(x => ag.includes(x));
+
+        let fifaBracket = "";
+        if (is8to12) {
+          fifaBracket =
+            "FIFA BRACKET (8–12): Use GAG (Game→Analytical→Game) methodology. " +
+            "Priority: ball mastery, basic shooting, dribbling, 1v1 situations. " +
+            "Keep sessions fun, game-based, repetition-heavy. NO tactical overload. " +
+            "Drills: juggling, dribbling courses, 3v3–4v4 small-sided, simple shooting. " +
+            "Coaching tone: encouragement-first, short instructions, celebrate every attempt.";
+        } else if (is12to15) {
+          fifaBracket =
+            "FIFA BRACKET (12–15): Progressive Methodology. " +
+            "Priority: tactical introduction, game-like situations, passing combinations, positional understanding. " +
+            "Drills: rondo 4v1/5v2, positional play exercises, pressing triggers, 8v8 matches. " +
+            "Begin explaining WHY behind decisions. Introduce team shape concepts. " +
+            "Coaching tone: ask questions ('What did you see?'), build football IQ alongside skills.";
+        } else if (ag) {
+          fifaBracket =
+            "FIFA BRACKET (15+): Play-Practice-Play. " +
+            "Priority: full tactical understanding, physical conditioning, positional mastery, set pieces. " +
+            "Drills: rondo variations, positional games, high-press systems, 11v11 scenarios. " +
+            "Coaching tone: professional, data-driven, outcome-focused, challenge the player.";
+        }
+
+        parts.push(
+          `\nPLAYER PROFILE: Age group ${ctx.age_group || "unknown"} · Position: ${ctx.position || "unknown"} · Sport: ${ctx.sport} · Province: ${ctx.province}`
+        );
+        if (fifaBracket) parts.push(`\n${fifaBracket}`);
+      }
+    } catch { /* ignore */ }
+
     return parts.join("");
   };
 
@@ -676,6 +718,23 @@ export default function ThutoChat() {
         setDnaCompleteness(res.data?.data?.profile_completeness ?? 0);
       })
       .catch(() => {}); // non-critical — bar simply stays hidden
+
+    // Cache player profile context for age-aware FIFA coaching
+    api.get("/profile")
+      .then((res) => {
+        const prof = res.data?.profile ?? res.data;
+        if (prof) {
+          try {
+            localStorage.setItem("thuto_player_context", JSON.stringify({
+              age_group: prof.age_group ?? "",
+              position:  prof.position  ?? "",
+              sport:     prof.sport     ?? "football",
+              province:  prof.province  ?? "",
+            }));
+          } catch { /* storage full */ }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // ── Load chat history + auto-open if flagged ──────────────────────────────
