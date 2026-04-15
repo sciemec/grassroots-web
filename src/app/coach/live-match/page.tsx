@@ -341,6 +341,16 @@ export default function LiveMatchPage() {
       "coach_matches",
       JSON.stringify([record, ...existing])
     );
+
+    // Also save raw events for Strategic Patterns analysis — additive, does not replace above
+    try {
+      const savedEvents = localStorage.getItem("coach_match_events");
+      const existingEvents: unknown[] = savedEvents ? JSON.parse(savedEvents) : [];
+      localStorage.setItem("coach_match_events", JSON.stringify([
+        { matchId: record.id, date: record.date, opponent: record.opponent, sport: setup.sport, events },
+        ...existingEvents.slice(0, 19),
+      ]));
+    } catch { /* non-critical — patterns will still work from coach_matches */ }
   }, [events, setup, homeScore, awayScore]);
 
   const logEvent = (evt: Omit<MatchEvent, "id">) => {

@@ -4329,3 +4329,104 @@ Add to ProfileController@update() validation + Profile model $fillable + cast co
 ```
 3b63e88  feat: FIFA session templates + Freedom of Expression + Player Passport public page
 ```
+
+---
+
+## SESSION LOG — 15 April 2026
+
+### Theme — FIFA Once-a-Week Methodology + Player Passport + Strategic Patterns
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. FIFA Once-a-Week Training Methodology — Injected into THUTO ✅
+
+**File updated:** `src/components/thuto/ThutoChat.tsx`
+- 3-part FIFA session framework injected into BASE_PROMPT:
+  - PART 1: Fun Warm-up (10-15 min) — ball always involved, competitive activity
+  - PART 2: Mini-Games 3v3 or 4v4 (20-25 min) — small-sided, decision-making
+  - PART 3: Real-Game Application (15-20 min) — unscripted full expression
+- Freedom of Expression / Zimbabwean Flair section added:
+  - No over-coaching reminder
+  - Match day = encouragement only, not instruction
+  - Celebrate creative play, Zimbabwean flair
+
+#### 2. Player Passport Public Page — BUILT ✅
+
+**New file:** `src/app/passport/[id]/page.tsx`
+- Public shareable page — no auth required
+- Fetches `GET /api/v1/player/public/{id}` + `GET /api/v1/showcase/discover?user_id={id}`
+- Identity card: avatar/initials, position, sport, province, age group, physical stats
+- AI Performance Summary, Academic Standing, Coach Endorsements, Video Highlights
+- RatingBar component for skill attributes
+- jsPDF export (full A4, green header, gold section headers, multi-page support)
+- CTA to join GrassRoots Sports
+- Not-found state if no public profile
+- Share URL: `grassrootssports.live/passport/${id}`
+
+**Modified:** `src/app/player/page.tsx` — added My Passport hub card (BookOpen icon, `/player/passport`)
+**Modified:** `src/components/layout/sidebar.tsx` — added My Passport nav item (player role)
+
+**Backend needed (bhora-ai):**
+Migration needed for passport fields on profiles table:
+- `school_name`, `grade_level`, `academic_average`, `academic_year`
+- `coach_endorsements` (JSON array)
+- `passport_views` (integer counter)
+
+#### 3. Strategic Patterns (Compounding Team Intelligence) — BUILT ✅
+
+**New file:** `src/app/coach/patterns/page.tsx`
+
+A coach analytics dashboard that reads match history and detects recurring team patterns,
+then prescribes drills and generates a THUTO 4-Week Strategic Plan.
+
+**How it works:**
+- Reads `coach_matches` from localStorage + `GET /api/v1/matches` from API (merged, de-duplicated)
+- Reads `coach_match_events` from localStorage (raw minute-by-minute events saved by live-match)
+- `calculatePatterns()` function detects up to 6 patterns:
+  1. Team Form & Momentum — win rate from last 10 matches
+  2. Defensive Solidity — avg goals conceded, clean sheet rate
+  3. Late-Game Energy (65-90 min) — goals conceded in last 25 mins from event data
+  4. Discipline & Card Control — yellow/red cards per match
+  5. Goal Scoring Efficiency — avg goals scored
+  6. Formation Effectiveness — only shown if 2+ formations used with significant gap
+- Severity levels: `critical` (red) / `warning` (amber) / `good` (green)
+- Static `DRILLS` lookup table — no API call needed for prescriptions
+- PatternCard component: severity badge, evidence, THUTO insight, expandable drill section
+- "4-Week Strategic Plan" section: calls `/api/ai-coach` for THUTO's full compounding strategy
+- Compounding loop banner explaining the business flywheel
+- Summary row: W/D/L + Critical/Warning/Good counts
+- Empty state with link to Live Match tool
+
+**Modified:** `src/app/coach/live-match/page.tsx`
+- Added additive event save in `handleEndMatch` — saves raw events to `coach_match_events` localStorage key
+- Format: `{ matchId, date, opponent, sport, events: MatchEvent[] }` — keeps last 20 matches
+- Does NOT replace existing `coach_matches` save — fully additive
+
+**Modified:** `src/app/coach/page.tsx`
+- Added TrendingUp import
+- Added Strategic Patterns hub card: navy blue gradient, `/coach/patterns`
+
+**Modified:** `src/components/layout/sidebar.tsx`
+- Added Strategic Patterns nav item (SeasonIcon/TrendingUp, coach role) after Live Match
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (15 April 2026)
+
+```
+/passport/[id]         Player Passport — public shareable page, no auth, jsPDF export
+/coach/patterns        Strategic Patterns — pattern detection, drill prescriptions, THUTO 4-week plan
+```
+
+---
+
+### WHAT STILL NEEDS DOING (15 April 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Passport backend fields | Migration NOT run on Render | Copy migration to bhora-ai, run php artisan migrate |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+| `/player/success-engine` | Hub card href mismatch | Fix href to `/player/goal` or create alias |
