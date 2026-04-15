@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd D:/bhora-ai/grassroots-web && grep -rn \"api\\\\.\\\\\\(get\\\\|post\\\\|patch\\\\|put\\\\|delete\\\\\\)\" src/app/coach/training-plans/page.tsx 2>/dev/null | head -10\ngrep -rn \"api\\\\.\\\\|fetch\\(\" src/app/player/nutrition/page.tsx 2>/dev/null | head -10\ngrep -rn \"api\\\\.\\\\|fetch\\(\" src/app/coach/set-pieces/page.tsx 2>/dev/null | head -10\ngrep -rn \"api\\\\.\\\\|fetch\\(\" src/app/talent-database/page.tsx 2>/dev/null | head -10\ngrep -rn \"api\\\\.\\\\|fetch\\(\" src/app/school-leagues/page.tsx 2>/dev/null | head -10)"
+    ]
+  }
+}
