@@ -4240,3 +4240,92 @@ import { safeArray } from "@/lib/safe-array";
 safeArray(res.data)
 ```
 
+
+---
+
+## SESSION LOG — 15 April 2026
+
+### Theme — FIFA Once-a-Week Methodology + Player Passport
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. FIFA Once-a-Week Session Templates — Injected into THUTO ✅
+
+**File:** `src/components/thuto/ThutoChat.tsx` — BASE_PROMPT extended with:
+
+**FIFA 3-Part Session Framework** (THUTO ALWAYS follows this when generating sessions):
+- PART 1: Fun Warm-up (10–15 min) — ball always involved, competitive, high energy
+- PART 2: Mini-Games 3v3 or 4v4 (20–25 min) — max touches, max decisions, no lines
+- PART 3: Real-Game Application (15–20 min) — unscripted play, full expression, coach observes only
+
+THUTO explicitly calls out sessions missing any part: "This plan is missing Part 2 — let me fix that."
+
+#### 2. Freedom of Expression / Zimbabwean Flair — Injected into THUTO ✅
+
+**File:** `src/components/thuto/ThutoChat.tsx` — added FREEDOM OF EXPRESSION section:
+- Match day reminder to coaches: "Today: positive reinforcement only. Let players solve it."
+- THUTO NEVER tells a player what specific move to make in a game
+- Self-discovery principle: players who solve problems themselves remember the solution forever
+- THUTO celebrates individual creativity: "That is the Zimbabwean game. Nobody can take that away."
+
+#### 3. Player Passport — Public Shareable Page ✅
+
+**File:** `src/app/passport/[id]/page.tsx` (NEW — no auth required)
+
+Public page scouts and scholarship agencies open from the share link.
+- Fetches `GET /api/v1/player/public/{id}` (public endpoint, no token)
+- Fetches `GET /api/v1/showcase/discover?user_id={id}` for video highlights
+- Shows: identity card, AI summary, academic standing, coach endorsements, video highlights
+- Download Passport PDF button (jsPDF, full A4, no auth needed)
+- CTA to join GrassRoots Sports
+
+#### 4. My Passport Hub Card + Sidebar Nav ✅
+
+- `src/app/player/page.tsx` — new hub card (purple gradient, BookOpen icon)
+- `src/components/layout/sidebar.tsx` — nav item after Talent ID
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (15 April 2026)
+
+```
+/player/passport       Player edits their own talent passport, generates AI summary, exports PDF
+/passport/[id]         Public shareable passport — no auth — scouts/scholarship agencies view this
+```
+
+---
+
+### WHAT STILL NEEDS DOING
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — all THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+| `/player/success-engine` | Hub card href mismatch — page lives at `/player/goal` | Fix href or create alias |
+| Passport backend fields | `school_name`, `grade_level`, `academic_average`, `academic_year`, `coach_endorsements` (JSON), `passport_views` not yet on profiles table | Run migration below on Render |
+
+### PASSPORT MIGRATION (copy to bhora-ai, run php artisan migrate):
+
+```php
+// FILE: database/migrations/2026_04_15_000001_add_passport_fields_to_profiles_table.php
+Schema::table('profiles', function (Blueprint $table) {
+    $table->string('school_name')->nullable()->after('bio');
+    $table->string('grade_level')->nullable()->after('school_name');
+    $table->string('academic_average')->nullable()->after('grade_level');
+    $table->string('academic_year')->nullable()->after('academic_average');
+    $table->json('coach_endorsements')->nullable()->after('academic_year');
+    $table->unsignedInteger('passport_views')->default(0)->after('coach_endorsements');
+});
+```
+
+Add to ProfileController@update() validation + Profile model $fillable + cast coach_endorsements as array.
+
+---
+
+### COMMIT THIS SESSION
+
+```
+3b63e88  feat: FIFA session templates + Freedom of Expression + Player Passport public page
+```
