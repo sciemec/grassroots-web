@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, TrendingDown, TrendingUp, AlertTriangle, CheckCircle2,
   Loader2, Brain, ChevronDown, ChevronUp, RefreshCw, Zap, Shield,
-  Target, Activity, Layers,
+  Target, Activity, Layers, Radio, Eye, EyeOff, ExternalLink,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
@@ -351,6 +351,12 @@ function PatternCard({ pattern }: { pattern: Pattern }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+interface SquadMemberLite {
+  id: string;
+  scout_visible?: boolean;
+  open_for_scouting?: boolean;
+}
+
 export default function StrategicPatternsPage() {
   const { user } = useAuthStore();
   const [matches, setMatches]       = useState<CoachMatch[]>([]);
@@ -359,6 +365,8 @@ export default function StrategicPatternsPage() {
   const [loading, setLoading]       = useState(true);
   const [fullAnalysis, setFullAnalysis] = useState("");
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [squadSize, setSquadSize]   = useState(0);
+  const [openCount, setOpenCount]   = useState(0);
 
   useEffect(() => {
     // Load localStorage data
@@ -372,6 +380,16 @@ export default function StrategicPatternsPage() {
       try { return eventsRaw ? JSON.parse(eventsRaw) : []; } catch { return []; }
     })();
     setEventRecords(localEvents);
+
+    // Load squad visibility (non-blocking)
+    api.get("/coach/squad")
+      .then((res) => {
+        const _r = res.data?.data ?? res.data;
+        const squad: SquadMemberLite[] = Array.isArray(_r) ? _r : [];
+        setSquadSize(squad.length);
+        setOpenCount(squad.filter((p) => p.scout_visible || p.open_for_scouting).length);
+      })
+      .catch(() => { /* offline — squad visibility stays 0 */ });
 
     // Try API — merge with localStorage (API is source of truth for old matches)
     api.get("/matches")
@@ -510,6 +528,104 @@ Keep it under 200 words. Be specific, direct, actionable.`;
                 Better coaching → better players → better results → stronger talent database → scouts find your players → Zimbabwe&apos;s gold standard grows.
               </p>
             </div>
+
+            {/* Surface Area Score */}
+            {(() => {
+              const matchScore  = Math.min(matches.length, 10) * 4;          // max 40
+              const squadScore  = squadSize > 0 ? Math.round((openCount / squadSize) * 35) : 0; // max 35
+              const eventScore  = eventRecords.length > 0 ? 25 : 0;          // max 25
+              const total       = matchScore + squadScore + eventScore;
+              const lastMatch   = matches[0]?.date
+                ? new Date(matches[0].date).toLocaleDateString("en-ZW", { day: "numeric", month: "short" })
+                : null;
+              const scoreColor  = total >= 70 ? "text-green-400" : total >= 40 ? "text-amber-400" : "text-red-400";
+              const scoreBorder = total >= 70 ? "border-green-500/30" : total >= 40 ? "border-amber-500/30" : "border-red-500/30";
+              const scoreBg     = total >= 70 ? "bg-green-500/10" : total >= 40 ? "bg-amber-500/10" : "bg-red-500/10";
+              const hiddenCount = squadSize > 0 ? squadSize - openCount : null;
+              return (
+                <div className={`mb-5 rounded-2xl border ${scoreBorder} ${scoreBg} p-5`}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Radio className={`h-4 w-4 ${scoreColor}`} />
+                      <span className="text-xs font-bold uppercase tracking-wide text-white/70">Surface Area Score</span>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-2xl font-black ${scoreColor}`}>{total}</span>
+                      <span className="text-xs text-white/30">/100</span>
+                    </div>
+                  </div>
+                  <p className="mb-4 text-xs text-white/50">
+                    How many active &quot;pings&quot; your squad is sending to scouts right now. More pings = more luck.
+                  </p>
+                  <div className="mb-4 grid grid-cols-3 gap-3">
+                    {/* Matches logged */}
+                    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                      <p className={`text-lg font-black ${matches.length >= 5 ? "text-green-400" : "text-amber-400"}`}>
+                        {matches.length}
+                      </p>
+                      <p className="text-[10px] text-white/40">matches logged</p>
+                      {lastMatch && <p className="mt-0.5 text-[10px] text-white/25">last: {lastMatch}</p>}
+                    </div>
+                    {/* Squad visibility */}
+                    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                      {squadSize > 0 ? (
+                        <>
+                          <p className={`text-lg font-black ${openCount === squadSize ? "text-green-400" : openCount > 0 ? "text-amber-400" : "text-red-400"}`}>
+                            {openCount}/{squadSize}
+                          </p>
+                          <p className="text-[10px] text-white/40">open to scouts</p>
+                          {hiddenCount !== null && hiddenCount > 0 && (
+                            <p className="mt-0.5 text-[10px] text-red-400/70">{hiddenCount} invisible</p>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-black text-white/20">—</p>
+                          <p className="text-[10px] text-white/30">squad loading</p>
+                        </>
+                      )}
+                    </div>
+                    {/* Event richness */}
+                    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                      <p className={`text-lg font-black ${eventRecords.length > 0 ? "text-green-400" : "text-white/20"}`}>
+                        {eventRecords.length}
+                      </p>
+                      <p className="text-[10px] text-white/40">event-rich matches</p>
+                      <p className="mt-0.5 text-[10px] text-white/25">minute data</p>
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2">
+                    {hiddenCount !== null && hiddenCount > 0 && (
+                      <Link
+                        href="/coach/squad"
+                        className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 transition-colors"
+                      >
+                        <EyeOff className="h-3 w-3" />
+                        {hiddenCount} players invisible — tell them to open their profile
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    )}
+                    {matches.length < 3 && (
+                      <Link
+                        href="/coach/live-match"
+                        className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-colors"
+                      >
+                        <Radio className="h-3 w-3" />
+                        Log matches to increase your signal
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    )}
+                    {openCount === squadSize && squadSize > 0 && matches.length >= 5 && (
+                      <div className="flex items-center gap-1.5 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-xs font-semibold text-green-400">
+                        <Eye className="h-3 w-3" />
+                        Strong signal — your squad is visible to scouts
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Pattern cards */}
             <div className="mb-6 space-y-4">
