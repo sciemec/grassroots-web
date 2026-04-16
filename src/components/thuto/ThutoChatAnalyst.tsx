@@ -18,7 +18,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { X, Send, Sparkles, ChevronDown } from "lucide-react";
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff } from "lucide-react";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -268,6 +268,53 @@ function MessageBubble({ msg }: { msg: Message }) {
   );
 }
 
+// ── Voice Input Hook ──────────────────────────────────────────────────────────
+
+type VoiceState = "idle" | "listening" | "unsupported";
+
+function useVoiceInput(onTranscript: (text: string) => void) {
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const SpeechRecognitionAPI =
+      (window as typeof window & { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition })
+        .SpeechRecognition ??
+      (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition })
+        .webkitSpeechRecognition;
+
+    if (!SpeechRecognitionAPI) { setVoiceState("unsupported"); return; }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = "en-ZW";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      onTranscript(event.results[0][0].transcript);
+      setVoiceState("idle");
+    };
+    recognition.onerror = () => setVoiceState("idle");
+    recognition.onend   = () => setVoiceState((s) => s === "listening" ? "idle" : s);
+
+    recognitionRef.current = recognition;
+  }, [onTranscript]);
+
+  const toggleListening = () => {
+    if (voiceState === "unsupported" || !recognitionRef.current) return;
+    if (voiceState === "listening") {
+      recognitionRef.current.stop();
+      setVoiceState("idle");
+    } else {
+      try { recognitionRef.current.start(); setVoiceState("listening"); }
+      catch { setVoiceState("idle"); }
+    }
+  };
+
+  return { voiceState, toggleListening };
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function ThutoChatAnalyst() {
@@ -298,6 +345,13 @@ export default function ThutoChatAnalyst() {
 
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // ── Voice input ───────────────────────────────────────────────────────────
+  const handleTranscript = (text: string) => {
+    setInput((prev) => (prev ? `${prev} ${text}` : text));
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+  const { voiceState, toggleListening } = useVoiceInput(handleTranscript);
 
   useEffect(() => {
     preloadOfflineAI();
@@ -466,11 +520,28 @@ export default function ThutoChatAnalyst() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask THUTO about the data..."
+                placeholder={voiceState === "listening" ? "Listening…" : "Ask THUTO about the data..."}
                 disabled={thinking}
                 className="flex-1 bg-transparent text-sm text-white placeholder-white/25 outline-none disabled:opacity-50"
                 maxLength={2000}
               />
+              {voiceState !== "unsupported" && (
+                <button
+                  onClick={toggleListening}
+                  disabled={thinking}
+                  aria-label={voiceState === "listening" ? "Stop listening" : "Speak to THUTO"}
+                  title={voiceState === "listening" ? "Tap to stop" : "Speak your question"}
+                  className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                    voiceState === "listening"
+                      ? "bg-red-600 text-white animate-pulse hover:bg-red-500"
+                      : "text-white/40 hover:bg-white/10 hover:text-teal-400"
+                  }`}
+                >
+                  {voiceState === "listening"
+                    ? <MicOff className="h-3.5 w-3.5" />
+                    : <Mic     className="h-3.5 w-3.5" />}
+                </button>
+              )}
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || thinking}
