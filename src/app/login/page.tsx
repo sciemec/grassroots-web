@@ -23,6 +23,19 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // ── Dev-bypass: admin testing without backend ──────────────────────────
+    if (identifier.toLowerCase() === 'nnygel@live.com' && password === 'test1234') {
+      loginStore({
+        id: 'dev', name: 'Nigel (Dev)', email: 'nnygel@live.com',
+        role: 'admin', token: 'dev-token',
+      } as AuthUser);
+      router.push('/admin');
+      setLoading(false);
+      return;
+    }
+    // ───────────────────────────────────────────────────────────────────────
+
     try {
       const { data } = await api.post('/api/auth/login', {
         email: identifier,
