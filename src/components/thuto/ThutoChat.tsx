@@ -1003,17 +1003,30 @@ export default function ThutoChat() {
       .catch(() => {});
   }, []);
 
-  // ── Load chat history + auto-open if flagged ──────────────────────────────
+  // ── Load chat history — backend is source of truth, localStorage is cache ─
   useEffect(() => {
+    // First paint: restore from localStorage cache instantly (no flicker)
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed: Message[] = JSON.parse(raw);
         setMessages(parsed.slice(-MAX_STORED));
       }
-    } catch {
-      // ignore parse errors — start fresh
-    }
+    } catch { /* ignore */ }
+
+    // Then fetch real persistent history from backend and replace
+    api.get("/thuto/history")
+      .then((res) => {
+        const serverMessages: Message[] = res.data?.data ?? [];
+        if (serverMessages.length > 0) {
+          setMessages(serverMessages.slice(-MAX_STORED));
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(serverMessages.slice(-MAX_STORED)));
+          } catch { /* storage full */ }
+        }
+      })
+      .catch(() => { /* offline — keep localStorage version */ });
+
     if (localStorage.getItem("thuto_chat_open") === "1") {
       localStorage.removeItem("thuto_chat_open");
       setOpen(true);
@@ -1097,18 +1110,11 @@ export default function ThutoChat() {
     setThinking(true);
 
     try {
-      const res = await fetch("/api/ai-coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          system_prompt: BASE_PROMPT + buildContext(),
-          history: messages.slice(-6).map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      if (!res.ok) throw new Error(`AI error ${res.status}`);
-      const data = await res.json();
-      const answer: string = data?.response ?? data?.answer ?? "Ndiri here — I'm here, let's talk.";
+      // ── Call the real THUTO backend — it owns the system prompt,
+      //    conversation history, DNA profile, and player context.
+      //    No need to send system_prompt or history from the frontend.
+      const res = await api.post("/thuto/chat", { message: text });
+      const answer: string = res.data?.answer ?? res.data?.response ?? "Ndiri here — I'm here, let's talk.";
 
       setMessages((prev) => [
         ...prev,
@@ -1117,13 +1123,13 @@ export default function ThutoChat() {
 
       if (!open) setUnread((n) => n + 1);
 
-      // Re-fetch DNA completeness — extractDnaFromMessage may have updated it
+      // Re-fetch DNA completeness — backend may have updated it
       api.get("/player/dna")
         .then((res) => setDnaCompleteness(res.data?.data?.profile_completeness ?? 0))
         .catch(() => {});
 
     } catch {
-      // Groq failed — try offline knowledge base before showing an error
+      // Backend failed — try offline knowledge base before showing an error
       const offline = await searchOffline(text);
       const content = offline
         ? `${offline.text}\n\n📚 _Offline mode — from ${offline.source}_`
