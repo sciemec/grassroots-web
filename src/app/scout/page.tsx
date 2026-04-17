@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   UserSearch, Send, Star, ChevronRight, Search, Loader2, Shield,
-  FileText, ClipboardList, Sparkles, TrendingUp, Video, Eye,
+  FileText, ClipboardList, Sparkles, TrendingUp, Video, Eye, Users,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -38,7 +38,7 @@ interface ShowcaseClip {
   view_count: number;
 }
 
-type Tab = "search" | "for-you" | "showcase" | "rising";
+type Tab = "search" | "for-you" | "showcase" | "rising" | "women";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -129,6 +129,13 @@ export default function ScoutPage() {
   const [risingStars, setRisingStars] = useState<ScoutPlayer[]>([]);
   const [loadingRising, setLoadingRising] = useState(false);
 
+  // Women's Spotlight tab
+  const [womenPlayers, setWomenPlayers] = useState<ScoutPlayer[]>([]);
+  const [loadingWomen, setLoadingWomen] = useState(false);
+  const [womenProvince, setWomenProvince] = useState("");
+  const [womenPosition, setWomenPosition] = useState("");
+  const [womenAgeGroup, setWomenAgeGroup] = useState("");
+
   useEffect(() => {
     if (!user) return; // guests allowed — layout shows GuestBanner
     if (user.role !== "scout" && user.role !== "admin") { router.push("/dashboard"); }
@@ -174,11 +181,29 @@ export default function ScoutPage() {
     finally { setLoadingRising(false); }
   }, []);
 
+  const loadWomen = useCallback(async () => {
+    setLoadingWomen(true);
+    try {
+      const res = await api.get("/scout/players", {
+        params: {
+          gender:    "female",
+          province:  womenProvince  || undefined,
+          position:  womenPosition  || undefined,
+          age_group: womenAgeGroup  || undefined,
+        },
+      });
+      const _r = res.data?.data ?? res.data;
+      setWomenPlayers(Array.isArray(_r) ? _r : []);
+    } catch { setWomenPlayers([]); }
+    finally { setLoadingWomen(false); }
+  }, [womenProvince, womenPosition, womenAgeGroup]);
+
   useEffect(() => {
     if (tab === "for-you") loadForYou();
     if (tab === "showcase") loadShowcase();
     if (tab === "rising") loadRising();
-  }, [tab, loadForYou, loadShowcase, loadRising]);
+    if (tab === "women") loadWomen();
+  }, [tab, loadForYou, loadShowcase, loadRising, loadWomen]);
 
   // ── Search ────────────────────────────────────────────────────────────────
 
@@ -259,10 +284,11 @@ Use null for any field not mentioned. Position should be a short code like GK, C
   ];
 
   const TABS: { id: Tab; label: string; icon: typeof Search }[] = [
-    { id: "search",   label: "Search",        icon: Search },
-    { id: "for-you",  label: "For You",       icon: Sparkles },
-    { id: "showcase", label: "Showcase Clips", icon: Video },
-    { id: "rising",   label: "Rising Stars",  icon: TrendingUp },
+    { id: "search",   label: "Search",            icon: Search },
+    { id: "for-you",  label: "For You",           icon: Sparkles },
+    { id: "showcase", label: "Showcase Clips",    icon: Video },
+    { id: "rising",   label: "Rising Stars",      icon: TrendingUp },
+    { id: "women",    label: "Women's Spotlight", icon: Users },
   ];
 
   return (
@@ -289,7 +315,9 @@ Use null for any field not mentioned. Position should be a short code like GK, C
               key={id}
               onClick={() => setTab(id)}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all ${
-                tab === id
+                tab === id && id === "women"
+                  ? "bg-purple-500 text-white"
+                  : tab === id
                   ? "bg-[#f0b429] text-[#1a3a1a]"
                   : "text-muted-foreground hover:text-white"
               }`}
@@ -469,6 +497,114 @@ Use null for any field not mentioned. Position should be a short code like GK, C
               onContactChange={(id, val) => setContactReason((p) => ({ ...p, [id]: val }))}
               onSendContact={sendContact}
               emptyMessage="No ranked players yet. Players need completed sessions to appear here."
+            />
+          </div>
+        )}
+
+        {/* ── WOMEN'S SPOTLIGHT TAB ── */}
+        {tab === "women" && (
+          <div>
+            {/* Banner */}
+            <div className="mb-5 rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-4">
+              <div className="flex items-start gap-3">
+                <Users className="mt-0.5 h-5 w-5 flex-shrink-0 text-purple-400" />
+                <div>
+                  <p className="font-semibold text-purple-300">Women&apos;s Talent Spotlight</p>
+                  <p className="mt-1 text-sm text-purple-200/80">
+                    Female players in Zimbabwe who are open for scouting. Many are eligible for NCAA, NAIA, and UK university scholarships — sorted by performance score.
+                  </p>
+                  <p className="mt-2 text-xs italic text-purple-300/60">
+                    Powered by AMARA — GrassRoots Sports&apos; female-aware AI coach
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy notice */}
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3">
+              <Shield className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
+              <p className="text-sm text-blue-300">
+                Names hidden until contact approved. Initials and region only — full details shared after admin review.
+              </p>
+            </div>
+
+            {/* Filters */}
+            <div className="mb-5 rounded-xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Position</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setWomenPosition("")}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${!womenPosition ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
+                    >
+                      Any
+                    </button>
+                    {POSITIONS.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setWomenPosition(womenPosition === p ? "" : p)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${womenPosition === p ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Province</label>
+                  <select
+                    value={womenProvince}
+                    onChange={(e) => setWomenProvince(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:ring-1 focus:ring-purple-500"
+                  >
+                    <option value="">Any province</option>
+                    {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Age Group</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setWomenAgeGroup("")}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${!womenAgeGroup ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
+                    >
+                      Any
+                    </button>
+                    {AGE_GROUPS.map((ag) => (
+                      <button
+                        key={ag}
+                        onClick={() => setWomenAgeGroup(womenAgeGroup === ag ? "" : ag)}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium uppercase transition-colors ${womenAgeGroup === ag ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
+                      >
+                        {ag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={loadWomen}
+                  disabled={loadingWomen}
+                  className="flex items-center gap-2 rounded-xl bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-400 disabled:opacity-50 transition-colors"
+                >
+                  {loadingWomen ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  {loadingWomen ? "Loading…" : "Filter"}
+                </button>
+              </div>
+            </div>
+
+            <PlayerGrid
+              players={womenPlayers.length ? womenPlayers : (loadingWomen ? null : [])}
+              loading={loadingWomen}
+              hasSearched={true}
+              contactReason={contactReason}
+              sent={sent}
+              sending={sending}
+              onContactChange={(id, val) => setContactReason((p) => ({ ...p, [id]: val }))}
+              onSendContact={sendContact}
+              emptyMessage="No female players found with these filters. Try widening your search — or encourage players to set their gender in their profile."
             />
           </div>
         )}
