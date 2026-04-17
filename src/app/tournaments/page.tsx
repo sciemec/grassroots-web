@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Trophy, Calendar, MapPin, Users, ChevronRight, Filter } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Trophy, Calendar, MapPin, Users, ChevronRight, Filter, Star } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SportSelector } from "@/components/sports/sport-selector";
 import { SPORTS, SPORT_MAP, SportKey } from "@/config/sports";
@@ -18,10 +19,27 @@ interface Tournament {
   teams: number;
   status: "upcoming" | "ongoing" | "completed";
   prize?: string;
+  featured?: boolean;
+  registrationUrl?: string;
 }
 
 // Static NASH tournament data — replace with API call when backend is ready
 const TOURNAMENTS: Tournament[] = [
+  {
+    id: "munhumutapa-2026",
+    name: "Munhumutapa Challenge Cup 2026",
+    sport: "football",
+    organiser: "ZIFA Harare Province",
+    ageGroup: "U14 / U16",
+    province: "Harare",
+    startDate: "2026-04-21",
+    endDate: "2026-05-30",
+    teams: 32,
+    status: "upcoming",
+    prize: "Harare Province title + national pathway",
+    featured: true,
+    registrationUrl: "/tournaments/munhumutapa-2026",
+  },
   {
     id: "nash-football-2026",
     name: "NASH Football Championships",
@@ -163,6 +181,7 @@ const STATUS_LABELS = {
 };
 
 export default function TournamentsPage() {
+  const router = useRouter();
   const [sportFilter, setSportFilter] = useState<SportKey[]>([]);
   const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "ongoing" | "completed">("all");
   const [showFilter, setShowFilter] = useState(false);
@@ -304,7 +323,12 @@ export default function TournamentsPage() {
                 return (
                   <div
                     key={t.id}
-                    className="rounded-xl border bg-card p-5 hover:border-primary/30 hover:bg-muted/20 transition-colors cursor-pointer group"
+                    onClick={() => t.registrationUrl && router.push(t.registrationUrl)}
+                    className={`rounded-xl border p-5 transition-colors cursor-pointer group ${
+                      t.featured
+                        ? "border-[#f0b429]/40 bg-[#f0b429]/5 hover:border-[#f0b429]/70 hover:bg-[#f0b429]/10"
+                        : "bg-card hover:border-primary/30 hover:bg-muted/20"
+                    }`}
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-2xl">
@@ -318,6 +342,11 @@ export default function TournamentsPage() {
                               <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${STATUS_STYLES[t.status]}`}>
                                 {STATUS_LABELS[t.status]}
                               </span>
+                              {t.featured && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[#f0b429]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#f0b429]">
+                                  <Star className="h-2.5 w-2.5" /> Register Now
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs text-muted-foreground">{t.organiser} · {t.ageGroup}</p>
                           </div>

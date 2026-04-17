@@ -10,9 +10,11 @@ interface QRProfileCardProps {
   ageGroup?: string;
   province?: string;
   selfieUrl?: string;
+  school?: string;       // school or club name
+  tournament?: string;   // e.g. "Munhumutapa Challenge Cup 2026"
 }
 
-export function QRProfileCard({ playerId, playerName, ageGroup, province, selfieUrl }: QRProfileCardProps) {
+export function QRProfileCard({ playerId, playerName, ageGroup, province, selfieUrl, school, tournament }: QRProfileCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -72,6 +74,12 @@ export function QRProfileCard({ playerId, playerName, ageGroup, province, selfie
             <div>
               <p className="font-bold text-white text-lg leading-tight">{playerName}</p>
               {ageGroup && <p className="text-sm text-muted-foreground capitalize">{ageGroup.replace("u", "U")} · {province ?? "Zimbabwe"}</p>}
+              {school && <p className="text-xs text-muted-foreground">{school}</p>}
+              {tournament && (
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#f0b429]/20 px-2 py-0.5 text-xs font-semibold text-[#f0b429]">
+                  🏆 {tournament}
+                </span>
+              )}
               <p className="mt-1 text-xs text-muted-foreground">Scan to view full profile & TalentID score</p>
             </div>
           </div>
