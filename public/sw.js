@@ -1,7 +1,7 @@
 // Grassroots Sport Pro — Service Worker (Workbox-powered)
 // Cache version — bump this string whenever you deploy a breaking change
 // so users immediately get the new JS bundle instead of the stale cached one.
-const CACHE_VERSION = "v20260326-2";
+const CACHE_VERSION = "v20260417-1";
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js");
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
@@ -100,9 +100,29 @@ self.addEventListener("periodicsync", (event) => {
 });
 
 async function fireThutoDailyNotification() {
-  // Check if user has already checked in today (read from IDB/cache if needed)
-  // Simple approach: always fire; app page suppresses the banner once checked in
-  const streak = 0; // can't read localStorage from SW — keep message generic
+  // Read the user's chosen reminder time from Cache API
+  let targetHour = 7, targetMinute = 0;
+  try {
+    const cache = await caches.open("thuto-config");
+    const resp  = await cache.match("/thuto-reminder-config");
+    if (resp) {
+      const cfg    = await resp.json();
+      targetHour   = typeof cfg.hour   === "number" ? cfg.hour   : 7;
+      targetMinute = typeof cfg.minute === "number" ? cfg.minute : 0;
+    }
+  } catch { /* use defaults if cache unavailable */ }
+
+  // Only fire if Chrome woke us within ±90 minutes of the user's chosen time.
+  // periodicSync does not fire at an exact clock time — this gate prevents
+  // nudges arriving at 2am or 11pm when the user asked for 7am.
+  const now     = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const tgtMins = targetHour * 60 + targetMinute;
+  const diff    = Math.abs(nowMins - tgtMins);
+  const withinWindow = diff <= 90 || diff >= (24 * 60 - 90); // also handles midnight wrap
+
+  if (!withinWindow) return; // wrong time — skip silently
+
   const messages = [
     { title: "THUTO Daily Check-In ⚽", body: "Time to log your training. 30 seconds — keep your goal alive. Pamberi! 🔥" },
     { title: "THUTO Daily Check-In ⚽", body: "Champions show up every day. Tap to log your check-in. Ramba uchishanda!" },

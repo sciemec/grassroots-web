@@ -15,9 +15,26 @@ export function getNotificationPermission(): NotificationPermission | "unsupport
   return Notification.permission;
 }
 
+// Write reminder time to Cache API so the service worker can read it
+async function storeReminderConfig(hour: number, minute: number): Promise<void> {
+  if (typeof caches === "undefined") return;
+  try {
+    const cache = await caches.open("thuto-config");
+    await cache.put(
+      "/thuto-reminder-config",
+      new Response(JSON.stringify({ hour, minute }), {
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+  } catch { /* cache not available in this context */ }
+}
+
 // Schedule daily reminder via periodicSync (Chrome) or setTimeout fallback
 export async function scheduleDailyReminder(hour: number, minute: number): Promise<void> {
   if (typeof window === "undefined") return;
+
+  // Always persist the target time so the SW knows when to fire
+  await storeReminderConfig(hour, minute);
 
   // Try Service Worker periodicSync (Chrome 80+)
   if ("serviceWorker" in navigator) {
