@@ -825,11 +825,19 @@ const THUTO_ACTIVE = true;
 // Works on mobile Chrome (Android) which is how most Zimbabwean players use the app.
 // Falls back gracefully on unsupported browsers (mic button simply stays hidden).
 
-type VoiceState = "idle" | "listening" | "unsupported";
+type VoiceState = "idle" | "listening" | "unsupported" | "error";
 
 function useVoiceInput(onTranscript: (text: string) => void) {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Auto-clear error message after 4 seconds
+  useEffect(() => {
+    if (!voiceError) return;
+    const t = setTimeout(() => { setVoiceError(null); setVoiceState("idle"); }, 4000);
+    return () => clearTimeout(t);
+  }, [voiceError]);
 
   useEffect(() => {
     const SpeechRecognitionAPI =
@@ -844,19 +852,35 @@ function useVoiceInput(onTranscript: (text: string) => void) {
     }
 
     const recognition = new SpeechRecognitionAPI();
-    recognition.lang = "en-ZW"; // Zimbabwean English — falls back to en-GB if unavailable
+    recognition.lang = "en-GB"; // British English — closest supported locale to Zimbabwean English
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.continuous = false;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0][0].transcript;
-      onTranscript(transcript);
+      // Optional chaining prevents crash if browser returns malformed event
+      const transcript = event.results?.[0]?.[0]?.transcript ?? "";
+      if (transcript) onTranscript(transcript);
       setVoiceState("idle");
     };
 
-    recognition.onerror = () => setVoiceState("idle");
-    recognition.onend   = () => setVoiceState((s) => s === "listening" ? "idle" : s);
+    recognition.onerror = (event: Event & { error?: string }) => {
+      const err = event.error ?? "unknown";
+      if (err === "not-allowed" || err === "permission-denied") {
+        setVoiceError("Microphone blocked. Allow mic access in your browser settings.");
+      } else if (err === "no-speech") {
+        setVoiceError("No speech heard. Tap the mic and speak clearly.");
+      } else if (err === "network") {
+        setVoiceError("Network error. Check your connection and try again.");
+      } else if (err === "audio-capture") {
+        setVoiceError("No microphone found. Check your device settings.");
+      } else {
+        setVoiceError("Voice input failed. Please try again.");
+      }
+      setVoiceState("error");
+    };
+
+    recognition.onend = () => setVoiceState((s) => s === "listening" ? "idle" : s);
 
     recognitionRef.current = recognition;
   }, [onTranscript]);
@@ -868,15 +892,19 @@ function useVoiceInput(onTranscript: (text: string) => void) {
       setVoiceState("idle");
     } else {
       try {
+        // abort() first clears any stuck recogniser state from rapid taps
+        recognitionRef.current.abort();
         recognitionRef.current.start();
         setVoiceState("listening");
+        setVoiceError(null);
       } catch {
-        setVoiceState("idle");
+        setVoiceError("Could not start microphone. Please try again.");
+        setVoiceState("error");
       }
     }
   };
 
-  return { voiceState, toggleListening };
+  return { voiceState, toggleListening, voiceError };
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────────
@@ -987,7 +1015,7 @@ export default function ThutoChat() {
     setInput((prev) => (prev ? `${prev} ${text}` : text));
     setTimeout(() => inputRef.current?.focus(), 50);
   };
-  const { voiceState, toggleListening } = useVoiceInput(handleTranscript);
+  const { voiceState, toggleListening, voiceError } = useVoiceInput(handleTranscript);
 
   // ── Check onboarding status + fetch DNA completeness on mount ────────────
   useEffect(() => {
@@ -1327,6 +1355,14 @@ export default function ThutoChat() {
             <div ref={bottomRef} />
           </div>
 
+          {/* Voice error toast — shown when mic fails (permission denied, no speech, etc.) */}
+          {voiceError && (
+            <div className="flex-shrink-0 mx-3 mb-1 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-900/60 px-3 py-2 text-xs font-medium text-red-200 shadow-md">
+              <MicOff className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>{voiceError}</span>
+            </div>
+          )}
+
           {/* Voice command toast — slides in above input when a command fires */}
           {commandToast && (
             <div className="flex-shrink-0 mx-3 mb-1 flex items-center gap-2 rounded-xl border border-teal-500/30 bg-teal-900/70 px-3 py-2 text-xs font-medium text-teal-200 shadow-md">
@@ -1389,6 +1425,8 @@ export default function ThutoChat() {
           className={`fixed bottom-[5.25rem] right-4 z-50 flex h-9 w-9 items-center justify-center rounded-full border shadow-lg transition-all duration-200 ${
             voiceState === "listening"
               ? "animate-pulse border-red-400/70 bg-red-600/80 shadow-red-500/40"
+              : voiceState === "error"
+              ? "border-amber-400/70 bg-amber-700/80 shadow-amber-500/40"
               : voiceState === "processing"
               ? "border-teal-400/50 bg-teal-700/80 shadow-teal-500/30"
               : "border-white/20 bg-black/40 shadow-black/20 hover:border-teal-400/40 hover:bg-teal-900/60"

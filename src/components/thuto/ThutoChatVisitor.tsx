@@ -202,7 +202,7 @@ function useVoiceInput(onTranscript: (text: string) => void) {
     if (!SpeechRecognitionAPI) { setVoiceState("unsupported"); return; }
 
     const recognition = new SpeechRecognitionAPI();
-    recognition.lang = "en-ZW";
+    recognition.lang = "en-GB"; // British English — closest supported locale to Zimbabwean English
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.continuous = false;
