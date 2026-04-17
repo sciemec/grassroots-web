@@ -71,6 +71,9 @@ export default function RegisterPage() {
   // Role
   const [role, setRole] = useState<Role>('player');
 
+  // Gender
+  const [gender, setGender] = useState('');
+
   // Sport profile
   const [sport, setSport]             = useState('Football');
   const [position, setPosition]       = useState('');
@@ -124,6 +127,7 @@ export default function RegisterPage() {
         position,
         dominant_foot:         dominantFoot,
         province,
+        ...(isPlayer && gender ? { gender } : {}),
         ...(isUnder13 && guardianPhone ? { guardian_phone: guardianPhone } : {}),
       }, { timeout: 60000 });
 
@@ -275,6 +279,37 @@ export default function RegisterPage() {
                 className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
+
+            {/* Gender — players only */}
+            {isPlayer && (
+              <div>
+                <label className="block text-xs text-green-300/70 mb-2 font-medium">
+                  Gender <span className="text-white/30">(optional — helps scouts find female talent)</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'male',   label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+                  ].map(g => (
+                    <button
+                      key={g.value}
+                      type="button"
+                      onClick={() => setGender(gender === g.value ? '' : g.value)}
+                      className={`py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                        gender === g.value
+                          ? g.value === 'female'
+                            ? 'border-purple-400 bg-purple-500/20 text-purple-300'
+                            : 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]'
+                          : 'border-white/10 text-white/50 hover:border-white/30'
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Under-13 guardian field */}
             {isUnder13 && (

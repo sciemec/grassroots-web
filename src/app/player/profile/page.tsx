@@ -77,6 +77,7 @@ interface Profile extends FormData {
   photo_url:           string | null;
   leadership_score:    number;
   joy_score?:          number;
+  gender?:             string;
 }
 
 function calcCompletion(profile: Profile | null, data: Partial<FormData>): { count: number; total: number; pct: number } {
@@ -100,6 +101,8 @@ export default function PlayerProfilePage() {
   const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [aiNarrative, setAiNarrative]           = useState("");
   const [generatingNarrative, setGeneratingNarrative] = useState(false);
+  const [gender, setGender]             = useState<string>("");
+  const [savingGender, setSavingGender] = useState(false);
   const [selectedSport, setSelectedSport] = useState<SportKey>("football");
   const [photoUrl, setPhotoUrl]         = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -117,6 +120,7 @@ export default function PlayerProfilePage() {
       .then((res) => {
         setProfile(res.data);
         setPhotoUrl(res.data.photo_url ?? null);
+        setGender(res.data.gender ?? "");
         if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
         reset({
           sport:          res.data.sport          ?? "football",
@@ -197,6 +201,18 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
       setError("Failed to update scout visibility.");
     } finally {
       setTogglingVisibility(false);
+    }
+  };
+
+  const saveGender = async (value: string) => {
+    setSavingGender(true);
+    try {
+      await api.patch("/profile", { gender: value });
+      setGender(value);
+    } catch {
+      setError("Failed to save gender. Please try again.");
+    } finally {
+      setSavingGender(false);
     }
   };
 
@@ -353,6 +369,43 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               </p>
             )}
           </div>
+
+          {/* Gender banner — shown once when gender is unset */}
+          {!loading && profile && !gender && (
+            <div className="mb-6 rounded-xl border border-purple-500/40 bg-purple-500/10 p-4">
+              <p className="text-sm font-semibold text-purple-300 mb-1">Help scouts find you</p>
+              <p className="text-xs text-purple-200/70 mb-3">
+                Female players now have a dedicated Women&apos;s Spotlight tab in the Scout Hub.
+                Set your gender so scouts can discover you.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  disabled={savingGender}
+                  onClick={() => saveGender("female")}
+                  className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors disabled:opacity-60"
+                >
+                  {savingGender ? "Saving…" : "I'm female"}
+                </button>
+                <button
+                  type="button"
+                  disabled={savingGender}
+                  onClick={() => saveGender("male")}
+                  className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors disabled:opacity-60"
+                >
+                  {savingGender ? "Saving…" : "I'm male"}
+                </button>
+                <button
+                  type="button"
+                  disabled={savingGender}
+                  onClick={() => saveGender("prefer_not_to_say")}
+                  className="w-full py-2 rounded-lg border border-white/10 text-white/40 text-xs font-medium transition-colors hover:text-white/60 disabled:opacity-60"
+                >
+                  Prefer not to say
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Scout visibility toggle */}
           <div className="mb-8 flex items-center justify-between rounded-xl border p-5">
