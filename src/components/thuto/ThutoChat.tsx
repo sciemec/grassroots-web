@@ -1381,6 +1381,29 @@ export default function ThutoChat() {
       )}
 
       {/* ── Floating Trigger Button ─────────────────────────────────────── */}
+      {/* Ambient mic — listens for commands without opening the panel */}
+      {!open && (
+        <button
+          onClick={toggleListening}
+          aria-label={voiceState === "listening" ? "Stop listening" : "Speak a command to THUTO"}
+          className={`fixed bottom-[5.25rem] right-4 z-50 flex h-9 w-9 items-center justify-center rounded-full border shadow-lg transition-all duration-200 ${
+            voiceState === "listening"
+              ? "animate-pulse border-red-400/70 bg-red-600/80 shadow-red-500/40"
+              : voiceState === "processing"
+              ? "border-teal-400/50 bg-teal-700/80 shadow-teal-500/30"
+              : "border-white/20 bg-black/40 shadow-black/20 hover:border-teal-400/40 hover:bg-teal-900/60"
+          }`}
+        >
+          {voiceState === "listening" ? (
+            <MicOff className="h-4 w-4 text-white" />
+          ) : voiceState === "processing" ? (
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
+            <Mic className="h-4 w-4 text-white/60" />
+          )}
+        </button>
+      )}
+
       {/* THUTO UI RULE: always a small circle. Grows big only on click.    */}
       {/* When unread > 0: whole circle turns red. Normal: teal.            */}
       <button
