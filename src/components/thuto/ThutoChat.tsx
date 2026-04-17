@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -1079,6 +1079,19 @@ export default function ThutoChat() {
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // ── AMARA mode — true when the cached player gender is female ─────────────
+  const isAmaraMode = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("thuto_player_context");
+      if (!raw) return false;
+      const ctx = JSON.parse(raw) as { gender?: string };
+      const g = (ctx.gender ?? "").toLowerCase().trim();
+      return g === "female" || g === "f";
+    } catch {
+      return false;
+    }
+  }, []);
+
   // ── Voice command hook ────────────────────────────────────────────────────
   const { executeCommand } = useThutoCommands();
 
@@ -1375,7 +1388,7 @@ export default function ThutoChat() {
             <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
               <ThutoAvatar size="lg" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-white">THUTO</p>
+                <p className="text-sm font-bold text-white">{isAmaraMode ? "AMARA" : "THUTO"}</p>
                 <p className="text-xs text-teal-400 truncate" title={pageCtx.description}>
                   {pageCtx.description.split("—")[0].trim()}
                 </p>
