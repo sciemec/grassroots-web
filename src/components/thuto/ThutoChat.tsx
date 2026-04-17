@@ -919,7 +919,7 @@ const THUTO_ACTIVE = true;
 // Works on mobile Chrome (Android) which is how most Zimbabwean players use the app.
 // Falls back gracefully on unsupported browsers (mic button simply stays hidden).
 
-type VoiceState = "idle" | "listening" | "unsupported" | "error";
+type VoiceState = "idle" | "listening" | "unsupported" | "error" | "processing";
 
 function useVoiceInput(onTranscript: (text: string) => void) {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
