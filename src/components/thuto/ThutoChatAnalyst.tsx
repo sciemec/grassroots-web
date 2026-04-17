@@ -270,11 +270,19 @@ function MessageBubble({ msg }: { msg: Message }) {
 
 // ── Voice Input Hook ──────────────────────────────────────────────────────────
 
-type VoiceState = "idle" | "listening" | "unsupported";
+type VoiceState = "idle" | "listening" | "unsupported" | "error";
 
 function useVoiceInput(onTranscript: (text: string) => void) {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Auto-clear error after 4 seconds
+  useEffect(() => {
+    if (!voiceError) return;
+    const t = setTimeout(() => { setVoiceError(null); setVoiceState("idle"); }, 4000);
+    return () => clearTimeout(t);
+  }, [voiceError]);
 
   useEffect(() => {
     const SpeechRecognitionAPI =
@@ -292,11 +300,28 @@ function useVoiceInput(onTranscript: (text: string) => void) {
     recognition.continuous = false;
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      onTranscript(event.results[0][0].transcript);
+      const transcript = event.results?.[0]?.[0]?.transcript ?? "";
+      if (transcript) onTranscript(transcript);
       setVoiceState("idle");
     };
-    recognition.onerror = () => setVoiceState("idle");
-    recognition.onend   = () => setVoiceState((s) => s === "listening" ? "idle" : s);
+
+    recognition.onerror = (event: Event & { error?: string }) => {
+      const err = event.error ?? "unknown";
+      if (err === "not-allowed" || err === "permission-denied") {
+        setVoiceError("Microphone blocked. Allow mic access in your browser settings.");
+      } else if (err === "no-speech") {
+        setVoiceError("No speech heard. Tap the mic and speak clearly.");
+      } else if (err === "network") {
+        setVoiceError("Network error. Check your connection and try again.");
+      } else if (err === "audio-capture") {
+        setVoiceError("No microphone found. Check your device settings.");
+      } else {
+        setVoiceError("Voice input failed. Please try again.");
+      }
+      setVoiceState("error");
+    };
+
+    recognition.onend = () => setVoiceState((s) => s === "listening" ? "idle" : s);
 
     recognitionRef.current = recognition;
   }, [onTranscript]);
@@ -307,12 +332,19 @@ function useVoiceInput(onTranscript: (text: string) => void) {
       recognitionRef.current.stop();
       setVoiceState("idle");
     } else {
-      try { recognitionRef.current.start(); setVoiceState("listening"); }
-      catch { setVoiceState("idle"); }
+      try {
+        recognitionRef.current.abort(); // clear any stuck state from rapid taps
+        recognitionRef.current.start();
+        setVoiceState("listening");
+        setVoiceError(null);
+      } catch {
+        setVoiceError("Could not start microphone. Please try again.");
+        setVoiceState("error");
+      }
     }
   };
 
-  return { voiceState, toggleListening };
+  return { voiceState, toggleListening, voiceError };
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -351,7 +383,7 @@ export default function ThutoChatAnalyst() {
     setInput((prev) => (prev ? `${prev} ${text}` : text));
     setTimeout(() => inputRef.current?.focus(), 50);
   };
-  const { voiceState, toggleListening } = useVoiceInput(handleTranscript);
+  const { voiceState, toggleListening, voiceError } = useVoiceInput(handleTranscript);
 
   useEffect(() => {
     preloadOfflineAI();
@@ -511,6 +543,14 @@ export default function ThutoChatAnalyst() {
 
             <div ref={bottomRef} />
           </div>
+
+          {/* Voice error toast */}
+          {voiceError && (
+            <div className="flex-shrink-0 mx-3 mb-1 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-900/60 px-3 py-2 text-xs font-medium text-red-200 shadow-md">
+              <MicOff className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>{voiceError}</span>
+            </div>
+          )}
 
           {/* Input */}
           <div className="flex-shrink-0 border-t border-white/10 px-3 py-2.5">
