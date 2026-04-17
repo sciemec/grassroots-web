@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Send, Sparkles, ChevronDown, Mic, MicOff } from "lucide-react";
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useThutoCommands } from "./useThutoCommands";
+import { useThutoVoice } from "./useThutoVoice";
 import api from "@/lib/api";
 import { searchOffline, preloadOfflineAI } from "@/lib/offline-ai";
 
@@ -950,14 +952,39 @@ export default function ThutoChat() {
   const [thinking,        setThinking]        = useState(false);
   const [unread,          setUnread]          = useState(0);
   const [dnaCompleteness, setDnaCompleteness] = useState(0);
+  const [commandToast,    setCommandToast]    = useState<string | null>(null);
 
   const inputRef  = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ── Voice input — appends transcript to current input value ──────────────
-  const handleTranscript = (text: string) => {
+  // ── Voice command hook ────────────────────────────────────────────────────
+  const { executeCommand } = useThutoCommands();
+
+  // ── THUTO voice output — speaks AI responses aloud when voice mode is on ──
+  const { voiceMode, toggleVoiceMode, isSpeaking, speakThutoResponse, cancelSpeech } = useThutoVoice();
+
+  // ── Auto-dismiss command toast after 3 seconds ────────────────────────────
+  useEffect(() => {
+    if (!commandToast) return;
+    const timer = setTimeout(() => setCommandToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [commandToast]);
+
+  // ── Voice input — checks for commands FIRST, falls through to chat input ──
+  const handleTranscript = async (text: string) => {
+    const result = await executeCommand(text);
+    if (result) {
+      // Command matched — show toast and handle any follow-up action
+      setCommandToast(result.toast);
+      if (result.type === "analyse_session" && result.analyseMessage) {
+        // Open the panel and send the session data to THUTO for AI analysis
+        setOpen(true);
+        setTimeout(() => sendMessage(result.analyseMessage), 200);
+      }
+      return; // ← CRITICAL: does NOT fall through to input box
+    }
+    // No command — original behaviour: append to input and focus
     setInput((prev) => (prev ? `${prev} ${text}` : text));
-    // Auto-focus input so player can review or edit before sending
     setTimeout(() => inputRef.current?.focus(), 50);
   };
   const { voiceState, toggleListening } = useVoiceInput(handleTranscript);
@@ -1098,8 +1125,10 @@ export default function ThutoChat() {
   }, [open]);
 
   // ── Send message ──────────────────────────────────────────────────────────
-  const sendMessage = async () => {
-    const text = input.trim();
+  // Accepts an optional overrideText so voice commands (e.g. analyse_session)
+  // can inject a message programmatically without touching the input box.
+  const sendMessage = async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || thinking) return;
 
     const userMsg: Message = {
@@ -1121,6 +1150,7 @@ export default function ThutoChat() {
         { id: crypto.randomUUID(), role: "assistant", content: answer, timestamp: Date.now() },
       ]);
 
+      if (voiceMode) speakThutoResponse(answer);
       if (!open) setUnread((n) => n + 1);
 
       // Re-fetch DNA completeness — backend may have updated it
@@ -1139,6 +1169,8 @@ export default function ThutoChat() {
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", content, timestamp: Date.now() },
       ]);
+
+      if (voiceMode) speakThutoResponse(content);
     } finally {
       setThinking(false);
     }
@@ -1200,6 +1232,19 @@ export default function ThutoChat() {
                 </p>
               </div>
               <div className="flex items-center gap-1">
+                {/* Voice mode toggle — THUTO reads responses aloud */}
+                <button
+                  onClick={() => { if (isSpeaking) cancelSpeech(); toggleVoiceMode(); }}
+                  className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                    voiceMode
+                      ? "bg-teal-600/30 text-teal-300 hover:bg-teal-600/50"
+                      : "text-white/40 hover:bg-white/10 hover:text-white"
+                  }`}
+                  title={voiceMode ? "Voice mode on — click to mute THUTO" : "Click to hear THUTO speak"}
+                  aria-label={voiceMode ? "Mute THUTO voice" : "Enable THUTO voice"}
+                >
+                  {voiceMode ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                </button>
                 {messages.length > 0 && (
                   <button
                     onClick={clearHistory}
@@ -1282,6 +1327,14 @@ export default function ThutoChat() {
             <div ref={bottomRef} />
           </div>
 
+          {/* Voice command toast — slides in above input when a command fires */}
+          {commandToast && (
+            <div className="flex-shrink-0 mx-3 mb-1 flex items-center gap-2 rounded-xl border border-teal-500/30 bg-teal-900/70 px-3 py-2 text-xs font-medium text-teal-200 shadow-md">
+              <span className="text-base leading-none">🎙️</span>
+              <span>{commandToast}</span>
+            </div>
+          )}
+
           {/* Input */}
           <div className="flex-shrink-0 border-t border-white/10 px-3 py-2.5">
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/50 transition-colors">
@@ -1315,7 +1368,7 @@ export default function ThutoChat() {
                 </button>
               )}
               <button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={!input.trim() || thinking}
                 aria-label="Send message"
                 className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white transition-colors hover:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed"
