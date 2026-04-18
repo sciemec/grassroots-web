@@ -614,12 +614,22 @@ export default function MunhumutapaPage() {
           </div>
         )}
 
-        {/* ── Fixtures placeholder ─────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
-          <Calendar className="mx-auto mb-3 h-8 w-8 text-white/20" />
-          <p className="font-semibold text-white/40">Fixture Schedule</p>
-          <p className="mt-1 text-xs text-white/20">Fixtures will be published after the 21 April meeting</p>
-        </div>
+        {/* ── Fixtures & Standings ─────────────────────────────────────────── */}
+        <Link
+          href="/tournaments/munhumutapa-2026/fixtures"
+          className="group flex items-center justify-between rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-5 hover:bg-[#f0b429]/10 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b429]/20">
+              <Calendar className="h-5 w-5 text-[#f0b429]" />
+            </div>
+            <div>
+              <p className="font-bold text-white">Fixtures &amp; Standings</p>
+              <p className="text-xs text-white/50">Live schedule, results and group tables</p>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-[#f0b429] group-hover:translate-x-1 transition-transform" />
+        </Link>
 
         {/* ── Contact / Admin ──────────────────────────────────────────────── */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center space-y-2">
