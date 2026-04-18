@@ -12,15 +12,18 @@ interface QRProfileCardProps {
   selfieUrl?: string;
   school?: string;       // school or club name
   tournament?: string;   // e.g. "Munhumutapa Challenge Cup 2026"
+  profileUrl?: string;   // override default /player/public/[id] URL
 }
 
-export function QRProfileCard({ playerId, playerName, ageGroup, province, selfieUrl, school, tournament }: QRProfileCardProps) {
+export function QRProfileCard({ playerId, playerName, ageGroup, province, selfieUrl, school, tournament, profileUrl: overrideUrl }: QRProfileCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
 
-  const profileUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/player/public/${playerId}`
-    : `https://grassrootssports.live/player/public/${playerId}`;
+  const profileUrl = overrideUrl ?? (
+    typeof window !== "undefined"
+      ? `${window.location.origin}/player/public/${playerId}`
+      : `https://grassrootssports.live/player/public/${playerId}`
+  );
 
   useEffect(() => {
     if (!canvasRef.current) return;

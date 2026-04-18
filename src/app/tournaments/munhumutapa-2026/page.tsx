@@ -32,19 +32,60 @@ interface ClubRegistration {
 
 type Step = "details" | "players" | "confirm" | "done";
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface TournamentPlayerProfile {
+  id: string;           // e.g. MCC2026-abc123-0
+  regId: string;
+  clubName: string;
+  ageGroup: "U14" | "U16";
+  gender: "Boys" | "Girls";
+  name: string;
+  position: string;
+  age: string;
+  school: string;
+  openForScouting: boolean;
+  scholarshipEligible: boolean;  // true for all Girls
+  registeredAt: string;
+}
+
 // ── localStorage ──────────────────────────────────────────────────────────────
 
-const LS_ALL  = "munhumutapa_2026_registrations";
-const LS_MINE = "munhumutapa_2026_my_registration";
+const LS_ALL      = "munhumutapa_2026_registrations";
+const LS_MINE     = "munhumutapa_2026_my_registration";
+const LS_PROFILES = "munhumutapa_2026_player_profiles";
 
 function loadAll(): ClubRegistration[] {
   try { return JSON.parse(localStorage.getItem(LS_ALL) ?? "[]"); } catch { return []; }
+}
+
+function loadProfiles(): TournamentPlayerProfile[] {
+  try { return JSON.parse(localStorage.getItem(LS_PROFILES) ?? "[]"); } catch { return []; }
 }
 
 function saveReg(reg: ClubRegistration) {
   const all = loadAll().filter(r => r.id !== reg.id);
   localStorage.setItem(LS_ALL,  JSON.stringify([...all, reg]));
   localStorage.setItem(LS_MINE, JSON.stringify(reg));
+
+  // Create individual player profiles
+  const shortId = reg.id.slice(-6);
+  const existing = loadProfiles().filter(p => p.regId !== reg.id);
+  const newProfiles: TournamentPlayerProfile[] = reg.players.map((p, i) => ({
+    id:                  `MCC2026-${shortId}-${i}`,
+    regId:               reg.id,
+    clubName:            reg.club_name,
+    ageGroup:            reg.age_group,
+    gender:              reg.gender,
+    name:                p.name,
+    position:            p.position,
+    age:                 p.age,
+    school:              p.school || reg.club_name,
+    openForScouting:     true,
+    scholarshipEligible: reg.gender === "Girls",
+    registeredAt:        reg.registered_at,
+  }));
+  localStorage.setItem(LS_PROFILES, JSON.stringify([...existing, ...newProfiles]));
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -500,17 +541,23 @@ export default function MunhumutapaPage() {
                 <span className="ml-auto text-xs text-white/40">Share with each player</span>
               </div>
               <div className="space-y-3">
-                {myReg.players.map((player, i) => (
-                  <QRProfileCard
-                    key={i}
-                    playerId={`munhumutapa-${myReg.id}-${i}`}
-                    playerName={player.name}
-                    ageGroup={myReg.age_group}
-                    province="Harare"
-                    school={player.school || myReg.club_name}
-                    tournament="Munhumutapa Challenge Cup 2026"
-                  />
-                ))}
+                {myReg.players.map((player, i) => {
+                  const shortId = myReg.id.slice(-6);
+                  const pid = `MCC2026-${shortId}-${i}`;
+                  const url = `${typeof window !== "undefined" ? window.location.origin : "https://grassrootssports.live"}/tournaments/munhumutapa-2026/players/${pid}`;
+                  return (
+                    <QRProfileCard
+                      key={i}
+                      playerId={pid}
+                      playerName={player.name}
+                      ageGroup={myReg.age_group}
+                      province="Harare"
+                      school={player.school || myReg.club_name}
+                      tournament="Munhumutapa Challenge Cup 2026"
+                      profileUrl={url}
+                    />
+                  );
+                })}
               </div>
             </div>
 
