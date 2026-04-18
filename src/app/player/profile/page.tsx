@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2, ExternalLink, Brain, Sparkles } from "lucide-react";
+import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2, ExternalLink, Brain, Sparkles, MessageCircle } from "lucide-react";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -78,6 +78,7 @@ interface Profile extends FormData {
   leadership_score:    number;
   joy_score?:          number;
   gender?:             string;
+  whatsapp_phone?:     string;
 }
 
 function calcCompletion(profile: Profile | null, data: Partial<FormData>): { count: number; total: number; pct: number } {
@@ -101,8 +102,11 @@ export default function PlayerProfilePage() {
   const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [aiNarrative, setAiNarrative]           = useState("");
   const [generatingNarrative, setGeneratingNarrative] = useState(false);
-  const [gender, setGender]             = useState<string>("");
-  const [savingGender, setSavingGender] = useState(false);
+  const [gender, setGender]               = useState<string>("");
+  const [savingGender, setSavingGender]   = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState<string>("");
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [whatsappSaved, setWhatsappSaved]   = useState(false);
   const [selectedSport, setSelectedSport] = useState<SportKey>("football");
   const [photoUrl, setPhotoUrl]         = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -121,6 +125,7 @@ export default function PlayerProfilePage() {
         setProfile(res.data);
         setPhotoUrl(res.data.photo_url ?? null);
         setGender(res.data.gender ?? "");
+        setWhatsappPhone(res.data.whatsapp_phone ?? "");
         if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
         reset({
           sport:          res.data.sport          ?? "football",
@@ -213,6 +218,24 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
       setError("Failed to save gender. Please try again.");
     } finally {
       setSavingGender(false);
+    }
+  };
+
+  const saveWhatsappPhone = async () => {
+    if (!whatsappPhone.trim()) return;
+    setSavingWhatsapp(true);
+    try {
+      // Normalise: 07XXXXXXX → 2637XXXXXXX
+      let phone = whatsappPhone.replace(/\s+/g, "");
+      if (phone.startsWith("07")) phone = "263" + phone.slice(1);
+      await api.patch("/profile", { whatsapp_phone: phone });
+      setWhatsappPhone(phone);
+      setWhatsappSaved(true);
+      setTimeout(() => setWhatsappSaved(false), 3000);
+    } catch {
+      setError("Failed to save WhatsApp number. Please try again.");
+    } finally {
+      setSavingWhatsapp(false);
     }
   };
 
@@ -431,6 +454,44 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             >
               <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${profile?.scout_visible ? "translate-x-6" : "translate-x-1"}`} />
             </button>
+          </div>
+
+          {/* WhatsApp THUTO Link */}
+          <div className="mb-8 rounded-xl border border-white/10 bg-card/60 p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-green-400" />
+              <div>
+                <p className="font-medium text-white">THUTO on WhatsApp</p>
+                <p className="text-xs text-muted-foreground">
+                  Get coaching messages from THUTO directly on WhatsApp
+                </p>
+              </div>
+              {whatsappPhone && (
+                <span className="ml-auto rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-medium text-green-400">
+                  Linked ✓
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="tel"
+                value={whatsappPhone}
+                onChange={(e) => setWhatsappPhone(e.target.value)}
+                placeholder="e.g. 0771 234 567"
+                className="flex-1 rounded-lg border border-white/10 bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-green-500/50 placeholder:text-muted-foreground"
+              />
+              <button
+                type="button"
+                onClick={saveWhatsappPhone}
+                disabled={savingWhatsapp || !whatsappPhone.trim()}
+                className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-500 disabled:opacity-50"
+              >
+                {savingWhatsapp ? <Loader2 className="h-4 w-4 animate-spin" /> : whatsappSaved ? "Saved ✓" : "Link"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Enter your Econet or NetOne number. After linking, message the THUTO WhatsApp number to start chatting.
+            </p>
           </div>
 
           {/* Form */}
