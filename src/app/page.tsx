@@ -289,6 +289,30 @@ export default function LandingPage() {
             ))}
           </div>
 
+          {/* ── Munhumutapa 2026 Tournament Banner ──────────────────────────── */}
+          <Link href="/tournaments/munhumutapa-2026">
+            <div
+              className="mt-3 rounded-2xl flex items-center gap-4 px-5 py-4 overflow-hidden relative cursor-pointer"
+              style={{
+                background: "linear-gradient(135deg, #0D4A1F, #0a1f0e)",
+                border: "1px solid rgba(240,180,41,0.4)",
+                boxShadow: "0 4px 16px rgba(240,180,41,0.15)",
+              }}
+            >
+              {/* Gold chevron pattern */}
+              <div className="pointer-events-none absolute inset-0 opacity-5 rounded-2xl"
+                style={{ backgroundImage: "repeating-linear-gradient(-45deg,#f0b429 0,#f0b429 1px,transparent 0,transparent 50%)", backgroundSize: "10px 10px" }} />
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-xl"
+                style={{ background: "rgba(240,180,41,0.15)" }}>🏆</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]">Now Open — Register Free</p>
+                <p className="text-sm font-extrabold text-white leading-tight">Munhumutapa Challenge Cup 2026</p>
+                <p className="text-xs text-white/50 truncate">U14 &amp; U16 · Boys &amp; Girls · ZIFA Harare Province</p>
+              </div>
+              <ChevronRight className="h-5 w-5 flex-shrink-0 text-[#f0b429]" />
+            </div>
+          </Link>
+
           {/* Join banner */}
           <Link href="/register">
             <div

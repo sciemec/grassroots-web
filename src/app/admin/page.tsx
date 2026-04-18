@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Users, ShieldCheck, Search, CreditCard, BarChart2, Megaphone, Loader2, Globe, Download, Eye } from "lucide-react";
+import { Users, ShieldCheck, Search, CreditCard, BarChart2, Megaphone, Loader2, Globe, Download, Eye, Trophy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -32,6 +32,7 @@ const HUB_CARDS = [
   { icon: Globe,       title: "Sports Content",  subtitle: "Netball info page",       href: "/sports/netball",       bg: "bg-purple-600" },
   { icon: Download,    title: "PWA Installs",    subtitle: "App install tracker",     href: "/admin/pwa",            bg: "bg-[#1a5c2a]" },
   { icon: Eye,         title: "Player Preview",  subtitle: "THUTO vs AMARA live chat", href: "/admin/player-preview", bg: "bg-purple-700" },
+  { icon: Trophy,      title: "Munhumutapa 2026", subtitle: "Registrations & results", href: "/admin/tournaments/munhumutapa-2026", bg: "bg-[#b8860b]" },
 ];
 
 export default function AdminHubPage() {
