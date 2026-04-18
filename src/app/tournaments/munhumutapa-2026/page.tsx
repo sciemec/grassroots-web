@@ -301,34 +301,31 @@ export default function MunhumutapaPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-white/60">Age Group *</label>
-                    <div className="flex gap-2">
-                      {(["U14", "U16"] as const).map(ag => (
+                <div>
+                  <label className="mb-2 block text-xs font-semibold text-white/60">Team Category *</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { ag: "U14", g: "Boys",  label: "U14 Boys",  emoji: "⚽" },
+                      { ag: "U14", g: "Girls", label: "U14 Girls", emoji: "⚽" },
+                      { ag: "U16", g: "Boys",  label: "U16 Boys",  emoji: "⚽" },
+                      { ag: "U16", g: "Girls", label: "U16 Girls", emoji: "⚽" },
+                    ] as { ag: "U14"|"U16"; g: "Boys"|"Girls"; label: string; emoji: string }[]).map(({ ag, g, label, emoji }) => {
+                      const active = ageGroup === ag && gender === g;
+                      return (
                         <button
-                          key={ag}
-                          onClick={() => setAgeGroup(ag)}
-                          className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors ${
-                            ageGroup === ag ? "bg-[#f0b429] text-[#0a1f0e]" : "border border-white/10 bg-white/5 text-white/60"
+                          key={label}
+                          onClick={() => { setAgeGroup(ag); setGender(g); }}
+                          className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-colors ${
+                            active
+                              ? "bg-[#f0b429] text-[#0a1f0e]"
+                              : "border border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
                           }`}
-                        >{ag}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-white/60">Gender *</label>
-                    <div className="flex gap-2">
-                      {(["Boys", "Girls"] as const).map(g => (
-                        <button
-                          key={g}
-                          onClick={() => setGender(g)}
-                          className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors ${
-                            gender === g ? "bg-[#f0b429] text-[#0a1f0e]" : "border border-white/10 bg-white/5 text-white/60"
-                          }`}
-                        >{g}</button>
-                      ))}
-                    </div>
+                        >
+                          <span>{emoji}</span>
+                          {label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
