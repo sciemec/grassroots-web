@@ -242,6 +242,36 @@ export default function PitchModePage() {
     setMotivationMsg(THUTO_MESSAGES[Math.floor(Math.random() * THUTO_MESSAGES.length)]);
   };
 
+  // ── Normalize new AI schedule format → legacy drills[] ───────────────────
+  // THUTO now generates: warm_up / main_drill / game_application fields.
+  // The execution engine (timers, drill navigation) reads session.day.drills[].
+  // This converts either format into a unified drills array.
+
+  function normalizeToDrills(day: ScheduleDay): ScheduleDay {
+    if (day.drills?.length) return day; // already legacy format — no change
+    const drills: Drill[] = [];
+    if (day.warm_up) drills.push({
+      name: day.warm_up.name,
+      duration_minutes: day.warm_up.duration_minutes,
+      instructions: day.warm_up.instructions,
+      equipment_needed: "None",
+    });
+    if (day.main_drill) drills.push({
+      name: day.main_drill.name,
+      duration_minutes: day.main_drill.duration_minutes,
+      instructions: day.main_drill.instructions,
+      equipment_needed: day.main_drill.equipment_needed ?? "None",
+    });
+    if (day.game_application) drills.push({
+      name: day.game_application.name,
+      duration_minutes: day.game_application.duration_minutes,
+      instructions: day.game_application.instructions,
+      equipment_needed: "None",
+    });
+    const total = drills.reduce((s, d) => s + d.duration_minutes, 0);
+    return { ...day, drills, total_duration_minutes: day.total_duration_minutes ?? total };
+  }
+
   // ── Load training schedule ────────────────────────────────────────────────
 
   useEffect(() => {
@@ -269,7 +299,10 @@ export default function PitchModePage() {
       if (!todayData)   { setPhase("no_schedule"); return; }
       if (todayData.is_rest) { setPhase("rest_day"); return; }
 
-      setSession({ day: todayData, drillIndex: 0, scheduleId: scheduleData.id });
+      // Normalize new AI format (warm_up / main_drill / game_application)
+      // into the legacy drills[] array the execution engine uses.
+      const normalized = normalizeToDrills(todayData);
+      setSession({ day: normalized, drillIndex: 0, scheduleId: scheduleData.id });
       setPhase("ready");
     }
 

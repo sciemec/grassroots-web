@@ -28,6 +28,14 @@ export interface ScheduleDay {
   intensity?: string;
   pre_session_warmup?: string;
   post_session_cooldown?: string;
+  // New AI format fields (THUTO FIFA schedule)
+  warm_up?: { name: string; duration_minutes: number; instructions: string; coaching_question?: string };
+  main_drill?: { name: string; duration_minutes: number; instructions: string; equipment_needed?: string; coaching_question?: string; success_looks_like?: string; repetitions?: string };
+  game_application?: { name: string; duration_minutes: number; instructions: string; setup?: string; thuto_observes?: string; coaching_intervention?: string };
+  session_intention?: string;
+  joy_prompt?: string;
+  phase_of_play?: string;
+  cooldown?: string;
 }
 
 export interface Drill {
