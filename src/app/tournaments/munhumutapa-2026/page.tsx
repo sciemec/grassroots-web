@@ -165,7 +165,7 @@ export default function MunhumutapaPage() {
   };
 
   const shareViaWhatsApp = () => {
-    const text = `🏆 Register your club for the Munhumutapa Challenge Cup 2026!\n\nU14 & U16 | Boys & Girls | ZIFA Harare Province\nRaylton Sports Club — Starting April 2026\n\nRegister free at:\nhttps://grassrootssports.live/tournaments/munhumutapa-2026`;
+    const text = `🏆 Register for the Munhumutapa Challenge Cup 2026!\n\nU14 & U16 | Boys & Girls | Open to Clubs & Schools Across Zimbabwe\n\nRegister free at:\nhttps://grassrootssports.live/tournaments/munhumutapa-2026`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
   };
 
@@ -182,7 +182,7 @@ export default function MunhumutapaPage() {
         {/* Co-branding */}
         <div className="relative mb-6 flex items-center justify-between">
           <div className="rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]">ZIFA Harare Province</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]">Zimbabwe · Open National</p>
           </div>
           <div className="rounded-xl border border-white/20 bg-white/5 px-3 py-1.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Grassroots Sports</p>
@@ -197,7 +197,7 @@ export default function MunhumutapaPage() {
           <h1 className="text-2xl font-black uppercase tracking-wide text-white">
             Munhumutapa<br />Challenge Cup 2026
           </h1>
-          <p className="mt-2 text-sm font-semibold text-[#f0b429]">Official ZIFA Harare Province Junior Tournament</p>
+          <p className="mt-2 text-sm font-semibold text-[#f0b429]">Open to Clubs &amp; Schools Across Zimbabwe</p>
 
           {/* Category pills */}
           <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -515,7 +515,7 @@ export default function MunhumutapaPage() {
                       playerId={pid}
                       playerName={player.name}
                       ageGroup={myReg.age_group}
-                      province="Harare"
+                      province="Zimbabwe"
                       school={player.school || myReg.club_name}
                       tournament="Munhumutapa Challenge Cup 2026"
                       profileUrl={url}
