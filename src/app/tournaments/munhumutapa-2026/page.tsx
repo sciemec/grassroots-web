@@ -207,32 +207,6 @@ export default function MunhumutapaPage() {
           </div>
         </div>
 
-        {/* Info strip */}
-        <div className="relative mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-            <Calendar className="mx-auto mb-1 h-4 w-4 text-[#f0b429]" />
-            <p className="text-[10px] uppercase tracking-wide text-white/50">Registration Meeting</p>
-            <p className="text-sm font-bold text-white">21 April 2026</p>
-            <p className="text-xs text-white/60">4:00 PM</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-            <MapPin className="mx-auto mb-1 h-4 w-4 text-[#f0b429]" />
-            <p className="text-[10px] uppercase tracking-wide text-white/50">Venue</p>
-            <p className="text-sm font-bold text-white">Raylton Sports Club</p>
-            <p className="text-xs text-white/60">Harare</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-            <Users className="mx-auto mb-1 h-4 w-4 text-[#f0b429]" />
-            <p className="text-[10px] uppercase tracking-wide text-white/50">Eligible Clubs</p>
-            <p className="text-sm font-bold text-white">Harare & Chitungwiza</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-            <Shield className="mx-auto mb-1 h-4 w-4 text-[#f0b429]" />
-            <p className="text-[10px] uppercase tracking-wide text-white/50">Registration Fee</p>
-            <p className="text-sm font-bold text-white">USD 100</p>
-            <p className="text-xs text-white/60">per club</p>
-          </div>
-        </div>
       </div>
 
       <div className="px-5 pb-16 space-y-6 pt-6">
@@ -494,10 +468,6 @@ export default function MunhumutapaPage() {
                   </ul>
                 </div>
 
-                <p className="text-xs text-white/40 text-center">
-                  USD 100 registration fee payable at Raylton Sports Club on 21 April 2026
-                </p>
-
                 <div className="flex gap-3">
                   <button
                     onClick={() => setStep("players")}
@@ -525,9 +495,6 @@ export default function MunhumutapaPage() {
               <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-green-400" />
               <p className="text-lg font-black text-white">Registration Complete!</p>
               <p className="mt-1 text-sm text-white/60">{myReg.club_name} — {myReg.age_group} {myReg.gender}</p>
-              <p className="mt-2 text-xs text-white/40">
-                Bring your USD 100 registration fee to Raylton Sports Club on 21 April 2026 at 4 PM.
-              </p>
             </div>
 
             {/* Player QR cards */}
@@ -628,13 +595,9 @@ export default function MunhumutapaPage() {
           <ChevronRight className="h-5 w-5 text-[#f0b429] group-hover:translate-x-1 transition-transform" />
         </Link>
 
-        {/* ── Contact / Admin ──────────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center space-y-2">
-          <p className="text-xs text-white/40">Questions? Contact ZIFA Harare Province</p>
-          <a href="tel:+263771000000" className="flex items-center justify-center gap-2 text-sm font-semibold text-[#f0b429]">
-            <Phone className="h-3.5 w-3.5" /> Robert Tembo — Chairman
-          </a>
-          <Link href="/admin/tournaments/munhumutapa-2026" className="block text-xs text-white/20 hover:text-white/40">
+        {/* ── Admin link ───────────────────────────────────────────────────── */}
+        <div className="text-center">
+          <Link href="/admin/tournaments/munhumutapa-2026" className="text-xs text-white/20 hover:text-white/40">
             Admin View →
           </Link>
         </div>
