@@ -259,7 +259,10 @@ export default function DrillsPage() {
       // localStorage fallback — same device demo (coach + player on same browser)
       try {
         const raw = localStorage.getItem("gs_futurefit_assignments");
-        if (raw) setAssignedDrills(JSON.parse(raw) as AssignedDrill[]);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setAssignedDrills(parsed as AssignedDrill[]);
+        }
       } catch { /* ignore */ }
     };
     fetchAssigned();
