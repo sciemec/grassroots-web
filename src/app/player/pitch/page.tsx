@@ -283,10 +283,26 @@ export default function PitchModePage() {
         if (raw) {
           scheduleData = { ...raw, cached_at: Date.now() };
           await saveSchedule(scheduleData!);
+        } else {
+          // API returned 200 but no server schedule — use local cache
+          scheduleData = await getSchedule();
+          if (!scheduleData) {
+            // Last resort: localStorage (Training Plan saves here after generation)
+            const ls = localStorage.getItem("thuto_training_schedule");
+            if (ls) {
+              try { scheduleData = { ...JSON.parse(ls), cached_at: Date.now() }; } catch { /* malformed */ }
+            }
+          }
         }
       } catch {
         setOffline(true);
         scheduleData = await getSchedule();
+        if (!scheduleData) {
+          const ls = localStorage.getItem("thuto_training_schedule");
+          if (ls) {
+            try { scheduleData = { ...JSON.parse(ls), cached_at: Date.now() }; } catch { /* malformed */ }
+          }
+        }
       }
 
       if (!scheduleData) { setPhase("no_schedule"); return; }
