@@ -213,6 +213,15 @@ export default function PitchModePage() {
     try { if (document.fullscreenElement) document.exitFullscreen?.(); } catch { /* silent */ }
   };
 
+  // ── Exit to hub (stops all timers, used by X button on active phases) ──────
+  const exitToHub = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (condElapsedRef.current) clearInterval(condElapsedRef.current);
+    releaseWakeLock();
+    exitFullscreen();
+    router.push("/player");
+  }, [releaseWakeLock]);
+
   // ── Countdown Timer ───────────────────────────────────────────────────────
 
   const startCountdown = useCallback((durationSec: number, onComplete: () => void) => {
@@ -340,7 +349,13 @@ export default function PitchModePage() {
       fetch(`${API}/exercise-cards?per_page=100`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
-          const loaded: ExerciseCard[] = (Array.isArray(data?.data) && data.data.length > 0) ? data.data : SEED_CARDS;
+          // Always keep SEED_CARDS as the baseline — API cards are added on top.
+          // This ensures hiit/strength/plyometrics always show exercises even if
+          // the backend returns a partial or empty list.
+          const apiCards: ExerciseCard[] = (Array.isArray(data?.data) && data.data.length > 0) ? data.data : [];
+          const loaded = apiCards.length > 0
+            ? [...SEED_CARDS, ...apiCards.filter((c: ExerciseCard) => !SEED_CARDS.some((s) => s.id === c.id))]
+            : SEED_CARDS;
           setAllCondCards(loaded);
 
           // Load today's cards from week plan
@@ -506,14 +521,6 @@ export default function PitchModePage() {
 
   // ── Existing drill handlers ───────────────────────────────────────────────
 
-  const startSession = () => {
-    enterFullscreen();
-    acquireWakeLock();
-    newMotivation();
-    setPhase("warmup");
-    startCountdown(60 * 3, () => startNextDrill(0));
-  };
-
   const startNextDrill = useCallback(
     (index: number) => {
       if (!session) return;
@@ -539,6 +546,23 @@ export default function PitchModePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [session]
   );
+
+  const startSession = () => {
+    enterFullscreen();
+    acquireWakeLock();
+    newMotivation();
+    setPhase("warmup");
+    startCountdown(60 * 3, () => startNextDrill(0));
+  };
+
+  // Skip warmup — jump directly to a specific drill chosen by the player
+  const startDrillAt = useCallback((index: number) => {
+    enterFullscreen();
+    acquireWakeLock();
+    newMotivation();
+    startNextDrill(index);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acquireWakeLock, startNextDrill]);
 
   const saveDrillSession = async (feeling: "tough" | "amazing") => {
     if (!session) return;
@@ -710,15 +734,20 @@ export default function PitchModePage() {
 
                   <div className="mt-6 max-h-48 space-y-2 overflow-y-auto">
                     {session.day.drills?.map((d, i) => (
-                      <div key={i} className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3">
+                      <button
+                        key={i}
+                        onClick={() => startDrillAt(i)}
+                        className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-left transition-all hover:bg-white/20 active:scale-[0.98]"
+                      >
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
                           {i + 1}
                         </span>
-                        <div>
+                        <div className="flex-1">
                           <p className="font-semibold">{d.name}</p>
                           <p className="text-sm text-white/60">{d.duration_minutes} min · {d.equipment_needed}</p>
                         </div>
-                      </div>
+                        <span className="text-[10px] text-white/30">tap →</span>
+                      </button>
                     ))}
                   </div>
 
@@ -868,6 +897,7 @@ export default function PitchModePage() {
   if (phase === "warmup") {
     return (
       <div className={BASE}>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
         <div className="relative flex h-[200px] w-[200px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} />
           <div className="text-center">
@@ -914,6 +944,7 @@ export default function PitchModePage() {
   if (phase === "drill" && currentDrill) {
     return (
       <div className={BASE}>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
         <p className="absolute top-6 text-sm font-semibold uppercase tracking-widest text-white/50">
           Drill {drillNumber} of {drillsTotal}
         </p>
@@ -940,6 +971,7 @@ export default function PitchModePage() {
     const nextDrill = session?.day.drills?.[session.drillIndex + 1];
     return (
       <div className={BASE}>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
         <div className="relative flex h-[200px] w-[200px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} />
           <div className="text-center">
@@ -961,6 +993,7 @@ export default function PitchModePage() {
   if (phase === "cooldown") {
     return (
       <div className={BASE}>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
         <div className="relative flex h-[200px] w-[200px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} />
           <div className="text-center">
@@ -1025,7 +1058,9 @@ export default function PitchModePage() {
           />
         </div>
 
-        <p className="absolute top-5 text-sm font-semibold uppercase tracking-widest text-white/40">
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
+
+        <p className="absolute top-5 left-4 text-sm font-semibold uppercase tracking-widest text-white/40">
           Exercise {progress} of {condCards.length}
         </p>
 
@@ -1090,6 +1125,8 @@ export default function PitchModePage() {
             style={{ width: `${((condIndex + 1) / condCards.length) * 100}%` }}
           />
         </div>
+
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
 
         {/* Countdown ring — subtle */}
         <div className="relative flex h-[140px] w-[140px] items-center justify-center">
