@@ -178,6 +178,11 @@ export default function PitchModePage() {
   const [condTotalElapsed, setCondTotalElapsed] = useState(0); // seconds
   const condElapsedRef                          = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── THUTO live coaching tip per drill/exercise ────────────────────────────
+  const [thutoTip, setThutoTip]             = useState("");
+  const [thutoTipLoading, setThutoTipLoading] = useState(false);
+  const [showThutoPanel, setShowThutoPanel] = useState(false);
+
   const wakeLockRef    = useRef<WakeLockSentinel | null>(null);
   const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
   const onCompleteRef  = useRef<() => void>(() => {});
@@ -385,6 +390,52 @@ export default function PitchModePage() {
       }
     }
   }, []);
+
+  // ── THUTO coaching tip — fetched when entering each drill or cond exercise ─
+
+  useEffect(() => {
+    if (phase === "drill" && currentDrill) {
+      setThutoTip("");
+      setThutoTipLoading(true);
+      setShowThutoPanel(false);
+      fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `I am about to do a training drill called "${currentDrill.name}". Instructions given: "${currentDrill.instructions}". As THUTO my coach, give me: 1) How to do it correctly (2-3 bullet points using • ), 2) Why this drill is important for my development, 3) One key coaching tip to focus on RIGHT NOW. Keep it under 120 words. Be like a coach on a pitch in Harare or Bulawayo — direct, practical, encouraging.`,
+          system_prompt: "You are THUTO, Zimbabwe's AI sports coach. Give short, practical coaching advice during active training. Always mention one way the player can save their performance or upload a clip for scouts to see."
+        })
+      })
+      .then((r) => r.json())
+      .then((data) => {
+        setThutoTip(data.response ?? data.answer ?? "");
+        setThutoTipLoading(false);
+        setShowThutoPanel(true);
+      })
+      .catch(() => { setThutoTipLoading(false); });
+    }
+    if (phase === "cond_active" && currentCard) {
+      setThutoTip("");
+      setThutoTipLoading(true);
+      setShowThutoPanel(false);
+      fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `I am doing a conditioning exercise: "${currentCard.name}". As THUTO, give me: 1) Exact technique — 2-3 bullet points (• ), 2) Which muscles or energy systems this targets, 3) The #1 mistake to avoid. Max 100 words. Coaching voice, practical.`,
+          system_prompt: "You are THUTO, Zimbabwe's AI sports coach. Give short, practical conditioning coaching. Be encouraging."
+        })
+      })
+      .then((r) => r.json())
+      .then((data) => {
+        setThutoTip(data.response ?? data.answer ?? "");
+        setThutoTipLoading(false);
+        setShowThutoPanel(true);
+      })
+      .catch(() => { setThutoTipLoading(false); });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, session?.drillIndex, condIndex]);
 
   // ── Conditioning category selection ───────────────────────────────────────
 
@@ -943,25 +994,90 @@ export default function PitchModePage() {
   // ── Drill (existing training drills) ──────────────────────────────────────
   if (phase === "drill" && currentDrill) {
     return (
-      <div className={BASE}>
-        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
-        <p className="absolute top-6 text-sm font-semibold uppercase tracking-widest text-white/50">
+      <div className={`${BASE} justify-start overflow-y-auto pt-16 pb-32`}>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white z-20" aria-label="Exit to hub">✕</button>
+        <p className="absolute top-6 left-0 right-0 text-center text-sm font-semibold uppercase tracking-widest text-white/50">
           Drill {drillNumber} of {drillsTotal}
         </p>
-        <div className="relative flex h-[200px] w-[200px] items-center justify-center">
+
+        {/* Timer ring */}
+        <div className="relative flex h-[180px] w-[180px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} />
           <div className="text-center">
             <p className="text-5xl font-bold tabular-nums">{formatTime(secondsLeft)}</p>
           </div>
         </div>
-        <h2 className="mt-6 px-6 text-center text-2xl font-bold">{currentDrill.name}</h2>
-        <p className="mt-2 max-w-xs px-6 text-center text-sm text-white/70">{currentDrill.instructions}</p>
-        {currentDrill.equipment_needed && currentDrill.equipment_needed !== "none" && (
-          <p className="mt-2 text-xs text-white/40">🎽 {currentDrill.equipment_needed}</p>
+
+        {/* Drill name + equipment */}
+        <h2 className="mt-4 px-6 text-center text-2xl font-bold">{currentDrill.name}</h2>
+        {currentDrill.equipment_needed && currentDrill.equipment_needed !== "none" && currentDrill.equipment_needed !== "None" && (
+          <p className="mt-1 text-xs text-white/40">🎽 {currentDrill.equipment_needed}</p>
         )}
-        <p className="absolute bottom-8 max-w-xs px-6 text-center text-sm italic text-white/60">
-          &quot;{motivationMsg}&quot;
-        </p>
+
+        {/* Instructions */}
+        <div className="mt-4 w-full max-w-sm px-5">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">How to do it</p>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-sm leading-relaxed text-white/80">{currentDrill.instructions}</p>
+          </div>
+        </div>
+
+        {/* THUTO coaching tip */}
+        <div className="mt-3 w-full max-w-sm px-5">
+          <button
+            onClick={() => setShowThutoPanel((p) => !p)}
+            className="flex w-full items-center gap-2 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 px-4 py-3 text-left transition-all hover:bg-[#f0b429]/15"
+          >
+            <span className="text-base">🤖</span>
+            <span className="flex-1 text-sm font-semibold text-[#f0b429]">
+              {thutoTipLoading ? "THUTO is thinking…" : "THUTO coaching tip"}
+            </span>
+            <span className="text-xs text-white/30">{showThutoPanel ? "▲" : "▼"}</span>
+          </button>
+          {showThutoPanel && (
+            <div className="mt-1 rounded-2xl border border-[#f0b429]/20 bg-black/30 px-4 py-4">
+              {thutoTipLoading ? (
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <div className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+                  Loading coaching tips…
+                </div>
+              ) : thutoTip ? (
+                <p className="whitespace-pre-line text-sm leading-relaxed text-white/80">{thutoTip}</p>
+              ) : (
+                <p className="text-xs text-white/40">Focus on your form. Quality over speed. THUTO is watching every rep.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Form check + motivation */}
+        <div className="mt-4 w-full max-w-sm px-5">
+          <button
+            onClick={() => setShowFormCheck(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 py-3 text-sm font-semibold text-white transition-all hover:bg-white/20 active:scale-95"
+          >
+            📷 Check My Form with Camera
+          </button>
+          <p className="mt-2 text-center text-xs italic text-white/40">&quot;{motivationMsg}&quot;</p>
+        </div>
+
+        {showFormCheck && (
+          <PitchPoseCheck
+            currentExercise={currentDrill.name}
+            onClose={() => setShowFormCheck(false)}
+          />
+        )}
+
+        {/* Bottom CTA — upload for scouts */}
+        <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-[#15803d]/95 px-5 py-4 backdrop-blur-sm">
+          <p className="mb-2 text-center text-[10px] text-white/40">After your session — share your performance with scouts</p>
+          <button
+            onClick={() => { exitFullscreen(); router.push("/player/showcase"); }}
+            className="w-full rounded-2xl border border-white/20 bg-white/10 py-3 text-sm font-semibold text-white transition-all hover:bg-white/20"
+          >
+            📤 Upload Clip for Scouts
+          </button>
+        </div>
       </div>
     );
   }
@@ -1011,25 +1127,55 @@ export default function PitchModePage() {
   // ── Done (training drills) ─────────────────────────────────────────────────
   if (phase === "done") {
     return (
-      <div className={BASE}>
-        <div className="px-8 text-center">
+      <div className={`${BASE} justify-start overflow-y-auto pt-12 pb-10`}>
+        <div className="w-full max-w-sm px-8 text-center">
           <p className="text-6xl">🏆</p>
           <h1 className="mt-4 text-3xl font-bold">Session Complete!</h1>
           <p className="mt-2 text-lg text-white/70">
             {drillsTotal} drill{drillsTotal !== 1 ? "s" : ""} done — {session?.day.total_duration_minutes} min
           </p>
-          <p className="mt-4 text-base italic text-white/60">&quot;Zvakanaka zvakaitwa — well done!&quot;</p>
-          <p className="mt-8 text-sm font-semibold uppercase tracking-widest text-white/60">How did it feel?</p>
-          <div className="mt-4 flex gap-4">
+          <p className="mt-3 text-base italic text-white/60">&quot;Zvakanaka zvakaitwa — well done!&quot;</p>
+
+          {/* THUTO message about saving */}
+          <div className="mt-5 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-4 text-left">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]">THUTO says</p>
+            <p className="text-sm leading-relaxed text-white/80">
+              You just completed a full session — that takes courage. Now make it count for scouts:
+            </p>
+            <ul className="mt-2 space-y-1 text-xs text-white/60">
+              <li>• <strong className="text-white/80">Upload a drill clip</strong> → scouts can find you in the Showcase tab</li>
+              <li>• <strong className="text-white/80">Log your session stats</strong> → builds your performance history</li>
+              <li>• <strong className="text-white/80">Turn on &quot;Open for Scouting&quot;</strong> in your Scout Profile</li>
+            </ul>
+          </div>
+
+          {/* Quick actions */}
+          <div className="mt-4 space-y-2">
+            <button
+              onClick={() => { exitFullscreen(); router.push("/player/showcase"); }}
+              className="w-full rounded-2xl bg-[#f0b429] py-3.5 text-sm font-bold text-[#1a3a1a] transition-transform active:scale-95"
+            >
+              📤 Upload Clip for Scouts
+            </button>
+            <button
+              onClick={() => { exitFullscreen(); router.push("/player/stats/new"); }}
+              className="w-full rounded-2xl border border-white/20 bg-white/10 py-3 text-sm font-semibold text-white transition-all hover:bg-white/20"
+            >
+              📊 Log Session Stats
+            </button>
+          </div>
+
+          <p className="mt-6 text-sm font-semibold uppercase tracking-widest text-white/60">How did it feel?</p>
+          <div className="mt-3 flex gap-4">
             <button
               onClick={() => saveDrillSession("tough")}
-              className="flex-1 rounded-2xl border border-white/30 bg-white/15 py-5 text-lg font-bold transition-transform active:scale-95"
+              className="flex-1 rounded-2xl border border-white/30 bg-white/15 py-4 text-base font-bold transition-transform active:scale-95"
             >
               😤 Tough but done
             </button>
             <button
               onClick={() => saveDrillSession("amazing")}
-              className="flex-1 rounded-2xl bg-white py-5 text-lg font-bold text-[#15803d] transition-transform active:scale-95"
+              className="flex-1 rounded-2xl bg-white py-4 text-base font-bold text-[#15803d] transition-transform active:scale-95"
             >
               🔥 Felt amazing
             </button>
@@ -1086,9 +1232,9 @@ export default function PitchModePage() {
 
         <h2 className="mt-4 px-6 text-center text-2xl font-bold">{currentCard.name}</h2>
 
-        {/* Instructions — show first 2 steps */}
+        {/* Instructions — all steps */}
         <div className="mt-3 w-full max-w-xs space-y-1.5 px-6">
-          {currentCard.instructions.slice(0, 2).map((step, i) => (
+          {currentCard.instructions.map((step, i) => (
             <div key={i} className="flex gap-2 rounded-xl bg-white/10 px-3 py-2.5">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/30 text-[10px] font-bold text-[#f0b429]">
                 {i + 1}
@@ -1098,10 +1244,53 @@ export default function PitchModePage() {
           ))}
         </div>
 
-        {/* THUTO coaching cue */}
-        <p className="mt-3 max-w-xs px-6 text-center text-xs italic text-[#f0b429]/80">
+        {/* THUTO coaching tip */}
+        <div className="mt-3 w-full max-w-xs px-6">
+          <button
+            onClick={() => setShowThutoPanel((p) => !p)}
+            className="flex w-full items-center gap-2 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-2.5 text-left"
+          >
+            <span className="text-sm">🤖</span>
+            <span className="flex-1 text-xs font-semibold text-[#f0b429]">
+              {thutoTipLoading ? "THUTO thinking…" : "THUTO coaching tip"}
+            </span>
+            <span className="text-[10px] text-white/30">{showThutoPanel ? "▲" : "▼"}</span>
+          </button>
+          {showThutoPanel && (
+            <div className="mt-1 rounded-xl border border-[#f0b429]/20 bg-black/30 px-3 py-3">
+              {thutoTipLoading ? (
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <div className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+                  Loading…
+                </div>
+              ) : thutoTip ? (
+                <p className="whitespace-pre-line text-xs leading-relaxed text-white/80">{thutoTip}</p>
+              ) : (
+                <p className="text-xs text-white/40">Focus on form. Feel every rep. Quality beats speed.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Form check button */}
+        <button
+          onClick={() => setShowFormCheck(true)}
+          className="mt-3 flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/20"
+        >
+          📷 Check My Form
+        </button>
+
+        {/* Motivation cue */}
+        <p className="mt-2 max-w-xs px-6 text-center text-[11px] italic text-[#f0b429]/70">
           &quot;{motivationMsg}&quot;
         </p>
+
+        {showFormCheck && (
+          <PitchPoseCheck
+            currentExercise={currentCard.name}
+            onClose={() => setShowFormCheck(false)}
+          />
+        )}
 
         {/* Done / next button */}
         <button
@@ -1221,10 +1410,24 @@ export default function PitchModePage() {
             </div>
           </div>
 
+          {/* Scout upload CTA */}
+          <div className="mt-5 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-4 text-left">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]">THUTO says</p>
+            <p className="text-sm text-white/80">
+              Great conditioning work. Upload a clip of your session so scouts can see your dedication and athleticism — not just your match stats.
+            </p>
+            <button
+              onClick={() => { exitFullscreen(); router.push("/player/showcase"); }}
+              className="mt-3 w-full rounded-xl bg-[#f0b429] py-2.5 text-sm font-bold text-[#1a3a1a] transition-transform active:scale-95"
+            >
+              📤 Upload Clip for Scouts
+            </button>
+          </div>
+
           <button
             onClick={saveAndFinishCond}
             disabled={!condIntensity}
-            className="mt-6 w-full rounded-2xl bg-[#f0b429] py-4 text-base font-bold text-[#1a3a1a] disabled:opacity-40 active:scale-95 transition-transform"
+            className="mt-4 w-full rounded-2xl bg-[#f0b429] py-4 text-base font-bold text-[#1a3a1a] disabled:opacity-40 active:scale-95 transition-transform"
           >
             {condSaved ? "Saved ✓" : "Save & Finish"}
           </button>
