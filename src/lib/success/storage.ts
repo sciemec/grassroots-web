@@ -53,7 +53,9 @@ export function saveCheckIn(checkIn: CheckIn): void {
 
 export function getAllCheckIns(): CheckIn[] {
   const raw = localStorage.getItem("thuto_checkins");
-  return raw ? (JSON.parse(raw) as CheckIn[]) : [];
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 export function getTodayCheckIn(): CheckIn | null {
