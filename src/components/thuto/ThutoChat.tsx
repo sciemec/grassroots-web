@@ -737,7 +737,10 @@ function DailyJourney() {
 
     try {
       const cached = localStorage.getItem(journeyDateKey());
-      if (cached) { setJourney(JSON.parse(cached)); setLoading(false); return; }
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.steps?.length > 0) { setJourney(parsed); setLoading(false); return; }
+      }
     } catch { /* ignore */ }
 
     generateJourney().then((j) => {
@@ -766,8 +769,9 @@ function DailyJourney() {
 
   if (!journey) return null;
 
-  const doneCount = journey.steps.filter((s) => doneIds.includes(s.id)).length;
-  const allDone   = doneCount === journey.steps.length;
+  const steps     = journey.steps ?? [];
+  const doneCount = steps.filter((s) => doneIds.includes(s.id)).length;
+  const allDone   = doneCount === steps.length;
 
   return (
     <div className="mb-3 overflow-hidden rounded-xl border border-teal-500/20 bg-teal-900/20">
@@ -781,7 +785,7 @@ function DailyJourney() {
             Today&apos;s Journey
           </p>
           <p className="mt-0.5 text-[10px] text-white/40">
-            {allDone ? "Complete! 🏆" : `${doneCount} of ${journey.steps.length} done`}
+            {allDone ? "Complete! 🏆" : `${doneCount} of ${steps.length} done`}
           </p>
         </div>
         <ChevronDown
@@ -795,7 +799,7 @@ function DailyJourney() {
           <div className="mb-2 h-0.5 w-full overflow-hidden rounded-full bg-white/5">
             <div
               className="h-full rounded-full bg-teal-500 transition-all duration-500"
-              style={{ width: `${(doneCount / journey.steps.length) * 100}%` }}
+              style={{ width: `${steps.length > 0 ? (doneCount / steps.length) * 100 : 0}%` }}
             />
           </div>
 
@@ -804,9 +808,9 @@ function DailyJourney() {
 
           {/* Steps */}
           <div className="space-y-1.5">
-            {journey.steps.map((step, i) => {
+            {steps.map((step, i) => {
               const done   = doneIds.includes(step.id);
-              const isNext = !done && journey.steps.slice(0, i).every((s) => doneIds.includes(s.id));
+              const isNext = !done && steps.slice(0, i).every((s) => doneIds.includes(s.id));
               return (
                 <div
                   key={step.id}
