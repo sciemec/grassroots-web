@@ -56,6 +56,7 @@ export function PitchPoseCheck({ currentExercise, onClose }: Props) {
   const frameRef  = useRef(0);
 
   const [status, setStatus]       = useState<"loading" | "running" | "error">("loading");
+  const [errorMsg, setErrorMsg]   = useState("Camera unavailable.");
   const [facingMode, setFacing]   = useState<"user" | "environment">("environment");
   const [score, setScore]         = useState(0);
   const [cue, setCue]             = useState("Getting ready…");
@@ -173,7 +174,19 @@ export function PitchPoseCheck({ currentExercise, onClose }: Props) {
       }
       setStatus("running");
       rafRef.current = requestAnimationFrame(runLoop);
-    } catch {
+    } catch (err) {
+      const name = (err as { name?: string })?.name ?? "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setErrorMsg("Camera permission denied. Go to browser settings and allow camera access.");
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setErrorMsg("No camera found on this device.");
+      } else if (name === "NotReadableError" || name === "TrackStartError") {
+        setErrorMsg("Camera is in use by another app. Close it and retry.");
+      } else if (name === "Model failed" || String(err).includes("Model")) {
+        setErrorMsg("Pose model failed to load. Check your connection and retry.");
+      } else {
+        setErrorMsg("Camera unavailable. Check permissions and retry.");
+      }
       setStatus("error");
     }
   }, [facingMode, runLoop]);
@@ -217,9 +230,14 @@ export function PitchPoseCheck({ currentExercise, onClose }: Props) {
           </div>
         )}
         {status === "error" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-4">
-            <p className="text-xs text-red-400">Camera unavailable.</p>
-            <p className="text-xs text-white/40">Allow camera access and try again.</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-5">
+            <p className="text-xs font-semibold text-red-400">{errorMsg}</p>
+            <button
+              onClick={() => { setStatus("loading"); start(); }}
+              className="rounded-xl bg-white/20 px-4 py-2 text-xs font-bold text-white hover:bg-white/30"
+            >
+              Retry
+            </button>
           </div>
         )}
 
