@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   UserSearch, Send, Star, ChevronRight, Search, Loader2, Shield,
-  FileText, ClipboardList, Sparkles, TrendingUp, Video, Eye, Users,
+  FileText, ClipboardList, Sparkles, TrendingUp, Video, Eye, Users, Trophy, GraduationCap,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -38,7 +38,29 @@ interface ShowcaseClip {
   view_count: number;
 }
 
-type Tab = "search" | "for-you" | "showcase" | "rising" | "women";
+type Tab = "search" | "for-you" | "showcase" | "rising" | "women" | "tournament";
+
+interface TournamentPlayer {
+  id: string;
+  regId: string;
+  clubName: string;
+  ageGroup: "U14" | "U16";
+  gender: "Boys" | "Girls";
+  name: string;
+  position: string;
+  age: string;
+  school: string;
+  openForScouting: boolean;
+  scholarshipEligible: boolean;
+  registeredAt: string;
+}
+
+const LS_TOURNAMENT_PROFILES = "munhumutapa_2026_player_profiles";
+
+function loadTournamentPlayers(): TournamentPlayer[] {
+  try { return JSON.parse(localStorage.getItem(LS_TOURNAMENT_PROFILES) ?? "[]"); }
+  catch { return []; }
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -136,6 +158,10 @@ export default function ScoutPage() {
   const [womenPosition, setWomenPosition] = useState("");
   const [womenAgeGroup, setWomenAgeGroup] = useState("");
 
+  // Tournament tab
+  const [tournamentPlayers, setTournamentPlayers] = useState<TournamentPlayer[]>([]);
+  const [tournamentCategory, setTournamentCategory] = useState<"all" | "U14 Boys" | "U14 Girls" | "U16 Boys" | "U16 Girls">("all");
+
   useEffect(() => {
     if (!user) return; // guests allowed — layout shows GuestBanner
     if (user.role !== "scout" && user.role !== "admin") { router.push("/dashboard"); }
@@ -203,6 +229,7 @@ export default function ScoutPage() {
     if (tab === "showcase") loadShowcase();
     if (tab === "rising") loadRising();
     if (tab === "women") loadWomen();
+    if (tab === "tournament") setTournamentPlayers(loadTournamentPlayers());
   }, [tab, loadForYou, loadShowcase, loadRising, loadWomen]);
 
   // ── Search ────────────────────────────────────────────────────────────────
@@ -284,11 +311,12 @@ Use null for any field not mentioned. Position should be a short code like GK, C
   ];
 
   const TABS: { id: Tab; label: string; icon: typeof Search }[] = [
-    { id: "search",   label: "Search",            icon: Search },
-    { id: "for-you",  label: "For You",           icon: Sparkles },
-    { id: "showcase", label: "Showcase Clips",    icon: Video },
-    { id: "rising",   label: "Rising Stars",      icon: TrendingUp },
-    { id: "women",    label: "Women's Spotlight", icon: Users },
+    { id: "search",     label: "Search",            icon: Search },
+    { id: "for-you",    label: "For You",           icon: Sparkles },
+    { id: "showcase",   label: "Showcase Clips",    icon: Video },
+    { id: "rising",     label: "Rising Stars",      icon: TrendingUp },
+    { id: "women",      label: "Women's Spotlight", icon: Users },
+    { id: "tournament", label: "Tournament",        icon: Trophy },
   ];
 
   return (
@@ -317,6 +345,8 @@ Use null for any field not mentioned. Position should be a short code like GK, C
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all ${
                 tab === id && id === "women"
                   ? "bg-purple-500 text-white"
+                  : tab === id && id === "tournament"
+                  ? "bg-[#b8860b] text-white"
                   : tab === id
                   ? "bg-[#f0b429] text-[#1a3a1a]"
                   : "text-muted-foreground hover:text-white"
@@ -608,6 +638,142 @@ Use null for any field not mentioned. Position should be a short code like GK, C
             />
           </div>
         )}
+
+        {/* ── TOURNAMENT TAB ── */}
+        {tab === "tournament" && (() => {
+          const filtered = tournamentPlayers.filter((p) =>
+            tournamentCategory === "all" ||
+            `${p.ageGroup} ${p.gender}` === tournamentCategory
+          );
+          const counts = {
+            all:        tournamentPlayers.length,
+            "U14 Boys": tournamentPlayers.filter((p) => p.ageGroup === "U14" && p.gender === "Boys").length,
+            "U14 Girls":tournamentPlayers.filter((p) => p.ageGroup === "U14" && p.gender === "Girls").length,
+            "U16 Boys": tournamentPlayers.filter((p) => p.ageGroup === "U16" && p.gender === "Boys").length,
+            "U16 Girls":tournamentPlayers.filter((p) => p.ageGroup === "U16" && p.gender === "Girls").length,
+          };
+
+          return (
+            <div>
+              {/* Banner */}
+              <div className="mb-5 overflow-hidden rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4">
+                <div className="flex items-start gap-3">
+                  <Trophy className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#f0b429]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-white">Munhumutapa Challenge Cup 2026</p>
+                    <p className="mt-0.5 text-sm text-white/60">
+                      U14 &amp; U16 · Boys &amp; Girls · Open to Clubs &amp; Schools Across Zimbabwe
+                    </p>
+                    <p className="mt-2 text-xs text-[#f0b429]/80">
+                      {tournamentPlayers.length} registered player{tournamentPlayers.length !== 1 ? "s" : ""} — all open for scouting
+                    </p>
+                  </div>
+                  <Link
+                    href="/tournaments/munhumutapa-2026"
+                    className="flex-shrink-0 rounded-lg border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
+                  >
+                    View Tournament
+                  </Link>
+                </div>
+              </div>
+
+              {/* Category filter */}
+              <div className="mb-5 flex flex-wrap gap-2">
+                {(["all", "U14 Boys", "U14 Girls", "U16 Boys", "U16 Girls"] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setTournamentCategory(cat)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      tournamentCategory === cat
+                        ? "bg-[#f0b429] text-[#1a3a1a]"
+                        : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+                    }`}
+                  >
+                    {cat === "all" ? "All categories" : cat}
+                    <span className="ml-1.5 opacity-60">
+                      ({counts[cat]})
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {tournamentPlayers.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[#f0b429]/20 p-12 text-center">
+                  <Trophy className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/30" />
+                  <p className="font-medium text-white">No tournament players yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Players appear here once clubs &amp; schools register for Munhumutapa 2026.
+                  </p>
+                  <Link
+                    href="/tournaments/munhumutapa-2026"
+                    className="mt-4 inline-block rounded-xl bg-[#f0b429] px-5 py-2 text-sm font-semibold text-[#1a3a1a]"
+                  >
+                    Register a Team
+                  </Link>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/20 p-10 text-center">
+                  <p className="text-muted-foreground">No players in this category yet.</p>
+                </div>
+              ) : (
+                <>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {filtered.length} player{filtered.length !== 1 ? "s" : ""}
+                    {tournamentCategory !== "all" ? ` · ${tournamentCategory}` : ""}
+                  </p>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {filtered.map((p) => (
+                      <Link
+                        key={p.id}
+                        href={`/tournaments/munhumutapa-2026/players/${p.id}`}
+                        className="group block rounded-xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm hover:border-[#f0b429]/30 hover:bg-[#f0b429]/5 transition-all"
+                      >
+                        {/* Header */}
+                        <div className="mb-3 flex items-start justify-between gap-2">
+                          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#f0b429]/10 text-sm font-bold text-[#f0b429]">
+                            {p.name.trim().split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex flex-wrap gap-1 justify-end">
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                              p.gender === "Girls" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300"
+                            }`}>
+                              {p.ageGroup} {p.gender}
+                            </span>
+                            {p.scholarshipEligible && (
+                              <span className="flex items-center gap-0.5 rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-bold text-green-400">
+                                <GraduationCap className="h-2.5 w-2.5" /> Scholarship
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Name + position */}
+                        <p className="font-semibold text-white group-hover:text-[#f0b429] transition-colors">
+                          {p.name}
+                        </p>
+                        <p className="text-sm font-medium text-[#f0b429]">{p.position}</p>
+
+                        {/* Club/school + age */}
+                        <p className="mt-1 text-xs text-muted-foreground">{p.school || p.clubName}</p>
+                        {p.age && (
+                          <p className="text-xs text-muted-foreground">Age {p.age}</p>
+                        )}
+
+                        {/* Open for scouting badge */}
+                        <div className="mt-3 flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-green-400">
+                            Open for Scouting
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })()}
 
       </main>
     </div>
