@@ -723,7 +723,7 @@ export default function TalentIDPage() {
 
             {/* ── Knowledge base CTA ── */}
             <Link
-              href="/knowledge"
+              href="/player/drills"
               className="flex items-center justify-between rounded-2xl border border-white/10 bg-card/60 px-5 py-4 hover:bg-white/5 transition-colors"
             >
               <div className="flex items-center gap-3">
