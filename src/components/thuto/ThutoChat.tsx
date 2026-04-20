@@ -1302,9 +1302,16 @@ export default function ThutoChat() {
         const data = await resp.json();
         answer = data.response ?? data.answer ?? "Ndiri here — I'm here, let's talk.";
       } else {
-        // ── Standard THUTO: backend owns the system prompt + history ──
-        const res = await api.post("/thuto/chat", { message: text });
-        answer = res.data?.answer ?? res.data?.response ?? "Ndiri here — I'm here, let's talk.";
+        // ── Standard THUTO: route through Next.js proxy (/thuto/chat not built on Laravel) ──
+        const systemPrompt = BASE_PROMPT + buildContext();
+        const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
+        const resp = await fetch("/api/ai-coach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, system_prompt: systemPrompt, history }),
+        });
+        const data = await resp.json();
+        answer = data.response ?? data.answer ?? "Ndiri here — I'm here, let's talk.";
       }
 
       setMessages((prev) => [
