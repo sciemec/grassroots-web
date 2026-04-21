@@ -993,15 +993,6 @@ export default function TouchTrackerPage() {
                   );
                 })}
               </div>
-              {/* Log Shot */}
-              {phase === "live" && (
-                <button
-                  onClick={() => setShotModal({ team: "home", playerNum: 9 })}
-                  className="mt-2 w-full rounded-lg border border-red-500/40 bg-red-500/10 py-1.5 text-[10px] font-black text-red-400 hover:bg-red-500/20 transition-colors"
-                >
-                  🎯 Log Shot + xG
-                </button>
-              )}
               {shots.filter(s => s.team === "home").length > 0 && (
                 <p className="mt-1 text-center text-[9px] text-white/40">
                   {homeGoals}G · {homeXg.toFixed(2)} xG · {shots.filter(s => s.team === "home").length} shots
@@ -1009,79 +1000,66 @@ export default function TouchTrackerPage() {
               )}
             </div>
 
-            {/* Away team */}
-            <div className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-3">
-              <p className="mb-2 text-center text-xs font-bold text-orange-400 uppercase tracking-widest">{awayTeam}</p>
-              {lastAway && (
-                <p className="mb-2 text-center text-[10px] text-orange-300/70">
-                  Last: #{lastAway.num} @ {lastAway.min}:{lastAway.sec.toString().padStart(2,"0")}
-                </p>
-              )}
-              {/* Starters */}
-              <div className="grid grid-cols-3 gap-1.5 mb-2">
-                {AWAY_STARTERS.map((n) => {
-                  const count = stats.touchCounts[`away_${n}`] ?? 0;
-                  const role = awayRoles[n] ?? "DEF";
-                  return (
-                    <button
-                      key={n}
-                      onPointerDown={() => logTouch("away", n)}
-                      disabled={phase !== "live"}
-                      className={`relative flex flex-col items-center rounded-lg py-1.5 transition-transform active:scale-95 select-none
-                        ${phase === "live" ? "bg-orange-600 text-white hover:bg-orange-500 cursor-pointer" : "bg-orange-600/40 text-white/40 cursor-default"}
-                      `}
+            {/* xG Shot Table */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 flex flex-col">
+              <p className="mb-2 text-center text-xs font-bold text-white/60 uppercase tracking-widest">xG Log</p>
+
+              {/* Summary row */}
+              <div className="mb-2 grid grid-cols-2 gap-1.5">
+                <div className="rounded-lg bg-blue-500/10 px-2 py-1 text-center">
+                  <p className="text-[9px] text-blue-300/70 uppercase tracking-wide">Home</p>
+                  <p className="text-xs font-black text-blue-300">{homeGoals}G · {homeXg.toFixed(2)} xG</p>
+                </div>
+                <div className="rounded-lg bg-orange-500/10 px-2 py-1 text-center">
+                  <p className="text-[9px] text-orange-300/70 uppercase tracking-wide">Away</p>
+                  <p className="text-xs font-black text-orange-300">{awayGoals}G · {awayXg.toFixed(2)} xG</p>
+                </div>
+              </div>
+
+              {/* Shot list */}
+              <div className="flex-1 overflow-y-auto max-h-[260px] space-y-1 pr-0.5">
+                {shots.length === 0 ? (
+                  <div className="flex h-20 items-center justify-center text-[10px] text-white/30">
+                    No shots logged yet
+                  </div>
+                ) : (
+                  [...shots].reverse().map((s, i) => (
+                    <div
+                      key={s.id}
+                      className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] ${
+                        s.team === "home" ? "bg-blue-500/10" : "bg-orange-500/10"
+                      }`}
                     >
-                      <span className="text-sm font-black">{n}</span>
-                      <span className={`rounded px-1 text-[7px] font-black leading-tight ${phase === "live" ? ROLE_COLORS[role] : "bg-white/10 text-white/30"}`}>
-                        {role}
+                      <span className={`shrink-0 w-4 text-center font-black ${s.team === "home" ? "text-blue-400" : "text-orange-400"}`}>
+                        {s.team === "home" ? "H" : "A"}
                       </span>
-                      {count > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[8px] font-black text-black">
-                          {count > 99 ? "99" : count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                      <span className="flex-1 truncate text-white/70">{s.zone}</span>
+                      <span className="shrink-0 font-mono text-amber-400">{s.xg.toFixed(2)}</span>
+                      <span className="shrink-0 w-5 text-center">
+                        {s.isGoal ? "⚽" : <span className="text-white/30">✗</span>}
+                      </span>
+                      <span className="shrink-0 text-white/40">{s.min}&apos;</span>
+                    </div>
+                  ))
+                )}
               </div>
-              {/* Subs */}
-              <p className="mb-1 text-center text-[9px] text-orange-300/50 uppercase tracking-widest">Subs</p>
-              <div className="grid grid-cols-5 gap-1">
-                {SUBS.map((n) => {
-                  const playerNum = 11 + n;
-                  const count = stats.touchCounts[`away_${playerNum}`] ?? 0;
-                  return (
-                    <button
-                      key={n}
-                      onPointerDown={() => logTouch("away", playerNum)}
-                      disabled={phase !== "live"}
-                      className={`relative rounded py-1.5 text-[10px] font-bold transition-transform active:scale-95 select-none
-                        ${phase === "live" ? "bg-orange-800 text-orange-200 hover:bg-orange-700 cursor-pointer" : "bg-orange-800/30 text-orange-200/30 cursor-default"}
-                      `}
-                    >
-                      S{n}
-                      {count > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-amber-400 text-[7px] font-black text-black">
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              {/* Log Shot */}
+
+              {/* Log shot buttons */}
               {phase === "live" && (
-                <button
-                  onClick={() => setShotModal({ team: "away", playerNum: 9 })}
-                  className="mt-2 w-full rounded-lg border border-red-500/40 bg-red-500/10 py-1.5 text-[10px] font-black text-red-400 hover:bg-red-500/20 transition-colors"
-                >
-                  🎯 Log Shot + xG
-                </button>
-              )}
-              {shots.filter(s => s.team === "away").length > 0 && (
-                <p className="mt-1 text-center text-[9px] text-white/40">
-                  {awayGoals}G · {awayXg.toFixed(2)} xG · {shots.filter(s => s.team === "away").length} shots
-                </p>
+                <div className="mt-2 grid grid-cols-2 gap-1">
+                  <button
+                    onClick={() => setShotModal({ team: "home", playerNum: 9 })}
+                    className="rounded-lg border border-blue-500/30 bg-blue-500/10 py-1.5 text-[9px] font-black text-blue-400 hover:bg-blue-500/20 transition-colors"
+                  >
+                    🎯 Home Shot
+                  </button>
+                  <button
+                    onClick={() => setShotModal({ team: "away", playerNum: 9 })}
+                    className="rounded-lg border border-orange-500/30 bg-orange-500/10 py-1.5 text-[9px] font-black text-orange-400 hover:bg-orange-500/20 transition-colors"
+                  >
+                    🎯 Away Shot
+                  </button>
+                </div>
               )}
             </div>
           </div>
