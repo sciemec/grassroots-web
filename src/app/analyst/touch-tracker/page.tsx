@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Activity, Play, Pause, Square, Zap, BarChart2, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -353,6 +354,7 @@ Be concise and direct. Use player numbers and roles (e.g. "#6 MID"). 3-5 sentenc
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function TouchTrackerPage() {
+  const router = useRouter();
   const [homeTeam, setHomeTeam] = useState("Home");
   const [awayTeam, setAwayTeam] = useState("Away");
   const [homeRoles, setHomeRoles] = useState<Record<number, PlayerRole>>(FORMATION_PRESETS["4-4-2"]);
@@ -672,6 +674,19 @@ export default function TouchTrackerPage() {
   };
 
   const [copied, setCopied] = useState(false);
+
+  const openInXgAnalysis = () => {
+    const xgShots = shots.map((s) => ({
+      id: s.id,
+      team: s.team,
+      zone: s.zone,
+      xg: s.xg,
+      minute: s.min,
+      isGoal: s.isGoal,
+    }));
+    try { localStorage.setItem("gs_xg_shots", JSON.stringify(xgShots)); } catch {}
+    router.push("/analyst/xg-analysis");
+  };
 
   const copyReport = async () => {
     const text = generateReport();
@@ -1149,6 +1164,15 @@ export default function TouchTrackerPage() {
                 {copied ? "✓ Copied!" : "📋 Copy Report"}
               </button>
             </div>
+            {shots.length > 0 && (
+              <button
+                onClick={openInXgAnalysis}
+                className="w-full rounded-xl border border-blue-400/40 bg-blue-400/10 py-2.5 text-xs font-bold text-blue-300 hover:bg-blue-400/20 flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <BarChart2 className="h-3.5 w-3.5" />
+                Open {shots.length} shot{shots.length !== 1 ? "s" : ""} in xG Analysis →
+              </button>
+            )}
           </div>
         )}
 

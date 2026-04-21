@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, Copy, Check, Database, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Copy, Check, Database, Loader2, Activity } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getMatch, extractShots } from "@/lib/analyst-api";
 import { MatchLoader } from "@/components/analyst/match-loader";
@@ -169,6 +169,30 @@ function XgAnalysisInner() {
 
   useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(shots)); } catch {} }, [shots]);
 
+  const loadFromTouchTracker = () => {
+    try {
+      const saved = localStorage.getItem("gs_touch_tracker");
+      if (!saved) return;
+      const d = JSON.parse(saved) as {
+        homeTeam?: string;
+        awayTeam?: string;
+        shots?: Array<{ id: string; team: "home" | "away"; zone: string; xg: number; isGoal: boolean; min: number }>;
+      };
+      const ttShots = d.shots ?? [];
+      if (!ttShots.length) return;
+      const converted: Shot[] = ttShots.map((s) => ({
+        id: s.id,
+        team: s.team,
+        zone: s.zone,
+        xg: s.xg,
+        minute: s.min,
+        isGoal: s.isGoal,
+      }));
+      setShots(converted);
+      setMatchLabel(`${d.homeTeam ?? "Home"} vs ${d.awayTeam ?? "Away"} (Touch Tracker)`);
+    } catch {}
+  };
+
   // Auto-load if ?match_id= is in URL
   useEffect(() => {
     const mid = searchParams.get("match_id");
@@ -243,6 +267,14 @@ function XgAnalysisInner() {
               {matchLabel ? `Loaded: ${matchLabel}` : "Tap a zone on the pitch, then log the shot"}
             </p>
           </div>
+          <button
+            onClick={loadFromTouchTracker}
+            className="flex items-center gap-2 rounded-xl border border-blue-400/30 px-3 py-2 text-xs font-semibold text-blue-300 transition-colors hover:border-blue-400/60 hover:text-blue-200"
+            title="Import shots logged in Touch Tracker"
+          >
+            <Activity className="h-3.5 w-3.5" />
+            From Tracker
+          </button>
           <button
             onClick={() => setShowLoader(true)}
             disabled={loadingMatch}
