@@ -107,6 +107,7 @@ const navItems: NavItem[] = [
   { href: "/business-hub",       label: "Business Hub",   icon: Briefcase,       roles: ["fan"] },
   // ─── Analyst ──────────────────────────────────────────────────────────────
   { href: "/analyst",                      label: "Analyst Hub",       icon: LineChart,   roles: ["analyst"] },
+  { href: "/analyst/match-brain",          label: "Match Brain",       icon: Brain,       roles: ["analyst"] },
   { href: "/analyst/live-match",           label: "Live Collector",    icon: Flame,       roles: ["analyst"] },
   { href: "/analyst/touch-tracker",        label: "Touch Tracker",     icon: Activity,    roles: ["analyst"] },
   { href: "/analyst/xg-analysis",          label: "xG Analysis",       icon: Target,      roles: ["analyst"] },

@@ -1,11 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity } from "lucide-react";
+import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Brain } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
 const tools = [
+  {
+    icon: Brain,
+    title: "Match Brain",
+    subtitle: "One session. Six outputs. Touch, xG, passes, heatmaps, zones & AI report — all synced",
+    href: "/analyst/match-brain",
+    bg: "bg-gradient-to-br from-[#4a1a8a] to-[#1a0a3d]",
+    live: true,
+    featured: true,
+  },
   {
     icon: Target,
     title: "Live Match Collector",
@@ -114,9 +123,14 @@ export default function AnalystHubPage() {
                     <Lock className="h-2.5 w-2.5" /> Coming Soon
                   </span>
                 )}
-                {tool.live && (
+                {tool.live && !tool.featured && (
                   <span className="absolute right-3 top-3 rounded-full bg-[#f0b429] px-2 py-0.5 text-[10px] font-bold text-[#1a3a1a]">
                     LIVE
+                  </span>
+                )}
+                {tool.featured && (
+                  <span className="absolute right-3 top-3 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#4a1a8a]">
+                    NEW
                   </span>
                 )}
               </div>
