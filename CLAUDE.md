@@ -4430,3 +4430,75 @@ then prescribes drills and generates a THUTO 4-Week Strategic Plan.
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
 | `/player/success-engine` | Hub card href mismatch | Fix href to `/player/goal` or create alias |
+
+---
+
+## SESSION LOG — 21 April 2026
+
+### Theme — Pitch Mode Backend Migration + drills page filter crash fix
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `filter is not a function` crash on `/player/drills` — FIXED ✅
+
+**Root cause:** `gs_futurefit_assignments` localStorage key was parsed with no `Array.isArray` guard.
+When data was stored as an object (from an older app version), calling `.filter()` on the plain object threw at runtime.
+
+**Fix applied:** `src/app/player/drills/page.tsx` lines 261-262:
+```typescript
+// BEFORE:
+const raw = localStorage.getItem("gs_futurefit_assignments");
+if (raw) setAssignedDrills(JSON.parse(raw) as AssignedDrill[]);
+
+// AFTER:
+const raw = localStorage.getItem("gs_futurefit_assignments");
+if (raw) {
+  const parsed = JSON.parse(raw);
+  if (Array.isArray(parsed)) setAssignedDrills(parsed as AssignedDrill[]);
+}
+```
+
+Commit: `8c27dde`
+
+---
+
+#### 2. Pitch Mode — Laravel Backend Migration — CONFIRMED ON RENDER ✅
+
+**Context:** `/player/pitch` page.tsx calls:
+- `POST /api/v1/training/sessions` — `saveDrillSession()` — sends `schedule_id`, `day_name`, `drills_completed`, `total_drills`, `feeling`, `completed_at`
+- `POST /api/v1/conditioning/sessions` — `saveAndFinishCond()` — sends `session_type`, `cards_used` (string[]), `duration_actual`, `intensity_felt`, `joy_response`
+
+**What was already built (confirmed via bhora-ai repo audit):**
+- `training_sessions` table — existed from `2026_02_20_000004` migration
+- `TrainingSessionController::storePitch()` — route `POST training/sessions` at line 246 of routes/api.php
+- `conditioning_sessions` table — existed from `2026_04_13_000002` migration with all needed columns
+- `ExerciseCardController::logSession()` — route `POST conditioning/sessions` at line 579
+
+**What was missing:**
+- `training_sessions` table lacked 6 columns sent by `saveDrillSession`: `schedule_id`, `completed_drills`, `total_drills`, `duration_actual`, `joy_response`, `logged_at`
+- NOTE: `storePitch` controller does NOT write these columns — it maps `feeling` → `overall_score` and `day_name` → `focus_area`. The migration was additive for future use.
+
+**Migration created and deployed:**
+```
+FILE: database/migrations/2026_04_21_000001_add_pitch_mode_fields_to_training_sessions_table.php
+```
+Adds 6 columns to existing `training_sessions` table (additive — no data loss).
+
+**Verification on Render (CONFIRMED ✅):**
+- `POST /api/v1/training/sessions` with valid auth → HTTP 201, `"Pitch session saved."` ✅
+- `POST /api/v1/conditioning/sessions` with valid auth → HTTP 422 (correct: cards_used must be array, not scalar) ✅
+
+Both endpoints are live. `pitch/page.tsx` session logging works end-to-end.
+
+---
+
+### WHAT STILL NEEDS DOING (21 April 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Passport backend fields | Migration NOT run on Render | `2026_04_15_000001_add_passport_fields_to_player_profiles_table.php` — already in bhora-ai, run `php artisan migrate` |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — all THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+| `/player/success-engine` | Hub card href mismatch — page at `/player/goal` | Fix href in `src/app/player/page.tsx` |
