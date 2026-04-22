@@ -14,10 +14,11 @@ type Team     = "home" | "away";
 type Mode     = "touch" | "shot" | "pass" | "zone";
 type Phase    = "setup" | "live" | "ended";
 type ResultTab = "touch" | "xg" | "pass" | "heatmap" | "report";
+type PassType  = "pass" | "long" | "cross" | "corner" | "throw-in" | "intercept" | "penalty";
 
 interface TouchEv { id: string; type: "touch"; team: Team; player: number; min: number; sec: number }
 interface ShotEv  { id: string; type: "shot";  team: Team; zone: string; xg: number; isGoal: boolean; min: number }
-interface PassEv  { id: string; type: "pass";  team: Team; fromPlayer: number; toPlayer: number; min: number }
+interface PassEv  { id: string; type: "pass";  team: Team; fromPlayer: number; toPlayer: number; passType: PassType; min: number }
 interface ZoneEv  { id: string; type: "zone";  team: Team; player: number; pitchZone: string; min: number }
 type MatchEvent = TouchEv | ShotEv | PassEv | ZoneEv;
 
@@ -74,6 +75,7 @@ export default function MatchBrainPage() {
   const [passFrom,   setPassFrom]   = useState<number | null>(null);
   const [zonePlayer, setZonePlayer] = useState<number | null>(null);
   const [shotIsGoal, setShotIsGoal] = useState(false);
+  const [passType,   setPassType]   = useState<PassType>("pass");
 
   const [aiReport,       setAiReport]       = useState("");
   const [reportLoading,  setReportLoading]  = useState(false);
@@ -148,7 +150,7 @@ export default function MatchBrainPage() {
   const logPass = (toPlayer: number) => {
     if (passFrom === null) { setPassFrom(toPlayer); return; }
     if (passFrom === toPlayer) { setPassFrom(null); return; }
-    setEvents(ev => [...ev, { id: uid(), type: "pass", team: activeTeam, fromPlayer: passFrom, toPlayer, min }]);
+    setEvents(ev => [...ev, { id: uid(), type: "pass", team: activeTeam, fromPlayer: passFrom, toPlayer, passType, min }]);
     setPassFrom(null);
   };
 
@@ -168,7 +170,9 @@ export default function MatchBrainPage() {
     try {
       const xgShots = shotEvs.map(s => ({ id: s.id, team: s.team, zone: s.zone, xg: s.xg, minute: s.min, isGoal: s.isGoal }));
       localStorage.setItem("gs_xg_shots", JSON.stringify(xgShots));
-      localStorage.setItem("gs_match_brain", JSON.stringify({ homeTeam, awayTeam, sport, formation, date: new Date().toISOString(), events }));
+      const session = { homeTeam, awayTeam, sport, formation, date: new Date().toISOString(), events };
+      localStorage.setItem("gs_match_brain", JSON.stringify(session));
+      localStorage.setItem("gs_match_brain_events", JSON.stringify(session));
       // append to season history
       const prev = JSON.parse(localStorage.getItem("gs_touch_tracker_history") ?? "[]") as object[];
       const entry = { homeTeam, awayTeam, homeXg, awayXg, homeGoals, awayGoals, date: new Date().toISOString() };
@@ -413,11 +417,14 @@ Top away players by touch: ${topAway || "no data"}`;
               ))}
             </div>
 
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={exportPDF} className="flex items-center gap-1.5 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/10 px-4 py-2 text-xs font-black text-[#f0b429] transition-colors hover:bg-[#f0b429]/20">
                 <Download className="h-3.5 w-3.5" /> Full PDF Export
               </button>
-              <button onClick={() => { setPhase("setup"); setEvents([]); setAiReport(""); setShotIsGoal(false); }}
+              <a href="/analyst/pass-map" className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-black text-cyan-400 transition-colors hover:bg-cyan-500/20">
+                <Network className="h-3.5 w-3.5" /> Match Movement
+              </a>
+              <button onClick={() => { setPhase("setup"); setEvents([]); setAiReport(""); setShotIsGoal(false); setPassType("pass"); }}
                 className="flex items-center gap-1.5 rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-white/50 transition-colors hover:text-white/70">
                 New Match
               </button>
@@ -732,6 +739,24 @@ Top away players by touch: ${topAway || "no data"}`;
                 ? "Tap FROM player (who played the pass)"
                 : <span>From <strong className="text-amber-400">#{passFrom}</strong> — now tap the TO player</span>
               }
+            </div>
+            <div className="mb-2 flex flex-wrap gap-1">
+              {(["pass","long","cross","corner","throw-in","intercept","penalty"] as PassType[]).map(pt => (
+                <button key={pt} onClick={() => setPassType(pt)}
+                  className={`rounded-lg px-2.5 py-1 text-[9px] font-black uppercase tracking-wide transition-colors ${
+                    passType === pt
+                      ? pt==="intercept" ? "bg-red-500/50 text-red-200"
+                      : pt==="cross"     ? "bg-cyan-500/50 text-cyan-200"
+                      : pt==="corner"    ? "bg-amber-500/50 text-amber-200"
+                      : pt==="long"      ? "bg-yellow-500/50 text-yellow-200"
+                      : pt==="throw-in"  ? "bg-blue-400/50 text-blue-200"
+                      : pt==="penalty"   ? "bg-[#f0b429]/50 text-[#f0b429]"
+                      : "bg-white/30 text-white"
+                      : "bg-white/5 text-white/30 hover:bg-white/10"
+                  }`}>
+                  {pt==="throw-in"?"Throw":pt==="long"?"Long":pt.charAt(0).toUpperCase()+pt.slice(1)}
+                </button>
+              ))}
             </div>
             <div className="grid grid-cols-4 gap-1.5">
               {STARTERS.map(n => {
