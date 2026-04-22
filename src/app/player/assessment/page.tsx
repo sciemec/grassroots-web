@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Target, Play, CheckCircle2, Brain, Loader2, TrendingUp,
+  Activity, ChevronRight, Star, Zap,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -12,6 +13,8 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 import { calcBenchmarkScore } from "@/lib/skill-scoring";
+import api from "@/lib/api";
+import { safeArray } from "@/lib/safe-array";
 
 // ── Test definitions ──────────────────────────────────────────────────────────
 
@@ -57,6 +60,36 @@ const POSITIONS_TESTS: Record<string, {
   },
 };
 
+// ── APK session types ─────────────────────────────────────────────────────────
+
+interface TrainingSession {
+  id: string;
+  status: string;
+  overall_score: number | null;
+  created_at: string;
+  focus_area?: string;
+}
+
+interface DrillSet {
+  drill_name?: string;
+  form_score?: number | null;
+  rep_count?: number | null;
+}
+
+interface CoachingReport {
+  summary?: string;
+  strengths?: string[];
+  improvements?: string[];
+  drill_tips?: string[];
+  shona_message?: string;
+}
+
+interface SessionReport {
+  session?: { id: string; overall_score: number | null };
+  coaching_report?: CoachingReport;
+  drill_sets?: DrillSet[];
+}
+
 // ── Score helpers ─────────────────────────────────────────────────────────────
 
 function scoreColor(score: number) {
@@ -78,13 +111,51 @@ function scoreLabel(score: number) {
 
 export default function AssessmentPage() {
   const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<"field" | "apk">("field");
+
+  // Field tests state
   const [positionGroup, setPositionGroup] = useState("");
   const [started, setStarted]             = useState(false);
   const [results, setResults]             = useState<Record<string, string>>({});
   const [aiReport, setAiReport]           = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
 
+  // APK sessions state
+  const [sessions, setSessions]         = useState<TrainingSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
+  const [sessionReport, setSessionReport]     = useState<SessionReport | null>(null);
+  const [reportLoading, setReportLoading]     = useState(false);
+
   useEffect(() => { /* auth handled by layout.tsx */ }, [user]);
+
+  // Load APK sessions when tab switches to "apk"
+  useEffect(() => {
+    if (activeTab !== "apk" || sessions.length > 0) return;
+    setSessionsLoading(true);
+    api.get("/training/sessions")
+      .then((res) => {
+        setSessions(safeArray<TrainingSession>(res.data));
+      })
+      .catch(() => {})
+      .finally(() => setSessionsLoading(false));
+  }, [activeTab, sessions.length]);
+
+  // Load individual session report
+  const loadReport = async (session: TrainingSession) => {
+    setSelectedSession(session);
+    setSessionReport(null);
+    setReportLoading(true);
+    try {
+      const res = await api.get(`/sessions/${session.id}/report`);
+      const data = res.data?.data ?? res.data ?? {};
+      setSessionReport(data as SessionReport);
+    } catch {
+      setSessionReport({});
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   const currentTests = positionGroup ? (POSITIONS_TESTS[positionGroup]?.tests ?? []) : [];
   const allFilled    = currentTests.length > 0 && currentTests.every((t) => results[t.name]?.trim());
@@ -138,173 +209,435 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             <ArrowLeft className="h-4 w-4 text-white" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white">Position Assessment</h1>
-            <p className="text-sm text-muted-foreground">Benchmark yourself against Zimbabwe U17/Senior standards</p>
+            <h1 className="text-2xl font-bold text-white">Assessment</h1>
+            <p className="text-sm text-muted-foreground">Field tests + APK biomechanics coaching reports</p>
           </div>
         </div>
 
-        {!started ? (
-          /* ── Position selector ── */
-          <div className="mx-auto max-w-lg">
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center backdrop-blur-sm">
-              <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]" />
-              <h2 className="mb-2 text-xl font-bold text-white">Position Assessment Hub</h2>
-              <p className="mb-6 text-sm text-muted-foreground">
-                Run field tests with a partner and enter your results. AI will generate a performance report and skill radar.
+        {/* Tab switcher */}
+        <div className="mb-6 flex rounded-xl border border-white/10 bg-white/5 p-1">
+          <button
+            onClick={() => setActiveTab("field")}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+              activeTab === "field"
+                ? "bg-[#f0b429] text-[#1a3a1a]"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <Target className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
+            Field Tests
+          </button>
+          <button
+            onClick={() => setActiveTab("apk")}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+              activeTab === "apk"
+                ? "bg-[#f0b429] text-[#1a3a1a]"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <Activity className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
+            APK Sessions
+          </button>
+        </div>
+
+        {/* ── FIELD TESTS TAB ── */}
+        {activeTab === "field" && (
+          !started ? (
+            <div className="mx-auto max-w-lg">
+              <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center backdrop-blur-sm">
+                <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]" />
+                <h2 className="mb-2 text-xl font-bold text-white">Position Assessment Hub</h2>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  Run field tests with a partner and enter your results. AI will generate a performance report and skill radar.
+                </p>
+                <div className="mb-6">
+                  <label className="mb-3 block text-left text-sm font-semibold text-white">Select your position group</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {Object.entries(POSITIONS_TESTS).map(([id, { label }]) => (
+                      <button
+                        key={id}
+                        onClick={() => setPositionGroup(id)}
+                        className={`rounded-xl border p-4 text-sm font-medium transition-all ${
+                          positionGroup === id
+                            ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
+                            : "border-white/10 bg-white/5 text-white hover:border-white/20"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setStarted(true)}
+                  disabled={!positionGroup}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] px-4 py-3 text-sm font-bold text-[#1a3a1a] hover:bg-[#f5c542] disabled:opacity-50 transition-colors"
+                >
+                  <Play className="h-4 w-4" /> Start Assessment
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto max-w-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-bold capitalize text-white">{positionGroup} Tests</h2>
+                <button
+                  onClick={() => { setStarted(false); setResults({}); setAiReport(""); }}
+                  className="text-xs text-muted-foreground hover:text-white"
+                >
+                  ← Change position
+                </button>
+              </div>
+
+              <p className="mb-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-muted-foreground">
+                Run each test on the field with a partner. Enter your result — green means you met the Zimbabwe benchmark.
               </p>
-              <div className="mb-6">
-                <label className="mb-3 block text-left text-sm font-semibold text-white">Select your position group</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {Object.entries(POSITIONS_TESTS).map(([id, { label }]) => (
-                    <button
-                      key={id}
-                      onClick={() => setPositionGroup(id)}
-                      className={`rounded-xl border p-4 text-sm font-medium transition-all ${
-                        positionGroup === id
-                          ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
-                          : "border-white/10 bg-white/5 text-white hover:border-white/20"
+
+              <div className="mb-6 space-y-4">
+                {currentTests.map((test) => {
+                  const val    = results[test.name] ?? "";
+                  const passed = val ? compareToChampionship(test, val) : null;
+                  const pct    = val ? calcBenchmarkScore(test.benchmark, val, test.unit) : null;
+                  return (
+                    <div
+                      key={test.name}
+                      className={`rounded-xl border p-5 transition-all ${
+                        passed === true  ? "border-green-500/40 bg-green-500/5" :
+                        passed === false ? "border-red-500/30 bg-red-500/5"    : "border-white/10 bg-card/60"
                       }`}
                     >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                      <div className="mb-2 flex items-start justify-between">
+                        <h3 className="font-semibold text-white">{test.name}</h3>
+                        <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-muted-foreground">
+                          Benchmark: {test.benchmark}
+                        </span>
+                      </div>
+                      <p className="mb-3 text-sm text-muted-foreground">{test.desc}</p>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder={`Enter result (${test.unit})`}
+                          value={val}
+                          onChange={(e) => setResults((r) => ({ ...r, [test.name]: e.target.value }))}
+                          className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
+                        />
+                        <span className="text-xs text-muted-foreground">{test.unit}</span>
+                        {pct !== null && (
+                          <span className={`text-sm font-bold ${scoreColor(pct)}`}>{pct}%</span>
+                        )}
+                        {passed === true && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-400" />}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <button
-                onClick={() => setStarted(true)}
-                disabled={!positionGroup}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] px-4 py-3 text-sm font-bold text-[#1a3a1a] hover:bg-[#f5c542] disabled:opacity-50 transition-colors"
-              >
-                <Play className="h-4 w-4" /> Start Assessment
-              </button>
+
+              {radarData.some((d) => d.score > 0) && (
+                <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-[#f0b429]" />
+                      <h3 className="font-semibold text-white">Skill Radar</h3>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-3xl font-black ${scoreColor(overallScore)}`}>
+                        {overallScore}
+                      </p>
+                      <p className={`text-xs font-medium ${scoreColor(overallScore)}`}>
+                        {scoreLabel(overallScore)}
+                      </p>
+                    </div>
+                  </div>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: "#c8edd0", fontSize: 11 }} />
+                      <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+                      <Radar
+                        name="Score"
+                        dataKey="score"
+                        stroke="#f0b429"
+                        fill="#f0b429"
+                        fillOpacity={0.25}
+                        strokeWidth={2}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    % of Zimbabwe benchmark achieved per test
+                  </p>
+                </div>
+              )}
+
+              {allFilled && !aiReport && (
+                <button
+                  onClick={getReport}
+                  disabled={loadingReport}
+                  className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6c3483] px-4 py-3 text-sm font-bold text-white hover:bg-[#6c3483]/80 disabled:opacity-50 transition-colors"
+                >
+                  {loadingReport ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Generating AI report…</>
+                  ) : (
+                    <><Brain className="h-4 w-4" /> Get AI performance report</>
+                  )}
+                </button>
+              )}
+
+              {aiReport && (
+                <div className="rounded-xl border border-[#6c3483]/40 bg-[#6c3483]/10 p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-[#a855f7]" />
+                    <h3 className="font-semibold text-[#a855f7]">AI Performance Report</h3>
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-white">
+                    {aiReport}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ) : (
-          /* ── Test entry + results ── */
+          )
+        )}
+
+        {/* ── APK SESSIONS TAB ── */}
+        {activeTab === "apk" && (
           <div className="mx-auto max-w-2xl">
+            {!selectedSession ? (
+              <>
+                <div className="mb-4 rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 px-4 py-3">
+                  <p className="text-xs text-[#f0b429]">
+                    These are your real training sessions recorded in the GrassRoots APK. Each session includes biomechanics analysis from your phone camera.
+                  </p>
+                </div>
 
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-bold capitalize text-white">{positionGroup} Tests</h2>
-              <button
-                onClick={() => { setStarted(false); setResults({}); setAiReport(""); }}
-                className="text-xs text-muted-foreground hover:text-white"
-              >
-                ← Change position
-              </button>
-            </div>
+                {sessionsLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#f0b429]" />
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+                    <Activity className="mx-auto mb-3 h-10 w-10 text-white/30" />
+                    <p className="text-white/60 text-sm">No APK sessions found yet.</p>
+                    <p className="mt-1 text-xs text-white/40">
+                      Complete a training session in the GrassRoots mobile app to see your coaching reports here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {sessions.map((session) => (
+                      <button
+                        key={session.id}
+                        onClick={() => loadReport(session)}
+                        className="w-full flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4 text-left hover:bg-white/10 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                            session.status === "completed" ? "bg-green-500/20" : "bg-white/10"
+                          }`}>
+                            {session.status === "completed"
+                              ? <CheckCircle2 className="h-5 w-5 text-green-400" />
+                              : <Activity className="h-5 w-5 text-white/40" />
+                            }
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">
+                              {session.focus_area ?? "Training Session"}
+                            </p>
+                            <p className="text-xs text-white/50">
+                              {new Date(session.created_at).toLocaleDateString("en-ZW", {
+                                day: "numeric", month: "short", year: "numeric"
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {session.overall_score !== null && session.overall_score !== undefined && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3.5 w-3.5 text-[#f0b429]" />
+                              <span className={`text-sm font-bold ${scoreColor(session.overall_score)}`}>
+                                {session.overall_score}
+                              </span>
+                            </div>
+                          )}
+                          <ChevronRight className="h-4 w-4 text-white/30" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Session report detail */
+              <div>
+                <button
+                  onClick={() => { setSelectedSession(null); setSessionReport(null); }}
+                  className="mb-4 flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back to sessions
+                </button>
 
-            <p className="mb-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-muted-foreground">
-              Run each test on the field with a partner. Enter your result — green means you met the Zimbabwe benchmark.
-            </p>
-
-            {/* ── Test cards ── */}
-            <div className="mb-6 space-y-4">
-              {currentTests.map((test) => {
-                const val    = results[test.name] ?? "";
-                const passed = val ? compareToChampionship(test, val) : null;
-                const pct    = val ? calcBenchmarkScore(test.benchmark, val, test.unit) : null;
-                return (
-                  <div
-                    key={test.name}
-                    className={`rounded-xl border p-5 transition-all ${
-                      passed === true  ? "border-green-500/40 bg-green-500/5" :
-                      passed === false ? "border-red-500/30 bg-red-500/5"    : "border-white/10 bg-card/60"
-                    }`}
-                  >
-                    <div className="mb-2 flex items-start justify-between">
-                      <h3 className="font-semibold text-white">{test.name}</h3>
-                      <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-muted-foreground">
-                        Benchmark: {test.benchmark}
+                <div className="mb-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-xs text-white/50">
+                    {new Date(selectedSession.created_at).toLocaleDateString("en-ZW", {
+                      weekday: "long", day: "numeric", month: "long", year: "numeric"
+                    })}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-white">
+                    {selectedSession.focus_area ?? "Training Session"}
+                  </p>
+                  {selectedSession.overall_score !== null && selectedSession.overall_score !== undefined && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className={`text-2xl font-black ${scoreColor(selectedSession.overall_score)}`}>
+                        {selectedSession.overall_score}
+                      </span>
+                      <span className="text-sm text-white/40">/ 100</span>
+                      <span className={`text-xs font-medium ${scoreColor(selectedSession.overall_score)}`}>
+                        — {scoreLabel(selectedSession.overall_score)}
                       </span>
                     </div>
-                    <p className="mb-3 text-sm text-muted-foreground">{test.desc}</p>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="number"
-                        step="0.1"
-                        placeholder={`Enter result (${test.unit})`}
-                        value={val}
-                        onChange={(e) => setResults((r) => ({ ...r, [test.name]: e.target.value }))}
-                        className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
-                      />
-                      <span className="text-xs text-muted-foreground">{test.unit}</span>
-                      {pct !== null && (
-                        <span className={`text-sm font-bold ${scoreColor(pct)}`}>{pct}%</span>
-                      )}
-                      {passed === true && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-400" />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* ── Skill Radar (shown as soon as any result is entered) ── */}
-            {radarData.some((d) => d.score > 0) && (
-              <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-[#f0b429]" />
-                    <h3 className="font-semibold text-white">Skill Radar</h3>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-3xl font-black ${scoreColor(overallScore)}`}>
-                      {overallScore}
-                    </p>
-                    <p className={`text-xs font-medium ${scoreColor(overallScore)}`}>
-                      {scoreLabel(overallScore)}
-                    </p>
-                  </div>
+                  )}
                 </div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: "#c8edd0", fontSize: 11 }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar
-                      name="Score"
-                      dataKey="score"
-                      stroke="#f0b429"
-                      fill="#f0b429"
-                      fillOpacity={0.25}
-                      strokeWidth={2}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-                <p className="mt-2 text-center text-xs text-muted-foreground">
-                  % of Zimbabwe benchmark achieved per test
-                </p>
-              </div>
-            )}
 
-            {/* ── AI Report button ── */}
-            {allFilled && !aiReport && (
-              <button
-                onClick={getReport}
-                disabled={loadingReport}
-                className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6c3483] px-4 py-3 text-sm font-bold text-white hover:bg-[#6c3483]/80 disabled:opacity-50 transition-colors"
-              >
-                {loadingReport ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Generating AI report…</>
+                {reportLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#f0b429]" />
+                  </div>
+                ) : sessionReport ? (
+                  <div className="space-y-4">
+
+                    {/* Coaching summary */}
+                    {sessionReport.coaching_report?.summary && (
+                      <div className="rounded-xl border border-[#6c3483]/40 bg-[#6c3483]/10 p-4">
+                        <div className="mb-2 flex items-center gap-2">
+                          <Brain className="h-4 w-4 text-[#a855f7]" />
+                          <h3 className="text-sm font-semibold text-[#a855f7]">THUTO Coaching Report</h3>
+                        </div>
+                        <p className="text-sm text-white/80 leading-relaxed">
+                          {sessionReport.coaching_report.summary}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Shona message */}
+                    {sessionReport.coaching_report?.shona_message && (
+                      <div className="rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 p-4">
+                        <p className="text-sm text-[#f0b429] font-medium italic">
+                          &ldquo;{sessionReport.coaching_report.shona_message}&rdquo;
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Strengths + Improvements row */}
+                    {(sessionReport.coaching_report?.strengths?.length ?? 0) > 0 ||
+                     (sessionReport.coaching_report?.improvements?.length ?? 0) > 0 ? (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {(sessionReport.coaching_report?.strengths?.length ?? 0) > 0 && (
+                          <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-400">
+                              Strengths
+                            </p>
+                            <ul className="space-y-1">
+                              {sessionReport.coaching_report!.strengths!.map((s, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-white/80">
+                                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-green-400" />
+                                  {s}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {(sessionReport.coaching_report?.improvements?.length ?? 0) > 0 && (
+                          <div className="rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 p-4">
+                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#f0b429]">
+                              Areas to Improve
+                            </p>
+                            <ul className="space-y-1">
+                              {sessionReport.coaching_report!.improvements!.map((s, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-white/80">
+                                  <Zap className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#f0b429]" />
+                                  {s}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+
+                    {/* Drill tips */}
+                    {(sessionReport.coaching_report?.drill_tips?.length ?? 0) > 0 && (
+                      <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-400">
+                          Drill Tips
+                        </p>
+                        <ul className="space-y-1">
+                          {sessionReport.coaching_report!.drill_tips!.map((tip, i) => (
+                            <li key={i} className="text-sm text-white/80">• {tip}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Per-drill form scores */}
+                    {(sessionReport.drill_sets?.length ?? 0) > 0 && (
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/60">
+                          Drill Breakdown
+                        </p>
+                        <div className="space-y-3">
+                          {sessionReport.drill_sets!.map((ds, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate text-sm text-white">
+                                  {ds.drill_name ?? `Drill ${i + 1}`}
+                                </p>
+                                {ds.rep_count !== null && ds.rep_count !== undefined && (
+                                  <p className="text-xs text-white/40">{ds.rep_count} reps</p>
+                                )}
+                              </div>
+                              {ds.form_score !== null && ds.form_score !== undefined && (
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full bg-[#f0b429] transition-all"
+                                      style={{ width: `${ds.form_score}%` }}
+                                    />
+                                  </div>
+                                  <span className={`text-xs font-bold w-8 text-right ${scoreColor(ds.form_score)}`}>
+                                    {ds.form_score}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty coaching report state */}
+                    {!sessionReport.coaching_report?.summary &&
+                     (sessionReport.drill_sets?.length ?? 0) === 0 && (
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+                        <Activity className="mx-auto mb-2 h-8 w-8 text-white/30" />
+                        <p className="text-sm text-white/60">
+                          Coaching report not yet available for this session.
+                        </p>
+                        <p className="mt-1 text-xs text-white/40">
+                          Reports are generated after session completion.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <><Brain className="h-4 w-4" /> Get AI performance report</>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+                    <p className="text-sm text-white/60">Could not load report. Please try again.</p>
+                  </div>
                 )}
-              </button>
-            )}
-
-            {/* ── AI Report display ── */}
-            {aiReport && (
-              <div className="rounded-xl border border-[#6c3483]/40 bg-[#6c3483]/10 p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-[#a855f7]" />
-                  <h3 className="font-semibold text-[#a855f7]">AI Performance Report</h3>
-                </div>
-                <div className="whitespace-pre-wrap text-sm leading-relaxed text-white">
-                  {aiReport}
-                </div>
               </div>
             )}
           </div>
         )}
+
       </main>
     </div>
   );

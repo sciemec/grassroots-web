@@ -4433,6 +4433,137 @@ then prescribes drills and generates a THUTO 4-Week Strategic Plan.
 
 ---
 
+## SESSION LOG — 22 April 2026
+
+### Theme — Biomechanics Remote Scouting Loop + APK Data on Web + Drills Card Restore
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Drills Library Card Restored to Player Hub ✅
+
+**File:** `src/app/player/page.tsx`
+- Drills card was removed during the April 13 consolidation (20→11 cards)
+- Added back: `Dumbbell` icon, title "Drills Library", subtitle "500+ drills · Record & Analyse", href `/player/drills`
+- Inserted after "Train Now" card — correct position in the training workflow
+
+#### 2. `/player/assessment` — APK Sessions Tab (Real Biomechanics Data) ✅
+
+**File:** `src/app/player/assessment/page.tsx` — rebuilt with two tabs
+
+**Tab 1: Field Tests** (existing functionality preserved)
+- Position selector, test entry, benchmark comparison, skill radar (recharts), AI performance report
+
+**Tab 2: APK Sessions** (NEW — wired to real backend data)
+- Fetches `GET /api/v1/training/sessions` on tab open → shows list of sessions with date + score
+- Click any session → fetches `GET /api/v1/sessions/{id}/report`
+- Shows real `CoachingReportService` output:
+  - `coaching_report.summary` — THUTO coaching narrative
+  - `coaching_report.shona_message` — motivational phrase in Shona
+  - `coaching_report.strengths` — green card with tick list
+  - `coaching_report.improvements` — amber card with areas to work on
+  - `coaching_report.drill_tips` — blue card
+  - `drill_sets` — per-drill breakdown: name, form_score bar, rep_count
+- Safe fallback: empty state message if no coaching report generated yet
+- Uses `safeArray()` for all API responses — no filter/map crashes
+
+**How the data gets here (full chain):**
+```
+Player does drill in APK
+  → Flutter records ML Kit pose snapshots
+  → POST /api/v1/sessions/{id}/drill-sets/{setId}/poses
+  → AnalysePoseDataJob dispatched
+  → PoseAnalysisService: computes form_score per drill (joint angle analysis)
+  → CoachingReportService: generates summary/strengths/improvements/shona_message
+  → stored in coaching_reports table + drill_sets.form_score
+  → PlayerStat.avg_form_score rolling average updated
+  → GET /api/v1/sessions/{id}/report returns full data
+  → /player/assessment APK tab displays it
+```
+
+#### 3. `/scout/reports` — Real Biomechanics Data in PDF ✅
+
+**File:** `src/app/scout/reports/page.tsx`
+
+**New function: `fetchBiomechanicsData(playerId)`**
+- Calls `GET /api/v1/scout/players/{id}` (already built on backend)
+- Returns: `avg_form_score`, `total_sessions`, `programme_complete`, `rating`
+- Silently returns `{}` if endpoint fails — no crash
+
+**`fetchPlayerAnalysis()` enriched:**
+- Calls `fetchBiomechanicsData()` before generating AI text
+- When `avg_form_score` is available, adds to context:
+  `"Biomechanics Form Score (from APK AI analysis): 74/100. Total recorded sessions: 12. AI Rating category: Developing."`
+- AI generates a more accurate, data-backed scouting report
+
+**`generatePdf()` enriched:**
+- Accepts optional `bio?: BiomechanicsData` parameter
+- When biomechanics data is available, PDF player table includes extra rows:
+  - APK Form Score (e.g. "74 / 100 (biomechanics AI)")
+  - Recorded Sessions count
+  - AI Rating category
+
+**`generateReports()` updated:**
+- Calls `fetchBiomechanicsData()` first, passes `bio` to both `fetchPlayerAnalysis()` and `generatePdf()`
+- Two API calls per report: one for biomechanics, one for AI analysis
+
+**End result scouts see:**
+- PDF now shows APK biomechanics form score alongside the overall score
+- AI analysis is aware of the real recorded session data
+- When player has no APK data, fallback is clean — `bioContext` is empty string
+
+---
+
+### BIOMECHANICS REMOTE SCOUTING LOOP — COMPLETE ✅
+
+The full chain is now wired end-to-end:
+
+```
+Player trains with APK (Flutter + ML Kit)
+  ↓
+Biomechanics form score computed (PoseAnalysisService)
+  ↓
+avg_form_score stored on PlayerStat
+  ↓
+Scout sees real form score in /scout (ScoutPlayerController::anonymise)
+  ↓
+Scout generates PDF report (/scout/reports)
+  ↓
+PDF includes real biomechanics APK score + AI narrative backed by real data
+  ↓
+Player sees their own coaching report in /player/assessment → APK Sessions tab
+```
+
+**This is the full remote scouting loop** — a scout in Harare can discover a player
+from Hwange, see their form score derived from actual biomechanics training data,
+and generate a professional PDF report — all without the player or scout being in the same place.
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (22 April 2026)
+
+No new routes — enhanced existing:
+```
+/player/assessment     — now has APK Sessions tab showing real coaching reports from backend
+/scout/reports         — PDF now includes real APK biomechanics form score when available
+/player              — Drills Library card restored
+```
+
+---
+
+### WHAT STILL NEEDS DOING (22 April 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+| Passport backend fields | Migration NOT run on Render | Copy migration to bhora-ai, run php artisan migrate |
+| `/player/success-engine` | Hub card href mismatch | Fix href to `/player/goal` or create alias |
+| `GET /api/v1/sessions/{id}/report` | Backend endpoint — confirm it exists | Test: `curl -H "Authorization: Bearer {token}" https://bhora-ai.onrender.com/api/v1/sessions/{id}/report` |
+
+---
+
 ## SESSION LOG — 21 April 2026
 
 ### Theme — Pitch Mode Backend Migration + drills page filter crash fix

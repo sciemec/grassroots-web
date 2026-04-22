@@ -31,7 +31,30 @@ interface GeneratedReport {
   generated_at: string;
 }
 
-/** Fetches a Claude-generated assessment for a single player. */
+interface BiomechanicsData {
+  avg_form_score?: number | null;
+  total_sessions?: number | null;
+  programme_complete?: boolean | null;
+  rating?: string | null;
+}
+
+/** Try to fetch real biomechanics/form data from the scout player endpoint. */
+async function fetchBiomechanicsData(playerId: string): Promise<BiomechanicsData> {
+  try {
+    const res = await api.get(`/scout/players/${playerId}`);
+    const raw = res.data?.data ?? res.data ?? {};
+    return {
+      avg_form_score:     raw.avg_form_score ?? null,
+      total_sessions:     raw.total_sessions ?? null,
+      programme_complete: raw.programme_complete ?? null,
+      rating:             raw.rating ?? null,
+    };
+  } catch {
+    return {};
+  }
+}
+
+/** Fetches a Claude-generated assessment for a single player, enriched with real biomechanics data. */
 async function fetchPlayerAnalysis(player: ScoutPlayer): Promise<string> {
   const statsKeys =
     SPORT_STATS[player.sport]?.outfield ??
@@ -39,10 +62,21 @@ async function fetchPlayerAnalysis(player: ScoutPlayer): Promise<string> {
     SPORT_STATS[player.sport]?.[Object.keys(SPORT_STATS[player.sport] ?? {})[0]] ??
     [];
 
+  // Try to get real biomechanics data first — enriches the report significantly
+  const bio = await fetchBiomechanicsData(player.id);
+
+  const bioContext = bio.avg_form_score != null
+    ? `Biomechanics Form Score (from APK AI analysis): ${bio.avg_form_score}/100. ` +
+      `Total recorded sessions: ${bio.total_sessions ?? "unknown"}. ` +
+      (bio.programme_complete ? "Player has completed a full training programme. " : "") +
+      (bio.rating ? `AI Rating category: ${bio.rating}. ` : "")
+    : "";
+
   const context =
     `Player: ${player.initials}, Position: ${player.position}, ` +
     `Region: ${player.region}, Age Group: ${player.age_group}, ` +
     `Overall Score: ${player.overall_score}/100, Sport: ${player.sport}. ` +
+    (bioContext ? bioContext : "") +
     `Key stats tracked: ${statsKeys.join(", ")}.`;
 
   const prompt = getSportAnalysisPrompt(player.sport as SportKey, context);
@@ -53,7 +87,8 @@ async function fetchPlayerAnalysis(player: ScoutPlayer): Promise<string> {
 /** Generates and downloads a professional PDF scouting report for one player. */
 async function generatePdf(
   player: ScoutPlayer,
-  analysis: string
+  analysis: string,
+  bio?: BiomechanicsData
 ): Promise<void> {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -94,18 +129,29 @@ async function generatePdf(
   y += 6;
 
   // ── Player info table ──────────────────────────────────────────────────────
+  const playerRows: [string, string][] = [
+    ["Initials", player.initials],
+    ["Position", player.position],
+    ["Region", player.region],
+    ["Age Group", player.age_group.toUpperCase()],
+    ["Sport", player.sport.charAt(0).toUpperCase() + player.sport.slice(1)],
+    ["Overall Score", `${player.overall_score} / 100`],
+  ];
+  if (bio?.avg_form_score != null) {
+    playerRows.push(["APK Form Score", `${bio.avg_form_score} / 100 (biomechanics AI)`]);
+  }
+  if (bio?.total_sessions != null) {
+    playerRows.push(["Recorded Sessions", String(bio.total_sessions)]);
+  }
+  if (bio?.rating) {
+    playerRows.push(["AI Rating", bio.rating]);
+  }
+
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
     head: [["Field", "Value"]],
-    body: [
-      ["Initials", player.initials],
-      ["Position", player.position],
-      ["Region", player.region],
-      ["Age Group", player.age_group.toUpperCase()],
-      ["Sport", player.sport.charAt(0).toUpperCase() + player.sport.slice(1)],
-      ["Overall Score", `${player.overall_score} / 100`],
-    ],
+    body: playerRows,
     styles: { fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: [22, 163, 74], textColor: 255 },
     columnStyles: { 0: { fontStyle: "bold", cellWidth: 45 } },
@@ -268,8 +314,9 @@ export default function ScoutReportsPage() {
       if (!player) continue;
 
       try {
+        const bio = await fetchBiomechanicsData(player.id);
         const analysis = await fetchPlayerAnalysis(player);
-        await generatePdf(player, analysis);
+        await generatePdf(player, analysis, bio);
         newReports.push({
           player_id: id,
           initials: player.initials,
