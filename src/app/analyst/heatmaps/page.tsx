@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Download } from "lucide-react";
+import { ArrowLeft, Trash2, Download, Brain } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import jsPDF from "jspdf";
 
@@ -55,6 +55,85 @@ export default function HeatmapsPage() {
   const clearAll = () => {
     setHeatmaps({});
     try { localStorage.removeItem(LS_KEY + "_data"); } catch {}
+  };
+
+  const importFromMatchBrain = () => {
+    try {
+      const raw = localStorage.getItem("gs_match_brain_events");
+      if (!raw) { alert("No Match Brain session found. Run a match first."); return; }
+      const session = JSON.parse(raw) as {
+        homeTeam: string; awayTeam: string;
+        events: Array<{ type: string; team: string; player?: number; pitchZone?: string; min: number }>;
+      };
+      if (!session.events?.length) { alert("Match Brain session has no events."); return; }
+
+      // Zone name → list of grid cells that should light up (row*COLS + col)
+      // Heatmap: row 0 = attack end (top), row 9 = defence end (bottom)
+      const ZONE_CELLS: Record<string, number[]> = {
+        "Opp Box":    [1,2,3,4,7,8,9,10,13,14,15,16],
+        "Left Att":   [12,13,18,19,24,25],
+        "Right Att":  [15,16,21,22,27,28],
+        "Left Mid":   [24,25,30,31,36,37],
+        "Centre Mid": [26,27,32,33,38,39],
+        "Right Mid":  [27,28,33,34,39,40],
+        "Left Def":   [36,37,42,43,48,49],
+        "Right Def":  [39,40,45,46,51,52],
+        "Own Box":    [49,50,51,52,55,56,57,58],
+      };
+      // Player shirt number → default grid cell from PLAYER_POS percentages
+      // PLAYER_POS: { 1:[50,88], 2:[15,67], 3:[35,67], 4:[65,67], 5:[85,67],
+      //               6:[20,44], 7:[50,44], 8:[80,44], 9:[25,20], 10:[50,20], 11:[75,20] }
+      // row = floor(y/100 * ROWS), col = floor(x/100 * COLS)
+      const PLAYER_DEFAULT_CELL: Record<number, number> = {
+        1:  Math.floor(88/100*ROWS)*COLS + Math.floor(50/100*COLS),
+        2:  Math.floor(67/100*ROWS)*COLS + Math.floor(15/100*COLS),
+        3:  Math.floor(67/100*ROWS)*COLS + Math.floor(35/100*COLS),
+        4:  Math.floor(67/100*ROWS)*COLS + Math.floor(65/100*COLS),
+        5:  Math.floor(67/100*ROWS)*COLS + Math.floor(85/100*COLS),
+        6:  Math.floor(44/100*ROWS)*COLS + Math.floor(20/100*COLS),
+        7:  Math.floor(44/100*ROWS)*COLS + Math.floor(50/100*COLS),
+        8:  Math.floor(44/100*ROWS)*COLS + Math.floor(80/100*COLS),
+        9:  Math.floor(20/100*ROWS)*COLS + Math.floor(25/100*COLS),
+        10: Math.floor(20/100*ROWS)*COLS + Math.floor(50/100*COLS),
+        11: Math.floor(20/100*ROWS)*COLS + Math.floor(75/100*COLS),
+      };
+
+      // Build heatmap per player (0-based index = shirt number - 1)
+      const newMaps: Record<number, number[]> = {};
+      const newSquadLines: string[] = [];
+
+      session.events.forEach(ev => {
+        if (ev.type !== "touch" && ev.type !== "zone") return;
+        if (!ev.player || ev.player < 1 || ev.player > 16) return;
+
+        const playerIdx = ev.player - 1; // 0-based
+        if (!newMaps[playerIdx]) newMaps[playerIdx] = Array(TOTAL).fill(0);
+
+        if (ev.type === "zone" && ev.pitchZone) {
+          const cells = ZONE_CELLS[ev.pitchZone] ?? [];
+          cells.forEach(cell => {
+            if (cell >= 0 && cell < TOTAL) newMaps[playerIdx][cell] = (newMaps[playerIdx][cell] ?? 0) + 1;
+          });
+        } else if (ev.type === "touch") {
+          const cell = PLAYER_DEFAULT_CELL[ev.player] ?? 27;
+          if (cell >= 0 && cell < TOTAL) newMaps[playerIdx][cell] = (newMaps[playerIdx][cell] ?? 0) + 1;
+        }
+      });
+
+      if (Object.keys(newMaps).length === 0) { alert("No touch or zone events found in this Match Brain session."); return; }
+
+      // Build squad name list
+      const maxIdx = Math.max(...Object.keys(newMaps).map(Number));
+      for (let i = 0; i <= maxIdx; i++) {
+        newSquadLines.push(`Player ${i + 1} (${session.homeTeam})`);
+      }
+
+      setHeatmaps(newMaps);
+      setSquadInput(newSquadLines.join("\n"));
+      setSelectedPlayer(0);
+    } catch {
+      alert("Could not read Match Brain data. Run a match and try again.");
+    }
   };
 
   const totalClicks = currentMap.reduce((s, v) => s + v, 0);
@@ -239,6 +318,11 @@ export default function HeatmapsPage() {
             <button onClick={exportPDF}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 py-2.5 text-sm font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors">
               <Download className="h-4 w-4" /> Export PDF Report
+            </button>
+
+            <button onClick={importFromMatchBrain}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-500/10 py-2.5 text-sm font-semibold text-purple-300 hover:bg-purple-500/20 transition-colors">
+              <Brain className="h-4 w-4" /> Import from Match Brain
             </button>
 
             {/* Legend */}

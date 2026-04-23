@@ -5,13 +5,13 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
   Brain, Play, Square, BarChart2, Network, Map,
-  FileText, Download, Activity, Loader2, Target,
+  FileText, Download, Activity, Loader2, Target, ArrowLeftRight,
 } from "lucide-react";
 import jsPDF from "jspdf";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 type Team     = "home" | "away";
-type Mode     = "touch" | "shot" | "pass" | "zone";
+type Mode     = "touch" | "shot" | "pass" | "zone" | "sub";
 type Phase    = "setup" | "live" | "ended";
 type ResultTab = "touch" | "xg" | "pass" | "heatmap" | "report";
 type PassType  = "pass" | "long" | "cross" | "corner" | "throw-in" | "intercept" | "penalty";
@@ -20,7 +20,8 @@ interface TouchEv { id: string; type: "touch"; team: Team; player: number; min: 
 interface ShotEv  { id: string; type: "shot";  team: Team; zone: string; xg: number; isGoal: boolean; min: number }
 interface PassEv  { id: string; type: "pass";  team: Team; fromPlayer: number; toPlayer: number; passType: PassType; min: number }
 interface ZoneEv  { id: string; type: "zone";  team: Team; player: number; pitchZone: string; min: number }
-type MatchEvent = TouchEv | ShotEv | PassEv | ZoneEv;
+interface SubEv   { id: string; type: "sub";   team: Team; offPlayer: number; onPlayer: number; min: number }
+type MatchEvent = TouchEv | ShotEv | PassEv | ZoneEv | SubEv;
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const XG_ZONES = [
@@ -76,6 +77,7 @@ export default function MatchBrainPage() {
   const [zonePlayer, setZonePlayer] = useState<number | null>(null);
   const [shotIsGoal, setShotIsGoal] = useState(false);
   const [passType,   setPassType]   = useState<PassType>("pass");
+  const [subOff,     setSubOff]     = useState<number | null>(null);
 
   const [aiReport,       setAiReport]       = useState("");
   const [reportLoading,  setReportLoading]  = useState(false);
@@ -96,6 +98,7 @@ export default function MatchBrainPage() {
   const shotEvs  = useMemo(() => events.filter(e => e.type === "shot")  as ShotEv[],  [events]);
   const passEvs  = useMemo(() => events.filter(e => e.type === "pass")  as PassEv[],  [events]);
   const zoneEvs  = useMemo(() => events.filter(e => e.type === "zone")  as ZoneEv[],  [events]);
+  const subEvs   = useMemo(() => events.filter(e => e.type === "sub")   as SubEv[],   [events]);
 
   const homeGoals = useMemo(() => shotEvs.filter(s => s.team === "home" && s.isGoal).length, [shotEvs]);
   const awayGoals = useMemo(() => shotEvs.filter(s => s.team === "away" && s.isGoal).length, [shotEvs]);
@@ -152,6 +155,12 @@ export default function MatchBrainPage() {
     if (passFrom === toPlayer) { setPassFrom(null); return; }
     setEvents(ev => [...ev, { id: uid(), type: "pass", team: activeTeam, fromPlayer: passFrom, toPlayer, passType, min }]);
     setPassFrom(null);
+  };
+
+  const logSub = (onPlayer: number) => {
+    if (subOff === null) return;
+    setEvents(ev => [...ev, { id: uid(), type: "sub", team: activeTeam, offPlayer: subOff, onPlayer, min }]);
+    setSubOff(null);
   };
 
   const logZone = (zone: string) => {
@@ -287,7 +296,7 @@ Top away players by touch: ${topAway || "no data"}`;
   const modeButton = (m: Mode, label: string, Icon: React.ElementType) => (
     <button
       key={m}
-      onClick={() => { setMode(m); setPassFrom(null); setZonePlayer(null); }}
+      onClick={() => { setMode(m); setPassFrom(null); setZonePlayer(null); setSubOff(null); }}
       className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-wider transition-colors ${
         mode === m ? "bg-[#f0b429] text-[#1a3a1a]" : "bg-white/10 text-white/60 hover:bg-white/20"
       }`}
@@ -408,8 +417,8 @@ Top away players by touch: ${topAway || "no data"}`;
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[10px]">
-              {([["Touches", touchEvs.length, "text-blue-400"], ["Shots", shotEvs.length, "text-red-400"], ["Passes", passEvs.length, "text-green-400"], ["Zones", zoneEvs.length, "text-purple-400"]] as const).map(([l,v,c]) => (
+            <div className="mt-3 grid grid-cols-5 gap-2 text-center text-[10px]">
+              {([["Touches", touchEvs.length, "text-blue-400"], ["Shots", shotEvs.length, "text-red-400"], ["Passes", passEvs.length, "text-green-400"], ["Zones", zoneEvs.length, "text-purple-400"], ["Subs", subEvs.length, "text-yellow-400"]] as const).map(([l,v,c]) => (
                 <div key={l} className="rounded-lg bg-white/5 py-2">
                   <p className={`text-sm font-black ${c}`}>{v}</p>
                   <p className="text-white/40">{l}</p>
@@ -424,7 +433,7 @@ Top away players by touch: ${topAway || "no data"}`;
               <a href="/analyst/pass-map" className="flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-black text-cyan-400 transition-colors hover:bg-cyan-500/20">
                 <Network className="h-3.5 w-3.5" /> Match Movement
               </a>
-              <button onClick={() => { setPhase("setup"); setEvents([]); setAiReport(""); setShotIsGoal(false); setPassType("pass"); }}
+              <button onClick={() => { setPhase("setup"); setEvents([]); setAiReport(""); setShotIsGoal(false); setPassType("pass"); setSubOff(null); }}
                 className="flex items-center gap-1.5 rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-white/50 transition-colors hover:text-white/70">
                 New Match
               </button>
@@ -569,6 +578,24 @@ Top away players by touch: ${topAway || "no data"}`;
                     ))
                 }
               </div>
+
+              {subEvs.length > 0 && (
+                <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+                  <p className="mb-3 text-xs font-black uppercase tracking-widest text-yellow-400/70">Substitutions — {subEvs.length} made</p>
+                  <p className="mb-2 text-[9px] text-white/30">Pass counts above reflect the full match. Use the minute column to cross-reference which passes happened before/after each sub.</p>
+                  {subEvs.map(s => (
+                    <div key={s.id} className={`mb-1.5 flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] ${s.team==="home" ? "bg-blue-500/10" : "bg-orange-500/10"}`}>
+                      <span className={`shrink-0 font-black ${s.team==="home" ? "text-blue-400" : "text-orange-400"}`}>{s.team==="home" ? homeTeam : awayTeam}</span>
+                      <span className="flex-1 text-white/70">
+                        <span className="text-red-400">#{ s.offPlayer} OFF</span>
+                        {" → "}
+                        <span className="text-green-400">#{s.onPlayer} ON</span>
+                      </span>
+                      <span className="shrink-0 text-white/30">{s.min}&apos;</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -669,11 +696,12 @@ Top away players by touch: ${topAway || "no data"}`;
         </div>
 
         {/* Mini stats bar */}
-        <div className="mb-3 grid grid-cols-4 gap-1.5 text-center text-[9px]">
+        <div className="mb-3 grid grid-cols-5 gap-1.5 text-center text-[9px]">
           <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 py-1.5"><p className="font-black text-blue-400">{touchEvs.length}</p><p className="text-white/30">Touches</p></div>
           <div className="rounded-lg border border-red-500/20 bg-red-500/5 py-1.5"><p className="font-black text-red-400">{shotEvs.length}</p><p className="text-white/30">Shots</p></div>
           <div className="rounded-lg border border-green-500/20 bg-green-500/5 py-1.5"><p className="font-black text-green-400">{passEvs.length}</p><p className="text-white/30">Passes</p></div>
           <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 py-1.5"><p className="font-black text-purple-400">{zoneEvs.length}</p><p className="text-white/30">Zones</p></div>
+          <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 py-1.5"><p className="font-black text-yellow-400">{subEvs.length}</p><p className="text-white/30">Subs</p></div>
         </div>
 
         {/* Mode switcher */}
@@ -682,6 +710,7 @@ Top away players by touch: ${topAway || "no data"}`;
           {modeButton("shot",  "Shot",  Target)}
           {modeButton("pass",  "Pass",  Network)}
           {modeButton("zone",  "Zone",  Map)}
+          {modeButton("sub",   "Subs",  ArrowLeftRight)}
         </div>
 
         {/* Team toggle */}
@@ -809,6 +838,64 @@ Top away players by touch: ${topAway || "no data"}`;
               </div>
             )}
             {zoneEvs.length > 0 && <p className="mt-2 text-center text-[9px] text-purple-400">{zoneEvs.length} zone position{zoneEvs.length!==1?"s":""} logged</p>}
+          </div>
+        )}
+
+        {/* ── SUB MODE ────────────────────────────────────────────────── */}
+        {mode === "sub" && (
+          <div>
+            <div className="mb-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-3 py-2 text-center text-xs text-white/60">
+              {subOff === null
+                ? "Step 1 — Tap the player coming OFF (1–11)"
+                : <span>Player <strong className="text-red-400">#{subOff}</strong> off — Step 2: tap the player coming ON</span>
+              }
+            </div>
+
+            {subOff === null ? (
+              /* Step 1: select who goes OFF (starters only) */
+              <div>
+                <p className="mb-2 text-[9px] font-semibold uppercase tracking-widest text-white/30">Who is going OFF?</p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {STARTERS.map(n => (
+                    <button key={n} onClick={() => setSubOff(n)}
+                      className={`rounded-xl py-3.5 text-sm font-black text-white transition-all active:scale-95 ${activeTeam==="home" ? "bg-red-700/80 hover:bg-red-600" : "bg-red-800/80 hover:bg-red-700"}`}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Step 2: select who comes ON (shirt 1–16) */
+              <div>
+                <p className="mb-2 text-[9px] font-semibold uppercase tracking-widest text-white/30">Who is coming ON?</p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {Array.from({ length: 16 }, (_, i) => i + 1).map(n => (
+                    <button key={n} onClick={() => logSub(n)}
+                      className={`rounded-xl py-3.5 text-sm font-black text-white transition-all active:scale-95 ${activeTeam==="home" ? "bg-green-700/80 hover:bg-green-600" : "bg-green-800/80 hover:bg-green-700"}`}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setSubOff(null)}
+                  className="mt-2 w-full rounded-xl border border-white/10 py-2 text-[10px] text-white/30 hover:text-white/50">
+                  ← Back (wrong player)
+                </button>
+              </div>
+            )}
+
+            {/* Sub log */}
+            {subEvs.length > 0 && (
+              <div className="mt-4 space-y-1.5">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-white/30">Sub Log</p>
+                {subEvs.map(s => (
+                  <div key={s.id} className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] ${s.team==="home" ? "bg-blue-500/10" : "bg-orange-500/10"}`}>
+                    <span className={`shrink-0 font-black ${s.team==="home" ? "text-blue-400" : "text-orange-400"}`}>{s.team==="home" ? homeTeam : awayTeam}</span>
+                    <span className="flex-1 text-white/70">#{s.offPlayer} <span className="text-red-400">OFF</span> → #{s.onPlayer} <span className="text-green-400">ON</span></span>
+                    <span className="shrink-0 text-white/30">{s.min}&apos;</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
