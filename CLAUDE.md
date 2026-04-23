@@ -4632,4 +4632,80 @@ Both endpoints are live. `pitch/page.tsx` session logging works end-to-end.
 | Passport backend fields | Migration NOT run on Render | `2026_04_15_000001_add_passport_fields_to_player_profiles_table.php` — already in bhora-ai, run `php artisan migrate` |
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — all THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
-| `/player/success-engine` | Hub card href mismatch — page at `/player/goal` | Fix href in `src/app/player/page.tsx` |
+| `/player/success-engine` | ✅ FIXED (23 April 2026) | Sidebar + hub card now point to `/player/success` |
+
+---
+
+## SESSION LOG — 23 April 2026
+
+### Theme — THUTO Success Engine Frontend (complete)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. THUTO Success Engine — FULLY BUILT ✅
+
+All lib layer was already committed (from prior session):
+- `src/lib/success/storage.ts` — Goal/CheckIn interfaces, localStorage CRUD, adjustment engine
+- `src/lib/success/streak.ts` — streak, success probability, week grid, weekly rate
+- `src/lib/success/actions.ts` — goal type detection, 5 action blueprints
+- `src/lib/success/notifications.ts` — browser Notification API + periodicSync scheduling
+- `src/app/api/success-adjust/route.ts` — Groq: acknowledge struggle → adjust actions
+- `src/app/api/success-analysis/route.ts` — Groq: weekly performance analysis
+- `public/sw.js` — periodicSync handler + notificationclick → `/player/success/checkin`
+
+Built this session:
+
+**`src/app/player/success/page.tsx`** — Main dashboard
+- Stage 1 (no goal): 2-step goal setup wizard
+  - Step 1: goalText + whyText + auto-detected action blueprint preview
+  - Step 2: days timeline (30/60/90/180) + daily reminder time picker
+  - Calls `saveGoal()` + `requestNotificationPermission()` + `scheduleDailyReminder()`
+- Stage 2 (has goal): Full dashboard
+  - Goal card: text, "why", days left, target date
+  - Check-in CTA (gold) when not done → `/player/success/checkin`
+  - Done state (green) when already checked in: shows score
+  - Stats row: current streak (🔥) / success probability / weekly rate
+  - Success probability bar: green/amber/red depending on value
+  - Week grid: 7-day dots — gold=done, red=missed, grey=future
+  - Today's 3 actions with completion state from today's check-in
+  - Adjustment Card (amber): appears when 3 consecutive days < 70% and not seen this week
+    - Calls `POST /api/success-adjust` with goal + reason + actions
+  - Weekly Report Card: appears after 7+ check-ins
+    - Strongest/weakest action tiles
+    - Calls `POST /api/success-analysis` for THUTO's personal analysis
+  - Reset goal button with confirm dialog
+
+**`src/app/player/success/checkin/page.tsx`** — Daily check-in
+- No goal → redirect prompt
+- Has goal → check-in form:
+  - Goal reminder card
+  - 3 action toggle buttons (tap to mark done)
+  - Mood slider (1-10) + optional mood note text
+  - Submit → saves check-in, calls `/api/ai-coach` for short THUTO message
+  - Done state: score badge, THUTO message in gold italics
+- Pre-populates from existing today check-in (allows edits during the day)
+
+**Routes fixed:**
+- `src/components/layout/sidebar.tsx` — `/player/success-engine` → `/player/success`
+- `src/app/player/page.tsx` — hub card `/player/goal` → `/player/success`
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (23 April 2026)
+
+```
+/player/success          THUTO Success Engine — goal setup, dashboard, streak, probability
+/player/success/checkin  Daily Check-In — 3 actions, mood, THUTO message
+```
+
+---
+
+### WHAT STILL NEEDS DOING (23 April 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Passport backend fields | Migration NOT run on Render | `2026_04_15_000001_add_passport_fields_to_player_profiles_table.php` — run `php artisan migrate` |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — Success Engine analysis + THUTO chat broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
