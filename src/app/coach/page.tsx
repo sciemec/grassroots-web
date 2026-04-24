@@ -171,6 +171,7 @@ Keep each section to 2-3 sentences. Be specific and actionable. Zimbabwe grassro
   ];
 
   const hubCards = [
+    { icon: Flame,        title: "Success Engine",   subtitle: "Daily habits · Streak · Goals", href: "/coach/success",           bg: "bg-[#1a3d26]", gradient: "bg-gradient-to-br from-[#1a6b3c] to-[#0d2b1a]" },
     { icon: Brain,        title: "AI Insights",      subtitle: "Mubatsiri wako — Claude AI",  href: "/coach/ai-insights",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
     { icon: Users,        title: "My Squad",         subtitle: "Timu yako — Manage squad",    href: "/coach/squad",             bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
     { icon: ClipboardList,title: "Tactics Board",    subtitle: "Formation & set pieces",      href: "/coach/tactics",           bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#27ae60] to-[#1a6b3c]" },

@@ -37,6 +37,7 @@ const navItems: NavItem[] = [
   { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["admin"] },
   // ─── Coach ────────────────────────────────────────────────────────────────
   { href: "/coach",                  label: "Coach Hub",      icon: LayoutDashboard, roles: ["coach"] },
+  { href: "/coach/success",          label: "Success Engine", icon: Flame,           roles: ["coach"] },
   { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
   { href: "/coach/scouting",         label: "Scouting",       icon: ScanSearch,      roles: ["coach"] },
   { href: "/coach/training-plans",   label: "Training Plans", icon: Layers,          roles: ["coach"] },
