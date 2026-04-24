@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Target, Play, StopCircle,
+  ArrowLeft, Target, Play, StopCircle, PauseCircle, PlayCircle,
   Zap, Flag, ArrowUpDown, MoveRight, Users,
   Save, BarChart2, FileText, Loader2, CheckCircle2,
 } from "lucide-react";
@@ -452,13 +452,15 @@ function EventRow({ evt, homeTeam, awayTeam }: {
 
 // ─── Stats sidebar ────────────────────────────────────────────────────────────
 function StatsPanel({
-  events, possession, homeTeam, awayTeam, elapsed, onEnd, ballTimeSecs, deadTimeSecs,
+  events, possession, homeTeam, awayTeam, elapsed, onEnd, onPause, isPaused, ballTimeSecs, deadTimeSecs,
 }: {
   events: MatchEvent[];
   possession: { home: number; away: number };
   homeTeam: string; awayTeam: string;
   elapsed: number;
   onEnd: () => void;
+  onPause: () => void;
+  isPaused: boolean;
   ballTimeSecs: number;
   deadTimeSecs: number;
 }) {
@@ -539,6 +541,18 @@ function StatsPanel({
           );
         })()}
       </div>
+
+      <button onClick={onPause}
+        className={`w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition-colors ${
+          isPaused
+            ? "border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+            : "border border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+        }`}>
+        {isPaused
+          ? <><PlayCircle className="h-4 w-4" /> Resume Match</>
+          : <><PauseCircle className="h-4 w-4" /> Pause Clock</>
+        }
+      </button>
 
       <button onClick={onEnd}
         className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-colors">
@@ -760,6 +774,8 @@ export default function AnalystLiveMatchPage() {
   const [possessionLog, setPossessionLog]   = useState<PossessionBlock[]>(saved?.possessionLog ?? []);
   const intervalRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const ballInPlayRef  = useRef(false);
+  const isPausedRef    = useRef(false);
+  const [isPaused,     setIsPaused]     = useState(false);
   const [ballInPlay,   setBallInPlay]   = useState(false);
   const [ballTimeSecs, setBallTimeSecs] = useState(saved?.ballTimeSecs ?? 0);
   const [deadTimeSecs, setDeadTimeSecs] = useState(saved?.deadTimeSecs ?? 0);
@@ -775,6 +791,7 @@ export default function AnalystLiveMatchPage() {
   useEffect(() => {
     if (phase === "live") {
       intervalRef.current = setInterval(() => {
+        if (isPausedRef.current) return;
         setElapsed((s) => s + 1);
         if (ballInPlayRef.current) setBallTimeSecs((s) => s + 1);
         else setDeadTimeSecs((s) => s + 1);
@@ -837,6 +854,12 @@ export default function AnalystLiveMatchPage() {
     setPhase("ended");
   };
 
+  const handlePause = () => {
+    const next = !isPausedRef.current;
+    isPausedRef.current = next;
+    setIsPaused(next);
+  };
+
   return (
     <div className="flex h-screen bg-zinc-950">
       <Sidebar />
@@ -859,8 +882,11 @@ export default function AnalystLiveMatchPage() {
           </div>
           {phase === "live" && (
             <div className="flex items-center gap-2 text-xs text-zinc-400">
-              <span className="animate-pulse text-[#f0b429]">●</span>
-              <span>{setup.homeTeam} vs {setup.awayTeam} · {events.length} events</span>
+              <span className={isPaused ? "text-amber-400" : "animate-pulse text-[#f0b429]"}>●</span>
+              <span>
+                {setup.homeTeam} vs {setup.awayTeam} · {events.length} events
+                {isPaused && <span className="ml-2 font-bold text-amber-400">PAUSED</span>}
+              </span>
             </div>
           )}
         </div>
@@ -968,6 +994,8 @@ export default function AnalystLiveMatchPage() {
                 awayTeam={setup.awayTeam}
                 elapsed={elapsed}
                 onEnd={handleEnd}
+                onPause={handlePause}
+                isPaused={isPaused}
                 ballTimeSecs={ballTimeSecs}
                 deadTimeSecs={deadTimeSecs}
               />
