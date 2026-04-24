@@ -39,8 +39,8 @@ function xgColor(xg: number): string {
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MatchSetup { homeTeam: string; awayTeam: string; sport: string; }
 
-type EventType = "shot" | "pass" | "press" | "set_piece" | "substitution";
-type ActiveTab  = "shot" | "pass" | "press" | "set_piece" | "sub";
+type EventType = "shot" | "pass" | "press" | "set_piece" | "substitution" | "header" | "free_kick_direct";
+type ActiveTab  = "shot" | "pass" | "press" | "set_piece" | "sub" | "aerial" | "fk";
 
 interface MatchEvent {
   id: string;
@@ -59,6 +59,8 @@ interface MatchEvent {
   outcome?: "goal" | "shot_on" | "cleared" | "wasted";
   // substitution
   reason?: "tactical" | "injury" | "fatigue";
+  // header
+  headerWon?: boolean;
 }
 
 interface PossessionBlock { team: "home" | "away"; startMinute: number; }
@@ -199,15 +201,17 @@ function EventLoggerPanel({
   activeTab, setActiveTab, activeTeam, setActiveTeam,
   markGoal, setMarkGoal, lastZone, onShot,
   setPieceType, location, reason,
-  onPassLog, onPressLog, onSetPieceLog, onSubLog,
+  onPassLog, onPressLog, onSetPieceLog, onSubLog, onAerialLog, onFkShot,
   onSetPieceTypeChange, onLocationChange, onOutcomeChange, onReasonChange,
-  selectedOutcome, homeTeam, awayTeam,
+  selectedOutcome, fkLastZone, homeTeam, awayTeam,
 }: {
   activeTab: ActiveTab; setActiveTab: (t: ActiveTab) => void;
   activeTeam: "home" | "away"; setActiveTeam: (t: "home" | "away") => void;
   markGoal: boolean; setMarkGoal: (v: boolean) => void;
   lastZone: string | null;
+  fkLastZone: string | null;
   onShot: (zone: XgZone) => void;
+  onFkShot: (zone: XgZone) => void;
   setPieceType: "corner" | "free_kick" | "throw_in";
   location: "left" | "centre" | "right";
   reason: "tactical" | "injury" | "fatigue";
@@ -216,6 +220,7 @@ function EventLoggerPanel({
   onPressLog: () => void;
   onSetPieceLog: () => void;
   onSubLog: () => void;
+  onAerialLog: (won: boolean, isGoal: boolean) => void;
   onSetPieceTypeChange: (v: "corner" | "free_kick" | "throw_in") => void;
   onLocationChange: (v: "left" | "centre" | "right") => void;
   onOutcomeChange: (v: "goal" | "shot_on" | "cleared" | "wasted") => void;
@@ -226,7 +231,9 @@ function EventLoggerPanel({
     { id: "shot",      label: "⚽ Shot" },
     { id: "pass",      label: "↗ Pass" },
     { id: "press",     label: "⚡ Press" },
-    { id: "set_piece", label: "🚩 Set Piece" },
+    { id: "aerial",    label: "🤝 Air" },
+    { id: "fk",        label: "🎯 FK" },
+    { id: "set_piece", label: "🚩 Set" },
     { id: "sub",       label: "↕ Sub" },
   ];
 
@@ -293,6 +300,39 @@ function EventLoggerPanel({
           </button>
           <p className="text-center text-[10px] text-zinc-600">Only log successful press recoveries, not every tackle</p>
         </div>
+      )}
+
+      {/* AERIAL / HEADER TAB */}
+      {activeTab === "aerial" && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+            Aerial duel — who won the header?
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button onClick={() => onAerialLog(true, false)}
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-4 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all">
+              ✅<span>Won</span>
+            </button>
+            <button onClick={() => onAerialLog(false, false)}
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/10 py-4 text-xs font-bold text-red-400 hover:bg-red-500/20 active:scale-95 transition-all">
+              ❌<span>Lost</span>
+            </button>
+            <button onClick={() => onAerialLog(true, true)}
+              className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 py-4 text-xs font-bold text-[#f0b429] hover:bg-[#f0b429]/20 active:scale-95 transition-all">
+              ⚽<span>Header Goal</span>
+            </button>
+          </div>
+          <p className="text-center text-[10px] text-zinc-600">Tap to log instantly — corners, crosses, long balls</p>
+        </div>
+      )}
+
+      {/* FREE KICK DIRECT TAB */}
+      {activeTab === "fk" && (
+        <>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Direct free kick on goal — tap zone</p>
+          <PitchZoneTapper onZoneTap={onFkShot} lastZone={fkLastZone} />
+          <p className="text-center text-[10px] text-zinc-600">For FK deliveries (corners/throw-ins) use 🚩 Set tab</p>
+        </>
       )}
 
       {/* SET PIECE TAB */}
@@ -418,22 +458,26 @@ function EventRow({ evt, homeTeam, awayTeam }: {
 
   const label = (() => {
     switch (evt.type) {
-      case "shot":        return `Shot — ${ZONE_MAP[evt.zoneId ?? ""]?.label ?? evt.zoneId} (xG ${evt.xg?.toFixed(2)})`;
-      case "pass":        return `Pass — ${evt.completed ? "Completed" : "Intercepted"}`;
-      case "press":       return "Press Won";
-      case "set_piece":   return `${evt.setPieceType?.replace("_", " ")} (${evt.location}) → ${evt.outcome?.replace("_", " ")}`;
-      case "substitution":return `Sub — ${evt.reason}`;
-      default:            return evt.type;
+      case "shot":            return `Shot — ${ZONE_MAP[evt.zoneId ?? ""]?.label ?? evt.zoneId} (xG ${evt.xg?.toFixed(2)})`;
+      case "pass":            return `Pass — ${evt.completed ? "Completed" : "Intercepted"}`;
+      case "press":           return "Press Won";
+      case "set_piece":       return `${evt.setPieceType?.replace("_", " ")} (${evt.location}) → ${evt.outcome?.replace("_", " ")}`;
+      case "substitution":    return `Sub — ${evt.reason}`;
+      case "header":          return evt.isGoal ? "Header — Goal!" : evt.headerWon ? "Aerial — Won" : "Aerial — Lost";
+      case "free_kick_direct":return `Direct FK — ${ZONE_MAP[evt.zoneId ?? ""]?.label ?? evt.zoneId} (xG ${evt.xg?.toFixed(2)})`;
+      default:                return evt.type;
     }
   })();
 
   const icon = (() => {
     switch (evt.type) {
-      case "shot":        return "⚽";
-      case "pass":        return evt.completed ? "↗" : "✗";
-      case "press":       return "⚡";
-      case "set_piece":   return "🚩";
-      case "substitution":return "↕";
+      case "shot":            return "⚽";
+      case "pass":            return evt.completed ? "↗" : "✗";
+      case "press":           return "⚡";
+      case "set_piece":       return "🚩";
+      case "substitution":    return "↕";
+      case "header":          return evt.isGoal ? "⚽" : evt.headerWon ? "✅" : "❌";
+      case "free_kick_direct":return "🎯";
     }
   })();
 
@@ -473,10 +517,12 @@ function StatsPanel({
   const awayXg     = events.filter((e) => e.type === "shot" && e.team === "away").reduce((s, e) => s + (e.xg ?? 0), 0);
   const homeShots  = events.filter((e) => e.type === "shot" && e.team === "home").length;
   const awayShots  = events.filter((e) => e.type === "shot" && e.team === "away").length;
-  const homePress  = events.filter((e) => e.type === "press" && e.team === "home").length;
-  const awayPress  = events.filter((e) => e.type === "press" && e.team === "away").length;
+  const homePress   = events.filter((e) => e.type === "press" && e.team === "home").length;
+  const awayPress   = events.filter((e) => e.type === "press" && e.team === "away").length;
   const homeCorners = events.filter((e) => e.type === "set_piece" && e.team === "home" && e.setPieceType === "corner").length;
   const awayCorners = events.filter((e) => e.type === "set_piece" && e.team === "away" && e.setPieceType === "corner").length;
+  const homeHeaders = events.filter((e) => e.type === "header" && e.team === "home" && e.headerWon).length;
+  const awayHeaders = events.filter((e) => e.type === "header" && e.team === "away" && e.headerWon).length;
 
   const homePasses  = events.filter((e) => e.type === "pass" && e.team === "home");
   const awayPasses  = events.filter((e) => e.type === "pass" && e.team === "away");
@@ -522,6 +568,7 @@ function StatsPanel({
         {stat("xG",          homeXg.toFixed(2),  awayXg.toFixed(2))}
         {stat("Shots",       homeShots,           awayShots)}
         {stat("Possession",  `${possession.home}%`, `${possession.away}%`)}
+        {stat("Headers Won", homeHeaders,          awayHeaders)}
         {stat("Press Wins",  homePress,           awayPress)}
         {stat("Corners",     homeCorners,         awayCorners)}
         {stat("Pass %",      typeof homePassPct === "number" ? `${homePassPct}%` : homePassPct,
@@ -766,6 +813,7 @@ export default function AnalystLiveMatchPage() {
   const [activeTeam, setActiveTeam]     = useState<"home" | "away">("home");
   const [markGoal, setMarkGoal]         = useState(false);
   const [lastZone, setLastZone]         = useState<string | null>(null);
+  const [fkLastZone, setFkLastZone]     = useState<string | null>(null);
   const [setPieceType, setSetPieceType] = useState<"corner" | "free_kick" | "throw_in">("corner");
   const [location, setLocation]         = useState<"left" | "centre" | "right">("centre");
   const [outcome, setOutcome]           = useState<"goal" | "shot_on" | "cleared" | "wasted">("cleared");
@@ -842,6 +890,15 @@ export default function AnalystLiveMatchPage() {
   const handleSub = useCallback(() => {
     logEvent({ type: "substitution", team: activeTeam, reason: subReason });
   }, [activeTeam, subReason, logEvent]);
+
+  const handleAerial = useCallback((won: boolean, isGoal: boolean) => {
+    logEvent({ type: "header", team: activeTeam, headerWon: won, isGoal });
+  }, [activeTeam, logEvent]);
+
+  const handleFkShot = useCallback((zone: XgZone) => {
+    logEvent({ type: "free_kick_direct", team: activeTeam, zoneId: zone.id, xg: zone.xg, isGoal: false });
+    setFkLastZone(zone.id);
+  }, [activeTeam, logEvent]);
 
   const handlePossessionSwitch = useCallback((team: "home" | "away") => {
     if (team === possessionTeam) return;
@@ -953,11 +1010,14 @@ export default function AnalystLiveMatchPage() {
                   activeTeam={activeTeam} setActiveTeam={setActiveTeam}
                   markGoal={markGoal} setMarkGoal={setMarkGoal}
                   lastZone={lastZone}
+                  fkLastZone={fkLastZone}
                   onShot={handleShot}
+                  onFkShot={handleFkShot}
                   onPassLog={handlePass}
                   onPressLog={handlePress}
                   onSetPieceLog={handleSetPiece}
                   onSubLog={handleSub}
+                  onAerialLog={handleAerial}
                   setPieceType={setPieceType}
                   location={location}
                   reason={subReason}
