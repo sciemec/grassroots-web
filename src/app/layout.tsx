@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { PwaBanner } from "@/components/pwa/install-banner";
+import { SwUpdateBanner } from "@/components/pwa/sw-update-banner";
 import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { PushPrompt } from "@/components/ui/push-prompt";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -85,15 +86,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             {children}
             <PwaBanner />
+            <SwUpdateBanner />
             <OfflineIndicator />
             <PushPrompt />
           </AuthProvider>
         </Providers>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}`,
-          }}
-        />
+        {/* SW registration handled by SwUpdateBanner (workbox-window) */}
       </body>
     </html>
   );

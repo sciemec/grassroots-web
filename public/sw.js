@@ -2,6 +2,11 @@
 // Cache version — bump this string whenever you deploy a breaking change
 // so users immediately get the new JS bundle instead of the stale cached one.
 const CACHE_VERSION = "v20260424-1";
+
+// Allow workbox-window (in the page) to trigger immediate activation
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+});
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js");
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
