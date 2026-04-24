@@ -211,10 +211,16 @@ Top away players by touch: ${topAway || "no data"}`;
           system_prompt: `You are an expert ${sport} analyst. Write a structured, professional match report using only the data provided. Never make up stats.`,
         }),
       });
-      const d = await res.json() as { response?: string };
-      setAiReport(d.response ?? "Report generation failed — check GROQ_API_KEY in Vercel.");
+      if (!res.ok) {
+        let errMsg = "AI report unavailable — add GROQ_API_KEY to Vercel dashboard.";
+        try { const e = await res.json(); if (e.error) errMsg = e.error; } catch {}
+        setAiReport(errMsg);
+      } else {
+        const d = await res.json() as { response?: string };
+        setAiReport(d.response ?? "Report generation failed.");
+      }
     } catch {
-      setAiReport("Could not connect to AI. Check your internet connection.");
+      setAiReport("Could not reach AI server. Check your internet connection.");
     }
     setReportLoading(false);
   };
