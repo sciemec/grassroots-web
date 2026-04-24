@@ -15,6 +15,7 @@ import { useFileSystem } from "@/hooks/use-file-system";
 import { extractFrames, trimVideo } from "@/lib/ffmpeg-processor";
 import { PlayerTracker } from "@/components/video/player-tracker";
 import { PoseCamera } from "@/components/video/pose-camera";
+import { PossessionHeatmap } from "@/components/video/possession-heatmap";
 import { ResultsPanel, type AnalysisResult } from "./results-panel";
 import { searchOffline } from "@/lib/offline-ai";
 import { ProGate } from "@/components/ui/pro-gate";
@@ -472,11 +473,12 @@ export default function VideoStudioPage() {
             </button>
           )}
 
-          {/* AI trackers — player detection + live pose analysis */}
+          {/* AI trackers — player detection + live pose analysis + possession heatmap */}
           {file && (
             <div className="space-y-4">
               <PlayerTracker videoFile={file} />
               <PoseCamera focusArea={analysisType || undefined} />
+              <PossessionHeatmap videoFile={file} />
             </div>
           )}
 
