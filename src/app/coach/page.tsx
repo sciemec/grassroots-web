@@ -7,7 +7,7 @@ import {
   Users, Brain, ChevronRight, Flame, Shield, AlertTriangle,
   Trophy, Radio, ClipboardList, Loader2, Film, Activity, Crosshair, BookOpen,
   Layers, ScanSearch, GraduationCap, PiggyBank, Calendar, Heart, Sprout,
-  FileText, RefreshCw, TrendingUp,
+  FileText, RefreshCw, TrendingUp, Target, Map, Thermometer,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -230,6 +230,36 @@ Keep each section to 2-3 sentences. Be specific and actionable. Zimbabwe grassro
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {hubCards.map((card) => (
               <HubCard key={card.href} {...card} />
+            ))}
+          </div>
+        </div>
+
+        {/* Analytics Hub section */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-cyan-400" />
+            <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">
+              Analytics Hub
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              { icon: Flame,         title: "Live Collector",  subtitle: "Log shots & xG live",     href: "/analyst/live-match"     },
+              { icon: Target,        title: "xG Analysis",     subtitle: "Expected goals breakdown", href: "/analyst/xg-analysis"    },
+              { icon: ClipboardList, title: "Tactical Report", subtitle: "AI match analysis + PDF",  href: "/analyst/tactical-report" },
+              { icon: Map,           title: "Pass Map",        subtitle: "Network & connections",    href: "/analyst/pass-map"       },
+              { icon: Thermometer,   title: "Player Heatmaps", subtitle: "Zone intensity + PDF",     href: "/analyst/heatmaps"       },
+              { icon: TrendingUp,    title: "Season Intel",    subtitle: "xG trends & form",         href: "/analyst/season"         },
+            ].map((card) => (
+              <Link
+                key={card.href}
+                href={card.href}
+                className="flex flex-col rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-900/30 to-teal-900/20 p-4 hover:border-cyan-500/50 transition-all"
+              >
+                <card.icon className="mb-2 h-5 w-5 text-cyan-400" />
+                <p className="text-sm font-bold text-white leading-tight">{card.title}</p>
+                <p className="mt-0.5 text-[11px] text-cyan-200/50 leading-tight">{card.subtitle}</p>
+              </Link>
             ))}
           </div>
         </div>

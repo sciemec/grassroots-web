@@ -20,7 +20,7 @@ export default function AnalystLayout({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!hasHydrated) return;
     if (!user) return; // guests allowed — shows GuestBanner
-    if (user.role !== "analyst" && user.role !== "admin") {
+    if (user.role !== "analyst" && user.role !== "admin" && user.role !== "coach") {
       router.push(`/${user.role}`);
     }
   }, [hasHydrated, user, router]);
