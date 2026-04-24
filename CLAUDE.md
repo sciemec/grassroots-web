@@ -4304,7 +4304,7 @@ Public page scouts and scholarship agencies open from the share link.
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — all THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
 | `/player/success-engine` | Hub card href mismatch — page lives at `/player/goal` | Fix href or create alias |
-| Passport backend fields | `school_name`, `grade_level`, `academic_average`, `academic_year`, `coach_endorsements` (JSON), `passport_views` not yet on profiles table | Run migration below on Render |
+| Passport backend fields | DONE ✅ — committed in a6ea484, auto-migrated on Render | No action needed |
 
 ### PASSPORT MIGRATION (copy to bhora-ai, run php artisan migrate):
 
@@ -4426,7 +4426,7 @@ then prescribes drills and generates a THUTO 4-Week Strategic Plan.
 
 | Item | Status | Action Required |
 |---|---|---|
-| Passport backend fields | Migration NOT run on Render | Copy migration to bhora-ai, run php artisan migrate |
+| Passport backend fields | DONE ✅ — committed in a6ea484, auto-migrated on Render | No action needed |
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
 | `/player/success-engine` | Hub card href mismatch | Fix href to `/player/goal` or create alias |
@@ -4558,8 +4558,8 @@ No new routes — enhanced existing:
 |---|---|---|
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
-| Passport backend fields | Migration NOT run on Render | Copy migration to bhora-ai, run php artisan migrate |
-| `/player/success-engine` | Hub card href mismatch | Fix href to `/player/goal` or create alias |
+| Passport backend fields | DONE ✅ — committed in a6ea484, auto-migrated on Render | No action needed |
+| `/player/success-engine` | DONE ✅ — sidebar + hub card fixed (23 April 2026) | No action needed |
 | `GET /api/v1/sessions/{id}/report` | Backend endpoint — confirm it exists | Test: `curl -H "Authorization: Bearer {token}" https://bhora-ai.onrender.com/api/v1/sessions/{id}/report` |
 
 ---
@@ -4629,7 +4629,7 @@ Both endpoints are live. `pitch/page.tsx` session logging works end-to-end.
 
 | Item | Status | Action Required |
 |---|---|---|
-| Passport backend fields | Migration NOT run on Render | `2026_04_15_000001_add_passport_fields_to_player_profiles_table.php` — already in bhora-ai, run `php artisan migrate` |
+| Passport backend fields | DONE ✅ — committed in a6ea484, auto-migrated on Render | No action needed |
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — all THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
 | `/player/success-engine` | ✅ FIXED (23 April 2026) | Sidebar + hub card now point to `/player/success` |
@@ -4706,6 +4706,6 @@ Built this session:
 
 | Item | Status | Action Required |
 |---|---|---|
-| Passport backend fields | Migration NOT run on Render | `2026_04_15_000001_add_passport_fields_to_player_profiles_table.php` — run `php artisan migrate` |
+| Passport backend fields | DONE ✅ — committed in a6ea484, auto-migrated on Render | No action needed |
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — Success Engine analysis + THUTO chat broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
