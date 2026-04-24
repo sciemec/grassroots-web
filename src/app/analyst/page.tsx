@@ -1,11 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Brain } from "lucide-react";
+import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Brain, Camera } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 
 const tools = [
+  {
+    icon: Camera,
+    title: "Match Eye",
+    subtitle: "Upload a match video. Gemini watches it. Claude writes the full tactical report.",
+    href: "/analyst/match-eye",
+    bg: "bg-gradient-to-br from-[#1a1a5c] to-[#0a0a2d]",
+    live: true,
+    featured: true,
+  },
   {
     icon: Brain,
     title: "Match Brain",

@@ -116,6 +116,7 @@ const navItems: NavItem[] = [
   { href: "/analyst/pass-map",             label: "Pass Map",          icon: Map,         roles: ["analyst"] },
   { href: "/analyst/heatmaps",             label: "Player Heatmaps",   icon: Thermometer, roles: ["analyst"] },
   { href: "/analyst/season",               label: "Season Intelligence", icon: SeasonIcon, roles: ["analyst"] },
+  { href: "/analyst/match-eye",            label: "Match Eye",           icon: Camera,     roles: ["analyst"] },
 ];
 
 const HUB_TABS: { role: UserRole; label: string; color: string }[] = [
