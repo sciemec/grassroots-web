@@ -1,7 +1,7 @@
 // Grassroots Sport Pro — Service Worker (Workbox-powered)
 // Cache version — bump this string whenever you deploy a breaking change
 // so users immediately get the new JS bundle instead of the stale cached one.
-const CACHE_VERSION = "v20260417-1";
+const CACHE_VERSION = "v20260424-1";
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js");
 
 const { strategies, routing, expiration, backgroundSync, precaching } = workbox;
@@ -131,8 +131,8 @@ async function fireThutoDailyNotification() {
   const msg = messages[Math.floor(Math.random() * messages.length)];
   await self.registration.showNotification(msg.title, {
     body: msg.body,
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/icons/icon-192x192.png",
+    badge: "/icons/icon-192x192.png",
     data: { url: "/player/success/checkin" },
   });
 }
