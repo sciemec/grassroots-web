@@ -4,11 +4,12 @@ import { useState, useRef, useCallback } from "react";
 import {
   Upload, Play, Download, Loader2, CheckCircle2,
   AlertCircle, Eye, Crosshair, Shield, Zap, User, BookOpen,
-  ChevronRight, BarChart3, Clock,
+  ChevronRight, BarChart3, Clock, Activity,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 import jsPDF from "jspdf";
+import TrackingDashboard, { type TrackingData } from "@/components/match-eye/TrackingDashboard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ interface MatchAnalysis {
 }
 
 type Phase = "setup" | "uploading" | "processing" | "report";
+type TrackingPhase = "idle" | "uploading" | "processing" | "done" | "error";
 
 const EVENT_COLORS: Record<string, string> = {
   goal:         "text-green-400",
@@ -217,6 +219,12 @@ export default function MatchEyePage() {
   const [analysis, setAnalysis]   = useState<MatchAnalysis | null>(null);
   const [narrative, setNarrative] = useState("");
 
+  const [activeTab, setActiveTab]         = useState<"report" | "tracking">("report");
+  const [trackingPhase, setTrackingPhase] = useState<TrackingPhase>("idle");
+  const [trackingData, setTrackingData]   = useState<TrackingData | null>(null);
+  const [trackingError, setTrackingError] = useState("");
+  const [trackingProgress, setTrackingProgress] = useState(0);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const log = useCallback((msg: string) => {
@@ -332,6 +340,64 @@ export default function MatchEyePage() {
     setStatusLog([]);
     setError("");
     setUploadProgress(0);
+    setTrackingData(null);
+    setTrackingPhase("idle");
+    setTrackingError("");
+    setActiveTab("report");
+  };
+
+  const runTracking = async () => {
+    if (!videoFile) return;
+
+    const trackerUrl = process.env.NEXT_PUBLIC_TRACKER_URL;
+    if (!trackerUrl) {
+      setTrackingError("Player tracking service URL not configured. Add NEXT_PUBLIC_TRACKER_URL to Vercel env vars.");
+      setTrackingPhase("error");
+      return;
+    }
+
+    setTrackingError("");
+    setTrackingProgress(0);
+    setTrackingPhase("uploading");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", videoFile);
+
+      const result = await new Promise<TrackingData>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${trackerUrl}/track`);
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            setTrackingProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        });
+
+        xhr.onload = () => {
+          setTrackingPhase("processing");
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText) as TrackingData);
+          } else {
+            try {
+              const body = JSON.parse(xhr.responseText) as { detail?: string };
+              reject(new Error(body.detail ?? `Tracker error ${xhr.status}`));
+            } catch {
+              reject(new Error(`Tracker error ${xhr.status}`));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Cannot reach tracking service — check NEXT_PUBLIC_TRACKER_URL"));
+        xhr.send(formData);
+      });
+
+      setTrackingData(result);
+      setTrackingPhase("done");
+    } catch (err) {
+      setTrackingError(err instanceof Error ? err.message : "Tracking failed");
+      setTrackingPhase("error");
+    }
   };
 
   // ── Setup Phase ──────────────────────────────────────────────────────────────
@@ -669,8 +735,95 @@ export default function MatchEyePage() {
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-card/60 p-5 sm:grid-cols-5">
+          {/* Tab switcher */}
+          <div className="mb-6 flex gap-2">
+            <button
+              onClick={() => setActiveTab("report")}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                activeTab === "report"
+                  ? "bg-[#f0b429] text-[#1a3a1a]"
+                  : "border border-white/20 bg-white/5 text-white/60 hover:bg-white/10"
+              }`}
+            >
+              <BookOpen className="h-4 w-4" />
+              AI Match Report
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("tracking");
+                if (trackingPhase === "idle") runTracking();
+              }}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                activeTab === "tracking"
+                  ? "bg-[#4a1a8a] text-white"
+                  : "border border-white/20 bg-white/5 text-white/60 hover:bg-white/10"
+              }`}
+            >
+              <Activity className="h-4 w-4" />
+              Player Tracking
+              <span className="rounded-full bg-[#4a1a8a]/40 px-1.5 py-0.5 text-[10px] font-bold text-purple-300">
+                YOLOv8
+              </span>
+            </button>
+          </div>
+
+          {/* Tracking panel */}
+          {activeTab === "tracking" && (
+            <div className="mb-6">
+              {(trackingPhase === "uploading" || trackingPhase === "processing") && (
+                <div className="flex flex-col items-center gap-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 p-10 text-center">
+                  <Loader2 className="h-10 w-10 animate-spin text-purple-400" />
+                  <div>
+                    <p className="font-semibold text-white">
+                      {trackingPhase === "uploading"
+                        ? `Uploading video to tracker... ${trackingProgress}%`
+                        : "YOLOv8 is tracking every player..."}
+                    </p>
+                    <p className="mt-1 text-xs text-white/40">
+                      {trackingPhase === "uploading"
+                        ? "Sending video directly to the Python tracking service"
+                        : "Detecting players, assigning IDs, building heatmaps — this takes ~5 minutes for a full match"}
+                    </p>
+                  </div>
+                  {trackingPhase === "uploading" && (
+                    <div className="w-full max-w-xs">
+                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-purple-400 transition-all duration-300"
+                          style={{ width: `${trackingProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {trackingPhase === "error" && (
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center">
+                  <AlertCircle className="mx-auto mb-2 h-8 w-8 text-red-400" />
+                  <p className="font-semibold text-red-300">Tracking failed</p>
+                  <p className="mt-1 text-sm text-red-200/70">{trackingError}</p>
+                  <button
+                    onClick={runTracking}
+                    className="mt-4 rounded-xl bg-red-500/20 px-4 py-2 text-sm text-red-300 hover:bg-red-500/30"
+                  >
+                    Retry Tracking
+                  </button>
+                </div>
+              )}
+
+              {trackingPhase === "done" && trackingData && (
+                <TrackingDashboard
+                  data={trackingData}
+                  homeTeam={homeTeam}
+                  awayTeam={awayTeam}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Stats row + report columns — only shown on report tab */}
+          {activeTab === "report" && <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-card/60 p-5 sm:grid-cols-5">
             {[
               { label: "Formation",  home: analysis.formation_home,              away: analysis.formation_away },
               { label: "Possession", home: `${analysis.possession_home}%`,       away: `${analysis.possession_away}%` },
@@ -691,9 +844,9 @@ export default function MatchEyePage() {
                 </div>
               </div>
             ))}
-          </div>
+          </div>}
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {activeTab === "report" && <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
             {/* Left column */}
             <div className="space-y-5 lg:col-span-2">
@@ -819,7 +972,7 @@ export default function MatchEyePage() {
                 </div>
               )}
             </div>
-          </div>
+          </div>}
         </main>
       </div>
     );
