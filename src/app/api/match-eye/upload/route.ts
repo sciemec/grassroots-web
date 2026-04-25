@@ -1,6 +1,7 @@
-// Edge Runtime — no body size limit, supports streaming large video files
+// Edge Runtime — only initiates the Gemini resumable session.
+// The browser then PUTs the video bytes directly to Google's self-authenticating
+// upload URL, bypassing Vercel's 4 MB body limit entirely.
 export const runtime = "edge";
-export const maxDuration = 300;
 
 export async function POST(req: Request) {
   try {
@@ -9,10 +10,11 @@ export async function POST(req: Request) {
       return Response.json({ error: "GOOGLE_AI_API_KEY not configured" }, { status: 500 });
     }
 
+    // x-content-length and content-type come from the browser — no video body here
     const contentType = req.headers.get("content-type") || "video/mp4";
-    const contentLength = req.headers.get("content-length") || "0";
+    const contentLength = req.headers.get("x-content-length") || "0";
 
-    // ── Step 1: Initiate resumable upload session with Gemini File API ──────────
+    // Initiate resumable session — this is a tiny metadata-only request
     const initRes = await fetch(
       `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${googleKey}`,
       {
@@ -44,34 +46,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // ── Step 2: Upload video bytes to Gemini ─────────────────────────────────────
-    const videoBuffer = await req.arrayBuffer();
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Length": String(videoBuffer.byteLength),
-        "X-Goog-Upload-Offset": "0",
-        "X-Goog-Upload-Command": "upload, finalize",
-      },
-      body: videoBuffer,
-    });
-
-    if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      return Response.json({ error: `Video upload failed: ${errText}` }, { status: 502 });
-    }
-
-    const fileData = await uploadRes.json() as {
-      file: { uri: string; name: string; state: string; mimeType: string };
-    };
-
-    return Response.json({
-      fileUri: fileData.file.uri,
-      fileName: fileData.file.name,
-      mimeType: fileData.file.mimeType || contentType,
-      state: fileData.file.state,
-    });
+    // Return the self-authenticating upload URL to the browser.
+    // The browser PUTs the video bytes directly to this URL — no API key needed.
+    return Response.json({ uploadUrl, mimeType: contentType });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return Response.json({ error: message }, { status: 500 });
