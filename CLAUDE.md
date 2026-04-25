@@ -4830,11 +4830,11 @@ NEXT_PUBLIC_TRACKER_URL = https://ai.bhora-ai.onrender.com
 
 | Item | Status | Action Required |
 |---|---|---|
-| Deploy Python AI service | NOT YET on Render | Push `D:/bhora-ai/ai-service/` to a new GitHub repo → connect to Render as Docker service |
-| `NEXT_PUBLIC_TRACKER_URL` | NOT set in Vercel | Add after Python service is deployed |
+| Deploy Python AI service | DONE ✅ — live on Render | No action needed |
+| `NEXT_PUBLIC_TRACKER_URL` | DONE ✅ — set in Vercel | Player Tracking tab works end-to-end |
+| `GOOGLE_AI_API_KEY` | DONE ✅ — set in Vercel | Match Eye upload + analysis works |
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Video showcase clips broken without this |
-| `GOOGLE_AI_API_KEY` | Set in Vercel ✅ | Match Eye upload + analysis works |
 
 ### HOW TO DEPLOY THE PYTHON TRACKING SERVICE
 
@@ -4849,3 +4849,49 @@ NEXT_PUBLIC_TRACKER_URL = https://ai.bhora-ai.onrender.com
 
 NOTE: First request after cold start will be slow (~30s) — Render free tier sleeps.
 Standard plan keeps the service warm. Consider upgrading for production use.
+
+---
+
+## SESSION LOG — 25 April 2026 (continued)
+
+### Theme — Match Eye 413 Fix (direct client-to-Google upload)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 5. Match Eye — 413 Upload Error Fixed ✅
+
+**Commit:** `db79548`
+
+**Root cause:** Vercel blocks any request body larger than 4 MB before the Edge function code runs.
+The old upload route received the full video bytes from the browser and forwarded them to Google.
+This caused a 413 Payload Too Large on any video.
+
+**Fix — two-step upload (no video bytes through Vercel):**
+
+**`src/app/api/match-eye/upload/route.ts`** — now a tiny session-init only:
+- Receives only two headers from the browser: `content-type` + `x-content-length` (no body)
+- POSTs metadata to Gemini File API to start a resumable session
+- Returns `{ uploadUrl, mimeType }` to the browser
+- Video bytes never touch Vercel
+
+**`src/app/analyst/match-eye/page.tsx`** — upload flow changed to:
+1. `fetch POST /api/match-eye/upload` (headers only) → gets `{ uploadUrl }`
+2. XHR `PUT uploadUrl` (browser PUTs video directly to Google's self-authenticating URL)
+   - Upload progress bar still works via XHR `upload.progress` events
+   - Bypasses Vercel entirely — no 413 possible
+3. Parse Google's response → `{ file: { uri, name, mimeType } }`
+4. `fetch POST /api/match-eye/analyse` → as before
+
+**Why the Google URL is safe for direct browser upload:**
+The `X-Goog-Upload-URL` returned by the resumable session init is self-authenticating —
+it is a signed URL that does not require an API key for the PUT step.
+The browser can PUT directly without exposing any credentials.
+
+**Match Eye is now fully operational end-to-end:**
+- Upload: any size video (tested up to 2 GB) ✅
+- Analysis: Gemini 1.5 Pro watches native video ✅
+- Report: Claude writes tactical narrative ✅
+- Tracking: YOLOv8 player tracking via Python service ✅
+- Env vars: `GOOGLE_AI_API_KEY` + `NEXT_PUBLIC_TRACKER_URL` both set in Vercel ✅
