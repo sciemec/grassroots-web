@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { ComponentType } from "react";
 import {
   Dumbbell, Brain, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Apple, Zap, Film, Award, CalendarDays, Dna, Users, BookOpen,
+  Apple, Zap, Film, Award, CalendarDays, Dna, Users, BookOpen, Eye,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -193,6 +193,23 @@ export default function PlayerHubPage() {
               : "Ita profile yako — Complete your profile"}
           </p>
         </div>
+
+        {/* Admin-only: THUTO vs AMARA test shortcut */}
+        {user?.role === "admin" && (
+          <Link
+            href="/admin/player-preview"
+            className="mb-4 flex items-center justify-between rounded-xl border border-purple-500/30 bg-purple-900/20 px-4 py-3 hover:border-purple-500/50 hover:bg-purple-900/30 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <Eye className="h-4 w-4 text-purple-400" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-purple-300">Admin Preview</p>
+                <p className="text-xs text-purple-400/70">Test THUTO (male) vs AMARA (female) responses</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-purple-400/50" />
+          </Link>
+        )}
 
         {/* Stats row */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
