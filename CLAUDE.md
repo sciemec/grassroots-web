@@ -4709,3 +4709,143 @@ Built this session:
 | Passport backend fields | DONE ✅ — committed in a6ea484, auto-migrated on Render | No action needed |
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — Success Engine analysis + THUTO chat broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+
+
+---
+
+## SESSION LOG — 25 April 2026
+
+### Theme — Match Eye Rebuild (Gemini File API) + YOLOv8 Player Tracking Service
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Match Eye — Rebuilt with Gemini File API (Native Video Analysis) ✅
+
+**Commit:** `156550c`
+
+**What changed:**
+- Old build used `inline_data` (base64 JPEG screenshots) — same as frame extraction, not real video
+- New build uses Gemini File API — full video uploaded to Google's servers, Gemini watches natively
+
+**New route: `src/app/api/match-eye/upload/route.ts`** (Edge Runtime)
+- Initiates Gemini resumable upload session (`X-Goog-Upload-Protocol: resumable`)
+- Streams full video bytes as ArrayBuffer to Google's upload URL
+- Returns `{ fileUri, fileName, mimeType, state }`
+
+**Updated route: `src/app/api/match-eye/analyse/route.ts`** (Node.js)
+- Receives `fileUri` + `fileName` — NOT frames
+- `waitForFileActive()` polls every 5s until Gemini state = `ACTIVE` (max 3 min)
+- Calls `generateContent` with `file_data: { mime_type, file_uri }` — native video analysis
+- Claude writes tactical narrative using `claude-sonnet-4-6`
+
+**Updated page: `src/app/analyst/match-eye/page.tsx`**
+- Removed: frame extraction, depth selector, 45 JPEG screenshots
+- Added: real upload progress bar via XHR (fetch doesn't support upload progress events)
+- Phases: `uploading` (gold bar, %) → `processing` (purple spinner) → `report`
+- PDF header: "Full-match video analysis · Gemini 1.5 Pro + Claude"
+
+#### 2. YOLOv8 Player Tracking Microservice — BUILT ✅
+
+**Location:** `D:/bhora-ai/ai-service/` (separate repo — deploy to Render as Docker service)
+
+**Files:**
+- `D:/bhora-ai/ai-service/main.py` — FastAPI service, YOLOv8n + supervision ByteTracker
+- `D:/bhora-ai/ai-service/requirements.txt` — fastapi, uvicorn, ultralytics, supervision, opencv-python-headless, scikit-learn
+- `D:/bhora-ai/ai-service/Dockerfile` — Python 3.11 slim, OpenCV deps, pre-downloads YOLOv8n at build
+- `D:/bhora-ai/ai-service/render.yaml` — Render Docker web service, standard plan (2 CPU / 4 GB RAM)
+
+**How it works:**
+1. Client uploads video directly to `POST https://ai.bhora-ai.onrender.com/track`
+2. Service samples 1 frame/second (5,400 frames for 90-min match)
+3. YOLOv8n detects every person (class 0) in each frame
+4. supervision ByteTracker assigns persistent player IDs across all frames
+5. K-means (k=3) on jersey HSV colors classifies players → home / away / referee
+6. Pitch bounds detected via green grass HSV masking → coordinates normalised to 0-1
+7. Returns per-player: positions array, distance_m, avg_x/y, 13×20 heatmap grid
+
+**Response shape:**
+```json
+{
+  "players": [{"id": 1, "team": "home", "positions": [...], "distance_m": 8420, "avg_x": 0.52, "avg_y": 0.48, "heatmap": [[...]]}],
+  "stats": {"possession_home": 54, "possession_away": 46, "duration_seconds": 5400, "frames_processed": 5400},
+  "video": {"width": 1920, "height": 1080, "fps": 25, "total_frames": 135000}
+}
+```
+
+#### 3. TrackingDashboard Component — BUILT ✅
+
+**File:** `src/components/match-eye/TrackingDashboard.tsx`
+
+Components inside:
+- `PitchView` — SVG pitch with pitch markings + player dots at average position (home=gold, away=blue)
+- `HeatmapCanvas` — canvas-rendered 13×20 cell grid, colour scale transparent→cyan→yellow→red
+- `PossessionBar` — animated bar chart for home/away possession %
+- `DistanceLeaderboard` — top 10 players by distance, colour-coded bars
+- `HeatmapGrid` — grid of per-player heatmaps (up to 22 players, 4 columns)
+- `StatsSummary` — 6 stat cards: duration, frames, player counts, avg distances
+
+#### 4. Match Eye — Player Tracking Tab Added ✅
+
+**Commit:** `93c33c9`
+
+**Updated: `src/app/analyst/match-eye/page.tsx`**
+- Added tab switcher: "AI Match Report" (gold) | "Player Tracking" (purple, YOLOv8 badge)
+- Clicking "Player Tracking" auto-triggers `runTracking()` if idle
+- `runTracking()` uploads video via XHR FormData directly to `NEXT_PUBLIC_TRACKER_URL`
+- Upload progress bar shown during video upload
+- Processing spinner shown while YOLOv8 runs
+- On completion: renders `<TrackingDashboard>` with full data
+- Error state with Retry button
+- AI Report tab still shows stats row + full analysis/narrative/events columns
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (25 April 2026)
+
+No new Next.js routes — enhanced existing:
+```
+/analyst/match-eye   Now has "Player Tracking" tab with YOLOv8 + ByteTrack data
+```
+
+New external service:
+```
+POST https://ai.bhora-ai.onrender.com/track   Python FastAPI — YOLOv8 player tracking
+GET  https://ai.bhora-ai.onrender.com/health  Health check
+```
+
+---
+
+### ENVIRONMENT VARIABLES — NEW (25 April 2026)
+
+**Vercel (add this):**
+```
+NEXT_PUBLIC_TRACKER_URL = https://ai.bhora-ai.onrender.com
+```
+
+---
+
+### WHAT STILL NEEDS DOING (25 April 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Deploy Python AI service | NOT YET on Render | Push `D:/bhora-ai/ai-service/` to a new GitHub repo → connect to Render as Docker service |
+| `NEXT_PUBLIC_TRACKER_URL` | NOT set in Vercel | Add after Python service is deployed |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video showcase clips broken without this |
+| `GOOGLE_AI_API_KEY` | Set in Vercel ✅ | Match Eye upload + analysis works |
+
+### HOW TO DEPLOY THE PYTHON TRACKING SERVICE
+
+1. Create new GitHub repo: `github.com/sciemec/grassroots-ai-service`
+2. Push `D:/bhora-ai/ai-service/` contents to that repo
+3. In Render dashboard → New → Web Service → Docker
+4. Connect the new repo
+5. Render will build the Dockerfile (downloads YOLOv8n at build time — baked into image)
+6. Service URL will be: `https://grassroots-ai-tracker.onrender.com` (or similar)
+7. Add that URL as `NEXT_PUBLIC_TRACKER_URL` in Vercel
+8. Standard plan recommended — YOLOv8 needs 2+ GB RAM
+
+NOTE: First request after cold start will be slow (~30s) — Render free tier sleeps.
+Standard plan keeps the service warm. Consider upgrading for production use.
