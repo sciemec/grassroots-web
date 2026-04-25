@@ -3,11 +3,6 @@ import { NextRequest } from "next/server";
 export const maxDuration = 300;
 export const runtime = "nodejs";
 
-interface Frame {
-  base64: string;
-  timestamp: number;
-}
-
 interface MatchEvent {
   time: string;
   team: "home" | "away" | "neutral";
@@ -34,12 +29,6 @@ interface MatchAnalysis {
   key_coaching_points: string[];
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
 function extractJSON(text: string): MatchAnalysis | null {
   try {
     return JSON.parse(text) as MatchAnalysis;
@@ -56,18 +45,38 @@ function extractJSON(text: string): MatchAnalysis | null {
   }
 }
 
+// Poll Gemini until the uploaded file is ACTIVE (ready for generateContent)
+async function waitForFileActive(fileName: string, googleKey: string): Promise<void> {
+  for (let i = 0; i < 36; i++) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${googleKey}`
+    );
+    if (!res.ok) throw new Error(`File state check failed: ${res.status}`);
+
+    const data = await res.json() as { state: string };
+    if (data.state === "ACTIVE") return;
+    if (data.state === "FAILED") throw new Error("Gemini file processing failed");
+
+    await new Promise((r) => setTimeout(r, 5000)); // check every 5s → 3 min max
+  }
+  throw new Error("Video file did not become ready within 3 minutes");
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { frames, homeTeam, awayTeam, competition, sport } = await req.json() as {
-      frames: Frame[];
-      homeTeam: string;
-      awayTeam: string;
-      competition?: string;
-      sport?: string;
-    };
+    const { fileUri, fileName, mimeType, homeTeam, awayTeam, competition, sport } =
+      await req.json() as {
+        fileUri: string;
+        fileName: string;
+        mimeType: string;
+        homeTeam: string;
+        awayTeam: string;
+        competition?: string;
+        sport?: string;
+      };
 
-    if (!frames || frames.length === 0) {
-      return Response.json({ error: "No frames provided" }, { status: 400 });
+    if (!fileUri || !fileName) {
+      return Response.json({ error: "No file URI provided" }, { status: 400 });
     }
 
     const googleKey = process.env.GOOGLE_AI_API_KEY;
@@ -75,12 +84,14 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "GOOGLE_AI_API_KEY not configured" }, { status: 500 });
     }
 
-    // ── Build Gemini parts array ──────────────────────────────────────────────
-    const systemPrompt = `You are a professional football analyst with UEFA A-licence coaching experience.
-You will analyse a sequence of ${frames.length} match frames from ${homeTeam} vs ${awayTeam}${competition ? ` (${competition})` : ""}.
-Each frame is labelled with its exact match timestamp.
+    // Wait for Gemini to finish ingesting the video
+    await waitForFileActive(fileName, googleKey);
 
-Study the player positions, ball location, team shapes, and any visible events in each frame.
+    // ── Call Gemini 1.5 Pro with native video file_data ───────────────────────────
+    const systemPrompt = `You are a professional football analyst with UEFA A-licence coaching experience.
+You will watch the full match video: ${homeTeam} vs ${awayTeam}${competition ? ` (${competition})` : ""}${sport ? ` — Sport: ${sport}` : ""}.
+
+Watch the entire video. Observe player positions, ball movement, team shapes, events, and tactical patterns throughout the full match.
 
 Return ONLY a valid JSON object — no markdown, no explanation — with this exact structure:
 {
@@ -115,34 +126,24 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
   ]
 }
 
-For possession: estimate based on which team has the ball in each frame.
-For events: only include events you can see evidence of in the frames.
-For formations: identify from player positioning visible in frames.
-Be specific and professional. Base everything on what you observe in the frames.`;
+For possession: estimate based on which team controlled the ball across the full match.
+For events: include all significant events visible in the video with accurate timestamps.
+For formations: identify from player positioning throughout the full match.
+Be specific and professional. Base everything on what you observe in the video.`;
 
-    const geminiFlatParts: Array<{ text: string } | { inline_data: { mime_type: string; data: string } }> = [
-      { text: systemPrompt },
-    ];
-
-    for (let i = 0; i < frames.length; i++) {
-      geminiFlatParts.push({ text: `\n--- Frame ${i + 1} | Match time: ${formatTime(frames[i].timestamp)} ---` });
-      geminiFlatParts.push({
-        inline_data: { mime_type: "image/jpeg", data: frames[i].base64 },
-      });
-    }
-
-    geminiFlatParts.push({
-      text: "\nNow provide your complete JSON analysis of this match based on all the frames above.",
-    });
-
-    // ── Call Gemini 1.5 Pro ───────────────────────────────────────────────────
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: geminiFlatParts }],
+          contents: [{
+            parts: [
+              { text: systemPrompt },
+              { file_data: { mime_type: mimeType, file_uri: fileUri } },
+              { text: "Now provide your complete JSON analysis of this full match video." },
+            ],
+          }],
           generationConfig: {
             temperature: 0.2,
             maxOutputTokens: 4096,
@@ -153,7 +154,10 @@ Be specific and professional. Base everything on what you observe in the frames.
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      return Response.json({ error: `Gemini API error: ${geminiRes.status}`, detail: errText }, { status: 502 });
+      return Response.json(
+        { error: `Gemini API error: ${geminiRes.status}`, detail: errText },
+        { status: 502 }
+      );
     }
 
     const geminiData = await geminiRes.json() as {
@@ -164,13 +168,13 @@ Be specific and professional. Base everything on what you observe in the frames.
     const analysis = extractJSON(geminiText);
 
     if (!analysis) {
-      return Response.json({
-        error: "Gemini returned unreadable analysis",
-        raw: geminiText.slice(0, 500),
-      }, { status: 502 });
+      return Response.json(
+        { error: "Gemini returned unreadable analysis", raw: geminiText.slice(0, 500) },
+        { status: 502 }
+      );
     }
 
-    // ── Call Claude for tactical narrative ────────────────────────────────────
+    // ── Call Claude for tactical narrative ────────────────────────────────────────
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     let narrative = "";
 
@@ -185,14 +189,13 @@ Be specific and professional. Base everything on what you observe in the frames.
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
           max_tokens: 1500,
-          messages: [
-            {
-              role: "user",
-              content: `You are a professional football analyst writing a post-match report for a coach.
+          messages: [{
+            role: "user",
+            content: `You are a professional football analyst writing a post-match report for a coach.
 
 Match: ${homeTeam} vs ${awayTeam}${competition ? `\nCompetition: ${competition}` : ""}${sport ? `\nSport: ${sport}` : ""}
 
-AI Vision Analysis (from Gemini watching ${frames.length} match frames):
+AI Vision Analysis (Gemini 1.5 Pro watched the full match video natively):
 ${JSON.stringify(analysis, null, 2)}
 
 Write a professional 4-paragraph tactical match report:
@@ -201,9 +204,8 @@ Write a professional 4-paragraph tactical match report:
 3. Individual highlights and areas of concern
 4. Training recommendations for the next session based on what was seen
 
-Write as a UEFA A-licence coach. Be specific, direct, and actionable. Use the data above — reference formations, patterns, and events by name. No generic advice.`,
-            },
-          ],
+Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference formations, patterns, and events by name. No generic advice.`,
+          }],
         }),
       });
 
@@ -215,7 +217,7 @@ Write as a UEFA A-licence coach. Be specific, direct, and actionable. Use the da
       }
     }
 
-    return Response.json({ analysis, narrative, framesAnalysed: frames.length });
+    return Response.json({ analysis, narrative });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return Response.json({ error: message }, { status: 500 });

@@ -12,8 +12,6 @@ import jsPDF from "jspdf";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Frame { base64: string; timestamp: number; }
-
 interface MatchEvent {
   time: string;
   team: "home" | "away" | "neutral";
@@ -40,16 +38,7 @@ interface MatchAnalysis {
   key_coaching_points: string[];
 }
 
-type Phase = "setup" | "extracting" | "analysing" | "report";
-type Depth = "quick" | "standard" | "deep";
-
-interface DepthOption { label: string; interval: number; desc: string; }
-
-const DEPTH_CONFIG: Record<Depth, DepthOption> = {
-  quick:    { label: "Quick",    interval: 600, desc: "1 frame / 10 min — fast overview" },
-  standard: { label: "Standard", interval: 300, desc: "1 frame / 5 min — balanced analysis" },
-  deep:     { label: "Deep",     interval: 120, desc: "1 frame / 2 min — full tactical detail" },
-};
+type Phase = "setup" | "uploading" | "processing" | "report";
 
 const EVENT_COLORS: Record<string, string> = {
   goal:         "text-green-400",
@@ -62,62 +51,9 @@ const EVENT_COLORS: Record<string, string> = {
   substitution: "text-cyan-400",
 };
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
 function eventColor(type: string): string {
   const key = Object.keys(EVENT_COLORS).find((k) => type.toLowerCase().includes(k));
   return key ? EVENT_COLORS[key] : "text-white/80";
-}
-
-// ── Frame extraction using HTML5 Canvas ───────────────────────────────────────
-
-async function extractFrames(
-  videoFile: File,
-  intervalSeconds: number,
-  onProgress: (done: number, total: number) => void
-): Promise<Frame[]> {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement("video");
-    video.preload = "auto";
-    video.muted = true;
-    video.src = URL.createObjectURL(videoFile);
-
-    video.onloadedmetadata = async () => {
-      const duration = video.duration;
-      const timestamps: number[] = [];
-      for (let t = 0; t < duration; t += intervalSeconds) {
-        timestamps.push(Math.min(t, duration - 0.5));
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = 640;
-      canvas.height = 360;
-      const ctx = canvas.getContext("2d")!;
-      const frames: Frame[] = [];
-
-      for (let i = 0; i < timestamps.length; i++) {
-        await new Promise<void>((seekResolve, seekReject) => {
-          const timeout = setTimeout(() => seekReject(new Error("Seek timeout")), 5000);
-          video.onseeked = () => { clearTimeout(timeout); seekResolve(); };
-          video.currentTime = timestamps[i];
-        });
-
-        ctx.drawImage(video, 0, 0, 640, 360);
-        const base64 = canvas.toDataURL("image/jpeg", 0.75).split(",")[1];
-        frames.push({ base64, timestamp: timestamps[i] });
-        onProgress(i + 1, timestamps.length);
-      }
-
-      URL.revokeObjectURL(video.src);
-      resolve(frames);
-    };
-
-    video.onerror = () => reject(new Error("Could not load video file"));
-  });
 }
 
 // ── PDF Export ────────────────────────────────────────────────────────────────
@@ -127,14 +63,12 @@ function exportPDF(
   awayTeam: string,
   competition: string,
   analysis: MatchAnalysis,
-  narrative: string,
-  framesCount: number
+  narrative: string
 ) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210;
   let y = 0;
 
-  // Header bar
   doc.setFillColor(26, 92, 42);
   doc.rect(0, 0, W, 28, "F");
   doc.setTextColor(240, 180, 41);
@@ -145,20 +79,19 @@ function exportPDF(
   doc.setFontSize(11);
   doc.text(`${homeTeam} vs ${awayTeam}${competition ? `  |  ${competition}` : ""}`, W / 2, 18, { align: "center" });
   doc.setFontSize(8);
-  doc.text(`Analysed from ${framesCount} video frames  |  Powered by Gemini + Claude`, W / 2, 24, { align: "center" });
+  doc.text("Full-match video analysis  |  Gemini 1.5 Pro + Claude", W / 2, 24, { align: "center" });
   y = 36;
 
-  // Stats row
   doc.setFillColor(240, 180, 41);
   doc.rect(10, y, W - 20, 0.5, "F");
   y += 6;
 
   const stats = [
-    [`Formation`, analysis.formation_home, analysis.formation_away],
-    [`Possession`, `${analysis.possession_home}%`, `${analysis.possession_away}%`],
-    [`Shots`, String(analysis.shots_home), String(analysis.shots_away)],
-    [`On Target`, String(analysis.shots_on_target_home), String(analysis.shots_on_target_away)],
-    [`Fouls`, String(analysis.fouls_detected), "—"],
+    ["Formation",  analysis.formation_home,                  analysis.formation_away],
+    ["Possession", `${analysis.possession_home}%`,           `${analysis.possession_away}%`],
+    ["Shots",      String(analysis.shots_home),              String(analysis.shots_away)],
+    ["On Target",  String(analysis.shots_on_target_home),    String(analysis.shots_on_target_away)],
+    ["Fouls",      String(analysis.fouls_detected),          "—"],
   ];
 
   doc.setFontSize(8);
@@ -202,7 +135,6 @@ function exportPDF(
     if (y > 270) { doc.addPage(); y = 20; }
   };
 
-  // Tactical Narrative
   if (narrative) {
     section("TACTICAL NARRATIVE", [26, 92, 42]);
     const lines = doc.splitTextToSize(narrative, W - 28);
@@ -211,28 +143,24 @@ function exportPDF(
     if (y > 270) { doc.addPage(); y = 20; }
   }
 
-  // Tactical Patterns
   if (analysis.tactical_patterns?.length) {
     section("TACTICAL PATTERNS", [26, 92, 42]);
     for (const p of analysis.tactical_patterns) bullet(p);
     y += 2;
   }
 
-  // Defensive Issues
   if (analysis.defensive_issues?.length) {
     section("DEFENSIVE ISSUES", [180, 30, 30]);
     for (const d of analysis.defensive_issues) bullet(d);
     y += 2;
   }
 
-  // Attacking Strengths
   if (analysis.attacking_strengths?.length) {
     section("ATTACKING STRENGTHS", [26, 130, 60]);
     for (const a of analysis.attacking_strengths) bullet(a);
     y += 2;
   }
 
-  // Key Events
   if (analysis.key_events?.length) {
     section("KEY EVENTS TIMELINE", [70, 50, 150]);
     for (const e of analysis.key_events) {
@@ -241,14 +169,12 @@ function exportPDF(
     y += 2;
   }
 
-  // Coaching Points
   if (analysis.key_coaching_points?.length) {
     section("KEY COACHING POINTS", [26, 92, 42]);
     for (const p of analysis.key_coaching_points) bullet(p);
     y += 2;
   }
 
-  // Man of Match
   if (analysis.man_of_match_candidate) {
     section("MAN OF THE MATCH CANDIDATE", [180, 130, 10]);
     const lines = doc.splitTextToSize(analysis.man_of_match_candidate, W - 28);
@@ -256,7 +182,6 @@ function exportPDF(
     y += lines.length * 5 + 6;
   }
 
-  // Footer
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -277,22 +202,20 @@ function exportPDF(
 export default function MatchEyePage() {
   const { user } = useAuthStore();
 
-  const [phase, setPhase]           = useState<Phase>("setup");
-  const [videoFile, setVideoFile]   = useState<File | null>(null);
-  const [dragOver, setDragOver]     = useState(false);
-  const [homeTeam, setHomeTeam]     = useState("");
-  const [awayTeam, setAwayTeam]     = useState("");
+  const [phase, setPhase]             = useState<Phase>("setup");
+  const [videoFile, setVideoFile]     = useState<File | null>(null);
+  const [dragOver, setDragOver]       = useState(false);
+  const [homeTeam, setHomeTeam]       = useState("");
+  const [awayTeam, setAwayTeam]       = useState("");
   const [competition, setCompetition] = useState("");
-  const [sport, setSport]           = useState("football");
-  const [depth, setDepth]           = useState<Depth>("standard");
+  const [sport, setSport]             = useState("football");
 
-  const [extractProgress, setExtractProgress] = useState({ done: 0, total: 0 });
-  const [statusLog, setStatusLog]   = useState<string[]>([]);
-  const [error, setError]           = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [statusLog, setStatusLog]           = useState<string[]>([]);
+  const [error, setError]                   = useState("");
 
-  const [analysis, setAnalysis]     = useState<MatchAnalysis | null>(null);
-  const [narrative, setNarrative]   = useState("");
-  const [framesCount, setFramesCount] = useState(0);
+  const [analysis, setAnalysis]   = useState<MatchAnalysis | null>(null);
+  const [narrative, setNarrative] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -302,7 +225,7 @@ export default function MatchEyePage() {
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith("video/")) {
-      setError("Please upload a video file (mp4, mov, avi, mkv)");
+      setError("Please upload a video file (mp4, mov, avi, mkv, webm)");
       return;
     }
     setVideoFile(file);
@@ -324,48 +247,74 @@ export default function MatchEyePage() {
 
     setError("");
     setStatusLog([]);
-    setPhase("extracting");
+    setUploadProgress(0);
+    setPhase("uploading");
 
     try {
-      // Step 1: Extract frames
-      log(`Extracting frames from video (${DEPTH_CONFIG[depth].desc})...`);
-      const interval = DEPTH_CONFIG[depth].interval;
-      const frames = await extractFrames(videoFile, interval, (done, total) => {
-        setExtractProgress({ done, total });
+      // ── Step 1: Upload video to Gemini File API via our Edge proxy ──────────────
+      log(`Uploading ${videoFile.name} (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB) to Gemini...`);
+
+      const uploadResult = await new Promise<{
+        fileUri: string;
+        fileName: string;
+        mimeType: string;
+      }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/match-eye/upload");
+        xhr.setRequestHeader("Content-Type", videoFile.type || "video/mp4");
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        });
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText) as { fileUri: string; fileName: string; mimeType: string });
+          } else {
+            try {
+              const body = JSON.parse(xhr.responseText) as { error?: string };
+              reject(new Error(body.error ?? `Upload failed: ${xhr.status}`));
+            } catch {
+              reject(new Error(`Upload failed: ${xhr.status}`));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(videoFile);
       });
 
-      log(`Extracted ${frames.length} frames. Sending to Gemini Vision AI...`);
-      setPhase("analysing");
+      log("Upload complete. Gemini is processing the video...");
+      setPhase("processing");
 
-      // Step 2: Send to API
+      // ── Step 2: Analyse with Gemini + Claude ──────────────────────────────────
+      log("Gemini 1.5 Pro is watching the full match...");
       const res = await fetch("/api/match-eye/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          frames,
-          homeTeam: homeTeam.trim(),
-          awayTeam: awayTeam.trim(),
+          fileUri:     uploadResult.fileUri,
+          fileName:    uploadResult.fileName,
+          mimeType:    uploadResult.mimeType,
+          homeTeam:    homeTeam.trim(),
+          awayTeam:    awayTeam.trim(),
           competition: competition.trim(),
           sport,
         }),
       });
-
-      log("Gemini analysis complete. Generating tactical narrative with Claude...");
 
       if (!res.ok) {
         const err = await res.json() as { error?: string };
         throw new Error(err.error ?? `Server error ${res.status}`);
       }
 
-      const data = await res.json() as {
-        analysis: MatchAnalysis;
-        narrative: string;
-        framesAnalysed: number;
-      };
+      const data = await res.json() as { analysis: MatchAnalysis; narrative: string };
 
+      log("Analysis complete. Claude is writing the tactical report...");
       setAnalysis(data.analysis);
       setNarrative(data.narrative);
-      setFramesCount(data.framesAnalysed);
       log("Report ready.");
       setPhase("report");
     } catch (err) {
@@ -382,7 +331,7 @@ export default function MatchEyePage() {
     setNarrative("");
     setStatusLog([]);
     setError("");
-    setExtractProgress({ done: 0, total: 0 });
+    setUploadProgress(0);
   };
 
   // ── Setup Phase ──────────────────────────────────────────────────────────────
@@ -395,10 +344,11 @@ export default function MatchEyePage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">Match Eye</p>
           <h1 className="mt-1 text-2xl font-bold text-white">AI Vision Match Analysis</h1>
           <p className="mt-0.5 text-sm text-white/60">
-            Upload a match video. Gemini watches it. Claude writes the report.
+            Upload your full match video. Gemini 1.5 Pro watches every second. Claude writes the report.
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+
             {/* Left — Match setup */}
             <div className="space-y-4">
               <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
@@ -450,46 +400,38 @@ export default function MatchEyePage() {
                 </div>
               </div>
 
-              {/* Analysis depth */}
-              <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
-                <p className="mb-3 text-xs font-bold uppercase tracking-widest text-accent">Analysis Depth</p>
-                <div className="space-y-2">
-                  {(Object.entries(DEPTH_CONFIG) as [Depth, DepthOption][]).map(([key, cfg]) => (
-                    <button
-                      key={key}
-                      onClick={() => setDepth(key)}
-                      className={`flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all ${
-                        depth === key
-                          ? "border-accent bg-accent/10 text-accent"
-                          : "border-white/10 bg-white/5 text-white/70 hover:border-white/20"
-                      }`}
-                    >
-                      <span className="text-sm font-semibold">{cfg.label}</span>
-                      <span className="text-xs opacity-70">{cfg.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* What Gemini detects */}
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#4a1a8a]/30 to-transparent p-5">
-                <p className="mb-3 text-xs font-bold uppercase tracking-widest text-purple-300">What Gemini Detects</p>
+                <p className="mb-3 text-xs font-bold uppercase tracking-widest text-purple-300">
+                  What Gemini Watches (Full Match)
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    "Formations & shapes",
-                    "Shots & goals",
+                    "Every second of footage",
+                    "Formations & team shape",
+                    "Shots, goals & key events",
                     "Possession patterns",
                     "Defensive issues",
                     "Pressing triggers",
                     "Individual highlights",
                     "Set piece patterns",
-                    "Tactical trends",
                   ].map((item) => (
                     <div key={item} className="flex items-center gap-1.5 text-xs text-white/70">
                       <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-green-400" />
                       {item}
                     </div>
                   ))}
+                </div>
+
+                {/* Vs frame extraction callout */}
+                <div className="mt-4 rounded-xl border border-purple-500/20 bg-purple-500/10 p-3">
+                  <p className="text-xs font-semibold text-purple-300">
+                    Native Video Analysis — Not Frame Extraction
+                  </p>
+                  <p className="mt-1 text-xs text-white/50">
+                    Gemini receives your actual video file and watches it natively — the same way a professional
+                    analyst watches a match. No screenshots. No missed minutes.
+                  </p>
                 </div>
               </div>
             </div>
@@ -525,28 +467,28 @@ export default function MatchEyePage() {
                       {(videoFile.size / (1024 * 1024)).toFixed(1)} MB — click to change
                     </p>
                     <p className="mt-3 text-xs text-white/40">
-                      Estimated frames: ~{Math.ceil(videoFile.size / (1024 * 1024 * 0.5) / DEPTH_CONFIG[depth].interval * 60)} frames
+                      Full video will be uploaded to Gemini for native analysis
                     </p>
                   </>
                 ) : (
                   <>
                     <Upload className="mb-3 h-10 w-10 text-white/40" />
-                    <p className="text-sm font-semibold text-white/70">Drop match video here</p>
+                    <p className="text-sm font-semibold text-white/70">Drop full match video here</p>
                     <p className="mt-1 text-xs text-white/40">or click to browse</p>
-                    <p className="mt-3 text-xs text-white/30">mp4 · mov · avi · mkv · webm</p>
+                    <p className="mt-3 text-xs text-white/30">mp4 · mov · avi · mkv · webm · up to 2 GB</p>
                   </>
                 )}
               </div>
 
-              {/* Processing info */}
+              {/* How it works */}
               <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
                 <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">How It Works</p>
                 {[
-                  { icon: Upload,    label: "Upload",   desc: "Your video stays in your browser" },
-                  { icon: Eye,       label: "Extract",  desc: "Frames captured at your chosen interval" },
-                  { icon: Zap,       label: "Gemini",   desc: "Google AI watches every frame, detects events" },
-                  { icon: BookOpen,  label: "Claude",   desc: "Writes a professional tactical report" },
-                  { icon: Download,  label: "Export",   desc: "Download as PDF — ready for team meeting" },
+                  { icon: Upload,   label: "Upload",    desc: "Full video sent to Gemini File API" },
+                  { icon: Eye,      label: "Watch",     desc: "Gemini 1.5 Pro watches every second" },
+                  { icon: Zap,      label: "Analyse",   desc: "Detects formations, events, patterns" },
+                  { icon: BookOpen, label: "Report",    desc: "Claude writes the tactical narrative" },
+                  { icon: Download, label: "Export",    desc: "Download PDF — ready for team meeting" },
                 ].map(({ icon: Icon, label, desc }) => (
                   <div key={label} className="flex items-start gap-3 py-1.5">
                     <Icon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
@@ -571,7 +513,7 @@ export default function MatchEyePage() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-3 text-sm font-bold text-[#1a3a1a] transition-all hover:bg-[#f5c542] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Play className="h-4 w-4" />
-                Analyse Match with AI
+                Analyse Full Match with Gemini
               </button>
             </div>
           </div>
@@ -580,44 +522,41 @@ export default function MatchEyePage() {
     );
   }
 
-  // ── Processing Phase ──────────────────────────────────────────────────────────
+  // ── Uploading Phase ───────────────────────────────────────────────────────────
 
-  if (phase === "extracting" || phase === "analysing") {
+  if (phase === "uploading") {
     return (
       <div className="flex h-screen bg-background">
         <Sidebar />
         <main className="flex flex-1 flex-col items-center justify-center p-6">
           <div className="w-full max-w-md space-y-6 text-center">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#f0b429]/10">
-              <Loader2 className="h-10 w-10 animate-spin text-[#f0b429]" />
+              <Upload className="h-10 w-10 text-[#f0b429]" />
             </div>
 
             <div>
-              <p className="text-lg font-bold text-white">
-                {phase === "extracting" ? "Extracting Match Frames" : "Gemini is Watching..."}
-              </p>
+              <p className="text-lg font-bold text-white">Uploading to Gemini</p>
               <p className="mt-1 text-sm text-white/50">
-                {phase === "extracting"
-                  ? `Capturing frame ${extractProgress.done} of ${extractProgress.total}`
-                  : "Google AI is analysing every frame for tactical patterns"}
+                Sending your match video to Google&apos;s servers for native AI analysis
               </p>
             </div>
 
-            {phase === "extracting" && extractProgress.total > 0 && (
-              <div className="space-y-1">
-                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-[#f0b429] transition-all"
-                    style={{ width: `${(extractProgress.done / extractProgress.total) * 100}%` }}
-                  />
-                </div>
-                <p className="text-xs text-white/40">
-                  {Math.round((extractProgress.done / extractProgress.total) * 100)}% complete
-                </p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-white/40">
+                <span>{videoFile ? `${(videoFile.size / (1024 * 1024)).toFixed(1)} MB` : ""}</span>
+                <span>{uploadProgress}%</span>
               </div>
-            )}
+              <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-[#f0b429] transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="text-xs text-white/30">
+                Upload speed depends on your internet connection
+              </p>
+            </div>
 
-            {/* Status log */}
             <div className="rounded-xl border border-white/10 bg-black/30 p-4 text-left">
               {statusLog.map((msg, i) => (
                 <div key={i} className="flex items-start gap-2 py-0.5">
@@ -625,16 +564,69 @@ export default function MatchEyePage() {
                   <p className="text-xs text-white/70">{msg}</p>
                 </div>
               ))}
-              {phase === "analysing" && (
-                <div className="flex items-center gap-2 py-0.5">
-                  <Loader2 className="h-3 w-3 animate-spin text-accent" />
-                  <p className="text-xs text-white/50">Processing with Gemini 1.5 Pro + Claude...</p>
+              <div className="flex items-center gap-2 py-0.5">
+                <Loader2 className="h-3 w-3 animate-spin text-[#f0b429]" />
+                <p className="text-xs text-white/50">Uploading {uploadProgress}%...</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-white/30">Do not close this tab during upload.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ── Processing Phase ──────────────────────────────────────────────────────────
+
+  if (phase === "processing") {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar />
+        <main className="flex flex-1 flex-col items-center justify-center p-6">
+          <div className="w-full max-w-md space-y-6 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-purple-500/10">
+              <Loader2 className="h-10 w-10 animate-spin text-purple-400" />
+            </div>
+
+            <div>
+              <p className="text-lg font-bold text-white">Gemini Is Watching Your Match</p>
+              <p className="mt-1 text-sm text-white/50">
+                Gemini 1.5 Pro is analysing every second of the full video
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 p-4 text-left">
+              <p className="mb-2 text-xs font-semibold text-purple-300">What&apos;s happening now:</p>
+              {[
+                "Video uploaded — Gemini is ingesting the file",
+                "Detecting player positions and formations",
+                "Identifying shots, goals, fouls, and key events",
+                "Analysing tactical patterns across the full 90 minutes",
+                "Claude writing the professional tactical report",
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-2 py-0.5">
+                  <ChevronRight className="mt-0.5 h-3 w-3 flex-shrink-0 text-purple-400" />
+                  <p className="text-xs text-white/60">{step}</p>
                 </div>
-              )}
+              ))}
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4 text-left">
+              {statusLog.map((msg, i) => (
+                <div key={i} className="flex items-start gap-2 py-0.5">
+                  <ChevronRight className="mt-0.5 h-3 w-3 flex-shrink-0 text-accent" />
+                  <p className="text-xs text-white/70">{msg}</p>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 py-0.5">
+                <Loader2 className="h-3 w-3 animate-spin text-purple-400" />
+                <p className="text-xs text-white/50">Processing with Gemini 1.5 Pro + Claude...</p>
+              </div>
             </div>
 
             <p className="text-xs text-white/30">
-              This takes 30–90 seconds depending on analysis depth. Do not close this tab.
+              This takes 1–3 minutes depending on video length. Do not close this tab.
             </p>
           </div>
         </main>
@@ -650,7 +642,6 @@ export default function MatchEyePage() {
         <Sidebar />
         <main className="flex-1 overflow-auto p-6">
 
-          {/* Report header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-accent">Match Eye Report</p>
@@ -658,7 +649,7 @@ export default function MatchEyePage() {
                 {homeTeam} vs {awayTeam}
               </h1>
               <p className="mt-0.5 text-sm text-white/50">
-                {competition && `${competition} · `}Analysed from {framesCount} frames · Gemini 1.5 Pro + Claude
+                {competition && `${competition} · `}Full-match video analysis · Gemini 1.5 Pro + Claude
               </p>
             </div>
             <div className="flex gap-2">
@@ -669,7 +660,7 @@ export default function MatchEyePage() {
                 New Match
               </button>
               <button
-                onClick={() => exportPDF(homeTeam, awayTeam, competition, analysis, narrative, framesCount)}
+                onClick={() => exportPDF(homeTeam, awayTeam, competition, analysis, narrative)}
                 className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-sm font-bold text-[#1a3a1a] hover:bg-[#f5c542]"
               >
                 <Download className="h-4 w-4" />
@@ -681,11 +672,11 @@ export default function MatchEyePage() {
           {/* Stats row */}
           <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-card/60 p-5 sm:grid-cols-5">
             {[
-              { label: "Formation", home: analysis.formation_home, away: analysis.formation_away },
-              { label: "Possession", home: `${analysis.possession_home}%`, away: `${analysis.possession_away}%` },
-              { label: "Shots", home: analysis.shots_home, away: analysis.shots_away },
-              { label: "On Target", home: analysis.shots_on_target_home, away: analysis.shots_on_target_away },
-              { label: "Fouls", home: analysis.fouls_detected, away: "—" },
+              { label: "Formation",  home: analysis.formation_home,              away: analysis.formation_away },
+              { label: "Possession", home: `${analysis.possession_home}%`,       away: `${analysis.possession_away}%` },
+              { label: "Shots",      home: analysis.shots_home,                  away: analysis.shots_away },
+              { label: "On Target",  home: analysis.shots_on_target_home,        away: analysis.shots_on_target_away },
+              { label: "Fouls",      home: analysis.fouls_detected,              away: "—" },
             ].map(({ label, home, away }) => (
               <div key={label} className="text-center">
                 <p className="text-xs text-white/40">{label}</p>
@@ -704,10 +695,9 @@ export default function MatchEyePage() {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-            {/* Left column — narrative + patterns */}
+            {/* Left column */}
             <div className="space-y-5 lg:col-span-2">
 
-              {/* Tactical Narrative */}
               {narrative && (
                 <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
                   <div className="mb-3 flex items-center gap-2">
@@ -721,12 +711,14 @@ export default function MatchEyePage() {
                 </div>
               )}
 
-              {/* Tactical Patterns */}
               {analysis.tactical_patterns?.length > 0 && (
                 <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
                   <div className="mb-3 flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-accent" />
                     <p className="text-xs font-bold uppercase tracking-widest text-accent">Tactical Patterns</p>
+                    <span className="ml-auto rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-semibold text-green-300">
+                      Gemini
+                    </span>
                   </div>
                   <div className="space-y-2">
                     {analysis.tactical_patterns.map((p, i) => (
@@ -739,7 +731,6 @@ export default function MatchEyePage() {
                 </div>
               )}
 
-              {/* Events Timeline */}
               {analysis.key_events?.length > 0 && (
                 <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
                   <div className="mb-3 flex items-center gap-2">
@@ -749,7 +740,7 @@ export default function MatchEyePage() {
                   <div className="space-y-2">
                     {analysis.key_events.map((e, i) => (
                       <div key={i} className="flex items-start gap-3 border-l-2 border-white/10 pl-3">
-                        <span className="mt-0.5 w-10 flex-shrink-0 text-xs font-mono text-accent">{e.time}</span>
+                        <span className="mt-0.5 w-10 flex-shrink-0 font-mono text-xs text-accent">{e.time}</span>
                         <div>
                           <span className={`text-xs font-bold uppercase ${eventColor(e.type)}`}>{e.type}</span>
                           <span className="ml-2 text-xs text-white/40">
@@ -764,10 +755,9 @@ export default function MatchEyePage() {
               )}
             </div>
 
-            {/* Right column — intel cards */}
+            {/* Right column */}
             <div className="space-y-4">
 
-              {/* Defensive Issues */}
               {analysis.defensive_issues?.length > 0 && (
                 <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
@@ -783,7 +773,6 @@ export default function MatchEyePage() {
                 </div>
               )}
 
-              {/* Attacking Strengths */}
               {analysis.attacking_strengths?.length > 0 && (
                 <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
@@ -799,7 +788,6 @@ export default function MatchEyePage() {
                 </div>
               )}
 
-              {/* Key Coaching Points */}
               {analysis.key_coaching_points?.length > 0 && (
                 <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
                   <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Coaching Points</p>
@@ -812,7 +800,6 @@ export default function MatchEyePage() {
                 </div>
               )}
 
-              {/* Man of Match */}
               {analysis.man_of_match_candidate && (
                 <div className="rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-4">
                   <div className="mb-2 flex items-center gap-2">
@@ -823,7 +810,6 @@ export default function MatchEyePage() {
                 </div>
               )}
 
-              {/* Halftime Recommendation */}
               {analysis.halftime_recommendation && (
                 <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
                   <p className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-400">

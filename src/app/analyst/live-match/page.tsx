@@ -28,6 +28,53 @@ const XG_ZONES: XgZone[] = [
 
 const ZONE_MAP = Object.fromEntries(XG_ZONES.map((z) => [z.id, z]));
 
+// ─── Pitch loss zones (3×3 — full pitch thirds) ───────────────────────────────
+const LOSS_ZONES = [
+  { id: "def_l", label: "Def Left",   row: 1, col: 1 },
+  { id: "def_c", label: "Def Centre", row: 1, col: 2 },
+  { id: "def_r", label: "Def Right",  row: 1, col: 3 },
+  { id: "mid_l", label: "Mid Left",   row: 2, col: 1 },
+  { id: "mid_c", label: "Mid Centre", row: 2, col: 2 },
+  { id: "mid_r", label: "Mid Right",  row: 2, col: 3 },
+  { id: "att_l", label: "Att Left",   row: 3, col: 1 },
+  { id: "att_c", label: "Att Centre", row: 3, col: 2 },
+  { id: "att_r", label: "Att Right",  row: 3, col: 3 },
+];
+
+function lossZoneColor(id: string, selected: boolean): string {
+  const base = id.startsWith("def_")
+    ? selected ? "bg-red-600 text-white border-red-500" : "border-red-500/40 text-red-400 hover:bg-red-600/20"
+    : id.startsWith("mid_")
+    ? selected ? "bg-amber-500 text-white border-amber-400" : "border-amber-500/40 text-amber-400 hover:bg-amber-500/20"
+    : selected ? "bg-teal-600 text-white border-teal-500" : "border-teal-500/40 text-teal-400 hover:bg-teal-600/20";
+  return base;
+}
+
+function LossZonePicker({ selected, onSelect }: { selected: string | null; onSelect: (id: string) => void }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-[9px] font-semibold uppercase tracking-widest text-zinc-600 px-1">
+        <span>← Defensive End</span><span>Attacking End →</span>
+      </div>
+      {[1, 2, 3].map((row) => (
+        <div key={row} className="grid grid-cols-3 gap-1">
+          {LOSS_ZONES.filter((z) => z.row === row).map((z) => (
+            <button key={z.id} onClick={() => onSelect(z.id)}
+              className={`rounded-lg border py-2 text-[10px] font-bold transition-all ${lossZoneColor(z.id, selected === z.id)}`}>
+              {z.label}
+            </button>
+          ))}
+        </div>
+      ))}
+      <div className="flex justify-between text-[9px] text-zinc-700 px-1">
+        <span className="text-red-500/60">⚠ Danger</span>
+        <span>Moderate</span>
+        <span className="text-teal-500/60">✓ Safe</span>
+      </div>
+    </div>
+  );
+}
+
 function xgColor(xg: number): string {
   if (xg >= 0.5)  return "bg-red-600 hover:bg-red-500";
   if (xg >= 0.3)  return "bg-orange-500 hover:bg-orange-400";
@@ -39,8 +86,8 @@ function xgColor(xg: number): string {
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MatchSetup { homeTeam: string; awayTeam: string; sport: string; }
 
-type EventType = "shot" | "pass" | "press" | "set_piece" | "substitution" | "header" | "free_kick_direct";
-type ActiveTab  = "shot" | "pass" | "press" | "set_piece" | "sub" | "aerial" | "fk";
+type EventType = "shot" | "pass" | "press" | "set_piece" | "substitution" | "header" | "free_kick_direct" | "lost_ball" | "save" | "goal_kick" | "offside";
+type ActiveTab  = "shot" | "pass" | "press" | "set_piece" | "sub" | "aerial" | "fk" | "gk";
 
 interface MatchEvent {
   id: string;
@@ -61,6 +108,8 @@ interface MatchEvent {
   reason?: "tactical" | "injury" | "fatigue";
   // header
   headerWon?: boolean;
+  // lost ball / position
+  lostZone?: string;
 }
 
 interface PossessionBlock { team: "home" | "away"; startMinute: number; }
@@ -201,38 +250,58 @@ function EventLoggerPanel({
   activeTab, setActiveTab, activeTeam, setActiveTeam,
   markGoal, setMarkGoal, lastZone, onShot,
   setPieceType, location, reason,
-  onPassLog, onPressLog, onSetPieceLog, onSubLog, onAerialLog, onFkShot,
+  onPassLog, onLostBallLog, onPressLog, onSetPieceLog, onSubLog, onAerialLog, onFkShot,
+  onSaveLog, onGoalKickLog, onOffsideLog,
   onSetPieceTypeChange, onLocationChange, onOutcomeChange, onReasonChange,
-  selectedOutcome, fkLastZone, homeTeam, awayTeam,
+  selectedOutcome, fkLastZone, saveLastZone, homeTeam, awayTeam,
 }: {
   activeTab: ActiveTab; setActiveTab: (t: ActiveTab) => void;
   activeTeam: "home" | "away"; setActiveTeam: (t: "home" | "away") => void;
   markGoal: boolean; setMarkGoal: (v: boolean) => void;
   lastZone: string | null;
   fkLastZone: string | null;
+  saveLastZone: string | null;
   onShot: (zone: XgZone) => void;
   onFkShot: (zone: XgZone) => void;
+  onSaveLog: (zone: XgZone) => void;
   setPieceType: "corner" | "free_kick" | "throw_in";
   location: "left" | "centre" | "right";
   reason: "tactical" | "injury" | "fatigue";
   selectedOutcome: "goal" | "shot_on" | "cleared" | "wasted";
-  onPassLog: (completed: boolean) => void;
+  onPassLog: (completed: boolean, lostZone?: string) => void;
+  onLostBallLog: (zone: string) => void;
   onPressLog: () => void;
   onSetPieceLog: () => void;
   onSubLog: () => void;
   onAerialLog: (won: boolean, isGoal: boolean) => void;
+  onGoalKickLog: () => void;
+  onOffsideLog: () => void;
   onSetPieceTypeChange: (v: "corner" | "free_kick" | "throw_in") => void;
   onLocationChange: (v: "left" | "centre" | "right") => void;
   onOutcomeChange: (v: "goal" | "shot_on" | "cleared" | "wasted") => void;
   onReasonChange: (v: "tactical" | "injury" | "fatigue") => void;
   homeTeam: string; awayTeam: string;
 }) {
+  const [pendingLoss, setPendingLoss] = useState<"intercepted" | "lost_ball" | null>(null);
+  const [selectedLossZone, setSelectedLossZone] = useState<string | null>(null);
+
+  const confirmLoss = () => {
+    if (!selectedLossZone) return;
+    if (pendingLoss === "intercepted") onPassLog(false, selectedLossZone);
+    else if (pendingLoss === "lost_ball") onLostBallLog(selectedLossZone);
+    setPendingLoss(null);
+    setSelectedLossZone(null);
+  };
+
+  const cancelLoss = () => { setPendingLoss(null); setSelectedLossZone(null); };
+
   const tabs: { id: ActiveTab; label: string }[] = [
     { id: "shot",      label: "⚽ Shot" },
     { id: "pass",      label: "↗ Pass" },
     { id: "press",     label: "⚡ Press" },
     { id: "aerial",    label: "🤝 Air" },
     { id: "fk",        label: "🎯 FK" },
+    { id: "gk",        label: "🧤 GK" },
     { id: "set_piece", label: "🚩 Set" },
     { id: "sub",       label: "↕ Sub" },
   ];
@@ -240,20 +309,20 @@ function EventLoggerPanel({
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-lg bg-zinc-800 p-1">
+      <div className="flex gap-0.5 rounded-lg bg-zinc-800 p-1">
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex-1 rounded-md py-1.5 text-[10px] font-bold transition-colors ${
+          <button key={t.id} onClick={() => { setActiveTab(t.id); cancelLoss(); }}
+            className={`flex-1 rounded-md py-1.5 text-[9px] font-bold transition-colors ${
               activeTab === t.id ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
             }`}>{t.label}
           </button>
         ))}
       </div>
 
-      {/* Team toggle (all tabs except sub use it) */}
+      {/* Team toggle */}
       <div>
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
-          {activeTab === "press" ? "Who pressed?" : activeTab === "sub" ? "Which team?" : "Shot by:"}
+          {activeTab === "press" ? "Who pressed?" : activeTab === "sub" ? "Which team?" : activeTab === "gk" ? "Whose keeper?" : "Team:"}
         </p>
         <TeamToggle active={activeTeam} home={homeTeam} away={awayTeam} onChange={setActiveTeam} />
       </div>
@@ -272,20 +341,42 @@ function EventLoggerPanel({
 
       {/* PASS TAB */}
       {activeTab === "pass" && (
-        <div className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Result</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => onPassLog(true)}
-              className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-4 text-sm font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors">
-              <MoveRight className="h-4 w-4" /> Completed
-            </button>
-            <button onClick={() => onPassLog(false)}
-              className="flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 py-4 text-sm font-bold text-red-400 hover:bg-red-500/20 transition-colors">
-              <StopCircle className="h-4 w-4" /> Intercepted
+        pendingLoss ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-zinc-300">
+                {pendingLoss === "intercepted" ? "Where intercepted?" : "Where was ball lost?"}
+              </p>
+              <button onClick={cancelLoss} className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors">
+                Cancel
+              </button>
+            </div>
+            <LossZonePicker selected={selectedLossZone} onSelect={setSelectedLossZone} />
+            <button onClick={confirmLoss} disabled={!selectedLossZone}
+              className="w-full rounded-xl bg-[#f0b429] py-3 text-sm font-bold text-[#1a3a1a] disabled:opacity-40 hover:bg-[#f0b429]/90 transition-colors">
+              Confirm Location
             </button>
           </div>
-          <p className="text-center text-[10px] text-zinc-600">Tap to log instantly — no confirmation needed</p>
-        </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Result</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => onPassLog(true)}
+                className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-4 text-sm font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+                <MoveRight className="h-4 w-4" /> Completed
+              </button>
+              <button onClick={() => setPendingLoss("intercepted")}
+                className="flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 py-4 text-sm font-bold text-red-400 hover:bg-red-500/20 transition-colors">
+                <StopCircle className="h-4 w-4" /> Intercepted
+              </button>
+            </div>
+            <button onClick={() => setPendingLoss("lost_ball")}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-orange-500/40 bg-orange-500/10 py-3 text-sm font-bold text-orange-400 hover:bg-orange-500/20 transition-colors">
+              Lost Ball (Open Play)
+            </button>
+            <p className="text-center text-[10px] text-zinc-600">Intercepted + Lost Ball show zone picker</p>
+          </div>
+        )
       )}
 
       {/* PRESS TAB */}
@@ -331,8 +422,29 @@ function EventLoggerPanel({
         <>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Direct free kick on goal — tap zone</p>
           <PitchZoneTapper onZoneTap={onFkShot} lastZone={fkLastZone} />
-          <p className="text-center text-[10px] text-zinc-600">For FK deliveries (corners/throw-ins) use 🚩 Set tab</p>
+          <p className="text-center text-[10px] text-zinc-600">For FK deliveries (corners/throw-ins) use Set tab</p>
         </>
+      )}
+
+      {/* GOALKEEPER TAB */}
+      {activeTab === "gk" && (
+        <div className="space-y-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
+            Save — tap the zone the shot came from
+          </p>
+          <PitchZoneTapper onZoneTap={onSaveLog} lastZone={saveLastZone} />
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={onGoalKickLog}
+              className="flex items-center justify-center gap-2 rounded-xl border border-zinc-600/60 bg-zinc-800 py-3 text-xs font-bold text-zinc-300 hover:bg-zinc-700 active:scale-95 transition-all">
+              Goal Kick
+            </button>
+            <button onClick={onOffsideLog}
+              className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-500/10 py-3 text-xs font-bold text-purple-400 hover:bg-purple-500/20 active:scale-95 transition-all">
+              Offside
+            </button>
+          </div>
+          <p className="text-center text-[10px] text-zinc-600">Goal Kick + Offside log for the team in possession</p>
+        </div>
       )}
 
       {/* SET PIECE TAB */}
@@ -465,6 +577,10 @@ function EventRow({ evt, homeTeam, awayTeam }: {
       case "substitution":    return `Sub — ${evt.reason}`;
       case "header":          return evt.isGoal ? "Header — Goal!" : evt.headerWon ? "Aerial — Won" : "Aerial — Lost";
       case "free_kick_direct":return `Direct FK — ${ZONE_MAP[evt.zoneId ?? ""]?.label ?? evt.zoneId} (xG ${evt.xg?.toFixed(2)})`;
+      case "lost_ball":       return `Lost Ball — ${evt.lostZone?.replace(/_/g, " ") ?? ""}`;
+      case "save":            return `GK Save — ${ZONE_MAP[evt.zoneId ?? ""]?.label ?? evt.zoneId ?? ""}`;
+      case "goal_kick":       return "Goal Kick";
+      case "offside":         return "Offside";
       default:                return evt.type;
     }
   })();
@@ -478,6 +594,10 @@ function EventRow({ evt, homeTeam, awayTeam }: {
       case "substitution":    return "↕";
       case "header":          return evt.isGoal ? "⚽" : evt.headerWon ? "✅" : "❌";
       case "free_kick_direct":return "🎯";
+      case "lost_ball":       return "🔴";
+      case "save":            return "🧤";
+      case "goal_kick":       return "🟡";
+      case "offside":         return "🚩";
     }
   })();
 
@@ -814,6 +934,7 @@ export default function AnalystLiveMatchPage() {
   const [markGoal, setMarkGoal]         = useState(false);
   const [lastZone, setLastZone]         = useState<string | null>(null);
   const [fkLastZone, setFkLastZone]     = useState<string | null>(null);
+  const [saveLastZone, setSaveLastZone] = useState<string | null>(null);
   const [setPieceType, setSetPieceType] = useState<"corner" | "free_kick" | "throw_in">("corner");
   const [location, setLocation]         = useState<"left" | "centre" | "right">("centre");
   const [outcome, setOutcome]           = useState<"goal" | "shot_on" | "cleared" | "wasted">("cleared");
@@ -875,8 +996,8 @@ export default function AnalystLiveMatchPage() {
     if (markGoal) setMarkGoal(false);
   }, [activeTeam, markGoal, logEvent]);
 
-  const handlePass = useCallback((completed: boolean) => {
-    logEvent({ type: "pass", team: activeTeam, completed });
+  const handlePass = useCallback((completed: boolean, lostZone?: string) => {
+    logEvent({ type: "pass", team: activeTeam, completed, lostZone });
   }, [activeTeam, logEvent]);
 
   const handlePress = useCallback(() => {
@@ -898,6 +1019,23 @@ export default function AnalystLiveMatchPage() {
   const handleFkShot = useCallback((zone: XgZone) => {
     logEvent({ type: "free_kick_direct", team: activeTeam, zoneId: zone.id, xg: zone.xg, isGoal: false });
     setFkLastZone(zone.id);
+  }, [activeTeam, logEvent]);
+
+  const handleLostBall = useCallback((zone: string) => {
+    logEvent({ type: "lost_ball", team: activeTeam, lostZone: zone });
+  }, [activeTeam, logEvent]);
+
+  const handleSave = useCallback((zone: XgZone) => {
+    logEvent({ type: "save", team: activeTeam, zoneId: zone.id });
+    setSaveLastZone(zone.id);
+  }, [activeTeam, logEvent]);
+
+  const handleGoalKick = useCallback(() => {
+    logEvent({ type: "goal_kick", team: activeTeam });
+  }, [activeTeam, logEvent]);
+
+  const handleOffside = useCallback(() => {
+    logEvent({ type: "offside", team: activeTeam });
   }, [activeTeam, logEvent]);
 
   const handlePossessionSwitch = useCallback((team: "home" | "away") => {
@@ -1018,6 +1156,11 @@ export default function AnalystLiveMatchPage() {
                   onSetPieceLog={handleSetPiece}
                   onSubLog={handleSub}
                   onAerialLog={handleAerial}
+                  onLostBallLog={handleLostBall}
+                  onSaveLog={handleSave}
+                  onGoalKickLog={handleGoalKick}
+                  onOffsideLog={handleOffside}
+                  saveLastZone={saveLastZone}
                   setPieceType={setPieceType}
                   location={location}
                   reason={subReason}
