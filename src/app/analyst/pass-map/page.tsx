@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Plus, Download, Play, Pause, SkipBack } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Download, Play, Pause, SkipBack, Camera } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import jsPDF from "jspdf";
 
@@ -112,6 +112,12 @@ export default function PassMapPage() {
   const [isPlaying,      setIsPlaying]      = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  /* ── Match Eye state ── */
+  const [meSource,          setMeSource]          = useState(false);
+  const [meTrackingPlayers, setMeTrackingPlayers] = useState<Array<{ id: number; team: string; x: number; y: number }>>([]);
+  const [mePossession,      setMePossession]      = useState<{ home: number; away: number } | null>(null);
+  const [meTacticalPatterns,setMeTacticalPatterns]= useState<string[]>([]);
+
   // Load Match Brain session from localStorage
   useEffect(() => {
     try {
@@ -124,8 +130,77 @@ export default function PassMapPage() {
     } catch { /* no session */ }
   }, []);
 
+  /* ── Load Match Eye data → convert to MBSession + real player positions ── */
+  const loadFromMatchEye = () => {
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      if (!raw) return;
+      const me = JSON.parse(raw) as {
+        homeTeam?: string; awayTeam?: string; sport?: string; savedAt?: string;
+        analysis?: {
+          formation_home?: string; possession_home?: number;
+          tactical_patterns?: string[];
+          key_events?: Array<{ time?: string; team?: string; type?: string; description?: string }>;
+        };
+        trackingData?: {
+          players?: Array<{ id: number; team: string; avg_x: number; avg_y: number }>;
+          stats?: { possession_home?: number; possession_away?: number };
+        } | null;
+      };
+      const a = me.analysis ?? {};
+
+      // Convert key_events → ShotEv (shots + goals are all we can extract without player IDs)
+      const events: MatchEvent[] = [];
+      let idx = 0;
+      for (const ev of (a.key_events ?? [])) {
+        const minStr = (ev.time ?? "0").replace(/\D/g, "");
+        const min = parseInt(minStr) || 0;
+        const isGoal = /goal/i.test(ev.type ?? "");
+        const isShot = /shot/i.test(ev.type ?? "") || isGoal;
+        if (!isShot) continue;
+        const team: Team = ev.team === "away" ? "away" : "home";
+        events.push({
+          id: `me-${idx++}`, type: "shot", team,
+          zone: isGoal ? "Penalty Spot" : "Central Box",
+          xg: isGoal ? 0.45 : 0.18,
+          isGoal, min,
+        });
+      }
+
+      const session: MBSession = {
+        homeTeam: me.homeTeam ?? "Home",
+        awayTeam: me.awayTeam ?? "Away",
+        sport: me.sport ?? "football",
+        formation: a.formation_home ?? "4-3-3",
+        date: me.savedAt ?? new Date().toISOString(),
+        events,
+      };
+      setMbSession(session);
+      setMeSource(true);
+      setCurrentMinute(0);
+      setIsPlaying(false);
+
+      // Real YOLOv8 player positions (normalised 0-1 → SVG 68×105)
+      if (me.trackingData?.players?.length) {
+        setMeTrackingPlayers(
+          me.trackingData.players.map(p => ({ id: p.id, team: p.team, x: p.avg_x * 68, y: p.avg_y * 105 }))
+        );
+      }
+
+      // Possession
+      const posHome = me.trackingData?.stats?.possession_home ?? a.possession_home ?? 50;
+      const posAway = me.trackingData?.stats?.possession_away ?? (100 - posHome);
+      setMePossession({ home: Math.round(posHome), away: Math.round(posAway) });
+
+      // Tactical patterns
+      setMeTacticalPatterns(a.tactical_patterns ?? []);
+
+      setMapMode("movement");
+    } catch { /* silent */ }
+  };
+
   const maxMinute = mbSession
-    ? Math.max(0, ...mbSession.events.map(e => e.min))
+    ? Math.max(90, ...mbSession.events.map(e => e.min))
     : 90;
 
   const visibleEvents = mbSession
@@ -328,10 +403,18 @@ export default function PassMapPage() {
           <Link href="/analyst" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-white">Pass Map Network</h1>
             <p className="text-sm text-accent/80 italic">Visualise ball movement from your match data</p>
           </div>
+          <button
+            onClick={loadFromMatchEye}
+            className="flex items-center gap-2 rounded-xl border border-[#f0b429]/40 px-3 py-2 text-xs font-semibold text-[#f0b429] transition-colors hover:border-[#f0b429]/70"
+            title="Load Match Eye analysis into Match Movement"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            From Match Eye
+          </button>
         </div>
 
         {/* Mode tabs */}
@@ -476,12 +559,18 @@ export default function PassMapPage() {
           <div>
             {!mbSession ? (
               <div className="rounded-2xl border border-dashed border-white/20 p-12 text-center">
-                <p className="text-lg font-bold text-white/60">No Match Brain session found</p>
-                <p className="mt-2 text-sm text-white/30">Complete a match in Match Brain, then click "Match Movement" to see it here.</p>
-                <Link href="/analyst/match-brain"
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#4a1a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#5a2a9a] transition-colors">
-                  Go to Match Brain
-                </Link>
+                <p className="text-lg font-bold text-white/60">No match session found</p>
+                <p className="mt-2 text-sm text-white/30">Load data from Match Eye (button above) or complete a match in Match Brain.</p>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                  <button onClick={loadFromMatchEye}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#f0b429]/20 border border-[#f0b429]/40 px-5 py-2.5 text-sm font-bold text-[#f0b429] hover:bg-[#f0b429]/30 transition-colors">
+                    <Camera className="h-4 w-4" /> From Match Eye
+                  </button>
+                  <Link href="/analyst/match-brain"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#4a1a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#5a2a9a] transition-colors">
+                    Go to Match Brain
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="grid gap-5 lg:grid-cols-3">
@@ -564,8 +653,8 @@ export default function PassMapPage() {
                   </div>
                 </div>
 
-                {/* Pitch */}
-                <div className="lg:col-span-2">
+                {/* Pitch + Match Eye overlays */}
+                <div className="space-y-4 lg:col-span-2">
                   <div className="relative w-full overflow-hidden rounded-2xl border-2 border-white/20"
                     style={{ aspectRatio: "68/105", background: "#2d6a2d" }}>
                     <svg className="absolute inset-0 h-full w-full" viewBox="0 0 68 105">
@@ -591,21 +680,82 @@ export default function PassMapPage() {
                       {/* Render visible events */}
                       {visibleEvents.map((ev, idx) => renderMBEvent(ev, idx))}
 
-                      {/* Player position dots (standard 4-3-3 home, mirrored away) */}
-                      {[1,2,3,4,5,6,7,8,9,10,11].map(n => {
-                        const [hx, hy] = playerSVG(n, "home");
-                        const [ax, ay] = playerSVG(n, "away");
-                        return (
-                          <g key={n}>
-                            <circle cx={hx} cy={hy} r="2" fill="#1e40af" stroke="white" strokeWidth="0.4" opacity="0.7" />
-                            <text x={hx} y={hy + 0.7} textAnchor="middle" fontSize="1.8" fill="white" fontWeight="bold">{n}</text>
-                            <circle cx={ax} cy={ay} r="2" fill="#c2410c" stroke="white" strokeWidth="0.4" opacity="0.7" />
-                            <text x={ax} y={ay + 0.7} textAnchor="middle" fontSize="1.8" fill="white" fontWeight="bold">{n}</text>
-                          </g>
-                        );
-                      })}
+                      {/* Player positions — real YOLOv8 positions if available, else standard 4-3-3 */}
+                      {meSource && meTrackingPlayers.length > 0 ? (
+                        meTrackingPlayers.map(p => {
+                          const fill = p.team === "away" ? "#c2410c" : p.team === "referee" ? "#6b7280" : "#f0b429";
+                          return (
+                            <g key={`me-player-${p.id}`}>
+                              <circle cx={p.x} cy={p.y} r="2.2" fill={fill} stroke="white" strokeWidth="0.5" opacity="0.85" />
+                              <text x={p.x} y={p.y + 0.7} textAnchor="middle" fontSize="1.8" fill="white" fontWeight="bold">{p.id}</text>
+                            </g>
+                          );
+                        })
+                      ) : (
+                        [1,2,3,4,5,6,7,8,9,10,11].map(n => {
+                          const [hx, hy] = playerSVG(n, "home");
+                          const [ax, ay] = playerSVG(n, "away");
+                          return (
+                            <g key={n}>
+                              <circle cx={hx} cy={hy} r="2" fill="#1e40af" stroke="white" strokeWidth="0.4" opacity="0.7" />
+                              <text x={hx} y={hy + 0.7} textAnchor="middle" fontSize="1.8" fill="white" fontWeight="bold">{n}</text>
+                              <circle cx={ax} cy={ay} r="2" fill="#c2410c" stroke="white" strokeWidth="0.4" opacity="0.7" />
+                              <text x={ax} y={ay + 0.7} textAnchor="middle" fontSize="1.8" fill="white" fontWeight="bold">{n}</text>
+                            </g>
+                          );
+                        })
+                      )}
                     </svg>
                   </div>
+
+                  {/* Match Eye: Possession bar */}
+                  {meSource && mePossession && (
+                    <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+                      <div className="mb-2 flex items-center justify-between text-xs font-semibold">
+                        <span className="text-[#f0b429]">{mbSession!.homeTeam} {mePossession.home}%</span>
+                        <span className="text-white/40 uppercase tracking-widest text-[9px]">Possession</span>
+                        <span className="text-blue-400">{mePossession.away}% {mbSession!.awayTeam}</span>
+                      </div>
+                      <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
+                        <div className="flex h-full">
+                          <div className="h-full rounded-l-full bg-[#f0b429] transition-all" style={{ width: `${mePossession.home}%` }} />
+                          <div className="h-full rounded-r-full bg-blue-500" style={{ width: `${mePossession.away}%` }} />
+                        </div>
+                      </div>
+                      {meTrackingPlayers.length > 0 && (
+                        <p className="mt-2 text-[10px] text-muted-foreground">
+                          <span className="font-semibold text-[#f0b429]">{meTrackingPlayers.filter(p => p.team === "home").length}</span> home players ·{" "}
+                          <span className="font-semibold text-blue-400">{meTrackingPlayers.filter(p => p.team === "away").length}</span> away players tracked by YOLOv8
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Match Eye: Tactical patterns */}
+                  {meSource && meTacticalPatterns.length > 0 && (
+                    <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tactical Patterns Detected</p>
+                      <div className="flex flex-wrap gap-2">
+                        {meTacticalPatterns.map((pat, i) => (
+                          <span key={i} className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-medium text-cyan-300">
+                            {pat}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Match Eye legend when real positions shown */}
+                  {meSource && meTrackingPlayers.length > 0 && (
+                    <div className="rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/5 p-3">
+                      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#f0b429]">YOLOv8 Real Player Positions</p>
+                      <div className="flex gap-4 text-[10px] text-white/60">
+                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#f0b429] inline-block" /> {mbSession!.homeTeam}</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red-500 inline-block" /> {mbSession!.awayTeam}</span>
+                        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-gray-500 inline-block" /> Referee</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
