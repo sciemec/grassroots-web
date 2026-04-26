@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
-  Building2, Users, Star, ClipboardList,
+  Building2, Users, Star, ClipboardList, Trophy,
   Clock, CheckCircle2, ChevronRight, Loader2,
 } from "lucide-react";
 
@@ -55,6 +55,15 @@ const NAV_CARDS = [
     color:   "from-orange-900/40 to-orange-800/20",
     border:  "border-orange-500/20",
     iconBg:  "bg-orange-500/20 text-orange-300",
+  },
+  {
+    href:    "/province-admin/leagues",
+    icon:    Trophy,
+    title:   "League Management",
+    desc:    "Create leagues, schedule fixtures, record results",
+    color:   "from-purple-900/40 to-purple-800/20",
+    border:  "border-purple-500/20",
+    iconBg:  "bg-purple-500/20 text-purple-300",
   },
 ];
 
