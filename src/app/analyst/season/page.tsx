@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, Loader2, Camera } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
@@ -53,6 +53,41 @@ export default function SeasonIntelligencePage() {
       if (raw) setXgHistory(JSON.parse(raw) as XgRecord[]);
     } catch {}
   }, []);
+
+  const loadFromMatchEye = () => {
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      if (!raw) return;
+      const me = JSON.parse(raw) as {
+        homeTeam?: string; awayTeam?: string; savedAt?: string;
+        analysis?: {
+          possession_home?: number;
+          shots_home?: number; shots_away?: number;
+          key_events?: Array<{ type: string; team?: string }>;
+        };
+      };
+      const a = me.analysis ?? {};
+      const homeGoals = (a.key_events ?? []).filter((e) => /goal/i.test(e.type) && /home/i.test(e.team ?? "home")).length;
+      const awayGoals = (a.key_events ?? []).filter((e) => /goal/i.test(e.type) && /away/i.test(e.team ?? "")).length;
+      const poss = a.possession_home ?? 50;
+      const shots = a.shots_home ?? 0;
+      const newRecord: XgRecord = {
+        id: crypto.randomUUID(),
+        date: me.savedAt ?? new Date().toISOString(),
+        homeTeam: me.homeTeam ?? "Home",
+        awayTeam: me.awayTeam ?? "Away",
+        homeXg: parseFloat((shots * 0.18).toFixed(2)),
+        awayXg: parseFloat(((a.shots_away ?? 0) * 0.18).toFixed(2)),
+        homeGoals,
+        awayGoals,
+      };
+      setXgHistory((prev) => {
+        const updated = [newRecord, ...prev.filter((r) => r.id !== newRecord.id)].slice(0, 20);
+        try { localStorage.setItem("gs_touch_tracker_history", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+    } catch {}
+  };
 
   const { data, isLoading, isError } = useQuery<{ data: CoachMatch[] }>({
     queryKey: ["coach-matches-season"],
@@ -109,10 +144,18 @@ export default function SeasonIntelligencePage() {
           <Link href="/analyst" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-white">Season Intelligence</h1>
             <p className="text-sm text-accent/80 italic">Rolling form, goal trends, AI season review</p>
           </div>
+          <button
+            onClick={loadFromMatchEye}
+            className="flex items-center gap-2 rounded-xl border border-[#f0b429]/40 px-3 py-2 text-xs font-semibold text-[#f0b429] transition-colors hover:border-[#f0b429]/70"
+            title="Add Match Eye match to xG history"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            Add Match Eye
+          </button>
         </div>
 
         {isLoading && (

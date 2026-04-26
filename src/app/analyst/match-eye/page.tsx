@@ -351,6 +351,20 @@ export default function MatchEyePage() {
       setNarrative(data.narrative);
       log("Report ready.");
       setPhase("report");
+
+      // Save to localStorage so other analyst tools can import visually
+      try {
+        localStorage.setItem("gs_match_eye_last", JSON.stringify({
+          homeTeam: homeTeam.trim(),
+          awayTeam: awayTeam.trim(),
+          competition: competition.trim(),
+          sport,
+          savedAt: new Date().toISOString(),
+          analysis: data.analysis,
+          narrative: data.narrative,
+          trackingData: null,
+        }));
+      } catch {}
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       setError(msg);
@@ -420,6 +434,11 @@ export default function MatchEyePage() {
 
       setTrackingData(result);
       setTrackingPhase("done");
+      // Merge tracking data into gs_match_eye_last so other tools can read it
+      try {
+        const existing = JSON.parse(localStorage.getItem("gs_match_eye_last") ?? "{}");
+        localStorage.setItem("gs_match_eye_last", JSON.stringify({ ...existing, trackingData: result }));
+      } catch {}
     } catch (err) {
       setTrackingError(err instanceof Error ? err.message : "Tracking failed");
       setTrackingPhase("error");

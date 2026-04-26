@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, Copy, Check, FileText, Database, Download } from "lucide-react";
+import { ArrowLeft, Loader2, Copy, Check, FileText, Database, Download, Camera } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
 import { getMatch, calcPossessionFromLog } from "@/lib/analyst-api";
@@ -38,6 +38,37 @@ function TacticalReportInner() {
 
   useEffect(() => { try { localStorage.setItem(LS_FORM, JSON.stringify(form)); } catch {} }, [form]);
   useEffect(() => { try { if (report) localStorage.setItem(LS_REPORT, report); } catch {} }, [report]);
+
+  const loadFromMatchEye = () => {
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      if (!raw) { return; }
+      const me = JSON.parse(raw) as {
+        homeTeam?: string; awayTeam?: string; sport?: string;
+        analysis?: {
+          formation_home?: string; possession_home?: number;
+          shots_home?: number; shots_on_target_home?: number;
+          tactical_patterns?: string[]; key_events?: Array<{ type: string }>;
+        };
+      };
+      const a = me.analysis ?? {};
+      const homeGoals = (a.key_events ?? []).filter((e) => /goal/i.test(e.type) && !/own/i.test(e.type)).length;
+      const awayGoals = (a.key_events ?? []).filter((e) => /own goal/i.test(e.type)).length;
+      setForm({
+        homeTeam: me.homeTeam ?? "",
+        awayTeam: me.awayTeam ?? "",
+        homeScore: homeGoals,
+        awayScore: awayGoals,
+        formation: a.formation_home ?? "4-3-3",
+        possession: a.possession_home ?? 50,
+        shots: (a.shots_home ?? 0),
+        onTarget: a.shots_on_target_home ?? 0,
+        notes: (a.tactical_patterns ?? []).slice(0, 3).join(". "),
+      });
+      setMatchLabel(`${me.homeTeam ?? "Home"} vs ${me.awayTeam ?? "Away"} (Match Eye)`);
+      setReport("");
+    } catch {}
+  };
 
   // Auto-load if ?match_id= is in URL
   useEffect(() => {
@@ -246,6 +277,14 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
               {matchLabel ? `Loaded: ${matchLabel}` : "Generate a 3-section match report with AI"}
             </p>
           </div>
+          <button
+            onClick={loadFromMatchEye}
+            className="flex items-center gap-2 rounded-xl border border-[#f0b429]/40 px-3 py-2 text-xs font-semibold text-[#f0b429] transition-colors hover:border-[#f0b429]/70"
+            title="Fill form from Match Eye video analysis"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            From Match Eye
+          </button>
           <button
             onClick={() => setShowLoader(true)}
             disabled={loadingMatch}

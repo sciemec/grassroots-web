@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, Copy, Check, Database, Loader2, Activity } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Copy, Check, Database, Loader2, Activity, Camera } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { getMatch, extractShots } from "@/lib/analyst-api";
 import { MatchLoader } from "@/components/analyst/match-loader";
@@ -169,6 +169,34 @@ function XgAnalysisInner() {
 
   useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(shots)); } catch {} }, [shots]);
 
+  const loadFromMatchEye = () => {
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      if (!raw) return;
+      const me = JSON.parse(raw) as {
+        homeTeam?: string; awayTeam?: string;
+        analysis?: { key_events?: Array<{ time: string; team: string; type: string }> };
+      };
+      const events = me.analysis?.key_events ?? [];
+      const converted: Shot[] = events
+        .filter((e) => /shot|goal/i.test(e.type))
+        .map((e) => {
+          const min = parseInt(e.time?.replace(/\D/g, "") ?? "0") || 1;
+          const isGoal = /goal/i.test(e.type);
+          const team: "home" | "away" = /away/i.test(e.team) ? "away" : "home";
+          // Map event type to nearest xG zone
+          const zoneId = isGoal ? "penalty_spot"
+            : /long/i.test(e.type) ? "long_range"
+            : "central_box";
+          const zoneData = XG_ZONES.find((z) => z.id === zoneId) ?? XG_ZONES[2];
+          return { id: crypto.randomUUID(), team, zone: zoneData.label, xg: zoneData.xg, minute: min, isGoal };
+        });
+      if (!converted.length) return;
+      setShots(converted);
+      setMatchLabel(`${me.homeTeam ?? "Home"} vs ${me.awayTeam ?? "Away"} (Match Eye)`);
+    } catch {}
+  };
+
   const loadFromTouchTracker = () => {
     try {
       const saved = localStorage.getItem("gs_touch_tracker");
@@ -267,6 +295,14 @@ function XgAnalysisInner() {
               {matchLabel ? `Loaded: ${matchLabel}` : "Tap a zone on the pitch, then log the shot"}
             </p>
           </div>
+          <button
+            onClick={loadFromMatchEye}
+            className="flex items-center gap-2 rounded-xl border border-[#f0b429]/40 px-3 py-2 text-xs font-semibold text-[#f0b429] transition-colors hover:border-[#f0b429]/70 hover:text-[#f0b429]"
+            title="Import shots from Match Eye video analysis"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            From Match Eye
+          </button>
           <button
             onClick={loadFromTouchTracker}
             className="flex items-center gap-2 rounded-xl border border-blue-400/30 px-3 py-2 text-xs font-semibold text-blue-300 transition-colors hover:border-blue-400/60 hover:text-blue-200"

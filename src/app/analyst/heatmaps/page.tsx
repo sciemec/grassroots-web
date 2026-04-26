@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Download, Brain } from "lucide-react";
+import { ArrowLeft, Trash2, Download, Brain, Camera } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import jsPDF from "jspdf";
 
@@ -55,6 +55,60 @@ export default function HeatmapsPage() {
   const clearAll = () => {
     setHeatmaps({});
     try { localStorage.removeItem(LS_KEY + "_data"); } catch {}
+  };
+
+  const importFromMatchEye = () => {
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      if (!raw) { alert("No Match Eye analysis found. Run a match video first."); return; }
+      const me = JSON.parse(raw) as {
+        homeTeam?: string; awayTeam?: string;
+        trackingData?: {
+          players?: Array<{ id: number; team: string; avg_x: number; avg_y: number; heatmap: number[][] }>;
+        };
+      };
+      const players = me.trackingData?.players;
+      if (!players?.length) { alert("No player tracking data in Match Eye session. Run the Player Tracking tab first."); return; }
+
+      const newMaps: Record<number, number[]> = {};
+      const newSquadLines: string[] = [];
+
+      players.forEach((p, idx) => {
+        // Downsample YOLOv8 13×20 heatmap → 6×10 tool grid
+        const grid = Array(TOTAL).fill(0) as number[];
+        if (p.heatmap?.length) {
+          for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+              // Each tool cell covers ~2.17 YOLOv8 rows × ~3.33 cols
+              const yStart = Math.round(row * 13 / ROWS);
+              const yEnd   = Math.round((row + 1) * 13 / ROWS);
+              const xStart = Math.round(col * 20 / COLS);
+              const xEnd   = Math.round((col + 1) * 20 / COLS);
+              let sum = 0;
+              for (let r = yStart; r < yEnd; r++) {
+                for (let c = xStart; c < xEnd; c++) {
+                  sum += p.heatmap[r]?.[c] ?? 0;
+                }
+              }
+              grid[row * COLS + col] = sum;
+            }
+          }
+        } else {
+          // Fallback: use avg_x/avg_y to place a single hot cell
+          const col = Math.min(Math.floor(p.avg_x * COLS), COLS - 1);
+          const row = Math.min(Math.floor(p.avg_y * ROWS), ROWS - 1);
+          grid[row * COLS + col] = 10;
+        }
+        newMaps[idx] = grid;
+        newSquadLines.push(`P${p.id} (${p.team})`);
+      });
+
+      setHeatmaps(newMaps);
+      setSquadInput(newSquadLines.join("\n"));
+      setSelectedPlayer(0);
+    } catch {
+      alert("Could not read Match Eye tracking data.");
+    }
   };
 
   const importFromMatchBrain = () => {
@@ -318,6 +372,11 @@ export default function HeatmapsPage() {
             <button onClick={exportPDF}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 py-2.5 text-sm font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors">
               <Download className="h-4 w-4" /> Export PDF Report
+            </button>
+
+            <button onClick={importFromMatchEye}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 py-2.5 text-sm font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors">
+              <Camera className="h-4 w-4" /> Import from Match Eye
             </button>
 
             <button onClick={importFromMatchBrain}

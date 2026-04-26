@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Brain, Camera } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -39,6 +40,7 @@ const tools = [
     href: "/analyst/xg-analysis",
     bg: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]",
     live: true,
+    matchEye: true,
   },
   {
     icon: FileText,
@@ -47,6 +49,7 @@ const tools = [
     href: "/analyst/tactical-report",
     bg: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]",
     live: true,
+    matchEye: true,
   },
   {
     icon: Network,
@@ -63,6 +66,7 @@ const tools = [
     href: "/analyst/heatmaps",
     bg: "bg-gradient-to-br from-[#d35400] to-[#a04000]",
     live: true,
+    matchEye: true,
   },
   {
     icon: TrendingUp,
@@ -71,6 +75,7 @@ const tools = [
     href: "/analyst/season",
     bg: "bg-gradient-to-br from-[#7d6608] to-[#4a3d05]",
     live: true,
+    matchEye: true,
   },
   {
     icon: Layers,
@@ -92,6 +97,14 @@ const tools = [
 
 export default function AnalystHubPage() {
   const { user } = useAuthStore();
+  const [hasMatchEye, setHasMatchEye] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      setHasMatchEye(!!raw);
+    } catch {}
+  }, []);
 
   return (
     <div className="flex h-screen bg-background">
@@ -132,9 +145,14 @@ export default function AnalystHubPage() {
                     <Lock className="h-2.5 w-2.5" /> Coming Soon
                   </span>
                 )}
-                {tool.live && !tool.featured && (
+                {tool.live && !tool.featured && !('matchEye' in tool && hasMatchEye) && (
                   <span className="absolute right-3 top-3 rounded-full bg-[#f0b429] px-2 py-0.5 text-[10px] font-bold text-[#1a3a1a]">
                     LIVE
+                  </span>
+                )}
+                {'matchEye' in tool && hasMatchEye && (
+                  <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[#f0b429] px-2 py-0.5 text-[10px] font-bold text-[#1a3a1a]">
+                    <Camera className="h-2.5 w-2.5" /> Match Eye Data
                   </span>
                 )}
                 {tool.featured && (
