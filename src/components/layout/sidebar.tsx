@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, ShieldCheck, Users, Dumbbell, CreditCard, UserSearch,
+  LayoutDashboard, ShieldCheck, Shield, Users, Dumbbell, CreditCard, UserSearch,
   ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
   Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
@@ -26,6 +26,8 @@ type NavItem = { href: string; label: string; icon: React.ElementType; roles: st
 const navItems: NavItem[] = [
   // ─── Admin ────────────────────────────────────────────────────────────────
   { href: "/admin",                  label: "Admin Hub",      icon: LayoutDashboard, roles: ["admin"] },
+  { href: "/province-admin",         label: "Province Admin", icon: Shield,          roles: ["admin"] },
+  { href: "/province-admin/leagues", label: "Leagues",        icon: Trophy,          roles: ["admin"] },
   { href: "/admin/users",            label: "Users",          icon: Users,           roles: ["admin"] },
   { href: "/admin/verifications",    label: "Verifications",  icon: ShieldCheck,     roles: ["admin"] },
   { href: "/admin/scout-requests",   label: "Scout Requests", icon: ClipboardList,   roles: ["admin"] },
