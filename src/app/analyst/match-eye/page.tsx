@@ -257,6 +257,8 @@ export default function MatchEyePage() {
     setStatusLog([]);
     setUploadProgress(0);
     setPhase("uploading");
+
+    try {
       // ── Upload video through our server (Edge streams it to Google, no CORS) ──
       log(`Uploading ${videoFile.name} (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB) to Gemini...`);
 
