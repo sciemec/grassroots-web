@@ -9,7 +9,7 @@ import api from "@/lib/api";
 import type { DashboardStats } from "@/types";
 import {
   Users, ShieldCheck, CreditCard, Dumbbell, ClipboardList, UserPlus,
-  ArrowRight, Bell, Heart, BarChart2,
+  ArrowRight, Bell, Heart, BarChart2, Trophy,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -49,6 +49,7 @@ export default function DashboardPage() {
     { icon: CreditCard,   title: "Subscriptions",  subtitle: "Revenue — Mitengo",          href: "/subscriptions",  bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#27ae60] to-[#1a6b3c]" },
     { icon: Heart,        title: "Community",      subtitle: "Districts & clubs",          href: "/community",      bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
     { icon: Dumbbell,     title: "Sessions",       subtitle: "Training activity log",      href: "/sessions",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#8e44ad] to-[#6c3483]" },
+    { icon: Trophy,       title: "Provincial League Hub", subtitle: "Leagues · Clubs · Fixtures", href: "/province-admin", bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#1a8a50] to-[#0f4a28]" },
   ];
 
   const roleColors: Record<string, string> = {
