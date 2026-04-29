@@ -53,7 +53,7 @@ export default function SessionsPage() {
   // Fetch all completed sessions for stats + sparkline (once)
   useEffect(() => {
     if (!user) return;
-    api.get("/sessions?per_page=100&status=completed")
+    api.get("/player/sessions?per_page=100&status=completed")
       .then((res) => { const _r = res.data?.data ?? res.data; setAllCompleted(Array.isArray(_r) ? _r : []); })
       .catch(() => {});
   }, [user]);
@@ -63,7 +63,7 @@ export default function SessionsPage() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), per_page: "15" });
     if (statusFilter !== "all") params.set("status", statusFilter);
-    api.get(`/sessions?${params}`)
+    api.get(`/player/sessions?${params}`)
       .then((res) => {
         if (res.data?.data) {
           setPaged(res.data);

@@ -90,7 +90,7 @@ export default function PlayerHubPage() {
   // Auth guard is handled by PlayerLayout — this just loads data
   useEffect(() => {
     Promise.all([
-      api.get("/sessions?per_page=5").catch(() => null),
+      api.get("/player/sessions?per_page=5").catch(() => null),
       api.get("/profile").catch(() => null),
       api.get("/training/schedule").catch(() => null),
     ])
