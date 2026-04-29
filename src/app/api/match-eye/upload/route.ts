@@ -1,7 +1,7 @@
 // Edge Runtime — only initiates the Gemini resumable session.
 // The browser then PUTs the video bytes directly to Google's self-authenticating
 // upload URL, bypassing Vercel's 4 MB body limit entirely.
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
