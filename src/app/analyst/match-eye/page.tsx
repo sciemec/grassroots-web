@@ -257,39 +257,19 @@ export default function MatchEyePage() {
     setStatusLog([]);
     setUploadProgress(0);
     setPhase("uploading");
-
-    try {
-      // ── Step 1: Initiate Gemini resumable session (tiny request — no video body) ─
-      log(`Preparing upload for ${videoFile.name} (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB)...`);
+      // ── Upload video through our server (Edge streams it to Google, no CORS) ──
+      log(`Uploading ${videoFile.name} (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB) to Gemini...`);
 
       const mimeType = videoFile.type || "video/mp4";
-      const initRes = await fetch("/api/match-eye/upload", {
-        method: "POST",
-        headers: {
-          "content-type": mimeType,
-          "x-content-length": String(videoFile.size),
-        },
-      });
 
-      if (!initRes.ok) {
-        const err = await initRes.json() as { error?: string };
-        throw new Error(err.error ?? `Session init failed: ${initRes.status}`);
-      }
-
-      const { uploadUrl } = await initRes.json() as { uploadUrl: string; mimeType: string };
-      log(`Uploading ${videoFile.name} directly to Gemini (bypasses Vercel)...`);
-
-      // ── Step 2: PUT video bytes directly to Google — bypasses Vercel 4 MB limit ─
       const uploadResult = await new Promise<{
         fileUri: string;
         fileName: string;
         mimeType: string;
       }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Length", String(videoFile.size));
-        xhr.setRequestHeader("X-Goog-Upload-Offset", "0");
-        xhr.setRequestHeader("X-Goog-Upload-Command", "upload, finalize");
+        xhr.open("POST", "/api/match-eye/upload");
+        xhr.setRequestHeader("content-type", mimeType);
 
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
@@ -300,29 +280,29 @@ export default function MatchEyePage() {
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
-              const fileData = JSON.parse(xhr.responseText) as {
-                file: { uri: string; name: string; mimeType: string };
+              const data = JSON.parse(xhr.responseText) as {
+                fileUri: string; fileName: string; mimeType: string;
               };
-              resolve({
-                fileUri: fileData.file.uri,
-                fileName: fileData.file.name,
-                mimeType: fileData.file.mimeType || mimeType,
-              });
+              resolve(data);
             } catch {
-              reject(new Error("Failed to parse Google upload response"));
+              reject(new Error("Failed to parse upload response"));
             }
           } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
+            try {
+              const err = JSON.parse(xhr.responseText) as { error?: string };
+              reject(new Error(err.error ?? `Upload failed: ${xhr.status}`));
+            } catch {
+              reject(new Error(`Upload failed: ${xhr.status}`));
+            }
           }
         };
 
-        xhr.onerror = () => reject(new Error("Network error during upload to Google"));
+        xhr.onerror = () => reject(new Error("Upload failed — check your connection"));
         xhr.send(videoFile);
       });
 
       log("Upload complete. Gemini is processing the video...");
       setPhase("processing");
-
       // ── Step 2: Analyse with Gemini + Claude ──────────────────────────────────
       log("Gemini 1.5 Pro is watching the full match...");
       const res = await fetch("/api/match-eye/analyse", {
