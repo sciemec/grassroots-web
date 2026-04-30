@@ -262,35 +262,25 @@ export default function MatchEyePage() {
       const mimeType = videoFile.type || "video/mp4";
       log(`Preparing upload for ${videoFile.name} (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB)...`);
 
-      // ── Step 1: Get a Google resumable upload URL (no video body through Vercel) ─
-      const initRes = await fetch("/api/match-eye/upload", {
-        method: "POST",
-        headers: {
-          "content-type": mimeType,
-          "x-content-length": String(videoFile.size),
-        },
-      });
-
-      if (!initRes.ok) {
-        const err = await initRes.json() as { error?: string };
-        throw new Error(err.error ?? `Failed to get upload URL: ${initRes.status}`);
+      // ── Upload via Python AI service (server-to-server to Google, bypasses CORS) ─
+      // Gemini File API does not serve CORS headers — browsers cannot PUT directly.
+      // The Python service on Render has no body-size limit and proxies to Google.
+      const trackerUrl = process.env.NEXT_PUBLIC_TRACKER_URL;
+      if (!trackerUrl) {
+        throw new Error("NEXT_PUBLIC_TRACKER_URL not configured — cannot upload video");
       }
 
-      const { uploadUrl } = await initRes.json() as { uploadUrl: string };
-      log(`Uploading ${videoFile.name} directly to Google...`);
+      log(`Uploading ${videoFile.name} via AI service...`);
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", videoFile);
 
-      // ── Step 2: Browser PUTs video directly to Google — bypasses Vercel entirely ─
-      // Google's Gemini File API supports CORS for browser-direct resumable uploads.
-      // Do NOT set Content-Length — browsers block it (forbidden header); Google infers it.
       const uploadResult = await new Promise<{
         fileUri: string;
         fileName: string;
         mimeType: string;
       }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("X-Goog-Upload-Offset", "0");
-        xhr.setRequestHeader("X-Goog-Upload-Command", "upload, finalize");
+        xhr.open("POST", `${trackerUrl}/gemini-upload`);
 
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
@@ -301,26 +291,28 @@ export default function MatchEyePage() {
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
-              const fileData = JSON.parse(xhr.responseText) as {
-                file: { uri: string; name: string; mimeType: string };
-              };
-              resolve({
-                fileUri:  fileData.file.uri,
-                fileName: fileData.file.name,
-                mimeType: fileData.file.mimeType || mimeType,
+              resolve(JSON.parse(xhr.responseText) as {
+                fileUri: string;
+                fileName: string;
+                mimeType: string;
               });
             } catch {
-              reject(new Error("Failed to parse Google upload response"));
+              reject(new Error("Failed to parse upload response"));
             }
           } else {
-            reject(new Error(`Upload to Google failed: ${xhr.status}`));
+            try {
+              const body = JSON.parse(xhr.responseText) as { detail?: string };
+              reject(new Error(body.detail ?? `Upload failed: ${xhr.status}`));
+            } catch {
+              reject(new Error(`Upload failed: ${xhr.status}`));
+            }
           }
         };
 
         xhr.onerror = () => reject(new Error(
-          "Could not reach Google servers. Check your internet connection and try again."
+          "Cannot reach AI service. Check NEXT_PUBLIC_TRACKER_URL in Vercel env vars."
         ));
-        xhr.send(videoFile);
+        xhr.send(uploadFormData);
       });
 
       log("Upload complete. Gemini is processing the video...");
