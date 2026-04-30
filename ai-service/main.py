@@ -43,6 +43,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://grassrootssports.live",
+        "https://www.grassrootssports.live",
         "http://localhost:3000",
         "http://localhost:3001",
     ],
