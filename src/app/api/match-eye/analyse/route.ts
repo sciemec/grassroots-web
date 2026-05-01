@@ -47,7 +47,7 @@ function extractJSON(text: string): MatchAnalysis | null {
 
 // Poll Gemini until the uploaded file is ACTIVE (ready for generateContent)
 async function waitForFileActive(fileName: string, googleKey: string): Promise<void> {
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < 120; i++) {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${googleKey}`
     );
@@ -60,9 +60,9 @@ async function waitForFileActive(fileName: string, googleKey: string): Promise<v
     if (data.state === "ACTIVE") return;
     if (data.state === "FAILED") throw new Error("Gemini file processing failed");
 
-    await new Promise((r) => setTimeout(r, 5000)); // check every 5s → 3 min max
+    await new Promise((r) => setTimeout(r, 5000)); // check every 5s → 10 min max
   }
-  throw new Error("Video file did not become ready within 3 minutes");
+  throw new Error("Video file did not become ready within 10 minutes");
 }
 
 export async function POST(req: NextRequest) {

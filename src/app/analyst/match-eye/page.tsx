@@ -278,6 +278,7 @@ export default function MatchEyePage() {
         fileUri: string;
         fileName: string;
         mimeType: string;
+        state?: string;
       }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `${trackerUrl}/gemini-upload`);
@@ -410,7 +411,6 @@ export default function MatchEyePage() {
         });
 
         xhr.onload = () => {
-          setTrackingPhase("processing");
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(JSON.parse(xhr.responseText) as TrackingData);
           } else {
