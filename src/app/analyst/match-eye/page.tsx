@@ -326,6 +326,7 @@ export default function MatchEyePage() {
           fileUri:     uploadResult.fileUri,
           fileName:    uploadResult.fileName,
           mimeType:    uploadResult.mimeType,
+          fileState:   uploadResult.state,
           homeTeam:    homeTeam.trim(),
           awayTeam:    awayTeam.trim(),
           competition: competition.trim(),

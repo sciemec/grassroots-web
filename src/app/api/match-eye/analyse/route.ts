@@ -51,7 +51,10 @@ async function waitForFileActive(fileName: string, googleKey: string): Promise<v
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${googleKey}`
     );
-    if (!res.ok) throw new Error(`File state check failed: ${res.status}`);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`File state check failed: ${res.status} — ${body.slice(0, 300)}`);
+    }
 
     const data = await res.json() as { state: string };
     if (data.state === "ACTIVE") return;
@@ -64,11 +67,12 @@ async function waitForFileActive(fileName: string, googleKey: string): Promise<v
 
 export async function POST(req: NextRequest) {
   try {
-    const { fileUri, fileName, mimeType, homeTeam, awayTeam, competition, sport } =
+    const { fileUri, fileName, mimeType, fileState, homeTeam, awayTeam, competition, sport } =
       await req.json() as {
         fileUri: string;
         fileName: string;
         mimeType: string;
+        fileState?: string;
         homeTeam: string;
         awayTeam: string;
         competition?: string;
@@ -84,8 +88,10 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "GOOGLE_AI_API_KEY not configured" }, { status: 500 });
     }
 
-    // Wait for Gemini to finish ingesting the video
-    await waitForFileActive(fileName, googleKey);
+    // Skip polling if upload already confirmed ACTIVE
+    if (fileState !== "ACTIVE") {
+      await waitForFileActive(fileName, googleKey);
+    }
 
     // ── Call Gemini 1.5 Pro with native video file_data ───────────────────────────
     const systemPrompt = `You are a professional football analyst with UEFA A-licence coaching experience.
