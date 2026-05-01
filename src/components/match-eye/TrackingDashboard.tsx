@@ -581,7 +581,7 @@ export default function TrackingDashboard({ data, homeTeam, awayTeam }: Props) {
       {/* Header badge */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="rounded-full bg-[#4a1a8a] px-3 py-1 text-xs font-bold text-white">
-          YOLOv8n + ByteTrack
+          YOLOv8x + ByteTrack
         </span>
         <span className="rounded-full bg-[#1a3a1a] border border-green-700/40 px-3 py-1 text-xs font-semibold text-green-300">
           Ball Tracking
@@ -664,7 +664,7 @@ export default function TrackingDashboard({ data, homeTeam, awayTeam }: Props) {
         </p>
         <p className="mt-0.5 text-xs text-white/50">
           GrassRoots Sports delivers ball tracking, speed data, and player heatmaps
-          at $99/month — built for Zimbabwe, powered by YOLOv8n computer vision.
+          at $99/month — built for Zimbabwe, powered by YOLOv8x computer vision.
         </p>
       </div>
     </div>
