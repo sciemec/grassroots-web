@@ -6,6 +6,8 @@ import Link from "next/link";
 import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2, ExternalLink, Brain, Sparkles, MessageCircle } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
+import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
+import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,6 +75,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 interface Profile extends FormData {
+  id?:                 string;
   scout_visible:       boolean;
   verification_status: string;
   photo_url:           string | null;
@@ -303,6 +306,15 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
       <Sidebar />
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-2xl">
+
+          <ProUpgradeBanner />
+
+          {/* Scout View Badge */}
+          {profile?.id && (
+            <div className="mb-4">
+              <ScoutViewBadge playerId={profile.id} />
+            </div>
+          )}
 
           {/* Header */}
           <div className="mb-8 flex items-center gap-3">

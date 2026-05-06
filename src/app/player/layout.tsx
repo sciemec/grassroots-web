@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
+import { AdBanner } from "@/components/ui/AdBanner";
 import dynamic from "next/dynamic";
 
 const ThutoChat = dynamic(() => import("@/components/thuto/ThutoChat"), { ssr: false });
@@ -35,6 +36,7 @@ export default function PlayerLayout({ children }: { children: React.ReactNode }
   return (
     <GuestGateProvider>
       <GuestBanner />
+      <AdBanner slot="banner-below-nav" className="w-full" />
       {children}
       <ThutoChat />
     </GuestGateProvider>

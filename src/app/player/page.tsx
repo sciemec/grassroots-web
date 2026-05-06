@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
 import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
 import { getSchedule, saveSchedule, getPendingSessions, clearPendingSession, type ScheduleDay } from "@/lib/offlineDB";
@@ -178,6 +179,8 @@ export default function PlayerHubPage() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
+
+        <ProUpgradeBanner />
 
         {/* Header */}
         <div className="mb-6">

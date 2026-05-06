@@ -1,5 +1,7 @@
 import { ShieldCheck, MapPin, Ruler, Trophy, User } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
+import { LogProfileView } from "@/components/player/LogProfileView";
+import { AdBanner } from "@/components/ui/AdBanner";
 
 interface ShowcaseClip {
   id: string;
@@ -82,6 +84,8 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
   const isVerified = profile.verification_status === "approved";
 
   return (
+    <>
+    <LogProfileView playerId={profile.id} />
     <div className="min-h-screen" style={{
       background: "#1a5c2a",
       backgroundImage: `
@@ -197,6 +201,11 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
           </div>
         )}
 
+        {/* Ad — player-profile-bottom (high-intent scout audience) */}
+        <div className="mt-6">
+          <AdBanner slot="player-profile-bottom" fallback={true} className="w-full" />
+        </div>
+
         {/* CTA */}
         <div className="mt-6 text-center">
           <a
@@ -209,5 +218,6 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
         </div>
       </div>
     </div>
+    </>
   );
 }

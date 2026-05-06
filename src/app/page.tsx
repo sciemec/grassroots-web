@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import { SchoolPitchSection } from "@/components/landing/SchoolPitchSection";
+import { AdBanner } from "@/components/ui/AdBanner";
 import AfricanPatternStrip from "@/components/ui/AfricanPatternStrip";
 import { ZimPresidentBanner, ZimIndependenceSection } from "@/components/ui/zim-independence";
 import ThutoChatVisitor from "@/components/thuto/ThutoChatVisitor";
@@ -361,6 +363,12 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── School Bulk Pitch ─────────────────────────────────────────────── */}
+      <SchoolPitchSection />
+
+      {/* ── Ad Banner — landing-mid ───────────────────────────────────────── */}
+      <AdBanner slot="landing-mid" />
 
       {/* ── Roles / Features — cream ──────────────────────────────────────── */}
       <section id="features" style={creamSection} className="py-24 border-t border-[#A0522D]/10">

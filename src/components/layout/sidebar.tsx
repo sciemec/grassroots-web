@@ -20,6 +20,7 @@ import { auth } from "@/firebase";
 import { NotificationBell } from "./notification-bell";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { ZimSidebarPanel } from "@/components/ui/zim-independence";
+import { AdBanner } from "@/components/ui/AdBanner";
 
 type NavItem = { href: string; label: string; icon: React.ElementType; roles: string[] };
 
@@ -239,6 +240,9 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
           </button>
           <div className="mt-3 px-1">
             <LanguageSwitcher compact />
+          </div>
+          <div className="mt-4 px-1">
+            <AdBanner slot="sidebar-top" fallback={true} className="w-full" />
           </div>
         </div>
       )}
