@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2, ExternalLink, Brain, Sparkles, MessageCircle } from "lucide-react";
+import { HighlightReel } from "@/components/player/HighlightReel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -736,6 +737,9 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               </div>
             );
           })()}
+
+          {/* Highlight Reel */}
+          <HighlightReel mode="self" />
 
         </div>
       </main>

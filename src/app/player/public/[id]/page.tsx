@@ -1,4 +1,16 @@
 import { ShieldCheck, MapPin, Ruler, Trophy, User } from "lucide-react";
+import { HighlightReel } from "@/components/player/HighlightReel";
+
+interface ShowcaseClip {
+  id: string;
+  skill_type: string;
+  video_url: string | null;
+  thumbnail_url: string | null;
+  ai_rating: number;
+  top_strength: string;
+  scout_note: string;
+  view_count: number;
+}
 
 interface PublicProfile {
   id: string;
@@ -19,6 +31,21 @@ interface PublicProfile {
   appearances: number | null;
 }
 
+async function getShowcaseClips(id: string): Promise<ShowcaseClip[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/showcase/discover?user_id=${id}`,
+      { next: { revalidate: 60 } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const raw = data?.data ?? data;
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
 async function getPublicProfile(id: string): Promise<PublicProfile | null> {
   try {
     const res = await fetch(
@@ -33,7 +60,10 @@ async function getPublicProfile(id: string): Promise<PublicProfile | null> {
 }
 
 export default async function PublicPlayerProfile({ params }: { params: { id: string } }) {
-  const profile = await getPublicProfile(params.id);
+  const [profile, showcaseClips] = await Promise.all([
+    getPublicProfile(params.id),
+    getShowcaseClips(params.id),
+  ]);
 
   if (!profile) {
     return (
@@ -159,6 +189,13 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
             </p>
           </div>
         </div>
+
+        {/* Highlight Reel */}
+        {showcaseClips.length > 0 && (
+          <div className="mt-6">
+            <HighlightReel clips={showcaseClips} mode="public" />
+          </div>
+        )}
 
         {/* CTA */}
         <div className="mt-6 text-center">
