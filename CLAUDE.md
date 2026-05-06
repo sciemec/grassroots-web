@@ -4895,3 +4895,190 @@ The browser can PUT directly without exposing any credentials.
 - Report: Claude writes tactical narrative ✅
 - Tracking: YOLOv8 player tracking via Python service ✅
 - Env vars: `GOOGLE_AI_API_KEY` + `NEXT_PUBLIC_TRACKER_URL` both set in Vercel ✅
+
+---
+
+## SESSION LOG — 6 May 2026
+
+### Theme — Conversion Features: Scout View Notifications + Urgency Banners + School Pitch + Ad Slots
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Profile View Tracking — Location + Deduplication ✅
+
+**Migration (bhora-ai repo — additive to existing `profile_views` table):**
+```
+FILE: database/migrations/2026_05_06_000001_add_location_fields_to_profile_views_table.php
+```
+Adds 2 columns to existing table (no data loss):
+- `scout_location` VARCHAR nullable — from Cloudflare CF-IPCity / CF-IPCountry headers
+- `ip_address` VARCHAR nullable — SHA256 hashed raw IP (privacy-safe deduplication)
+
+#### 2. ProfileViewController (Laravel) ✅
+
+```
+FILE: app/Http/Controllers/Api/ProfileViewController.php
+```
+
+Two public routes (NO auth middleware — optional auth):
+```php
+Route::post('/players/{playerId}/view',      [ProfileViewController::class, 'logView']);
+Route::get('/players/{playerId}/view-count', [ProfileViewController::class, 'getViewCount']);
+```
+
+`logView()` behaviour:
+- Uses `auth('sanctum')->user()` (not `$request->user()`) — resolves token if present, null if not
+- Gets location from Cloudflare headers: `CF-IPCity`, `CF-IPCountry` → formatted as "Harare, ZW"
+- Hashes IP with SHA256 before storing (never stores raw IP)
+- **24-hour deduplication:** checks `profile_views` for existing row in last 24h before inserting
+- Fires `Notification::send()` with type `opportunity` to the player if new view
+- Notification body: "A scout from {location} viewed your profile"
+
+`getViewCount()` returns count of views in the last 7 days.
+
+**⚠️ ACTION REQUIRED:** Copy migration to bhora-ai repo + run `php artisan migrate --force` on Render.
+
+#### 3. LogProfileView.tsx — Client Boundary Component ✅
+
+**File:** `src/components/player/LogProfileView.tsx`
+
+Needed because `src/app/player/public/[id]/page.tsx` is a server component — cannot use `useEffect` directly.
+Standard Next.js pattern: client component that renders `null` but fires the fetch in `useEffect`.
+
+- Fire-and-forget: `.catch(() => {})` — never breaks the public profile page
+- Reads `auth_token` from localStorage; skips `dev-token`
+- Sends `POST /api/v1/players/{playerId}/view` with optional Bearer token
+
+**Modified:** `src/app/player/public/[id]/page.tsx`
+- Added `<LogProfileView playerId={profile.id} />` inside a React fragment
+- Added `<AdBanner slot="player-profile-bottom" fallback={true} />` before the CTA section
+
+#### 4. ScoutViewBadge.tsx ✅
+
+**File:** `src/components/player/ScoutViewBadge.tsx`
+
+- Fetches `GET /api/v1/players/{playerId}/view-count` on mount
+- 3 states:
+  - 0 views → nudge to complete profile (grey)
+  - 1-4 views → gold text "X scouts viewed your profile this week"
+  - 5+ views → gold text + "Upgrade to Pro" button → `/player/subscription`
+- Loading skeleton during fetch; fails silently if API down
+
+**Modified:** `src/app/player/profile/page.tsx`
+- Added `id?: string` to `Profile` interface (was missing — TypeScript fix)
+- Added `<ScoutViewBadge playerId={profile.id} />` before the header section
+
+#### 5. ProUpgradeBanner.tsx ✅
+
+**File:** `src/components/player/ProUpgradeBanner.tsx`
+
+- Gold `bg-amber-500` banner, dark green `text-green-900` text
+- Only shown when `user.subscription_tier === "free"` or undefined
+- **7-day localStorage dismiss** via `banner_dismissed` key storing timestamp
+- X button sets dismiss; "Upgrade Now" links to `/player/subscription`
+- Not shown for coach/scout/admin roles
+
+**Modified:** `src/app/player/page.tsx` — `<ProUpgradeBanner />` as first element in main content
+**Modified:** `src/app/player/profile/page.tsx` — `<ProUpgradeBanner />` above profile header
+
+#### 6. SchoolPitchSection.tsx — Landing Page ✅
+
+**File:** `src/components/landing/SchoolPitchSection.tsx`
+
+- Dark green (`#14532d`) background section targeting school sports coordinators
+- Two-column layout: Georgia serif headline + gold subtext + CTA / 3 bullet points
+- CTA: "Register Your School" → `/register?role=coach&school=true`
+- Mobile: `flex-col`, Desktop: `md:flex-row`
+
+**Modified:** `src/app/page.tsx` — inserted `<SchoolPitchSection />` between sports section and features section
+
+#### 7. Ad Banner System ✅
+
+**File:** `src/config/ads.config.ts`
+- TypeScript config mapping 4 slot names to ad content
+- All slots default to `active: false` — safe to deploy now, activate when an advertiser books
+- Slots:
+  - `sidebar-top` — 300×250, shown at bottom of sidebar
+  - `banner-below-nav` — 728×90, full-width below player layout nav
+  - `landing-mid` — 1200×120, banner between sports and features sections on landing page
+  - `player-profile-bottom` — 300×250, bottom of public player profile page
+
+**File:** `src/components/ui/AdBanner.tsx`
+- Reads `ADS_CONFIG[slot]`; if inactive + `fallback=true` → shows "Advertise here" placeholder
+- If active → renders linked `<img>` with lazy loading + `rel="noopener noreferrer"`
+- Server component (no "use client")
+
+**File:** `public/ads/.gitkeep` — tracks the `public/ads/` folder for ad image uploads
+
+**Ad slot placements:**
+- `src/components/layout/sidebar.tsx` → `<AdBanner slot="sidebar-top" fallback={true} />` at bottom of NavContent
+- `src/app/player/layout.tsx` → `<AdBanner slot="banner-below-nav" className="w-full" />` above `{children}`
+- `src/app/page.tsx` → `<AdBanner slot="landing-mid" />` between sports and features sections
+- `src/app/player/public/[id]/page.tsx` → `<AdBanner slot="player-profile-bottom" fallback={true} />` before CTA
+
+---
+
+### HOW TO ACTIVATE ADS (when first advertiser books)
+
+1. Upload ad image to `public/ads/your-ad.webp` (max 200KB, WebP format)
+2. In `src/config/ads.config.ts`, set `active: true` + fill in `imageUrl`, `linkUrl`, `altText`
+3. `git push origin master` → Vercel deploys → ad goes live immediately
+4. No code changes needed beyond the config file
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (6 May 2026)
+
+No new routes — enhanced existing pages:
+```
+/player/public/[id]   Now logs profile views (LogProfileView) + shows ad at bottom
+/player/profile       Now shows ScoutViewBadge + ProUpgradeBanner
+/player              Now shows ProUpgradeBanner
+/ (landing)           Now shows SchoolPitchSection + landing-mid ad slot
+```
+
+New public API routes (bhora-ai):
+```
+POST /api/v1/players/{playerId}/view       Log a profile view (public, optional auth)
+GET  /api/v1/players/{playerId}/view-count Scout view count for last 7 days (public)
+```
+
+---
+
+### WHAT STILL NEEDS DOING (6 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `profile_views` migration | WRITTEN — NOT YET RUN on Render | Copy `2026_05_06_000001_add_location_fields_to_profile_views_table.php` to bhora-ai + `php artisan migrate --force` |
+| `ProfileViewController.php` | WRITTEN — NOT COMMITTED to bhora-ai | Copy controller to `app/Http/Controllers/Api/` in bhora-ai repo + push |
+| `routes/api.php` (2 routes) | WRITTEN — NOT COMMITTED to bhora-ai | Add `POST /players/{playerId}/view` + `GET /players/{playerId}/view-count` routes |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+| Ad images | No advertisers yet | Upload WebP to `public/ads/` when first booking received; set `active: true` in `ads.config.ts` |
+
+---
+
+### COMMIT THIS SESSION
+
+```
+54e73f6  feat: scout view notifications, urgency banner, school pitch, ad slots
+```
+
+**Files changed (13):**
+```
+public/ads/.gitkeep                          (new)
+src/app/page.tsx                             (SchoolPitchSection + landing-mid ad)
+src/app/player/layout.tsx                   (banner-below-nav ad)
+src/app/player/page.tsx                     (ProUpgradeBanner)
+src/app/player/profile/page.tsx             (ScoutViewBadge + ProUpgradeBanner + id field)
+src/app/player/public/[id]/page.tsx         (LogProfileView + player-profile-bottom ad)
+src/components/landing/SchoolPitchSection.tsx (new)
+src/components/layout/sidebar.tsx           (sidebar-top ad)
+src/components/player/LogProfileView.tsx    (new)
+src/components/player/ProUpgradeBanner.tsx  (new)
+src/components/player/ScoutViewBadge.tsx    (new)
+src/components/ui/AdBanner.tsx              (new)
+src/config/ads.config.ts                    (new)
+```
