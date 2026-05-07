@@ -5082,3 +5082,122 @@ src/components/player/ScoutViewBadge.tsx    (new)
 src/components/ui/AdBanner.tsx              (new)
 src/config/ads.config.ts                    (new)
 ```
+
+---
+
+## SESSION LOG — 7 May 2026
+
+### Theme — Chemistry Rating Phase 1: Backend (Week 1) + Coach Chemistry Matrix UI (Week 3)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Chemistry Rating Phase 1 — Backend Foundations (Week 1) ✅
+
+**Committed to bhora-ai repo as `5b99a8c`**
+
+**5 new migrations (D:/bhora-ai/bhora-ai/database/migrations/):**
+- `2026_05_07_000001_create_style_fingerprints_table.php` — 32-dim fingerprint vector (jsonb), confidence_score, under_18 flag, expires_at
+- `2026_05_07_000002_create_style_fingerprint_history_table.php` — archives old fingerprints for player development tracking
+- `2026_05_07_000003_create_style_similarities_table.php` — pairwise chemistry scores, canonical UUID ordering, top_matching/diverging dimensions
+- `2026_05_07_000004_add_chemistry_columns_to_player_profiles_table.php` — adds safeguarding_consent_chemistry + chemistry_notifications_enabled to player_profiles
+- `2026_05_07_000005_create_chemistry_data_access_log_table.php` — audit log for every under-18 chemistry data access (PRD requirement)
+
+**2 new services:**
+- `app/Services/StyleFingerprintService.php` — generates 32-dim fingerprint from drill_sets + pose_analysis_results. Min 8 drills / 3 sessions. 30-day expiry. cosine_similarity() + topDimensions() helpers.
+- `app/Services/ChemistryService.php` — v1 formula: 60% style + 25% demographic + 15% geographic. runNightlyBatch(), calculatePair(), getSimilarPlayers(), getSquadMatrix(). Under-18 safeguarding, canonical pair ordering.
+
+**1 new job:**
+- `app/Jobs/RecalculateSimilaritiesJob.php` — dispatched nightly, 2h timeout, tries=1
+
+**1 new controller:**
+- `app/Http/Controllers/Api/ChemistryController.php` — 7 endpoints: getFingerprint, regenerateFingerprint, getSimilar, getPair, getSquadMatrix, updateConsent, deleteFingerprint. Under-18 access logging in every read.
+
+**Routes added to `routes/api.php`:**
+```
+GET    /chemistry/fingerprint/{playerId}
+POST   /chemistry/fingerprint/regenerate/{playerId}
+DELETE /chemistry/fingerprint/{playerId}
+GET    /chemistry/similar/{playerId}
+GET    /chemistry/pair/{playerAId}/{playerBId}
+GET    /chemistry/squad/{coachId}
+POST   /chemistry/consent/{playerId}
+```
+
+**Scheduler added to `routes/console.php`:**
+```php
+Schedule::job(new \App\Jobs\RecalculateSimilaritiesJob)
+    ->dailyAt('02:00')
+    ->timezone('Africa/Harare')
+    ->withoutOverlapping()
+    ->runInBackground();
+```
+
+**Chemistry v1 Formula:**
+- Style similarity: cosine similarity of 32-dim fingerprint vectors (0-100)
+- Demographic score: age proximity (±4yr, 60% weight) + position group match (40% weight)
+- Geographic score: same town=100, same province=70, different province=30
+- Final: (style × 0.60) + (demographic × 0.25) + (geographic × 0.15)
+
+**Eligibility constraints:**
+- Same position group (forward/midfielder/defender/goalkeeper)
+- Age within ±4 years
+- Same country (Zimbabwe)
+- Both have valid, non-expired fingerprints (confidence > 0)
+- Under-18: both must be U18, both must have safeguarding_consent_chemistry=true, same province only
+
+**Notification threshold:** 85% → max 2 chemistry notifications per player per 7 days
+
+**ACTION REQUIRED — LARAVEL:**
+Run `php artisan migrate --force` on Render to apply the 5 new migrations.
+
+---
+
+#### 2. Coach Chemistry Matrix UI — Week 3 (Next.js frontend) ✅
+
+**Committed to grassroots-web as `2573d82`**
+
+**4 new files:**
+
+| File | Purpose |
+|---|---|
+| `src/components/chemistry/ChemistryMatrix.tsx` | N×N colour-coded grid, bidirectional pair lookup, click → pair detail page |
+| `src/components/chemistry/PairDetail.tsx` | Score breakdown (style/demographic/geo bars), matching/diverging dimension pills, AI explanation |
+| `src/app/coach/chemistry/page.tsx` | Squad matrix page: position filter, stats row, top-5 pairs list, PDF export (jsPDF) |
+| `src/app/coach/chemistry/pair/[playerA]/[playerB]/page.tsx` | Pair detail page: fetches player names from squad silently |
+
+**Matrix colour scale:**
+- Green (85+) → Green-light (70-84) → Yellow (55-69) → Orange (40-54) → Red (<40) → Grey (no data)
+
+**PDF export:** jsPDF — green header, squad stats, top-5 pairs with scores, confidential footer
+
+**Hub card added:** `src/app/coach/page.tsx` — "Squad Chemistry" card (purple gradient, Zap icon, `/coach/chemistry`)
+
+**Sidebar nav added:** `src/components/layout/sidebar.tsx` — "Squad Chemistry" after Strategic Patterns (coach role)
+
+**API calls made:**
+- `GET /api/v1/coach/squad` — get player names and positions
+- `GET /api/v1/chemistry/squad/{coachId}` — get pairwise chemistry scores
+- `GET /api/v1/chemistry/pair/{playerA}/{playerB}` — get single pair breakdown
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (7 May 2026)
+
+```
+/coach/chemistry                              Squad chemistry matrix with position filter + PDF export
+/coach/chemistry/pair/[playerA]/[playerB]    Pair breakdown: score components, dimensions, AI explanation
+```
+
+---
+
+### WHAT STILL NEEDS DOING (7 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` on Render |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage |
+
