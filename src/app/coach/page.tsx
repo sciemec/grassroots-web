@@ -7,7 +7,7 @@ import {
   Users, Brain, ChevronRight, Flame, Shield, AlertTriangle,
   Trophy, Radio, ClipboardList, Loader2, Film, Activity, Crosshair, BookOpen,
   Layers, ScanSearch, GraduationCap, PiggyBank, Calendar, Heart, Sprout,
-  FileText, RefreshCw, TrendingUp, Target, Map, Thermometer,
+  FileText, RefreshCw, TrendingUp, Target, Map, Thermometer, Zap,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -185,6 +185,7 @@ Keep each section to 2-3 sentences. Be specific and actionable. Zimbabwe grassro
     { icon: Layers,       title: "Training Plans",   subtitle: "Phases & programmes",         href: "/coach/training-plans",    bg: "bg-[#145a32]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#145a32]" },
     { icon: Sprout,       title: "FutureFit",        subtitle: "Junior football development",  href: "/coach/futurefit",         bg: "bg-[#5b2c6f]", gradient: "bg-gradient-to-br from-[#7d3c98] to-[#5b2c6f]" },
     { icon: TrendingUp,   title: "Strategic Patterns", subtitle: "Compounding team intelligence", href: "/coach/patterns",          bg: "bg-[#1a2a4a]", gradient: "bg-gradient-to-br from-[#1a4a7a] to-[#0d1a3a]" },
+    { icon: Zap,          title: "Squad Chemistry",    subtitle: "Style similarity · Player pairing", href: "/coach/chemistry",       bg: "bg-[#3a1a4a]", gradient: "bg-gradient-to-br from-[#6c2d8c] to-[#3a1a4a]" },
     { icon: Trophy,       title: "Munhumutapa 2026",  subtitle: "Tournament · Fixtures & Squads", href: "/tournaments/munhumutapa-2026", bg: "bg-[#7d5a00]", gradient: "bg-gradient-to-br from-[#b8860b] to-[#7d5a00]" },
   ];
 

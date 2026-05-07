@@ -51,6 +51,7 @@ const navItems: NavItem[] = [
   { href: "/coach/tactical-analysis",  label: "Tactical Analysis", icon: Crosshair,  roles: ["coach"] },
   { href: "/coach/live-match",          label: "Live Match",       icon: Tv2,         roles: ["coach"] },
   { href: "/coach/patterns",            label: "Strategic Patterns", icon: SeasonIcon, roles: ["coach"] },
+  { href: "/coach/chemistry",           label: "Squad Chemistry",    icon: Zap,        roles: ["coach"] },
   { href: "/coach/stats",               label: "Season Stats",     icon: BarChart2,   roles: ["coach"] },
   { href: "/video-studio",           label: "Video Studio",   icon: Film,            roles: ["coach"] },
   { href: "/video-analysis",         label: "Video Analysis", icon: Sparkles,        roles: ["coach"] },
