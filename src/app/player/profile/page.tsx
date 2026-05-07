@@ -71,6 +71,7 @@ const schema = z.object({
   club:           z.string().optional(),
   school:         z.string().optional(),
   bio:            z.string().max(500).optional(),
+  area:           z.string().max(100).optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -142,6 +143,7 @@ export default function PlayerProfilePage() {
           club:           res.data.club           ?? "",
           school:         res.data.school         ?? "",
           bio:            res.data.bio            ?? "",
+          area:           res.data.area           ?? "",
         });
       })
       .catch(() => {})
@@ -549,6 +551,22 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 </select>
                 {errors.province && <p className="mt-1 text-xs text-destructive">{errors.province.message}</p>}
               </div>
+            </div>
+
+            {/* Area / Village / Town */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">
+                Area / Village / Town <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <input
+                {...register("area")}
+                type="text"
+                placeholder="e.g. Gutu Growth Point, Wedza, Mhangura, near Marondera…"
+                className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Type anywhere you are from — village, farm, growth point, mission, suburb
+              </p>
             </div>
 
             {/* Age Group + Preferred Foot + Height + Weight */}
