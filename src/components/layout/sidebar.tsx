@@ -84,6 +84,7 @@ const navItems: NavItem[] = [
   { href: "/player/progress",             label: "Progress",        icon: TrendingUp,      roles: ["player"] },
   { href: "/player/talent-id",            label: "Talent ID",       icon: Zap,             roles: ["player"] },
   { href: "/player/passport",             label: "My Passport",     icon: BookOpen,        roles: ["player"] },
+  { href: "/player/similar",              label: "Players Like You", icon: Heart,           roles: ["player"] },
   { href: "/player/assessment",           label: "Assessment",      icon: Target,          roles: ["player"] },
   { href: "/player/nutrition",            label: "Nutrition",       icon: Apple,           roles: ["player"] },
   { href: "/player/development",          label: "Dev Phases",      icon: Layers,          roles: ["player"] },

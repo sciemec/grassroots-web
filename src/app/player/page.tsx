@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { ComponentType } from "react";
 import {
   Dumbbell, Brain, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Apple, Zap, Film, Award, CalendarDays, Dna, Users, BookOpen, Eye,
+  Apple, Zap, Film, Award, CalendarDays, Dna, Users, BookOpen, Eye, HeartHandshake,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -172,7 +172,8 @@ export default function PlayerHubPage() {
     { icon: TrendingUp,   title: "My Journey",      subtitle: "Progress charts · Milestones",              href: "/player/progress",       bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
     { icon: Apple,        title: "Nutrition",       subtitle: "Meal plans · Performance fuel",             href: "/player/nutrition",      bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
     { icon: Users,        title: "Ubuntu",          subtitle: "Train together — vanhu pamwe",              href: "/player/ubuntu",         bg: "bg-[#1a3a2a]", gradient: "bg-gradient-to-br from-[#1a6b4a] to-[#0d2b1a]" },
-    { icon: BookOpen,     title: "My Passport",     subtitle: "Shareable talent passport · PDF export",    href: "/player/passport",       bg: "bg-[#2c1a5c]", gradient: "bg-gradient-to-br from-[#4a2c8c] to-[#2c1a5c]" },
+    { icon: BookOpen,        title: "My Passport",      subtitle: "Shareable talent passport · PDF export",    href: "/player/passport",        bg: "bg-[#2c1a5c]", gradient: "bg-gradient-to-br from-[#4a2c8c] to-[#2c1a5c]" },
+    { icon: HeartHandshake, title: "Players Like You", subtitle: "Style matches · Compatible squadmates",      href: "/player/similar",         bg: "bg-[#1a2c4a]", gradient: "bg-gradient-to-br from-[#1a3a6b] to-[#1a2c4a]" },
   ];
 
   return (

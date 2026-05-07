@@ -7,7 +7,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import {
-  User, Lock, Bell, Trash2, CheckCircle2, Eye, EyeOff, Loader2, AlertTriangle,
+  User, Lock, Bell, Trash2, CheckCircle2, Eye, EyeOff, Loader2, AlertTriangle, Zap,
 } from "lucide-react";
 
 type Tab = "profile" | "security" | "notifications" | "danger";
@@ -62,6 +62,38 @@ export default function SettingsPage() {
       setNotifPermission(Notification.permission);
     }
   }, []);
+
+  /* ── Chemistry consent ── */
+  const [chemConsent, setChemConsent]     = useState(false);
+  const [chemNotifs, setChemNotifs]       = useState(false);
+  const [chemSaving, setChemSaving]       = useState(false);
+  const [chemSaved, setChemSaved]         = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    api.get("/profile").then((res) => {
+      const prof = res.data?.profile ?? res.data;
+      setChemConsent(!!prof?.safeguarding_consent_chemistry);
+      setChemNotifs(!!prof?.chemistry_notifications_enabled);
+    }).catch(() => {});
+  }, [user?.id]);
+
+  const saveChemConsent = async () => {
+    if (!user?.id) return;
+    setChemSaving(true);
+    try {
+      await api.post(`/chemistry/consent/${user.id}`, {
+        safeguarding_consent_chemistry:   chemConsent,
+        chemistry_notifications_enabled:  chemNotifs,
+      });
+      setChemSaved(true);
+      setTimeout(() => setChemSaved(false), 3000);
+    } catch {
+      // silently fail — consent is best-effort on backend
+    } finally {
+      setChemSaving(false);
+    }
+  };
 
   const requestPushPermission = async () => {
     if (typeof Notification === "undefined") return;
@@ -292,6 +324,67 @@ export default function SettingsPage() {
                 Save preferences
               </button>
             </form>
+          )}
+
+          {/* ── Chemistry & Privacy card (shown inside notifications tab) ── */}
+          {tab === "notifications" && (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-[#f0b429]" />
+                <h2 className="text-sm font-semibold text-white">Chemistry Matching</h2>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                When enabled, your training style fingerprint is used to find compatible squadmates
+                and players in Zimbabwe. Your name is never shared with players outside your squad.
+                Under-18 players are only matched with same-province U18 peers.
+              </p>
+
+              <div className="space-y-3">
+                <label className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium">Enable chemistry matching</p>
+                    <p className="text-xs text-muted-foreground">Allow the platform to calculate your style similarity with other players</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={chemConsent}
+                    onChange={(e) => setChemConsent(e.target.checked)}
+                    className="h-4 w-4 rounded accent-primary"
+                  />
+                </label>
+
+                <label className={`flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 transition-colors ${chemConsent ? "hover:bg-white/5" : "opacity-40 cursor-not-allowed"}`}>
+                  <div>
+                    <p className="text-sm font-medium">Chemistry notifications</p>
+                    <p className="text-xs text-muted-foreground">Get notified when you have a high-chemistry pair (85%+) in your squad</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={chemNotifs}
+                    disabled={!chemConsent}
+                    onChange={(e) => setChemNotifs(e.target.checked)}
+                    className="h-4 w-4 rounded accent-primary"
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={saveChemConsent}
+                  disabled={chemSaving}
+                  className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2.5 text-sm font-bold text-[#1a3a1a] transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {chemSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Save chemistry settings
+                </button>
+                {chemSaved && (
+                  <span className="flex items-center gap-1 text-xs text-green-400">
+                    <CheckCircle2 className="h-3 w-3" /> Saved
+                  </span>
+                )}
+              </div>
+            </div>
           )}
 
           {/* ── Danger zone tab ── */}
