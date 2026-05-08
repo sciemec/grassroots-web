@@ -231,6 +231,21 @@ export default function PlayerHubPage() {
           ))}
         </div>
 
+        {/* My Card CTA — viral sharing prompt */}
+        <Link
+          href="/player/my-card"
+          className="mb-6 flex items-center justify-between rounded-2xl border border-amber-500/40 bg-gradient-to-br from-[#1a3a1a] to-[#0d2b0d] px-5 py-4 hover:border-amber-500/70 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <Star className="h-5 w-5 text-[#f0b429]" />
+            <div>
+              <p className="text-sm font-bold text-[#f0b429]">Share Your THUTO Score Card</p>
+              <p className="text-xs text-white/60">Download your card and share it on WhatsApp</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-[#f0b429]/60" />
+        </Link>
+
         {/* Age group reminder — THUTO needs this to give personalised advice */}
         {profile && !profile.age_group && (
           <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#f0b429]/40 bg-[#f0b429]/10 px-4 py-3">
