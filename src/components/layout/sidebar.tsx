@@ -9,7 +9,7 @@ import {
   UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
   Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
   Menu, X, ScanSearch, Briefcase, LineChart, Camera, Globe2,
-  Map, Thermometer, TrendingUp as SeasonIcon, Flame,
+  Map, Thermometer, TrendingUp as SeasonIcon, Flame, Award,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -91,6 +91,7 @@ const navItems: NavItem[] = [
   { href: "/player/subscription",         label: "Subscription",    icon: SubIcon,         roles: ["player"] },
   { href: "/player/verification",         label: "Verification",    icon: ShieldCheck,     roles: ["player"] },
   { href: "/player/profile",              label: "My Profile",      icon: UserCircle,      roles: ["player"] },
+  { href: "/player/my-card",              label: "My Card",         icon: Award,           roles: ["player"] },
   { href: "/video-studio",               label: "Video Studio",    icon: Film,            roles: ["player"] },
   { href: "/video-analysis",             label: "Video Analysis",  icon: Sparkles,        roles: ["player"] },
   { href: "/injury-tracker",             label: "Injury Tracker",  icon: Activity,        roles: ["player"] },
