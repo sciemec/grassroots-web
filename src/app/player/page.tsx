@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { ComponentType } from "react";
 import {
   Dumbbell, Brain, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Apple, Zap, Film, Award, CalendarDays, Dna, Users, BookOpen, Eye, HeartHandshake,
+  Apple, Zap, Film, Award, CalendarDays, Dna, Users, BookOpen, Eye, HeartHandshake, GraduationCap,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -174,6 +174,7 @@ export default function PlayerHubPage() {
     { icon: Users,        title: "Ubuntu",          subtitle: "Train together — vanhu pamwe",              href: "/player/ubuntu",         bg: "bg-[#1a3a2a]", gradient: "bg-gradient-to-br from-[#1a6b4a] to-[#0d2b1a]" },
     { icon: BookOpen,        title: "My Passport",      subtitle: "Shareable talent passport · PDF export",    href: "/player/passport",        bg: "bg-[#2c1a5c]", gradient: "bg-gradient-to-br from-[#4a2c8c] to-[#2c1a5c]" },
     { icon: HeartHandshake, title: "Players Like You", subtitle: "Style matches · Compatible squadmates",      href: "/player/similar",         bg: "bg-[#1a2c4a]", gradient: "bg-gradient-to-br from-[#1a3a6b] to-[#1a2c4a]" },
+    { icon: GraduationCap,  title: "Business School",  subtitle: "Contracts · Money · Branding · Career",     href: "/player/business-school", bg: "bg-[#3b1a5c]", gradient: "bg-gradient-to-br from-[#5c2a8c] to-[#3b1a5c]" },
   ];
 
   return (
