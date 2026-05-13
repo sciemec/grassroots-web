@@ -8,6 +8,7 @@ import { HighlightReel } from "@/components/player/HighlightReel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
 import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
+import PotentialCard from "@/components/player/PotentialCard";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -697,6 +698,16 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             <Eye className="h-4 w-4" /> View as Scout
             <ExternalLink className="h-3.5 w-3.5 opacity-60" />
           </Link>
+
+          {/* Talent Prediction Card */}
+          {user && (
+            <div className="mb-6">
+              <PotentialCard
+                playerId={String(user.id)}
+                playerName={user.name}
+              />
+            </div>
+          )}
 
           {/* AI Profile Narrative */}
           <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">

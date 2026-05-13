@@ -2,6 +2,7 @@ import { ShieldCheck, MapPin, Ruler, Trophy, User } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { LogProfileView } from "@/components/player/LogProfileView";
 import { AdBanner } from "@/components/ui/AdBanner";
+import PotentialCard from "@/components/player/PotentialCard";
 
 interface ShowcaseClip {
   id: string;
@@ -200,6 +201,15 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
             <HighlightReel clips={showcaseClips} mode="public" />
           </div>
         )}
+
+        {/* Talent Prediction — scouts see this as the key signal */}
+        <div className="mt-6">
+          <PotentialCard
+            playerId={profile.id}
+            playerName={profile.name}
+            isPublicView={true}
+          />
+        </div>
 
         {/* Ad — player-profile-bottom (high-intent scout audience) */}
         <div className="mt-6">
