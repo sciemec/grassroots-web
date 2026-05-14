@@ -336,11 +336,19 @@ export default function MatchEyePage() {
       });
 
       if (!res.ok) {
-        const err = await res.json() as { error?: string };
-        throw new Error(err.error ?? `Server error ${res.status}`);
+        const errText = await res.text();
+        let errMsg = `Server error ${res.status}`;
+        try { errMsg = (JSON.parse(errText) as { error?: string }).error ?? errMsg; } catch { /* HTML response */ }
+        throw new Error(errMsg);
       }
 
-      const data = await res.json() as { analysis: MatchAnalysis; narrative: string };
+      const rawText = await res.text();
+      let data: { analysis: MatchAnalysis; narrative: string };
+      try {
+        data = JSON.parse(rawText) as { analysis: MatchAnalysis; narrative: string };
+      } catch {
+        throw new Error("AI service returned an unexpected response. The service may be starting up — please try again in 30 seconds.");
+      }
 
       log("Analysis complete. Claude is writing the tactical report...");
       setAnalysis(data.analysis);
