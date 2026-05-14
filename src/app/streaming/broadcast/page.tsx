@@ -67,6 +67,7 @@ export default function BroadcastPage() {
   const [trackingEnabled, setTrackingEnabled] = useState(false);
   const [dailyNote, setDailyNote] = useState("");
   const [roomCopied, setRoomCopied] = useState(false);
+  const liveStreamIdRef = useRef<string | null>(null);
 
   // TF.js player tracking hook
   const { playerCount, loading: trackerLoading, error: trackerError } = usePlayerTracker(
@@ -82,6 +83,32 @@ export default function BroadcastPage() {
     if (!_hasHydrated) return;
     if (!user) router.push("/login");
   }, [_hasHydrated, user, router]);
+
+  // When Daily.co connects and we get a room URL, register the stream on the backend
+  // so it appears in the /streaming hub for all viewers.
+  useEffect(() => {
+    if (dailyState !== "live" || !roomUrl || liveStreamIdRef.current) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    if (!token || token === "dev-token") return;
+    const roomName = roomUrl.split("/").pop() ?? roomUrl;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/streams/go-live`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        home_team:  homeTeam  || "Home Team",
+        away_team:  awayTeam  || "Away Team",
+        sport,
+        venue_name: venue     || null,
+        stream_url: roomUrl,
+        room_name:  roomName,
+      }),
+    })
+      .then((r) => r.json())
+      .then((d: { data?: { id?: string } }) => {
+        if (d.data?.id) liveStreamIdRef.current = d.data.id;
+      })
+      .catch(() => {});
+  }, [dailyState, roomUrl, homeTeam, awayTeam, sport, venue]);
 
   useEffect(() => {
     return () => {
@@ -164,6 +191,18 @@ export default function BroadcastPage() {
     // Stop Daily.co stream if it was active
     if (dailyState === "live" || dailyState === "connecting") {
       await stopStream();
+    }
+
+    // Mark stream as ended on the backend so it disappears from /streaming hub
+    if (liveStreamIdRef.current) {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      if (token && token !== "dev-token") {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/streams/${liveStreamIdRef.current}/end`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      }
+      liveStreamIdRef.current = null;
     }
 
     stopAllTracks();
