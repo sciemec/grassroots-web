@@ -420,7 +420,11 @@ export default function MatchEyePage() {
 
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText) as TrackingData);
+            try {
+              resolve(JSON.parse(xhr.responseText) as TrackingData);
+            } catch {
+              reject(new Error("Tracking service returned an unexpected response. It may be starting up — please try again in 30 seconds."));
+            }
           } else {
             try {
               const body = JSON.parse(xhr.responseText) as { detail?: string };
