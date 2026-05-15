@@ -225,7 +225,8 @@ export default function MatchEyePage() {
   const [trackingError, setTrackingError] = useState("");
   const [trackingProgress, setTrackingProgress] = useState(0);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const log = useCallback((msg: string) => {
     setStatusLog((prev) => [...prev, msg]);
@@ -316,11 +317,11 @@ export default function MatchEyePage() {
         xhr.send(uploadFormData);
       });
 
-      log("Upload complete. Gemini is processing the video...");
+      log("Upload complete. Starting background analysis...");
       setPhase("processing");
-      // ── Step 2: Analyse with Gemini + Claude ──────────────────────────────────
-      log("Gemini 1.5 Pro is watching the full match...");
-      const res = await fetch("/api/match-eye/analyse", {
+
+      // ── Step 2: POST to Python service → get job_id immediately ───────────────
+      const startText = await fetch(`${trackerUrl}/analyse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -333,43 +334,84 @@ export default function MatchEyePage() {
           competition: competition.trim(),
           sport,
         }),
-      });
+      }).then((r) => r.text());
 
-      if (!res.ok) {
-        const errText = await res.text();
-        let errMsg = `Server error ${res.status}`;
-        try { errMsg = (JSON.parse(errText) as { error?: string }).error ?? errMsg; } catch { /* HTML response */ }
-        throw new Error(errMsg);
-      }
-
-      const rawText = await res.text();
-      let data: { analysis: MatchAnalysis; narrative: string };
+      let jobId: string;
       try {
-        data = JSON.parse(rawText) as { analysis: MatchAnalysis; narrative: string };
+        jobId = (JSON.parse(startText) as { job_id: string }).job_id;
       } catch {
-        throw new Error("AI service returned an unexpected response. The service may be starting up — please try again in 30 seconds.");
+        throw new Error("Failed to start analysis job. The AI service may be starting up — please try again in 30 seconds.");
       }
+      log("Analysis job started — Gemini 1.5 Pro is watching the full match...");
 
-      log("Analysis complete. Claude is writing the tactical report...");
-      setAnalysis(data.analysis);
-      setNarrative(data.narrative);
-      log("Report ready.");
-      setPhase("report");
+      // ── Step 3: Poll every 5s until complete or failed ────────────────────────
+      const capturedHomeTeam   = homeTeam.trim();
+      const capturedAwayTeam   = awayTeam.trim();
+      const capturedCompetition = competition.trim();
+      const capturedSport      = sport;
+      let lastMessage = "";
 
-      // Save to localStorage so other analyst tools can import visually
-      try {
-        localStorage.setItem("gs_match_eye_last", JSON.stringify({
-          homeTeam: homeTeam.trim(),
-          awayTeam: awayTeam.trim(),
-          competition: competition.trim(),
-          sport,
-          savedAt: new Date().toISOString(),
-          analysis: data.analysis,
-          narrative: data.narrative,
-          trackingData: null,
-        }));
-      } catch {}
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const pollText = await fetch(`${trackerUrl}/job/${jobId}`).then((r) => r.text());
+          let job: {
+            status: string;
+            progress: number;
+            message?: string;
+            analysis?: MatchAnalysis;
+            narrative?: string;
+            error?: string;
+          };
+          try {
+            job = JSON.parse(pollText) as typeof job;
+          } catch {
+            // Service returned HTML (cold start) — retry next tick
+            return;
+          }
+
+          if (job.message && job.message !== lastMessage) {
+            log(job.message);
+            lastMessage = job.message;
+          }
+
+          if (job.status === "complete" && job.analysis) {
+            clearInterval(pollIntervalRef.current!);
+            pollIntervalRef.current = null;
+
+            setAnalysis(job.analysis);
+            setNarrative(job.narrative ?? "");
+            log("Report ready.");
+            setPhase("report");
+
+            // Save to localStorage for other analyst tools
+            try {
+              localStorage.setItem("gs_match_eye_last", JSON.stringify({
+                homeTeam:     capturedHomeTeam,
+                awayTeam:     capturedAwayTeam,
+                competition:  capturedCompetition,
+                sport:        capturedSport,
+                savedAt:      new Date().toISOString(),
+                analysis:     job.analysis,
+                narrative:    job.narrative ?? "",
+                trackingData: null,
+              }));
+            } catch { /* storage full */ }
+          } else if (job.status === "failed") {
+            clearInterval(pollIntervalRef.current!);
+            pollIntervalRef.current = null;
+            setError(job.error ?? "Analysis failed — please try again.");
+            setPhase("setup");
+          }
+        } catch {
+          // Network error — retry next interval
+        }
+      }, 5000);
+
     } catch (err) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
       const msg = err instanceof Error ? err.message : "Unknown error";
       setError(msg);
       setPhase("setup");
@@ -377,6 +419,10 @@ export default function MatchEyePage() {
   };
 
   const resetAll = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
     setPhase("setup");
     setVideoFile(null);
     setAnalysis(null);
