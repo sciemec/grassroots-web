@@ -5571,3 +5571,111 @@ POST /upload/presigned
 | Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI chat broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / fan hub uploads |
+
+---
+
+## SESSION LOG — 15 May 2026 (continued)
+
+### Theme — Highlight Clips: Laravel Backend + HighlightReel Frontend
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `player_highlights` Table Migration ✅
+
+**File (copy to bhora-ai):** `database/migrations/2026_05_15_000001_create_player_highlights_table.php`
+
+Schema:
+```sql
+player_highlights:
+  id                UUID PK
+  player_id         UUID FK → users (cascade delete), indexed
+  match_id          VARCHAR indexed
+  r2_key            VARCHAR (unique — used for idempotent re-delivery)
+  r2_url            TEXT
+  event_type        VARCHAR default 'sprint'  -- sprint | tackle
+  speed_kmh         DECIMAL(5,2) nullable
+  timestamp_seconds DECIMAL(8,2) nullable
+  created_at        TIMESTAMP
+```
+
+#### 2. `HighlightController` (Laravel) ✅
+
+**File (copy to bhora-ai):** `app/Http/Controllers/Api/HighlightController.php`
+
+Two methods:
+- `getPlayerHighlights($playerId)` — public, no auth. Returns last 20 clips for player ordered by `created_at DESC`
+- `storeCallback(Request $request)` — called by Python `run_pipeline` after clips uploaded to R2. Idempotent: skips clips whose `r2_key` already exists. Validates `status === 'complete'` before inserting.
+
+**Routes (add to routes/api.php):**
+```php
+Route::get('/players/{playerId}/highlights', [HighlightController::class, 'getPlayerHighlights']);
+Route::post('/highlights/callback',           [HighlightController::class, 'storeCallback']);
+```
+
+#### 3. `HighlightReel.tsx` — Updated ✅
+
+**File:** `src/components/player/HighlightReel.tsx`
+
+New features:
+- Accepts `playerId?: string` prop
+- New `AutoHighlight` interface: `{ id, player_id, match_id, r2_key, r2_url, event_type, speed_kmh, timestamp_seconds, created_at }`
+- When `playerId` provided: fetches `GET /api/v1/players/{playerId}/highlights` (no-auth fetch with optional Bearer token if available)
+- Falls back silently if endpoint returns error
+- Two sections rendered in one card:
+  - Top row: showcase clips (manually uploaded) — gold badge
+  - Bottom row: "AI-Generated Clips" with Zap icon — Sprint=amber, Tackle=red, speed overlay in km/h, timestamp label
+- `ActiveVideo` discriminated union: `{ kind: "showcase", clip }` | `{ kind: "auto", clip }`
+- Video modal shows event type + speed + match ID for auto clips
+
+**Updated pages:**
+- `src/app/player/profile/page.tsx` — passes `playerId={user?.id ? String(user.id) : undefined}`
+- `src/app/player/public/[id]/page.tsx` — always renders `<HighlightReel playerId={profile.id} />` (removed empty check for showcase)
+
+---
+
+### HIGHLIGHT CLIPS — FULL PIPELINE (end-to-end)
+
+```
+Coach triggers Match Eye video analysis
+  ↓
+Python /process-video:
+  - Downloads R2 video
+  - YOLOv8 player tracking (ByteTracker)
+  - detect_sprint_events() → events above SPRINT_THRESHOLD_KMH
+  - clip_highlights() → FFmpeg 8s clips around each event
+  - upload_clips_to_r2() → uploads to R2 under highlights/{match_id}/
+  - POST /highlights/callback → Laravel HighlightController::storeCallback()
+         → inserts rows into player_highlights table (idempotent)
+  ↓
+Player visits /player/profile or /player/public/{id}
+  → HighlightReel fetches GET /api/v1/players/{id}/highlights
+  → Shows AI-generated clips with sprint/tackle badges + speed overlay
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (15 May 2026)
+
+New public API routes (bhora-ai — NOT YET DEPLOYED):
+```
+GET  /api/v1/players/{playerId}/highlights   Returns last 20 AI-generated clips
+POST /api/v1/highlights/callback             Receives Python pipeline output
+```
+
+Reference file for copy-paste: `highlight-clips-backend.md` (in grassroots-web root)
+
+---
+
+### WHAT STILL NEEDS DOING (15 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `player_highlights` migration | WRITTEN — NOT YET ON RENDER | Copy from `highlight-clips-backend.md` to bhora-ai repo + push |
+| `HighlightController.php` | WRITTEN — NOT YET IN bhora-ai | Copy from `highlight-clips-backend.md` to `app/Http/Controllers/Api/` in bhora-ai |
+| 2 new routes in `routes/api.php` | WRITTEN — NOT YET IN bhora-ai | Add `GET /players/{id}/highlights` + `POST /highlights/callback` |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May 2026) |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+
