@@ -195,12 +195,14 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
           </div>
         </div>
 
-        {/* Highlight Reel */}
-        {showcaseClips.length > 0 && (
-          <div className="mt-6">
-            <HighlightReel clips={showcaseClips} mode="public" />
-          </div>
-        )}
+        {/* Highlight Reel — showcase + AI-generated clips */}
+        <div className="mt-6">
+          <HighlightReel
+            clips={showcaseClips}
+            mode="public"
+            playerId={profile.id}
+          />
+        </div>
 
         {/* Talent Prediction — scouts see this as the key signal */}
         <div className="mt-6">

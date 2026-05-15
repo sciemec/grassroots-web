@@ -780,7 +780,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           })()}
 
           {/* Highlight Reel */}
-          <HighlightReel mode="self" />
+          <HighlightReel mode="self" playerId={user?.id ? String(user.id) : undefined} />
 
         </div>
       </main>
