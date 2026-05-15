@@ -17,6 +17,7 @@ export function PublicNavbar() {
     { href: "/schools", label: "Schools & Clubs" },
     { href: "/school-curriculum", label: "FIFA Curriculum" },
     { href: "/business-hub", label: "Business Hub" },
+    { href: "/fan-hub", label: "Fan Hub" },
     { href: "/business-directory", label: "Org Directory" },
     { href: "/#pricing", label: "Pricing" },
     { href: "/#download", label: "📱 Download App" },
