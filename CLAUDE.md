@@ -5477,3 +5477,97 @@ All 16 steps of the THUTO Talent Prediction Engine briefing are now complete and
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
 | Prediction projected_score | 0 for test player | Expected — no `PlayerStat` assessments logged via APK pose data yet |
 
+
+---
+
+## SESSION LOG — 15 May 2026
+
+### Theme — Match Eye Background Jobs + Fan Hub Video Dashboard
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Match Eye — Background Job Architecture ✅
+
+**Problem:** Vercel serverless functions timeout at 60s (Hobby) / 300s (Pro).
+Full 90-min match Gemini 1.5 Pro analysis takes 8–15 minutes — impossible synchronously.
+
+**Solution:** POST to Python service → returns `job_id` immediately → browser polls `GET /job/{job_id}` every 5s.
+
+**Modified: `D:/bhora-ai/ai-service/main.py`** — committed as `514acbe` to `sciemec/grassroots-ai-service`
+- Added `_jobs: dict[str, dict] = {}` — in-memory job store, 2-hour TTL with auto-expiry cleanup
+- Added `AnalyseRequest(BaseModel)` — fileUri, fileName, mimeType, fileState, homeTeam, awayTeam, competition, sport
+- Added `_wait_for_file_active(file_name, google_key, job_id)` — async polls Gemini File API state every 5s, max 10 min
+- Added `_extract_json(text)` — tries direct parse, markdown code block regex, object regex
+- Added `_analyse_background(job_id, req)` — full async coroutine: waits ACTIVE, calls Gemini (read timeout 600s), extracts JSON, optionally calls Claude for narrative, upserts `_jobs[job_id]`
+- Added `POST /analyse` — creates job, calls `background_tasks.add_task()`, returns `{"job_id": job_id}` immediately
+- Added `GET /job/{job_id}` — returns job dict, cleans expired entries (>2h) on each call
+
+**Modified: `src/app/analyst/match-eye/page.tsx`** — committed as `5a188da`
+- Added `pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)`
+- `resetAll()` now clears the interval before resetting state
+- `runAnalysis` Step 2: `POST ${trackerUrl}/analyse` → `job_id` → `setInterval` every 5000ms → `GET ${trackerUrl}/job/${jobId}`
+- On `status === "complete"`: clears interval, renders report
+- On `status === "failed"`: clears interval, shows error
+- HTML/JSON parse errors silently retry next tick (handles Render cold-start HTML responses)
+
+---
+
+#### 2. Fan Hub Video Dashboard — Frontend Only ✅
+
+**Route:** `/fan-hub` — public page, no auth required for browsing or uploading.
+
+**Commit:** `e739087`
+
+**New files:**
+
+| File | Purpose |
+|---|---|
+| `src/components/fan-hub/VideoCard.tsx` | Reusable video card — thumbnail, badges (clip type, AI, LIVE), duration, view count, relative time, uploader |
+| `src/components/fan-hub/VideoPlayer.tsx` | Modal video player — HTML5 `<video>`, fetches full details + increments view count, Escape to close, tagged player link |
+| `src/components/fan-hub/UploadModal.tsx` | 6-step upload flow: select → upload (R2 presigned, XHR progress) → metadata → submitting → done → error |
+| `src/app/fan-hub/page.tsx` | Full page: hero, stats row, featured slot, category pills, province dropdown, trending grid, AI Analysis section |
+
+**Modified: `src/components/layout/public-navbar.tsx`**
+- Added `{ href: "/fan-hub", label: "Fan Hub" }` after Business Hub in links array
+
+**Key design decisions:**
+- `Promise.allSettled` for 4 parallel API calls on load (featured, feed, ai-clips, stats)
+- Explicit "Load more" button (not infinite scroll) — data-light mode for Zimbabwe 2G/3G
+- `SkeletonCard` animate-pulse during loading
+- Report flag button appears on hover (not always visible)
+- Upload reuses existing `POST /api/upload/presigned` → XHR PUT to R2 → `POST /fan-hub/videos`
+- AI clips section shows THUTO purple badge
+- Grid: `gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))"` — responsive without media queries
+
+**Backend already built — these endpoints are live:**
+```
+GET  /fan-hub/videos/featured
+GET  /fan-hub/videos?page=&per_page=&clip_type=&province=
+GET  /fan-hub/videos/ai-clips
+GET  /fan-hub/stats
+GET  /fan-hub/videos/{id}
+POST /fan-hub/videos
+POST /fan-hub/videos/{id}/report
+POST /upload/presigned
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (15 May 2026)
+
+```
+/fan-hub    Public Fan Hub — video feed, upload, AI analysis, no auth required
+```
+
+---
+
+### WHAT STILL NEEDS DOING (15 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May 2026 session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI chat broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / fan hub uploads |
