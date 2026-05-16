@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   { href: "/admin/subscriptions",    label: "Subscriptions",  icon: CreditCard,      roles: ["admin"] },
   { href: "/admin/stats",            label: "Platform Stats", icon: BarChart2,       roles: ["admin"] },
   { href: "/admin/announcements",    label: "Announcements",  icon: Bell,            roles: ["admin"] },
+  { href: "/admin/fan-hub",          label: "Fan Hub Mod",    icon: Film,            roles: ["admin"] },
   { href: "/business-hub",           label: "Business Hub",   icon: Briefcase,       roles: ["admin"] },
   { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["admin"] },
   { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["admin"] },
