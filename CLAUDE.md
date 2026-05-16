@@ -5477,6 +5477,75 @@ All 16 steps of the THUTO Talent Prediction Engine briefing are now complete and
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
 | Prediction projected_score | 0 for test player | Expected — no `PlayerStat` assessments logged via APK pose data yet |
 
+---
+
+## SESSION LOG — 15 May 2026
+
+### Theme — Match Eye Gemini fix (correct file: Python AI service)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Match Eye — `gemini-1.5-pro` 404 fixed in the correct file ✅
+
+**Root cause (the real one):**
+The previous session applied the Gemini model fix to `src/app/api/match-eye/analyse/route.ts` (the Next.js server route). That was the **wrong file** — that route is now dead code. The browser calls the Python AI service directly at `${NEXT_PUBLIC_TRACKER_URL}/analyse`, not the Next.js route.
+
+The Python AI service `_analyse_background()` function at line 969 of `main.py` still had:
+```python
+# BEFORE (broken — model retired):
+f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=..."
+```
+
+**Fix applied (`D:/bhora-ai/ai-service/main.py` line 969):**
+```python
+# AFTER (fixed — live model):
+f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=..."
+```
+
+**Committed:** `e46c8e0` — pushed to `github.com/sciemec/grassroots-ai-service` → Render auto-deploys.
+
+#### Match Eye Full Architecture (for reference)
+
+```
+Browser → XHR POST FormData → Python service /gemini-upload
+            ↓ streams to Google File API (v1beta/files resumable upload)
+            ↓ returns { fileUri, fileName, mimeType, state }
+
+Browser → fetch POST → Python service /analyse  (returns { job_id } immediately)
+            ↓ background: _analyse_background()
+            ↓ polls Gemini v1beta/{fileName} until state = ACTIVE
+            ↓ calls gemini-2.0-flash generateContent with file_data  ← FIXED
+            ↓ calls Claude claude-sonnet-4-6 for tactical narrative
+            ↓ stores result in _jobs dict
+
+Browser → polls GET /job/{job_id} every 5s → reads analysis + narrative when complete
+```
+
+**The Next.js route `src/app/api/match-eye/analyse/route.ts` is now unused dead code.**
+It is harmless to leave it but it will never be called by the browser.
+
+**Env vars required on Render (Python AI service):**
+```
+GOOGLE_AI_API_KEY   = (Gemini File API + generateContent)
+ANTHROPIC_API_KEY   = (Claude narrative — optional, skipped if not set)
+```
+
+---
+
+### WHAT STILL NEEDS DOING (15 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Render deploy of ai-service | Auto-deploys from `e46c8e0` | Wait ~3 min, then test Match Eye |
+| `GOOGLE_AI_API_KEY` on Render | Must be set on ai-service Render service | Verify in Render dashboard → Environment |
+| `ANTHROPIC_API_KEY` on Render | Must be set on ai-service Render service | Narrative will be empty if missing |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI chat broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+
 
 ---
 
@@ -5678,4 +5747,164 @@ Reference file for copy-paste: `highlight-clips-backend.md` (in grassroots-web r
 | Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May 2026) |
 | `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips |
+
+---
+
+## SESSION LOG — 16 May 2026
+
+### Theme — Fan Hub PRD Completion: Thumbnail Generation + THUTO Auto-Hook + Admin Moderation Page
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Thumbnail Generation Endpoint (Python AI Service) ✅
+
+**File:** `D:/bhora-ai/ai-service/main.py`
+**Commit:** `c64fe85` → pushed to `sciemec/grassroots-ai-service`
+
+Added `POST /generate-thumbnail` endpoint:
+- `GenerateThumbnailRequest(BaseModel)` with `video_url: str`
+- Downloads video via `httpx` streaming into a temp file
+- Seeks to `fps × 3` (3-second mark) with `cv2.VideoCapture` + `CAP_PROP_POS_FRAMES`
+- Falls back to frame 0 if seek fails or FPS is 0
+- Encodes JPEG at quality 82 via `imencode`
+- Uploads JPEG to Cloudflare R2 via boto3 under `thumbnails/fan-hub/{uuid}.jpg`
+- Returns `{ "thumbnail_url": "...", "r2_key": "..." }`
+- Endpoint is synchronous (small operation — no background task needed)
+
+**Required env vars on ai-service Render:**
+```
+R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL
+```
+
+---
+
+#### 2. THUTO Auto-Hook in HighlightController (Laravel) ✅
+
+**File:** `D:/bhora-ai/bhora-ai/app/Http/Controllers/Api/HighlightController.php`
+**File:** `D:/bhora-ai/bhora-ai/routes/api.php`
+**Commit:** `e790694` → pushed to `sciemec/bhora-ai`
+
+Added to `HighlightController::store()` — fires after player_highlights insert:
+- Added `use App\Models\FanHubVideo;` import
+- Fire-and-forget `try { ... } catch (\Throwable) {}` block — never breaks the primary store
+- Creates `FanHubVideo` record with:
+  - `title`: `"THUTO AI: {EventType} Highlight · {speed} km/h"` (e.g. "THUTO AI: Sprint Highlight · 28.4 km/h")
+  - `clip_type`: `'highlight'`
+  - `r2_key`, `r2_url`: same as player_highlights
+  - `match_id`: passed through from request
+  - `tagged_player_id`: the player's UUID
+  - `uploader_name`: `'THUTO AI'`
+  - `is_ai_generated`: `true`
+  - `status`: `'approved'` (auto-approved — AI-generated, no manual review needed)
+
+Also added two new admin endpoints:
+
+**`approve()` method:** `PATCH /fan-hub/videos/{id}/approve`
+```php
+$video->update(['status' => 'approved', 'moderated_at' => now()]);
+```
+
+**`adminIndex()` method:** `GET /admin/fan-hub/videos?status=pending`
+```php
+FanHubVideo::where('status', $status)->orderByDesc('created_at')->paginate(20)
+```
+
+**Routes added to `routes/api.php`:**
+```php
+Route::patch('fan-hub/videos/{id}/approve', [FanHubController::class, 'approve'])
+    ->middleware(['auth:sanctum', 'role:admin']);
+Route::get('admin/fan-hub/videos', [FanHubController::class, 'adminIndex'])
+    ->middleware(['auth:sanctum', 'role:admin']);
+```
+
+**No model changes needed** — `FanHubVideo::$fillable` already included all required fields.
+
+---
+
+#### 3. `/admin/fan-hub` Moderation Page (Next.js) ✅
+
+**File:** `src/app/admin/fan-hub/page.tsx` (NEW — 277 lines)
+**File:** `src/components/layout/sidebar.tsx` (modified — added Fan Hub Mod nav item)
+**Commit:** `c7b21d8` → pushed to `sciemec/grassroots-web`
+
+**Page features:**
+- `FanHubVideo` interface with all fields: `report_count`, `is_ai_generated`, `is_live`, `status`, `clip_type`, `uploader_name`, `province`, `view_count`, `r2_url`, `thumbnail_url`
+- Status tabs: **Pending** (default, red badge showing count) / **Approved**
+- Pending count badge on tab using `videos.length` when status = pending
+- `useQuery` on `GET /admin/fan-hub/videos?status={tab}` — auto-refetches on tab switch
+- Refresh button with `RefreshCw` spin animation during `isRefetching`
+- `VideoSkeleton` — 6 animate-pulse rows during load
+- `timeAgo()` helper — "Xm ago" / "Xh ago" / "Xd ago"
+- `CLIP_TYPE_COLOURS` record — per clip type badge colour (amber/blue/green/purple/cyan/red)
+
+**Per-video row:**
+- Thumbnail (click to toggle inline preview): `Eye` icon hover overlay
+- Badges: clip type, THUTO AI (purple, when `is_ai_generated`), LIVE (red, when `is_live`)
+- Reports badge (red AlertTriangle) when `report_count >= 3`
+- Title + uploader + province + time + view count
+- **Approve button** (green, only on Pending tab): `PATCH /fan-hub/videos/{id}/approve`, spinner during mutation
+- **Delete button** (red, both tabs): `DELETE /fan-hub/videos/{id}` with `confirm()` dialog, spinner during mutation
+
+**Inline video preview:**
+- Clicking any thumbnail sets `previewId`; clicking again closes
+- Renders `<video controls>` panel below the list (no separate modal)
+- Close button in preview header
+
+**Sidebar nav added:**
+- `{ href: "/admin/fan-hub", label: "Fan Hub Mod", icon: Film, roles: ["admin"] }` after Announcements
+- `Film` icon was already imported — no import changes needed
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (16 May 2026)
+
+```
+/admin/fan-hub    Admin Fan Hub moderation — pending queue, approve/delete, inline video preview
+```
+
+New API routes (bhora-ai — LIVE on Render via e790694):
+```
+PATCH /api/v1/fan-hub/videos/{id}/approve    Set status=approved (admin only)
+GET   /api/v1/admin/fan-hub/videos           Paginated queue filtered by status (admin only)
+```
+
+New Python AI service endpoint (LIVE via c64fe85):
+```
+POST  https://ai.bhora-ai.onrender.com/generate-thumbnail    Extract frame at 3s + upload to R2
+```
+
+---
+
+### WHAT STILL NEEDS DOING (16 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `player_highlights` migration on Render | Confirm deployed | Verify `player_highlights` table exists via Render logs |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May 2026 session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI chat broken without this |
+| `R2_*` vars (5 vars) on Vercel | NOT set in Vercel | Add for video storage, showcase clips, fan hub uploads |
+| `R2_*` vars on ai-service Render | NOT confirmed | Required for `/generate-thumbnail` to upload to R2 |
+| `GOOGLE_AI_API_KEY` on ai-service | Must be set | Required for Gemini Match Eye analysis |
+| `ANTHROPIC_API_KEY` on ai-service | Must be set | Required for Claude tactical narrative in Match Eye |
+
+---
+
+### FAN HUB — COMPLETE FEATURE STATUS (16 May 2026)
+
+| Feature | Backend | Frontend | Status |
+|---|---|---|---|
+| Video feed + filters | ✅ FanHubController::index | ✅ /fan-hub page | LIVE |
+| Video upload (metadata) | ✅ FanHubController::store | ✅ UploadModal.tsx | LIVE |
+| Featured slot | ✅ getFeatured() | ✅ Hero section | LIVE |
+| AI clips section | ✅ getAiClips() | ✅ AI Analysis section | LIVE |
+| Stats row | ✅ stats() | ✅ Stats row | LIVE |
+| View count increment | ✅ show() | ✅ VideoPlayer.tsx | LIVE |
+| Report flag | ✅ report() (auto-hide at 5) | ✅ Flag button on hover | LIVE |
+| THUTO auto-hook | ✅ HighlightController::store | N/A (server-side) | LIVE |
+| Admin moderation | ✅ approve() + adminIndex() | ✅ /admin/fan-hub | LIVE |
+| Thumbnail generation | ✅ /generate-thumbnail (Python) | ✅ UploadModal calls endpoint | LIVE (needs R2 vars) |
+| R2 video upload | ✅ /upload/presigned | ✅ XHR upload in UploadModal | LIVE (needs R2 vars) |
 
