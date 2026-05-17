@@ -137,8 +137,25 @@ export default function ShowcasePage() {
       setErrorMsg("Video must be under 500 MB.");
       return;
     }
-    setErrorMsg("");
-    setVideoFile(file);
+    // Validate duration (max 60 seconds)
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      if (video.duration > 60) {
+        setErrorMsg("Showcase clips must be 60 seconds or less.");
+        return;
+      }
+      setErrorMsg("");
+      setVideoFile(file);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      setErrorMsg("");
+      setVideoFile(file); // allow anyway if duration check fails
+    };
+    video.src = url;
   };
 
   // ── Main analysis flow ─────────────────────────────────────────────────────
@@ -200,22 +217,21 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
         const token = typeof window !== "undefined"
           ? localStorage.getItem("auth_token") ?? ""
           : "";
-        const aiRes = await fetch("/api/video-analysis", {
+        const aiRes = await fetch("/api/ai-coach", {
           method:  "POST",
           headers: {
             "Content-Type":  "application/json",
             "Authorization": `Bearer ${token}`,
           },
           body:    JSON.stringify({
-            frames:        frames.slice(0, 10),
-            context:       PROMPT,
+            message:       PROMPT,
             system_prompt: "You are a FIFA talent scout. Respond with valid JSON only.",
           }),
         });
 
         if (aiRes.ok) {
           const aiData = await aiRes.json();
-          const raw    = aiData.analysis ?? "";
+          const raw    = aiData.response ?? "";
           const match  = raw.match(/\{[\s\S]*\}/);
           if (match) {
             const parsed = JSON.parse(match[0]) as Partial<AIAnalysis>;

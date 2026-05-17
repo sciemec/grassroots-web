@@ -182,7 +182,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
           r2_key: "",
           tag: state.tag,
           size_mb: round1(state.file!.size / (1024 * 1024)),
-          video_url: URL.createObjectURL(state.file!),
+          video_url: "", // blob URLs are session-only; can't persist across refresh
           created_at: new Date().toISOString(),
         };
         onUploaded(localVideo);
@@ -463,13 +463,22 @@ function VideoModal({ video, onClose }: { video: PlayerVideo; onClose: () => voi
           </button>
         </div>
         <div className="p-4">
-          <video
-            src={video.video_url}
-            controls
-            autoPlay
-            className="w-full rounded-lg bg-black"
-            style={{ maxHeight: "60vh" }}
-          />
+          {video.video_url ? (
+            <video
+              src={video.video_url}
+              controls
+              autoPlay
+              className="w-full rounded-lg bg-black"
+              style={{ maxHeight: "60vh" }}
+            />
+          ) : (
+            <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-black/40 text-center text-sm text-muted-foreground">
+              <div>
+                <WifiOff className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                <p>Video saved locally — playback available after upload to cloud storage.</p>
+              </div>
+            </div>
+          )}
           {video.description && (
             <p className="mt-3 text-sm text-muted-foreground">{video.description}</p>
           )}
