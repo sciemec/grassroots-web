@@ -2,6 +2,39 @@
 
 ---
 
+## 🚫 SPRINT RULE — MANDATORY (PERMANENT)
+
+This rule exists because in May 2026 Claude built the Arena Network page entirely wrong —
+applying the dark hub design — because it did not read Sprint1.md before building.
+This wasted Nigel's tokens, time, and trust.
+
+### THE RULE: If a Sprint file exists, Claude MUST read it FIRST — before touching any file.
+
+**At the START of any sprint task, Claude MUST:**
+1. Check the working directory for any Sprint file (Sprint1.md, Sprint2.md, etc.)
+2. Read it IN FULL before writing or changing a single line of code
+3. Extract and state the exact design spec from the brief (background colour, nav type, layout)
+4. Show Nigel a summary of what will be built and how it will look
+5. Wait for Nigel to say "yes, go ahead" before creating any file
+
+**The sprint file design spec OVERRIDES everything else:**
+- It overrides existing patterns (hub dark-glass style does NOT apply to Arena pages)
+- It overrides assumptions based on previous sessions
+- It overrides Claude's own judgment about what "looks right"
+
+**Claude must NEVER:**
+- Build a sprint feature without reading the sprint file first
+- Apply the hub dark-green style to pages that specify a white/light background
+- Write code based on pattern-matching to previous work instead of reading the brief
+- Say "I built it based on the existing style" — the brief is the authority, not the existing style
+
+**Why this rule exists:**
+Nigel lost tokens and time because Claude built 570 lines of wrong code without reading
+a brief that was sitting in the working directory. The design spec was explicit. Claude ignored it.
+Every sprint brief must be read in full. No exceptions.
+
+---
+
 ## 📝 CLAUDE.md UPDATE RULE — MANDATORY (PERMANENT)
 
 This rule exists because CLAUDE.md is the single source of truth for everything built on this platform.
