@@ -5783,6 +5783,118 @@ Reference file for copy-paste: `highlight-clips-backend.md` (in grassroots-web r
 
 ---
 
+## SESSION LOG — 18 May 2026
+
+### Theme — Arena Social Graph: Sprint 1 Complete
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Sprint 1 Analysis Delivered ✅
+
+Read Sprint1.md in full and reported:
+- Steps 1–5 and 8: COMPLETE (backend models, migrations, controllers, routes all live)
+- Step 6 (`/arena/network` design): WRONG — dark hub style applied instead of Sprint1.md white spec
+- Steps 7, 9: NOT DONE
+- Sprint 1 design spec: `#f4f2ee` background, `#1a5c2a` forest green, `#c8962a` gold, white nav, NO Sidebar
+
+#### 2. `/arena/network` — REBUILT with correct Sprint1.md design ✅
+
+**Commit:** `5f69149` (prior session) + `14a4fb0` (this session)
+
+**What was wrong:**
+- Dark hub `Sidebar` component used instead of white custom nav
+- Dark card backgrounds, white text — opposite of Sprint1.md spec
+- React #185 infinite loop: `(s) => ({ user: s.user, token: s.token })` object selector
+
+**What was fixed:**
+- `ArenaNav` component built inline (white sticky header, Arena brand, 5 hub links, user dropdown, Messages button)
+- Root div: `style={{ backgroundColor: "#f4f2ee" }}`
+- Cards: `bg-white rounded-2xl border border-gray-200 shadow-sm`
+- Text: `text-gray-900` / `text-gray-500` (dark on white)
+- Tab numbers: `color: "#1a5c2a"` when active
+- Connect button: `backgroundColor: "#c8962a"` (gold)
+- Zustand selectors split: `const user = useAuthStore((s) => s.user)` + `const token = useAuthStore((s) => s.token)`
+
+#### 3. `/arena/messages` — FIXED (ArenaNav + Zustand bug + poll interval) ✅
+
+**Commit:** `14a4fb0`
+
+**Changes:**
+- Fixed React #185 infinite loop: split object selector on line 51 into two separate selectors
+- Added `ArenaNav` component (same white header as `/arena/network`)
+- Changed thread poll interval: `10000` → `30000` (30s per Sprint1.md spec)
+- Added `Link` + `useRouter` imports needed by ArenaNav
+
+**File:** `src/app/arena/messages/page.tsx`
+
+---
+
+### ARENA SOCIAL GRAPH — SPRINT 1 STATUS (18 May 2026)
+
+| Step | Feature | Status |
+|---|---|---|
+| 1 | `arena_follows` table + ArenaFollow model | ✅ LIVE on Render |
+| 2 | `arena_connections` table + ArenaConnection model | ✅ LIVE on Render |
+| 3 | `arena_messages` table + ArenaMessage model | ✅ LIVE on Render |
+| 4 | ArenaController (follow/unfollow/connections/inbox/send) | ✅ LIVE on Render |
+| 5 | API routes in routes/api.php | ✅ LIVE on Render |
+| 6 | `/arena/network` — Sprint1.md white design | ✅ FIXED + DEPLOYED |
+| 7 | `/arena/messages` — Sprint1.md white design | ✅ FIXED + DEPLOYED |
+| 8 | `src/types/arena.ts` TypeScript interfaces | ✅ DONE |
+| 9 | UI tests (Sprint1.md Step 9) | ❌ NOT YET CONFIRMED |
+| 10 | CLAUDE.md session log | ✅ THIS ENTRY |
+
+**Arena API Endpoints (all auth:sanctum required):**
+```
+POST   /arena/follow/{userId}              Follow a user (one-way)
+DELETE /arena/follow/{userId}              Unfollow
+GET    /arena/following                    Who I follow
+GET    /arena/followers                    Who follows me
+POST   /arena/connect/{userId}             Send connection request
+PATCH  /arena/connect/{connectionId}/accept   Accept request
+DELETE /arena/connect/{connectionId}       Decline/remove connection
+GET    /arena/connections                  My accepted connections
+GET    /arena/connections/pending          Pending requests received
+GET    /arena/inbox                        Latest message per thread
+GET    /arena/messages/{userId}            Full thread with user
+POST   /arena/messages/{userId}            Send message (connections only)
+```
+
+**Arena Design Spec (Sprint1.md — PERMANENT):**
+```
+Background:  #f4f2ee  (light warm white)
+Primary:     #1a5c2a  (forest green — avatars, active states, sent bubbles)
+Accent:      #c8962a  (gold — Connect/Discover buttons, Send button)
+Nav:         White sticky top nav (ArenaNav) — NOT the dark Sidebar component
+Cards:       bg-white rounded-2xl border border-gray-200 shadow-sm
+Text:        text-gray-900 (primary), text-gray-500 (secondary)
+```
+
+### ALL BUILT ROUTES — ADDITIONS (18 May 2026)
+
+```
+/arena/network   My Network — 4 tabs: Connections, Followers, Following, Pending
+/arena/messages  Direct Messages — thread list + full message thread, polling 30s
+```
+
+### REACT #185 — ZUSTAND OBJECT SELECTOR BUG (PERMANENT RULE)
+
+**NEVER use this pattern in any page:**
+```typescript
+const { user, token } = useAuthStore((s) => ({ user: s.user, token: s.token }));
+// Creates new object reference every render → infinite re-render → React error #185
+```
+
+**ALWAYS use separate selectors:**
+```typescript
+const user  = useAuthStore((s) => s.user);
+const token = useAuthStore((s) => s.token);
+```
+
+---
+
 ## SESSION LOG — 16 May 2026
 
 ### Theme — Fan Hub PRD Completion: Thumbnail Generation + THUTO Auto-Hook + Admin Moderation Page
