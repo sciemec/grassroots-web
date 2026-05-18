@@ -5908,3 +5908,99 @@ POST  https://ai.bhora-ai.onrender.com/generate-thumbnail    Extract frame at 3s
 | Thumbnail generation | ✅ /generate-thumbnail (Python) | ✅ UploadModal calls endpoint | LIVE (needs R2 vars) |
 | R2 video upload | ✅ /upload/presigned | ✅ XHR upload in UploadModal | LIVE (needs R2 vars) |
 
+---
+
+## SESSION LOG — 18 May 2026
+
+### Theme — Arena Social Graph Sprint 1: All 12 Tests Passing
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Arena Social Graph — FULLY TESTED ✅
+
+All 12 API tests for Arena Sprint 1 now pass end-to-end.
+
+**Root causes found and fixed:**
+
+**Bug 1 — All arena endpoints returned 500 after every Render restart**
+- Root cause: `start.sh` dropped arena tables on restart then called `php artisan migrate --force`,
+  but `2026_05_18_000001_create_arena_tables_uuid` was already marked "done" in the migrations table
+  from the first deploy — so it never re-ran, leaving all three tables permanently absent.
+- Fix: added `DB::table('migrations')->where('migration', '2026_05_18_000001_create_arena_tables_uuid')->delete();`
+  to the tinker block in `start.sh` so the migration always re-runs after the drops.
+- Committed `5e065ad` to `sciemec/bhora-ai`
+
+**Bug 2 — ArenaConnection, ArenaFollow, ArenaMessage models missing UUID PK config**
+- Root cause: All three Eloquent models were missing `public $incrementing = false` and
+  `protected $keyType = 'string'`. Eloquent defaulted to treating the UUID primary key
+  as an auto-increment integer — returning `"id": 33` (integer) instead of a UUID string,
+  and causing PATCH/UPDATE queries against the UUID column to fail with HTTP 500.
+- Fix: added both properties to all three models.
+- Committed `0e3cbf1` to `sciemec/bhora-ai`
+
+**Bug 3 — Controller method signatures used `int $id` instead of `string $id`**
+- Fixed in prior session — all `ArenaSocialController` route-model binding parameters
+  changed from `int` to `string` to match UUID route segments.
+
+---
+
+#### Arena API Routes (all confirmed LIVE ✅)
+
+| Method | Route | Auth | Tested |
+|---|---|---|---|
+| POST | `/arena/follow/{id}` | Bearer | ✅ Follow + unfollow toggle |
+| GET | `/arena/followers` | Bearer | ✅ Returns followers list |
+| GET | `/arena/following` | Bearer | ✅ Returns following list |
+| POST | `/arena/connect/{id}` | Bearer | ✅ Sends pending connection request |
+| PATCH | `/arena/connect/{id}` | Bearer | ✅ Accept/decline connection |
+| GET | `/arena/connections` | Bearer | ✅ Returns accepted connections |
+| GET | `/arena/connections/pending` | Bearer | ✅ Returns pending requests with requester data |
+| POST | `/arena/messages/{recipientId}` | Bearer | ✅ Send DM (must be connected) |
+| GET | `/arena/messages/{otherUserId}` | Bearer | ✅ Read thread, auto-marks read |
+| GET | `/arena/inbox` | Bearer | ✅ Inbox with sender/recipient, read_at stamped |
+
+---
+
+#### Frontend Pages (Next.js — already built, no changes needed this session)
+
+- `src/app/arena/network/page.tsx` — Arena network hub (followers, following, connections, pending)
+- `src/app/arena/messages/page.tsx` — DM inbox + thread view, polling every 10s
+
+**TypeScript types used:** `src/types/arena.ts` — `ArenaMessage`, `ArenaUser` interfaces
+
+---
+
+#### Backend Files (bhora-ai repo)
+
+| File | Status |
+|---|---|
+| `app/Http/Controllers/Api/ArenaSocialController.php` | LIVE ✅ |
+| `app/Models/ArenaConnection.php` | FIXED ✅ — UUID PK config added |
+| `app/Models/ArenaFollow.php` | FIXED ✅ — UUID PK config added |
+| `app/Models/ArenaMessage.php` | FIXED ✅ — UUID PK config added |
+| `database/migrations/2026_05_18_000001_create_arena_tables_uuid.php` | LIVE ✅ |
+| `start.sh` | FIXED ✅ — now deletes uuid migration record before re-running |
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (18 May 2026)
+
+```
+/arena/network    Arena social hub — follow, connect, pending requests
+/arena/messages   Arena DM inbox + thread view (polling every 10s)
+```
+
+---
+
+### WHAT STILL NEEDS DOING (18 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | Add to Vercel env vars — THUTO AI chat broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips / fan hub |
+| Arena `name` field in messages | `name: null` in responses | `users` table has `name` but not split into first/surname — populate via profile join if needed |
+
