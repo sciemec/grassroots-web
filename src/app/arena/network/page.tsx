@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Users, UserCheck, UserPlus, Clock, MessageSquare,
-  Search, UserMinus, Check, X, ArrowLeft, Zap,
+  Search, UserMinus, Check, X, Zap, ChevronDown,
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
-import { useAuthStore } from "@/lib/auth-store";
+import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
 import type { ArenaConnection, ArenaFollow, ArenaUser } from "@/types/arena";
 
@@ -14,12 +14,12 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 type Tab = "connections" | "followers" | "following" | "pending";
 
-const ROLE_META: Record<string, { label: string; color: string; dot: string }> = {
-  player: { label: "Player", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", dot: "bg-emerald-400" },
-  coach:  { label: "Coach",  color: "bg-blue-500/20 text-blue-300 border-blue-500/30",          dot: "bg-blue-400" },
-  scout:  { label: "Scout",  color: "bg-purple-500/20 text-purple-300 border-purple-500/30",    dot: "bg-purple-400" },
-  fan:    { label: "Fan",    color: "bg-amber-500/20 text-amber-300 border-amber-500/30",        dot: "bg-amber-400" },
-  admin:  { label: "Admin",  color: "bg-red-500/20 text-red-300 border-red-500/30",              dot: "bg-red-400" },
+const ROLE_BADGE: Record<string, string> = {
+  player: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  coach:  "bg-blue-50 text-blue-700 border-blue-200",
+  scout:  "bg-purple-50 text-purple-700 border-purple-200",
+  fan:    "bg-amber-50 text-amber-700 border-amber-200",
+  admin:  "bg-red-50 text-red-700 border-red-200",
 };
 
 function initials(name: string): string {
@@ -36,59 +36,149 @@ function timeAgo(iso: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-// ── Avatar ─────────────────────────────────────────────────────────────────
-function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
-  const sz = { sm: "w-9 h-9 text-xs", md: "w-11 h-11 text-sm", lg: "w-14 h-14 text-base" }[size];
+// ── Arena Top Nav ────────────────────────────────────────────────────────────
+function ArenaNav() {
+  const { user } = useAuthStore();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const hubs = [
+    { label: "Player Hub",   href: "/player" },
+    { label: "Coach Hub",    href: "/coach" },
+    { label: "Fan Hub",      href: "/fan-hub" },
+    { label: "Analysis Hub", href: "/analyst" },
+    { label: "Scout Hub",    href: "/scout" },
+  ];
+
   return (
-    <div className={`${sz} rounded-full flex items-center justify-center font-bold text-white shrink-0`}
-      style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #2d7a3e 100%)" }}>
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo_v2.png" alt="Grassroots" width={28} height={28} className="rounded" />
+          <span className="font-black text-sm tracking-tight" style={{ color: "#1a5c2a" }}>
+            The Arena
+          </span>
+        </Link>
+
+        {/* Hub links — desktop */}
+        <nav className="hidden md:flex items-center gap-5">
+          {hubs.map((h) => (
+            <Link
+              key={h.href}
+              href={h.href}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              {h.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right */}
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href="/arena/messages"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"
+            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
+          >
+            <MessageSquare size={12} />
+            Messages
+          </Link>
+
+          {user && (
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0"
+                  style={{ background: "#1a5c2a" }}
+                >
+                  {initials(user.name ?? "")}
+                </div>
+                <span className="hidden sm:block">{user.name?.split(" ")[0]}</span>
+                <ChevronDown size={12} className="text-gray-400" />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-9 w-44 bg-white rounded-xl border border-gray-200 shadow-lg py-1 z-50">
+                  <Link
+                    href={roleHomePath(user.role)}
+                    className="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    My Hub
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Settings
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ── Avatar ───────────────────────────────────────────────────────────────────
+function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
+  const sz = size === "sm" ? "w-9 h-9 text-xs" : "w-11 h-11 text-sm";
+  return (
+    <div
+      className={`${sz} rounded-full flex items-center justify-center text-white font-black shrink-0`}
+      style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #2d7a3e 100%)" }}
+    >
       {initials(name)}
     </div>
   );
 }
 
-// ── Skeleton ────────────────────────────────────────────────────────────────
-function SkeletonCard() {
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+function SkeletonRow() {
   return (
-    <div className="flex items-center gap-3 p-4 animate-pulse">
-      <div className="w-11 h-11 rounded-full bg-white/10 shrink-0" />
+    <div className="flex items-center gap-3 px-5 py-4 animate-pulse">
+      <div className="w-11 h-11 rounded-full bg-gray-100 shrink-0" />
       <div className="flex-1 space-y-2">
-        <div className="h-3.5 bg-white/10 rounded-full w-1/3" />
-        <div className="h-3 bg-white/10 rounded-full w-1/4" />
+        <div className="h-3.5 bg-gray-100 rounded-full w-1/3" />
+        <div className="h-3 bg-gray-100 rounded-full w-1/4" />
       </div>
-      <div className="h-8 w-20 bg-white/10 rounded-xl" />
+      <div className="h-8 w-20 bg-gray-100 rounded-full" />
     </div>
   );
 }
 
-// ── Empty state ─────────────────────────────────────────────────────────────
-function EmptyState({ icon: Icon, title, body, cta, onCta }: {
+// ── Empty state ───────────────────────────────────────────────────────────────
+function EmptyState({ icon: Icon, title, body }: {
   icon: React.ElementType; title: string; body: string;
-  cta?: string; onCta?: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-14 px-6 text-center gap-4">
-      <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-        <Icon size={22} className="text-white/30" />
+    <div className="flex flex-col items-center justify-center py-14 px-6 text-center gap-3">
+      <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center">
+        <Icon size={20} className="text-gray-300" />
       </div>
       <div>
-        <p className="text-white font-semibold text-sm">{title}</p>
-        <p className="text-white/40 text-xs mt-1 max-w-xs mx-auto">{body}</p>
+        <p className="text-sm font-semibold text-gray-700">{title}</p>
+        <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto leading-relaxed">{body}</p>
       </div>
-      {cta && onCta && (
-        <button
-          onClick={onCta}
-          className="text-xs px-4 py-2 rounded-xl font-bold text-[#1a3a1a] transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "#f0b429" }}
-        >
-          {cta}
-        </button>
-      )}
+      <Link
+        href="/arena/discover"
+        className="text-xs font-bold px-4 py-2 rounded-full transition-opacity hover:opacity-85 mt-1"
+        style={{ backgroundColor: "#1a5c2a", color: "#fff" }}
+      >
+        Discover Athletes
+      </Link>
     </div>
   );
 }
 
-// ── Person card ─────────────────────────────────────────────────────────────
+// ── Person card ───────────────────────────────────────────────────────────────
 interface PersonCardProps {
   user: ArenaUser;
   tab: Tab;
@@ -108,7 +198,7 @@ function PersonCard({
   connectionId, connectedAt, message, isConnecting,
 }: PersonCardProps) {
   const [busy, setBusy] = useState(false);
-  const meta = ROLE_META[user.role] ?? ROLE_META.player;
+  const badgeClass = ROLE_BADGE[user.role] ?? ROLE_BADGE.player;
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -116,44 +206,41 @@ function PersonCard({
   };
 
   return (
-    <div className="group flex items-start gap-3 p-4 border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+    <div className="flex items-start gap-3 px-5 py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
       <Avatar name={user.name} />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-semibold text-white text-sm truncate leading-snug">
-              {user.name || "Arena User"}
-            </p>
-            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-              <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-semibold ${meta.color}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                {meta.label}
+            <p className="text-sm font-semibold text-gray-900 truncate">{user.name || "Arena User"}</p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold capitalize ${badgeClass}`}>
+                {user.role}
               </span>
               {user.sport && (
-                <span className="text-[10px] text-white/40 capitalize">{user.sport}</span>
+                <span className="text-[10px] text-gray-400 capitalize">{user.sport}</span>
               )}
               {user.province && (
-                <span className="text-[10px] text-white/30">· {user.province}</span>
+                <span className="text-[10px] text-gray-400">· {user.province}</span>
               )}
             </div>
             {tab === "pending" && message && (
-              <p className="text-xs text-white/40 mt-1.5 italic truncate">&ldquo;{message}&rdquo;</p>
+              <p className="text-xs text-gray-400 mt-1.5 italic truncate">&ldquo;{message}&rdquo;</p>
             )}
             {tab === "connections" && connectedAt && (
-              <p className="text-[10px] text-white/25 mt-1">Connected {timeAgo(connectedAt)}</p>
+              <p className="text-[10px] text-gray-400 mt-1">Connected {timeAgo(connectedAt)}</p>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex gap-1.5 shrink-0 items-center">
+          <div className="flex gap-2 shrink-0 items-center">
             {tab === "connections" && (
               <button
                 onClick={() => onMessage?.(user.id)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl font-semibold border border-white/15 text-white/70 hover:border-[#f0b429]/50 hover:text-[#f0b429] transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors"
               >
-                <MessageSquare size={12} />
-                <span>Message</span>
+                <MessageSquare size={11} />
+                Message
               </button>
             )}
 
@@ -162,18 +249,18 @@ function PersonCard({
                 <button
                   disabled={busy}
                   onClick={() => run(() => onAccept!(connectionId))}
-                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl font-bold text-white disabled:opacity-40 transition-opacity hover:opacity-90"
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-bold text-white disabled:opacity-40 transition-opacity hover:opacity-85"
                   style={{ backgroundColor: "#1a5c2a" }}
                 >
-                  <Check size={12} />
+                  <Check size={11} />
                   Accept
                 </button>
                 <button
                   disabled={busy}
                   onClick={() => run(() => onDecline!(connectionId))}
-                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-semibold border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors"
                 >
-                  <X size={12} />
+                  <X size={11} />
                   Decline
                 </button>
               </>
@@ -183,9 +270,9 @@ function PersonCard({
               <button
                 disabled={busy}
                 onClick={() => run(() => onUnfollow!(user.id))}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl font-semibold border border-white/15 text-white/50 hover:border-red-500/40 hover:text-red-400 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors"
               >
-                <UserMinus size={12} />
+                <UserMinus size={11} />
                 Unfollow
               </button>
             )}
@@ -194,10 +281,10 @@ function PersonCard({
               <button
                 disabled={busy || isConnecting}
                 onClick={() => run(() => onConnect!(user.id))}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl font-bold disabled:opacity-40 transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "#f0b429", color: "#1a3a1a" }}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold text-white disabled:opacity-40 transition-opacity hover:opacity-85"
+                style={{ backgroundColor: "#c8962a" }}
               >
-                <UserPlus size={12} />
+                <UserPlus size={11} />
                 Connect
               </button>
             )}
@@ -208,7 +295,7 @@ function PersonCard({
   );
 }
 
-// ── Discover search result ──────────────────────────────────────────────────
+// ── Discover card ─────────────────────────────────────────────────────────────
 interface DiscoverPlayer {
   id: string;
   name?: string;
@@ -216,37 +303,38 @@ interface DiscoverPlayer {
   role?: string;
   sport?: string;
   province?: string;
-  age_group?: string;
 }
 
-function DiscoverCard({
-  player, onConnect, sent,
-}: { player: DiscoverPlayer; onConnect: (id: string) => Promise<void>; sent: boolean }) {
+function DiscoverCard({ player, onConnect, sent }: {
+  player: DiscoverPlayer;
+  onConnect: (id: string) => Promise<void>;
+  sent: boolean;
+}) {
   const [busy, setBusy] = useState(false);
-  const meta = ROLE_META[player.role ?? "player"] ?? ROLE_META.player;
+  const badgeClass = ROLE_BADGE[player.role ?? "player"] ?? ROLE_BADGE.player;
   const displayName = player.name ?? player.initials ?? "Arena User";
 
   return (
-    <div className="flex items-center gap-3 p-3 border-b border-white/5 last:border-0">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
       <Avatar name={displayName} size="sm" />
       <div className="flex-1 min-w-0">
-        <p className="text-white text-xs font-semibold truncate">{displayName}</p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-semibold ${meta.color}`}>
-            {meta.label}
+        <p className="text-xs font-semibold text-gray-900 truncate">{displayName}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-semibold capitalize ${badgeClass}`}>
+            {player.role ?? "player"}
           </span>
-          {player.sport && <span className="text-[10px] text-white/40 capitalize">{player.sport}</span>}
-          {player.province && <span className="text-[10px] text-white/30">· {player.province}</span>}
+          {player.sport && <span className="text-[10px] text-gray-400 capitalize">{player.sport}</span>}
+          {player.province && <span className="text-[10px] text-gray-400">· {player.province}</span>}
         </div>
       </div>
       {sent ? (
-        <span className="text-[10px] text-white/30 font-semibold px-2">Sent ✓</span>
+        <span className="text-[10px] text-gray-400 font-semibold">Sent ✓</span>
       ) : (
         <button
           disabled={busy}
           onClick={async () => { setBusy(true); await onConnect(player.id); setBusy(false); }}
-          className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg font-bold disabled:opacity-40 transition-opacity hover:opacity-90 shrink-0"
-          style={{ backgroundColor: "#f0b429", color: "#1a3a1a" }}
+          className="flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-full font-bold text-white disabled:opacity-40 transition-opacity hover:opacity-85 shrink-0"
+          style={{ backgroundColor: "#c8962a" }}
         >
           <UserPlus size={10} />
           Connect
@@ -256,7 +344,7 @@ function DiscoverCard({
   );
 }
 
-// ── Main page ───────────────────────────────────────────────────────────────
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function MyNetworkPage() {
   const router = useRouter();
   const user  = useAuthStore((s) => s.user);
@@ -269,7 +357,6 @@ export default function MyNetworkPage() {
   const [following, setFollowing]   = useState<ArenaFollow[]>([]);
   const [pending, setPending]       = useState<ArenaConnection[]>([]);
 
-  // Discover panel
   const [query, setQuery]           = useState("");
   const [searching, setSearching]   = useState(false);
   const [results, setResults]       = useState<DiscoverPlayer[]>([]);
@@ -294,7 +381,6 @@ export default function MyNetworkPage() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Discover search
   useEffect(() => {
     if (!query.trim()) { setResults([]); return; }
     const t = setTimeout(async () => {
@@ -334,7 +420,8 @@ export default function MyNetworkPage() {
   };
 
   const handleConnect = async (userId: string) => {
-    await fetch(`${API}/arena/connect/${userId}`, { method: "POST", headers,
+    await fetch(`${API}/arena/connect/${userId}`, {
+      method: "POST", headers,
       body: JSON.stringify({ message: "Hi, I'd like to connect!" }),
     });
     setSentIds((prev) => new Set(prev).add(userId));
@@ -353,218 +440,216 @@ export default function MyNetworkPage() {
   ];
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+    <div style={{ backgroundColor: "#f4f2ee", minHeight: "100vh" }}>
+      <ArenaNav />
 
-          {/* Back + header */}
-          <div>
+      <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+        {/* Page header */}
+        <div>
+          <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a5c2a" }}>
+            My Network
+          </h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Your professional sports circle on The Arena
+          </p>
+        </div>
+
+        {/* Stats / Tab picker */}
+        <div className="grid grid-cols-4 gap-2">
+          {TABS.map(({ key, label, count }) => (
             <button
-              onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-white/40 hover:text-white text-xs mb-3 transition-colors"
+              key={key}
+              onClick={() => setTab(key)}
+              className={`relative flex flex-col items-center gap-1 py-3 rounded-2xl border text-center transition-all ${
+                tab === key
+                  ? "bg-white border-gray-200 shadow-sm"
+                  : "bg-white/60 border-transparent hover:bg-white hover:border-gray-200"
+              }`}
             >
-              <ArrowLeft size={13} /> Back
-            </button>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-black text-white tracking-tight">My Network</h1>
-                <p className="text-white/40 text-sm mt-0.5">The Arena · your professional sports circle</p>
-              </div>
-              <button
-                onClick={() => router.push("/arena/messages")}
-                className="flex items-center gap-2 text-xs px-4 py-2 rounded-xl font-bold transition-opacity hover:opacity-90 shrink-0"
-                style={{ backgroundColor: "#f0b429", color: "#1a3a1a" }}
+              <span
+                className={`text-xl font-black leading-none ${
+                  tab === key ? "" : "text-gray-400"
+                }`}
+                style={tab === key ? { color: "#1a5c2a" } : {}}
               >
-                <MessageSquare size={13} />
-                Messages
-              </button>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-4 gap-2">
-            {TABS.map(({ key, label, icon: Icon, count }) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`flex flex-col items-center gap-1 py-3 rounded-2xl border transition-all ${
-                  tab === key
-                    ? "border-[#f0b429]/40 bg-[#f0b429]/10"
-                    : "border-white/8 bg-white/4 hover:bg-white/7"
+                {loading ? "—" : count}
+              </span>
+              <span
+                className={`text-[10px] font-semibold ${
+                  tab === key ? "text-gray-700" : "text-gray-400"
                 }`}
               >
-                <Icon size={16} className={tab === key ? "text-[#f0b429]" : "text-white/40"} />
-                <span className={`text-lg font-black leading-none ${tab === key ? "text-[#f0b429]" : "text-white"}`}>
-                  {loading ? "—" : count}
+                {label}
+              </span>
+              {key === "pending" && !loading && count > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">
+                  {count}
                 </span>
-                <span className={`text-[10px] font-semibold ${tab === key ? "text-[#f0b429]/80" : "text-white/30"}`}>
-                  {label}
-                </span>
-                {key === "pending" && !loading && count > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-red-500 mt-0.5" />
-                )}
-              </button>
-            ))}
-          </div>
+              )}
+            </button>
+          ))}
+        </div>
 
-          {/* Discover people (connections tab only) */}
-          {tab === "connections" && (
-            <div className="rounded-2xl border border-white/10 bg-white/4 overflow-hidden">
-              <div className="px-4 py-3 border-b border-white/8">
-                <p className="text-xs font-bold text-white/60 uppercase tracking-wider">Discover People</p>
-              </div>
-              <div className="px-4 py-3">
-                <div className="flex items-center gap-2 bg-white/6 rounded-xl px-3 py-2 border border-white/10 focus-within:border-[#f0b429]/40">
-                  <Search size={14} className="text-white/30 shrink-0" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search by name, sport or province…"
-                    className="flex-1 bg-transparent text-sm text-white placeholder-white/25 focus:outline-none"
-                  />
-                  {searching && (
-                    <div className="w-3.5 h-3.5 rounded-full border-2 border-white/20 border-t-white/60 animate-spin shrink-0" />
-                  )}
-                </div>
-              </div>
-              {results.length > 0 && (
-                <div className="border-t border-white/8">
-                  {results
-                    .filter((p) => p.id !== user?.id)
-                    .map((p) => (
-                      <DiscoverCard
-                        key={p.id}
-                        player={p}
-                        onConnect={handleConnect}
-                        sent={sentIds.has(p.id)}
-                      />
-                    ))}
-                </div>
-              )}
-              {query.trim() && !searching && results.length === 0 && (
-                <p className="text-xs text-white/30 text-center py-5 px-4">No players found for &ldquo;{query}&rdquo;</p>
-              )}
+        {/* Discover panel — only on connections tab */}
+        {tab === "connections" && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-100">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Discover People</p>
             </div>
-          )}
+            <div className="px-5 py-3">
+              <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 border border-gray-200 focus-within:border-gray-300 transition-colors">
+                <Search size={14} className="text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by name, sport or province…"
+                  className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+                />
+                {searching && (
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 border-t-gray-500 animate-spin shrink-0" />
+                )}
+              </div>
+            </div>
 
-          {/* List panel */}
-          <div className="rounded-2xl border border-white/10 bg-white/4 overflow-hidden">
-            <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between">
-              <p className="text-xs font-bold text-white/60 uppercase tracking-wider">
-                {TABS.find((t) => t.key === tab)?.label}
+            {results.length > 0 && (
+              <div className="border-t border-gray-100">
+                {results
+                  .filter((p) => p.id !== user?.id)
+                  .map((p) => (
+                    <DiscoverCard
+                      key={p.id}
+                      player={p}
+                      onConnect={handleConnect}
+                      sent={sentIds.has(p.id)}
+                    />
+                  ))}
+              </div>
+            )}
+            {query.trim() && !searching && results.length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-5 px-4">
+                No players found for &ldquo;{query}&rdquo;
               </p>
-              {!loading && (
-                <span className="text-xs text-white/30">
-                  {TABS.find((t) => t.key === tab)?.count ?? 0} total
-                </span>
-              )}
-            </div>
+            )}
+          </div>
+        )}
 
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-            ) : (
-              <>
-                {/* Connections */}
-                {tab === "connections" && (
-                  connections.length === 0 ? (
-                    <EmptyState
-                      icon={UserCheck}
-                      title="No connections yet"
-                      body="Search for players and coaches above to start building your network."
-                    />
-                  ) : (
-                    connections.map((conn) => {
-                      const other = getOtherUser(conn);
-                      return other ? (
-                        <PersonCard
-                          key={conn.id}
-                          user={other}
-                          tab="connections"
-                          connectedAt={conn.accepted_at}
-                          onMessage={(id) => router.push(`/arena/messages?with=${id}`)}
-                        />
-                      ) : null;
-                    })
-                  )
-                )}
-
-                {/* Followers */}
-                {tab === "followers" && (
-                  followers.length === 0 ? (
-                    <EmptyState
-                      icon={Users}
-                      title="No followers yet"
-                      body="Share your passport link and people will start following you."
-                    />
-                  ) : (
-                    followers.map((f) =>
-                      f.follower ? (
-                        <PersonCard
-                          key={f.id}
-                          user={f.follower}
-                          tab="followers"
-                          onConnect={handleConnect}
-                          isConnecting={sentIds.has(f.follower.id)}
-                        />
-                      ) : null
-                    )
-                  )
-                )}
-
-                {/* Following */}
-                {tab === "following" && (
-                  following.length === 0 ? (
-                    <EmptyState
-                      icon={Zap}
-                      title="Not following anyone yet"
-                      body="Follow coaches, scouts and players to stay up to date with their activity."
-                    />
-                  ) : (
-                    following.map((f) =>
-                      f.following ? (
-                        <PersonCard
-                          key={f.id}
-                          user={f.following}
-                          tab="following"
-                          onUnfollow={handleUnfollow}
-                        />
-                      ) : null
-                    )
-                  )
-                )}
-
-                {/* Pending */}
-                {tab === "pending" && (
-                  pending.length === 0 ? (
-                    <EmptyState
-                      icon={Clock}
-                      title="No pending requests"
-                      body="When someone sends you a connection request, it will appear here."
-                    />
-                  ) : (
-                    pending.map((conn) =>
-                      conn.requester ? (
-                        <PersonCard
-                          key={conn.id}
-                          user={conn.requester}
-                          tab="pending"
-                          connectionId={conn.id}
-                          message={conn.message}
-                          onAccept={handleAccept}
-                          onDecline={handleDecline}
-                        />
-                      ) : null
-                    )
-                  )
-                )}
-              </>
+        {/* List card */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              {TABS.find((t) => t.key === tab)?.label}
+            </p>
+            {!loading && (
+              <span className="text-xs text-gray-400">
+                {TABS.find((t) => t.key === tab)?.count ?? 0} total
+              </span>
             )}
           </div>
 
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+          ) : (
+            <>
+              {tab === "connections" && (
+                connections.length === 0 ? (
+                  <EmptyState
+                    icon={UserCheck}
+                    title="No connections yet"
+                    body="Search for players and coaches above to start building your network."
+                  />
+                ) : (
+                  connections.map((conn) => {
+                    const other = getOtherUser(conn);
+                    return other ? (
+                      <PersonCard
+                        key={conn.id}
+                        user={other}
+                        tab="connections"
+                        connectedAt={conn.accepted_at}
+                        onMessage={(id) => router.push(`/arena/messages?with=${id}`)}
+                      />
+                    ) : null;
+                  })
+                )
+              )}
+
+              {tab === "followers" && (
+                followers.length === 0 ? (
+                  <EmptyState
+                    icon={Users}
+                    title="No followers yet"
+                    body="Share your passport link and people will start following you."
+                  />
+                ) : (
+                  followers.map((f) =>
+                    f.follower ? (
+                      <PersonCard
+                        key={f.id}
+                        user={f.follower}
+                        tab="followers"
+                        onConnect={handleConnect}
+                        isConnecting={sentIds.has(f.follower.id)}
+                      />
+                    ) : null
+                  )
+                )
+              )}
+
+              {tab === "following" && (
+                following.length === 0 ? (
+                  <EmptyState
+                    icon={Zap}
+                    title="Not following anyone yet"
+                    body="Follow coaches, scouts and players to stay up to date with their activity."
+                  />
+                ) : (
+                  following.map((f) =>
+                    f.following ? (
+                      <PersonCard
+                        key={f.id}
+                        user={f.following}
+                        tab="following"
+                        onUnfollow={handleUnfollow}
+                      />
+                    ) : null
+                  )
+                )
+              )}
+
+              {tab === "pending" && (
+                pending.length === 0 ? (
+                  <EmptyState
+                    icon={Clock}
+                    title="No pending requests"
+                    body="When someone sends you a connection request, it will appear here."
+                  />
+                ) : (
+                  pending.map((conn) =>
+                    conn.requester ? (
+                      <PersonCard
+                        key={conn.id}
+                        user={conn.requester}
+                        tab="pending"
+                        connectionId={conn.id}
+                        message={conn.message}
+                        onAccept={handleAccept}
+                        onDecline={handleDecline}
+                      />
+                    ) : null
+                  )
+                )
+              )}
+            </>
+          )}
         </div>
-      </main>
+
+        {/* Footer note */}
+        <p className="text-center text-xs text-gray-400 pb-6">
+          Only connected users can send direct messages to each other.
+        </p>
+      </div>
     </div>
   );
 }

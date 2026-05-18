@@ -1,9 +1,89 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
 import type { ArenaMessage, ArenaUser } from "@/types/arena";
+
+// ── Arena top nav (matches /arena/network) ────────────────────────────────
+function ArenaNav() {
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const hubs = [
+    { label: "Player Hub",   href: "/player" },
+    { label: "Coach Hub",    href: "/coach" },
+    { label: "Fan Hub",      href: "/fan-hub" },
+    { label: "Analysis Hub", href: "/analyst" },
+    { label: "Scout Hub",    href: "/scout" },
+  ];
+
+  function ini(name: string) {
+    return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  }
+
+  return (
+    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        {/* Brand */}
+        <Link href="/arena/network" className="font-bold text-base shrink-0" style={{ color: "#1a5c2a" }}>
+          Arena
+        </Link>
+
+        {/* Hub links — hidden on small screens */}
+        <nav className="hidden md:flex items-center gap-1">
+          {hubs.map((h) => (
+            <Link
+              key={h.href}
+              href={h.href}
+              className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap"
+            >
+              {h.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right: Messages + avatar */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/arena/network"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors hover:bg-gray-50"
+            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
+          >
+            Network
+          </Link>
+
+          {/* Avatar + dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+              style={{ backgroundColor: "#1a5c2a" }}
+            >
+              {user?.name ? ini(user.name) : "?"}
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                <p className="px-3 py-2 text-xs text-gray-500 truncate">{user?.name}</p>
+                <hr className="border-gray-100" />
+                <button
+                  onClick={() => { logout(); router.push("/login"); }}
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -48,7 +128,8 @@ function InboxSkeleton() {
 
 function MessagesContent() {
   const searchParams = useSearchParams();
-  const { user, token } = useAuthStore((s) => ({ user: s.user, token: s.token }));
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
 
   const [threads, setThreads]           = useState<Thread[]>([]);
   const [inboxLoading, setInboxLoading] = useState(true);
@@ -143,7 +224,7 @@ function MessagesContent() {
   useEffect(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (activeId == null) return;
-    pollRef.current = setInterval(() => pollThread(activeId), 10000);
+    pollRef.current = setInterval(() => pollThread(activeId), 30000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [activeId, pollThread]);
 
@@ -185,6 +266,7 @@ function MessagesContent() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
+      <ArenaNav />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-5">
           <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
