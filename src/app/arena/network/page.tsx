@@ -259,7 +259,8 @@ function DiscoverCard({
 // ── Main page ───────────────────────────────────────────────────────────────
 export default function MyNetworkPage() {
   const router = useRouter();
-  const { user, token } = useAuthStore((s) => ({ user: s.user, token: s.token }));
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
 
   const [tab, setTab]               = useState<Tab>("connections");
   const [loading, setLoading]       = useState(true);
