@@ -10,6 +10,7 @@ import {
   Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
   Menu, X, ScanSearch, Briefcase, LineChart, Camera, Globe2,
   Map, Thermometer, TrendingUp as SeasonIcon, Flame, Award, GraduationCap,
+  MessageSquare,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -64,6 +65,8 @@ const navItems: NavItem[] = [
   { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["coach"] },
   { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["coach"] },
   { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
+  { href: "/arena/network",          label: "My Network",     icon: Users,           roles: ["coach"] },
+  { href: "/arena/messages",         label: "Messages",       icon: MessageSquare,   roles: ["coach"] },
   { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
   { href: "/scout",           label: "Find Players",  icon: UserSearch,  roles: ["scout"] },
@@ -73,6 +76,8 @@ const navItems: NavItem[] = [
   { href: "/business-hub",    label: "Business Hub",  icon: Briefcase,   roles: ["scout"] },
   { href: "/sports/netball",  label: "Netball Hub",   icon: Globe2,      roles: ["scout"] },
   { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
+  { href: "/arena/network",   label: "My Network",    icon: Users,       roles: ["scout"] },
+  { href: "/arena/messages",  label: "Messages",      icon: MessageSquare, roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
   { href: "/player/success",              label: "Success Engine",  icon: Flame,           roles: ["player"] },
@@ -105,6 +110,8 @@ const navItems: NavItem[] = [
   { href: "/business-hub",                label: "Business Hub",    icon: Briefcase,       roles: ["player"] },
   { href: "/sports/netball",              label: "Netball Hub",     icon: Globe2,          roles: ["player"] },
   { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
+  { href: "/arena/network",               label: "My Network",      icon: Users,           roles: ["player"] },
+  { href: "/arena/messages",              label: "Messages",        icon: MessageSquare,   roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },
   { href: "/fan/discover",       label: "Discover",       icon: Star,            roles: ["fan"] },
@@ -114,6 +121,8 @@ const navItems: NavItem[] = [
   { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
   { href: "/sports/netball",     label: "Netball Hub",    icon: Globe2,          roles: ["fan"] },
   { href: "/business-hub",       label: "Business Hub",   icon: Briefcase,       roles: ["fan"] },
+  { href: "/arena/network",      label: "My Network",     icon: Users,           roles: ["fan"] },
+  { href: "/arena/messages",     label: "Messages",       icon: MessageSquare,   roles: ["fan"] },
   // ─── Analyst ──────────────────────────────────────────────────────────────
   { href: "/analyst",                      label: "Analyst Hub",       icon: LineChart,   roles: ["analyst"] },
   { href: "/analyst/match-brain",          label: "Match Brain",       icon: Brain,       roles: ["analyst"] },
