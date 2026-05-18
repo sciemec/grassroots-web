@@ -48,6 +48,7 @@ export default function SimilarPlayersPage() {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
   const [hasConsent, setHasConsent] = useState<boolean | null>(null);
+  const [isU18, setIsU18]       = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -59,6 +60,8 @@ export default function SimilarPlayersPage() {
         const prof = profRes?.data?.profile ?? profRes?.data;
         const consented = prof?.safeguarding_consent_chemistry ?? false;
         setHasConsent(!!consented);
+        const ageGroup = (prof?.age_group ?? "").toLowerCase();
+        setIsU18(["u15", "u16", "u17"].includes(ageGroup));
 
         if (!consented) {
           setLoading(false);
@@ -96,9 +99,14 @@ export default function SimilarPlayersPage() {
           >
             <ArrowLeft size={12} /> Player Hub
           </Link>
-          <h1 className="text-2xl font-black text-white">Players Like You</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white">Players Like You</h1>
+            <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300">
+              Style Compatibility v1
+            </span>
+          </div>
           <p className="text-white/50 text-sm mt-0.5">
-            Players who share your style, position and energy — ranked by compatibility
+            Players who share your training style, position and energy — ranked by compatibility
           </p>
         </div>
 
@@ -111,6 +119,20 @@ export default function SimilarPlayersPage() {
           </div>
         )}
 
+        {/* U18 safeguarding notice */}
+        {!loading && hasConsent && isU18 && (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3">
+            <span className="mt-0.5 text-amber-400 text-lg leading-none">⚠</span>
+            <div>
+              <p className="text-amber-300 text-sm font-semibold">U18 Player — Safeguarding Active</p>
+              <p className="text-amber-300/70 text-xs mt-0.5">
+                Your matches are limited to players in your province only.
+                Your name is not shown to other players. Full Chemistry Rating is available at U19+.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Consent required */}
         {!loading && hasConsent === false && (
           <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-8 text-center space-y-4">
@@ -118,9 +140,10 @@ export default function SimilarPlayersPage() {
               <Users className="text-[#f0b429]" size={24} />
             </div>
             <div>
-              <h2 className="text-white font-bold text-lg">Chemistry Matching is Off</h2>
-              <p className="text-white/50 text-sm mt-1 max-w-sm mx-auto">
-                Enable chemistry matching in your settings to discover players who share your style
+              <h2 className="text-white font-bold text-lg">Style Matching is Off</h2>
+              <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mt-0.5">Style Compatibility v1</p>
+              <p className="text-white/50 text-sm mt-2 max-w-sm mx-auto">
+                Enable style matching in your settings to discover players who share your training style
                 and see how compatible you are with your squadmates.
               </p>
             </div>
@@ -207,6 +230,7 @@ export default function SimilarPlayersPage() {
                           {Math.round(p.chemistry_score)}%
                         </div>
                         <div className="text-white/40 text-xs">{scoreLabel(p.chemistry_score)}</div>
+                        <div className="text-white/25 text-[10px] mt-0.5">style match</div>
                       </div>
                     </div>
 
@@ -250,8 +274,10 @@ export default function SimilarPlayersPage() {
         {!loading && hasConsent && (
           <div className="rounded-2xl border border-white/5 bg-white/3 p-4 text-center">
             <p className="text-white/30 text-xs">
-              Similarity is calculated nightly using your style fingerprint — 60% training style · 25% demographics · 15% location.
-              Names are privacy-protected for U18 players.{" "}
+              <span className="text-purple-300/60 font-semibold">Style Compatibility v1</span>
+              {" · "}Calculated nightly — 60% training style · 25% demographics · 15% location.
+              Names are privacy-protected for U18 players.
+              Full Chemistry Rating coming soon.{" "}
               <Link href="/settings" className="text-white/50 hover:text-white underline transition-colors">
                 Manage privacy settings
               </Link>

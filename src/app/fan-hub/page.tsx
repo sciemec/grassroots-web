@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Upload, Play, Cpu, TrendingUp, Eye, Globe, Film, RefreshCw } from "lucide-react";
+import { Upload, Play, Cpu, TrendingUp, Eye, Globe, Film, RefreshCw, Zap, MapPin } from "lucide-react";
 import VideoCard, { type FanHubVideo } from "@/components/fan-hub/VideoCard";
 import VideoPlayer from "@/components/fan-hub/VideoPlayer";
 import UploadModal from "@/components/fan-hub/UploadModal";
@@ -31,6 +31,19 @@ interface FeedStats {
   provinces_count: number;
 }
 
+interface HighlightClip {
+  id: string;
+  player_id: string;
+  match_id: string | null;
+  r2_url: string;
+  event_type: string;
+  speed_kmh: number | null;
+  timestamp_seconds: number | null;
+  created_at: string;
+  player_initials?: string;
+  province?: string | null;
+}
+
 // Skeleton card for loading state
 function SkeletonCard() {
   return (
@@ -58,6 +71,7 @@ export default function FanHubPage() {
   const [playing, setPlaying]         = useState<FanHubVideo | null>(null);
   const [showUpload, setShowUpload]   = useState(false);
   const [error, setError]             = useState("");
+  const [highlights, setHighlights]   = useState<HighlightClip[]>([]);
 
   const buildQuery = useCallback((pg: number, cat: string, prov: string) => {
     const params = new URLSearchParams({ page: String(pg), per_page: "20" });
@@ -72,11 +86,12 @@ export default function FanHubPage() {
     setPage(1);
 
     try {
-      const [featRes, feedRes, aiRes, statsRes] = await Promise.allSettled([
+      const [featRes, feedRes, aiRes, statsRes, hlRes] = await Promise.allSettled([
         fetch(`${API}/fan-hub/videos/featured`),
         fetch(`${API}/fan-hub/videos?${buildQuery(1, cat, prov)}`),
         fetch(`${API}/fan-hub/videos/ai-clips`),
         fetch(`${API}/fan-hub/stats`),
+        fetch(`${API}/highlights/feed`),
       ]);
 
       if (featRes.status === "fulfilled" && featRes.value.ok) {
@@ -102,6 +117,12 @@ export default function FanHubPage() {
       if (statsRes.status === "fulfilled" && statsRes.value.ok) {
         const d = await statsRes.value.json() as { data: FeedStats };
         setStats(d.data ?? null);
+      }
+
+      if (hlRes.status === "fulfilled" && hlRes.value.ok) {
+        const d = await hlRes.value.json() as { data: HighlightClip[] };
+        const _r = d.data ?? d;
+        setHighlights(Array.isArray(_r) ? _r : []);
       }
     } catch {
       setError("Could not load the feed. Please check your connection.");
@@ -343,6 +364,82 @@ export default function FanHubPage() {
             <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
               {aiClips.slice(0, 8).map((v) => (
                 <VideoCard key={v.id} video={v} onPlay={setPlaying} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Sprint Highlights ── */}
+        {highlights.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-400" />
+                <h2 className="text-white font-bold text-lg">Sprint Highlights</h2>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 uppercase tracking-wider">
+                  AI-Detected
+                </span>
+              </div>
+              <span className="text-xs text-white/30">Auto-generated from match footage</span>
+            </div>
+
+            <div className="space-y-2">
+              {highlights.slice(0, 10).map((h) => (
+                <div
+                  key={h.id}
+                  className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/[0.07] transition-colors"
+                >
+                  {/* Event badge */}
+                  <div className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-full ${
+                    h.event_type === "sprint" ? "bg-amber-500/20" : "bg-red-500/20"
+                  }`}>
+                    <Zap className={`h-4 w-4 ${h.event_type === "sprint" ? "text-amber-400" : "text-red-400"}`} />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                        h.event_type === "sprint"
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-red-500/20 text-red-300"
+                      }`}>
+                        {h.event_type}
+                      </span>
+                      {h.player_initials && (
+                        <span className="text-xs text-white/60 font-medium">{h.player_initials}</span>
+                      )}
+                      {h.province && (
+                        <span className="flex items-center gap-0.5 text-[10px] text-white/40">
+                          <MapPin className="h-2.5 w-2.5" />{h.province}
+                        </span>
+                      )}
+                    </div>
+                    {h.timestamp_seconds != null && (
+                      <p className="text-[10px] text-white/30 mt-0.5">
+                        {Math.floor(h.timestamp_seconds / 60)}:{String(Math.round(h.timestamp_seconds % 60)).padStart(2, "0")} min
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Speed */}
+                  {h.speed_kmh != null && (
+                    <div className="flex-shrink-0 text-right">
+                      <div className="text-lg font-black text-amber-400">{h.speed_kmh.toFixed(1)}</div>
+                      <div className="text-[10px] text-white/30">km/h</div>
+                    </div>
+                  )}
+
+                  {/* Play button */}
+                  <a
+                    href={h.r2_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 hover:bg-amber-500/30 transition-colors"
+                  >
+                    <Play className="h-3.5 w-3.5 text-amber-400" />
+                  </a>
+                </div>
               ))}
             </div>
           </section>

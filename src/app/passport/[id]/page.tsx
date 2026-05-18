@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Download, ExternalLink, Award, GraduationCap, Film,
-  MapPin, Shield, Star, Loader2, BookOpen,
+  MapPin, Shield, Star, Loader2, BookOpen, Users,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -48,6 +48,14 @@ interface ShowcaseClip {
   top_strength: string | null;
   scout_note: string | null;
   view_count: number;
+}
+
+interface SimilarStylePlayer {
+  matched_player_id: string;
+  similarity_score: number;
+  position: string | null;
+  province: string | null;
+  initials: string;
 }
 
 // ─── Rating bar ───────────────────────────────────────────────────────────────
@@ -93,6 +101,7 @@ export default function PublicPassportPage() {
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [clips, setClips] = useState<ShowcaseClip[]>([]);
+  const [similar, setSimilar] = useState<SimilarStylePlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -107,7 +116,8 @@ export default function PublicPassportPage() {
         return r.json();
       }),
       fetch(`${API}/showcase/discover?user_id=${id}&per_page=6`).then((r) => r.json()).catch(() => null),
-    ]).then(([profResult, clipsResult]) => {
+      fetch(`${API}/chemistry/public-similar/${id}`).then((r) => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([profResult, clipsResult, similarResult]) => {
       if (profResult.status === "fulfilled") {
         const raw = profResult.value;
         setProfile(raw.data ?? raw);
@@ -117,6 +127,10 @@ export default function PublicPassportPage() {
       if (clipsResult.status === "fulfilled" && clipsResult.value) {
         const _r = clipsResult.value?.data?.data ?? clipsResult.value?.data ?? clipsResult.value;
         setClips(Array.isArray(_r) ? _r : []);
+      }
+      if (similarResult.status === "fulfilled" && similarResult.value) {
+        const _s = similarResult.value?.data ?? similarResult.value;
+        setSimilar(Array.isArray(_s) ? _s.slice(0, 3) : []);
       }
     }).finally(() => setLoading(false));
   }, [id, API]);
@@ -417,6 +431,53 @@ export default function PublicPassportPage() {
                 </div>
               ))}
             </div>
+          </Section>
+        )}
+
+        {/* Similar Style Players */}
+        {similar.length > 0 && (
+          <Section icon={Users} title="Similar Style Players">
+            <div className="mb-2 flex items-center gap-1.5">
+              <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                Style Compatibility v1
+              </span>
+              <span className="text-[10px] text-white/30">· Full Chemistry Rating coming soon</span>
+            </div>
+            <div className="space-y-3">
+              {similar.map((p) => (
+                <div key={p.matched_player_id} className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1a5c2a]/60 border border-white/10 text-xs font-bold text-[#f0b429]">
+                    {p.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {p.position && (
+                          <span className="text-xs text-white/60 capitalize">{p.position}</span>
+                        )}
+                        {p.province && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-white/40">
+                            <MapPin className="h-2.5 w-2.5" />{p.province}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-bold text-[#f0b429] flex-shrink-0">
+                        {Math.round(p.similarity_score)}%
+                      </span>
+                    </div>
+                    <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-purple-500 transition-all duration-500"
+                        style={{ width: `${Math.min(100, p.similarity_score)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[10px] text-white/25 text-center">
+              Anonymised · calculated from training style data
+            </p>
           </Section>
         )}
 

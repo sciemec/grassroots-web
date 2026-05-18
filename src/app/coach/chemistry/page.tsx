@@ -161,9 +161,12 @@ export default function CoachChemistryPage() {
             <Link href="/coach" className="flex items-center gap-1.5 text-white/50 hover:text-white text-xs mb-2 transition-colors">
               <ArrowLeft size={12} /> Coach Hub
             </Link>
-            <h1 className="text-2xl font-black text-white">Squad Chemistry</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-white">Squad Chemistry</h1>
+              <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300">v1</span>
+            </div>
             <p className="text-white/50 text-sm mt-0.5">
-              Style-based player compatibility · 60% style · 25% demographic · 15% geographic
+              Style Compatibility · 60% style · 25% demographic · 15% geographic · Full Chemistry Rating coming soon
             </p>
           </div>
           <button
@@ -202,9 +205,9 @@ export default function CoachChemistryPage() {
 
         {/* Chemistry Matrix */}
         <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
-          <h2 className="text-white font-bold mb-1">Chemistry Matrix</h2>
+          <h2 className="text-white font-bold mb-1">Style Compatibility Matrix</h2>
           <p className="text-white/40 text-xs mb-5">
-            Each cell = chemistry score between two players. Click any cell to see the full breakdown.
+            Each cell = style compatibility score between two players. Click any cell to see the full breakdown.
           </p>
 
           {loading && (

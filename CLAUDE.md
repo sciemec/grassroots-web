@@ -6149,3 +6149,106 @@ All 12 API tests for Arena Sprint 1 now pass end-to-end.
 | `R2_*` vars (5 vars) | NOT set in Vercel | Add for video storage / showcase clips / fan hub |
 | Arena `name` field in messages | `name: null` in responses | `users` table has `name` but not split into first/surname — populate via profile join if needed |
 
+---
+
+## SESSION LOG — 18 May 2026 (continued)
+
+### Theme — Arena Sprint 2: Activity Feed Page — BUILT + LIVE TESTED
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Arena Activity Feed — FULLY BUILT + PASSED ALL LIVE TESTS ✅
+
+**Frontend:** `src/app/arena/page.tsx` (497 lines)
+
+**Layout:** LinkedIn-style 3-column — left identity panel / centre feed / right nav panel
+- Background `#f4f2ee` (warm off-white), white post cards, `#1a5c2a` green brand accents
+- Left + right panels hidden on mobile; single-column on small screens
+
+**Components (all inline in page.tsx):**
+- `ArenaNav` — sticky white header, The Arena branding, Network/Messages hub links, user avatar + dropdown
+- `PostComposer` — 280-char textarea counter, post type picker (standard/milestone/achievement), milestone label, sport + province tags, Cancel + Post buttons
+- `PostCard` — optimistic like toggle (local flip → sync → revert on error), inline comment expansion, role/sport badges, timeAgo
+- `CommentSection` — loads on demand, Enter to submit, initials avatars
+- `FeedSkeleton` — 3 animate-pulse skeleton rows
+- `LeftPanel` — user identity card, hub nav links
+- `RightPanel` — Arena nav, tips card
+
+**Feed endpoints:**
+- For You → `GET /api/v1/arena/feed`
+- Following → `GET /api/v1/arena/feed/following`
+- Connections → `GET /api/v1/arena/feed/connections`
+
+**Backend (bhora-ai commit `587c005`):**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_05_18_000002_create_arena_posts_table.php` | `arena_posts` — UUID PK gen_random_uuid(), body, sport, province, post_type enum, like_count, comment_count |
+| `database/migrations/2026_05_18_000003_create_arena_post_likes_table.php` | `arena_post_likes` — UUID PK, post_id+user_id UNIQUE, created_at only |
+| `database/migrations/2026_05_18_000004_create_arena_post_comments_table.php` | `arena_post_comments` — UUID PK, post_id FK (cascade), body, timestamps |
+| `app/Models/ArenaPost.php` | `$incrementing = false`, `$keyType = 'string'`, has many likes + comments |
+| `app/Models/ArenaPostLike.php` | `$timestamps = false`, `const UPDATED_AT = null`, created_at only |
+| `app/Models/ArenaPostComment.php` | `$incrementing = false`, `$keyType = 'string'`, belongs to post + user |
+| `app/Http/Controllers/Api/ArenaFeedController.php` | forYou, following, connections, store, like (toggle + counter), comments, addComment |
+
+**Routes added to `routes/api.php` (auth:sanctum):**
+```php
+Route::get('/arena/feed',                 [ArenaFeedController::class, 'forYou']);
+Route::get('/arena/feed/following',       [ArenaFeedController::class, 'following']);
+Route::get('/arena/feed/connections',     [ArenaFeedController::class, 'connections']);
+Route::post('/arena/posts',               [ArenaFeedController::class, 'store']);
+Route::post('/arena/posts/{id}/like',     [ArenaFeedController::class, 'like']);
+Route::get('/arena/posts/{id}/comments',  [ArenaFeedController::class, 'comments']);
+Route::post('/arena/posts/{id}/comments', [ArenaFeedController::class, 'addComment']);
+```
+
+**Live site test results (Python Playwright — 18 May 2026):**
+```
+✅ Login            — redirected to /player successfully
+✅ /arena loads     — "The Arena" heading, all 3 feed tabs, post composer textarea present
+✅ Post submitted   — "Arena Sprint 2" text appeared in feed immediately
+✅ Tab navigation   — Following, Connections, For You all switch cleanly
+✅ Like interaction — clicked like button on a post card
+✅ Console errors   — zero JS errors on reload
+✅ Mobile (375px)   — page loads, "The Arena" branding visible
+```
+
+**Key implementation notes:**
+- `safeArray()` used on all API array responses — no `.map()` crashes
+- Auth hydration guard waits for `useAuthStore.persist.hasHydrated()` before rendering
+- Like toggle uses optimistic UI: flips local state instantly, then syncs with backend, reverts on error
+- `withCount(['likes as liked' => fn($q) => $q->where('user_id', $userId)])` shows per-user liked state on all feed queries
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (18 May 2026, continued)
+
+```
+/arena    Arena Activity Feed — post composer, 3 feed tabs (For You / Following / Connections), likes, inline comments
+```
+
+New API routes (bhora-ai — live on Render):
+```
+GET    /api/v1/arena/feed                    For You feed (all posts, newest first, paginated 20)
+GET    /api/v1/arena/feed/following          Posts from followed users only
+GET    /api/v1/arena/feed/connections        Posts from accepted connections only
+POST   /api/v1/arena/posts                   Create post (body max 280, sport, province, post_type)
+POST   /api/v1/arena/posts/{id}/like         Toggle like — returns {liked: bool}
+GET    /api/v1/arena/posts/{id}/comments     Get all comments ordered by created_at
+POST   /api/v1/arena/posts/{id}/comments     Add comment (body max 280)
+```
+
+---
+
+### WHAT STILL NEEDS DOING (18 May 2026, continued)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Arena post migrations on Render | Deployed via `587c005` | Verify `arena_posts`, `arena_post_likes`, `arena_post_comments` tables exist via Render logs |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May 2026 session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
+
