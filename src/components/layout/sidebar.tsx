@@ -11,6 +11,7 @@ import {
   Menu, X, ScanSearch, Briefcase, LineChart, Camera, Globe2,
   Map, Thermometer, TrendingUp as SeasonIcon, Flame, Award, GraduationCap,
   MessageSquare,
+  Rss,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ const navItems: NavItem[] = [
   { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["coach"] },
   { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["coach"] },
   { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
+  { href: "/arena",                   label: "Arena Feed",     icon: Rss,             roles: ["coach"] },
   { href: "/arena/network",          label: "My Network",     icon: Users,           roles: ["coach"] },
   { href: "/arena/messages",         label: "Messages",       icon: MessageSquare,   roles: ["coach"] },
   { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
@@ -76,7 +78,8 @@ const navItems: NavItem[] = [
   { href: "/business-hub",    label: "Business Hub",  icon: Briefcase,   roles: ["scout"] },
   { href: "/sports/netball",  label: "Netball Hub",   icon: Globe2,      roles: ["scout"] },
   { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
-  { href: "/arena/network",   label: "My Network",    icon: Users,       roles: ["scout"] },
+  { href: "/arena",           label: "Arena Feed",    icon: Rss,           roles: ["scout"] },
+  { href: "/arena/network",   label: "My Network",    icon: Users,         roles: ["scout"] },
   { href: "/arena/messages",  label: "Messages",      icon: MessageSquare, roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
@@ -110,6 +113,7 @@ const navItems: NavItem[] = [
   { href: "/business-hub",                label: "Business Hub",    icon: Briefcase,       roles: ["player"] },
   { href: "/sports/netball",              label: "Netball Hub",     icon: Globe2,          roles: ["player"] },
   { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
+  { href: "/arena",                       label: "Arena Feed",      icon: Rss,             roles: ["player"] },
   { href: "/arena/network",               label: "My Network",      icon: Users,           roles: ["player"] },
   { href: "/arena/messages",              label: "Messages",        icon: MessageSquare,   roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
@@ -121,6 +125,7 @@ const navItems: NavItem[] = [
   { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
   { href: "/sports/netball",     label: "Netball Hub",    icon: Globe2,          roles: ["fan"] },
   { href: "/business-hub",       label: "Business Hub",   icon: Briefcase,       roles: ["fan"] },
+  { href: "/arena",              label: "Arena Feed",     icon: Rss,             roles: ["fan"] },
   { href: "/arena/network",      label: "My Network",     icon: Users,           roles: ["fan"] },
   { href: "/arena/messages",     label: "Messages",       icon: MessageSquare,   roles: ["fan"] },
   // ─── Analyst ──────────────────────────────────────────────────────────────
