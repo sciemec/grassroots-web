@@ -1,7 +1,7 @@
 export interface ArenaFollow {
-  id: number;
-  follower_id: number;
-  following_id: number;
+  id: string;
+  follower_id: string;
+  following_id: string;
   following_type: 'user' | 'club' | 'school';
   created_at: string;
   follower?: ArenaUser;
@@ -9,9 +9,9 @@ export interface ArenaFollow {
 }
 
 export interface ArenaConnection {
-  id: number;
-  requester_id: number;
-  recipient_id: number;
+  id: string;
+  requester_id: string;
+  recipient_id: string;
   status: 'pending' | 'accepted' | 'declined';
   message: string | null;
   accepted_at: string | null;
@@ -21,9 +21,9 @@ export interface ArenaConnection {
 }
 
 export interface ArenaMessage {
-  id: number;
-  sender_id: number;
-  recipient_id: number;
+  id: string;
+  sender_id: string;
+  recipient_id: string;
   body: string;
   read_at: string | null;
   created_at: string;
@@ -32,10 +32,9 @@ export interface ArenaMessage {
 }
 
 export interface ArenaUser {
-  id: number;
+  id: string;
   name: string;
   role: string;
   sport?: string;
   province?: string;
-  thuto_score?: number;
 }
