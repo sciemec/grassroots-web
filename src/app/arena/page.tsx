@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Heart, MessageSquare, Send, ChevronDown, X,
-  Trophy, Star, Zap, Globe, Users,
+  Trophy, Star, Zap, Globe, Users, Briefcase,
 } from "lucide-react";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
@@ -127,6 +127,14 @@ function ArenaNav() {
           >
             <Users size={12} />
             Network
+          </Link>
+          <Link
+            href="/arena/recruitment"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"
+            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
+          >
+            <Briefcase size={12} />
+            Talent Board
           </Link>
           <Link
             href="/arena/messages"

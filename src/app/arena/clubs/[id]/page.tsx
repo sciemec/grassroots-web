@@ -67,6 +67,7 @@ function ArenaNav() {
           <Link href="/arena" className="text-gray-600 hover:text-gray-900">Feed</Link>
           <Link href="/arena/network" className="text-gray-600 hover:text-gray-900">Network</Link>
           <Link href="/arena/clubs" className="font-semibold" style={{ color: "#1a5c2a" }}>Clubs</Link>
+          <Link href="/arena/recruitment" className="text-gray-600 hover:text-gray-900">Talent Board</Link>
           <Link href="/arena/messages" className="text-gray-600 hover:text-gray-900">Messages</Link>
         </div>
       </div>

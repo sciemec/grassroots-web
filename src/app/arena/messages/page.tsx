@@ -56,6 +56,13 @@ function ArenaNav() {
           >
             Network
           </Link>
+          <Link
+            href="/arena/recruitment"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors hover:bg-gray-50"
+            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
+          >
+            Talent Board
+          </Link>
 
           {/* Avatar + dropdown */}
           <div className="relative">

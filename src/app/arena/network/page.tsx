@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Users, UserCheck, UserPlus, Clock, MessageSquare,
-  Search, UserMinus, Check, X, Zap, ChevronDown,
+  Search, UserMinus, Check, X, Zap, ChevronDown, Briefcase,
 } from "lucide-react";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
@@ -76,6 +76,14 @@ function ArenaNav() {
 
         {/* Right */}
         <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href="/arena/recruitment"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"
+            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
+          >
+            <Briefcase size={12} />
+            Talent Board
+          </Link>
           <Link
             href="/arena/messages"
             className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"

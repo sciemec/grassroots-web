@@ -6315,3 +6315,134 @@ Hook 2 cannot fire until a badge backend is built.
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
 
+
+---
+
+## SESSION LOG — 19 May 2026
+
+### Theme — Arena Sprint 3: Club Discovery (listing, detail, review)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Arena Club Discovery — FULLY BUILT ✅
+
+**Commit:** `a932d17` → pushed to `sciemec/grassroots-web` → Vercel auto-deploying
+
+**3 new frontend files:**
+
+| File | Purpose |
+|---|---|
+| `src/app/arena/clubs/page.tsx` | Club directory — search bar, 7-filter panel, ClubCard grid, ClubSkeleton |
+| `src/app/arena/clubs/[id]/page.tsx` | Club detail — banner, stats, follow/unfollow (optimistic), ratings breakdown, anonymous reviews |
+| `src/app/arena/clubs/[id]/review/page.tsx` | Star rating form — 4 categories, 200-char comment, success state |
+
+**Modified:**
+- `src/components/layout/sidebar.tsx` — added `Building2` import + "Clubs" nav item for coach, scout, player, fan roles (after "Messages" in each role block)
+
+---
+
+#### `/arena/clubs` — Club Directory
+
+- ArenaNav with "Clubs" link active
+- Search bar (client-side filter by name/province)
+- Filter panel (togglable): Sport, Province, Tier, Formation, Playing Style, Open Trials checkbox, Scouting checkbox
+- Active filter count badge on filter button
+- Results count line
+- `ClubCard` — name, sport, THUTO score (colour-coded: green≥80, amber≥60, red<60), location, tier, formation/style pills, scouting/trials badges, follower + review count
+- `ClubSkeleton` — 6 animate-pulse cards during loading
+- Empty state with "Register Club" CTA → `/arena/clubs/new`
+- "+ Register Club" button in header → `/arena/clubs/new`
+- Grid: 1 col mobile, 2 cols sm, 3 cols lg
+
+**API calls:**
+```
+GET /api/v1/arena/clubs?sport=&province=&tier=&formation=&playing_style=&open_trials=1&scouting=1
+```
+
+---
+
+#### `/arena/clubs/[id]` — Club Detail Page
+
+- `RatingBar` component: label + filled bar (score × 20 / 100) + numeric value
+- `StarRow` component: 5 filled/empty stars from a 1-5 rating value
+- `ReviewCard` component: anonymous avatar ("A"), time ago, star rows, comment text
+- `Skeleton` during initial load
+- Club banner: name, sport badge, province/tier location row, formation/style pills, scouting/trials badges
+- Stats row: follower count, review count, THUTO score (colour-coded)
+- Follow/Unfollow button — optimistic UI (flips immediately, reverts on error)
+- "Write a Review" button → `/arena/clubs/{id}/review`
+- "Edit Club" button — only shown when `user.id === club.coach.id`
+- Coach card: avatar with initials, name
+- Ratings breakdown: Overall / Training Quality / Coaching Staff / Facilities (4 `RatingBar` items)
+- Reviews section: anonymous `ReviewCard` per review, empty state if no reviews yet
+
+**API calls (parallel via `Promise.allSettled`):**
+```
+GET /api/v1/arena/clubs/{id}      → club detail + avg_ratings + is_following
+GET /api/v1/arena/clubs/{id}/reviews → paginated anonymous reviews
+POST /api/v1/arena/clubs/{id}/follow → follow/unfollow toggle
+```
+
+---
+
+#### `/arena/clubs/[id]/review` — Review Form
+
+- `StarPicker` component: hover state tracking, 5-star interactive, descriptive labels ("Poor"/"Fair"/"Good"/"Very Good"/"Excellent")
+- 4 categories: Overall Experience, Training Quality, Coaching Staff, Facilities & Pitch
+- 200-char comment textarea with live counter
+- "Reviews are anonymous" note shown in form header
+- Submit button disabled until all 4 categories rated
+- Submit button background changes from gray to green when all rated
+- 3 render states:
+  1. **Unauthenticated gate** — "Sign In" CTA, no form shown
+  2. **Form** — StarPicker × 4, comment, error display, submit button
+  3. **Success** — green CheckCircle, "Review Submitted!", back-to-club link
+
+**API calls:**
+```
+GET  /api/v1/arena/clubs/{id}           → load club name for display
+POST /api/v1/arena/clubs/{id}/review    → submit review
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (19 May 2026)
+
+```
+/arena/clubs              Club directory — search, 7 filters, ClubCard grid
+/arena/clubs/[id]         Club detail — follow, ratings, anonymous reviews
+/arena/clubs/[id]/review  Star rating review form — 4 categories + comment
+```
+
+---
+
+### ARENA CLUB BACKEND (already built in prior session — confirmed live)
+
+| Endpoint | Method | Auth | Notes |
+|---|---|---|---|
+| `GET /api/v1/arena/clubs` | public | optional | Filters: sport, province, tier, formation, playing_style, open_trials, scouting |
+| `GET /api/v1/arena/clubs/{id}` | public | optional | Returns club + avg_ratings + is_following |
+| `POST /api/v1/arena/clubs` | auth | required | Create club (coach_id = Auth::id()) |
+| `PUT /api/v1/arena/clubs/{id}` | auth | coach only | Update (403 if not coach) |
+| `POST /api/v1/arena/clubs/{id}/review` | auth | required | updateOrCreate — one review per user. Recalculates avg_thuto_score |
+| `GET /api/v1/arena/clubs/{id}/reviews` | public | optional | Anonymous — omits reviewer_id |
+| `POST /api/v1/arena/clubs/{id}/follow` | auth | required | Toggle follow — uses arena_follows with following_type='club' |
+
+**Models:** `ArenaClub`, `ArenaClubReview` (bhora-ai repo, committed prior session)
+
+**avg_thuto_score formula:** `round(avg(rating_overall) × 20, 2)` — scales 1-5 stars → 0-100
+
+---
+
+### WHAT STILL NEEDS DOING (19 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `/arena/clubs/new` page | NOT YET BUILT | Club registration form (name, sport, province, district, tier, formation, playing_style, is_scouting, is_open_trials) |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May 2026 session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
+| Auto-hook migration on Render | Auto-runs on next deploy | Verify via Render logs |
