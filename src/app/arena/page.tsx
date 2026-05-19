@@ -562,7 +562,45 @@ function FeedSkeleton() {
 
 // ── Right Side Panel ──────────────────────────────────────────────────────────
 
-function RightPanel() {
+interface LeaderboardEntry {
+  id: string;
+  initials: string;
+  sport: string;
+  province: string;
+  projected_score: number;
+  peak_level_label: string;
+}
+
+interface SuggestedUser {
+  id: string;
+  name: string;
+  role: string;
+  sport: string;
+  mutual_connections: number;
+}
+
+function RightPanel({ token }: { token: string | null | undefined }) {
+  const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
+  const [suggested, setSuggested] = useState<SuggestedUser[]>([]);
+  const [loadingL, setLoadingL] = useState(true);
+  const [loadingS, setLoadingS] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/arena/leaderboard`, { headers: authHeaders(token) })
+      .then((r) => r.json())
+      .then((d) => setLeaders(safeArray<LeaderboardEntry>(d.data ?? d).slice(0, 5)))
+      .catch(() => {})
+      .finally(() => setLoadingL(false));
+  }, [token]);
+
+  useEffect(() => {
+    fetch(`${API}/arena/suggested`, { headers: authHeaders(token) })
+      .then((r) => r.json())
+      .then((d) => setSuggested(safeArray<SuggestedUser>(d.data ?? d).slice(0, 3)))
+      .catch(() => {})
+      .finally(() => setLoadingS(false));
+  }, [token]);
+
   return (
     <div className="space-y-4">
       {/* Arena quick nav */}
@@ -570,9 +608,11 @@ function RightPanel() {
         <p className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wide">Arena</p>
         <div className="space-y-1">
           {[
-            { label: "Activity Feed", href: "/arena", active: true },
-            { label: "My Network",    href: "/arena/network" },
-            { label: "Messages",      href: "/arena/messages" },
+            { label: "Activity Feed",    href: "/arena",              active: true },
+            { label: "My Network",       href: "/arena/network" },
+            { label: "Discover Athletes",href: "/arena/discover" },
+            { label: "Messages",         href: "/arena/messages" },
+            { label: "Arena Alerts",     href: "/arena/notifications" },
           ].map((l) => (
             <Link
               key={l.href}
@@ -587,25 +627,117 @@ function RightPanel() {
         </div>
       </div>
 
-      {/* Tips card */}
+      {/* Top Players leaderboard */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Zap size={13} style={{ color: "#c8962a" }} />
-          <p className="text-xs font-bold text-gray-900">Arena Tips</p>
+        <div className="flex items-center gap-2 mb-3">
+          <Trophy size={13} style={{ color: "#c8962a" }} />
+          <p className="text-xs font-bold text-gray-900">Top Players</p>
         </div>
-        <ul className="space-y-1.5">
-          {[
-            "Share a milestone to inspire your network",
-            "Like posts to show support for fellow athletes",
-            "Comment to connect with coaches and scouts",
-          ].map((tip) => (
-            <li key={tip} className="text-[11px] text-gray-500 flex gap-1.5">
-              <span className="text-green-500 mt-0.5">•</span>
-              {tip}
-            </li>
-          ))}
-        </ul>
+        {loadingL ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="flex items-center gap-2 animate-pulse">
+                <div className="w-6 h-6 bg-gray-200 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-2.5 bg-gray-200 rounded w-3/4" />
+                  <div className="h-2 bg-gray-100 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : leaders.length === 0 ? (
+          <p className="text-[11px] text-gray-400">No leaderboard data yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {leaders.map((p, i) => (
+              <div key={p.id} className="flex items-center gap-2">
+                <span className="text-[10px] font-bold w-4 text-center" style={{ color: i === 0 ? "#c8962a" : "#9ca3af" }}>
+                  {i + 1}
+                </span>
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                  style={{ background: "#1a5c2a" }}
+                >
+                  {p.initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-gray-900 truncate">{p.peak_level_label}</p>
+                  <p className="text-[10px] text-gray-400 truncate">{p.sport} · {p.province}</p>
+                </div>
+                <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "#c8962a" }}>
+                  {Math.round(p.projected_score)}
+                </span>
+              </div>
+            ))}
+            <Link
+              href="/talent-leaderboard"
+              className="block text-center text-[10px] font-semibold mt-2 pt-2 border-t border-gray-100"
+              style={{ color: "#1a5c2a" }}
+            >
+              Full Leaderboard →
+            </Link>
+          </div>
+        )}
       </div>
+
+      {/* Suggested for you */}
+      {token && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Users size={13} style={{ color: "#1a5c2a" }} />
+            <p className="text-xs font-bold text-gray-900">Suggested for You</p>
+          </div>
+          {loadingS ? (
+            <div className="space-y-3">
+              {[1, 2].map((n) => (
+                <div key={n} className="flex items-center gap-2 animate-pulse">
+                  <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-2.5 bg-gray-200 rounded w-2/3" />
+                    <div className="h-2 bg-gray-100 rounded w-1/2" />
+                  </div>
+                  <div className="w-12 h-5 bg-gray-200 rounded flex-shrink-0" />
+                </div>
+              ))}
+            </div>
+          ) : suggested.length === 0 ? (
+            <p className="text-[11px] text-gray-400">No suggestions right now.</p>
+          ) : (
+            <div className="space-y-3">
+              {suggested.map((u) => (
+                <div key={u.id} className="flex items-center gap-2">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                    style={{ background: "#1a5c2a" }}
+                  >
+                    {initials(u.name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-gray-900 truncate">{u.name}</p>
+                    <p className="text-[10px] text-gray-400 capitalize truncate">
+                      {u.role}{u.sport ? ` · ${u.sport}` : ""}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/arena/network`}
+                    className="text-[10px] font-bold px-2 py-1 rounded-lg flex-shrink-0"
+                    style={{ backgroundColor: "#c8962a", color: "#fff" }}
+                  >
+                    Connect
+                  </Link>
+                </div>
+              ))}
+              <Link
+                href="/arena/discover"
+                className="block text-center text-[10px] font-semibold mt-1 pt-2 border-t border-gray-100"
+                style={{ color: "#1a5c2a" }}
+              >
+                Discover More Athletes →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -660,7 +792,8 @@ const TAB_ENDPOINT: Record<FeedTab, string> = {
 };
 
 export default function ArenaFeedPage() {
-  const { user, token } = useAuthStore();
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const [hydrated, setHydrated] = useState(false);
   const [tab, setTab] = useState<FeedTab>("for-you");
   const [posts, setPosts] = useState<ArenaPost[]>([]);
