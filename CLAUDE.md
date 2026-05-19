@@ -6252,3 +6252,66 @@ POST   /api/v1/arena/posts/{id}/comments     Add comment (body max 280)
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
 
+---
+
+## SESSION LOG — 19 May 2026
+
+### Theme — Arena Sprint 2 Auto-Post Hooks (Hooks 1 + 3)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Arena Sprint 2 Auto-Post Hooks ✅
+
+**Commit:** `59c777f` — pushed to `sciemec/bhora-ai`
+
+**Files changed (5):**
+
+| File | Change |
+|---|---|
+| `database/migrations/2026_05_19_000001_extend_arena_posts_for_auto_hooks.php` | New migration — nullable body, is_auto bool, metadata JSON, extended post_type to include session_milestone / badge / prediction_upgrade |
+| `app/Models/ArenaPost.php` | Added `is_auto` + `metadata` to `$fillable`; added `$casts` (is_auto=bool, metadata=array) |
+| `app/Http/Controllers/Api/ArenaFeedController.php` | Added static `autoPost(string $type, string $userId, array $metadata)` method + extended store() validation enum |
+| `app/Http/Controllers/Api/TrainingSessionController.php` | Hook 1 — reads previous `overall_score`, fires `session_milestone` auto-post when new score > old score |
+| `app/Services/TalentPredictionService.php` | Hook 3 — captures `$oldLevel` before upsert, fires `prediction_upgrade` auto-post when `$peakLevel` changes |
+
+**`autoPost()` design:**
+- Static method — callable without instantiating the controller
+- Fire-and-forget — callers wrap in `try/catch(\Throwable)` so it NEVER breaks the primary action
+- Auto-generates body text from a per-type template
+- Creates `ArenaPost` with `is_auto=true` + `metadata` JSON payload
+- Skips if user not found
+
+**Auto-post body templates:**
+```
+session_milestone  → "🔥 Score improved to {new_score} (was {old_score}) — keep going!"
+badge              → "🏅 Earned the {badge_name} badge!"
+prediction_upgrade → "⬆️ Talent level upgraded to {new_label}!"
+```
+
+**Hook 2 (badge) — BLOCKED:**
+No badge backend exists. `CommunityController.php` has a `'badge' => 'community_player'` reference
+but no Football Business School badge system, no `BadgeController`, no badge routes.
+Hook 2 cannot fire until a badge backend is built.
+
+**Migration behaviour on Render:**
+- Changes `post_type` column from PostgreSQL enum to `VARCHAR(50)` + explicit CHECK constraint
+- Makes `body` nullable (auto-posts have AI-generated body, not user-typed)
+- Adds `is_auto BOOLEAN DEFAULT false` + `metadata JSONB nullable`
+- Auto-runs on next Render deploy via `start.sh` → `php artisan migrate --force`
+
+---
+
+### WHAT STILL NEEDS DOING (19 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Auto-hook migration on Render | Auto-runs on next deploy | Verify via Render logs after `59c777f` deploys |
+| Hook 2 (badge auto-post) | BLOCKED — no badge backend | Build badge backend first, then add hook |
+| Arena post migrations on Render | Deployed via `587c005` | Verify `arena_posts` tables exist |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
+
