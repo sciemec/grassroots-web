@@ -6446,3 +6446,334 @@ POST /api/v1/arena/clubs/{id}/review    → submit review
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
 | Auto-hook migration on Render | Auto-runs on next deploy | Verify via Render logs |
+
+---
+
+## SESSION LOG — 19 May 2026 (Sprint 5)
+
+### Theme — Arena Sprint 5: Discover Athletes, Public Profiles, Notifications, Recruitment Board
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Arena Sprint 5 — ALL FRONTEND PAGES BUILT ✅
+
+**Commit:** `2aeaef4` — pushed to `sciemec/grassroots-web`
+
+**9 files changed (7 new, 2 modified):**
+
+| File | Purpose |
+|---|---|
+| `src/app/arena/discover/page.tsx` | Discover Athletes — debounced search + sport/province/position/THUTO score filters, follow toggle |
+| `src/app/arena/notifications/page.tsx` | Arena Alerts — date grouped (Today/Yesterday/Earlier), unread dot, mark-all-read, dismiss |
+| `src/app/arena/profile/[id]/page.tsx` | Public Arena Profile — THUTO score, prediction card, arena posts, follow/connect CTA |
+| `src/app/arena/recruitment/page.tsx` | Talent Board listing — sport/province/stipend/THUTO filters, card grid |
+| `src/app/arena/recruitment/[id]/page.tsx` | Posting detail — apply modal with message + availability fields |
+| `src/app/arena/recruitment/new/page.tsx` | Create posting form — sport, position, age range, THUTO min, province, stipend, description |
+| `src/app/coach/recruitment/page.tsx` | Coach Applications Viewer — tabbed by posting, applicant detail panel |
+| `src/app/arena/page.tsx` | Arena Feed — RightPanel now fetches leaderboard + suggested widgets; nav updated |
+| `src/components/layout/sidebar.tsx` | Added Discover Athletes + Arena Alerts nav items for all 4 arena roles |
+
+---
+
+#### 2. `/arena/discover` — Discover Athletes Page ✅
+
+- `DiscoverPlayer` interface: id, name, role, sport, province, position, thuto_score, peak_level_label, avatar_url, is_following
+- `ArenaNav` inline component (same white sticky header as all Arena pages)
+- `PlayerCard` component: avatar with initials fallback, sport/province/position badges, THUTO score pill, Follow button with optimistic toggle
+- Debounced search (400ms) on player name
+- Filter panel (slide-open on mobile): sport chips × 10, province dropdown, position text input, THUTO min score chips (40+/55+/65+/75+)
+- Fetches `GET /api/v1/arena/discover` with query params on load + on any filter change
+- Follow button calls `POST /api/v1/arena/follow/{id}` / `DELETE /api/v1/arena/follow/{id}` (optimistic)
+- Empty state + skeleton loader
+- Background: `#f4f2ee`, cards: `bg-white rounded-2xl border border-gray-200`
+
+---
+
+#### 3. `/arena/notifications` — Arena Alerts Page ✅
+
+- Fetches `GET /api/v1/notifications` (reuses existing notifications endpoint)
+- `ArenaNotification` interface: id, title, body, type, read, link, created_at
+- `typeIcon()` helper: Info/CheckCircle2/AlertTriangle/AlertCircle/Star per type
+- `timeAgo()` — "Just now" / "Xm ago" / "Xh ago" / "Yesterday" / date
+- `groupByDate()` — splits notifications into Today / Yesterday / Earlier sections
+- Unread count badge in header + "X unread notifications" subtitle
+- "Mark all read" button (calls `POST /api/v1/notifications/mark-all-read`)
+- Click any notification → marks read + navigates to `n.link` if set
+- Dismiss (Trash2) calls `DELETE /api/v1/notifications/{id}` — optimistic remove
+- Unread left border: `borderLeftWidth: 3, borderLeftColor: "#1a5c2a"` + green dot top-right
+- 5-row animate-pulse skeleton during load
+- Empty state with "Go to Arena Feed" CTA
+
+---
+
+#### 4. `/arena/profile/[id]` — Public Arena Profile ✅
+
+- Fetches `GET /api/v1/arena/profile/{id}` (optional Bearer token)
+- `ProfileData` interface: user (id, name, role, sport, province, position, bio, avatar_url), posts[], scout_views, is_following, connection_status (none/pending/connected), prediction
+- Profile header: avatar/initials, name, role badge (gold/green/purple), sport + province chips
+- THUTO Score card: projected_score large display, peak_level_label, percentile pill
+- Prediction card: upside stars, comparable player, narrative excerpt (expandable)
+- Scout view count: "X scouts viewed this week" with Eye icon
+- Recent Arena Posts: up to 5, with post type badges, like count, comment count
+- CTA row: Follow button (toggle, optimistic) + Connect button (green) + Message link (only if connected)
+- Connect calls `POST /api/v1/arena/connect/{id}`
+- Skeleton loader (3-section pulse)
+- Not-found state if API returns 404
+
+---
+
+#### 5. `/arena/recruitment` — Talent Board ✅
+
+- `TalentPosting` interface: id, sport, position, age_min, age_max, thuto_min, province, style_of_play, stipend, description, status, closes_at, applications_count, poster, club
+- Filter chips: sport × 10, province dropdown, Stipend Available toggle, THUTO min score
+- `PostingCard`: sport badge, stipend/THUTO/closed badges, daysLeft countdown (red ≤3), position title, club name, province + age range + applications count meta grid, style_of_play snippet
+- "Post a Talent Wanted" CTA button → `/arena/recruitment/new`
+- Fetches `GET /api/v1/arena/talent-wanted` with filters
+- Closed postings shown with dimmed opacity + "Closed" badge
+
+#### 6. `/arena/recruitment/[id]` — Posting Detail + Apply ✅
+
+- Full posting detail with all meta fields in 2×2 grid cards
+- Apply modal: message textarea (1000 chars) + availability input (200 chars)
+- Calls `POST /api/v1/arena/talent-wanted/{id}/apply`
+- Apply button only shown to `role:player` users
+- Coach users see "View Applications ({count})" → `/coach/recruitment?posting={id}`
+- "Already applied" state (from `json.applied`)
+- Success banner + submitted state after apply
+- Closed state respects `status === "closed"` OR `daysLeft === 0`
+
+#### 7. `/arena/recruitment/new` — Create Posting Form ✅
+
+- Auth gate (redirect to /login if no token)
+- Fields: sport (10-sport grid), position text, age_min/max, THUTO_min (slider-style chips), province, stipend toggle, style_of_play, description (1000 chars), closes_at date
+- Submits to `POST /api/v1/arena/talent-wanted`
+- Success redirects to `/arena/recruitment`
+
+#### 8. `/coach/recruitment` — Coach Applications Viewer ✅
+
+- Fetches `GET /api/v1/arena/talent-wanted?mine=true` for coach's own postings
+- Fetches applications per posting: `GET /api/v1/arena/talent-wanted/{id}/applications`
+- Tab switcher: one tab per posting
+- Applicant rows: name + message excerpt + availability + applied date
+- Expand row → full message + `View Profile → /arena/profile/{id}` link
+- Application count badges on tabs
+
+#### 9. Sidebar Nav — Discover Athletes + Arena Alerts ✅
+
+**All 4 arena-enabled roles updated:**
+```
+/arena/discover        Discover Athletes  (UserSearch icon)
+/arena/notifications   Arena Alerts       (Bell icon)
+```
+Both inserted after `/arena/network` in coach, scout, player, and fan sections.
+
+---
+
+### ARENA SPRINT 5 — MISSING LARAVEL BACKEND (copy-paste ready)
+
+These 4 endpoints are called by Sprint 5 frontend pages but NOT yet built on Laravel.
+
+#### Routes to add to `routes/api.php`:
+```php
+// Arena Sprint 5 — Discover & Profiles
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/arena/leaderboard', [ArenaFeedController::class, 'leaderboard']);
+    Route::get('/arena/suggested',   [ArenaSocialController::class, 'suggested']);
+});
+// Public (optional auth — no middleware)
+Route::get('/arena/discover',     [ArenaSocialController::class, 'discover']);
+Route::get('/arena/profile/{id}', [ArenaSocialController::class, 'profile']);
+```
+
+#### `ArenaFeedController::leaderboard()`:
+```php
+public function leaderboard(Request $request): JsonResponse
+{
+    $entries = Cache::remember('arena_leaderboard', 3600, function () {
+        return DB::table('player_predictions')
+            ->join('users', 'player_predictions.player_id', '=', 'users.id')
+            ->join('player_profiles', 'users.id', '=', 'player_profiles.user_id')
+            ->where('player_predictions.data_quality', '!=', 'low')
+            ->whereNotNull('player_predictions.projected_score')
+            ->select(
+                'users.id',
+                DB::raw("CONCAT(LEFT(player_profiles.first_name,1),'.',LEFT(player_profiles.surname,1),'.') as initials"),
+                DB::raw("COALESCE(users.sport,'Football') as sport"),
+                DB::raw("COALESCE(users.province,'') as province"),
+                'player_predictions.projected_score',
+                'player_predictions.peak_level_label'
+            )
+            ->orderByDesc('player_predictions.projected_score')
+            ->limit(5)
+            ->get();
+    });
+    return response()->json(['data' => $entries]);
+}
+```
+
+#### `ArenaSocialController::suggested()`:
+```php
+public function suggested(Request $request): JsonResponse
+{
+    $me = $request->user();
+    if (!$me) return response()->json(['data' => []]);
+    $alreadyFollowing = DB::table('arena_follows')
+        ->where('follower_id', $me->id)->pluck('following_id')->toArray();
+    $alreadyFollowing[] = $me->id;
+    $users = DB::table('users')
+        ->leftJoin('player_profiles','users.id','=','player_profiles.user_id')
+        ->whereNotIn('users.id', $alreadyFollowing)
+        ->select('users.id','users.name','users.role',
+            DB::raw("COALESCE(users.sport,'Football') as sport"),
+            DB::raw("COALESCE(users.province,'') as province"))
+        ->inRandomOrder()->limit(3)->get()
+        ->map(function ($u) { $u->mutual_connections = 0; return $u; });
+    return response()->json(['data' => $users]);
+}
+```
+
+#### `ArenaSocialController::discover()`:
+```php
+public function discover(Request $request): JsonResponse
+{
+    $me = auth('sanctum')->user();
+    $meId = $me?->id;
+    $query = DB::table('users')
+        ->leftJoin('player_profiles','users.id','=','player_profiles.user_id')
+        ->leftJoin('player_predictions','users.id','=','player_predictions.player_id')
+        ->select('users.id','users.name','users.role',
+            DB::raw("COALESCE(users.sport,'Football') as sport"),
+            DB::raw("COALESCE(users.province,'') as province"),
+            'player_profiles.position_primary as position',
+            'player_predictions.projected_score as thuto_score',
+            'player_predictions.peak_level_label','player_profiles.avatar_url');
+    if ($q = $request->query('q'))         $query->where('users.name','ilike',"%{$q}%");
+    if ($sport = $request->query('sport')) $query->where('users.sport',$sport);
+    if ($prov = $request->query('province')) $query->where('users.province',$prov);
+    if ($pos = $request->query('position')) $query->where('player_profiles.position_primary','ilike',"%{$pos}%");
+    if ($min = $request->query('min_score')) $query->where('player_predictions.projected_score','>=',(int)$min);
+    if ($meId) $query->where('users.id','!=',$meId);
+    $players = $query->orderByDesc('player_predictions.projected_score')->paginate(20);
+    $followingIds = $meId
+        ? DB::table('arena_follows')->where('follower_id',$meId)->pluck('following_id')->toArray()
+        : [];
+    $players->getCollection()->transform(fn($p) => tap($p, fn($p) => $p->is_following = in_array($p->id,$followingIds)));
+    return response()->json($players);
+}
+```
+
+#### `ArenaSocialController::profile()`:
+```php
+public function profile(Request $request, string $id): JsonResponse
+{
+    $me = auth('sanctum')->user();
+    $meId = $me?->id;
+    $user = DB::table('users')
+        ->leftJoin('player_profiles','users.id','=','player_profiles.user_id')
+        ->leftJoin('player_predictions','users.id','=','player_predictions.player_id')
+        ->where('users.id',$id)
+        ->select('users.id','users.name','users.role',
+            DB::raw("COALESCE(users.sport,'Football') as sport"),
+            DB::raw("COALESCE(users.province,'') as province"),
+            'player_profiles.position_primary as position','player_profiles.bio',
+            'player_profiles.avatar_url',
+            'player_predictions.projected_score as thuto_score',
+            'player_predictions.peak_level_label','player_predictions.upside_rating',
+            'player_predictions.upside_label','player_predictions.percentile',
+            'player_predictions.comparable_name','player_predictions.narrative as prediction_narrative',
+            'player_predictions.data_quality')
+        ->first();
+    if (!$user) return response()->json(['error'=>'Not found'],404);
+    $posts = DB::table('arena_posts')->where('user_id',$id)
+        ->orderByDesc('created_at')->limit(5)->get();
+    $scoutViews = DB::table('profile_views')
+        ->where('player_id',$id)->where('viewed_at','>=',now()->subDays(7))->count();
+    $isFollowing = $meId && DB::table('arena_follows')
+        ->where('follower_id',$meId)->where('following_id',$id)->exists();
+    $connection = $meId ? DB::table('arena_connections')
+        ->where(fn($q)=>$q->where('requester_id',$meId)->where('recipient_id',$id)
+            ->orWhere(fn($q)=>$q->where('requester_id',$id)->where('recipient_id',$meId)))
+        ->first() : null;
+    $connectionStatus = $connection
+        ? ($connection->status === 'accepted' ? 'connected' : 'pending')
+        : 'none';
+    return response()->json([
+        'user'=>$user,'posts'=>$posts,'scout_views'=>$scoutViews,
+        'is_following'=>$isFollowing,'connection_status'=>$connectionStatus,
+    ]);
+}
+```
+
+**Also add `talent-wanted` routes** (Recruitment Board backend needed):
+```php
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/arena/talent-wanted',        [TalentWantedController::class, 'index']);
+    Route::post('/arena/talent-wanted',       [TalentWantedController::class, 'store']);
+    Route::get('/arena/talent-wanted/{id}',   [TalentWantedController::class, 'show']);
+    Route::post('/arena/talent-wanted/{id}/apply',        [TalentWantedController::class, 'apply']);
+    Route::get('/arena/talent-wanted/{id}/applications',  [TalentWantedController::class, 'applications']);
+});
+```
+
+**`TalentWantedController` needs these tables (new migration):**
+```sql
+CREATE TABLE talent_postings (
+  id              UUID PK (gen_random_uuid()),
+  poster_id       UUID FK → users,
+  club_id         UUID FK → arena_clubs nullable,
+  sport           VARCHAR,
+  position        VARCHAR,
+  age_min         SMALLINT,
+  age_max         SMALLINT,
+  thuto_min       SMALLINT DEFAULT 0,
+  province        VARCHAR nullable,
+  style_of_play   TEXT nullable,
+  stipend         BOOLEAN DEFAULT false,
+  description     TEXT,
+  status          VARCHAR DEFAULT 'open',  -- open | closed
+  closes_at       TIMESTAMP nullable,
+  applications_count INTEGER DEFAULT 0,
+  created_at, updated_at
+);
+
+CREATE TABLE talent_applications (
+  id              UUID PK,
+  posting_id      UUID FK → talent_postings (cascade),
+  applicant_id    UUID FK → users (cascade),
+  message         TEXT,
+  availability    VARCHAR nullable,
+  status          VARCHAR DEFAULT 'pending',  -- pending | accepted | rejected
+  created_at, updated_at,
+  UNIQUE(posting_id, applicant_id)
+);
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (19 May 2026, Sprint 5)
+
+```
+/arena/discover              Discover Athletes — search + filters, follow toggle
+/arena/notifications         Arena Alerts — date-grouped, mark-all-read, dismiss
+/arena/profile/[id]          Public Arena Profile — THUTO score, prediction, posts
+/arena/recruitment           Talent Board — filter by sport/province/stipend/THUTO
+/arena/recruitment/[id]      Posting detail + player apply modal
+/arena/recruitment/new       Create talent-wanted posting (coach only)
+/coach/recruitment           Coach applications viewer — tabbed per posting
+```
+
+---
+
+### WHAT STILL NEEDS DOING (19 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Arena Sprint 5 backend endpoints | NOT YET BUILT on Laravel | Copy 4 controller methods above to bhora-ai + add routes |
+| `talent_postings` + `talent_applications` tables | NOT YET BUILT | Create migration + `TalentWantedController` in bhora-ai |
+| `/arena/clubs/new` page | NOT YET BUILT | Club registration form |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
