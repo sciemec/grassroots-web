@@ -12,6 +12,7 @@ import {
   Map, Thermometer, TrendingUp as SeasonIcon, Flame, Award, GraduationCap,
   MessageSquare,
   Rss,
+  Building2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ const navItems: NavItem[] = [
   { href: "/arena",                   label: "Arena Feed",     icon: Rss,             roles: ["coach"] },
   { href: "/arena/network",          label: "My Network",     icon: Users,           roles: ["coach"] },
   { href: "/arena/messages",         label: "Messages",       icon: MessageSquare,   roles: ["coach"] },
+  { href: "/arena/clubs",            label: "Clubs",          icon: Building2,       roles: ["coach"] },
   { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
   // ─── Scout ────────────────────────────────────────────────────────────────
   { href: "/scout",           label: "Find Players",  icon: UserSearch,  roles: ["scout"] },
@@ -81,6 +83,7 @@ const navItems: NavItem[] = [
   { href: "/arena",           label: "Arena Feed",    icon: Rss,           roles: ["scout"] },
   { href: "/arena/network",   label: "My Network",    icon: Users,         roles: ["scout"] },
   { href: "/arena/messages",  label: "Messages",      icon: MessageSquare, roles: ["scout"] },
+  { href: "/arena/clubs",     label: "Clubs",         icon: Building2,     roles: ["scout"] },
   // ─── Player ───────────────────────────────────────────────────────────────
   { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
   { href: "/player/success",              label: "Success Engine",  icon: Flame,           roles: ["player"] },
@@ -116,6 +119,7 @@ const navItems: NavItem[] = [
   { href: "/arena",                       label: "Arena Feed",      icon: Rss,             roles: ["player"] },
   { href: "/arena/network",               label: "My Network",      icon: Users,           roles: ["player"] },
   { href: "/arena/messages",              label: "Messages",        icon: MessageSquare,   roles: ["player"] },
+  { href: "/arena/clubs",                 label: "Clubs",           icon: Building2,       roles: ["player"] },
   // ─── Fan ──────────────────────────────────────────────────────────────────
   { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },
   { href: "/fan/discover",       label: "Discover",       icon: Star,            roles: ["fan"] },
@@ -128,6 +132,7 @@ const navItems: NavItem[] = [
   { href: "/arena",              label: "Arena Feed",     icon: Rss,             roles: ["fan"] },
   { href: "/arena/network",      label: "My Network",     icon: Users,           roles: ["fan"] },
   { href: "/arena/messages",     label: "Messages",       icon: MessageSquare,   roles: ["fan"] },
+  { href: "/arena/clubs",        label: "Clubs",          icon: Building2,       roles: ["fan"] },
   // ─── Analyst ──────────────────────────────────────────────────────────────
   { href: "/analyst",                      label: "Analyst Hub",       icon: LineChart,   roles: ["analyst"] },
   { href: "/analyst/match-brain",          label: "Match Brain",       icon: Brain,       roles: ["analyst"] },
