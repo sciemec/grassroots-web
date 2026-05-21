@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, MapPin, ChevronLeft, Check, Users, Zap } from "lucide-react";
+import { Building2, MapPin, ChevronLeft, Check, Users, Zap, Trophy } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 // ─── ArenaNav ─────────────────────────────────────────────────────────────────
