@@ -115,7 +115,7 @@ function authHeaders(token: string | null | undefined) {
 // ── Arena Top Nav ─────────────────────────────────────────────────────────────
 
 function ArenaNav({ unreadCount }: { unreadCount: number }) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,11 +127,11 @@ function ArenaNav({ unreadCount }: { unreadCount: number }) {
   }
 
   const hubs = [
-    { label: "Player Hub",   href: "/player" },
-    { label: "Coach Hub",    href: "/coach" },
-    { label: "Fan Hub",      href: "/fan-hub" },
-    { label: "Analysis Hub", href: "/analyst" },
-    { label: "Scout Hub",    href: "/scout" },
+    { label: "Player",   href: "/player",   icon: <Activity size={11} /> },
+    { label: "Coach",    href: "/coach",    icon: <Shield size={11} /> },
+    { label: "Fans",     href: "/fan-hub",  icon: <Heart size={11} /> },
+    { label: "Analysis", href: "/analyst",  icon: <Target size={11} /> },
+    { label: "Scout",    href: "/scout",    icon: <Search size={11} /> },
   ];
 
   return (
@@ -158,13 +158,14 @@ function ArenaNav({ unreadCount }: { unreadCount: number }) {
           </div>
         </form>
 
-        <nav className="hidden lg:flex items-center gap-4">
+        <nav className="hidden lg:flex items-center gap-1">
           {hubs.map((h) => (
             <Link
               key={h.href}
               href={h.href}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-2.5 py-1.5 rounded-full transition-colors whitespace-nowrap"
             >
+              {h.icon}
               {h.label}
             </Link>
           ))}
