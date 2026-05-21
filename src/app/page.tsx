@@ -1,742 +1,529 @@
+"use client";
+
 import Link from "next/link";
 import AuthRedirect from "@/components/ui/AuthRedirect";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { SchoolPitchSection } from "@/components/landing/SchoolPitchSection";
 import { AdBanner } from "@/components/ui/AdBanner";
-import AfricanPatternStrip from "@/components/ui/AfricanPatternStrip";
-import { ZimPresidentBanner, ZimIndependenceSection } from "@/components/ui/zim-independence";
 import ThutoChatVisitor from "@/components/thuto/ThutoChatVisitor";
 import { ApkDownloadButton } from "@/components/ui/apk-download-button";
+import { ZimPresidentBanner, ZimIndependenceSection } from "@/components/ui/zim-independence";
 import {
-  Users, Dumbbell, Brain, Trophy, Globe, Shield, Zap, Star, ChevronRight,
+  Trophy, ChevronRight, Zap, Star, Heart,
+  Brain, Activity, Video, BarChart3, Globe, Shield,
 } from "lucide-react";
 
-// ── Background tiles ──────────────────────────────────────────────────────────
-const CREAM_TILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpolygon points='100,30 120,65 100,100 80,65' fill='none' stroke='%232C2416' stroke-width='1.5' opacity='0.25'/%3E%3Cpolyline points='0,120 12,108 24,120 36,108 48,120 60,108 72,120 84,108 96,120 108,108 120,120 132,108 144,120 156,108 168,120 180,108 192,120 200,112' fill='none' stroke='%232C2416' stroke-width='1' opacity='0.20'/%3E%3Ccircle cx='30' cy='170' r='5' fill='%23C1714A' opacity='0.32'/%3E%3Ccircle cx='100' cy='170' r='5' fill='%23E6A817' opacity='0.32'/%3E%3Ccircle cx='170' cy='170' r='5' fill='%233A7D6B' opacity='0.32'/%3E%3C/svg%3E")`;
+/* ─────────────────────────────────────────────────────────────────────────
+   LANDING PAGE — Concept B (light palette)
+   Background: #f4f2ee  |  Cards: white  |  Primary: #1a5c2a  |  Accent: #c8962a
+   ───────────────────────────────────────────────────────────────────────── */
 
-const STATS_TILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='60'%3E%3Cpolyline points='0,30 10,20 20,30 30,20 40,30 50,20 60,30 70,20 80,30 90,20 100,30' fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.15'/%3E%3Ccircle cx='25' cy='50' r='3' fill='%23E6A817' opacity='0.28'/%3E%3Ccircle cx='75' cy='50' r='3' fill='%23E6A817' opacity='0.28'/%3E%3C/svg%3E")`;
-
-const FOOTER_TILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Cpolygon points='60,10 74,35 60,60 46,35' fill='none' stroke='%23E6A817' stroke-width='0.8' opacity='0.20'/%3E%3Cellipse cx='20' cy='70' rx='8' ry='10' fill='%23E6A817' opacity='0.12'/%3E%3Cellipse cx='100' cy='70' rx='8' ry='10' fill='%23E6A817' opacity='0.12'/%3E%3C/svg%3E")`;
-
-const creamSection = {
-  background: "#f4f2ee",
-} as React.CSSProperties;
-
-// ── Section label ─────────────────────────────────────────────────────────────
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 mb-3">
-      <div className="h-0.5 w-6 bg-[#E6A817]" />
-      <span className="text-[11px] font-bold tracking-[3px] uppercase text-[#1B5E20]">{children}</span>
-    </div>
-  );
-}
-
-// ── Hub label (dark bg version) ───────────────────────────────────────────────
-function HubSectionLabel({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 mb-5">
-      <div className="w-[4px] h-[24px] rounded-full" style={{ background: "#E6A817" }} />
-      <span className="font-extrabold text-xl tracking-tight" style={{ color: "#1B5E20" }}>{label}</span>
-    </div>
-  );
-}
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-
-const sports = [
-  { name: "Football",   icon: "⚽", color: "bg-green-600" },
-  { name: "Basketball", icon: "🏀", color: "bg-orange-600" },
-  { name: "Athletics",  icon: "🏃", color: "bg-blue-600" },
-  { name: "Volleyball", icon: "🏐", color: "bg-yellow-600" },
-  { name: "Cricket",    icon: "🏏", color: "bg-red-700" },
-  { name: "Netball",    icon: "🥅", color: "bg-purple-700" },
-  { name: "Rugby",      icon: "🏉", color: "bg-amber-700" },
-  { name: "Swimming",   icon: "🏊", color: "bg-cyan-700" },
-  { name: "Tennis",     icon: "🎾", color: "bg-lime-700" },
-  { name: "Hockey",     icon: "🏑", color: "bg-teal-700" },
+const SPORTS = [
+  "⚽ Football", "🏉 Rugby", "🏃 Athletics", "🏐 Netball",
+  "🏀 Basketball", "🏏 Cricket", "🏊 Swimming", "🎾 Tennis",
+  "🏐 Volleyball", "🏑 Hockey",
 ];
 
-const stats = [
-  { value: "10,000+", label: "Registered Athletes", icon: Users },
-  { value: "50,000+", label: "Training Sessions",   icon: Dumbbell },
-  { value: "10",      label: "Sports Supported",    icon: Trophy },
-  { value: "10",      label: "Provinces Covered",   icon: Globe },
-];
-
-const aiFeatures = [
+const HUB_CARDS = [
   {
-    icon: Brain,
-    title: "AI Coach (Claude)",
-    description: "Real-time technique feedback using pose detection and Claude's reasoning. Know exactly what to fix after every session.",
-    color: "text-purple-700",
-    bg: "bg-purple-100",
+    title: "Player Hub",
+    sub: "Build your profile. Get scouted.",
+    bg: "linear-gradient(135deg, #1a5c2a 0%, #2e7d32 100%)",
+    href: "/register?role=player",
+    cta: "Join as Player",
   },
   {
-    icon: Zap,
-    title: "Training Plan Generator",
-    description: "Tell Claude your goals — get a personalised weekly programme built around your age group, position, and fitness level.",
-    color: "text-amber-700",
-    bg: "bg-amber-100",
+    title: "Coach Hub",
+    sub: "Squad tools. Live match analysis.",
+    bg: "linear-gradient(135deg, #1565c0 0%, #1976d2 100%)",
+    href: "/register?role=coach",
+    cta: "Join as Coach",
+  },
+  {
+    title: "Scout Hub",
+    sub: "Discover talent. Generate reports.",
+    bg: "linear-gradient(135deg, #6a1b9a 0%, #8e24aa 100%)",
+    href: "/register?role=scout",
+    cta: "Join as Scout",
+  },
+  {
+    title: "Fan Hub",
+    sub: "Follow players. Watch highlights.",
+    bg: "linear-gradient(135deg, #c8962a 0%, #e6a817 100%)",
+    href: "/register?role=fan",
+    cta: "Join as Fan",
+  },
+];
+
+const FEATURES = [
+  {
+    icon: Brain,
+    title: "AI Coaching (THUTO)",
+    desc: "Zimbabwe's first AI sports coach. Training plans, EQ support, and live match insights — all in your pocket.",
+  },
+  {
+    icon: Activity,
+    title: "Biomechanics Analysis",
+    desc: "ML Kit pose detection in the mobile app scores every drill rep. Coaches see real form data in the Scout Hub.",
+  },
+  {
+    icon: Video,
+    title: "Match Eye Video AI",
+    desc: "Upload a match video. Gemini 1.5 Pro watches the full footage. Claude writes the tactical report.",
+  },
+  {
+    icon: BarChart3,
+    title: "Talent Leaderboard",
+    desc: "THUTO ranks every player by projected peak level — from amateur to continental. Public. Filterable. Free.",
+  },
+  {
+    icon: Globe,
+    title: "The Arena",
+    desc: "A social graph for Zimbabwean sport. Post milestones, connect with coaches, apply to talent board listings.",
   },
   {
     icon: Shield,
-    title: "Injury Risk Analysis",
-    description: "AI monitors training load patterns and flags early warning signs of overuse injuries before they sideline you.",
-    color: "text-red-700",
-    bg: "bg-red-100",
-  },
-  {
-    icon: Star,
-    title: "Scout Reports (AI)",
-    description: "Scouts get Claude-generated comparative reports: strengths, weaknesses, potential — all from real session data.",
-    color: "text-[#1B5E20]",
-    bg: "bg-green-100",
+    title: "Verified Profiles",
+    desc: "Selfie + ID document verification. QR code on every approved profile — scouts scan to confirm authenticity.",
   },
 ];
 
-const pricing = [
+const PLANS = [
   {
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "For players just getting started",
-    features: [
-      "5 training sessions / month",
-      "Basic drill library access",
-      "AI Coach (5 queries / month)",
-      "Public player profile",
-      "Community leaderboard",
-    ],
-    cta: "Get started free",
+    color: "#6b7280",
+    features: ["Player profile", "Basic stats", "THUTO AI (10 msgs/day)", "Arena feed access"],
+    cta: "Get Started",
     href: "/register",
-    highlighted: false,
+    primary: false,
   },
   {
     name: "Pro",
-    price: "$5",
+    price: "$25",
     period: "/ month",
-    description: "For serious athletes & coaches",
-    features: [
-      "Unlimited training sessions",
-      "Full drill library (48+ drills)",
-      "Unlimited AI Coach queries",
-      "Video pose analysis",
-      "Scout visibility & contact requests",
-      "Training plan generator",
-      "Injury risk monitoring",
-      "PDF progress reports",
-    ],
-    cta: "Start Pro — $5/mo",
-    href: "/register?plan=pro",
-    highlighted: true,
+    color: "#1a5c2a",
+    features: ["Everything in Free", "Unlimited THUTO AI", "Scout PDF reports", "Video analysis", "Chemistry matrix", "Priority support"],
+    cta: "Start Free Trial",
+    href: "/register",
+    primary: true,
   },
   {
-    name: "Team",
-    price: "$20",
+    name: "School",
+    price: "$10",
     period: "/ month",
-    description: "For coaches & academies (up to 25 players)",
-    features: [
-      "Everything in Pro × 25 players",
-      "Coach squad dashboard",
-      "AI tactical insights",
-      "Formation recommender",
-      "Team export & PDF reports",
-      "Priority support",
-    ],
-    cta: "Start Team",
-    href: "/register?plan=team",
-    highlighted: false,
+    color: "#1565c0",
+    features: ["Up to 3 sports", "20 video uploads/month", "NASH/NAPH leagues", "Coach + player accounts", "Team analytics"],
+    cta: "Register School",
+    href: "/register?role=coach&school=true",
+    primary: false,
   },
 ];
-
-// ── Featured hub cards data ───────────────────────────────────────────────────
-const featuredHubs = [
-  {
-    icon: "🤖",
-    title: "AI Coach",
-    tagline: "Get personalised coaching, drills & training plans",
-    shona: "Ndinokubatsira sei nhasi?",
-    href: "/player/ai-coach",
-    from: "#0a2a0a",
-    to: "#1B5E20",
-  },
-  {
-    icon: "⚽",
-    title: "Player Hub",
-    tagline: "Train · Drill · Analyse · Grow",
-    shona: "Dzidzira — Nzira yako yekutamba",
-    href: "/player",
-    from: "#1B5E20",
-    to: "#2E7D32",
-  },
-];
-
-const hubGrid = [
-  { icon: "🔍", title: "Scout Hub",        subtitle: "Discover talent",          href: "/scout",                   color: "#B71C1C" },
-  { icon: "🏆", title: "Fan Hub",           subtitle: "Follow the game",          href: "/fan",                     color: "#C62828" },
-  { icon: "📋", title: "Coach Hub",         subtitle: "Manage your squad",        href: "/coach",                   color: "#004D40" },
-  { icon: "🎥", title: "Live Match",        subtitle: "Stream & analyse",         href: "/coach/live-match",        color: "#B71C1C", badge: "LIVE" },
-  { icon: "📊", title: "Training Formats",  subtitle: "Rondo · SSG · Drills",     href: "/player/training-formats", color: "#1565C0" },
-  { icon: "👥", title: "Squad",             subtitle: "Register & ID players",    href: "/coach/squad",             color: "#4A148C" },
-  { icon: "📈", title: "My Journey",        subtitle: "Progress & scores",        href: "/player/development",      color: "#1B5E20" },
-  { icon: "🎖️", title: "Milestones",       subtitle: "Your achievements",        href: "/player/milestones",       color: "#BF360C" },
-  { icon: "💼", title: "Business Hub",      subtitle: "Budgets · Sponsors · Events", href: "/business-hub",         color: "#1A237E" },
-  { icon: "📉", title: "Analyst Hub",       subtitle: "xG · Heatmaps · Tactics", href: "/analyst",                 color: "#004D40", badge: "PRO" },
-];
-
-// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
+    <div style={{ backgroundColor: "#f4f2ee", minHeight: "100vh", color: "#1a1a1a" }}>
       <AuthRedirect />
-      <ZimPresidentBanner />
       <PublicNavbar />
 
-      {/* ── Hub Cards section — Flutter off-white + green chevron ─────────── */}
-      <section
-        className="pt-16 pb-10 relative overflow-hidden"
-        style={{
-          backgroundColor: "#F5F7F5",
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Cpolyline points='0,10 12,2 24,10' fill='none' stroke='%23E6A817' stroke-width='1.2' opacity='0.35'/%3E%3C/svg%3E")`,
-          backgroundSize: "24px 12px",
-          backgroundRepeat: "repeat",
-        }}
-      >
-        {/* No extra overlay needed — pattern is already at 6% via SVG stroke opacity */}
-        {/* Gold bottom rule */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: "#E6A817" }} />
-
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10">
-
-          {/* Title row */}
-          <div className="flex items-center gap-4 mb-8 pt-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo_v2.png" alt="Grassroots Sport" width={56} height={56} className="rounded-xl shadow-md" />
-            <div>
-              <h1 className="text-3xl font-extrabold leading-tight" style={{ color: "#1B5E20" }}>
-                Grassroots <span style={{ color: "#E6A817" }}>Sport</span>
-              </h1>
-              <p className="text-sm mt-0.5 font-medium italic" style={{ color: "#1B5E20", opacity: 0.7 }}>Zimbabwe&apos;s AI-Powered Sports Platform 🇿🇼</p>
-            </div>
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
+      <section style={{ paddingTop: "6rem", paddingBottom: "4rem" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 1.5rem", textAlign: "center" }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            backgroundColor: "rgba(26,92,42,0.08)", borderRadius: 999,
+            padding: "6px 16px", marginBottom: "1.5rem",
+            fontSize: "0.8rem", fontWeight: 600, color: "#1a5c2a",
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "#1a5c2a", display: "inline-block" }} />
+            Zimbabwe&apos;s First AI Sports Platform
           </div>
 
-          <HubSectionLabel label="Explore the Platform" />
+          <h1 style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)", fontWeight: 800, lineHeight: 1.15, marginBottom: "1.25rem", color: "#1a1a1a" }}>
+            Train Anywhere in Zimbabwe.{" "}
+            <span style={{ color: "#1a5c2a" }}>Use AI to Get Recognized.</span>
+          </h1>
 
-          {/* Featured full-width hub cards */}
-          <div className="grid gap-3 sm:grid-cols-2 mb-3">
-            {featuredHubs.map((hub) => (
-              <Link key={hub.title} href={hub.href}>
-                <div
-                  className="relative overflow-hidden rounded-2xl h-40 flex flex-col justify-between p-5 cursor-pointer transition-transform hover:-translate-y-0.5"
-                  style={{
-                    background: `linear-gradient(135deg, ${hub.from}, ${hub.to})`,
-                    boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
-                  }}
-                >
-                  <span className="absolute -right-3 -bottom-3 text-[96px] opacity-[0.08] select-none pointer-events-none leading-none">
-                    {hub.icon}
-                  </span>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl text-2xl"
-                      style={{ background: "rgba(255,255,255,0.14)" }}>
-                      {hub.icon}
-                    </div>
-                    <span className="text-xs text-white/80 font-semibold px-3 py-1.5 rounded-full"
-                      style={{ background: "rgba(255,255,255,0.14)" }}>
-                      Open →
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-white text-[19px] font-extrabold leading-tight">{hub.title}</p>
-                    <p className="text-white/65 text-xs mt-0.5 truncate">{hub.tagline}</p>
-                    <p className="text-white/40 text-[11px] italic mt-0.5 truncate">{hub.shona}</p>
-                  </div>
-                </div>
-              </Link>
+          <p style={{ fontSize: "clamp(1rem, 2.5vw, 1.2rem)", color: "#555", maxWidth: 580, margin: "0 auto 2.5rem", lineHeight: 1.7 }}>
+            GrassRoots Sports gives every Zimbabwean athlete, coach, and scout the tools
+            that only elite clubs could previously afford — across all 10 major sports.
+          </p>
+
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: "3rem" }}>
+            <Link href="/register" style={{
+              backgroundColor: "#1a5c2a", color: "#fff",
+              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
+              fontSize: "1rem", textDecoration: "none", display: "inline-flex",
+              alignItems: "center", gap: 6,
+            }}>
+              Get Started Free <ChevronRight size={16} />
+            </Link>
+            <Link href="/login" style={{
+              backgroundColor: "#fff", color: "#1a5c2a",
+              border: "2px solid #1a5c2a",
+              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
+              fontSize: "1rem", textDecoration: "none",
+            }}>
+              Sign In
+            </Link>
+          </div>
+
+          <div style={{ display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap" }}>
+            {[
+              { value: "10", label: "Sports" },
+              { value: "10+", label: "Provinces" },
+              { value: "AI", label: "Powered" },
+              { value: "Free", label: "To Start" },
+            ].map((s) => (
+              <div key={s.label} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#1a5c2a" }}>{s.value}</div>
+                <div style={{ fontSize: "0.8rem", color: "#888", fontWeight: 500 }}>{s.label}</div>
+              </div>
             ))}
           </div>
-
-          {/* 2-column compact hub grid */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {hubGrid.map((hub) => (
-              <Link key={hub.title} href={hub.href}>
-                <div
-                  className="relative overflow-hidden rounded-xl h-[110px] flex flex-col justify-between p-3.5 cursor-pointer transition-transform hover:-translate-y-0.5"
-                  style={{
-                    background: hub.color,
-                    boxShadow: `0 4px 12px ${hub.color}55`,
-                  }}
-                >
-                  <span className="absolute -right-2 -bottom-2 text-[60px] opacity-[0.10] select-none pointer-events-none leading-none">
-                    {hub.icon}
-                  </span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl">{hub.icon}</span>
-                    {hub.badge && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black text-white"
-                        style={{ background: "rgba(255,255,255,0.2)" }}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
-                        {hub.badge}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-white text-sm font-bold leading-tight">{hub.title}</p>
-                    <p className="text-white/65 text-[11px] mt-0.5 truncate">{hub.subtitle}</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* ── Munhumutapa 2026 Tournament Banner ──────────────────────────── */}
-          <Link href="/tournaments/munhumutapa-2026">
-            <div
-              className="mt-3 rounded-2xl flex items-center gap-4 px-5 py-4 overflow-hidden relative cursor-pointer"
-              style={{
-                background: "linear-gradient(135deg, #0D4A1F, #0a1f0e)",
-                border: "1px solid rgba(240,180,41,0.4)",
-                boxShadow: "0 4px 16px rgba(240,180,41,0.15)",
-              }}
-            >
-              {/* Gold chevron pattern */}
-              <div className="pointer-events-none absolute inset-0 opacity-5 rounded-2xl"
-                style={{ backgroundImage: "repeating-linear-gradient(-45deg,#f0b429 0,#f0b429 1px,transparent 0,transparent 50%)", backgroundSize: "10px 10px" }} />
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-xl"
-                style={{ background: "rgba(240,180,41,0.15)" }}>🏆</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]">Now Open — Register Free</p>
-                <p className="text-sm font-extrabold text-white leading-tight">Munhumutapa Challenge Cup 2026</p>
-                <p className="text-xs text-white/50 truncate">U14 &amp; U16 · Boys &amp; Girls · ZIFA Harare Province</p>
-              </div>
-              <ChevronRight className="h-5 w-5 flex-shrink-0 text-[#f0b429]" />
-            </div>
-          </Link>
-
-          {/* Join banner */}
-          <Link href="/register">
-            <div
-              className="mt-4 rounded-2xl h-[64px] flex items-center gap-4 px-5 overflow-hidden relative cursor-pointer"
-              style={{
-                background: "linear-gradient(90deg, #4A148C, #7B1FA2, #9C27B0)",
-                borderLeft: "4px solid #E6A817",
-                boxShadow: "0 4px 14px rgba(123,31,162,0.3)",
-              }}
-            >
-              <div className="flex items-center justify-center w-9 h-9 rounded-full shrink-0"
-                style={{ background: "rgba(255,255,255,0.15)" }}>
-                <span className="text-lg">👑</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-bold">Join Free — Create Your Account</p>
-                <p className="text-white/65 text-xs truncate">Get full access to all hubs, AI Coach and more</p>
-              </div>
-              <ChevronRight className="text-white/50 shrink-0 h-5 w-5" />
-            </div>
-          </Link>
         </div>
       </section>
 
-      {/* ── Pattern strip ─────────────────────────────────────────────────── */}
-      <AfricanPatternStrip variant="green" height={44} />
+      {/* ── SPORTS STRIP ──────────────────────────────────────────────────── */}
+      <section style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "1.25rem 0", overflowX: "auto" }}>
+        <div style={{ display: "flex", gap: 10, padding: "0 1.5rem", width: "max-content", margin: "0 auto" }}>
+          {SPORTS.map((s) => (
+            <span key={s} style={{
+              backgroundColor: "rgba(26,92,42,0.07)", color: "#1a5c2a",
+              padding: "6px 16px", borderRadius: 999, fontSize: "0.85rem",
+              fontWeight: 600, whiteSpace: "nowrap",
+            }}>
+              {s}
+            </span>
+          ))}
+        </div>
+      </section>
 
-      {/* ── Sports Strip — cream ──────────────────────────────────────────── */}
-      <section id="sports" style={creamSection} className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionLabel>10 Sports</SectionLabel>
-          <h2 className="mb-10 text-3xl font-bold text-[#1B5E20]">One Platform</h2>
-          <div className="grid grid-cols-5 gap-3 sm:grid-cols-10 sm:gap-4">
-            {sports.map(({ name, icon, color }) => (
-              <div
-                key={name}
-                className="flex flex-col items-center gap-2 rounded-xl p-4 transition hover:-translate-y-0.5"
-                style={{ background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)" }}
+      {/* ── HUB CARDS ─────────────────────────────────────────────────────── */}
+      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
+        <h2 style={{ textAlign: "center", fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.5rem" }}>
+          Choose Your Hub
+        </h2>
+        <p style={{ textAlign: "center", color: "#666", marginBottom: "2rem" }}>
+          One platform. Four roles. All Zimbabwean sports.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+          {HUB_CARDS.map((card) => (
+            <Link key={card.title} href={card.href} style={{ textDecoration: "none" }}>
+              <div style={{
+                background: card.bg, borderRadius: 16, padding: "1.5rem",
+                minHeight: 140, display: "flex", flexDirection: "column",
+                justifyContent: "space-between", cursor: "pointer",
+                transition: "transform 0.15s",
+              }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
               >
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}/20`}>
-                  <span className="text-2xl">{icon}</span>
+                <div>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>{card.title}</div>
+                  <div style={{ color: "rgba(255,255,255,0.78)", fontSize: "0.78rem" }}>{card.sub}</div>
                 </div>
-                <span className="text-xs font-medium text-[#2C2416]">{name}</span>
+                <div style={{ color: "rgba(255,255,255,0.9)", fontSize: "0.78rem", fontWeight: 600, marginTop: 12 }}>
+                  {card.cta} →
+                </div>
               </div>
-            ))}
-          </div>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* ── School Bulk Pitch ─────────────────────────────────────────────── */}
+      {/* ── SCHOOL PITCH ──────────────────────────────────────────────────── */}
       <SchoolPitchSection />
 
-      {/* ── Ad Banner — landing-mid ───────────────────────────────────────── */}
-      <AdBanner slot="landing-mid" />
-
-      {/* ── Roles / Features — cream ──────────────────────────────────────── */}
-      <section id="features" style={creamSection} className="py-24 border-t border-[#A0522D]/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-16">
-            <SectionLabel>Platform Features</SectionLabel>
-            <h2 className="text-3xl font-bold text-[#1B5E20] sm:text-4xl">Built for everyone in the game</h2>
-            <p className="mt-3 text-base text-[#444]">Every role has its own hub — tailored tools, tailored AI</p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                id: "player", icon: "🏃", label: "Player", tagline: "Train smarter, get discovered",
-                desc: "Track every session, get AI-powered coaching feedback, and build a verified profile that scouts actually see.",
-                features: ["AI Coach powered by Claude", "Session tracking with video pose analysis", "Verified identity for scout visibility", "Offline-first — works on 2G/3G", "Progress charts & milestones", "Drill library with 48+ exercises"],
-                href: "/player",
-              },
-              {
-                id: "coach", icon: "📋", label: "Coach", tagline: "Build squads, analyse performance",
-                desc: "Manage up to 23 players, track fitness and injury status, and get AI-generated tactical insights from real training data.",
-                features: ["Full squad roster with shirt numbers", "Injury & fitness status tracking", "AI insights from training data", "Formation recommender powered by Claude", "Session drill assignment to players", "Export PDF training reports"],
-                href: "/coach",
-              },
-              {
-                id: "scout", icon: "🔍", label: "Scout", tagline: "Find talent, build pipelines",
-                desc: "Search verified players by position, age group, and province. Privacy-protected profiles with admin-approved contact requests.",
-                features: ["Advanced player search by position & region", "Privacy-first — initials shown until approved", "Contact request system with admin oversight", "AI scouting reports with comparisons", "Shortlist management", "Radar chart comparisons"],
-                href: "/scout",
-              },
-              {
-                id: "fan", icon: "🎉", label: "Fan", tagline: "Follow the game, support talent",
-                desc: "Discover rising stars in your region, follow your favourite athletes, and support grassroots sport financially.",
-                features: ["Player discovery by province & sport", "Regional leaderboards & rankings", "Follow athletes on their journey", "Academy & club directory", "Donation support for community players", "Live session highlights feed"],
-                href: "/fan",
-              },
-            ].map((role) => (
-              <div
-                key={role.id}
-                className="feature-card-african flex flex-col rounded-xl p-6"
-                style={{ background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)", boxShadow: "0 2px 8px rgba(27,94,32,0.06)" }}
-              >
-                <div className="relative mb-4 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg text-2xl" style={{ background: "#1B5E20" }}>
-                    {role.icon}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#1B5E20]">{role.label}</h3>
-                    <p className="text-xs font-semibold text-[#3A7D6B]">Hub</p>
-                  </div>
-                </div>
-                <h4 className="mb-2 text-sm font-semibold text-[#2C2416]">{role.tagline}</h4>
-                <p className="mb-5 text-xs text-[#666] leading-relaxed">{role.desc}</p>
-                <ul className="mb-6 flex-1 space-y-2">
-                  {role.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-[#2C2416]">
-                      <span className="mt-0.5 font-bold text-[#3A7D6B]">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={role.href}
-                  className="mt-auto flex items-center justify-center gap-2 rounded px-4 py-2.5 text-xs font-bold text-[#E6A817] transition hover:opacity-85"
-                  style={{ background: "#2C2416", border: "1px solid #A0522D" }}
-                >
-                  Explore {role.label} Hub <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── AI Features — cream ───────────────────────────────────────────── */}
-      <section id="ai" style={creamSection} className="py-24 border-t border-[#A0522D]/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-16">
-            <SectionLabel>Powered by Claude AI</SectionLabel>
-            <h2 className="text-3xl font-bold text-[#1B5E20] sm:text-4xl">AI that actually understands sport</h2>
-            <p className="mt-3 text-base text-[#444]">Every insight is generated from real training data — not generic advice</p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {aiFeatures.map(({ icon: Icon, title, description, color, bg }) => (
-              <div key={title} className="feature-card-african rounded-xl p-6"
-                style={{ background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)" }}>
-                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-lg ${bg}`}>
-                  <Icon className={`h-5 w-5 ${color}`} />
-                </div>
-                <h3 className="mb-2 font-bold text-[#1B5E20]">{title}</h3>
-                <p className="text-sm text-[#666] leading-relaxed">{description}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* AI Chat Preview */}
-          <div className="mt-16 rounded-xl p-6 sm:p-8"
-            style={{ background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)" }}>
-            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-              <div>
-                <h3 className="mb-3 text-2xl font-bold text-[#1B5E20]">Ask your AI Coach anything</h3>
-                <p className="mb-6 text-[#444]">
-                  Claude analyses your biomechanics, drill scores, and session history to give you
-                  specific, actionable coaching feedback — in English or Shona.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {["Why is my shooting weak?", "How do I improve my first touch?", "Ndisimudze sei?"].map((q) => (
-                    <span key={q} className="rounded-full px-3 py-1 text-xs text-[#1B5E20] font-medium"
-                      style={{ background: "rgba(27,94,32,0.1)", border: "1px solid rgba(27,94,32,0.2)" }}>
-                      {q}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-xl p-4 font-mono text-sm" style={{ background: "#1B5E20" }}>
-                <div className="mb-3 flex items-center gap-2 text-xs text-[#E6A817]">
-                  <Brain className="h-3.5 w-3.5" />
-                  AI Coach · Claude
-                </div>
-                <div className="space-y-3">
-                  <div className="rounded-lg bg-white/10 px-3 py-2 text-white/80 text-xs">
-                    How can I improve my heading ability?
-                  </div>
-                  <div className="rounded-lg px-3 py-2 text-white/90 text-xs leading-relaxed"
-                    style={{ background: "rgba(230,168,23,0.15)" }}>
-                    Based on your last 12 sessions, your jump timing is 0.3s early on crosses.
-                    Focus on: (1) Watching the ball through contact, (2) Arching your back before
-                    release for power, (3) Short approach runs to build explosive leg drive…
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Stats Banner ──────────────────────────────────────────────────── */}
-      <section className="py-16 relative overflow-hidden"
-        style={{ background: "#2E7D32", backgroundImage: STATS_TILE, backgroundSize: "100px 60px" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-2 gap-8 text-center sm:grid-cols-4">
-            {stats.map(({ value, label }) => (
-              <div key={label}>
-                <div className="text-4xl font-bold text-[#F5C842] sm:text-5xl">{value}</div>
-                <div className="mt-2 text-sm text-white/70 tracking-wide">{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Pricing — cream ───────────────────────────────────────────────── */}
-      <section id="pricing" style={creamSection} className="py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-16">
-            <SectionLabel>Pricing</SectionLabel>
-            <h2 className="text-3xl font-bold text-[#1B5E20] sm:text-4xl">Simple, affordable pricing</h2>
-            <p className="mt-3 text-base text-[#444]">Designed for the African grassroots ecosystem</p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {pricing.map((plan) => (
-              <div key={plan.name} className="relative flex flex-col rounded-xl p-6"
-                style={plan.highlighted
-                  ? { background: "#1B5E20", border: "2px solid #E6A817" }
-                  : { background: "rgba(255,248,230,0.82)", border: "1px solid rgba(160,82,45,0.15)" }}>
-                {plan.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full px-3 py-1 text-xs font-bold text-[#2C2416]" style={{ background: "#E6A817" }}>
-                      Most popular
-                    </span>
-                  </div>
-                )}
-                <div className="mb-6">
-                  <h3 className={`text-lg font-bold ${plan.highlighted ? "text-white" : "text-[#1B5E20]"}`}>{plan.name}</h3>
-                  <div className="mt-2 flex items-baseline gap-1">
-                    <span className={`text-4xl font-bold ${plan.highlighted ? "text-[#F5C842]" : "text-[#2C2416]"}`}>{plan.price}</span>
-                    <span className={`text-sm ${plan.highlighted ? "text-white/60" : "text-[#666]"}`}>{plan.period}</span>
-                  </div>
-                  <p className={`mt-2 text-sm ${plan.highlighted ? "text-white/70" : "text-[#666]"}`}>{plan.description}</p>
-                </div>
-                <ul className="mb-8 flex-1 space-y-2.5">
-                  {plan.features.map((f) => (
-                    <li key={f} className={`flex items-center gap-2 text-sm ${plan.highlighted ? "text-white/85" : "text-[#2C2416]"}`}>
-                      <span className={plan.highlighted ? "text-[#E6A817]" : "text-[#3A7D6B]"}>✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href={plan.href}
-                  className="block rounded px-4 py-3 text-center text-sm font-bold transition hover:opacity-85"
-                  style={plan.highlighted
-                    ? { background: "#E6A817", color: "#2C2416" }
-                    : { background: "#2C2416", color: "#E6A817", border: "1px solid #A0522D" }}>
-                  {plan.cta}
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Zimbabwe Independence Day section ──────────────────────────────── */}
-      <ZimIndependenceSection />
-
-      {/* ── Download App ───────────────────────────────────────────────────── */}
-      <section id="download" className="py-20 relative overflow-hidden" style={{ background: "#0f2a1a" }}>
-        {/* subtle chevron pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Cpolyline points='0,15 10,5 20,15 30,5 40,15' fill='none' stroke='%23E6A817' stroke-width='1.5'/%3E%3C/svg%3E")`,
-            backgroundSize: "40px 20px",
-          }}
-        />
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-
-            {/* Left — text */}
-            <div className="flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest mb-5"
-                style={{ background: "rgba(230,168,23,0.15)", color: "#E6A817", border: "1px solid rgba(230,168,23,0.3)" }}>
-                📱 Beta — Free to download
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 leading-tight">
-                Take Grassroots Sport<br />
-                <span style={{ color: "#E6A817" }}>everywhere you train</span>
-              </h2>
-              <p className="text-white/60 text-base mb-8 max-w-md mx-auto lg:mx-0">
-                The full platform in your pocket. Log sessions, get AI coaching, track your stats — even on a slow connection.
-              </p>
-
-              {/* Download button */}
-              <ApkDownloadButton size="lg" className="mb-6" />
-
-              {/* Install steps */}
-              <div className="mt-2 space-y-2 text-sm text-white/50 max-w-sm mx-auto lg:mx-0">
-                <p className="font-semibold text-white/70 mb-3">How to install (30 seconds):</p>
-                {[
-                  "Tap Download — the .apk file saves to your phone",
-                  "Open your Downloads folder and tap the file",
-                  'If Android warns you → tap "Install anyway"',
-                  "App opens — create your free account",
-                ].map((step, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black text-[#1a1a1a] mt-0.5"
-                      style={{ background: "#E6A817" }}>
-                      {i + 1}
-                    </span>
-                    <span>{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — phone mockup */}
-            <div className="flex-shrink-0 flex flex-col items-center gap-4">
-              <div className="relative w-[200px] h-[380px] rounded-[32px] overflow-hidden shadow-2xl"
-                style={{
-                  background: "linear-gradient(135deg, #1a3d26, #0f2a1a)",
-                  border: "2px solid rgba(230,168,23,0.3)",
-                  boxShadow: "0 0 60px rgba(230,168,23,0.15)",
-                }}>
-                {/* Screen content */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo_v2.png" alt="Grassroots Sport" width={64} height={64} className="rounded-2xl shadow-lg" />
-                  <p className="text-white font-extrabold text-lg text-center leading-tight">Grassroots<br/>Sport</p>
-                  <p className="text-white/50 text-[10px] text-center">Zimbabwe&apos;s AI Sports Platform</p>
-                  <div className="mt-4 w-full space-y-2">
-                    {["⚽  AI Coach", "📊  My Stats", "🎯  Drills", "🏆  Scout Ready"].map((item) => (
-                      <div key={item} className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-white font-medium"
-                        style={{ background: "rgba(255,255,255,0.07)" }}>
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Notch */}
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-16 h-1.5 rounded-full bg-black/50" />
-              </div>
-
-              {/* Version badge */}
-              <div className="text-center">
-                <p className="text-white/40 text-xs">Android 8.0+ · ~45 MB</p>
-                <p className="text-white/25 text-[10px] mt-1">Version 1.0 Beta</p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── Final CTA — dark green ─────────────────────────────────────────── */}
-      <section className="py-24 relative overflow-hidden" style={{ background: "#1B5E20" }}>
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 relative z-10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_v2.png" alt="Grassroots Sport" width={72} height={72} className="mx-auto mb-4" />
-          <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">Start your journey today</h2>
-          <p className="mb-8 text-lg text-white/75">
-            Join thousands of athletes, coaches, and scouts building African grassroots sport with data and AI.
-          </p>
-          <Link href="/register"
-            className="inline-flex items-center gap-2 rounded px-8 py-4 text-base font-bold text-[#2C2416] transition hover:-translate-y-px hover:opacity-90"
-            style={{ background: "#E6A817" }}>
-            Create free account <ChevronRight className="h-5 w-5" />
-          </Link>
-        </div>
-      </section>
-
-      {/* ── Bottom pattern ────────────────────────────────────────────────── */}
-      <div style={{ lineHeight: 0, overflow: "hidden" }}>
-        <svg viewBox="0 0 1440 36" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
-          style={{ display: "block", width: "100%", height: 36 }}>
-          <rect width="1440" height="36" fill="#2C2416"/>
-          <polyline
-            points="0,26 9,14 18,26 27,14 36,26 45,14 54,26 63,14 72,26 81,14 90,26 99,14 108,26 117,14 126,26 135,14 144,26 153,14 162,26 171,14 180,26 189,14 198,26 207,14 216,26 225,14 234,26 243,14 252,26 261,14 270,26 279,14 288,26 297,14 306,26 315,14 324,26 333,14 342,26 351,14 360,26 369,14 378,26 387,14 396,26 405,14 414,26 423,14 432,26 441,14 450,26 459,14 468,26 477,14 486,26 495,14 504,26 513,14 522,26 531,14 540,26 549,14 558,26 567,14 576,26 585,14 594,26 603,14 612,26 621,14 630,26 639,14 648,26 657,14 666,26 675,14 684,26 693,14 702,26 711,14 720,26 729,14 738,26 747,14 756,26 765,14 774,26 783,14 792,26 801,14 810,26 819,14 828,26 837,14 846,26 855,14 864,26 873,14 882,26 891,14 900,26 909,14 918,26 927,14 936,26 945,14 954,26 963,14 972,26 981,14 990,26 999,14 1008,26 1017,14 1026,26 1035,14 1044,26 1053,14 1062,26 1071,14 1080,26 1089,14 1098,26 1107,14 1116,26 1125,14 1134,26 1143,14 1152,26 1161,14 1170,26 1179,14 1188,26 1197,14 1206,26 1215,14 1224,26 1233,14 1242,26 1251,14 1260,26 1269,14 1278,26 1287,14 1296,26 1305,14 1314,26 1323,14 1332,26 1341,14 1350,26 1359,14 1368,26 1377,14 1386,26 1395,14 1404,26 1413,14 1422,26 1431,14 1440,26"
-            fill="none" stroke="#E6A817" strokeWidth="1.2" opacity="0.5"/>
-          {[36,108,180,252,324,396,468,540,612,684,756,828,900,972,1044,1116,1188,1260,1332,1404].map((cx, i) => (
-            <circle key={cx} cx={cx} cy="18" r="2.5" fill={i % 2 === 0 ? "#C1714A" : "#3A7D6B"} opacity="0.6"/>
-          ))}
-        </svg>
+      {/* ── AD BANNER ─────────────────────────────────────────────────────── */}
+      <div style={{ padding: "0 1.5rem", maxWidth: 960, margin: "0 auto" }}>
+        <AdBanner slot="landing-mid" />
       </div>
 
-      {/* ── Footer ────────────────────────────────────────────────────────── */}
-      <footer className="py-12 relative overflow-hidden"
-        style={{ background: "#2C2416", backgroundImage: FOOTER_TILE, backgroundSize: "120px 80px" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <div className="mb-4 flex items-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo_v2.png" alt="Grassroots Sport" width={28} height={28} />
-                <span className="font-bold text-white">Grassroots <span style={{ color: "#F5C842" }}>Sport</span></span>
+      {/* ── FEATURES ──────────────────────────────────────────────────────── */}
+      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
+        <h2 style={{ textAlign: "center", fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.5rem" }}>
+          Tools That Change the Game
+        </h2>
+        <p style={{ textAlign: "center", color: "#666", marginBottom: "2.5rem" }}>
+          Everything a Zimbabwean athlete needs. Nothing they don&apos;t.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+          {FEATURES.map((f) => {
+            const Icon = f.icon;
+            return (
+              <div key={f.title} className="feature-card-african" style={{
+                backgroundColor: "#fff", borderRadius: 16, padding: "1.5rem",
+                border: "1px solid rgba(0,0,0,0.07)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  backgroundColor: "rgba(26,92,42,0.09)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: "1rem",
+                }}>
+                  <Icon size={20} color="#1a5c2a" />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: 6 }}>{f.title}</div>
+                <div style={{ color: "#666", fontSize: "0.85rem", lineHeight: 1.6 }}>{f.desc}</div>
               </div>
-              <p className="text-sm text-white/50">AI-powered sports platform for Africa&apos;s next generation.</p>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── THUTO AI HIGHLIGHT ────────────────────────────────────────────── */}
+      <section style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "4rem 1.5rem" }}>
+        <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", gap: 48, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 260px" }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              backgroundColor: "rgba(26,92,42,0.08)", borderRadius: 999,
+              padding: "6px 14px", marginBottom: "1rem",
+              fontSize: "0.78rem", fontWeight: 600, color: "#1a5c2a",
+            }}>
+              <Zap size={13} /> AI COACH
             </div>
-            <div>
-              <h4 className="mb-3 text-sm font-semibold text-[#E6A817]">Platform</h4>
-              <ul className="space-y-2 text-sm text-white/50">
-                <li><Link href="/#features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="/#ai" className="hover:text-white transition-colors">AI Coach</Link></li>
-                <li><Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/#sports" className="hover:text-white transition-colors">Sports</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-3 text-sm font-semibold text-[#E6A817]">Hubs</h4>
-              <ul className="space-y-2 text-sm text-white/50">
-                <li><Link href="/player" className="hover:text-white transition-colors">Player Hub</Link></li>
-                <li><Link href="/coach"  className="hover:text-white transition-colors">Coach Hub</Link></li>
-                <li><Link href="/scout"  className="hover:text-white transition-colors">Scout Hub</Link></li>
-                <li><Link href="/fan"    className="hover:text-white transition-colors">Fan Hub</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-3 text-sm font-semibold text-[#E6A817]">Contact</h4>
-              <ul className="space-y-2 text-sm text-white/50">
-                <li>Zimbabwe 🇿🇼</li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms"   className="hover:text-white transition-colors">Terms of Service</Link></li>
-              </ul>
+            <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.75rem" }}>
+              Meet THUTO — Your AI Sports Coach
+            </h2>
+            <p style={{ color: "#555", lineHeight: 1.7, marginBottom: "1.25rem", fontSize: "0.92rem" }}>
+              THUTO understands Zimbabwean sport. It speaks your language — Shona, Ndebele, or English.
+              It follows FIFA methodology, knows every player profile, and never stops coaching.
+            </p>
+            <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: 8 }}>
+              {["Personalised training plans", "Emotional intelligence support", "Formation diagrams in chat", "Shona & Ndebele responses"].map((item) => (
+                <li key={item} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.88rem", color: "#444" }}>
+                  <span style={{ width: 18, height: 18, borderRadius: "50%", backgroundColor: "rgba(26,92,42,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Star size={10} color="#1a5c2a" fill="#1a5c2a" />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link href="/register" style={{
+              backgroundColor: "#1a5c2a", color: "#fff",
+              padding: "12px 24px", borderRadius: 10, fontWeight: 700,
+              fontSize: "0.9rem", textDecoration: "none", display: "inline-block",
+            }}>
+              Try THUTO Free
+            </Link>
+          </div>
+
+          {/* Chat preview */}
+          <div style={{ flex: "1 1 260px" }}>
+            <div style={{
+              backgroundColor: "#f4f2ee", borderRadius: 16, padding: "1.25rem",
+              border: "1px solid rgba(0,0,0,0.08)",
+              display: "flex", flexDirection: "column", gap: 10,
+            }}>
+              {[
+                { from: "player", text: "Coach, I keep losing the ball under pressure. What should I do?" },
+                { from: "thuto", text: "Ndinzwa izvozvo. Work on receiving on your front foot — toes down, ankle locked. This lets you play away from pressure immediately. Try our Front Foot Passing drill today. 🦁" },
+                { from: "player", text: "Can you show me a 4-3-3 formation?" },
+                { from: "thuto", text: "Yes! Here is how 4-3-3 looks with the press triggers activated..." },
+              ].map((msg, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: msg.from === "player" ? "flex-end" : "flex-start" }}>
+                  <div style={{
+                    maxWidth: "80%", padding: "10px 14px", borderRadius: 12,
+                    fontSize: "0.82rem", lineHeight: 1.5,
+                    backgroundColor: msg.from === "player" ? "#1a5c2a" : "#fff",
+                    color: msg.from === "player" ? "#fff" : "#1a1a1a",
+                    border: msg.from === "thuto" ? "1px solid rgba(0,0,0,0.07)" : "none",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                  }}>
+                    {msg.from === "thuto" && (
+                      <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1a5c2a", marginBottom: 4 }}>THUTO AI</div>
+                    )}
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="mt-8 border-t border-white/10 pt-6 text-center text-xs text-white/30">
-            &copy; 2026 Grassroots Sport Zimbabwe · Built with AI · All rights reserved
+        </div>
+      </section>
+
+      {/* ── PRICING ───────────────────────────────────────────────────────── */}
+      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
+        <h2 style={{ textAlign: "center", fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.5rem" }}>
+          Simple, Honest Pricing
+        </h2>
+        <p style={{ textAlign: "center", color: "#666", marginBottom: "2.5rem" }}>
+          Start free. Upgrade when you&apos;re ready.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          {PLANS.map((plan) => (
+            <div key={plan.name} style={{
+              backgroundColor: plan.primary ? plan.color : "#fff",
+              borderRadius: 20, padding: "2rem",
+              border: plan.primary ? "none" : "1px solid rgba(0,0,0,0.08)",
+              boxShadow: plan.primary ? "0 8px 32px rgba(26,92,42,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
+              display: "flex", flexDirection: "column",
+            }}>
+              {plan.primary && (
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: 4, marginBottom: "0.75rem",
+                  backgroundColor: "#c8962a", color: "#fff", borderRadius: 999,
+                  padding: "4px 12px", fontSize: "0.72rem", fontWeight: 700, width: "fit-content",
+                }}>
+                  <Heart size={11} fill="#fff" /> MOST POPULAR
+                </div>
+              )}
+              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: plan.primary ? "#fff" : "#1a1a1a", marginBottom: 4 }}>
+                {plan.name}
+              </div>
+              <div style={{ marginBottom: "1.25rem" }}>
+                <span style={{ fontSize: "2rem", fontWeight: 900, color: plan.primary ? "#fff" : plan.color }}>{plan.price}</span>
+                <span style={{ color: plan.primary ? "rgba(255,255,255,0.7)" : "#888", fontSize: "0.85rem", marginLeft: 4 }}>{plan.period}</span>
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+                {plan.features.map((f) => (
+                  <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.85rem", color: plan.primary ? "rgba(255,255,255,0.88)" : "#555" }}>
+                    <span style={{ marginTop: 2, flexShrink: 0 }}>✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href={plan.href} style={{
+                display: "block", textAlign: "center",
+                backgroundColor: plan.primary ? "#c8962a" : plan.color,
+                color: "#fff", padding: "12px 0", borderRadius: 10,
+                fontWeight: 700, fontSize: "0.9rem", textDecoration: "none",
+              }}>
+                {plan.cta}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── ZIM INDEPENDENCE ──────────────────────────────────────────────── */}
+      <ZimIndependenceSection />
+
+      {/* ── DOWNLOAD APP ──────────────────────────────────────────────────── */}
+      <section style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "4rem 1.5rem" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>📱</div>
+          <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.75rem" }}>
+            Download the Mobile App
+          </h2>
+          <p style={{ color: "#555", lineHeight: 1.7, marginBottom: "1.75rem", fontSize: "0.92rem" }}>
+            The GrassRoots Sports APK includes ML Kit biomechanics analysis, offline training,
+            and THUTO AI coaching — optimised for Zimbabwe&apos;s 2G/3G networks.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <ApkDownloadButton />
+            <Link href="/register" style={{
+              backgroundColor: "#f4f2ee", color: "#1a5c2a",
+              border: "2px solid #1a5c2a",
+              padding: "12px 24px", borderRadius: 10, fontWeight: 700,
+              fontSize: "0.9rem", textDecoration: "none",
+            }}>
+              Use Web App
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
+      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
+        <div style={{
+          backgroundColor: "#1a5c2a", borderRadius: 24, padding: "3rem 2rem", textAlign: "center",
+          backgroundImage: "repeating-linear-gradient(-45deg, transparent 0px, transparent 8px, rgba(255,255,255,0.03) 8px, rgba(255,255,255,0.03) 10px)",
+        }}>
+          <Trophy size={28} color="#c8962a" style={{ marginBottom: "1rem" }} />
+          <h2 style={{ color: "#fff", fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.75rem" }}>
+            Ready to Get Recognized?
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.7, marginBottom: "2rem", maxWidth: 480, margin: "0 auto 2rem", fontSize: "0.95rem" }}>
+            Join thousands of Zimbabwean athletes, coaches, and scouts already using GrassRoots Sports. It&apos;s free to start.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link href="/register" style={{
+              backgroundColor: "#c8962a", color: "#fff",
+              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
+              fontSize: "1rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
+            }}>
+              Create Free Account <ChevronRight size={16} />
+            </Link>
+            <Link href="/arena" style={{
+              backgroundColor: "rgba(255,255,255,0.12)", color: "#fff",
+              border: "1px solid rgba(255,255,255,0.25)",
+              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
+              fontSize: "1rem", textDecoration: "none",
+            }}>
+              Browse The Arena
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
+      <footer style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.08)", padding: "3rem 1.5rem 2rem" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+          <div style={{ display: "flex", gap: 48, flexWrap: "wrap", marginBottom: "2rem", justifyContent: "space-between" }}>
+            <div style={{ flex: "1 1 200px" }}>
+              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#1a5c2a", marginBottom: 8 }}>
+                GrassRoots Sports
+              </div>
+              <p style={{ color: "#888", fontSize: "0.82rem", lineHeight: 1.6, maxWidth: 220 }}>
+                Zimbabwe&apos;s first AI-powered grassroots sports platform. Train anywhere. Get recognized.
+              </p>
+            </div>
+            {[
+              {
+                heading: "Platform",
+                links: [
+                  { label: "The Arena", href: "/arena" },
+                  { label: "Talent Leaderboard", href: "/talent-leaderboard" },
+                  { label: "Business Hub", href: "/business-hub" },
+                  { label: "Fan Hub", href: "/fan-hub" },
+                ],
+              },
+              {
+                heading: "Register",
+                links: [
+                  { label: "Player", href: "/register?role=player" },
+                  { label: "Coach", href: "/register?role=coach" },
+                  { label: "Scout", href: "/register?role=scout" },
+                  { label: "Fan", href: "/register?role=fan" },
+                ],
+              },
+              {
+                heading: "Legal",
+                links: [
+                  { label: "Privacy Policy", href: "/privacy" },
+                  { label: "Terms of Service", href: "/terms" },
+                ],
+              },
+            ].map((col) => (
+              <div key={col.heading} style={{ flex: "0 0 auto" }}>
+                <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "#333", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {col.heading}
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {col.links.map((l) => (
+                    <li key={l.label}>
+                      <Link href={l.href} style={{ color: "#666", fontSize: "0.85rem", textDecoration: "none" }}>
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: "1.25rem", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <span style={{ color: "#999", fontSize: "0.8rem" }}>© 2026 GrassRoots Sports. All rights reserved.</span>
+            <span style={{ color: "#999", fontSize: "0.8rem" }}>Made with ❤️ in Zimbabwe 🇿🇼</span>
           </div>
         </div>
       </footer>
 
-      {/* THUTO visitor guide — fixed bottom-right circle */}
+      <ZimPresidentBanner />
       <ThutoChatVisitor />
     </div>
   );
