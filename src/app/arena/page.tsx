@@ -22,6 +22,7 @@ interface PostUser {
   role: string;
   sport: string | null;
   province: string | null;
+  thuto_score?: number | null;
 }
 
 interface ArenaPost {
@@ -638,6 +639,18 @@ function PostCard({ post: initial, token }: { post: ArenaPost; token: string | n
             {post.user?.sport && (
               <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full border border-gray-100">
                 {post.user.sport}
+              </span>
+            )}
+            {post.user?.thuto_score != null && (
+              <span className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                post.user.thuto_score >= 80
+                  ? "text-green-700 bg-green-50 border-green-200"
+                  : post.user.thuto_score >= 60
+                  ? "text-amber-700 bg-amber-50 border-amber-200"
+                  : "text-gray-500 bg-gray-50 border-gray-200"
+              }`}>
+                <Zap size={9} />
+                {Math.round(post.user.thuto_score)}
               </span>
             )}
           </div>
