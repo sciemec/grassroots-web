@@ -19,9 +19,7 @@ const STATS_TILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000
 const FOOTER_TILE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Cpolygon points='60,10 74,35 60,60 46,35' fill='none' stroke='%23E6A817' stroke-width='0.8' opacity='0.20'/%3E%3Cellipse cx='20' cy='70' rx='8' ry='10' fill='%23E6A817' opacity='0.12'/%3E%3Cellipse cx='100' cy='70' rx='8' ry='10' fill='%23E6A817' opacity='0.12'/%3E%3C/svg%3E")`;
 
 const creamSection = {
-  background: "#EDE0C4",
-  backgroundImage: CREAM_TILE,
-  backgroundSize: "200px 200px",
+  background: "#f4f2ee",
 } as React.CSSProperties;
 
 // ── Section label ─────────────────────────────────────────────────────────────

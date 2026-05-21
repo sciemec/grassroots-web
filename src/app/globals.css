@@ -31,45 +31,45 @@
 
 @layer base {
   :root {
-    /* ── Background colours ───────────────────────────────────── */
-    --background:          #0c1f10;
-    --foreground:          #ffffff;
+    /* ── Background colours — Concept B light palette ─────────── */
+    --background:          #f4f2ee;
+    --foreground:          #1a1a1a;
 
-    /* Cards: vivid forest green panels */
-    --card:                #1a3d26;
-    --card-foreground:     #ffffff;
+    /* Cards: clean white panels */
+    --card:                #ffffff;
+    --card-foreground:     #1a1a1a;
 
     /* Popovers */
-    --popover:             #1a3d26;
-    --popover-foreground:  #ffffff;
+    --popover:             #ffffff;
+    --popover-foreground:  #1a1a1a;
 
-    /* Primary action: bright Zimbabwe green */
-    --primary:             #2ecc71;
+    /* Primary action: forest green */
+    --primary:             #1a5c2a;
     --primary-foreground:  #ffffff;
 
-    /* Secondary: deep green */
-    --secondary:           #0a1a0d;
-    --secondary-foreground:#ffffff;
+    /* Secondary: light grey */
+    --secondary:           #f3f4f6;
+    --secondary-foreground:#1a1a1a;
 
-    /* Muted elements — much brighter so labels are readable on dark cards */
-    --muted:               #1e4a2e;
-    --muted-foreground:    #c8edd0;
+    /* Muted elements */
+    --muted:               #f3f4f6;
+    --muted-foreground:    #6b7280;
 
-    /* Accent: Zimbabwe gold — brighter */
-    --accent:              #f5c542;
-    --accent-foreground:   #0c1f10;
+    /* Accent: Zimbabwe gold */
+    --accent:              #c8962a;
+    --accent-foreground:   #ffffff;
 
     /* Destructive: Zimbabwe red */
     --destructive:         #e53e3e;
 
-    /* Borders and inputs — more visible */
-    --border:              rgba(255,255,255,0.28);
-    --input:               rgba(255,255,255,0.28);
-    --ring:                #f5c542;
+    /* Borders and inputs */
+    --border:              rgba(0,0,0,0.10);
+    --input:               rgba(0,0,0,0.10);
+    --ring:                #c8962a;
 
     /* Charts */
-    --chart-1:             #2ecc71;
-    --chart-2:             #f5c542;
+    --chart-1:             #1a5c2a;
+    --chart-2:             #c8962a;
     --chart-3:             #e53e3e;
     --chart-4:             #60a5fa;
     --chart-5:             #fb923c;
@@ -78,50 +78,50 @@
     --radius: 1rem;
 
     /* Sidebar */
-    --sidebar:                    #091508;
-    --sidebar-foreground:         #ffffff;
-    --sidebar-primary:            #2ecc71;
+    --sidebar:                    #f4f2ee;
+    --sidebar-foreground:         #1a1a1a;
+    --sidebar-primary:            #1a5c2a;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent:             #1a3d26;
-    --sidebar-accent-foreground:  #ffffff;
-    --sidebar-border:             rgba(255,255,255,0.20);
-    --sidebar-ring:               #f5c542;
+    --sidebar-accent:             #f3f4f6;
+    --sidebar-accent-foreground:  #1a1a1a;
+    --sidebar-border:             rgba(0,0,0,0.10);
+    --sidebar-ring:               #c8962a;
   }
 
   .dark {
-    /* Mirror :root — single Zimbabwe theme, no light/dark switch */
-    --background:          #0c1f10;
-    --foreground:          #ffffff;
-    --card:                #1a3d26;
-    --card-foreground:     #ffffff;
-    --popover:             #1a3d26;
-    --popover-foreground:  #ffffff;
-    --primary:             #2ecc71;
+    /* Mirror :root — single Concept B light theme */
+    --background:          #f4f2ee;
+    --foreground:          #1a1a1a;
+    --card:                #ffffff;
+    --card-foreground:     #1a1a1a;
+    --popover:             #ffffff;
+    --popover-foreground:  #1a1a1a;
+    --primary:             #1a5c2a;
     --primary-foreground:  #ffffff;
-    --secondary:           #0a1a0d;
-    --secondary-foreground:#ffffff;
-    --muted:               #1e4a2e;
-    --muted-foreground:    #c8edd0;
-    --accent:              #f5c542;
-    --accent-foreground:   #0c1f10;
+    --secondary:           #f3f4f6;
+    --secondary-foreground:#1a1a1a;
+    --muted:               #f3f4f6;
+    --muted-foreground:    #6b7280;
+    --accent:              #c8962a;
+    --accent-foreground:   #ffffff;
     --destructive:         #e53e3e;
-    --border:              rgba(255,255,255,0.28);
-    --input:               rgba(255,255,255,0.28);
-    --ring:                #f5c542;
-    --chart-1:             #2ecc71;
-    --chart-2:             #f5c542;
+    --border:              rgba(0,0,0,0.10);
+    --input:               rgba(0,0,0,0.10);
+    --ring:                #c8962a;
+    --chart-1:             #1a5c2a;
+    --chart-2:             #c8962a;
     --chart-3:             #e53e3e;
     --chart-4:             #60a5fa;
     --chart-5:             #fb923c;
     --radius:              1rem;
-    --sidebar:                    #091508;
-    --sidebar-foreground:         #ffffff;
-    --sidebar-primary:            #2ecc71;
+    --sidebar:                    #f4f2ee;
+    --sidebar-foreground:         #1a1a1a;
+    --sidebar-primary:            #1a5c2a;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent:             #1a3d26;
-    --sidebar-accent-foreground:  #ffffff;
-    --sidebar-border:             rgba(255,255,255,0.20);
-    --sidebar-ring:               #f5c542;
+    --sidebar-accent:             #f3f4f6;
+    --sidebar-accent-foreground:  #1a1a1a;
+    --sidebar-border:             rgba(0,0,0,0.10);
+    --sidebar-ring:               #c8962a;
   }
 
   .theme {
@@ -135,7 +135,7 @@
 
   html {
     font-family: var(--font-sans), sans-serif;
-    background-color: #0c1f10;
+    background-color: #f4f2ee;
   }
 
   body {
@@ -144,20 +144,11 @@
   }
 }
 
-/* ── Cards: solid green backgrounds ─────────────────────────────────────── */
-.bg-card\/60 { background-color: #1a3d26 !important; }
-.bg-card\/70 { background-color: #1e4229 !important; }
-.bg-card\/80 { background-color: #1e4229 !important; }
-
+/* ── Cards: white backgrounds with subtle border ────────────────────────── */
 .rounded-xl.border.bg-card,
 .rounded-2xl.border.bg-card {
-  background-color: #1a3d26;
-  border-color: rgba(255,255,255,0.28);
-}
-
-/* ── bg-background ───────────────────────────────────────────────────────── */
-.bg-background {
-  background-color: #0c1f10;
+  background-color: #ffffff;
+  border-color: rgba(0,0,0,0.10);
 }
 
 /* ── Hub card subtitle gold text — brighter ─────────────────────────────── */
@@ -168,14 +159,6 @@
   z-index: 1;
 }
 
-/* ── Light utility overrides ─────────────────────────────────────────────── */
-.bg-white        { background-color: #1e4229 !important; }
-.bg-gray-50      { background-color: #1a3d26 !important; }
-.bg-gray-100     { background-color: #163220 !important; }
-.bg-slate-50     { background-color: #1a3d26 !important; }
-.bg-slate-100    { background-color: #163220 !important; }
-.bg-zinc-50      { background-color: #1a3d26 !important; }
-.bg-zinc-100     { background-color: #163220 !important; }
 
 /* ── Grassroots Logo Watermark ───────────────────────────────────────────────
    Apply class="gs-watermark" to any page wrapper for the subtle bottom-right
@@ -277,11 +260,11 @@
   z-index: 1;
 }
 
-/* ── Scrollbar — thin gold on dark ──────────────────────────────────────────  */
+/* ── Scrollbar — thin gold on light ─────────────────────────────────────────  */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #0c1f10; }
-::-webkit-scrollbar-thumb { background: rgba(240,180,41,0.35); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(240,180,41,0.6); }
+::-webkit-scrollbar-track { background: #f4f2ee; }
+::-webkit-scrollbar-thumb { background: rgba(200,150,42,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(200,150,42,0.6); }
 
 /* ── PWA splash / safe areas ─────────────────────────────────────────────── */
 body {
