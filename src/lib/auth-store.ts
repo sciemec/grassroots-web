@@ -5,12 +5,8 @@ export type UserRole = "admin" | "coach" | "scout" | "player" | "fan" | "analyst
 
 export function roleHomePath(role: UserRole): string {
   switch (role) {
-    case "admin":  return "/dashboard";
-    case "coach":  return "/coach";
-    case "scout":  return "/scout";
-    case "player": return "/player";
-    case "fan":      return "/fan";
-    case "analyst":  return "/analyst";
+    case "admin":   return "/admin";
+    default:        return "/arena";
   }
 }
 

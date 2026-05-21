@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthRedirect from "@/components/ui/AuthRedirect";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { SchoolPitchSection } from "@/components/landing/SchoolPitchSection";
 import { AdBanner } from "@/components/ui/AdBanner";
@@ -191,6 +192,7 @@ const hubGrid = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
+      <AuthRedirect />
       <ZimPresidentBanner />
       <PublicNavbar />
 
