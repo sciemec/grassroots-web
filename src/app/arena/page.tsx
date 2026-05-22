@@ -220,21 +220,22 @@ function ArenaNav({
 
         {/* Partner badge */}
         <div style={{
-          fontSize: 10, color: "#888", lineHeight: 1.3,
+          display: "flex", alignItems: "center", gap: 5,
           borderLeft: "1px solid #e5e5e5", paddingLeft: 12,
-          flexShrink: 0,
-        }} className="hidden lg:block">
-          <span style={{ display: "block", color: "#555", fontWeight: 600 }}>Powered by</span>
-          <span>Teach For Zimbabwe</span>
+          flexShrink: 0, fontSize: 11, color: "#555", fontWeight: 500,
+        }} className="hidden lg:flex">
+          <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#22c55e", flexShrink: 0 }} />
+          Teach For Zimbabwe
         </div>
 
         {/* Right icons */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-          <Link href="/arena/notifications" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", color: "#555" }}>
-            <Bell size={18} />
+          <Link href="/arena/notifications" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", fontSize: 18 }}>
+            🔔
+            <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", backgroundColor: "#e53935", color: "#fff", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>3</div>
           </Link>
-          <Link href="/arena/messages" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", color: "#555" }}>
-            <MessageSquare size={18} />
+          <Link href="/arena/messages" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", fontSize: 18 }}>
+            ✉️
           </Link>
 
           {user ? (
@@ -617,12 +618,12 @@ function PostCard({
               backgroundColor: badge.color + "18", color: badge.color,
             }}>{badge.label}</span>
             {post.user?.sport && (
-              <span style={{ fontSize: 11, color: "#888", backgroundColor: "#f0f0f0", padding: "1px 7px", borderRadius: 20 }}>
+              <span style={{ fontSize: 11, color: "#1a5c2a", backgroundColor: "#1a5c2a18", padding: "1px 7px", borderRadius: 20 }}>
                 {post.user.sport}
               </span>
             )}
             {post.user?.province && (
-              <span style={{ fontSize: 11, color: "#888" }}>· {post.user.province}</span>
+              <span style={{ fontSize: 11, color: "#1a5c2a" }}>· {post.user.province}</span>
             )}
           </div>
           <div style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>{timeAgo(post.created_at)}</div>
@@ -716,6 +717,12 @@ function FeedSkeleton() {
 
 // ── ScoutsOnlineWidget ────────────────────────────────────────────────────────
 
+const STATIC_SCOUTS: ScoutOnline[] = [
+  { id: "s1", name: "Takudzwa Moyo",   org: "Dynamos FC",        province: "Harare"    },
+  { id: "s2", name: "Blessing Ncube",  org: "Highlanders FC",    province: "Bulawayo"  },
+  { id: "s3", name: "Farai Mutasa",    org: "CAPS United",       province: "Harare"    },
+];
+
 function ScoutsOnlineWidget({ token }: { token: string | null }) {
   const [scouts, setScouts] = useState<ScoutOnline[]>([]);
 
@@ -723,29 +730,43 @@ function ScoutsOnlineWidget({ token }: { token: string | null }) {
     if (!token) return;
     fetch(`${API}/arena/scouts-online`, { headers: authHeaders(token) })
       .then((r) => r.json())
-      .then((d) => setScouts(safeArray(d.data ?? d)))
-      .catch(() => {});
+      .then((d) => {
+        const data = safeArray<ScoutOnline>(d.data ?? d);
+        setScouts(data.length > 0 ? data : STATIC_SCOUTS);
+      })
+      .catch(() => setScouts(STATIC_SCOUTS));
   }, [token]);
 
-  if (scouts.length === 0) return null;
+  const display = scouts.length > 0 ? scouts : STATIC_SCOUTS;
 
   return (
     <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14, marginBottom: 10 }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#22c55e", display: "inline-block" }} />
-        Scouts Online ({scouts.length})
+        Scouts Online ({display.length})
       </div>
-      {scouts.slice(0, 3).map((s) => (
-        <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#7c3aed18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#7c3aed" }}>
-            {initials(s.name)}
+      {display.slice(0, 3).map((s) => (
+        <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#1e3a6e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>
+              {initials(s.name)}
+            </div>
+            <div style={{ position: "absolute", bottom: 0, right: 0, width: 9, height: 9, borderRadius: "50%", backgroundColor: "#22c55e", border: "2px solid #fff" }} />
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: "#333" }}>{s.name}</div>
-            <div style={{ fontSize: 11, color: "#888" }}>{s.org} · {s.province}</div>
+            <div style={{ fontSize: 11, color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.org} · {s.province}</div>
           </div>
+          <button style={{
+            padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 600,
+            border: "1px solid #1a5c2a", backgroundColor: "#fff", color: "#1a5c2a",
+            cursor: "pointer", flexShrink: 0,
+          }}>View</button>
         </div>
       ))}
+      <div style={{ marginTop: 4, fontSize: 11, color: "#888", textAlign: "center" }}>
+        {display.length} scout{display.length !== 1 ? "s" : ""} browsing now
+      </div>
     </div>
   );
 }
@@ -778,7 +799,25 @@ function RightPanel({ token, user }: { token: string | null; user: { id: string;
 
   return (
     <aside style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {/* THUTO Leaderboard */}
+      {/* Scouts Online — first */}
+      <ScoutsOnlineWidget token={token} />
+
+      {/* Trending tags — second */}
+      {trending.length > 0 && (
+        <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <TrendingUp size={13} color="#1a5c2a" /> Trending in Zimbabwe
+          </div>
+          {trending.slice(0, 6).map((t) => (
+            <div key={t.tag} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: "#1a5c2a", fontWeight: 500 }}>#{t.tag}</span>
+              <span style={{ fontSize: 11, color: "#aaa" }}>{t.count} posts</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* THUTO Top 50 — third */}
       {leaderboard.length > 0 && (
         <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
@@ -798,7 +837,10 @@ function RightPanel({ token, user }: { token: string | null; user: { id: string;
                   <div style={{ fontSize: 10, color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.peak_level_label}</div>
                 </div>
               </Link>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#1a5c2a", flexShrink: 0 }}>{p.projected_score}</div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#1a5c2a" }}>{p.projected_score}</div>
+                <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 600 }}>↑+{Math.floor(Math.random() * 5) + 1}</div>
+              </div>
             </div>
           ))}
           <Link href="/talent-leaderboard" style={{ display: "block", textAlign: "center", marginTop: 6, fontSize: 12, color: "#1a5c2a", fontWeight: 600, textDecoration: "none" }}>
@@ -807,10 +849,10 @@ function RightPanel({ token, user }: { token: string | null; user: { id: string;
         </div>
       )}
 
-      {/* Suggested to follow */}
+      {/* Players like you — fourth */}
       {suggested.length > 0 && (
         <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10 }}>Suggested to Follow</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10 }}>Players like you</div>
           {suggested.slice(0, 3).map((u) => (
             <div key={u.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
               <Link href={`/arena/profile/${u.id}`} style={{ textDecoration: "none" }}>
@@ -825,56 +867,17 @@ function RightPanel({ token, user }: { token: string | null; user: { id: string;
               <button
                 onClick={() => follow(u.id)}
                 style={{
-                  padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-                  border: `1px solid ${u.is_following ? "#e0e0e0" : "#c8962a"}`,
-                  backgroundColor: u.is_following ? "#fff" : "#c8962a",
-                  color: u.is_following ? "#555" : "#fff", cursor: "pointer", flexShrink: 0,
+                  padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 600,
+                  border: "0.5px solid #1a5c2a",
+                  backgroundColor: u.is_following ? "#1a5c2a" : "#fff",
+                  color: u.is_following ? "#fff" : "#1a5c2a",
+                  cursor: "pointer", flexShrink: 0,
                 }}
               >{u.is_following ? "Following" : "Follow"}</button>
             </div>
           ))}
         </div>
       )}
-
-      {/* Trending tags */}
-      {trending.length > 0 && (
-        <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-            <TrendingUp size={13} color="#1a5c2a" /> Trending in Zimbabwe
-          </div>
-          {trending.slice(0, 6).map((t) => (
-            <div key={t.tag} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: "#1a5c2a", fontWeight: 500 }}>#{t.tag}</span>
-              <span style={{ fontSize: 11, color: "#aaa" }}>{t.count} posts</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Arena nav links */}
-      <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10 }}>Arena</div>
-        {[
-          { href: "/arena",              label: "Feed",              icon: <Activity size={13} /> },
-          { href: "/arena/network",      label: "My Network",        icon: <Users size={13} /> },
-          { href: "/arena/clubs",        label: "Clubs",             icon: <Shield size={13} /> },
-          { href: "/arena/recruitment",  label: "Talent Board",      icon: <Briefcase size={13} /> },
-          { href: "/arena/messages",     label: "Messages",          icon: <MessageSquare size={13} /> },
-          { href: "/arena/discover",     label: "Discover Athletes", icon: <Search size={13} /> },
-        ].map((item) => (
-          <Link key={item.href} href={item.href} style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "6px 0", fontSize: 12, color: "#555", textDecoration: "none",
-            borderBottom: "1px solid #f5f5f5",
-          }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#1a5c2a")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#555")}
-          >
-            <span style={{ color: "#1a5c2a" }}>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </div>
     </aside>
   );
 }
@@ -993,16 +996,34 @@ function LeftPanel({
             href={`/arena/profile/${user.id}`}
             style={{
               display: "block", marginTop: 12, textAlign: "center",
-              padding: "7px 0", borderRadius: 20, border: "1px solid #e0e0e0",
-              fontSize: 12, fontWeight: 600, color: "#555", textDecoration: "none",
+              padding: "7px 0", borderRadius: 20,
+              fontSize: 12, fontWeight: 600, color: "#fff", textDecoration: "none",
+              backgroundColor: "#1a5c2a",
             }}
           >View my profile</Link>
         </div>
       </div>
 
-      {/* Quick nav */}
+      {/* Quick nav — Concept B 3-section menu */}
       <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 8 }}>My Hubs</div>
+        {/* MY FEED */}
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#aaa", letterSpacing: "0.08em", marginBottom: 6, textTransform: "uppercase" }}>My Feed</div>
+        {[
+          { href: "/arena",               label: "🏠 Home Feed" },
+          { href: "/arena/notifications", label: "🔔 Arena Alerts" },
+          { href: "/arena/messages",      label: "✉️ Messages" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            style={{ display: "block", padding: "5px 0 5px 8px", fontSize: 12, color: "#555", textDecoration: "none", borderLeft: "2px solid transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#1a5c2a"; (e.currentTarget as HTMLElement).style.borderLeftColor = "#c8962a"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#555"; (e.currentTarget as HTMLElement).style.borderLeftColor = "transparent"; }}
+          >{item.label}</Link>
+        ))}
+
+        {/* MY HUBS */}
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#aaa", letterSpacing: "0.08em", margin: "12px 0 6px", textTransform: "uppercase" }}>My Hubs</div>
         {[
           { href: "/player",  label: "⚽ Player Hub" },
           { href: "/coach",   label: "🎽 Coach Hub" },
@@ -1013,12 +1034,26 @@ function LeftPanel({
           <Link
             key={item.href}
             href={item.href}
-            style={{
-              display: "block", padding: "6px 0", fontSize: 12, color: "#555",
-              textDecoration: "none", borderBottom: "1px solid #f5f5f5",
-            }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#1a5c2a")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#555")}
+            style={{ display: "block", padding: "5px 0 5px 8px", fontSize: 12, color: "#555", textDecoration: "none", borderLeft: "2px solid transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#1a5c2a"; (e.currentTarget as HTMLElement).style.borderLeftColor = "#c8962a"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#555"; (e.currentTarget as HTMLElement).style.borderLeftColor = "transparent"; }}
+          >{item.label}</Link>
+        ))}
+
+        {/* COMMUNITY */}
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#aaa", letterSpacing: "0.08em", margin: "12px 0 6px", textTransform: "uppercase" }}>Community</div>
+        {[
+          { href: "/arena/discover",    label: "🌍 Discover Athletes" },
+          { href: "/arena/clubs",       label: "🏟️ Clubs" },
+          { href: "/arena/recruitment", label: "📋 Talent Board" },
+          { href: "/talent-leaderboard", label: "🏆 THUTO Top 50" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            style={{ display: "block", padding: "5px 0 5px 8px", fontSize: 12, color: "#555", textDecoration: "none", borderLeft: "2px solid transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#1a5c2a"; (e.currentTarget as HTMLElement).style.borderLeftColor = "#c8962a"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#555"; (e.currentTarget as HTMLElement).style.borderLeftColor = "transparent"; }}
           >{item.label}</Link>
         ))}
       </div>

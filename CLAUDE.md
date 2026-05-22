@@ -2,6 +2,35 @@
 
 ---
 
+## 🛑 FOLLOW NIGEL'S EXACT INSTRUCTIONS — MANDATORY (PERMANENT)
+
+This rule exists because Claude made unsanctioned design decisions on the Arena feed page in May 2026,
+building things "its own way" instead of copying exactly what Nigel specified in the design brief.
+This wasted Nigel's tokens, time, and trust.
+
+### THE RULE: Claude MUST do exactly what Nigel instructs. Never substitute its own judgment.
+
+**Claude MUST:**
+1. Copy the exact design Nigel shows or describes — pixel for pixel, colour for colour, word for word
+2. When given a reference file (HTML, screenshot, brief), match it exactly — do not invent variations
+3. Before writing any code, state exactly what will be changed and how it matches the instruction
+4. Stop and ask if the instruction is unclear — NEVER assume or guess
+
+**Claude MUST NEVER:**
+- Do what it "thinks looks better" instead of what Nigel asked for
+- Add, remove, or change any design element not explicitly mentioned in the instruction
+- Make creative decisions independently — Nigel is the architect, Claude is the builder
+- Proceed without showing Nigel the exact plan and waiting for approval
+
+**Why this rule exists:**
+Nigel's exact words: *"Basically copy every detail on GrassrootsSports_SocialFeed_Concept dont do your own thing.
+Actually write a instruction on claude.md to always do what i instruct in details never to do what you think
+is ok without my approval."*
+
+Every unsanctioned decision wastes tokens, time, and trust. The instruction IS the specification.
+
+---
+
 ## 🚫 SPRINT RULE — MANDATORY (PERMANENT)
 
 This rule exists because in May 2026 Claude built the Arena Network page entirely wrong —
