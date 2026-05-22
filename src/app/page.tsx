@@ -132,7 +132,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 1.5rem", textAlign: "center" }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            backgroundColor: "rgba(26,92,42,0.08)", borderRadius: 999,
+            backgroundColor: "#d4e8d8", borderRadius: 999,
             padding: "6px 16px", marginBottom: "1.5rem",
             fontSize: "0.8rem", fontWeight: 600, color: "#1a5c2a",
           }}>
@@ -178,7 +178,7 @@ export default function LandingPage() {
             ].map((s) => (
               <div key={s.label} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#1a5c2a" }}>{s.value}</div>
-                <div style={{ fontSize: "0.8rem", color: "#888", fontWeight: 500 }}>{s.label}</div>
+                <div style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -190,7 +190,7 @@ export default function LandingPage() {
         <div style={{ display: "flex", gap: 10, padding: "0 1.5rem", width: "max-content", margin: "0 auto" }}>
           {SPORTS.map((s) => (
             <span key={s} style={{
-              backgroundColor: "rgba(26,92,42,0.07)", color: "#1a5c2a",
+              backgroundColor: "#e0ede2", color: "#1a5c2a",
               padding: "6px 16px", borderRadius: 999, fontSize: "0.85rem",
               fontWeight: 600, whiteSpace: "nowrap",
             }}>
@@ -255,12 +255,12 @@ export default function LandingPage() {
             return (
               <div key={f.title} className="feature-card-african" style={{
                 backgroundColor: "#fff", borderRadius: 16, padding: "1.5rem",
-                border: "1px solid rgba(0,0,0,0.07)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                border: "1px solid rgba(0,0,0,0.11)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
               }}>
                 <div style={{
                   width: 40, height: 40, borderRadius: 10,
-                  backgroundColor: "rgba(26,92,42,0.09)",
+                  backgroundColor: "#d4e8d8",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   marginBottom: "1rem",
                 }}>
@@ -280,7 +280,7 @@ export default function LandingPage() {
           <div style={{ flex: "1 1 260px" }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              backgroundColor: "rgba(26,92,42,0.08)", borderRadius: 999,
+              backgroundColor: "#d4e8d8", borderRadius: 999,
               padding: "6px 14px", marginBottom: "1rem",
               fontSize: "0.78rem", fontWeight: 600, color: "#1a5c2a",
             }}>
@@ -296,7 +296,7 @@ export default function LandingPage() {
             <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: 8 }}>
               {["Personalised training plans", "Emotional intelligence support", "Formation diagrams in chat", "Shona & Ndebele responses"].map((item) => (
                 <li key={item} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.88rem", color: "#444" }}>
-                  <span style={{ width: 18, height: 18, borderRadius: "50%", backgroundColor: "rgba(26,92,42,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: "50%", backgroundColor: "#d4e8d8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Star size={10} color="#1a5c2a" fill="#1a5c2a" />
                   </span>
                   {item}
