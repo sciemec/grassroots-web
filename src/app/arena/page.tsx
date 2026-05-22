@@ -717,12 +717,6 @@ function FeedSkeleton() {
 
 // ── ScoutsOnlineWidget ────────────────────────────────────────────────────────
 
-const STATIC_SCOUTS: ScoutOnline[] = [
-  { id: "s1", name: "Takudzwa Moyo",   org: "Dynamos FC",        province: "Harare"    },
-  { id: "s2", name: "Blessing Ncube",  org: "Highlanders FC",    province: "Bulawayo"  },
-  { id: "s3", name: "Farai Mutasa",    org: "CAPS United",       province: "Harare"    },
-];
-
 function ScoutsOnlineWidget({ token }: { token: string | null }) {
   const [scouts, setScouts] = useState<ScoutOnline[]>([]);
 
@@ -730,22 +724,19 @@ function ScoutsOnlineWidget({ token }: { token: string | null }) {
     if (!token) return;
     fetch(`${API}/arena/scouts-online`, { headers: authHeaders(token) })
       .then((r) => r.json())
-      .then((d) => {
-        const data = safeArray<ScoutOnline>(d.data ?? d);
-        setScouts(data.length > 0 ? data : STATIC_SCOUTS);
-      })
-      .catch(() => setScouts(STATIC_SCOUTS));
+      .then((d) => setScouts(safeArray<ScoutOnline>(d.data ?? d)))
+      .catch(() => {});
   }, [token]);
 
-  const display = scouts.length > 0 ? scouts : STATIC_SCOUTS;
+  if (scouts.length === 0) return null;
 
   return (
     <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14, marginBottom: 10 }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#22c55e", display: "inline-block" }} />
-        Scouts Online ({display.length})
+        Scouts Online ({scouts.length})
       </div>
-      {display.slice(0, 3).map((s) => (
+      {scouts.slice(0, 3).map((s) => (
         <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
           <div style={{ position: "relative", flexShrink: 0 }}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#1e3a6e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>
@@ -765,7 +756,7 @@ function ScoutsOnlineWidget({ token }: { token: string | null }) {
         </div>
       ))}
       <div style={{ marginTop: 4, fontSize: 11, color: "#888", textAlign: "center" }}>
-        {display.length} scout{display.length !== 1 ? "s" : ""} browsing now
+        {scouts.length} scout{scouts.length !== 1 ? "s" : ""} browsing now
       </div>
     </div>
   );
@@ -839,7 +830,6 @@ function RightPanel({ token, user }: { token: string | null; user: { id: string;
               </Link>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#1a5c2a" }}>{p.projected_score}</div>
-                <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 600 }}>↑+{Math.floor(Math.random() * 5) + 1}</div>
               </div>
             </div>
           ))}
