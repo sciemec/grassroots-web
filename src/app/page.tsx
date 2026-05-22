@@ -2,529 +2,321 @@
 
 import Link from "next/link";
 import AuthRedirect from "@/components/ui/AuthRedirect";
-import { PublicNavbar } from "@/components/layout/public-navbar";
-import { SchoolPitchSection } from "@/components/landing/SchoolPitchSection";
-import { AdBanner } from "@/components/ui/AdBanner";
-import ThutoChatVisitor from "@/components/thuto/ThutoChatVisitor";
-import { ApkDownloadButton } from "@/components/ui/apk-download-button";
-import { ZimPresidentBanner, ZimIndependenceSection } from "@/components/ui/zim-independence";
 import {
-  Trophy, ChevronRight, Zap, Star, Heart,
-  Brain, Activity, Video, BarChart3, Globe, Shield,
+  UserCircle2, ClipboardList, Search, Video,
+  BarChart2, Network, ArrowRight,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────────────────────────
-   LANDING PAGE — Concept B (light palette)
-   Background: #f4f2ee  |  Cards: white  |  Primary: #1a5c2a  |  Accent: #c8962a
+   LANDING PAGE — Clean white palette
+   Background: #fff  |  Primary: #1a5c2a  |  Accent: #c8962a
    ───────────────────────────────────────────────────────────────────────── */
 
-const SPORTS = [
-  "⚽ Football", "🏉 Rugby", "🏃 Athletics", "🏐 Netball",
-  "🏀 Basketball", "🏏 Cricket", "🏊 Swimming", "🎾 Tennis",
-  "🏐 Volleyball", "🏑 Hockey",
-];
-
-const HUB_CARDS = [
+const HUBS = [
   {
+    icon: <UserCircle2 size={22} color="#1a5c2a" />,
     title: "Player Hub",
-    sub: "Build your profile. Get scouted.",
-    bg: "linear-gradient(135deg, #1a5c2a 0%, #2e7d32 100%)",
-    href: "/register?role=player",
-    cta: "Join as Player",
+    desc: "THUTO AI coach, training plans, drills, development prediction, market valuation, Football Business School.",
+    href: "/player",
+    featured: false,
+    badge: null,
   },
   {
+    icon: <ClipboardList size={22} color="#1a5c2a" />,
     title: "Coach Hub",
-    sub: "Squad tools. Live match analysis.",
-    bg: "linear-gradient(135deg, #1565c0 0%, #1976d2 100%)",
-    href: "/register?role=coach",
-    cta: "Join as Coach",
+    desc: "Squad management, AI tactical insights, live match dashboard, set piece analytics, WhatsApp match reports.",
+    href: "/coach",
+    featured: false,
+    badge: null,
   },
   {
+    icon: <Search size={22} color="#1a5c2a" />,
     title: "Scout Hub",
-    sub: "Discover talent. Generate reports.",
-    bg: "linear-gradient(135deg, #6a1b9a 0%, #8e24aa 100%)",
-    href: "/register?role=scout",
-    cta: "Join as Scout",
+    desc: "National talent database — filter by sport, province, position, age, and THUTO Score. Verified scouts only.",
+    href: "/scout",
+    featured: false,
+    badge: null,
   },
   {
+    icon: <Video size={22} color="#1a5c2a" />,
     title: "Fan Hub",
-    sub: "Follow players. Watch highlights.",
-    bg: "linear-gradient(135deg, #c8962a 0%, #e6a817 100%)",
-    href: "/register?role=fan",
-    cta: "Join as Fan",
-  },
-];
-
-const FEATURES = [
-  {
-    icon: Brain,
-    title: "AI Coaching (THUTO)",
-    desc: "Zimbabwe's first AI sports coach. Training plans, EQ support, and live match insights — all in your pocket.",
+    desc: "Live highlights, match clips, AI-generated analysis. Upload from any phone. Watch from anywhere.",
+    href: "/fan-hub",
+    featured: false,
+    badge: null,
   },
   {
-    icon: Activity,
-    title: "Biomechanics Analysis",
-    desc: "ML Kit pose detection in the mobile app scores every drill rep. Coaches see real form data in the Scout Hub.",
+    icon: <BarChart2 size={22} color="#1a5c2a" />,
+    title: "Analysis Hub",
+    desc: "Match Eye AI video analysis — heatmaps, possession stats, xG, tactical reports from uploaded footage.",
+    href: "/analyst",
+    featured: false,
+    badge: null,
   },
   {
-    icon: Video,
-    title: "Match Eye Video AI",
-    desc: "Upload a match video. Gemini 1.5 Pro watches the full footage. Claude writes the tactical report.",
-  },
-  {
-    icon: BarChart3,
-    title: "Talent Leaderboard",
-    desc: "THUTO ranks every player by projected peak level — from amateur to continental. Public. Filterable. Free.",
-  },
-  {
-    icon: Globe,
+    icon: <Network size={22} color="#c8962a" />,
     title: "The Arena",
-    desc: "A social graph for Zimbabwean sport. Post milestones, connect with coaches, apply to talent board listings.",
-  },
-  {
-    icon: Shield,
-    title: "Verified Profiles",
-    desc: "Selfie + ID document verification. QR code on every approved profile — scouts scan to confirm authenticity.",
+    desc: "Sports social community — performance feed, club discovery, talent wanted board, direct connections.",
+    href: "/arena",
+    featured: true,
+    badge: "New",
   },
 ];
 
-const PLANS = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    color: "#6b7280",
-    features: ["Player profile", "Basic stats", "THUTO AI (10 msgs/day)", "Arena feed access"],
-    cta: "Get Started",
-    href: "/register",
-    primary: false,
-  },
-  {
-    name: "Pro",
-    price: "$25",
-    period: "/ month",
-    color: "#1a5c2a",
-    features: ["Everything in Free", "Unlimited THUTO AI", "Scout PDF reports", "Video analysis", "Chemistry matrix", "Priority support"],
-    cta: "Start Free Trial",
-    href: "/register",
-    primary: true,
-  },
-  {
-    name: "School",
-    price: "$10",
-    period: "/ month",
-    color: "#1565c0",
-    features: ["Up to 3 sports", "20 video uploads/month", "NASH/NAPH leagues", "Coach + player accounts", "Team analytics"],
-    cta: "Register School",
-    href: "/register?role=coach&school=true",
-    primary: false,
-  },
+const NAV_LINKS = [
+  { label: "Platform", href: "/", active: true },
+  { label: "Player Passport", href: "/talent-leaderboard", active: false },
+  { label: "Scout Hub", href: "/scout", active: false },
+  { label: "For Schools", href: "/school-leagues", active: false },
+  { label: "The Arena", href: "/arena", active: false },
 ];
 
 export default function LandingPage() {
   return (
-    <div style={{ backgroundColor: "#f4f2ee", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div style={{ fontFamily: "var(--font-sans, system-ui, sans-serif)", background: "#fff", color: "#111", minHeight: "100vh" }}>
       <AuthRedirect />
-      <PublicNavbar />
 
-      {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section style={{ paddingTop: "6rem", paddingBottom: "4rem" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 1.5rem", textAlign: "center" }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            backgroundColor: "#d4e8d8", borderRadius: 999,
-            padding: "6px 16px", marginBottom: "1.5rem",
-            fontSize: "0.8rem", fontWeight: 600, color: "#1a5c2a",
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: "#1a5c2a", display: "inline-block" }} />
-            Zimbabwe&apos;s First AI Sports Platform
-          </div>
-
-          <h1 style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)", fontWeight: 800, lineHeight: 1.15, marginBottom: "1.25rem", color: "#1a1a1a" }}>
-            Train Anywhere in Zimbabwe.{" "}
-            <span style={{ color: "#1a5c2a" }}>Use AI to Get Recognized.</span>
-          </h1>
-
-          <p style={{ fontSize: "clamp(1rem, 2.5vw, 1.2rem)", color: "#555", maxWidth: 580, margin: "0 auto 2.5rem", lineHeight: 1.7 }}>
-            GrassRoots Sports gives every Zimbabwean athlete, coach, and scout the tools
-            that only elite clubs could previously afford — across all 10 major sports.
-          </p>
-
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: "3rem" }}>
-            <Link href="/register" style={{
-              backgroundColor: "#1a5c2a", color: "#fff",
-              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
-              fontSize: "1rem", textDecoration: "none", display: "inline-flex",
-              alignItems: "center", gap: 6,
-            }}>
-              Get Started Free <ChevronRight size={16} />
-            </Link>
-            <Link href="/login" style={{
-              backgroundColor: "#fff", color: "#1a5c2a",
-              border: "2px solid #1a5c2a",
-              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
-              fontSize: "1rem", textDecoration: "none",
-            }}>
-              Sign In
-            </Link>
-          </div>
-
-          <div style={{ display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap" }}>
-            {[
-              { value: "10", label: "Sports" },
-              { value: "10+", label: "Provinces" },
-              { value: "AI", label: "Powered" },
-              { value: "Free", label: "To Start" },
-            ].map((s) => (
-              <div key={s.label} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#1a5c2a" }}>{s.value}</div>
-                <div style={{ fontSize: "0.8rem", color: "#666", fontWeight: 500 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
+      {/* ── NAV ─────────────────────────────────────────────────────────── */}
+      <nav style={{
+        background: "#fff",
+        borderBottom: "3px solid #c8962a",
+        height: 56,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 28px",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        gap: 0,
+      }}>
+        {/* Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 32, flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#1a5c2a" }}>
+            Grassroots <span style={{ color: "#c8962a" }}>Sports</span>
+          </span>
         </div>
-      </section>
 
-      {/* ── SPORTS STRIP ──────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "1.25rem 0", overflowX: "auto" }}>
-        <div style={{ display: "flex", gap: 10, padding: "0 1.5rem", width: "max-content", margin: "0 auto" }}>
-          {SPORTS.map((s) => (
-            <span key={s} style={{
-              backgroundColor: "#e0ede2", color: "#1a5c2a",
-              padding: "6px 16px", borderRadius: 999, fontSize: "0.85rem",
-              fontWeight: 600, whiteSpace: "nowrap",
-            }}>
-              {s}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* ── HUB CARDS ─────────────────────────────────────────────────────── */}
-      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
-        <h2 style={{ textAlign: "center", fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.5rem" }}>
-          Choose Your Hub
-        </h2>
-        <p style={{ textAlign: "center", color: "#666", marginBottom: "2rem" }}>
-          One platform. Four roles. All Zimbabwean sports.
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-          {HUB_CARDS.map((card) => (
-            <Link key={card.title} href={card.href} style={{ textDecoration: "none" }}>
-              <div style={{
-                background: card.bg, borderRadius: 16, padding: "1.5rem",
-                minHeight: 140, display: "flex", flexDirection: "column",
-                justifyContent: "space-between", cursor: "pointer",
-                transition: "transform 0.15s",
+        {/* Nav links — hidden on small screens */}
+        <div style={{ display: "flex", gap: 0 }} className="landing-nav-links">
+          {NAV_LINKS.map((nl) => (
+            <Link
+              key={nl.href}
+              href={nl.href}
+              style={{
+                padding: "0 14px",
+                height: 56,
+                display: "flex",
+                alignItems: "center",
+                fontSize: 13,
+                fontWeight: 700,
+                color: nl.active ? "#1a5c2a" : "#111",
+                textDecoration: "none",
+                borderBottom: nl.active ? "3px solid #c8962a" : "3px solid transparent",
+                marginBottom: -3,
+                whiteSpace: "nowrap",
               }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
-              >
-                <div>
-                  <div style={{ color: "#fff", fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>{card.title}</div>
-                  <div style={{ color: "rgba(255,255,255,0.78)", fontSize: "0.78rem" }}>{card.sub}</div>
-                </div>
-                <div style={{ color: "rgba(255,255,255,0.9)", fontSize: "0.78rem", fontWeight: 600, marginTop: 12 }}>
-                  {card.cta} →
-                </div>
-              </div>
+            >
+              {nl.label}
             </Link>
           ))}
         </div>
-      </section>
 
-      {/* ── SCHOOL PITCH ──────────────────────────────────────────────────── */}
-      <SchoolPitchSection />
-
-      {/* ── AD BANNER ─────────────────────────────────────────────────────── */}
-      <div style={{ padding: "0 1.5rem", maxWidth: 960, margin: "0 auto" }}>
-        <AdBanner slot="landing-mid" />
-      </div>
-
-      {/* ── FEATURES ──────────────────────────────────────────────────────── */}
-      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
-        <h2 style={{ textAlign: "center", fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.5rem" }}>
-          Tools That Change the Game
-        </h2>
-        <p style={{ textAlign: "center", color: "#666", marginBottom: "2.5rem" }}>
-          Everything a Zimbabwean athlete needs. Nothing they don&apos;t.
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-          {FEATURES.map((f) => {
-            const Icon = f.icon;
-            return (
-              <div key={f.title} className="feature-card-african" style={{
-                backgroundColor: "#fff", borderRadius: 16, padding: "1.5rem",
-                border: "1px solid rgba(0,0,0,0.11)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  backgroundColor: "#d4e8d8",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  marginBottom: "1rem",
-                }}>
-                  <Icon size={20} color="#1a5c2a" />
-                </div>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: 6 }}>{f.title}</div>
-                <div style={{ color: "#666", fontSize: "0.85rem", lineHeight: 1.6 }}>{f.desc}</div>
-              </div>
-            );
-          })}
+        {/* Right buttons */}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+          <Link
+            href="/login"
+            style={{
+              padding: "7px 16px",
+              border: "2px solid #1a5c2a",
+              borderRadius: 20,
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#1a5c2a",
+              background: "#fff",
+              textDecoration: "none",
+              display: "inline-block",
+            }}
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/register"
+            style={{
+              padding: "7px 18px",
+              borderRadius: 20,
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#fff",
+              background: "#1a5c2a",
+              textDecoration: "none",
+              display: "inline-block",
+            }}
+          >
+            Join free
+          </Link>
         </div>
-      </section>
+      </nav>
 
-      {/* ── THUTO AI HIGHLIGHT ────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "4rem 1.5rem" }}>
-        <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", gap: 48, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 260px" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              backgroundColor: "#d4e8d8", borderRadius: 999,
-              padding: "6px 14px", marginBottom: "1rem",
-              fontSize: "0.78rem", fontWeight: 600, color: "#1a5c2a",
-            }}>
-              <Zap size={13} /> AI COACH
-            </div>
-            <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.75rem" }}>
-              Meet THUTO — Your AI Sports Coach
-            </h2>
-            <p style={{ color: "#555", lineHeight: 1.7, marginBottom: "1.25rem", fontSize: "0.92rem" }}>
-              THUTO understands Zimbabwean sport. It speaks your language — Shona, Ndebele, or English.
-              It follows FIFA methodology, knows every player profile, and never stops coaching.
-            </p>
-            <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: 8 }}>
-              {["Personalised training plans", "Emotional intelligence support", "Formation diagrams in chat", "Shona & Ndebele responses"].map((item) => (
-                <li key={item} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.88rem", color: "#444" }}>
-                  <span style={{ width: 18, height: 18, borderRadius: "50%", backgroundColor: "#d4e8d8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Star size={10} color="#1a5c2a" fill="#1a5c2a" />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <Link href="/register" style={{
-              backgroundColor: "#1a5c2a", color: "#fff",
-              padding: "12px 24px", borderRadius: 10, fontWeight: 700,
-              fontSize: "0.9rem", textDecoration: "none", display: "inline-block",
-            }}>
-              Try THUTO Free
-            </Link>
-          </div>
+      {/* ── HUBS SECTION ─────────────────────────────────────────────────── */}
+      <section style={{ padding: "56px 28px 64px", background: "#fff" }}>
+        <div style={{ fontSize: 11, color: "#c8962a", letterSpacing: 3, textTransform: "uppercase", marginBottom: 8, fontWeight: 700, textAlign: "center" }}>
+          Platform
+        </div>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1a5c2a", textAlign: "center", marginBottom: 6 }}>
+          Six hubs. One ecosystem.
+        </h1>
+        <div style={{ width: 56, height: 4, background: "linear-gradient(90deg,#ce1126,#f5c518,#c8962a)", borderRadius: 2, margin: "0 auto 16px" }} />
+        <p style={{ fontSize: 14, fontWeight: 600, color: "#333", textAlign: "center", maxWidth: 560, margin: "0 auto 44px", lineHeight: 1.8 }}>
+          Everything an athlete, coach, scout, and fan needs — built together so data from a training session flows through to the feed, the scout hub, and the talent pipeline automatically.
+        </p>
 
-          {/* Chat preview */}
-          <div style={{ flex: "1 1 260px" }}>
-            <div style={{
-              backgroundColor: "#f4f2ee", borderRadius: 16, padding: "1.25rem",
-              border: "1px solid rgba(0,0,0,0.08)",
-              display: "flex", flexDirection: "column", gap: 10,
-            }}>
-              {[
-                { from: "player", text: "Coach, I keep losing the ball under pressure. What should I do?" },
-                { from: "thuto", text: "Ndinzwa izvozvo. Work on receiving on your front foot — toes down, ankle locked. This lets you play away from pressure immediately. Try our Front Foot Passing drill today. 🦁" },
-                { from: "player", text: "Can you show me a 4-3-3 formation?" },
-                { from: "thuto", text: "Yes! Here is how 4-3-3 looks with the press triggers activated..." },
-              ].map((msg, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: msg.from === "player" ? "flex-end" : "flex-start" }}>
-                  <div style={{
-                    maxWidth: "80%", padding: "10px 14px", borderRadius: 12,
-                    fontSize: "0.82rem", lineHeight: 1.5,
-                    backgroundColor: msg.from === "player" ? "#1a5c2a" : "#fff",
-                    color: msg.from === "player" ? "#fff" : "#1a1a1a",
-                    border: msg.from === "thuto" ? "1px solid rgba(0,0,0,0.07)" : "none",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        {/* Hub cards grid */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 16,
+          maxWidth: 880,
+          margin: "0 auto",
+        }}>
+          {HUBS.map((hub) => (
+            <div
+              key={hub.href}
+              style={{
+                background: "#fff",
+                border: hub.featured ? "2px solid #c8962a" : "1.5px solid #ccc",
+                borderLeft: hub.featured ? "4px solid #f5c518" : "4px solid #c8962a",
+                borderRadius: 8,
+                padding: "22px 20px 18px",
+              }}
+            >
+              {/* Icon */}
+              <div style={{
+                width: 42,
+                height: 42,
+                borderRadius: 8,
+                background: hub.featured ? "#fff8e8" : "#e8f5e9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 14,
+              }}>
+                {hub.icon}
+              </div>
+
+              {/* Title */}
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1a5c2a", marginBottom: 7, display: "flex", alignItems: "center", gap: 7 }}>
+                {hub.title}
+                {hub.badge && (
+                  <span style={{
+                    fontSize: 9,
+                    background: "rgba(200,150,42,0.15)",
+                    color: "#c8962a",
+                    padding: "2px 8px",
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    border: "1px solid rgba(200,150,42,0.4)",
                   }}>
-                    {msg.from === "thuto" && (
-                      <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1a5c2a", marginBottom: 4 }}>THUTO AI</div>
-                    )}
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+                    {hub.badge}
+                  </span>
+                )}
+              </div>
 
-      {/* ── PRICING ───────────────────────────────────────────────────────── */}
-      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
-        <h2 style={{ textAlign: "center", fontSize: "1.6rem", fontWeight: 800, marginBottom: "0.5rem" }}>
-          Simple, Honest Pricing
-        </h2>
-        <p style={{ textAlign: "center", color: "#666", marginBottom: "2.5rem" }}>
-          Start free. Upgrade when you&apos;re ready.
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-          {PLANS.map((plan) => (
-            <div key={plan.name} style={{
-              backgroundColor: plan.primary ? plan.color : "#fff",
-              borderRadius: 20, padding: "2rem",
-              border: plan.primary ? "none" : "1px solid rgba(0,0,0,0.08)",
-              boxShadow: plan.primary ? "0 8px 32px rgba(26,92,42,0.2)" : "0 2px 8px rgba(0,0,0,0.04)",
-              display: "flex", flexDirection: "column",
-            }}>
-              {plan.primary && (
-                <div style={{
-                  display: "inline-flex", alignItems: "center", gap: 4, marginBottom: "0.75rem",
-                  backgroundColor: "#c8962a", color: "#fff", borderRadius: 999,
-                  padding: "4px 12px", fontSize: "0.72rem", fontWeight: 700, width: "fit-content",
-                }}>
-                  <Heart size={11} fill="#fff" /> MOST POPULAR
-                </div>
-              )}
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: plan.primary ? "#fff" : "#1a1a1a", marginBottom: 4 }}>
-                {plan.name}
-              </div>
-              <div style={{ marginBottom: "1.25rem" }}>
-                <span style={{ fontSize: "2rem", fontWeight: 900, color: plan.primary ? "#fff" : plan.color }}>{plan.price}</span>
-                <span style={{ color: plan.primary ? "rgba(255,255,255,0.7)" : "#888", fontSize: "0.85rem", marginLeft: 4 }}>{plan.period}</span>
-              </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-                {plan.features.map((f) => (
-                  <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "0.85rem", color: plan.primary ? "rgba(255,255,255,0.88)" : "#555" }}>
-                    <span style={{ marginTop: 2, flexShrink: 0 }}>✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href={plan.href} style={{
-                display: "block", textAlign: "center",
-                backgroundColor: plan.primary ? "#c8962a" : plan.color,
-                color: "#fff", padding: "12px 0", borderRadius: 10,
-                fontWeight: 700, fontSize: "0.9rem", textDecoration: "none",
-              }}>
-                {plan.cta}
+              {/* Description */}
+              <p style={{ fontSize: 13, fontWeight: 600, color: "#333", lineHeight: 1.65, marginBottom: 16 }}>
+                {hub.desc}
+              </p>
+
+              {/* Divider */}
+              <div style={{ height: 1, background: "#e0e0e0", marginBottom: 12 }} />
+
+              {/* Explore link */}
+              <Link
+                href={hub.href}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: hub.featured ? "#c8962a" : "#1a5c2a",
+                  padding: "5px 14px",
+                  borderRadius: 14,
+                  background: hub.featured ? "#fff8e8" : "#e8f5e9",
+                  border: hub.featured ? "1px solid rgba(200,150,42,0.35)" : "1px solid rgba(26,92,42,0.2)",
+                  textDecoration: "none",
+                }}
+              >
+                <span>Explore</span>
+                <ArrowRight size={13} />
               </Link>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── ZIM INDEPENDENCE ──────────────────────────────────────────────── */}
-      <ZimIndependenceSection />
-
-      {/* ── DOWNLOAD APP ──────────────────────────────────────────────────── */}
-      <section style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "4rem 1.5rem" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>📱</div>
-          <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.75rem" }}>
-            Download the Mobile App
-          </h2>
-          <p style={{ color: "#555", lineHeight: 1.7, marginBottom: "1.75rem", fontSize: "0.92rem" }}>
-            The GrassRoots Sports APK includes ML Kit biomechanics analysis, offline training,
-            and THUTO AI coaching — optimised for Zimbabwe&apos;s 2G/3G networks.
-          </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <ApkDownloadButton />
-            <Link href="/register" style={{
-              backgroundColor: "#f4f2ee", color: "#1a5c2a",
-              border: "2px solid #1a5c2a",
-              padding: "12px 24px", borderRadius: 10, fontWeight: 700,
-              fontSize: "0.9rem", textDecoration: "none",
-            }}>
-              Use Web App
-            </Link>
+      {/* ── FOOTER ───────────────────────────────────────────────────────── */}
+      <footer style={{ background: "#0f3a1a", borderTop: "3px solid #c8962a", padding: "32px 28px 20px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 24, maxWidth: 880, margin: "0 auto 24px" }}>
+          {/* Brand */}
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#c8962a", marginBottom: 4 }}>Grassroots Sports</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>grassrootssports.live</div>
           </div>
-        </div>
-      </section>
 
-      {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
-      <section style={{ padding: "4rem 1.5rem", maxWidth: 960, margin: "0 auto" }}>
-        <div style={{
-          backgroundColor: "#1a5c2a", borderRadius: 24, padding: "3rem 2rem", textAlign: "center",
-          backgroundImage: "repeating-linear-gradient(-45deg, transparent 0px, transparent 8px, rgba(255,255,255,0.03) 8px, rgba(255,255,255,0.03) 10px)",
-        }}>
-          <Trophy size={28} color="#c8962a" style={{ marginBottom: "1rem" }} />
-          <h2 style={{ color: "#fff", fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.75rem" }}>
-            Ready to Get Recognized?
-          </h2>
-          <p style={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.7, marginBottom: "2rem", maxWidth: 480, margin: "0 auto 2rem", fontSize: "0.95rem" }}>
-            Join thousands of Zimbabwean athletes, coaches, and scouts already using GrassRoots Sports. It&apos;s free to start.
-          </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/register" style={{
-              backgroundColor: "#c8962a", color: "#fff",
-              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
-              fontSize: "1rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
-            }}>
-              Create Free Account <ChevronRight size={16} />
-            </Link>
-            <Link href="/arena" style={{
-              backgroundColor: "rgba(255,255,255,0.12)", color: "#fff",
-              border: "1px solid rgba(255,255,255,0.25)",
-              padding: "14px 32px", borderRadius: 12, fontWeight: 700,
-              fontSize: "1rem", textDecoration: "none",
-            }}>
-              Browse The Arena
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
-      <footer style={{ backgroundColor: "#fff", borderTop: "1px solid rgba(0,0,0,0.08)", padding: "3rem 1.5rem 2rem" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ display: "flex", gap: 48, flexWrap: "wrap", marginBottom: "2rem", justifyContent: "space-between" }}>
-            <div style={{ flex: "1 1 200px" }}>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#1a5c2a", marginBottom: 8 }}>
-                GrassRoots Sports
-              </div>
-              <p style={{ color: "#888", fontSize: "0.82rem", lineHeight: 1.6, maxWidth: 220 }}>
-                Zimbabwe&apos;s first AI-powered grassroots sports platform. Train anywhere. Get recognized.
-              </p>
-            </div>
+          {/* Platform */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Platform</div>
             {[
-              {
-                heading: "Platform",
-                links: [
-                  { label: "The Arena", href: "/arena" },
-                  { label: "Talent Leaderboard", href: "/talent-leaderboard" },
-                  { label: "Business Hub", href: "/business-hub" },
-                  { label: "Fan Hub", href: "/fan-hub" },
-                ],
-              },
-              {
-                heading: "Register",
-                links: [
-                  { label: "Player", href: "/register?role=player" },
-                  { label: "Coach", href: "/register?role=coach" },
-                  { label: "Scout", href: "/register?role=scout" },
-                  { label: "Fan", href: "/register?role=fan" },
-                ],
-              },
-              {
-                heading: "Legal",
-                links: [
-                  { label: "Privacy Policy", href: "/privacy" },
-                  { label: "Terms of Service", href: "/terms" },
-                ],
-              },
-            ].map((col) => (
-              <div key={col.heading} style={{ flex: "0 0 auto" }}>
-                <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "#333", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {col.heading}
-                </div>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                  {col.links.map((l) => (
-                    <li key={l.label}>
-                      <Link href={l.href} style={{ color: "#666", fontSize: "0.85rem", textDecoration: "none" }}>
-                        {l.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              { label: "Player Hub", href: "/player" },
+              { label: "Coach Hub", href: "/coach" },
+              { label: "Scout Hub", href: "/scout" },
+              { label: "Fan Hub", href: "/fan-hub" },
+              { label: "Analysis Hub", href: "/analyst" },
+              { label: "The Arena", href: "/arena" },
+            ].map((l) => (
+              <Link key={l.href} href={l.href} style={{ display: "block", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6, textDecoration: "none" }}>
+                {l.label}
+              </Link>
             ))}
           </div>
-          <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: "1.25rem", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-            <span style={{ color: "#999", fontSize: "0.8rem" }}>© 2026 GrassRoots Sports. All rights reserved.</span>
-            <span style={{ color: "#999", fontSize: "0.8rem" }}>Made with ❤️ in Zimbabwe 🇿🇼</span>
+
+          {/* Features */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Features</div>
+            {[
+              { label: "Player Passport", href: "/talent-leaderboard" },
+              { label: "THUTO AI", href: "/player/ai-coach" },
+              { label: "Football Business School", href: "/player" },
+              { label: "School Leagues", href: "/school-leagues" },
+            ].map((l) => (
+              <Link key={l.href} href={l.href} style={{ display: "block", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6, textDecoration: "none" }}>
+                {l.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Partners */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Partners</div>
+            {[
+              "Teach For Zimbabwe",
+              "Ministry of Education",
+            ].map((l) => (
+              <div key={l} style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 6 }}>{l}</div>
+            ))}
           </div>
         </div>
-      </footer>
 
-      <ZimPresidentBanner />
-      <ThutoChatVisitor />
+        {/* Bottom bar */}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 880, margin: "0 auto", flexWrap: "wrap", gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)" }}>
+            © 2026 Grassroots Sports. All rights reserved.
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#c8962a", fontStyle: "italic" }}>
+            It costs your school nothing. It gives your students everything.
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
