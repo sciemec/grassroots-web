@@ -64,1322 +64,1173 @@ interface TrendingTag {
 }
 
 interface LeftPanelData {
-  thuto_score: number | null;
-  peak_level_label: string | null;
   scout_views: number;
-  followers: number;
   following: number;
+  followers: number;
   sessions: number;
+  peak_level_label: string | null;
+  thuto_score: number | null;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const ROLE_BADGE: Record<string, string> = {
-  player: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  coach:  "bg-blue-50 text-blue-700 border-blue-200",
-  scout:  "bg-purple-50 text-purple-700 border-purple-200",
-  fan:    "bg-amber-50 text-amber-700 border-amber-200",
-  admin:  "bg-red-50 text-red-700 border-red-200",
+const ROLE_BADGE: Record<string, { label: string; color: string }> = {
+  player:  { label: "Player",  color: "#1a5c2a" },
+  coach:   { label: "Coach",   color: "#1e40af" },
+  scout:   { label: "Scout",   color: "#7c3aed" },
+  fan:     { label: "Fan",     color: "#b45309" },
+  admin:   { label: "Admin",   color: "#dc2626" },
+  analyst: { label: "Analyst", color: "#0891b2" },
 };
 
-const POST_TYPE_META: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-  milestone:          { icon: <Trophy size={12} />,   label: "Milestone",   color: "text-amber-600" },
-  achievement:        { icon: <Star size={12} />,     label: "Achievement", color: "text-purple-600" },
-  scout_activity:     { icon: <Eye size={12} />,      label: "Scout Alert", color: "text-amber-700" },
-  session_milestone:  { icon: <Zap size={12} />,      label: "Session",     color: "text-blue-600" },
-  prediction_upgrade: { icon: <TrendingUp size={12} />, label: "Level Up",  color: "text-green-600" },
-  standard:           { icon: <Globe size={12} />,    label: "",            color: "text-gray-400" },
+const POST_TYPE_META: Record<string, { label: string; color: string }> = {
+  milestone:         { label: "Milestone",        color: "#c8962a" },
+  achievement:       { label: "Achievement",       color: "#1a5c2a" },
+  scout_activity:    { label: "Scout Activity",    color: "#7c3aed" },
+  session_milestone: { label: "Session Milestone", color: "#0891b2" },
+  prediction_upgrade:{ label: "Level Up",          color: "#c8962a" },
+  standard:          { label: "",                  color: "" },
 };
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function initials(name: string): string {
-  if (!name) return "??";
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m`;
+  if (m < 1)  return "Just now";
+  if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)  return `${d}d ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-function authHeaders(token: string | null | undefined) {
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+function authHeaders(token: string | null): HeadersInit {
+  return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+               : { "Content-Type": "application/json" };
 }
 
-// ── Arena Top Nav ─────────────────────────────────────────────────────────────
+// ── ArenaNav (Concept B) ──────────────────────────────────────────────────────
 
-function ArenaNav({ unreadCount }: { unreadCount: number }) {
-  const user = useAuthStore((s) => s.user);
+function ArenaNav({
+  user,
+  token,
+}: {
+  user: { id: string; name: string; role: string } | null;
+  token: string | null;
+}) {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    if (q) router.push(`/arena/discover?q=${encodeURIComponent(q)}`);
-  }
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setDropOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-  const hubs = [
-    { label: "Player",   href: "/player",   icon: <Activity size={11} /> },
-    { label: "Coach",    href: "/coach",    icon: <Shield size={11} /> },
-    { label: "Fans",     href: "/fan-hub",  icon: <Heart size={11} /> },
-    { label: "Analysis", href: "/analyst",  icon: <Target size={11} /> },
-    { label: "Scout",    href: "/scout",    icon: <Search size={11} /> },
-  ];
+  const handleLogout = () => {
+    useAuthStore.getState().logout();
+    router.replace("/login");
+  };
+
+  const homePath = user ? roleHomePath(user.role as Parameters<typeof roleHomePath>[0]) : "/";
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_v2.png" alt="Grassroots" width={28} height={28} className="rounded" />
-          <span className="font-black text-sm tracking-tight hidden sm:block" style={{ color: "#1a5c2a" }}>
-            The Arena
-          </span>
+    <nav style={{
+      position: "sticky", top: 0, zIndex: 50,
+      backgroundColor: "#ffffff",
+      borderBottom: "1px solid #e5e5e5",
+    }}>
+      <div style={{
+        maxWidth: 1200, margin: "0 auto",
+        padding: "0 16px",
+        display: "flex", alignItems: "center", gap: 16, height: 60,
+      }}>
+        {/* Logo */}
+        <Link href={homePath} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 6,
+            backgroundColor: "#1a5c2a",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#fff", fontWeight: 800, fontSize: 18, fontFamily: "Georgia, serif",
+          }}>G</div>
+          <div style={{ lineHeight: 1.2 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a" }}>Grassroots Sports</div>
+            <div style={{ fontSize: 11, color: "#888" }}>grassrootssports.live</div>
+          </div>
         </Link>
 
-        {/* Search bar */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-xs">
-          <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search athletes…"
-              className="w-full text-xs pl-7 pr-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 outline-none focus:border-green-500 focus:bg-white transition-colors"
-            />
-          </div>
-        </form>
-
-        <nav className="hidden lg:flex items-center gap-1">
-          {hubs.map((h) => (
+        {/* Hub nav links */}
+        <div style={{ display: "flex", alignItems: "center", gap: 2, marginLeft: 8 }} className="hidden md:flex">
+          {[
+            { href: "/player",  label: "⚽ Player Hub" },
+            { href: "/coach",   label: "🎽 Coach Hub" },
+            { href: "/scout",   label: "🔍 Scout Hub" },
+            { href: "/fan",     label: "👥 Fan Hub" },
+            { href: "/analyst", label: "📊 Analyst Hub" },
+          ].map((item) => (
             <Link
-              key={h.href}
-              href={h.href}
-              className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-2.5 py-1.5 rounded-full transition-colors whitespace-nowrap"
-            >
-              {h.icon}
-              {h.label}
-            </Link>
+              key={item.href}
+              href={item.href}
+              style={{
+                padding: "4px 10px",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#555",
+                textDecoration: "none",
+                borderBottom: "2px solid transparent",
+                transition: "color 0.15s, border-color 0.15s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color = "#1a5c2a";
+                (e.currentTarget as HTMLElement).style.borderBottomColor = "#1a5c2a";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color = "#555";
+                (e.currentTarget as HTMLElement).style.borderBottomColor = "transparent";
+              }}
+            >{item.label}</Link>
           ))}
-        </nav>
+        </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/arena/network"
-            className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"
-            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
-          >
-            <Users size={12} />
-            Network
+        {/* Search */}
+        <div style={{ flex: 1, maxWidth: 280, position: "relative" }} className="hidden md:block">
+          <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#aaa" }} />
+          <input
+            placeholder="Search athletes, clubs..."
+            style={{
+              width: "100%", paddingLeft: 32, paddingRight: 12,
+              height: 32, border: "1px solid #e0e0e0", borderRadius: 16,
+              fontSize: 13, color: "#333", backgroundColor: "#f5f5f5",
+              outline: "none", boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        {/* Partner badge */}
+        <div style={{
+          fontSize: 10, color: "#888", lineHeight: 1.3,
+          borderLeft: "1px solid #e5e5e5", paddingLeft: 12,
+          flexShrink: 0,
+        }} className="hidden lg:block">
+          <span style={{ display: "block", color: "#555", fontWeight: 600 }}>Powered by</span>
+          <span>Teach For Zimbabwe</span>
+        </div>
+
+        {/* Right icons */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+          <Link href="/arena/notifications" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", color: "#555" }}>
+            <Bell size={18} />
           </Link>
-          <Link
-            href="/arena/recruitment"
-            className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"
-            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
-          >
-            <Briefcase size={12} />
-            Talent Board
+          <Link href="/arena/messages" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "50%", color: "#555" }}>
+            <MessageSquare size={18} />
           </Link>
 
-          {/* Notification bell */}
-          <Link href="/arena/notifications" className="relative p-1.5 hover:bg-gray-100 rounded-full transition-colors">
-            <Bell size={16} className="text-gray-600" />
-            {unreadCount > 0 && (
-              <span
-                className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-black text-white flex items-center justify-center"
-                style={{ background: "#ce1126" }}
-              >
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </Link>
-
-          {user && (
-            <div className="relative">
+          {user ? (
+            <div ref={dropRef} style={{ position: "relative" }}>
               <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 text-xs font-semibold text-gray-700 hover:text-gray-900"
+                onClick={() => setDropOpen((o) => !o)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "4px 8px", borderRadius: 20,
+                  border: "1px solid #e5e5e5", background: "#fff",
+                  cursor: "pointer", fontSize: 13,
+                }}
               >
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0"
-                  style={{ background: "#1a5c2a" }}
-                >
-                  {initials(user.name ?? "")}
-                </div>
-                <span className="hidden sm:block">{user.name?.split(" ")[0]}</span>
-                <ChevronDown size={12} className="text-gray-400" />
+                <div style={{
+                  width: 26, height: 26, borderRadius: "50%",
+                  backgroundColor: "#1a5c2a", color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 700,
+                }}>{initials(user.name)}</div>
+                <ChevronDown size={13} color="#555" />
               </button>
-
-              {menuOpen && (
-                <div className="absolute right-0 top-9 w-44 bg-white rounded-xl border border-gray-200 shadow-lg py-1 z-50">
-                  <Link
-                    href={roleHomePath(user.role)}
-                    className="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    My Hub
-                  </Link>
-                  <Link
-                    href={`/arena/profile/${user.id}`}
-                    className="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    My Arena Profile
-                  </Link>
-                  <Link
-                    href="/settings"
-                    className="block px-4 py-2 text-xs text-gray-700 hover:bg-gray-50"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Settings
-                  </Link>
+              {dropOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 6px)", right: 0,
+                  background: "#fff", border: "1px solid #e5e5e5", borderRadius: 10,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.10)", minWidth: 160, zIndex: 100,
+                  overflow: "hidden",
+                }}>
+                  <div style={{ padding: "12px 14px", borderBottom: "1px solid #f0f0f0" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>{user.name}</div>
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 2, textTransform: "capitalize" }}>{user.role}</div>
+                  </div>
+                  {[
+                    { href: roleHomePath(user.role as Parameters<typeof roleHomePath>[0]), label: "My Dashboard" },
+                    { href: "/arena/profile/" + user.id, label: "Arena Profile" },
+                    { href: "/settings", label: "Settings" },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      style={{ display: "block", padding: "10px 14px", fontSize: 13, color: "#333", textDecoration: "none" }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#f5f5f5")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
+                      onClick={() => setDropOpen(false)}
+                    >{item.label}</Link>
+                  ))}
+                  <button
+                    onClick={handleLogout}
+                    style={{ width: "100%", textAlign: "left", padding: "10px 14px", fontSize: 13, color: "#dc2626", background: "none", border: "none", cursor: "pointer", borderTop: "1px solid #f0f0f0" }}
+                  >Sign out</button>
                 </div>
               )}
             </div>
+          ) : (
+            <Link href="/login" style={{
+              padding: "6px 14px", borderRadius: 20,
+              backgroundColor: "#1a5c2a", color: "#fff",
+              fontSize: 12, fontWeight: 600, textDecoration: "none",
+            }}>Sign in</Link>
           )}
         </div>
       </div>
-    </header>
+    </nav>
   );
 }
 
-// ── Post Composer ─────────────────────────────────────────────────────────────
+// ── PostComposer ──────────────────────────────────────────────────────────────
 
-interface ComposerProps {
+function PostComposer({
+  user,
+  token,
+  onPosted,
+}: {
+  user: { id: string; name: string; role: string } | null;
+  token: string | null;
   onPosted: (post: ArenaPost) => void;
-}
-
-const QUICK_ACTIONS = [
-  { label: "Clip",    icon: <Video size={12} />,     type: "achievement" as const, placeholder: "Share a highlight clip…" },
-  { label: "Session", icon: <Activity size={12} />,  type: "milestone" as const,  placeholder: "How was your training session?" },
-  { label: "Goal",    icon: <Target size={12} />,    type: "milestone" as const,  placeholder: "What goal did you hit today?" },
-  { label: "Photo",   icon: <Image size={12} />,     type: "standard" as const,   placeholder: "Share a moment…" },
-];
-
-function PostComposer({ onPosted }: ComposerProps) {
-  const { user, token } = useAuthStore();
-  const [body, setBody] = useState("");
-  const [sport, setSport] = useState("");
-  const [province, setProvince] = useState("");
-  const [postType, setPostType] = useState<"standard" | "milestone" | "achievement">("standard");
+}) {
+  const [body, setBody]             = useState("");
+  const [postType, setPostType]     = useState<"standard" | "milestone" | "achievement">("standard");
   const [milestoneLabel, setMilestoneLabel] = useState("");
-  const [expanded, setExpanded] = useState(false);
+  const [sport, setSport]           = useState("");
+  const [province, setProvince]     = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [placeholder, setPlaceholder] = useState("Share a moment, milestone, or insight with the Arena…");
+  const [expanded, setExpanded]     = useState(false);
+
   const MAX = 280;
 
-  function activateQuickAction(action: typeof QUICK_ACTIONS[0]) {
-    setPostType(action.type);
-    setPlaceholder(action.placeholder);
-    setExpanded(true);
-  }
-
-  async function submit() {
-    if (!body.trim() || submitting) return;
+  const handleSubmit = async () => {
+    if (!body.trim() || !token) return;
     setSubmitting(true);
     try {
       const res = await fetch(`${API}/arena/posts`, {
         method: "POST",
         headers: authHeaders(token),
         body: JSON.stringify({
-          body: body.trim(),
+          body: body.slice(0, MAX),
+          post_type: postType,
+          milestone_label: postType !== "standard" ? milestoneLabel : undefined,
           sport: sport || undefined,
           province: province || undefined,
-          post_type: postType,
-          milestone_label: milestoneLabel || undefined,
         }),
       });
       if (res.ok) {
-        const data = await res.json();
-        onPosted(data.post as ArenaPost);
-        setBody("");
-        setSport("");
-        setProvince("");
-        setPostType("standard");
-        setMilestoneLabel("");
+        const json = await res.json();
+        onPosted(json.data ?? json);
+        setBody(""); setPostType("standard"); setMilestoneLabel(""); setSport(""); setProvince("");
         setExpanded(false);
-        setPlaceholder("Share a moment, milestone, or insight with the Arena…");
       }
     } finally {
       setSubmitting(false);
     }
-  }
+  };
+
+  if (!user) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      {/* Quick action row */}
-      {!expanded && (
-        <div className="flex gap-2 mb-3">
-          {QUICK_ACTIONS.map((a) => (
-            <button
-              key={a.label}
-              onClick={() => activateQuickAction(a)}
-              className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-            >
-              {a.icon}
-              <span>{a.label}</span>
-            </button>
-          ))}
+    <div style={{
+      backgroundColor: "#fff", borderRadius: 12,
+      border: "1px solid #e5e5e5", padding: 16, marginBottom: 12,
+    }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+          backgroundColor: "#1a5c2a", color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 13, fontWeight: 700,
+        }}>{initials(user.name)}</div>
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          onFocus={() => setExpanded(true)}
+          placeholder="Share a training moment, milestone, or update..."
+          rows={expanded ? 3 : 1}
+          style={{
+            flex: 1, border: "1px solid #e5e5e5", borderRadius: 20,
+            padding: "8px 14px", fontSize: 14, resize: "none",
+            outline: "none", fontFamily: "inherit", color: "#1a1a1a",
+            backgroundColor: "#f9f9f9", lineHeight: 1.5, transition: "height 0.15s",
+          }}
+        />
+      </div>
+
+      {expanded && (
+        <div style={{ marginTop: 12, paddingLeft: 46 }}>
+          {/* Post type selector */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            {(["standard", "milestone", "achievement"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setPostType(t)}
+                style={{
+                  padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 500,
+                  border: `1px solid ${postType === t ? "#1a5c2a" : "#e0e0e0"}`,
+                  backgroundColor: postType === t ? "#1a5c2a" : "#fff",
+                  color: postType === t ? "#fff" : "#555", cursor: "pointer",
+                  textTransform: "capitalize",
+                }}
+              >{t}</button>
+            ))}
+          </div>
+
+          {postType !== "standard" && (
+            <input
+              value={milestoneLabel}
+              onChange={(e) => setMilestoneLabel(e.target.value)}
+              placeholder={postType === "milestone" ? "e.g. First hat-trick" : "e.g. Selected for NASH team"}
+              style={{
+                width: "100%", padding: "8px 12px", border: "1px solid #e0e0e0",
+                borderRadius: 8, fontSize: 13, outline: "none", marginBottom: 8,
+                boxSizing: "border-box",
+              }}
+            />
+          )}
+
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+            <input
+              value={sport}
+              onChange={(e) => setSport(e.target.value)}
+              placeholder="Sport (optional)"
+              style={{ padding: "6px 10px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 12, outline: "none", width: 130 }}
+            />
+            <input
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              placeholder="Province (optional)"
+              style={{ padding: "6px 10px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 12, outline: "none", width: 150 }}
+            />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 12, color: body.length > MAX * 0.85 ? "#dc2626" : "#aaa" }}>
+              {body.length}/{MAX}
+            </span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => { setExpanded(false); setBody(""); }}
+                style={{ padding: "7px 14px", borderRadius: 20, border: "1px solid #e0e0e0", background: "#fff", fontSize: 13, cursor: "pointer", color: "#555" }}
+              >Cancel</button>
+              <button
+                onClick={handleSubmit}
+                disabled={!body.trim() || submitting || body.length > MAX}
+                style={{
+                  padding: "7px 18px", borderRadius: 20,
+                  backgroundColor: body.trim() && !submitting ? "#1a5c2a" : "#ccc",
+                  color: "#fff", fontSize: 13, fontWeight: 600,
+                  border: "none", cursor: body.trim() && !submitting ? "pointer" : "not-allowed",
+                }}
+              >{submitting ? "Posting…" : "Post"}</button>
+            </div>
+          </div>
         </div>
       )}
-
-      <div className="flex gap-3">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0"
-          style={{ background: "#1a5c2a" }}
-        >
-          {initials(user?.name ?? "")}
-        </div>
-        <div className="flex-1 min-w-0">
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            onFocus={() => setExpanded(true)}
-            placeholder={placeholder}
-            maxLength={MAX}
-            rows={expanded ? 3 : 1}
-            className="w-full resize-none text-sm text-gray-800 placeholder-gray-400 outline-none"
-          />
-          {expanded && (
-            <>
-              {/* Post type selector */}
-              <div className="flex gap-2 mt-2 flex-wrap">
-                {(["standard", "milestone", "achievement"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setPostType(t)}
-                    className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                      postType === t
-                        ? "border-green-600 bg-green-50 text-green-700 font-semibold"
-                        : "border-gray-200 text-gray-500 hover:border-gray-300"
-                    }`}
-                  >
-                    {POST_TYPE_META[t].icon}
-                    <span className="capitalize">{t}</span>
-                  </button>
-                ))}
-              </div>
-
-              {postType !== "standard" && (
-                <input
-                  value={milestoneLabel}
-                  onChange={(e) => setMilestoneLabel(e.target.value)}
-                  placeholder={postType === "milestone" ? "e.g. First 100 training sessions" : "e.g. ZIFA Under-17 Selection"}
-                  className="mt-2 w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-green-500"
-                />
-              )}
-
-              {/* Tags row */}
-              <div className="flex gap-2 mt-2">
-                <input
-                  value={sport}
-                  onChange={(e) => setSport(e.target.value)}
-                  placeholder="Sport (optional)"
-                  className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-green-500"
-                />
-                <input
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  placeholder="Province (optional)"
-                  className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-green-500"
-                />
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between mt-3">
-                <span className={`text-xs ${body.length > MAX - 20 ? "text-red-500" : "text-gray-400"}`}>
-                  {MAX - body.length}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setExpanded(false); setBody(""); setPlaceholder("Share a moment, milestone, or insight with the Arena…"); }}
-                    className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={submit}
-                    disabled={!body.trim() || submitting}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-white px-4 py-1.5 rounded-full disabled:opacity-50 transition-opacity"
-                    style={{ background: "#1a5c2a" }}
-                  >
-                    <Send size={11} />
-                    {submitting ? "Posting…" : "Post"}
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
 
-// ── Comment Section ───────────────────────────────────────────────────────────
+// ── CommentSection ────────────────────────────────────────────────────────────
 
-function CommentSection({ postId, token }: { postId: string; token: string | null | undefined }) {
+function CommentSection({
+  postId,
+  token,
+}: {
+  postId: string;
+  token: string | null;
+}) {
   const [comments, setComments] = useState<ArenaComment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newComment, setNewComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [loading,  setLoading]  = useState(true);
+  const [newBody,  setNewBody]  = useState("");
+  const [sending,  setSending]  = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/arena/posts/${postId}/comments`, {
-      headers: authHeaders(token),
-    })
+    fetch(`${API}/arena/posts/${postId}/comments`, { headers: authHeaders(token) })
       .then((r) => r.json())
-      .then((data) => setComments(safeArray<ArenaComment>(data)))
+      .then((d) => setComments(safeArray(d.data ?? d)))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [postId, token]);
 
-  async function addComment() {
-    if (!newComment.trim() || submitting) return;
-    setSubmitting(true);
+  const send = async () => {
+    if (!newBody.trim() || !token) return;
+    setSending(true);
     try {
       const res = await fetch(`${API}/arena/posts/${postId}/comments`, {
         method: "POST",
         headers: authHeaders(token),
-        body: JSON.stringify({ body: newComment.trim() }),
+        body: JSON.stringify({ body: newBody.trim() }),
       });
       if (res.ok) {
-        const data = await res.json();
-        setComments((prev) => [...prev, data.comment as ArenaComment]);
-        setNewComment("");
+        const json = await res.json();
+        setComments((prev) => [...prev, json.data ?? json]);
+        setNewBody("");
       }
     } finally {
-      setSubmitting(false);
+      setSending(false);
     }
-  }
-
-  if (loading) return <div className="px-4 py-2 text-xs text-gray-400 animate-pulse">Loading comments…</div>;
+  };
 
   return (
-    <div className="px-4 pb-3 border-t border-gray-100 pt-3 space-y-2">
-      {comments.map((c) => (
-        <div key={c.id} className="flex gap-2 text-xs text-gray-700">
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-black shrink-0 mt-0.5"
-            style={{ background: "#1a5c2a" }}
-          >
-            {initials(c.user?.name ?? "")}
+    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #f0f0f0" }}>
+      {loading ? (
+        <div style={{ fontSize: 12, color: "#aaa", padding: "4px 0" }}>Loading…</div>
+      ) : (
+        comments.map((c) => (
+          <div key={c.id} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+              backgroundColor: "#1a5c2a", color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 10, fontWeight: 700,
+            }}>{initials(c.user?.name ?? "?")}</div>
+            <div style={{ flex: 1, backgroundColor: "#f5f5f5", borderRadius: 10, padding: "6px 10px" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#333" }}>{c.user?.name ?? "User"} </span>
+              <span style={{ fontSize: 12, color: "#555" }}>{c.body}</span>
+              <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{timeAgo(c.created_at)}</div>
+            </div>
           </div>
-          <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2">
-            <span className="font-semibold mr-1">{c.user?.name}</span>
-            <span className={`text-[10px] capitalize mr-2 ${ROLE_BADGE[c.user?.role] ?? ""} px-1.5 py-0.5 rounded-full border`}>
-              {c.user?.role}
-            </span>
-            <span className="text-gray-600">{c.body}</span>
-            <span className="ml-2 text-gray-400 text-[10px]">{timeAgo(c.created_at)}</span>
-          </div>
+        ))
+      )}
+      {token && (
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <input
+            value={newBody}
+            onChange={(e) => setNewBody(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder="Write a comment…"
+            style={{
+              flex: 1, border: "1px solid #e0e0e0", borderRadius: 20,
+              padding: "6px 12px", fontSize: 13, outline: "none",
+              backgroundColor: "#f9f9f9",
+            }}
+          />
+          <button
+            onClick={send}
+            disabled={!newBody.trim() || sending}
+            style={{
+              width: 32, height: 32, borderRadius: "50%", border: "none",
+              backgroundColor: newBody.trim() ? "#1a5c2a" : "#ddd",
+              cursor: newBody.trim() ? "pointer" : "default",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          ><Send size={14} color="#fff" /></button>
         </div>
-      ))}
-
-      <div className="flex gap-2 mt-2">
-        <input
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); addComment(); } }}
-          placeholder="Write a comment…"
-          maxLength={280}
-          className="flex-1 text-xs border border-gray-200 rounded-full px-3 py-1.5 outline-none focus:border-green-500"
-        />
-        <button
-          onClick={addComment}
-          disabled={!newComment.trim() || submitting}
-          className="text-xs font-semibold text-white px-3 py-1.5 rounded-full disabled:opacity-50"
-          style={{ background: "#1a5c2a" }}
-        >
-          <Send size={11} />
-        </button>
-      </div>
+      )}
     </div>
   );
 }
 
-// ── Post Card ─────────────────────────────────────────────────────────────────
+// ── PostCard ──────────────────────────────────────────────────────────────────
 
-function PostCard({ post: initial, token }: { post: ArenaPost; token: string | null | undefined }) {
-  const [post, setPost] = useState(initial);
-  const [liked, setLiked] = useState(initial.liked === 1);
+function PostCard({
+  post,
+  token,
+  currentUserId,
+}: {
+  post: ArenaPost;
+  token: string | null;
+  currentUserId: string;
+}) {
+  const [liked,        setLiked]        = useState(Boolean(post.liked));
+  const [likeCount,    setLikeCount]    = useState(post.like_count);
   const [showComments, setShowComments] = useState(false);
-  const [liking, setLiking] = useState(false);
 
-  async function toggleLike() {
-    if (liking) return;
-    setLiking(true);
-    const wasLiked = liked;
-    setLiked(!wasLiked);
-    setPost((p) => ({ ...p, like_count: p.like_count + (wasLiked ? -1 : 1) }));
+  const toggleLike = async () => {
+    const prev = liked;
+    setLiked(!prev);
+    setLikeCount((c) => c + (prev ? -1 : 1));
     try {
-      await fetch(`${API}/arena/posts/${post.id}/like`, {
+      const res = await fetch(`${API}/arena/posts/${post.id}/like`, {
         method: "POST",
         headers: authHeaders(token),
       });
+      if (res.ok) {
+        const json = await res.json();
+        setLiked(json.liked ?? !prev);
+      } else {
+        setLiked(prev);
+        setLikeCount((c) => c + (prev ? 1 : -1));
+      }
     } catch {
-      setLiked(wasLiked);
-      setPost((p) => ({ ...p, like_count: p.like_count + (wasLiked ? 1 : -1) }));
-    } finally {
-      setLiking(false);
+      setLiked(prev);
+      setLikeCount((c) => c + (prev ? 1 : -1));
     }
-  }
+  };
 
   const typeMeta = POST_TYPE_META[post.post_type] ?? POST_TYPE_META.standard;
+  const badge    = ROLE_BADGE[post.user?.role ?? ""] ?? ROLE_BADGE.player;
 
-  // Scout activity — gold background card
-  if (post.post_type === "scout_activity") {
-    return (
-      <div className="rounded-xl border overflow-hidden" style={{ background: "#fff8e8", borderColor: "#f0c060" }}>
-        <div className="flex items-start gap-3 p-4 pb-2">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-amber-800 text-xs font-black shrink-0 border border-amber-300" style={{ background: "#f5d57a" }}>
-            <Eye size={16} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-amber-900">Scout Activity</span>
-              <span className="text-[10px] text-amber-600">{timeAgo(post.created_at)}</span>
-            </div>
-            <p className="text-sm text-amber-900 mt-1 leading-relaxed">{post.body}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-2 border-t border-amber-200">
-          <Link href="/player/subscription" className="text-[11px] font-bold text-amber-800 hover:text-amber-900">
-            Upgrade to Pro to see who viewed →
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Auto milestone post — dark green gradient
-  if (post.post_type === "session_milestone" || post.post_type === "prediction_upgrade") {
-    const meta = post.metadata ?? {};
-    const isUpgrade = post.post_type === "prediction_upgrade";
-    return (
-      <div className="rounded-xl overflow-hidden" style={{ background: "linear-gradient(135deg, #1a3d26, #1a5c2a)" }}>
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black" style={{ background: "rgba(255,255,255,0.15)" }}>
-              {initials(post.user?.name ?? "")}
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-white">{post.user?.name}</p>
-              <p className="text-[10px] text-green-300">{timeAgo(post.created_at)}</p>
-            </div>
-            <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full text-green-900" style={{ background: "#f0b429" }}>
-              {isUpgrade ? "LEVEL UP" : "MILESTONE"}
-            </span>
-          </div>
-
-          {isUpgrade && meta.old_label && meta.new_label ? (
-            <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
-              <div className="text-center">
-                <p className="text-[10px] text-green-300">Before</p>
-                <p className="text-sm font-bold text-white/70">{meta.old_label as string}</p>
-              </div>
-              <div className="text-2xl text-green-300">→</div>
-              <div className="text-center">
-                <p className="text-[10px] text-green-300">Now</p>
-                <p className="text-sm font-bold text-white">{meta.new_label as string}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-white leading-relaxed">{post.body}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3 px-4 py-2 border-t border-white/10">
-          <button
-            onClick={toggleLike}
-            className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${liked ? "text-red-300" : "text-white/60 hover:text-red-300"}`}
-          >
-            <Heart size={13} fill={liked ? "currentColor" : "none"} />
-            <span>{post.like_count > 0 ? post.like_count : ""}</span>
-          </button>
-          <button
-            onClick={() => setShowComments(!showComments)}
-            className="flex items-center gap-1.5 text-xs font-medium text-white/60 hover:text-white/90"
-          >
-            <MessageSquare size={13} />
-            <span>{post.comment_count > 0 ? post.comment_count : "Comment"}</span>
-          </button>
-        </div>
-        {showComments && <div className="bg-white rounded-b-xl"><CommentSection postId={post.id} token={token} /></div>}
-      </div>
-    );
-  }
-
-  // Standard / milestone / achievement post
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-start gap-3 p-4 pb-3">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0"
-          style={{ background: "#1a5c2a" }}
-        >
-          {initials(post.user?.name ?? "")}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/arena/profile/${post.user_id}`} className="text-sm font-semibold text-gray-900 hover:underline">
-              {post.user?.name}
+    <div style={{
+      backgroundColor: "#fff", borderRadius: 12,
+      border: "1px solid #e5e5e5", padding: 16, marginBottom: 10,
+    }}>
+      {/* Auto-post banner */}
+      {post.is_auto && typeMeta.label && (
+        <div style={{
+          marginBottom: 10, padding: "6px 10px", borderRadius: 8,
+          backgroundColor: typeMeta.color + "18",
+          borderLeft: `3px solid ${typeMeta.color}`,
+          fontSize: 12, fontWeight: 600, color: typeMeta.color,
+        }}>🎯 {typeMeta.label}</div>
+      )}
+
+      {/* Header */}
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <Link href={`/arena/profile/${post.user?.id}`} style={{ textDecoration: "none" }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+            backgroundColor: "#1a5c2a", color: "#fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 700,
+          }}>{initials(post.user?.name ?? "?")}</div>
+        </Link>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Link href={`/arena/profile/${post.user?.id}`} style={{ textDecoration: "none" }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>{post.user?.name ?? "User"}</span>
             </Link>
-            <span className={`text-[10px] capitalize border px-1.5 py-0.5 rounded-full font-medium ${ROLE_BADGE[post.user?.role] ?? ""}`}>
-              {post.user?.role}
-            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: "1px 7px", borderRadius: 20,
+              backgroundColor: badge.color + "18", color: badge.color,
+            }}>{badge.label}</span>
             {post.user?.sport && (
-              <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full border border-gray-100">
+              <span style={{ fontSize: 11, color: "#888", backgroundColor: "#f0f0f0", padding: "1px 7px", borderRadius: 20 }}>
                 {post.user.sport}
               </span>
             )}
-            {post.user?.thuto_score != null && (
-              <span className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
-                post.user.thuto_score >= 80
-                  ? "text-green-700 bg-green-50 border-green-200"
-                  : post.user.thuto_score >= 60
-                  ? "text-amber-700 bg-amber-50 border-amber-200"
-                  : "text-gray-500 bg-gray-50 border-gray-200"
-              }`}>
-                <Zap size={9} />
-                {Math.round(post.user.thuto_score)}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-0.5">
             {post.user?.province && (
-              <span className="text-[10px] text-gray-400">{post.user.province}</span>
+              <span style={{ fontSize: 11, color: "#888" }}>· {post.user.province}</span>
             )}
-            <span className="text-[10px] text-gray-400">{timeAgo(post.created_at)}</span>
           </div>
+          <div style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>{timeAgo(post.created_at)}</div>
         </div>
       </div>
 
-      {post.post_type !== "standard" && (
-        <div className={`mx-4 mb-3 flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg ${
-          post.post_type === "milestone"
-            ? "bg-amber-50 text-amber-700 border border-amber-200"
-            : "bg-purple-50 text-purple-700 border border-purple-200"
-        }`}>
-          {typeMeta.icon}
-          <span>{post.milestone_label || typeMeta.label}</span>
-        </div>
+      {/* Body */}
+      <div style={{ marginTop: 10, fontSize: 14, color: "#333", lineHeight: 1.6 }}>{post.body}</div>
+
+      {/* Milestone label */}
+      {post.milestone_label && !post.is_auto && (
+        <div style={{
+          marginTop: 8, padding: "6px 12px", borderRadius: 8,
+          backgroundColor: typeMeta.color ? typeMeta.color + "18" : "#f5f5f5",
+          fontSize: 13, fontWeight: 600, color: typeMeta.color || "#555",
+          display: "inline-block",
+        }}>🏅 {post.milestone_label}</div>
       )}
 
-      <p className="px-4 pb-3 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
-        {post.body}
-      </p>
+      {/* Tags */}
+      <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+        {post.sport && (
+          <span style={{ fontSize: 11, color: "#1a5c2a", backgroundColor: "#1a5c2a18", padding: "2px 8px", borderRadius: 20 }}>
+            #{post.sport}
+          </span>
+        )}
+        {post.province && (
+          <span style={{ fontSize: 11, color: "#666", backgroundColor: "#f0f0f0", padding: "2px 8px", borderRadius: 20 }}>
+            #{post.province}
+          </span>
+        )}
+      </div>
 
-      {(post.sport || post.province) && (
-        <div className="px-4 pb-3 flex gap-2">
-          {post.sport && (
-            <span className="text-[10px] text-green-700 bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">
-              #{post.sport}
-            </span>
-          )}
-          {post.province && (
-            <span className="text-[10px] text-gray-500 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">
-              #{post.province}
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="flex items-center gap-4 px-4 py-2 border-t border-gray-100">
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 16, marginTop: 12, paddingTop: 10, borderTop: "1px solid #f5f5f5" }}>
         <button
           onClick={toggleLike}
-          className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
-            liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
-          }`}
+          style={{
+            display: "flex", alignItems: "center", gap: 5,
+            background: "none", border: "none", cursor: "pointer",
+            color: liked ? "#dc2626" : "#888", fontSize: 13, fontWeight: 500,
+            padding: 0,
+          }}
         >
-          <Heart size={14} fill={liked ? "currentColor" : "none"} />
-          <span>{post.like_count > 0 ? post.like_count : ""}</span>
+          <Heart size={16} fill={liked ? "#dc2626" : "none"} />
+          {likeCount > 0 && <span>{likeCount}</span>}
         </button>
         <button
-          onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-blue-500 transition-colors"
+          onClick={() => setShowComments((s) => !s)}
+          style={{
+            display: "flex", alignItems: "center", gap: 5,
+            background: "none", border: "none", cursor: "pointer",
+            color: "#888", fontSize: 13, fontWeight: 500, padding: 0,
+          }}
         >
-          <MessageSquare size={14} />
-          <span>{post.comment_count > 0 ? post.comment_count : "Comment"}</span>
+          <MessageSquare size={16} />
+          {post.comment_count > 0 && <span>{post.comment_count}</span>}
         </button>
       </div>
 
+      {/* Comments */}
       {showComments && <CommentSection postId={post.id} token={token} />}
     </div>
   );
 }
 
-// ── Feed Skeleton ─────────────────────────────────────────────────────────────
+// ── FeedSkeleton ──────────────────────────────────────────────────────────────
 
 function FeedSkeleton() {
   return (
-    <>
+    <div>
       {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
-          <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3 bg-gray-200 rounded w-32" />
-              <div className="h-2 bg-gray-100 rounded w-20" />
-              <div className="h-4 bg-gray-100 rounded w-full mt-2" />
-              <div className="h-4 bg-gray-100 rounded w-3/4" />
+        <div key={i} style={{
+          backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5",
+          padding: 16, marginBottom: 10,
+        }}>
+          <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#eee" }} className="animate-pulse" />
+            <div style={{ flex: 1 }}>
+              <div style={{ height: 14, width: "40%", backgroundColor: "#eee", borderRadius: 4, marginBottom: 6 }} className="animate-pulse" />
+              <div style={{ height: 11, width: "25%", backgroundColor: "#eee", borderRadius: 4 }} className="animate-pulse" />
             </div>
           </div>
+          <div style={{ height: 14, width: "90%", backgroundColor: "#eee", borderRadius: 4, marginBottom: 6 }} className="animate-pulse" />
+          <div style={{ height: 14, width: "70%", backgroundColor: "#eee", borderRadius: 4 }} className="animate-pulse" />
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
-// ── Scouts Online Widget ──────────────────────────────────────────────────────
+// ── ScoutsOnlineWidget ────────────────────────────────────────────────────────
 
-function ScoutsOnlineWidget({ token }: { token: string | null | undefined }) {
+function ScoutsOnlineWidget({ token }: { token: string | null }) {
   const [scouts, setScouts] = useState<ScoutOnline[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!token) return;
     fetch(`${API}/arena/scouts-online`, { headers: authHeaders(token) })
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (d) setScouts(safeArray<ScoutOnline>(d.data ?? d).slice(0, 3));
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then((r) => r.json())
+      .then((d) => setScouts(safeArray(d.data ?? d)))
+      .catch(() => {});
   }, [token]);
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-2 h-2 rounded-full bg-gray-200 animate-pulse" />
-          <div className="h-3 bg-gray-200 rounded w-28 animate-pulse" />
-        </div>
-        {[1, 2].map((n) => (
-          <div key={n} className="flex items-center gap-2 mb-2 animate-pulse">
-            <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0" />
-            <div className="flex-1 space-y-1">
-              <div className="h-2.5 bg-gray-200 rounded w-3/4" />
-              <div className="h-2 bg-gray-100 rounded w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   if (scouts.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-        <p className="text-xs font-bold text-gray-900">Scouts Online Now</p>
+    <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14, marginBottom: 10 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#22c55e", display: "inline-block" }} />
+        Scouts Online ({scouts.length})
       </div>
-      <div className="space-y-2.5">
-        {scouts.map((scout) => (
-          <div key={scout.id} className="flex items-center gap-2">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-              style={{ background: "#6b21a8" }}
-            >
-              {initials(scout.name)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-gray-900 truncate">{scout.org}</p>
-              <p className="text-[10px] text-gray-400 truncate">{scout.province}</p>
-            </div>
-            <Link
-              href={`/arena/profile/${scout.id}`}
-              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border flex-shrink-0"
-              style={{ borderColor: "#6b21a8", color: "#6b21a8" }}
-            >
-              View
-            </Link>
+      {scouts.slice(0, 3).map((s) => (
+        <div key={s.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#7c3aed18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#7c3aed" }}>
+            {initials(s.name)}
           </div>
-        ))}
-        <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-100">
-          {scouts.length} scout{scouts.length !== 1 ? "s" : ""} browsing now
-        </p>
-      </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#333" }}>{s.name}</div>
+            <div style={{ fontSize: 11, color: "#888" }}>{s.org} · {s.province}</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-// ── Right Side Panel ──────────────────────────────────────────────────────────
+// ── RightPanel ────────────────────────────────────────────────────────────────
 
-interface LeaderboardEntry {
-  id: string;
-  initials: string;
-  sport: string;
-  province: string;
-  projected_score: number;
-  peak_level_label: string;
-}
-
-interface SuggestedUser {
-  id: string;
-  name: string;
-  role: string;
-  sport: string;
-  mutual_connections: number;
-}
-
-const STATIC_TRENDING: TrendingTag[] = [
-  { tag: "ZimbabweFootball", count: 842 },
-  { tag: "PremierSoccer",    count: 631 },
-  { tag: "NASHNetball",      count: 419 },
-  { tag: "ChibukuCup",       count: 287 },
-  { tag: "GrassrootsSports", count: 194 },
-];
-
-function RightPanel({ token }: { token: string | null | undefined }) {
-  const [leaders, setLeaders] = useState<LeaderboardEntry[]>([]);
-  const [suggested, setSuggested] = useState<SuggestedUser[]>([]);
-  const [trending, setTrending] = useState<TrendingTag[]>(STATIC_TRENDING);
-  const [loadingL, setLoadingL] = useState(true);
-  const [loadingS, setLoadingS] = useState(true);
+function RightPanel({ token, user }: { token: string | null; user: { id: string; name: string; role: string } | null }) {
+  const [leaderboard, setLeaderboard] = useState<Array<{ id: string; initials: string; sport: string; province: string; projected_score: number; peak_level_label: string }>>([]);
+  const [suggested,   setSuggested]   = useState<Array<{ id: string; name: string; role: string; sport: string; province: string; is_following: boolean }>>([]);
+  const [trending,    setTrending]    = useState<TrendingTag[]>([]);
 
   useEffect(() => {
-    fetch(`${API}/arena/leaderboard`, { headers: authHeaders(token) })
-      .then((r) => r.json())
-      .then((d) => setLeaders(safeArray<LeaderboardEntry>(d.data ?? d).slice(0, 5)))
-      .catch(() => {})
-      .finally(() => setLoadingL(false));
+    const h = authHeaders(token);
+    Promise.allSettled([
+      fetch(`${API}/arena/leaderboard`,  { headers: h }).then((r) => r.json()),
+      fetch(`${API}/arena/suggested`,    { headers: h }).then((r) => r.json()),
+      fetch(`${API}/arena/trending`,     { headers: h }).then((r) => r.json()),
+    ]).then(([lb, sg, tr]) => {
+      if (lb.status === "fulfilled") setLeaderboard(safeArray((lb.value as {data?: unknown}).data ?? lb.value));
+      if (sg.status === "fulfilled") setSuggested(safeArray((sg.value as {data?: unknown}).data ?? sg.value));
+      if (tr.status === "fulfilled") setTrending(safeArray((tr.value as {data?: unknown}).data ?? tr.value));
+    });
   }, [token]);
 
-  useEffect(() => {
-    fetch(`${API}/arena/suggested`, { headers: authHeaders(token) })
-      .then((r) => r.json())
-      .then((d) => setSuggested(safeArray<SuggestedUser>(d.data ?? d).slice(0, 3)))
-      .catch(() => {})
-      .finally(() => setLoadingS(false));
-
-    // Try to fetch trending tags — fall back to static if not available
-    fetch(`${API}/arena/trending`, { headers: authHeaders(token) })
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d) setTrending(safeArray<TrendingTag>(d.data ?? d).slice(0, 5)); })
-      .catch(() => {});
-  }, [token]);
+  const follow = async (userId: string) => {
+    if (!token) return;
+    setSuggested((prev) => prev.map((u) => u.id === userId ? { ...u, is_following: !u.is_following } : u));
+    await fetch(`${API}/arena/follow/${userId}`, { method: "POST", headers: authHeaders(token) }).catch(() => {});
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Arena quick nav */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <p className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wide">Arena</p>
-        <div className="space-y-1">
-          {[
-            { label: "Activity Feed",     href: "/arena",               active: true },
-            { label: "My Network",        href: "/arena/network" },
-            { label: "Discover Athletes", href: "/arena/discover" },
-            { label: "Messages",          href: "/arena/messages" },
-            { label: "Arena Alerts",      href: "/arena/notifications" },
-          ].map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg transition-colors ${
-                l.active ? "bg-green-50 text-green-700 font-semibold" : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              {l.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Scouts online widget */}
-      <ScoutsOnlineWidget token={token} />
-
-      {/* Top Players leaderboard */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy size={13} style={{ color: "#c8962a" }} />
-          <p className="text-xs font-bold text-gray-900">Top Players</p>
-        </div>
-        {loadingL ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="flex items-center gap-2 animate-pulse">
-                <div className="w-6 h-6 bg-gray-200 rounded-full flex-shrink-0" />
-                <div className="flex-1 space-y-1">
-                  <div className="h-2.5 bg-gray-200 rounded w-3/4" />
-                  <div className="h-2 bg-gray-100 rounded w-1/2" />
-                </div>
-              </div>
-            ))}
+    <aside style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* THUTO Leaderboard */}
+      {leaderboard.length > 0 && (
+        <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <Trophy size={13} color="#c8962a" /> THUTO Top 50
           </div>
-        ) : leaders.length === 0 ? (
-          <p className="text-[11px] text-gray-400">No leaderboard data yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {leaders.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-2">
-                <span className="text-[10px] font-bold w-4 text-center" style={{ color: i === 0 ? "#c8962a" : "#9ca3af" }}>
-                  {i + 1}
-                </span>
-                <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
-                  style={{ background: "#1a5c2a" }}
-                >
+          {leaderboard.slice(0, 5).map((p, i) => (
+            <div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+              <div style={{ width: 18, fontSize: 11, fontWeight: 700, color: i < 3 ? "#c8962a" : "#aaa", textAlign: "center" }}>
+                {i + 1}
+              </div>
+              <Link href={`/arena/profile/${p.id}`} style={{ display: "flex", gap: 6, alignItems: "center", textDecoration: "none", flex: 1 }}>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", backgroundColor: "#1a5c2a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>
                   {p.initials}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-gray-900 truncate">{p.peak_level_label}</p>
-                  <p className="text-[10px] text-gray-400 truncate">{p.sport} · {p.province}</p>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#333" }}>{p.initials}</div>
+                  <div style={{ fontSize: 10, color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.peak_level_label}</div>
                 </div>
-                <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "#c8962a" }}>
-                  {Math.round(p.projected_score)}
-                </span>
-              </div>
-            ))}
-            <Link
-              href="/talent-leaderboard"
-              className="block text-center text-[10px] font-semibold mt-2 pt-2 border-t border-gray-100"
-              style={{ color: "#1a5c2a" }}
-            >
-              Full Leaderboard →
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Trending in Zimbabwe */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingUp size={13} style={{ color: "#1a5c2a" }} />
-          <p className="text-xs font-bold text-gray-900">Trending in Zimbabwe</p>
-        </div>
-        <div className="space-y-2">
-          {trending.map((t, i) => (
-            <Link
-              key={t.tag}
-              href={`/arena/discover?q=${encodeURIComponent(t.tag)}`}
-              className="flex items-center justify-between group"
-            >
-              <div>
-                <p className="text-[11px] font-semibold text-gray-900 group-hover:text-green-700 transition-colors">
-                  #{t.tag}
-                </p>
-                <p className="text-[10px] text-gray-400">{t.count.toLocaleString()} posts</p>
-              </div>
-              <span className="text-[10px] text-gray-300">{i + 1}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Suggested for you */}
-      {token && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Users size={13} style={{ color: "#1a5c2a" }} />
-            <p className="text-xs font-bold text-gray-900">Suggested for You</p>
-          </div>
-          {loadingS ? (
-            <div className="space-y-3">
-              {[1, 2].map((n) => (
-                <div key={n} className="flex items-center gap-2 animate-pulse">
-                  <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0" />
-                  <div className="flex-1 space-y-1">
-                    <div className="h-2.5 bg-gray-200 rounded w-2/3" />
-                    <div className="h-2 bg-gray-100 rounded w-1/2" />
-                  </div>
-                  <div className="w-12 h-5 bg-gray-200 rounded flex-shrink-0" />
-                </div>
-              ))}
-            </div>
-          ) : suggested.length === 0 ? (
-            <p className="text-[11px] text-gray-400">No suggestions right now.</p>
-          ) : (
-            <div className="space-y-3">
-              {suggested.map((u) => (
-                <div key={u.id} className="flex items-center gap-2">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                    style={{ background: "#1a5c2a" }}
-                  >
-                    {initials(u.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-gray-900 truncate">{u.name}</p>
-                    <p className="text-[10px] text-gray-400 capitalize truncate">
-                      {u.role}{u.sport ? ` · ${u.sport}` : ""}
-                    </p>
-                  </div>
-                  <Link
-                    href="/arena/network"
-                    className="text-[10px] font-bold px-2 py-1 rounded-lg flex-shrink-0"
-                    style={{ backgroundColor: "#c8962a", color: "#fff" }}
-                  >
-                    Connect
-                  </Link>
-                </div>
-              ))}
-              <Link
-                href="/arena/discover"
-                className="block text-center text-[10px] font-semibold mt-1 pt-2 border-t border-gray-100"
-                style={{ color: "#1a5c2a" }}
-              >
-                Discover More Athletes →
               </Link>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1a5c2a", flexShrink: 0 }}>{p.projected_score}</div>
             </div>
-          )}
+          ))}
+          <Link href="/talent-leaderboard" style={{ display: "block", textAlign: "center", marginTop: 6, fontSize: 12, color: "#1a5c2a", fontWeight: 600, textDecoration: "none" }}>
+            View full leaderboard →
+          </Link>
         </div>
       )}
-    </div>
+
+      {/* Suggested to follow */}
+      {suggested.length > 0 && (
+        <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10 }}>Suggested to Follow</div>
+          {suggested.slice(0, 3).map((u) => (
+            <div key={u.id} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+              <Link href={`/arena/profile/${u.id}`} style={{ textDecoration: "none" }}>
+                <div style={{ width: 30, height: 30, borderRadius: "50%", backgroundColor: "#1a5c2a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                  {initials(u.name)}
+                </div>
+              </Link>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#333", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
+                <div style={{ fontSize: 11, color: "#888", textTransform: "capitalize" }}>{u.role} · {u.province || "Zimbabwe"}</div>
+              </div>
+              <button
+                onClick={() => follow(u.id)}
+                style={{
+                  padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                  border: `1px solid ${u.is_following ? "#e0e0e0" : "#c8962a"}`,
+                  backgroundColor: u.is_following ? "#fff" : "#c8962a",
+                  color: u.is_following ? "#555" : "#fff", cursor: "pointer", flexShrink: 0,
+                }}
+              >{u.is_following ? "Following" : "Follow"}</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Trending tags */}
+      {trending.length > 0 && (
+        <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+            <TrendingUp size={13} color="#1a5c2a" /> Trending in Zimbabwe
+          </div>
+          {trending.slice(0, 6).map((t) => (
+            <div key={t.tag} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: "#1a5c2a", fontWeight: 500 }}>#{t.tag}</span>
+              <span style={{ fontSize: 11, color: "#aaa" }}>{t.count} posts</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Arena nav links */}
+      <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 10 }}>Arena</div>
+        {[
+          { href: "/arena",              label: "Feed",              icon: <Activity size={13} /> },
+          { href: "/arena/network",      label: "My Network",        icon: <Users size={13} /> },
+          { href: "/arena/clubs",        label: "Clubs",             icon: <Shield size={13} /> },
+          { href: "/arena/recruitment",  label: "Talent Board",      icon: <Briefcase size={13} /> },
+          { href: "/arena/messages",     label: "Messages",          icon: <MessageSquare size={13} /> },
+          { href: "/arena/discover",     label: "Discover Athletes", icon: <Search size={13} /> },
+        ].map((item) => (
+          <Link key={item.href} href={item.href} style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "6px 0", fontSize: 12, color: "#555", textDecoration: "none",
+            borderBottom: "1px solid #f5f5f5",
+          }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#1a5c2a")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#555")}
+          >
+            <span style={{ color: "#1a5c2a" }}>{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </aside>
   );
 }
 
-// ── Left Side Panel ───────────────────────────────────────────────────────────
+// ── LeftPanel ─────────────────────────────────────────────────────────────────
 
-function LeftPanel({ token }: { token: string | null | undefined }) {
-  const { user } = useAuthStore();
+function LeftPanel({
+  user,
+  token,
+}: {
+  user: { id: string; name: string; role: string } | null;
+  token: string | null;
+}) {
   const [panelData, setPanelData] = useState<LeftPanelData>({
-    thuto_score: null,
-    peak_level_label: null,
-    scout_views: 0,
-    followers: 0,
-    following: 0,
-    sessions: 0,
+    scout_views: 0, following: 0, followers: 0, sessions: 0,
+    peak_level_label: null, thuto_score: null,
   });
 
   useEffect(() => {
-    if (!user?.id || !token) return;
-
-    // Fetch arena profile (THUTO score, followers data) + scout view count in parallel
+    if (!user || !token) return;
     Promise.allSettled([
       fetch(`${API}/arena/profile/${user.id}`, { headers: authHeaders(token) }).then((r) => r.json()),
       fetch(`${API}/players/${user.id}/view-count`, { headers: authHeaders(token) }).then((r) => r.json()),
-    ]).then(([profileRes, viewRes]) => {
-      const profile = profileRes.status === "fulfilled" ? profileRes.value : null;
-      const viewData = viewRes.status === "fulfilled" ? viewRes.value : null;
-
+    ]).then(([profile, viewCount]) => {
+      const p = profile.status === "fulfilled" ? profile.value : null;
+      const vc = viewCount.status === "fulfilled" ? viewCount.value : null;
       setPanelData({
-        thuto_score: profile?.prediction?.projected_score ?? null,
-        peak_level_label: profile?.prediction?.peak_level_label ?? null,
-        scout_views: viewData?.count ?? 0,
-        followers: profile?.user?.followers_count ?? 0,
-        following: profile?.user?.following_count ?? 0,
-        sessions: 0,
+        scout_views:      vc?.count ?? 0,
+        following:        p?.user?.following_count ?? p?.following ?? 0,
+        followers:        p?.user?.followers_count ?? p?.followers ?? 0,
+        sessions:         p?.user?.sessions ?? 0,
+        peak_level_label: p?.user?.peak_level_label ?? p?.prediction?.peak_level_label ?? null,
+        thuto_score:      p?.user?.thuto_score ?? p?.prediction?.projected_score ?? null,
       });
     });
-  }, [user?.id, token]);
+  }, [user, token]);
 
-  const scoreColor =
-    (panelData.thuto_score ?? 0) >= 75 ? "#2ecc71" :
-    (panelData.thuto_score ?? 0) >= 55 ? "#f0b429" : "#e74c3c";
+  if (!user) {
+    return (
+      <aside>
+        <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 20, textAlign: "center" }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 6 }}>Join The Arena</div>
+          <div style={{ fontSize: 13, color: "#888", marginBottom: 14 }}>Connect with Zimbabwean athletes</div>
+          <Link href="/register" style={{ display: "block", padding: "8px 16px", borderRadius: 20, backgroundColor: "#1a5c2a", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 8 }}>
+            Create Account
+          </Link>
+          <Link href="/login" style={{ display: "block", padding: "8px 16px", borderRadius: 20, border: "1px solid #e0e0e0", color: "#555", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+            Sign In
+          </Link>
+        </div>
+      </aside>
+    );
+  }
 
-  const ACHIEVEMENT_BADGES = [
-    { label: "TFZ School",   icon: <Shield size={10} />,       active: user?.role === "player" },
-    { label: "Verified",     icon: <CheckCircle size={10} />,  active: true },
-    { label: "Active",       icon: <Flame size={10} />,        active: true },
-  ].filter((b) => b.active);
+  const badge = ROLE_BADGE[user.role] ?? ROLE_BADGE.player;
 
   return (
-    <div className="space-y-3">
-      {/* Identity card */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="h-12" style={{ background: "linear-gradient(135deg, #1a5c2a, #2ecc71)" }} />
-        <div className="px-4 pb-4 -mt-5">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black border-2 border-white"
-            style={{ background: "#1a5c2a" }}
-          >
-            {initials(user?.name ?? "")}
-          </div>
-          <p className="mt-2 text-sm font-semibold text-gray-900">{user?.name}</p>
-          <span className={`text-[10px] capitalize border px-1.5 py-0.5 rounded-full font-medium ${ROLE_BADGE[user?.role ?? ""] ?? ""}`}>
-            {user?.role}
-          </span>
+    <aside>
+      {/* Profile card */}
+      <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", overflow: "hidden", marginBottom: 10 }}>
+        {/* Green header strip */}
+        <div style={{ height: 48, backgroundColor: "#1a5c2a" }} />
+        <div style={{ padding: "0 16px 16px", marginTop: -24 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: "50%",
+            backgroundColor: "#1a5c2a", border: "3px solid #fff",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 8,
+          }}>{initials(user.name)}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>{user.name}</div>
+          <span style={{
+            fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
+            backgroundColor: badge.color + "18", color: badge.color,
+          }}>{badge.label}</span>
 
           {/* THUTO score */}
           {panelData.thuto_score !== null && (
-            <div className="mt-3 flex items-center gap-2">
-              <div className="text-sm font-black" style={{ color: scoreColor }}>
-                {Math.round(panelData.thuto_score)}
-              </div>
-              <div className="flex-1">
-                <p className="text-[10px] font-semibold text-gray-500">THUTO Score</p>
-                {panelData.peak_level_label && (
-                  <p className="text-[10px] text-gray-400 truncate">{panelData.peak_level_label}</p>
-                )}
-              </div>
+            <div style={{
+              marginTop: 10, padding: "8px 10px", borderRadius: 8,
+              backgroundColor: "#1a5c2a18", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 11, color: "#888", marginBottom: 2 }}>THUTO Score</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#1a5c2a" }}>{panelData.thuto_score}</div>
+              {panelData.peak_level_label && (
+                <div style={{ fontSize: 11, color: "#555" }}>{panelData.peak_level_label}</div>
+              )}
             </div>
           )}
 
-          {/* Stats grid */}
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          {/* Stats 2×2 grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginTop: 12, border: "1px solid #e5e5e5", borderRadius: 8, overflow: "hidden" }}>
             {[
-              { label: "Scout Views", value: panelData.scout_views, icon: <Eye size={10} /> },
-              { label: "Following",   value: panelData.following,   icon: <Users size={10} /> },
-            ].map((s) => (
-              <div key={s.label} className="bg-gray-50 rounded-lg p-2 text-center">
-                <div className="flex items-center justify-center gap-1 text-gray-400 mb-0.5">
-                  {s.icon}
+              { label: "Scout Views", value: panelData.scout_views, icon: <Eye size={12} /> },
+              { label: "Following",   value: panelData.following,   icon: <Users size={12} /> },
+              { label: "Followers",   value: panelData.followers,   icon: <Users size={12} /> },
+              { label: "Sessions",    value: panelData.sessions,     icon: <Activity size={12} /> },
+            ].map((s, i) => (
+              <div
+                key={s.label}
+                style={{
+                  padding: "10px 8px", textAlign: "center",
+                  borderRight: i % 2 === 0 ? "1px solid #e5e5e5" : "none",
+                  borderTop: i >= 2 ? "1px solid #e5e5e5" : "none",
+                }}
+              >
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1a1a1a" }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: "#888", marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+                  <span style={{ color: "#1a5c2a" }}>{s.icon}</span>
+                  {s.label}
                 </div>
-                <p className="text-sm font-bold text-gray-900">{s.value}</p>
-                <p className="text-[9px] text-gray-400">{s.label}</p>
               </div>
             ))}
           </div>
 
-          {/* Achievement badges */}
-          {ACHIEVEMENT_BADGES.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {ACHIEVEMENT_BADGES.map((b) => (
-                <span
-                  key={b.label}
-                  className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border"
-                  style={{ borderColor: "#1a5c2a", color: "#1a5c2a", background: "#f0fdf4" }}
-                >
-                  {b.icon}
-                  {b.label}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* CTA */}
           <Link
-            href={user?.id ? `/arena/profile/${user.id}` : "/arena"}
-            className="mt-3 block text-center text-[11px] font-semibold py-1.5 rounded-lg border transition-colors hover:bg-gray-50"
-            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
-          >
-            View my profile →
-          </Link>
+            href={`/arena/profile/${user.id}`}
+            style={{
+              display: "block", marginTop: 12, textAlign: "center",
+              padding: "7px 0", borderRadius: 20, border: "1px solid #e0e0e0",
+              fontSize: 12, fontWeight: 600, color: "#555", textDecoration: "none",
+            }}
+          >View my profile</Link>
         </div>
       </div>
 
-      {/* Hub navigation menu */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">My Hubs</p>
-        <div className="space-y-0.5">
-          {[
-            { label: "Player Hub",    href: "/player",   icon: <Activity size={12} /> },
-            { label: "Coach Hub",     href: "/coach",    icon: <Users size={12} /> },
-            { label: "Scout Hub",     href: "/scout",    icon: <Eye size={12} /> },
-            { label: "Fan Hub",       href: "/fan-hub",  icon: <Star size={12} /> },
-            { label: "Analysis Hub",  href: "/analyst",  icon: <TrendingUp size={12} /> },
-          ].filter((h) => {
-            if (user?.role === "player") return ["player", "fan-hub"].some((r) => h.href.includes(r));
-            if (user?.role === "coach") return ["coach", "fan-hub", "analyst"].some((r) => h.href.includes(r));
-            if (user?.role === "scout") return ["scout", "fan-hub"].some((r) => h.href.includes(r));
-            return true;
-          }).map((h) => (
-            <Link
-              key={h.href}
-              href={h.href}
-              className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-2 py-1.5 rounded-lg transition-colors"
-            >
-              <span className="text-gray-400">{h.icon}</span>
-              {h.label}
-            </Link>
-          ))}
-        </div>
-
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-3 mb-2">Community</p>
-        <div className="space-y-0.5">
-          {[
-            { label: "Talent Board",     href: "/arena/recruitment", icon: <Briefcase size={12} /> },
-            { label: "National Talent",  href: "/talent-leaderboard", icon: <Trophy size={12} /> },
-            { label: "My Passport",      href: "/player/passport",   icon: <BookOpen size={12} /> },
-          ].map((h) => (
-            <Link
-              key={h.href}
-              href={h.href}
-              className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-2 py-1.5 rounded-lg transition-colors"
-            >
-              <span className="text-gray-400">{h.icon}</span>
-              {h.label}
-            </Link>
-          ))}
-        </div>
+      {/* Quick nav */}
+      <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 8 }}>My Hubs</div>
+        {[
+          { href: "/player",  label: "⚽ Player Hub" },
+          { href: "/coach",   label: "🎽 Coach Hub" },
+          { href: "/scout",   label: "🔍 Scout Hub" },
+          { href: "/fan",     label: "👥 Fan Hub" },
+          { href: "/analyst", label: "📊 Analyst Hub" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            style={{
+              display: "block", padding: "6px 0", fontSize: 12, color: "#555",
+              textDecoration: "none", borderBottom: "1px solid #f5f5f5",
+            }}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#1a5c2a")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#555")}
+          >{item.label}</Link>
+        ))}
       </div>
-    </div>
+    </aside>
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── ArenaFeedPage ─────────────────────────────────────────────────────────────
 
-type FeedTab = "for-you" | "following" | "connections" | "my-school";
+type FeedTab = "for-you" | "following" | "my-school" | "top-50";
 
 const TAB_ENDPOINT: Record<FeedTab, string> = {
-  "for-you":     "/arena/feed",
-  "following":   "/arena/feed/following",
-  "connections": "/arena/feed/connections",
-  "my-school":   "/arena/feed/school",
+  "for-you":    "/arena/feed",
+  "following":  "/arena/feed/following",
+  "my-school":  "/arena/feed/school",
+  "top-50":     "/arena/feed/top50",
 };
 
 const TAB_LABELS: Record<FeedTab, string> = {
-  "for-you":     "All Activity",
-  "following":   "Following",
-  "connections": "Connections",
-  "my-school":   "My School",
+  "for-you":    "All activity",
+  "following":  "Following",
+  "my-school":  "My school",
+  "top-50":     "Top 50",
 };
 
 export default function ArenaFeedPage() {
-  const user  = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
+  const user       = useAuthStore((s) => s.user);
+  const token      = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
+  const [posts,     setPosts]     = useState<ArenaPost[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [page,      setPage]      = useState(1);
+  const [hasMore,   setHasMore]   = useState(true);
+
+  // Wait for Zustand hydration
   const [hydrated, setHydrated] = useState(false);
-  const [tab, setTab] = useState<FeedTab>("for-you");
-  const [posts, setPosts] = useState<ArenaPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Auth hydration
   useEffect(() => {
-    const store = useAuthStore as unknown as { persist?: { hasHydrated: () => boolean; onFinishHydration: (fn: () => void) => () => void } };
-    if (store.persist?.hasHydrated()) {
-      setHydrated(true);
-    } else {
-      const unsub = store.persist?.onFinishHydration(() => setHydrated(true));
-      return unsub;
-    }
-  }, []);
+    if (hasHydrated) { setHydrated(true); return; }
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+    return unsub;
+  }, [hasHydrated]);
 
-  // Fetch unread notification count for bell badge
-  useEffect(() => {
-    if (!token) return;
-    fetch(`${API}/notifications`, { headers: authHeaders(token) })
-      .then((r) => r.json())
-      .then((data) => {
-        const items = safeArray<{ read: boolean }>(data.data ?? data);
-        setUnreadCount(items.filter((n) => !n.read).length);
-      })
-      .catch(() => {});
-  }, [token]);
-
-  async function loadFeed(newTab: FeedTab, newPage: number, replace: boolean) {
-    if (replace) setLoading(true);
-    else setLoadingMore(true);
+  const fetchFeed = async (tab: FeedTab, pg: number, replace = false) => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API}${TAB_ENDPOINT[newTab]}?page=${newPage}`, {
+      const res = await fetch(`${API}${TAB_ENDPOINT[tab]}?page=${pg}&per_page=20`, {
         headers: authHeaders(token),
       });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      const items = safeArray<ArenaPost>(data.data ?? data);
-      const meta = data.meta ?? data;
-      const lastPage = meta.last_page ?? 1;
+      if (!res.ok) { setLoading(false); return; }
+      const json = await res.json();
+      const items: ArenaPost[] = safeArray(json.data ?? json);
       if (replace) {
         setPosts(items);
       } else {
-        setPosts((prev) => [...prev, ...items]);
+        setPosts((prev) => {
+          const ids = new Set(prev.map((p) => p.id));
+          return [...prev, ...items.filter((p) => !ids.has(p.id))];
+        });
       }
-      setHasMore(newPage < lastPage);
+      setHasMore(items.length === 20);
     } catch {
-      if (replace) setPosts([]);
+      // silently fail
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (!hydrated) return;
     setPage(1);
-    loadFeed(tab, 1, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, hydrated, token]);
+    fetchFeed(activeTab, 1, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, hydrated]);
 
-  function loadMore() {
+  const handleTabChange = (tab: FeedTab) => {
+    setActiveTab(tab);
+    setPosts([]);
+    setPage(1);
+  };
+
+  const handlePosted = (post: ArenaPost) => {
+    setPosts((prev) => [post, ...prev]);
+  };
+
+  const loadMore = () => {
     const next = page + 1;
     setPage(next);
-    loadFeed(tab, next, false);
-  }
-
-  function onPosted(post: ArenaPost) {
-    setPosts((prev) => [post, ...prev]);
-  }
+    fetchFeed(activeTab, next, false);
+  };
 
   if (!hydrated) return null;
 
-  const EMPTY_MESSAGES: Record<FeedTab, string> = {
-    "for-you":     "Be the first to post something!",
-    "following":   "Follow athletes to see their posts here.",
-    "connections": "Connect with athletes to see their posts here.",
-    "my-school":   "No posts from your school yet. Be the first!",
-  };
-
   return (
-    <div style={{ background: "#f4f2ee", minHeight: "100vh" }}>
-      <ArenaNav unreadCount={unreadCount} />
+    <div style={{ backgroundColor: "#eaeaea", minHeight: "100vh" }}>
+      <ArenaNav user={user} token={token} />
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* 3-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_260px] gap-5">
+      {/* Main 3-column layout */}
+      <div style={{
+        maxWidth: 1200, margin: "0 auto", padding: "20px 16px",
+        display: "grid",
+        gridTemplateColumns: "240px 1fr 280px",
+        gap: 16,
+        alignItems: "start",
+      }}
+        className="arena-grid"
+      >
+        {/* Left panel */}
+        <LeftPanel user={user} token={token} />
 
-          {/* Left panel — desktop only */}
-          <div className="hidden lg:block">
-            <LeftPanel token={token} />
-          </div>
-
-          {/* Centre: feed */}
-          <div className="space-y-4">
-            {/* Post composer */}
-            <PostComposer onPosted={onPosted} />
-
-            {/* Feed tabs */}
-            <div className="flex bg-white rounded-xl border border-gray-200 overflow-hidden">
-              {(["for-you", "following", "connections", "my-school"] as FeedTab[]).map((t) => (
+        {/* Centre: feed */}
+        <main>
+          {/* Feed tabs */}
+          <div style={{
+            backgroundColor: "#fff", borderRadius: 12,
+            border: "1px solid #e5e5e5", marginBottom: 12,
+            padding: "0 4px",
+          }}>
+            <div style={{ display: "flex", borderBottom: "1px solid #f0f0f0" }}>
+              {(Object.keys(TAB_LABELS) as FeedTab[]).map((tab) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`flex-1 text-xs font-semibold py-2.5 transition-colors border-b-2 ${
-                    tab === t
-                      ? "text-green-700 border-green-600 bg-green-50"
-                      : "text-gray-500 border-transparent hover:bg-gray-50"
-                  }`}
-                >
-                  {TAB_LABELS[t]}
-                </button>
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  style={{
+                    padding: "12px 16px",
+                    fontSize: 13, fontWeight: activeTab === tab ? 700 : 500,
+                    color: activeTab === tab ? "#1a5c2a" : "#888",
+                    background: "none", border: "none", cursor: "pointer",
+                    borderBottom: activeTab === tab ? "2px solid #1a5c2a" : "2px solid transparent",
+                    marginBottom: -1, whiteSpace: "nowrap", transition: "all 0.15s",
+                  }}
+                >{TAB_LABELS[tab]}</button>
               ))}
             </div>
+          </div>
 
-            {/* Feed list */}
-            {loading ? (
-              <FeedSkeleton />
-            ) : posts.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                <p className="text-sm font-semibold text-gray-700 mb-1">Nothing here yet</p>
-                <p className="text-xs text-gray-400">{EMPTY_MESSAGES[tab]}</p>
+          {/* Post composer */}
+          <PostComposer user={user} token={token} onPosted={handlePosted} />
+
+          {/* Scouts online widget */}
+          <ScoutsOnlineWidget token={token} />
+
+          {/* Posts */}
+          {loading && posts.length === 0 ? (
+            <FeedSkeleton />
+          ) : posts.length === 0 ? (
+            <div style={{
+              backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5",
+              padding: 40, textAlign: "center",
+            }}>
+              <div style={{ fontSize: 32, marginBottom: 10 }}>🏟️</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#1a1a1a", marginBottom: 6 }}>The Arena is quiet</div>
+              <div style={{ fontSize: 13, color: "#888" }}>
+                {activeTab === "following"
+                  ? "Follow athletes to see their updates here."
+                  : activeTab === "my-school"
+                  ? "No posts from your school yet."
+                  : "Be the first to post something!"}
               </div>
-            ) : (
-              <>
-                {posts.map((p) => (
-                  <PostCard key={p.id} post={p} token={token} />
-                ))}
-
-                {hasMore && (
+            </div>
+          ) : (
+            <>
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  token={token}
+                  currentUserId={user?.id ?? ""}
+                />
+              ))}
+              {hasMore && (
+                <div style={{ textAlign: "center", padding: "16px 0" }}>
                   <button
                     onClick={loadMore}
-                    disabled={loadingMore}
-                    className="w-full py-2.5 text-xs font-semibold text-gray-500 hover:text-gray-700 bg-white rounded-xl border border-gray-200 transition-colors disabled:opacity-50"
-                  >
-                    {loadingMore ? "Loading…" : "Load more posts"}
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+                    disabled={loading}
+                    style={{
+                      padding: "8px 24px", borderRadius: 20,
+                      border: "1px solid #e0e0e0", backgroundColor: "#fff",
+                      fontSize: 13, color: "#555", cursor: "pointer", fontWeight: 500,
+                    }}
+                  >{loading ? "Loading…" : "Load more"}</button>
+                </div>
+              )}
+            </>
+          )}
+        </main>
 
-          {/* Right panel — desktop only */}
-          <div className="hidden lg:block">
-            <RightPanel token={token} />
-          </div>
-        </div>
-      </main>
+        {/* Right panel */}
+        <RightPanel token={token} user={user} />
+      </div>
+
+      {/* Responsive: collapse to single column on mobile */}
+      <style>{`
+        @media (max-width: 900px) {
+          .arena-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .arena-grid > aside:first-child,
+          .arena-grid > aside:last-child {
+            display: none;
+          }
+        }
+        @media (max-width: 1100px) and (min-width: 901px) {
+          .arena-grid {
+            grid-template-columns: 200px 1fr !important;
+          }
+          .arena-grid > aside:last-child {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
