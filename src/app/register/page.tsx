@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuthStore, roleHomePath, type AuthUser } from '@/lib/auth-store';
@@ -111,11 +111,20 @@ const SELECT = 'w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/1
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
-  const router     = useRouter();
-  const loginStore = useAuthStore((s) => s.login);
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const loginStore   = useAuthStore((s) => s.login);
 
   // Step
   const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const preselect = searchParams.get('role');
+    if (preselect && ROLES.includes(preselect as typeof ROLES[number])) {
+      setRole(preselect as typeof ROLES[number]);
+      setStep(1);
+    }
+  }, [searchParams]);
 
   // Step 1 — Role
   const [role, setRole] = useState<Role>('player');
