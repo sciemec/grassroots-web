@@ -324,7 +324,7 @@ export default async function OrgProfilePage({
             Create your free profile and get discovered by scouts across Zimbabwe.
           </p>
           <Link
-            href="/register"
+            href="/register/who"
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-[#0d1f12] hover:bg-amber-400 transition-colors"
           >
             Create free profile <ArrowRight className="h-4 w-4" />

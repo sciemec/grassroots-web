@@ -23,7 +23,7 @@ export default function GuestBanner() {
 
       <div className="flex items-center gap-2 shrink-0">
         <Link
-          href="/register"
+          href="/register/who"
           className="px-3 py-1 rounded-lg bg-[#1a3a1a] text-[#f0b429] text-xs font-semibold hover:bg-[#0f2614] transition-colors"
         >
           Register Free

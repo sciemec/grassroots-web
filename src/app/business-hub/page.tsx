@@ -130,7 +130,7 @@ function GuestBanner() {
         </div>
         <div className="flex gap-2 shrink-0">
           <Link
-            href="/register"
+            href="/register/who"
             className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-black hover:bg-amber-400 transition-colors"
           >
             Register free

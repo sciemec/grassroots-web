@@ -246,7 +246,7 @@ export default function TournamentPlayerPage() {
             or create a free account to add this player to your shortlist.
           </p>
           <Link
-            href="/register"
+            href="/register/who"
             className="inline-flex items-center gap-2 rounded-xl bg-[#f0b429] px-5 py-2.5 text-sm font-bold text-[#0a1f0e]"
           >
             <Star className="h-4 w-4" /> Create Scout Account — Free
@@ -259,7 +259,7 @@ export default function TournamentPlayerPage() {
             Player — claim this profile and take control of your career
           </p>
           <Link
-            href="/register"
+            href="/register/who"
             className="inline-block text-sm font-semibold text-[#f0b429] hover:underline"
           >
             Join Grassroots Sports — Free →

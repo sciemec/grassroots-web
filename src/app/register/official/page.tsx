@@ -547,7 +547,7 @@ export default function OfficialRegistrationPage() {
                 Print Registration Card
               </button>
               <Link
-                href="/register"
+                href="/register/who"
                 className="block w-full py-3 rounded-xl bg-[#FFD700] text-[#0a1a0e] text-sm font-semibold hover:bg-[#FFE44D] transition-all"
               >
                 Create Player Account →
@@ -569,7 +569,7 @@ export default function OfficialRegistrationPage() {
               </button>
             ) : (
               <Link
-                href="/register"
+                href="/register/who"
                 className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all text-center"
               >
                 ← Back
@@ -607,7 +607,7 @@ export default function OfficialRegistrationPage() {
         {step < 6 && (
           <p className="text-center text-white/20 text-xs mt-4">
             Want a quick account instead?{' '}
-            <Link href="/register" className="text-[#FFD700]/60 hover:text-[#FFD700] transition-colors">
+            <Link href="/register/who" className="text-[#FFD700]/60 hover:text-[#FFD700] transition-colors">
               Quick registration
             </Link>
           </p>

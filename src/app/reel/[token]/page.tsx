@@ -369,7 +369,7 @@ export default function PublicReelPage() {
           </p>
           <div className="flex items-center gap-4 text-xs text-green-400/50">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
-            <Link href="/register" className="hover:text-white transition-colors">Join Free</Link>
+            <Link href="/register/who" className="hover:text-white transition-colors">Join Free</Link>
             <Link href="/register?role=scout" className="hover:text-white transition-colors">I&apos;m a Scout</Link>
           </div>
           <p className="mt-2 text-xs text-green-400/30">

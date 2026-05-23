@@ -363,7 +363,7 @@ export default function BusinessRegisterPage() {
             </button>
           ) : (
             <Link
-              href="/register"
+              href="/register/who"
               className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all text-center"
             >
               Back

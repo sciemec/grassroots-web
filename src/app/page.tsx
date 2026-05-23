@@ -140,7 +140,7 @@ export default function LandingPage() {
             Sign in
           </Link>
           <Link
-            href="/register"
+            href="/register/who"
             style={{
               padding: "7px 18px",
               borderRadius: 20,

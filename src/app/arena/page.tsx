@@ -911,7 +911,7 @@ function LeftPanel({
         <div style={{ backgroundColor: "#fff", borderRadius: 12, border: "1px solid #e5e5e5", padding: 20, textAlign: "center" }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 6 }}>Join The Arena</div>
           <div style={{ fontSize: 13, color: "#888", marginBottom: 14 }}>Connect with Zimbabwean athletes</div>
-          <Link href="/register" style={{ display: "block", padding: "8px 16px", borderRadius: 20, backgroundColor: "#1a5c2a", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 8 }}>
+          <Link href="/register/who" style={{ display: "block", padding: "8px 16px", borderRadius: 20, backgroundColor: "#1a5c2a", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none", marginBottom: 8 }}>
             Create Account
           </Link>
           <Link href="/login" style={{ display: "block", padding: "8px 16px", borderRadius: 20, border: "1px solid #e0e0e0", color: "#555", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>

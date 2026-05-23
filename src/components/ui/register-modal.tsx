@@ -63,7 +63,7 @@ export function GuestGateProvider({ children }: { children: React.ReactNode }) {
 
             <div className="space-y-3">
               <Link
-                href="/register"
+                href="/register/who"
                 className="block w-full py-3 rounded-xl bg-[#f0b429] text-[#0a1a0e] font-semibold text-sm hover:bg-[#FFE44D] transition-colors"
                 onClick={() => setOpen(false)}
               >

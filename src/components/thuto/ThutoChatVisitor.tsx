@@ -452,7 +452,7 @@ export default function ThutoChatVisitor() {
             </div>
             <p className="mt-1.5 text-center text-[10px] text-white/20">
               Ready to join?{" "}
-              <a href="/register" className="text-teal-400 hover:underline">
+              <a href="/register/who" className="text-teal-400 hover:underline">
                 Sign up free →
               </a>
             </p>

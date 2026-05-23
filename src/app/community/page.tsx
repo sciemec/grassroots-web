@@ -222,7 +222,7 @@ export default function CommunityPage() {
           {!user && (
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
-                href="/register"
+                href="/register/who"
                 className="rounded-full bg-[#f0b429] px-6 py-2.5 text-sm font-bold text-[#1a3a1a] transition hover:bg-[#f5c542]"
               >
                 Join the network
@@ -426,7 +426,7 @@ export default function CommunityPage() {
               Register as a player, coach, or scout and get your work recognised.
             </p>
             <Link
-              href="/register"
+              href="/register/who"
               className="inline-flex items-center gap-2 rounded-full bg-[#f0b429] px-8 py-3 font-bold text-[#1a3a1a] transition hover:bg-[#f5c542]"
             >
               Join GrassRoots Sports <ChevronRight className="h-4 w-4" />

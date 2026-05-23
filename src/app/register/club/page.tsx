@@ -417,7 +417,7 @@ export default function ClubRegistrationPage() {
               <ChevronLeft className="h-4 w-4" /> Back
             </button>
           ) : (
-            <Link href="/register"
+            <Link href="/register/who"
               className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white hover:border-white/30 transition-all">
               <ChevronLeft className="h-4 w-4" /> Back
             </Link>
