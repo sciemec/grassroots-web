@@ -33,6 +33,7 @@ interface ArenaPost {
   province: string | null;
   post_type: "standard" | "milestone" | "achievement" | "scout_activity" | "session_milestone" | "prediction_upgrade";
   milestone_label: string | null;
+  image_url: string | null;
   like_count: number;
   comment_count: number;
   liked: number;
@@ -320,13 +321,59 @@ function PostComposer({
   const [province, setProvince]     = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [expanded, setExpanded]     = useState(false);
+  const [imageFile, setImageFile]   = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const MAX = 280;
+
+  const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return;
+    if (file.size > 5 * 1024 * 1024) return; // 5MB max
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setExpanded(true);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return null;
+    setImageUploading(true);
+    try {
+      const presignRes = await fetch("/api/upload/presigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: imageFile.name,
+          content_type: imageFile.type,
+          folder: "arena",
+        }),
+      });
+      if (!presignRes.ok) return null;
+      const { upload_url, public_url } = await presignRes.json();
+      if (!upload_url) return null;
+      await fetch(upload_url, { method: "PUT", body: imageFile, headers: { "Content-Type": imageFile.type } });
+      return public_url as string | null;
+    } catch {
+      return null;
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!body.trim() || !token) return;
     setSubmitting(true);
     try {
+      const imageUrl = await uploadImage();
       const res = await fetch(`${API}/arena/posts`, {
         method: "POST",
         headers: authHeaders(token),
@@ -336,12 +383,15 @@ function PostComposer({
           milestone_label: postType !== "standard" ? milestoneLabel : undefined,
           sport: sport || undefined,
           province: province || undefined,
+          image_url: imageUrl || undefined,
         }),
       });
       if (res.ok) {
         const json = await res.json();
         onPosted(json.data ?? json);
         setBody(""); setPostType("standard"); setMilestoneLabel(""); setSport(""); setProvince("");
+        setImageFile(null); setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
         setExpanded(false);
       }
     } finally {
@@ -356,6 +406,15 @@ function PostComposer({
       backgroundColor: "#fff", borderRadius: 12,
       border: "1px solid #e5e5e5", padding: 16, marginBottom: 12,
     }}>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        style={{ display: "none" }}
+        onChange={handleImagePick}
+      />
+
       <div style={{ display: "flex", gap: 10 }}>
         <div style={{
           width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
@@ -377,6 +436,29 @@ function PostComposer({
           }}
         />
       </div>
+
+      {/* Image preview */}
+      {imagePreview && (
+        <div style={{ marginTop: 10, paddingLeft: 46, position: "relative", display: "inline-block" }}>
+          <img
+            src={imagePreview}
+            alt="Post image preview"
+            style={{ maxHeight: 200, maxWidth: "100%", borderRadius: 8, display: "block", border: "1px solid #e5e5e5" }}
+          />
+          <button
+            onClick={removeImage}
+            aria-label="Remove image"
+            style={{
+              position: "absolute", top: 6, right: 6,
+              width: 22, height: 22, borderRadius: "50%",
+              backgroundColor: "rgba(0,0,0,0.55)", color: "#fff",
+              border: "none", cursor: "pointer", fontSize: 13,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              lineHeight: 1,
+            }}
+          >×</button>
+        </div>
+      )}
 
       {expanded && (
         <div style={{ marginTop: 12, paddingLeft: 46 }}>
@@ -426,24 +508,39 @@ function PostComposer({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, color: body.length > MAX * 0.85 ? "#dc2626" : "#aaa" }}>
-              {body.length}/{MAX}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 12, color: body.length > MAX * 0.85 ? "#dc2626" : "#aaa" }}>
+                {body.length}/{MAX}
+              </span>
+              {/* Photo picker */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                title="Add photo"
+                style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  background: "none", border: "none", cursor: "pointer",
+                  color: imageFile ? "#1a5c2a" : "#999", fontSize: 12, padding: 0,
+                }}
+              >
+                <Image size={16} />
+                <span style={{ fontSize: 12 }}>{imageFile ? "1 photo" : "Photo"}</span>
+              </button>
+            </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
-                onClick={() => { setExpanded(false); setBody(""); }}
+                onClick={() => { setExpanded(false); setBody(""); removeImage(); }}
                 style={{ padding: "7px 14px", borderRadius: 20, border: "1px solid #e0e0e0", background: "#fff", fontSize: 13, cursor: "pointer", color: "#555" }}
               >Cancel</button>
               <button
                 onClick={handleSubmit}
-                disabled={!body.trim() || submitting || body.length > MAX}
+                disabled={!body.trim() || submitting || imageUploading || body.length > MAX}
                 style={{
                   padding: "7px 18px", borderRadius: 20,
-                  backgroundColor: body.trim() && !submitting ? "#1a5c2a" : "#ccc",
+                  backgroundColor: body.trim() && !submitting && !imageUploading ? "#1a5c2a" : "#ccc",
                   color: "#fff", fontSize: 13, fontWeight: 600,
-                  border: "none", cursor: body.trim() && !submitting ? "pointer" : "not-allowed",
+                  border: "none", cursor: body.trim() && !submitting && !imageUploading ? "pointer" : "not-allowed",
                 }}
-              >{submitting ? "Posting…" : "Post"}</button>
+              >{imageUploading ? "Uploading…" : submitting ? "Posting…" : "Post"}</button>
             </div>
           </div>
         </div>
@@ -632,6 +729,18 @@ function PostCard({
 
       {/* Body */}
       <div style={{ marginTop: 10, fontSize: 14, color: "#333", lineHeight: 1.6 }}>{post.body}</div>
+
+      {/* Post image */}
+      {post.image_url && (
+        <div style={{ marginTop: 10 }}>
+          <img
+            src={post.image_url}
+            alt="Post image"
+            loading="lazy"
+            style={{ width: "100%", maxHeight: 400, objectFit: "cover", borderRadius: 8, display: "block" }}
+          />
+        </div>
+      )}
 
       {/* Milestone label */}
       {post.milestone_label && !post.is_auto && (
