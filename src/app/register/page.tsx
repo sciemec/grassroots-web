@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -110,7 +110,7 @@ const SELECT = 'w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/1
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function RegisterPage() {
+function RegisterPage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const loginStore   = useAuthStore((s) => s.login);
@@ -713,5 +713,13 @@ export default function RegisterPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function RegisterPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterPage />
+    </Suspense>
   );
 }
