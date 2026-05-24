@@ -6806,3 +6806,98 @@ CREATE TABLE talent_applications (
 | Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
+
+---
+
+## SESSION LOG — 24 May 2026
+
+### Theme — Light Theme Migration: Player Hub, Start Session, Arena Feed, Club Detail
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Light Theme Applied Across 4 Pages — COMMITTED + DEPLOYED ✅
+
+**Commit:** `86d9cb2` — pushed to `sciemec/grassroots-web` → Vercel auto-deployed
+
+All 4 pages converted from dark hub theme to the new light design system:
+- Background: `#f4f2ee` warm off-white
+- Cards: `bg-white` on off-white
+- Primary: `#1a5c2a` forest green
+- Accent: `#c8962a` gold
+
+**Files changed:**
+
+| File | Change |
+|---|---|
+| `src/app/player/page.tsx` | Full light theme hub — white cards on `#f4f2ee` bg, green/gold accents |
+| `src/app/player/sessions/new/page.tsx` | Full rewrite — removed Sidebar, sticky white nav, light form, green Start button, gold special focus pills |
+| `src/app/arena/page.tsx` | PostCard milestone/achievement posts → `#f0fdf4` green bg + `#bbf7d0` border; prediction_upgrade posts → `#fde68a` amber border |
+| `src/app/arena/clubs/[id]/page.tsx` | Added Top Players 2-column section; switched `Promise.all` → `Promise.allSettled` for 3rd parallel fetch |
+
+---
+
+#### 2. `/player/sessions/new` Light Theme Detail ✅
+
+Key changes from old dark version:
+- Removed `import { Sidebar }` — no more dark sidebar on this page
+- Fixed Zustand selector (React #185 prevention): `const user = useAuthStore((s) => s.user)` (was destructured object)
+- `SPECIAL_AREAS = ["shooting", "tactics", "fitness"]` — gold pill border `#c8962a` + `#fffbeb` bg
+- Session type cards: white bg, `#1a5c2a` green border + `#f0f7f2` bg when selected
+- Focus pills: `#1a5c2a` green when selected, gold for special areas
+- Summary card: `#f0fdf4` bg, `#bbf7d0` border when focus area chosen
+- Start button: `#1a5c2a` green (enabled) / `#d1d5db` grey (disabled, no focus area selected)
+- Root: `style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}`
+
+---
+
+#### 3. Arena Feed — Milestone Post Styling ✅
+
+`PostCard` component in `src/app/arena/page.tsx` now applies card-level background per post type:
+```typescript
+const isCelebration = post.post_type === "milestone" || post.post_type === "achievement";
+const isLevelUp     = post.post_type === "prediction_upgrade";
+
+// Card wrapper:
+backgroundColor: isCelebration ? "#f0fdf4" : "#fff",
+border: isCelebration ? "1px solid #bbf7d0" : isLevelUp ? "1px solid #fde68a" : "1px solid #e5e5e5",
+```
+
+Standard posts remain white. Milestone/achievement = green tint. Level-up = amber border.
+
+---
+
+#### 4. Club Detail — Top Players Section ✅
+
+`src/app/arena/clubs/[id]/page.tsx` additions:
+- New `TopPlayer` interface: `id, name, position, thuto_score, peak_level_label, sport`
+- `topPlayers` state — fetches `GET /api/v1/arena/clubs/{id}/players` (3rd parallel call)
+- Switched `Promise.all` → `Promise.allSettled` so club detail still loads even if players endpoint is 404
+- Top Players section renders only when `topPlayers.length > 0` (safe when backend not yet built)
+- 2-column grid of player cards: initials avatar (`#1a5c2a` bg), name, position/sport, peak level label, THUTO score (green/amber/red by threshold)
+- Each card is a `Link` → `/arena/profile/{id}`
+- THUTO score colour: green ≥75, amber ≥55, red <55
+
+---
+
+### DEPLOY ISSUE — FIXED
+
+Commit `86d9cb2` was created locally but not pushed (branch was 1 ahead of origin).
+Manually pushed via `git push origin master` → Vercel deployed successfully.
+All 4 pages confirmed returning HTTP 200 on the live site.
+
+---
+
+### WHAT STILL NEEDS DOING (24 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GET /arena/clubs/{id}/players` | NOT YET BUILT on Laravel | Top Players section will be empty until this endpoint returns club members |
+| Arena Sprint 5 backend endpoints | NOT YET BUILT on Laravel | Discover, profile, leaderboard, suggested, talent-wanted routes |
+| `talent_postings` + `talent_applications` tables | NOT YET BUILT | Create migration + `TalentWantedController` in bhora-ai |
+| `/arena/clubs/new` page | NOT YET BUILT | Club registration form |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |

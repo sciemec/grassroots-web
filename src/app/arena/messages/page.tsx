@@ -109,7 +109,7 @@ function timeAgo(iso: string): string {
 }
 
 interface Thread {
-  otherId: number;
+  otherId: string;
   otherName: string;
   otherRole: string;
   lastMessage: string;
@@ -140,7 +140,7 @@ function MessagesContent() {
 
   const [threads, setThreads]           = useState<Thread[]>([]);
   const [inboxLoading, setInboxLoading] = useState(true);
-  const [activeId, setActiveId]         = useState<number | null>(null);
+  const [activeId, setActiveId]         = useState<string | null>(null);
   const [activeName, setActiveName]     = useState("");
   const [messages, setMessages]         = useState<ArenaMessage[]>([]);
   const [threadLoading, setThreadLoading] = useState(false);
@@ -159,7 +159,7 @@ function MessagesContent() {
       const res = await fetch(`${API}/arena/inbox`, { headers });
       const data = await res.json();
       const msgs: ArenaMessage[] = safeArray(data);
-      const currentId = Number(user?.id);
+      const currentId = user?.id ?? "";
 
       const built: Thread[] = msgs.map((m) => {
         const isMe = m.sender_id === currentId;
@@ -182,7 +182,7 @@ function MessagesContent() {
   }, [token, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load message thread for a given user
-  const loadThread = useCallback(async (otherId: number, name: string) => {
+  const loadThread = useCallback(async (otherId: string, name: string) => {
     setActiveId(otherId);
     setActiveName(name);
     setThreadLoading(true);
@@ -199,7 +199,7 @@ function MessagesContent() {
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll active thread every 10s
-  const pollThread = useCallback(async (otherId: number) => {
+  const pollThread = useCallback(async (otherId: string) => {
     try {
       const res = await fetch(`${API}/arena/messages/${otherId}`, { headers });
       const data = await res.json();
@@ -220,7 +220,7 @@ function MessagesContent() {
         loadThread(thread.otherId, thread.otherName);
       } else {
         // User not in inbox yet — open blank thread
-        setActiveId(Number(withId));
+        setActiveId(withId);
         setActiveName("");
         setMessages([]);
       }
@@ -269,7 +269,7 @@ function MessagesContent() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  const currentId = Number(user?.id);
+  const currentId = user?.id ?? "";
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>

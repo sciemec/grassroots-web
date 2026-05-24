@@ -13,7 +13,7 @@ import { safeArray } from "@/lib/safe-array";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface DiscoverPlayer {
-  id: number;
+  id: string;
   name: string;
   sport: string | null;
   province: string | null;
@@ -70,7 +70,7 @@ function ArenaNav() {
 
 // ─── PlayerCard ───────────────────────────────────────────────────────────────
 
-function PlayerCard({ player, currentUserId }: { player: DiscoverPlayer; currentUserId?: number }) {
+function PlayerCard({ player, currentUserId }: { player: DiscoverPlayer; currentUserId?: string }) {
   const token = useAuthStore((s) => s.token);
   const [following, setFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);

@@ -208,7 +208,7 @@ function PersonCard({
   const [busy, setBusy] = useState(false);
   const badgeClass = ROLE_BADGE[user.role] ?? ROLE_BADGE.player;
 
-  const run = async (fn: () => Promise<void>) => {
+  const run = async (fn: () => void | Promise<void>) => {
     setBusy(true);
     try { await fn(); } finally { setBusy(false); }
   };
