@@ -6955,3 +6955,105 @@ TypeScript fix commits pushed to `sciemec/grassroots-web` master branch → Verc
 | Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
+
+---
+
+## SESSION LOG — 24 May 2026
+
+### Theme — Player Media Gallery + Representation Enquiry Form
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Player Media Gallery — FULLY BUILT ✅
+
+**Frontend:** `src/app/player/media/page.tsx` (560 lines)
+
+Full CRUD media management page for the player hub. Auth-guarded with `_hasHydrated` Zustand pattern.
+
+**Features:**
+- Fetches `GET /player/media` ordered by `display_order`
+- Inline edit: pencil icon → caption input + category select → `PATCH /player/media/{id}`
+- Delete: trash icon + confirm dialog → `DELETE /player/media/{id}`, optimistic remove from state
+- Reorder: ArrowUp/ArrowDown buttons, debounced 800ms → `PATCH /player/media/reorder` with `{ ordered_ids }`, optimistic UI
+- Add form: collapsible, media_type toggle (video/image), URL, thumbnail URL, category pills, caption → `POST /player/media`
+- Max 10 items enforced: "Gallery full" message + hides Add button
+- Design: dark green (`#1a5c2a`) background with `#f0b429` gold accents
+
+**Backend used:** `PlayerShowcaseMediaController` — already live on Render with 5 endpoints:
+```
+GET    /player/media              list items ordered by display_order
+POST   /player/media              create item (max 10 enforced on backend)
+PATCH  /player/media/{id}         update caption + category
+DELETE /player/media/{id}         delete item
+PATCH  /player/media/reorder      reorder all items (body: { ordered_ids: string[] })
+```
+
+**Nav + hub card:**
+- `src/components/layout/sidebar.tsx` — added "Media Gallery" (`Layers` icon) after "Highlight Vault" for player role
+- `src/app/player/page.tsx` — added "Media Gallery" hub card (after "My Videos") with `Image` icon
+
+---
+
+#### 2. Representation Enquiry Form — FULLY BUILT ✅
+
+**Frontend:** `src/components/player/RepresentationForm.tsx` (261 lines)
+
+A `"use client"` component placed on the public player profile page (`/player/public/[id]`).
+Allows scouts and agents to formally approach GrassRoots Sports about a player.
+
+**UX:**
+- Default state: collapsed "Send a Representation Enquiry" toggle button (gold border)
+- Expanded: full form with close button
+- Fields: scout_name, scout_email, organisation (optional), request_type (5 pill buttons), message (30–2000 char textarea with live counter), professional_status (checkbox)
+- Status states: `idle | submitting | success | rate_limited | error`
+- Success: replaces entire component with gold CheckCircle2 + confirmation message
+
+**API:**
+- Calls `POST ${NEXT_PUBLIC_API_URL}/representation-requests` (no auth header — public endpoint)
+- Rate limited: 429 → "Too many enquiries. Please wait 24 hours."
+- Error fallback: red banner + "email nigel@grassrootssports.live"
+
+**Backend used:** `RepresentationController` — already live on Render:
+```
+POST /representation-requests   public, no auth, rate-limited 3/email/player/24h
+                                → emails nigel@grassrootssports.live + fires in-app notification to player
+```
+
+**Integration:** `src/app/player/public/[id]/page.tsx` — added `<RepresentationForm playerId={profile.id} playerName={profile.name} />` between PotentialCard and AdBanner.
+
+---
+
+### FILES CHANGED (commit `68de175`)
+
+```
+src/app/player/media/page.tsx                — new (560 lines)
+src/components/player/RepresentationForm.tsx — new (261 lines)
+src/app/player/public/[id]/page.tsx          — modified (RepresentationForm added)
+src/components/layout/sidebar.tsx            — modified (Media Gallery nav item)
+src/app/player/page.tsx                      — modified (Media Gallery hub card)
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (24 May 2026)
+
+```
+/player/media    Player Media Gallery — CRUD, reorder, inline edit, max 10 items
+```
+
+---
+
+### WHAT STILL NEEDS DOING (24 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GET /arena/clubs/{id}/players` | NOT YET BUILT on Laravel | Top Players section empty until endpoint returns club members |
+| Arena Sprint 5 backend endpoints | NOT YET BUILT on Laravel | discover, profile, leaderboard, suggested, talent-wanted routes |
+| `talent_postings` + `talent_applications` tables | NOT YET BUILT | Create migration + `TalentWantedController` in bhora-ai |
+| `/arena/clubs/new` page | NOT YET BUILT | Club registration form |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
