@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Heart, MessageSquare, Send, ChevronDown, X,
+  MessageSquare, Send, ChevronDown, X,
   Trophy, Star, Zap, Globe, Users, Briefcase,
   Bell, Search, Video, Image, Activity, Target,
   TrendingUp, Eye, Calendar, BookOpen, Shield,
@@ -37,6 +37,7 @@ interface ArenaPost {
   like_count: number;
   comment_count: number;
   liked: number;
+  my_reaction?: string | null;
   created_at: string;
   is_auto?: boolean;
   metadata?: Record<string, string | number | null>;
@@ -91,6 +92,20 @@ const POST_TYPE_META: Record<string, { label: string; color: string }> = {
   session_milestone: { label: "Session Milestone", color: "#0891b2" },
   prediction_upgrade:{ label: "Level Up",          color: "#c8962a" },
   standard:          { label: "",                  color: "" },
+};
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+
+const REACTIONS = [
+  { type: "heart",  emoji: "❤️", label: "Like" },
+  { type: "fire",   emoji: "🔥", label: "Fire" },
+  { type: "strong", emoji: "💪", label: "Strong" },
+  { type: "trophy", emoji: "🏆", label: "Trophy" },
+  { type: "clap",   emoji: "👏", label: "Clap" },
+] as const;
+
+const REACTION_EMOJI: Record<string, string> = {
+  heart: "❤️", fire: "🔥", strong: "💪", trophy: "🏆", clap: "👏",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -651,29 +666,37 @@ function PostCard({
   token: string | null;
   currentUserId: string;
 }) {
-  const [liked,        setLiked]        = useState(Boolean(post.liked));
+  const [myReaction,   setMyReaction]   = useState<string | null>(post.my_reaction ?? (post.liked ? "heart" : null));
   const [likeCount,    setLikeCount]    = useState(post.like_count);
+  const [showPicker,   setShowPicker]   = useState(false);
   const [showComments, setShowComments] = useState(false);
 
-  const toggleLike = async () => {
-    const prev = liked;
-    setLiked(!prev);
-    setLikeCount((c) => c + (prev ? -1 : 1));
+  const handleReact = async (type: string) => {
+    setShowPicker(false);
+    const prev        = myReaction;
+    const isToggleOff = prev === type;
+
+    // Optimistic update
+    setMyReaction(isToggleOff ? null : type);
+    setLikeCount((c) => c + (isToggleOff ? -1 : prev ? 0 : 1));
+
     try {
       const res = await fetch(`${API}/arena/posts/${post.id}/like`, {
         method: "POST",
         headers: authHeaders(token),
+        body: JSON.stringify({ reaction: type }),
       });
       if (res.ok) {
         const json = await res.json();
-        setLiked(json.liked ?? !prev);
+        setMyReaction(json.reaction ?? null);
+        if (typeof json.total === "number") setLikeCount(json.total);
       } else {
-        setLiked(prev);
-        setLikeCount((c) => c + (prev ? 1 : -1));
+        setMyReaction(prev);
+        setLikeCount((c) => c + (isToggleOff ? 1 : prev ? 0 : -1));
       }
     } catch {
-      setLiked(prev);
-      setLikeCount((c) => c + (prev ? 1 : -1));
+      setMyReaction(prev);
+      setLikeCount((c) => c + (isToggleOff ? 1 : prev ? 0 : -1));
     }
   };
 
@@ -773,18 +796,61 @@ function PostCard({
 
       {/* Actions */}
       <div style={{ display: "flex", gap: 16, marginTop: 12, paddingTop: 10, borderTop: "1px solid #f5f5f5" }}>
-        <button
-          onClick={toggleLike}
-          style={{
-            display: "flex", alignItems: "center", gap: 5,
-            background: "none", border: "none", cursor: "pointer",
-            color: liked ? "#dc2626" : "#888", fontSize: 13, fontWeight: 500,
-            padding: 0,
-          }}
+        {/* Reaction button with hover picker */}
+        <div
+          style={{ position: "relative", display: "inline-flex" }}
+          onMouseEnter={() => setShowPicker(true)}
+          onMouseLeave={() => setShowPicker(false)}
         >
-          <Heart size={16} fill={liked ? "#dc2626" : "none"} />
-          {likeCount > 0 && <span>{likeCount}</span>}
-        </button>
+          {/* Floating emoji picker */}
+          {showPicker && (
+            <div style={{
+              position: "absolute", bottom: "calc(100% + 8px)", left: 0,
+              display: "flex", gap: 2, padding: "5px 8px",
+              backgroundColor: "#fff", borderRadius: 24,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.13)", border: "1px solid #e5e5e5",
+              zIndex: 20,
+            }}>
+              {REACTIONS.map((r) => (
+                <button
+                  key={r.type}
+                  title={r.label}
+                  onClick={() => handleReact(r.type)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: 20, padding: "2px 5px", borderRadius: 8,
+                    transform: myReaction === r.type ? "scale(1.35)" : "scale(1)",
+                    transition: "transform 0.12s",
+                    outline: myReaction === r.type ? "2px solid #1a5c2a30" : "none",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.35)"; }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.transform =
+                      myReaction === r.type ? "scale(1.35)" : "scale(1)";
+                  }}
+                >
+                  {r.emoji}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Main reaction button */}
+          <button
+            onClick={() => handleReact(myReaction ?? "heart")}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              background: "none", border: "none", cursor: "pointer",
+              color: myReaction ? "#dc2626" : "#888", fontSize: 13, fontWeight: 500,
+              padding: 0,
+            }}
+          >
+            <span style={{ fontSize: 16, lineHeight: 1 }}>
+              {myReaction ? (REACTION_EMOJI[myReaction] ?? "❤️") : "🤍"}
+            </span>
+            {likeCount > 0 && <span>{likeCount}</span>}
+          </button>
+        </div>
         <button
           onClick={() => setShowComments((s) => !s)}
           style={{
