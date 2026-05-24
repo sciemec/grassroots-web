@@ -282,9 +282,9 @@ export default function ClubRegistrationPage() {
                 placeholder="e.g. Borrowdale"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
               />
-              {selectedZone?.suburbs?.length > 0 && (
+              {(selectedZone?.suburbs?.length ?? 0) > 0 && (
                 <p className="mt-1.5 text-xs text-white/40">
-                  Suburbs in {selectedZone.name}: {selectedZone.suburbs.join(', ')}
+                  Suburbs in {selectedZone?.name}: {selectedZone?.suburbs?.join(', ')}
                 </p>
               )}
             </div>

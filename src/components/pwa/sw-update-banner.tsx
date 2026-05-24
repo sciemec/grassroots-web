@@ -27,7 +27,6 @@ export function SwUpdateBanner() {
       // `waiting` fires when a new SW has installed and is waiting to take over.
       // `externalwaiting` fires when a different tab triggered the install.
       wb.addEventListener("waiting", () => setWaiting(true));
-      wb.addEventListener("externalwaiting", () => setWaiting(true));
 
       wbRef.current = wb;
       wb.register().catch(() => {/* silently ignore — no SW support */});

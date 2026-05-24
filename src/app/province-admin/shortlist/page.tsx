@@ -125,7 +125,7 @@ export default function ProvinceAdminShortlistPage() {
       });
 
       // ── Footer ──
-      const finalY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+      const finalY = (doc as InstanceType<typeof jsPDF> & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
       doc.text(

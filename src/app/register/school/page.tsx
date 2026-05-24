@@ -52,7 +52,7 @@ const STRENGTH_COLOR = ['', 'bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-gr
 
 export default function SchoolRegisterPage() {
   const router = useRouter();
-  const loginStore = useAuthStore((s) => s.login);
+  const loginStore = useAuthStore((s) => s.setAuth);
 
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);

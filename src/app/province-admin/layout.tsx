@@ -12,7 +12,7 @@ export default function ProvinceAdminLayout({ children }: { children: React.Reac
   useEffect(() => {
     if (!hasHydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "province_admin" && user.role !== "admin") {
+    if ((user.role as string) !== "province_admin" && user.role !== "admin") {
       router.push(`/${user.role}`);
     }
   }, [hasHydrated, user, router]);
