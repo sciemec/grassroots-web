@@ -680,10 +680,15 @@ function PostCard({
   const typeMeta = POST_TYPE_META[post.post_type] ?? POST_TYPE_META.standard;
   const badge    = ROLE_BADGE[post.user?.role ?? ""] ?? ROLE_BADGE.player;
 
+  const isCelebration = post.post_type === "milestone" || post.post_type === "achievement";
+  const isLevelUp     = post.post_type === "prediction_upgrade";
+
   return (
     <div style={{
-      backgroundColor: "#fff", borderRadius: 12,
-      border: "1px solid #e5e5e5", padding: 16, marginBottom: 10,
+      backgroundColor: isCelebration ? "#f0fdf4" : "#fff",
+      borderRadius: 12,
+      border: isCelebration ? "1px solid #bbf7d0" : isLevelUp ? "1px solid #fde68a" : "1px solid #e5e5e5",
+      padding: 16, marginBottom: 10,
     }}>
       {/* Auto-post banner */}
       {post.is_auto && typeMeta.label && (

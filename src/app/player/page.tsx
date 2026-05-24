@@ -1,421 +1,614 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
-import type { ComponentType } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Dumbbell, Brain, ChevronRight, Play, Flame, Target, TrendingUp, Star,
-  Apple, Zap, Film, Award, CalendarDays, Dna, Users, BookOpen, Eye, HeartHandshake, GraduationCap,
+  Play, Dumbbell, Brain, Target, User, BookOpen, ChevronRight,
+  Bell, Settings, LogOut, Eye, Users, Activity, Calendar,
+  TrendingUp, Zap, Flame, Star
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
-import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
-import { HubCard } from "@/components/ui/hub-card";
 import api from "@/lib/api";
-import { getSchedule, saveSchedule, getPendingSessions, clearPendingSession, type ScheduleDay } from "@/lib/offlineDB";
-
-// ThutoChat is now mounted in player/layout.tsx — covers all player pages
-
-const UbuntuOptIn = dynamic(
-  () => import("@/components/ubuntu/UbuntuOptIn") as Promise<{ default: ComponentType<{ onOptIn: () => void }> }>,
-  { ssr: false }
-);
-
-const BeautifulMoment = dynamic(
-  () => import("@/components/thuto/BeautifulMoment"),
-  { ssr: false }
-);
+import { safeArray } from "@/lib/safe-array";
+import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
 
 interface Session {
   id: string;
   focus_area: string;
-  overall_score: number | null;
+  overall_score?: number;
   status: string;
   created_at: string;
 }
 
 interface Profile {
-  position: string;
-  province: string;
-  age_group: string;
-  scout_visible: boolean;
-  ubuntu_opt_in: boolean;
+  position?: string;
+  province?: string;
+  age_group?: string;
+  scout_visible?: boolean;
   joy_score?: number;
+  first_name?: string;
+  surname?: string;
+  avatar_url?: string;
 }
 
-function PageSkeleton() {
+interface Prediction {
+  projected_score?: number;
+  peak_level_label?: string;
+  upside_rating?: number;
+  percentile?: number;
+  data_quality?: string;
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function AttributeBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mb-8">
-          <div className="h-8 w-48 animate-pulse rounded-lg bg-muted" />
-          <div className="mt-2 h-4 w-72 animate-pulse rounded-lg bg-muted" />
-        </div>
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
-          ))}
-        </div>
-        <div className="mb-8 h-28 animate-pulse rounded-2xl bg-muted" />
-        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
-          ))}
-        </div>
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
-          ))}
-        </div>
-      </main>
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>{label}</span>
+        <span style={{ fontSize: 12, color: "white", fontWeight: 600 }}>{value}</span>
+      </div>
+      <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 4, height: 6 }}>
+        <div style={{ background: color, borderRadius: 4, height: 6, width: `${value}%`, transition: "width 0.6s ease" }} />
+      </div>
     </div>
   );
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  completed: "bg-green-500/15 text-green-700",
-  active:    "bg-blue-500/15 text-blue-700",
-  aborted:   "bg-muted text-muted-foreground",
-};
+const TABS = ["Overview", "Sessions", "THUTO", "Drills", "Passport"] as const;
+type Tab = typeof TABS[number];
 
-export default function PlayerHubPage() {
-  const { user } = useAuthStore();
+export default function PlayerHub() {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
+  const logout = useAuthStore((s) => s.logout);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+
+  const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [scoutViews, setScoutViews] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [showUbuntuOptIn, setShowUbuntuOptIn] = useState(false);
-  const [todaySession, setTodaySession] = useState<ScheduleDay | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // Auth guard is handled by PlayerLayout — this just loads data
   useEffect(() => {
-    Promise.all([
-      api.get("/player/sessions?per_page=5").catch(() => null),
-      api.get("/profile").catch(() => null),
-      api.get("/training/schedule").catch(() => null),
-    ])
-      .then(async ([sessRes, profRes, schedRes]) => {
-        if (sessRes) { const _r = sessRes.data?.data ?? sessRes.data; setSessions(Array.isArray(_r) ? _r : []); }
-        if (profRes) {
-          const prof = profRes.data?.profile ?? profRes.data;
-          setProfile(prof);
-          const hasOnboarded = localStorage.getItem("thuto_onboarded") === "true";
-          if (hasOnboarded && prof && !prof.ubuntu_opt_in) {
-            setShowUbuntuOptIn(true);
-          }
-        }
+    if (!hasHydrated) return;
+    if (!user) { router.push("/login"); return; }
+  }, [hasHydrated, user, router]);
 
-        // Load today's training session (API or IndexedDB fallback)
-        let schedData = schedRes?.data?.schedule ?? null;
-        if (schedData) {
-          await saveSchedule({ ...schedData, cached_at: Date.now() });
-        } else {
-          const cached = await getSchedule();
-          schedData = cached;
-        }
-        if (schedData?.schedule_json?.days) {
-          const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
-          const dayData = schedData.schedule_json.days.find(
-            (d: ScheduleDay) => d.day.toLowerCase() === today.toLowerCase()
-          );
-          if (dayData && !dayData.is_rest) setTodaySession(dayData);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  // Sync any pitch sessions that completed while offline
   useEffect(() => {
-    async function syncOfflineSessions() {
+    if (!user) return;
+    const load = async () => {
+      setLoading(true);
       try {
-        const pending = await getPendingSessions();
-        for (const s of pending) {
-          try {
-            await api.post("/training/sessions", {
-              schedule_id: s.schedule_id,
-              day_name: s.day_name,
-              drills_completed: s.drills_completed,
-              total_drills: s.total_drills,
-              feeling: s.feeling,
-              completed_at: s.completed_at,
-            });
-            await clearPendingSession(s.localId);
-          } catch {
-            // Still offline — leave in queue for next time
-          }
+        const [sessRes, profRes, predRes, viewRes] = await Promise.allSettled([
+          api.get("/sessions?per_page=5"),
+          api.get("/profile"),
+          api.get(`/players/${user.id}/prediction`),
+          api.get(`/players/${user.id}/view-count`),
+        ]);
+        if (sessRes.status === "fulfilled") {
+          const raw = sessRes.value.data?.data ?? sessRes.value.data;
+          setSessions(safeArray<Session>(raw));
+        }
+        if (profRes.status === "fulfilled") {
+          const raw = profRes.value.data?.data ?? profRes.value.data;
+          setProfile(Array.isArray(raw) ? (raw[0] as Profile) : (raw as Profile));
+        }
+        if (predRes.status === "fulfilled") {
+          const raw = predRes.value?.data?.data ?? predRes.value?.data;
+          if (raw && typeof raw === "object") setPrediction(raw as Prediction);
+        }
+        if (viewRes.status === "fulfilled") {
+          const raw = viewRes.value?.data;
+          setScoutViews(typeof (raw as { count?: number })?.count === "number" ? (raw as { count: number }).count : 0);
         }
       } catch {
-        // IndexedDB not available
+        // silently fail — show empty state
+      } finally {
+        setLoading(false);
       }
-    }
-    syncOfflineSessions();
-  }, []);
+    };
+    load();
+  }, [user]);
 
-  if (loading) return <PageSkeleton />;
+  if (!hasHydrated || !user) return null;
 
-  const completed = sessions.filter((s) => s.status === "completed");
-  const avgScore = completed.length
-    ? Math.round(completed.reduce((sum, s) => sum + (s.overall_score ?? 0), 0) / completed.length)
-    : 0;
+  const completedSessions = sessions.filter((s) => s.status === "completed").length;
+  const thutoScore = prediction?.projected_score ?? 0;
+  const displayName = profile?.first_name
+    ? `${profile.first_name}${profile.surname ? " " + profile.surname : ""}`
+    : user.name ?? "Player";
+  const initials = displayName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
 
-  const hubCards = [
-    { icon: Flame,        title: "Success Engine",  subtitle: "Daily check-in · Goals · Streak",           href: "/player/success", bg: "bg-[#1a3d26]", gradient: "bg-gradient-to-br from-[#1a6b3c] to-[#0d2b1a]" },
-    { icon: Dna,          title: "Player DNA",      subtitle: "Tell THUTO your real life",                 href: "/player/dna",            bg: "bg-[#1a3a4a]", gradient: "bg-gradient-to-br from-[#1a6b6b] to-[#0d2b3a]" },
-    { icon: Brain,        title: "AI Coach",        subtitle: "Deep coaching with THUTO",                  href: "/player/ai-coach",       bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
-    { icon: CalendarDays, title: "Training Plan",   subtitle: "THUTO 7-day FIFA schedule",                 href: "/player/training",       bg: "bg-teal-800",  gradient: "bg-gradient-to-br from-teal-600 to-emerald-800" },
-    { icon: Zap,          title: "Train Now",       subtitle: "Pitch Mode · Log Session · Tracker",        href: "/player/pitch",          bg: "bg-[#15803d]", gradient: "bg-gradient-to-br from-[#15803d] to-[#0d5c2d]" },
-    { icon: Dumbbell,    title: "Drills Library",  subtitle: "500+ drills · Record & Analyse",            href: "/player/drills",         bg: "bg-[#1a3d26]", gradient: "bg-gradient-to-br from-[#1a5c2a] to-[#0d3b1a]" },
-    { icon: Film,         title: "My Videos",       subtitle: "Vault · Showcase · Capture",                href: "/player/vault",          bg: "bg-[#1a4971]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
-    { icon: Award,        title: "Scout Profile",   subtitle: "Talent ID · Potential · Market Value",      href: "/player/talent-id",      bg: "bg-[#1a3a4a]", gradient: "bg-gradient-to-br from-[#2471a3] to-[#1a5276]" },
-    { icon: TrendingUp,   title: "My Journey",      subtitle: "Progress charts · Milestones",              href: "/player/progress",       bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
-    { icon: Apple,        title: "Nutrition",       subtitle: "Meal plans · Performance fuel",             href: "/player/nutrition",      bg: "bg-[#1a6b3c]", gradient: "bg-gradient-to-br from-[#1e8449] to-[#1a6b3c]" },
-    { icon: Users,        title: "Ubuntu",          subtitle: "Train together — vanhu pamwe",              href: "/player/ubuntu",         bg: "bg-[#1a3a2a]", gradient: "bg-gradient-to-br from-[#1a6b4a] to-[#0d2b1a]" },
-    { icon: BookOpen,        title: "My Passport",      subtitle: "Shareable talent passport · PDF export",    href: "/player/passport",        bg: "bg-[#2c1a5c]", gradient: "bg-gradient-to-br from-[#4a2c8c] to-[#2c1a5c]" },
-    { icon: HeartHandshake, title: "Players Like You", subtitle: "Style matches · Compatible squadmates",      href: "/player/similar",         bg: "bg-[#1a2c4a]", gradient: "bg-gradient-to-br from-[#1a3a6b] to-[#1a2c4a]" },
-    { icon: GraduationCap,  title: "Business School",  subtitle: "Contracts · Money · Branding · Career",     href: "/player/business-school", bg: "bg-[#3b1a5c]", gradient: "bg-gradient-to-br from-[#5c2a8c] to-[#3b1a5c]" },
-  ];
+  // Derived attribute scores scaled from thuto score
+  const base = thutoScore || 55;
+  const technical = Math.min(100, Math.round(base * 1.0));
+  const physical  = Math.min(100, Math.round(base * 0.92));
+  const tactical  = Math.min(100, Math.round(base * 0.88));
+  const mental    = Math.min(100, Math.round(base * 0.95));
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
+  // Suppress unused warning for token (used implicitly by api interceptor)
+  void token;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", fontFamily: "Inter, sans-serif" }}>
+      {/* Top Nav */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 50,
+        backgroundColor: "white", borderBottom: "1px solid #e5e7eb",
+        padding: "0 16px", height: 56,
+        display: "flex", alignItems: "center", justifyContent: "space-between"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: "linear-gradient(135deg, #1a5c2a, #2d7a3a)",
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }}>
+            <span style={{ color: "#f5c518", fontWeight: 800, fontSize: 14 }}>G</span>
+          </div>
+          <span style={{ fontWeight: 700, color: "#1a5c2a", fontSize: 15 }}>Player Hub</span>
+        </div>
 
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Link href="/player/notifications" style={{ color: "#6b7280", display: "flex" }}>
+            <Bell size={20} />
+          </Link>
+          <Link href="/settings" style={{ color: "#6b7280", display: "flex" }}>
+            <Settings size={20} />
+          </Link>
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setShowUserMenu((v) => !v)}
+              style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: "linear-gradient(135deg, #1a5c2a, #2d7a3a)",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "white", fontWeight: 700, fontSize: 12
+              }}
+            >
+              {initials}
+            </button>
+            {showUserMenu && (
+              <div style={{
+                position: "absolute", right: 0, top: 40, zIndex: 100,
+                background: "white", borderRadius: 12,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                border: "1px solid #e5e7eb", width: 180, overflow: "hidden"
+              }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #f3f4f6" }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{displayName}</div>
+                  <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{user.email}</div>
+                </div>
+                <Link href="/player/profile" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: "#374151", fontSize: 13, textDecoration: "none" }}>
+                  <User size={15} /> My Profile
+                </Link>
+                <Link href="/settings" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: "#374151", fontSize: 13, textDecoration: "none" }}>
+                  <Settings size={15} /> Settings
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", color: "#dc2626", fontSize: 13, background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
+                >
+                  <LogOut size={15} /> Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {showUserMenu && (
+        <div onClick={() => setShowUserMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+      )}
+
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "0 16px 48px" }}>
         <ProUpgradeBanner />
 
-        {/* Header */}
-        <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-[#1A6B3C]">
-            Mhoro — Player Hub
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-[#0D2B1A]">
-            {user?.name?.split(" ")[0] ?? "Player"} 👋
-          </h1>
-          <p className="mt-0.5 text-sm italic text-[#1A6B3C]/80">
-            {profile?.position
-              ? `${profile.position} · ${profile.province ?? ""} · ${profile.age_group?.toUpperCase() ?? ""}`
-              : "Ita profile yako — Complete your profile"}
-          </p>
-        </div>
-
-        {/* Admin-only: THUTO vs AMARA test shortcut */}
-        {user?.role === "admin" && (
-          <Link
-            href="/admin/player-preview"
-            className="mb-4 flex items-center justify-between rounded-xl border border-purple-500/30 bg-purple-900/20 px-4 py-3 hover:border-purple-500/50 hover:bg-purple-900/30 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <Eye className="h-4 w-4 text-purple-400" />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-purple-300">Admin Preview</p>
-                <p className="text-xs text-purple-400/70">Test THUTO (male) vs AMARA (female) responses</p>
-              </div>
+        {/* Green Profile Header */}
+        <div style={{
+          background: "linear-gradient(135deg, #1a5c2a 0%, #2d7a3a 60%, #1a5c2a 100%)",
+          borderRadius: "0 0 24px 24px",
+          padding: "20px 20px 24px",
+          marginBottom: 20,
+          color: "white"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: "50%",
+              background: "rgba(245,197,24,0.25)",
+              border: "2px solid rgba(245,197,24,0.6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 700, fontSize: 18, color: "#f5c518"
+            }}>
+              {initials}
             </div>
-            <ChevronRight className="h-4 w-4 text-purple-400/50" />
-          </Link>
-        )}
-
-        {/* Stats row */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { icon: Flame,      label: "Completed",    value: completed.length, color: "text-orange-400" },
-            { icon: Star,       label: "Avg score",    value: `${avgScore}%`,   color: "text-accent" },
-            { icon: Target,     label: "Total",        value: sessions.length,  color: "text-blue-400" },
-            { icon: TrendingUp, label: "Scout visible",value: profile?.scout_visible ? "Yes" : "No", color: "text-primary" },
-          ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
-              <Icon className={`mb-2 h-4 w-4 ${color}`} />
-              <p className="text-xl font-bold text-white">{value}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* My Card CTA — viral sharing prompt */}
-        <Link
-          href="/player/my-card"
-          className="mb-6 flex items-center justify-between rounded-2xl border border-amber-500/40 bg-gradient-to-br from-[#1a3a1a] to-[#0d2b0d] px-5 py-4 hover:border-amber-500/70 transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <Star className="h-5 w-5 text-[#f0b429]" />
             <div>
-              <p className="text-sm font-bold text-[#f0b429]">Share Your THUTO Score Card</p>
-              <p className="text-xs text-white/60">Download your card and share it on WhatsApp</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-[#f0b429]/60" />
-        </Link>
-
-        {/* Age group reminder — THUTO needs this to give personalised advice */}
-        {profile && !profile.age_group && (
-          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#f0b429]/40 bg-[#f0b429]/10 px-4 py-3">
-            <span className="text-xl">⚠️</span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[#f0b429]">Complete your profile — THUTO needs your age group</p>
-              <p className="text-xs text-white/60">Without your age group, THUTO gives generic advice instead of advice for your level.</p>
-            </div>
-            <a
-              href="/player/profile"
-              className="shrink-0 rounded-lg bg-[#f0b429] px-3 py-1.5 text-xs font-bold text-[#1a3a1a] hover:bg-[#f5c542]"
-            >
-              Fix now
-            </a>
-          </div>
-        )}
-
-        {/* Ubuntu opt-in — shown after THUTO onboarding, before first Ubuntu join */}
-        {showUbuntuOptIn && (
-          <div className="mb-6">
-            <UbuntuOptIn onOptIn={() => setShowUbuntuOptIn(false)} />
-          </div>
-        )}
-
-        {/* Beautiful Game Score */}
-        {profile && (profile.joy_score ?? 0) > 0 && (
-          <div className="mb-6 rounded-2xl border border-[#f0b429]/30 bg-gradient-to-br from-[#1a3a1a] to-[#0d2b0d] p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#f0b429]/80">
-                  Your Beautiful Game Score
-                </p>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-[#f0b429]">{profile.joy_score}</span>
-                  <span className="text-sm text-white/50">/ 100</span>
-                </div>
-                <p className="mt-1 text-xs text-white/60">
-                  {(profile.joy_score ?? 0) >= 50
-                    ? "Exceptional joy for the game — scouts notice this energy"
-                    : (profile.joy_score ?? 0) >= 25
-                    ? "Your love for the game is growing — keep it up!"
-                    : "Every session adds to your story — keep going!"}
-                </p>
-              </div>
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#f0b429]/10 text-2xl">
-                ⚽
+              <div style={{ fontWeight: 700, fontSize: 17 }}>{displayName}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
+                {profile?.position ?? "Player"}{profile?.province ? ` · ${profile.province}` : ""}
               </div>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#f0b429] to-[#f5c542] transition-all duration-500"
-                style={{ width: `${profile.joy_score ?? 0}%` }}
-              />
-            </div>
-            <div className="mt-2 flex justify-between text-[10px] text-white/30">
-              <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
-            </div>
           </div>
-        )}
 
-        {/* Beautiful Moment — memory archive */}
-        <BeautifulMoment />
-
-        {/* Today's Session — Pitch Mode entry card */}
-        {todaySession && (
-          <div className="mb-6 rounded-2xl border border-white/10 bg-gradient-to-br from-[#15803d] to-[#0d5c2d] p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/60">
-                  Today&apos;s Session
-                </p>
-                <h2 className="mt-1 text-lg font-bold text-white">{todaySession.focus}</h2>
-                <p className="mt-0.5 text-sm text-white/70">
-                  {todaySession.total_duration_minutes} min · {todaySession.drills?.length ?? 0} drills ·{" "}
-                  <span className="capitalize">{todaySession.intensity}</span> intensity
-                </p>
+          {/* 3 Stat Boxes */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            {([
+              { label: "Completed", value: loading ? "—" : completedSessions, icon: <Activity size={15} /> },
+              { label: "THUTO Score", value: loading ? "—" : (thutoScore ? Math.round(thutoScore) : "—"), icon: <Zap size={15} /> },
+              { label: "Scout Views", value: loading ? "—" : scoutViews, icon: <Eye size={15} /> },
+            ] as const).map(({ label, value, icon }) => (
+              <div key={label} style={{
+                background: "rgba(255,255,255,0.12)",
+                borderRadius: 12, padding: "10px 12px", textAlign: "center"
+              }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, color: "#f5c518" }}>{icon}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 3 }}>{label}</div>
               </div>
-              <Zap className="h-6 w-6 flex-shrink-0 text-[#f0b429]" />
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Link
-                href="/player/pitch"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-bold text-[#15803d] transition-opacity hover:opacity-90 active:scale-95"
-              >
-                <Play className="h-4 w-4" /> Pitch Mode
-              </Link>
-              <Link
-                href="/player/session"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/30 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10 active:scale-95"
-              >
-                🎙 THUTO Voice
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Hub cards grid — mobile-style */}
-        <div className="mb-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#1A6B3C]">
-            Your Hub
-          </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {hubCards.map((card) => (
-              <HubCard key={card.href} {...card} />
             ))}
           </div>
         </div>
 
-        {/* Recent sessions */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#1A6B3C]">
-              Recent Sessions
-            </p>
-            <Link href="/player/sessions" className="flex items-center gap-1 text-xs text-[#1A6B3C] hover:text-[#0D2B1A] transition-colors">
-              View all <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
+        {/* Tabs */}
+        <div style={{
+          display: "flex", gap: 4, marginBottom: 20,
+          background: "white", borderRadius: 12, padding: 4,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
+        }}>
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1, padding: "8px 4px", borderRadius: 8,
+                border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                background: activeTab === tab ? "#1a5c2a" : "transparent",
+                color: activeTab === tab ? "white" : "#6b7280",
+                transition: "all 0.15s"
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-          {sessions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/20 p-8 text-center">
-              <Dumbbell className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-              <p className="font-medium text-white">No sessions yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Tanga mushandiro wako wekutanga
-              </p>
-              <Link
-                href="/player/sessions/new"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
-              >
-                <Play className="h-3.5 w-3.5" /> Start session
+        {/* ── OVERVIEW TAB ── */}
+        {activeTab === "Overview" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* THUTO Score Card */}
+            <div style={{
+              background: "linear-gradient(135deg, #1a5c2a, #2d7a3a)",
+              borderRadius: 16, padding: 20, color: "white"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 4 }}>THUTO Score</div>
+                  <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1 }}>
+                    {thutoScore ? Math.round(thutoScore) : "—"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
+                    {prediction?.peak_level_label ?? "Complete sessions to unlock"}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  {prediction?.percentile != null && (
+                    <div style={{
+                      background: "rgba(245,197,24,0.2)", border: "1px solid rgba(245,197,24,0.4)",
+                      borderRadius: 20, padding: "4px 10px", fontSize: 11, color: "#f5c518", fontWeight: 600
+                    }}>
+                      Top {100 - prediction.percentile}%
+                    </div>
+                  )}
+                  {(prediction?.upside_rating ?? 0) > 0 && (
+                    <div style={{ marginTop: 6, display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={12} fill={i < (prediction?.upside_rating ?? 0) ? "#f5c518" : "transparent"} color="#f5c518" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <AttributeBar label="Technical" value={technical} color="#f5c518" />
+              <AttributeBar label="Physical"  value={physical}  color="#4ade80" />
+              <AttributeBar label="Tactical"  value={tactical}  color="#60a5fa" />
+              <AttributeBar label="Mental"    value={mental}    color="#f472b6" />
+              <Link href="/player/talent-id" style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                marginTop: 12, padding: "10px",
+                background: "rgba(255,255,255,0.12)", borderRadius: 10,
+                color: "white", textDecoration: "none", fontSize: 13, fontWeight: 600
+              }}>
+                <TrendingUp size={14} /> View Full Scout Profile
               </Link>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {sessions.map((session) => (
-                <Link
-                  key={session.id}
-                  href={`/sessions/${session.id}`}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-card/60 px-4 py-3.5 transition-colors hover:bg-card"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/20">
-                      <Dumbbell className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium capitalize text-white">{session.focus_area}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(session.created_at).toLocaleDateString("en-ZW", {
-                          day: "numeric", month: "short", year: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {session.overall_score !== null && (
-                      <span className="text-sm font-bold text-accent">{session.overall_score}%</span>
-                    )}
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${STATUS_STYLES[session.status] ?? "bg-muted text-muted-foreground"}`}>
-                      {session.status}
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
+
+            {/* Quick Action Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {([
+                { label: "Start Session", sub: "Begin training now", icon: <Play size={20} />, href: "/player/sessions/new", color: "#1a5c2a" },
+                { label: "Drills Library", sub: "500+ drills", icon: <Dumbbell size={20} />, href: "/player/drills", color: "#c8962a" },
+                { label: "AI Coach", sub: "Ask THUTO anything", icon: <Brain size={20} />, href: "/player/ai-coach", color: "#7c3aed" },
+                { label: "My Progress", sub: "Track milestones", icon: <Target size={20} />, href: "/player/progress", color: "#0891b2" },
+              ] as const).map(({ label, sub, icon, href, color }) => (
+                <Link key={label} href={href} style={{
+                  background: "white", borderRadius: 14, padding: "16px",
+                  borderLeft: `4px solid ${color}`,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  textDecoration: "none", display: "block"
+                }}>
+                  <div style={{ color, marginBottom: 8 }}>{icon}</div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: "#111827" }}>{label}</div>
+                  <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{sub}</div>
                 </Link>
               ))}
             </div>
-          )}
-        </div>
-      </main>
+
+            {/* Recent Sessions */}
+            <div style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ padding: "14px 16px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f3f4f6" }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>Recent Sessions</span>
+                <Link href="/player/sessions" style={{ fontSize: 12, color: "#1a5c2a", fontWeight: 600, textDecoration: "none" }}>See all</Link>
+              </div>
+              {loading ? (
+                <div style={{ padding: 16 }}>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
+                      <div style={{ width: 4, minHeight: 40, borderRadius: 4, background: "#f3f4f6" }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, marginBottom: 6, width: "60%" }} />
+                        <div style={{ height: 10, background: "#f3f4f6", borderRadius: 4, width: "40%" }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : sessions.length === 0 ? (
+                <div style={{ padding: "24px 16px", textAlign: "center" }}>
+                  <Activity size={28} color="#d1d5db" style={{ margin: "0 auto 8px", display: "block" }} />
+                  <div style={{ fontSize: 13, color: "#6b7280" }}>No sessions yet</div>
+                  <Link href="/player/sessions/new" style={{
+                    display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10,
+                    background: "#1a5c2a", color: "white", borderRadius: 8, padding: "8px 16px",
+                    fontSize: 12, fontWeight: 600, textDecoration: "none"
+                  }}>
+                    <Play size={12} /> Start First Session
+                  </Link>
+                </div>
+              ) : (
+                <div style={{ padding: "8px 16px" }}>
+                  {sessions.map((s) => (
+                    <div key={s.id} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid #f9fafb", alignItems: "center" }}>
+                      <div style={{ width: 4, borderRadius: 4, background: s.status === "completed" ? "#1a5c2a" : "#d1d5db", minHeight: 40, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: "#111827", textTransform: "capitalize" }}>{s.focus_area}</div>
+                        <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                          {s.status === "completed" ? "Completed" : "In Progress"} · {timeAgo(s.created_at)}
+                        </div>
+                      </div>
+                      {s.overall_score != null && (
+                        <div style={{
+                          background: s.overall_score >= 70 ? "#dcfce7" : "#fef9c3",
+                          color: s.overall_score >= 70 ? "#166534" : "#854d0e",
+                          borderRadius: 20, padding: "2px 10px", fontSize: 12, fontWeight: 700
+                        }}>
+                          {s.overall_score}%
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* More Links */}
+            <div style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              {([
+                { label: "Training Plan", sub: "THUTO programme", icon: <Calendar size={16} />, href: "/player/pitch" },
+                { label: "Nutrition", sub: "Fuel your performance", icon: <Flame size={16} />, href: "/player/nutrition" },
+                { label: "My Videos", sub: "Highlight vault", icon: <Activity size={16} />, href: "/player/vault" },
+                { label: "Ubuntu Mode", sub: "Team challenges", icon: <Users size={16} />, href: "/player/ubuntu" },
+                { label: "Success Engine", sub: "Daily goals & streaks", icon: <Star size={16} />, href: "/player/success" },
+              ] as const).map(({ label, sub, icon, href }, idx, arr) => (
+                <Link key={label} href={href} style={{
+                  display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
+                  textDecoration: "none", borderBottom: idx < arr.length - 1 ? "1px solid #f3f4f6" : "none"
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#1a5c2a", flexShrink: 0
+                  }}>{icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{label}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>{sub}</div>
+                  </div>
+                  <ChevronRight size={16} color="#d1d5db" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SESSIONS TAB ── */}
+        {activeTab === "Sessions" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <Link href="/player/sessions/new" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              background: "#1a5c2a", color: "white", borderRadius: 14, padding: "14px",
+              textDecoration: "none", fontWeight: 700, fontSize: 14
+            }}>
+              <Play size={16} /> Start New Session
+            </Link>
+            <Link href="/player/sessions" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              background: "white", color: "#1a5c2a", borderRadius: 14, padding: "14px",
+              textDecoration: "none", fontWeight: 700, fontSize: 14,
+              border: "2px solid #1a5c2a", boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
+            }}>
+              <Activity size={16} /> View All Sessions
+            </Link>
+            <div style={{ background: "white", borderRadius: 16, padding: "0 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ padding: "14px 0 12px", fontWeight: 700, fontSize: 14, color: "#111827", borderBottom: "1px solid #f3f4f6" }}>Recent</div>
+              {sessions.length === 0 ? (
+                <div style={{ textAlign: "center", color: "#9ca3af", fontSize: 13, padding: "20px 0" }}>No sessions yet</div>
+              ) : sessions.map((s) => (
+                <Link key={s.id} href={`/sessions/${s.id}`} style={{
+                  display: "flex", gap: 12, padding: "12px 0",
+                  borderBottom: "1px solid #f9fafb", textDecoration: "none", alignItems: "center"
+                }}>
+                  <div style={{ width: 4, borderRadius: 4, background: "#1a5c2a", minHeight: 40 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#111827", textTransform: "capitalize" }}>{s.focus_area}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{timeAgo(s.created_at)}</div>
+                  </div>
+                  {s.overall_score != null && (
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1a5c2a" }}>{s.overall_score}%</div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── THUTO TAB ── */}
+        {activeTab === "THUTO" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{
+              background: "linear-gradient(135deg, #1a5c2a, #2d7a3a)",
+              borderRadius: 16, padding: 24, color: "white", textAlign: "center"
+            }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>Your THUTO Score</div>
+              <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 1 }}>{thutoScore ? Math.round(thutoScore) : "—"}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 8 }}>
+                {prediction?.peak_level_label ?? "Complete 3+ sessions to unlock"}
+              </div>
+              {prediction?.percentile != null && (
+                <div style={{
+                  display: "inline-block", marginTop: 12,
+                  background: "rgba(245,197,24,0.2)", border: "1px solid rgba(245,197,24,0.4)",
+                  borderRadius: 20, padding: "6px 16px", fontSize: 13, color: "#f5c518", fontWeight: 700
+                }}>
+                  Top {100 - prediction.percentile}% in Zimbabwe
+                </div>
+              )}
+            </div>
+            <div style={{ background: "white", borderRadius: 16, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: "#111827", marginBottom: 16 }}>Attribute Breakdown</div>
+              {([
+                { label: "Technical", value: technical, color: "#f5c518" },
+                { label: "Physical",  value: physical,  color: "#22c55e" },
+                { label: "Tactical",  value: tactical,  color: "#3b82f6" },
+                { label: "Mental",    value: mental,    color: "#ec4899" },
+              ] as const).map(({ label, value, color }) => (
+                <div key={label} style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>{label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{value}</span>
+                  </div>
+                  <div style={{ background: "#f3f4f6", borderRadius: 6, height: 8 }}>
+                    <div style={{ background: color, borderRadius: 6, height: 8, width: `${value}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link href="/player/ai-coach" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              background: "#7c3aed", color: "white", borderRadius: 14, padding: "14px",
+              textDecoration: "none", fontWeight: 700, fontSize: 14
+            }}>
+              <Brain size={16} /> Chat with THUTO
+            </Link>
+            <Link href="/talent-leaderboard" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              background: "white", color: "#1a5c2a", borderRadius: 14, padding: "14px",
+              textDecoration: "none", fontWeight: 700, fontSize: 14,
+              border: "2px solid #1a5c2a", boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
+            }}>
+              <TrendingUp size={16} /> Zimbabwe Talent Leaderboard
+            </Link>
+          </div>
+        )}
+
+        {/* ── DRILLS TAB ── */}
+        {activeTab === "Drills" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {([
+              { label: "All Drills", sub: "Browse 500+ drills", href: "/player/drills", icon: <Dumbbell size={20} />, color: "#1a5c2a" },
+              { label: "Rondo", sub: "Possession & pressing", href: "/player/training-formats/rondo", icon: <Activity size={20} />, color: "#c8962a" },
+              { label: "Small-Sided Games", sub: "Game-realistic drills", href: "/player/training-formats/ssg", icon: <Users size={20} />, color: "#7c3aed" },
+              { label: "Shooting Drills", sub: "Finishing practice", href: "/player/training-formats/shooting", icon: <Target size={20} />, color: "#dc2626" },
+            ] as const).map(({ label, sub, href, icon, color }) => (
+              <Link key={label} href={href} style={{
+                display: "flex", alignItems: "center", gap: 14,
+                background: "white", borderRadius: 14, padding: "16px",
+                textDecoration: "none", borderLeft: `4px solid ${color}`,
+                boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
+              }}>
+                <div style={{ color, flexShrink: 0 }}>{icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{label}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{sub}</div>
+                </div>
+                <ChevronRight size={16} color="#d1d5db" />
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* ── PASSPORT TAB ── */}
+        {activeTab === "Passport" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{
+              background: "linear-gradient(135deg, #7c3aed, #9333ea)",
+              borderRadius: 16, padding: 20, color: "white", textAlign: "center"
+            }}>
+              <BookOpen size={32} style={{ margin: "0 auto 12px", display: "block" }} />
+              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>Player Passport</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
+                Your public profile for scouts and scholarship agencies
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {([
+                { label: "Edit My Passport", href: "/player/passport", icon: <User size={16} /> },
+                { label: "Scout Profile", href: "/player/talent-id", icon: <Eye size={16} /> },
+                { label: "Market Value", href: "/player/valuation", icon: <TrendingUp size={16} /> },
+                { label: "My Potential", href: "/player/potential", icon: <Star size={16} /> },
+                { label: "View Public CV", href: `/passport/${user.id}`, icon: <ChevronRight size={16} /> },
+              ] as const).map(({ label, href, icon }) => (
+                <Link key={label} href={href} style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  background: "white", borderRadius: 14, padding: "14px 16px",
+                  textDecoration: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
+                }}>
+                  <div style={{ color: "#7c3aed" }}>{icon}</div>
+                  <div style={{ flex: 1, fontWeight: 600, fontSize: 13, color: "#111827" }}>{label}</div>
+                  <ChevronRight size={16} color="#d1d5db" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

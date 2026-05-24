@@ -46,6 +46,15 @@ interface Review {
   created_at: string;
 }
 
+interface TopPlayer {
+  id: string;
+  name: string;
+  position: string | null;
+  thuto_score: number | null;
+  peak_level_label: string | null;
+  sport: string | null;
+}
+
 // ─── ArenaNav ─────────────────────────────────────────────────────────────────
 
 function ArenaNav() {
@@ -195,6 +204,7 @@ export default function ClubDetailPage() {
   const [avgRatings, setAvgRatings] = useState<AvgRatings | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [reviews, setReviews]     = useState<Review[]>([]);
+  const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([]);
   const [loading, setLoading]     = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
 
@@ -205,26 +215,35 @@ export default function ClubDetailPage() {
     (async () => {
       setLoading(true);
       try {
-        const [detailRes, reviewsRes] = await Promise.all([
+        const [detailRes, reviewsRes, playersRes] = await Promise.allSettled([
           fetch(`${API}/arena/clubs/${clubId}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }),
           fetch(`${API}/arena/clubs/${clubId}/reviews`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }),
+          fetch(`${API}/arena/clubs/${clubId}/players`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }),
         ]);
 
-        if (detailRes.ok) {
-          const json = await detailRes.json();
+        if (detailRes.status === "fulfilled" && detailRes.value.ok) {
+          const json = await detailRes.value.json();
           setClub(json.club ?? null);
           setAvgRatings(json.avg_ratings ?? null);
           setIsFollowing(json.is_following ?? false);
         }
 
-        if (reviewsRes.ok) {
-          const rj = await reviewsRes.json();
+        if (reviewsRes.status === "fulfilled" && reviewsRes.value.ok) {
+          const rj = await reviewsRes.value.json();
           const raw = rj?.data ?? rj;
           setReviews(Array.isArray(raw) ? raw : []);
+        }
+
+        if (playersRes.status === "fulfilled" && playersRes.value.ok) {
+          const pj = await playersRes.value.json();
+          const raw = pj?.data ?? pj;
+          setTopPlayers(Array.isArray(raw) ? raw.slice(0, 6) : []);
         }
       } catch {
         // silently fail
@@ -394,6 +413,54 @@ export default function ClubDetailPage() {
                   <p className="text-xs text-gray-400">Head Coach / Manager</p>
                 </div>
                 <Shield size={16} className="text-gray-300 shrink-0" />
+              </div>
+            )}
+
+            {/* ── Top Players ── */}
+            {topPlayers.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+                <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-3">
+                  <Trophy size={16} style={{ color: "#c8962a" }} />
+                  Top Players
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {topPlayers.map((p) => {
+                    const score = p.thuto_score ?? null;
+                    const color = score
+                      ? score >= 75 ? "#16a34a" : score >= 55 ? "#ca8a04" : "#dc2626"
+                      : "#9ca3af";
+                    const initials = p.name
+                      .split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase();
+                    return (
+                      <Link
+                        key={p.id}
+                        href={`/arena/profile/${p.id}`}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-300 transition-colors no-underline"
+                        style={{ textDecoration: "none" }}
+                      >
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                          style={{ backgroundColor: "#1a5c2a" }}
+                        >
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                          <p className="text-xs text-gray-400">{p.position ?? p.sport ?? "Player"}</p>
+                          {p.peak_level_label && (
+                            <p className="text-xs mt-0.5 font-medium truncate" style={{ color: "#1a5c2a" }}>{p.peak_level_label}</p>
+                          )}
+                        </div>
+                        {score !== null && (
+                          <div className="shrink-0 text-right">
+                            <div className="text-base font-bold" style={{ color }}>{score.toFixed(0)}</div>
+                            <div className="text-xs text-gray-400">THUTO</div>
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
