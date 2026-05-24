@@ -6901,3 +6901,57 @@ All 4 pages confirmed returning HTTP 200 on the live site.
 | Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
 | `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
+
+---
+
+## SESSION LOG — 24 May 2026 (continued)
+
+### Theme — TypeScript Fixes: UUID Types + Zustand Selectors + Auth Store Methods
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Full Codebase TypeScript Audit — ZERO ERRORS ✅
+
+`tsc --noEmit` exits 0 across the entire codebase. 17 TypeScript errors fixed.
+
+**Root causes:**
+- Player/user IDs typed as `number` instead of `string` — all IDs are PostgreSQL UUIDs
+- Zustand object selectors causing React #185 infinite re-renders
+- Auth store method `login()` was renamed to `setAuth()` but old references remained
+- jsPDF `lastAutoTable` property needed `InstanceType<typeof jsPDF>` cast form
+- Optional chaining missing on nullable arrays before `.length` / `.join()` calls
+
+**Files fixed:**
+
+| File | Fix |
+|---|---|
+| `src/app/arena/discover/page.tsx` | `DiscoverPlayer.id: number` → `id: string`; UUID comparison now works |
+| `src/app/arena/messages/page.tsx` | `Thread.otherId: string`; `loadThread/pollThread` params to `string`; removed `Number()` wrappers; `currentId = user?.id ?? ""` |
+| `src/app/arena/network/page.tsx` | Zustand object selector split to prevent React #185 |
+| `src/app/province-admin/layout.tsx` | `(user.role as string) !== "province_admin"` — casts past role union type |
+| `src/app/province-admin/shortlist/page.tsx` | jsPDF cast: `(doc as InstanceType<typeof jsPDF> & { lastAutoTable: ... })` |
+| `src/app/register/business/page.tsx` | `useAuthStore((s) => s.login)` → `useAuthStore((s) => s.setAuth)` |
+| `src/app/register/organisation/page.tsx` | Same `login` → `setAuth` fix |
+| `src/app/register/school/page.tsx` | Same `login` → `setAuth` fix |
+| `src/app/register/club/page.tsx` | `(selectedZone?.suburbs?.length ?? 0) > 0` + optional chaining on `.join()` |
+
+#### 2. Commits Pushed to Master ✅
+
+TypeScript fix commits pushed to `sciemec/grassroots-web` master branch → Vercel auto-deployed.
+
+---
+
+### WHAT STILL NEEDS DOING (after 24 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GET /arena/clubs/{id}/players` | NOT YET BUILT on Laravel | Top Players section empty until endpoint returns club members |
+| Arena Sprint 5 backend endpoints | NOT YET BUILT on Laravel | discover, profile, leaderboard, suggested, talent-wanted routes |
+| `talent_postings` + `talent_applications` tables | NOT YET BUILT | Create migration + `TalentWantedController` in bhora-ai |
+| `/arena/clubs/new` page | NOT YET BUILT | Club registration form |
+| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May session) |
+| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
+| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
