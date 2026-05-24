@@ -3,6 +3,7 @@ import { HighlightReel } from "@/components/player/HighlightReel";
 import { LogProfileView } from "@/components/player/LogProfileView";
 import { AdBanner } from "@/components/ui/AdBanner";
 import PotentialCard from "@/components/player/PotentialCard";
+import { RepresentationForm } from "@/components/player/RepresentationForm";
 
 interface ShowcaseClip {
   id: string;
@@ -212,6 +213,9 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
             isPublicView={true}
           />
         </div>
+
+        {/* Representation enquiry — scouts send formal approach to GrassRoots */}
+        <RepresentationForm playerId={profile.id} playerName={profile.name} />
 
         {/* Ad — player-profile-bottom (high-intent scout audience) */}
         <div className="mt-6">

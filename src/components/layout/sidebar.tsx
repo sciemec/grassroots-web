@@ -117,6 +117,7 @@ const navItems: NavItem[] = [
   { href: "/player/sports",               label: "My Sports",       icon: Swords,          roles: ["player"] },
   { href: "/tournaments",                 label: "Tournaments",     icon: Trophy,          roles: ["player"] },
   { href: "/player/vault",                label: "Highlight Vault", icon: Film,            roles: ["player"] },
+  { href: "/player/media",               label: "Media Gallery",   icon: Layers,          roles: ["player"] },
   { href: "/player/record",              label: "Record Drill",    icon: Camera,          roles: ["player"] },
   { href: "/business-hub",                label: "Business Hub",    icon: Briefcase,       roles: ["player"] },
   { href: "/sports/netball",              label: "Netball Hub",     icon: Globe2,          roles: ["player"] },

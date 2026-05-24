@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Play, Dumbbell, Brain, Target, User, BookOpen, ChevronRight,
   Bell, Settings, LogOut, Eye, Users, Activity, Calendar,
-  TrendingUp, Zap, Flame, Star
+  TrendingUp, Zap, Flame, Star, Image
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
@@ -425,6 +425,7 @@ export default function PlayerHub() {
                 { label: "Training Plan", sub: "THUTO programme", icon: <Calendar size={16} />, href: "/player/pitch" },
                 { label: "Nutrition", sub: "Fuel your performance", icon: <Flame size={16} />, href: "/player/nutrition" },
                 { label: "My Videos", sub: "Highlight vault", icon: <Activity size={16} />, href: "/player/vault" },
+                { label: "Media Gallery", sub: "Manage showcase clips", icon: <Image size={16} />, href: "/player/media" },
                 { label: "Ubuntu Mode", sub: "Team challenges", icon: <Users size={16} />, href: "/player/ubuntu" },
                 { label: "Success Engine", sub: "Daily goals & streaks", icon: <Star size={16} />, href: "/player/success" },
               ] as const).map(({ label, sub, icon, href }, idx, arr) => (
