@@ -12,6 +12,7 @@ interface AdminUser {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: string;
   province: string;
   created_at: string;
@@ -152,6 +153,7 @@ export default function AdminUsersPage() {
                 <tr className="border-b bg-muted/50">
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Email</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Phone</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Role</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Province</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Joined</th>
@@ -164,6 +166,7 @@ export default function AdminUsersPage() {
                   <tr key={u.id} className="hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3 font-medium text-white">{u.name}</td>
                     <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{u.phone || "—"}</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_COLORS[u.role] ?? "bg-muted text-muted-foreground"}`}>
                         {u.role}
