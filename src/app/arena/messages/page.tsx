@@ -7,88 +7,48 @@ import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
 import type { ArenaMessage, ArenaUser } from "@/types/arena";
 
-// ── Arena top nav (matches /arena/network) ────────────────────────────────
+// ─── ArenaNav ─────────────────────────────────────────────────────────────────
+
 function ArenaNav() {
-  const user = useAuthStore((s) => s.user);
+  const user   = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
 
-  const hubs = [
-    { label: "Player Hub",   href: "/player" },
-    { label: "Coach Hub",    href: "/coach" },
-    { label: "Fan Hub",      href: "/fan-hub" },
-    { label: "Analysis Hub", href: "/analyst" },
-    { label: "Scout Hub",    href: "/scout" },
-  ];
-
-  function ini(name: string) {
-    return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  }
+  const avatarInitials = user?.name
+    ? user.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+    : "?";
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        {/* Brand */}
-        <Link href="/arena/network" className="font-bold text-base shrink-0" style={{ color: "#1a5c2a" }}>
-          Arena
+    <nav className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-6">
+        <Link href="/arena" className="text-lg font-bold" style={{ color: "#1a5c2a" }}>
+          The Arena
         </Link>
-
-        {/* Hub links — hidden on small screens */}
-        <nav className="hidden md:flex items-center gap-1">
-          {hubs.map((h) => (
-            <Link
-              key={h.href}
-              href={h.href}
-              className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap"
-            >
-              {h.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Right: Messages + avatar */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/arena/network"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors hover:bg-gray-50"
-            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
-          >
-            Network
-          </Link>
-          <Link
-            href="/arena/recruitment"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors hover:bg-gray-50"
-            style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
-          >
-            Talent Board
-          </Link>
-
-          {/* Avatar + dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-              style={{ backgroundColor: "#1a5c2a" }}
-            >
-              {user?.name ? ini(user.name) : "?"}
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                <p className="px-3 py-2 text-xs text-gray-500 truncate">{user?.name}</p>
-                <hr className="border-gray-100" />
-                <button
-                  onClick={() => { logout(); router.push("/login"); }}
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50"
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
-          </div>
+        <div className="hidden md:flex items-center gap-4 text-sm">
+          <Link href="/arena" className="text-gray-600 hover:text-gray-900">Feed</Link>
+          <Link href="/arena/network" className="text-gray-600 hover:text-gray-900">Network</Link>
+          <Link href="/arena/discover" className="text-gray-600 hover:text-gray-900">Discover</Link>
+          <Link href="/arena/recruitment" className="text-gray-600 hover:text-gray-900">Talent Board</Link>
+          <Link href="/arena/messages" className="font-semibold" style={{ color: "#1a5c2a" }}>Messages</Link>
         </div>
       </div>
-    </header>
+      <div className="relative group">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white cursor-pointer"
+          style={{ backgroundColor: "#1a5c2a" }}
+        >
+          {avatarInitials}
+        </div>
+        <div className="absolute right-0 top-10 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-40 hidden group-hover:block z-50">
+          <button
+            onClick={() => { logout(); router.push("/login"); }}
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    </nav>
   );
 }
 
