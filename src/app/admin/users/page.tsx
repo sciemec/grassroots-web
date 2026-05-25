@@ -14,10 +14,11 @@ interface AdminUser {
   email: string;
   phone?: string;
   role: string;
+  age_group?: string;
   province: string;
   created_at: string;
-  is_verified: boolean;
-  is_suspended: boolean;
+  is_active: boolean;
+  verified_at: string | null;
 }
 
 interface UsersMeta {
@@ -178,18 +179,18 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        u.is_suspended
+                        !u.is_active
                           ? "bg-red-500/15 text-red-700"
-                          : u.is_verified
+                          : u.verified_at
                           ? "bg-green-500/15 text-green-700"
                           : "bg-amber-500/15 text-amber-700"
                       }`}>
-                        {u.is_suspended ? "Suspended" : u.is_verified ? "Verified" : "Unverified"}
+                        {!u.is_active ? "Suspended" : u.verified_at ? "Verified" : "Unverified"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        {u.is_suspended ? (
+                        {!u.is_active ? (
                           <button
                             onClick={() => activateMutation.mutate(u.id)}
                             disabled={activateMutation.isPending}
