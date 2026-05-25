@@ -7047,13 +7047,52 @@ src/app/player/page.tsx                      — modified (Media Gallery hub car
 
 ### WHAT STILL NEEDS DOING (24 May 2026)
 
-| Item | Status | Action Required |
-|---|---|---|
-| `GET /arena/clubs/{id}/players` | NOT YET BUILT on Laravel | Top Players section empty until endpoint returns club members |
-| Arena Sprint 5 backend endpoints | NOT YET BUILT on Laravel | discover, profile, leaderboard, suggested, talent-wanted routes |
-| `talent_postings` + `talent_applications` tables | NOT YET BUILT | Create migration + `TalentWantedController` in bhora-ai |
-| `/arena/clubs/new` page | NOT YET BUILT | Club registration form |
-| Chemistry migrations on Render | NOT YET RUN | `php artisan migrate --force` for 5 chemistry tables (7 May session) |
-| Week 5 — Player Chemistry View | NOT YET BUILT | `/players/similar` page + consent toggle in settings |
-| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI broken without this |
-| `R2_*` vars (5 vars) | NOT set in Vercel | Video/showcase/fan hub uploads broken without this |
+All items confirmed BUILT AND DEPLOYED by Nigel (25 May 2026):
+
+| Item | Status |
+|---|---|
+| `GET /arena/clubs/{id}/players` | ✅ DONE |
+| Arena Sprint 5 backend endpoints (discover, profile, leaderboard, suggested, talent-wanted) | ✅ DONE |
+| `talent_postings` + `talent_applications` tables + `TalentWantedController` | ✅ DONE |
+| `/arena/clubs/new` page | ✅ DONE |
+| Chemistry migrations on Render | ✅ DONE |
+| Week 5 — Player Chemistry View (`/players/similar`) | ✅ DONE |
+| `GROQ_API_KEY` in Vercel | ✅ DONE |
+| `R2_*` vars (5 vars) in Vercel | ✅ DONE |
+
+---
+
+## SESSION LOG — 25 May 2026
+
+### Theme — Top Players Fix (ArenaClubController) + /arena/clubs/new Audit
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Arena Club Detail — Top Players Section Fixed ✅
+
+**File:** `bhora-ai/app/Http/Controllers/Api/ArenaClubController.php`
+**Commit:** `206bb76` — pushed to `sciemec/bhora-ai` → Render auto-deployed
+
+**Root cause:** `players()` queried `arena_follows` with `following_type='club'` — no players had followed any club via The Arena, so always empty. Also used `player_profiles.joy_score` (non-existent column → always NULL).
+
+**Fix:** Match players by `player_profiles.club` name against `arena_clubs.name` (case-insensitive `LOWER()`). Players appear automatically when their profile club name matches — no follow action required.
+
+**Caveat:** Players must have their profile `club` field set to the same name as the Arena club (case-insensitive). e.g. "Dynamos FC" matches "dynamos fc".
+
+---
+
+#### 2. /arena/clubs/new — Confirmed Already Built ✅
+
+Audited `src/app/arena/clubs/new/page.tsx` — 484 lines, fully implemented. Was incorrectly listed as "NOT YET BUILT" in prior session logs.
+
+**Contains:** ArenaNav, 10-sport selector, province dropdown, tier/formation/playing-style pill selectors, is_scouting + is_open_trials toggles, THUTO info banner, coach-only gate, auth gate, submits to `POST /api/v1/arena/clubs`, success auto-redirect to `/arena/clubs/{clubId}`.
+
+No changes needed — production-ready.
+
+---
+
+### WHAT STILL NEEDS DOING (25 May 2026)
+
+No outstanding items — all confirmed done by Nigel on 25 May 2026.
