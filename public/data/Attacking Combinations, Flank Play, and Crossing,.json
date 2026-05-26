@@ -1,0 +1,85 @@
+{
+  "document_info": {
+    "title": "France U17 Training Session: Overlapping Full Backs to Create and Finish",
+    "topic": "Attacking Combinations, Flank Play, and Crossing",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Passing Warm-Up: Flank Combinations",
+      "type": "Technical / Passing Pattern",
+      "pitch_diagram": {
+        "pitch_type": "Flank Channel Grid",
+        "image_description": "A 35x25m grid restricted to the wide right flank channel. Four mannequins/poles are positioned diagonally to represent an opposing midfield block. Attackers are stationed at three distinct passing stations (A, B, and C) with a finishing target or mini-gate at the endline.",
+        "tactical_layout": {
+          "dimensions": "35m x 25m wide channel",
+          "obstacles": "4 mannequins placed diagonally to simulate a defensive line shifting",
+          "stations": "Station A (Deep Central/Half-space), Station B (Wide Midfield), Station C (Advanced Center)"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players are distributed evenly among stations A, B, and C. The sequence is mirrored on the left flank using a separate group of players to ensure bilateral development."
+      },
+      "explanation": "Player A starts by passing to Player B, who drops off their mannequin. Player B lays the ball back to Player A on one touch. Player A then plays a longer penetrative pass to Player C. Player C cushions a pass into the space behind the defensive line for Player B, who has made a looping run around the outside. Player B receives and passes through the endline gate.",
+      "coaching_points": [
+        "Passing must be crisp, accurate, and weighted perfectly into the path of the running player.",
+        "Timing of the third-man run by the wide player is vital; they must not run offside before the ball is played by Player C.",
+        "Maintain an open body shape when receiving to see both the passer and the forward target simultaneously."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "3v2 to 3v3 Wide Overload & Crossing Game",
+      "type": "Tactical Overload / Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Extended Penalty Box Appended Grid",
+        "image_description": "The practice takes place in an area extending from the halfway line to the main penalty box, including one full wide channel. A full-sized goal with a goalkeeper is at one end. Inside the central zone, a 3v2 overload is established, while a wide midfielder waits in the flank channel."
+      },
+      "setup": {
+        "player_roles": "3 central attacking players and 1 wide midfield player against 2 central defenders. 1 recovering defender stands on the halfway line ready to transition."
+      },
+      "explanation": "The 3 central attackers combine to retain the ball and draw the 2 central defenders inward. Once the space opens up wide, the ball is shifted to the wide player. As soon as the ball travels wide, the wide fullback overlaps aggressively to create a 2v1 on the flank. Simultaneously, the recovering defender joins the box, creating a 3v3 aerial duel scenario. The wide player crosses for the attacking runners to finish.",
+      "coaching_points": [
+        "Attackers in the center must make decoy runs to pin the central defenders and prevent them from shifting wide early.",
+        "The cross must target specific zones: the front post, back post, or a cut-back to the penalty spot depending on defender positioning.",
+        "Rapid defensive recovery transitions are expected from the defending unit to lock down space."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: 8v7 Attacking from Wide Areas",
+      "type": "Tactical Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Two-Thirds Pitch with Isolated Flanks",
+        "image_description": "The session expands to two-thirds of a standard pitch. A full-sized goal is defended by a back 4 and 2 defensive midfielders plus a goalkeeper (7 defenders). The attacking team fields a midfield trio, a front 3, and 2 overlapping fullbacks (8 attackers)."
+      },
+      "setup": {
+        "player_distribution": "Attackers are arranged in a 2-3-3 shape (representing a 4-3-3 build-up phase), while defenders drop into a low block structured as a 4-2 structural unit ahead of the goalkeeper."
+      },
+      "explanation": "Play always begins centrally with the attacking midfielders. The objective is to shift the defensive block from side to side using quick ball circulation until an opening occurs to release an overlapping fullback down either flank. The opposite fullback must tuck inside to offer defensive balance. If defenders win the ball, they look to transition and pass into two mini-goals placed on the halfway line.",
+      "coaching_points": [
+        "The speed of ball circulation is critical; if the ball moves too slowly, the defensive block will easily slide and cover the wide spaces.",
+        "Fullbacks must recognize the visual cue to overlap: when the wide winger inside-cuts and drives diagonally inward, drawing the opposing fullback with them."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Conditioned Game: Exploiting Wide Overloads",
+      "type": "Conditioned Match",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch with Painted Flank Corridors",
+        "image_description": "A full 11v11 match setup. Cones are used to line out wide corridors extending along both touchlines from penalty box to penalty box. The game is free-flowing, but specific scoring rules apply to wide-area involvements."
+      },
+      "setup": {
+        "initial_alignment": "Both teams line up in their standard tactical formations (e.g., 4-3-3 vs 4-2-3-1) across the full pitch layout."
+      },
+      "explanation": "Normal football rules apply with one condition: any goal scored directly from a cross delivered by an overlapping fullback who entered the wide corridor counts as 3 goals. If a team creates a 2v1 overload inside the corridor but fails to score, they retain a possession bonus point. This structural incentive heavily forces tactical focus onto wide combinations.",
+      "coaching_points": [
+        "Encourage structural flexibility where wingers can tuck inside into half-spaces to clear the wide lanes entirely for the fullbacks.",
+        "Defensively, communication between the winger and the fullback is paramount to pass on runners and prevent being overloaded on the flanks.",
+        "Ensure balance remains in the midfield to protect against rapid central counter-attacks when fullbacks push high up the pitch."
+      ]
+    }
+  ]
+}

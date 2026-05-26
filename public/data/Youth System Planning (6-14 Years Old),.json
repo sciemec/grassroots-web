@@ -1,0 +1,125 @@
+{
+  "document_info": {
+    "title": "Youth System Planning (6-14 Years Old)",
+    "author": "Carles Romagosa i Vidal",
+    "location": "Norrtälje (Sweden)",
+    "date": "July 2010",
+    "source_organization": "www.soccerservices.net"
+  },
+  "background_experience": [
+    {
+      "organization": "F.C. Barcelona School",
+      "age_group": "6-10 years old"
+    },
+    {
+      "organization": "F.C. Barcelona Football Academy",
+      "age_group": "10-21 years old"
+    },
+    {
+      "organization": "Catalan Football Federation",
+      "age_group": "12-18 years old"
+    }
+  ],
+  "learning_process_stages": {
+    "progression_axis": ["Beginning", "Learning Skills", "Performance"],
+    "aim_hierarchy_by_stage": {
+      "beginning": ["Fun", "Learning", "Performance"],
+      "learning_skills": ["Learning", "Fun", "Performance"],
+      "performance": ["Performance", "Learning", "Fun"]
+    }
+  },
+  "planning_criteria": {
+    "objective": "To organize the training content by establishing structural criteria.",
+    "possibilities": [
+      "Player's Biological Development / Sensitive Phases",
+      "Understanding the Game / Game Analysis"
+    ],
+    "common_mistake": {
+      "metric_critique": "Evaluating players purely by outcome (e.g., 2-0 scoreline) rather than technical/process metrics (e.g., 6 correct passes in each attack)."
+    }
+  },
+  "core_content_categories": {
+    "A": {
+      "category": "Coordination",
+      "focus": ["Learning how to move", "Relationship with the ball"]
+    },
+    "B": {
+      "category": "Perception of Space",
+      "focus": ["Learn to look"]
+    },
+    "C": {
+      "category": "Tactical-Technical Content",
+      "focus": ["Egocentric Stage", "Summative Stage", "Concepts / Instructions"]
+    },
+    "D": {
+      "category": "Playing Style",
+      "focus": ["Fundamentals / Principles of the Game"]
+    }
+  },
+  "curriculum_breakdown": {
+    "coordination_and_movement": {
+      "actions": ["Assistance", "Starting and stopping", "Changing direction"],
+      "methods": ["Coordination runs", "Chasing games"],
+      "concepts_instructions": ["Frequency in assistance", "Dropping the hip", "Don't run in rings"]
+    },
+    "age_group_tactical_technical_progression": {
+      "egocentric_stage_under_10": [
+        "Running with the ball",
+        "Shielding the ball",
+        "A challenge / tackle",
+        "Dribbling",
+        "Directed Control",
+        "Hitting the ball",
+        "Assistance / support",
+        "Marking",
+        "Covering"
+      ],
+      "age_10_12": [
+        "Dribbling",
+        "Directed Control",
+        "Assistance / support",
+        "Marking",
+        "Covering",
+        "Passing",
+        "Shooting",
+        "Getting into position",
+        "Width",
+        "Depth",
+        "Heading",
+        "Centring"
+      ],
+      "age_13_14": [
+        "Passing",
+        "Heading",
+        "Centring",
+        "Clearing",
+        "Creating Space",
+        "Occupying Space",
+        "Individual Pressure",
+        "Doubling",
+        "Back to Defend"
+      ]
+    }
+  },
+  "sample_concepts_instructions": {
+    "topic": "Losing a Marker",
+    "steps": [
+      {
+        "step_number": 1,
+        "instruction": "Make the marker lose sight of the ball and/or our position."
+      },
+      {
+        "step_number": 2,
+        "instruction": "Use feints of two supports or more."
+      },
+      {
+        "step_number": 3,
+        "instruction": "Create space by moving initially in the opposite direction to the area in which we want to receive the ball."
+      }
+    ]
+  },
+  "fundamentals_principles_of_the_game": [
+    "The players must understand and adhere to the playing style of the TEAM / CLUB they are playing for as it may be different in character to other teams and clubs.",
+    "The players should bring all the skills they have learnt to the game, knowing when to apply them according to the principles of the game (Fundamentals) of the TEAM."
+  ]
+}

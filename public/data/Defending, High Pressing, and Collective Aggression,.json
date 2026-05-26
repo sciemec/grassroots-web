@@ -1,0 +1,86 @@
+{
+  "document_info": {
+    "title": "Session Programme: Wk 3 Pressing and Covering to Stop Goals",
+    "topic": "Defending, High Pressing, and Collective Aggression",
+    "structure": "4-Part Progressive Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: Coordinated Press & Cover",
+      "type": "Technical / Pressing Mechanics",
+      "pitch_diagram": {
+        "pitch_type": "20x20m Dual Central Cones Setup",
+        "image_description": "A square 20x20m grid containing two small central tall cones placed 3 meters apart. Players are distributed evenly across four corner stations, circulating two balls simultaneously while applying structured defensive pressure.",
+        "tactical_layout": {
+          "dimensions": "20m x 20m outer grid",
+          "central_element": "2 tracking markers spaced 3 meters apart to simulate a passing gate",
+          "stations": "4 corner stations executing synchronized movements"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players split into groups across the 4 corner stations. Two balls start at opposite corners to keep technical repetitions high and demand constant scanning."
+      },
+      "explanation": "The ball is passed around the perimeter of the square. As the ball travels from Corner A to Corner B, the nearest player from the adjacent central line sprints out to press the ball, while their partner drops back diagonally to cover the central passing gate. Once the pass moves to the next corner, the defenders swap roles dynamically before rotating out.",
+      "coaching_points": [
+        "Sprint at maximum speed to close down the ball carrier, then shorten your steps to brake safely as you near them.",
+        "The pressing player must adopt a low, side-on stance to force the ball carrier into a predictable direction.",
+        "The covering player must position themselves at a 45-degree angle behind the pressing teammate to intercept split passes."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "4v4 Grid: Pressing Trigger & Cover Shadows",
+      "type": "Tactical Rondo / Balanced Box",
+      "pitch_diagram": {
+        "pitch_type": "25x20m Subdivided Box",
+        "image_description": "A rectangular 25x20m playing field cleanly split into two equal halves by a dotted line. 4 attacking players (blue) position themselves to retain possession, while 4 defending players (orange) match them inside the grid to step out and press or slide and cover."
+      },
+      "setup": {
+        "player_roles": "4 attacking possession players vs. 4 central defending blocks. 2 attackers occupy the deep ends, while 2 operate wide along the sidelines."
+      },
+      "explanation": "The 4 blue attackers circulate the ball inside the grid, attempting to string together passes and cross the central line. The 4 orange defenders must remain compact. When a pressing trigger occurs (such as a heavy touch or a slow, lateral square pass), the closest defender steps up to press hard while the remaining 3 slide across in unison to lock down passing options.",
+      "coaching_points": [
+        "Recognize structural pressing triggers collectively to shift from containment to high aggression immediately.",
+        "The pressing defender must use their cover shadow to block passing lanes to the attackers behind them.",
+        "The remaining defenders must squeeze the space tightly, staying close enough to intercept the next logical pass."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: Midfield High Block (9v8)",
+      "type": "Tactical Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Two-Thirds Pitch Setup",
+        "image_description": "The session expands to two-thirds of a standard field. A full goal with a keeper sits at the baseline, defended by a back 4 and 4 midfielders (8 defenders). The pressing team lines up with a front 3, a midfield trio, and 3 advanced defenders pushing high toward the halfway line (9 attackers)."
+      },
+      "setup": {
+        "player_distribution": "The building team looks to build out from the back in a 4-4 shape. The defending team deploys a high-pressing 3-4-2 block, locking lines forward to pinch the playing space entirely."
+      },
+      "explanation": "Play always starts with the goalkeeper or a coach deep in the defensive zone. The possession team attempts to play through or over the high block to score by crossing the halfway line. The pressing unit sets their engagement line high, traps the ball carrier against the touchline, and looks to create high turnovers to launch quick counter-attacks.",
+      "coaching_points": [
+        "The front three must coordinate their pressing angles to cut the pitch in half and force play to one side.",
+        "The defensive backline must push high up toward the halfway line to eliminate gaps between the lines.",
+        "Use the touchline as an extra defender; once the opponent is trapped wide, commit fully to winning the ball."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Coordinated High Press Match",
+      "type": "Conditioned Match",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch Layout with High Pressing Thresholds",
+        "image_description": "A comprehensive 11v11 match across the full pitch layout. Cones or bright lines are placed 35 meters out from each goal to mark clear tactical pressing thresholds for the high block engagement zones."
+      },
+      "setup": {
+        "initial_alignment": "Both squads deploy in standard game formations (e.g., 4-3-3 vs 4-2-3-1), balancing tactical responsibilities across all zones."
+      },
+      "explanation": "A regular competitive match with a scoring modification: any goal scored within 8 seconds of winning a turnover inside the opponent's 35-meter defensive threshold counts double. This constraint encourages maximum pressing aggression from the out-of-possession unit while testing build-up composure.",
+      "coaching_points": [
+        "Collective aggression is key; if one player fails to press or lags behind, the entire high-block structure collapses.",
+        "The goalkeeper must maintain a high starting position as a sweeper-keeper to clear long balls played over the top.",
+        "Maintain constant communication from back to front, ensuring midfielders pass on runners as the block shifts dynamically."
+      ]
+    }
+  ]
+}

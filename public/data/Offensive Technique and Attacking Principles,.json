@@ -1,0 +1,48 @@
+{
+  "document_info": {
+    "title": "U14 Boys Costa Rica Tour - Training Session 2",
+    "topic": "Offensive Technique and Attacking Principles",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: High-Tempo Combination, Turn & Move",
+      "type": "Technical / Passing, Receiving & Turning Mechanics",
+      "pitch_diagram": {
+        "pitch_type": "25x25m Square Grid with Central Box",
+        "image_description": "A square 25x25 meter training grid. Four corner cones are labeled A, B, C, and D. In the exact center of the grid, a smaller 4x4 meter box is marked out using tall yellow cones to simulate a heavily congested central midfield zone.",
+        "tactical_layout": {
+          "dimensions": "25m x 25m outer grid, 4m x 4m central zone",
+          "equipment": "4 tall yellow cones forming the inner constraint",
+          "stations": "4 corner positions executing continuous diagonal passing patterns"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players are distributed evenly among the four outer corner stations. Two balls start at opposite corners (A and C) to maximize technical volume and force players to scan before receiving."
+      },
+      "explanation": "Player A plays a firm, low pass diagonally into the central box for Player B, who has checked away from their corner. Player B must receive the ball inside the yellow cone box, execute a quick turn (e.g., inside hook, outside flick, or Cruyff turn), and open up their body to play a pass out to Player C. Players follow their pass to rotate to the next station.",
+      "coaching_points": [
+        "Passes into the central box must be hit with pace to mimic breaking an opponent's midfield line.",
+        "The receiving player must check their shoulder to scan behind them before entering the central box.",
+        "The first touch inside the box must be soft and directional, turning the ball smoothly into the path of the next passing target."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "3v1 to 3v2 Rondo: Overload and Penetrate",
+      "type": "Tactical Overload / Dynamic Transition Game",
+      "pitch_diagram": {
+        "pitch_type": "30x15m Split Rectangle Grid",
+        "image_description": "A rectangular 30x15 meter grid divided cleanly into two equal 15x15 meter halves by a dashed center line. Two small mini-gates made of cones sit on each deep baseline. A 3v1 overload is established in the initial possession grid.",
+        "tactical_layout": {
+          "dimensions": "30m x 15m total grid split into two 15m x 15m zones",
+          "equipment": "4 mini cone gates on the endlines",
+          "player_alignment": "Blue group attacking with a numerical advantage in the active half against an orange defender"
+        }
+      },
+      "setup": {
+        "player_roles": "3 attacking players (blue) and 1 defending player (orange) occupy the active half. 1 resting defender stands inside the opposite half ready to engage when the ball crosses the line."
+      },
+      "explanation": "The 3 blue attackers circulate the ball inside their half, attempting to keep possession against the 1 orange defender. After completing a sequence of 4 passes, they look for an opening to pass through the mini-gates or dribble across the center line. As soon as the ball enters the opposite half, the resting defender becomes active, and 1 supporting attacker joins to create a live 3v2 matching block. If defenders win the ball, they score by passing back across the center line.",
+      "coaching_points":

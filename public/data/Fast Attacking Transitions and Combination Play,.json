@@ -1,0 +1,58 @@
+{
+  "document_info": {
+    "title": "U14 Boys Costa Rica Tour - Training Session 4",
+    "topic": "Talent Development: Fast Attacking Transitions and Combination Play",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: High-Tempo Combination & Move",
+      "type": "Technical / Passing & Receiving Mechanics",
+      "pitch_diagram": {
+        "pitch_type": "25x25m Diamond Passing Grid",
+        "image_description": "A diamond-shaped passing grid measuring 25x25 meters, defined by four corner cones labeled A, B, C, and D. Two tall training mannequins are placed centrally inside the diamond to act as static central defenders blocking direct passing lines.",
+        "tactical_layout": {
+          "dimensions": "25m x 25m diamond footprint",
+          "obstacles": "2 central mannequins spaced 4 meters apart horizontally",
+          "stations": "4 corner positions (Base A, Left Flank B, Right Flank C, Apex D)"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players are distributed across all four stations, with a larger queue forming at the base (Station A) where two balls are introduced simultaneously to keep technical density and rhythm high."
+      },
+      "explanation": "Player A plays a firm vertical pass through the central gap to Player D, who checks away from the apex cone. Player D drops the ball off with a soft first touch to Player B or C supporting underneath. The receiving flank player immediately sweeps a diagonal long ball out to the opposite side to restart the pattern. Players follow their pass to rotate positions.",
+      "coaching_points": [
+        "Passes must be hit with real purpose and speed to slice cleanly between the central obstacles.",
+        "The supporting flank players must adjust their positioning dynamically, checking their shoulders to scan open space before demanding the ball.",
+        "Emphasize sharp, clean weight on one-touch lay-offs to maintain the drill's high-tempo fluid movement."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "3v3 to 5v3 Directional Transition Rondo",
+      "type": "Tactical Overload / High-Speed Counter-Pressing",
+      "pitch_diagram": {
+        "pitch_type": "30x20m Dual-Zone Box",
+        "image_description": "A rectangular 30x20m playing area cleanly subdivided into two equal 15x20m zones by a solid white line. Two distinct teams of three (Blues vs Oranges) compete alongside two neutral target players (Green) stationed on each deep endline."
+      },
+      "setup": {
+        "player_roles": "3 blues and 3 oranges act as the core competitive outfield units, supported by 2 neutral end-targets who play exclusively with the team in possession."
+      },
+      "explanation": "Play begins in Zone 1 where the blue team combines with the local neutral player to retain possession in a 4v3 overload scenario. After stringing together 5 consecutive passes, the blues must rapidly transition the ball into the opposite zone to the target player. Two blue players quickly cross the line to support, establishing a new overload, while the oranges chase across to press. If the oranges intercept, they immediately score a point by transitioning the ball back to the opposite end line.",
+      "coaching_points": [
+        "The team in possession must expand the pitch, using maximum width and depth to stretch the three pressing defenders.",
+        "The defending group must press as a tight unit, sealing off the central dividing line to stop penetrative passes into the next zone.",
+        "Upon losing the ball, the attacking group must transition instantly, executing a high counter-press to choke out the escape pass."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: Counter-Attacking in Central Overloads",
+      "type": "Tactical Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Two-Thirds Pitch Layout",
+        "image_description": "The layout spans two-thirds of a standard field, featuring a full-sized goal defended by a back 4 and 2 defensive midfielders (6 defenders) alongside a goalkeeper. The attacking group establishes a matching midfield unit and a front 3 (6 attackers), starting from a deep midfield marker."
+      },
+      "setup": {
+        "player_distribution": "6 attackers line up in a fluid 2-1-3 attacking

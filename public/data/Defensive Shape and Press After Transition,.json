@@ -1,0 +1,34 @@
+{
+  "document_info": {
+    "title": "Spain U23 National Team Training Camp: Defensive Shape and Press After Transition",
+    "topic": "Defensive Organization, Immediate Counter-Pressing, and Low Block Transitions",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: High-Intensity Shadow Shifting & Pressing Trigger",
+      "type": "Technical / Defensive Shifting Mechanics",
+      "pitch_diagram": {
+        "pitch_type": "25x25m Square Grid subdivided with central target square",
+        "image_description": "A square 25x25 meter training area. A smaller 5x5 meter box is highlighted in the exact center using flat orange markers. Four corner stations are occupied by perimeter attackers passing a ball rapidly, while a central defensive unit of 4 shifts as a block to cut off lines.",
+        "tactical_layout": {
+          "dimensions": "25m x 25m outer boundaries, 5m x 5m inner block zone",
+          "equipment": "Cones marking perimeter stations, flat markers for the central square",
+          "stations": "4 outer passing stations, 1 active central defensive diamond unit"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players split into groups of 8 to 10. 4 perimeter players circulate the ball dynamically. Inside the grid, 4 active defenders operate as a compact tactical unit."
+      },
+      "explanation": "The perimeter attackers pass the ball around the outside, trying to find a clear lane to pass through the central 5x5m target box to the opposite side. The 4 central defenders must shift dynamically in relation to the ball. The nearest defender steps up to press the ball carrier, two slide over to support the flanks, and the deepest defender drops to protect the central box. Roles switch every 4 minutes.",
+      "coaching_points": [
+        "Defenders must shift in perfect synchronization based on the movement of the ball, maintaining compact horizontal lines.",
+        "The pressing player must close down the space with high speed and apply a curved approach run to force the pass wide.",
+        "The remaining 3 defenders must tuck inside instantly, closing down gaps and using their cover shadows to seal off the central box."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "5v5 Plus 2: Immediate Counter-Pressing Transition Game",
+      "type": "Tactical R

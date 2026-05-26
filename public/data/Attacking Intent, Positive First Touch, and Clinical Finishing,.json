@@ -1,0 +1,87 @@
+{
+  "document_info": {
+    "title": "Session Programme: Receiving and Finishing to Score",
+    "topic": "Attacking Intent, Positive First Touch, and Clinical Finishing",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: Blind Turn & Finish",
+      "type": "Technical / Body Shape & Finishing Mechanics",
+      "pitch_diagram": {
+        "pitch_type": "Edge of Penalty Box Setup",
+        "image_description": "The practice is set up just outside the main penalty area. A full-sized goal with a goalkeeper is positioned at the base. Three training mannequins or poles are placed 20 meters out from goal, aligned horizontally to represent a defensive backline. Two starting lines of players face the goal from a deep central position.",
+        "tactical_layout": {
+          "dimensions": "Final third / penalty box area",
+          "equipment": "3 mannequins/poles spaced 5 meters apart acting as static central defenders",
+          "stations": "Two deep passing lines (A and B) positioned 30 meters out from goal"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players split into two equal lines at the deep central stations. One active attacking player starts pinned against the central mannequin with their back to goal."
+      },
+      "explanation": "Player A plays a firm vertical pass into the feet of the central attacker. The attacker checks toward the ball, uses a creative first touch (e.g., a blind turn, dummy, or back-heel flick) to explode past the mannequin into the penalty box, and finishes past the goalkeeper on their second touch. The shooter then joins the opposite line, and the passer becomes the next central attacker.",
+      "coaching_points": [
+        "Check away from the mannequin aggressively before receiving to simulate creating separation from a defender.",
+        "The first touch must be positive and intentional, taking the ball directly into the open space behind the defender.",
+        "Keep your head up to spot the goalkeeper's positioning before quickly striking the ball with accuracy over power."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "2v1 to 2v2 Directional Transition Game",
+      "type": "Tactical Overload / Decisive Overlapping",
+      "pitch_diagram": {
+        "pitch_type": "30x20m Subdivided Box",
+        "image_description": "A 30x20m playing grid placed vertically ahead of the penalty area. The grid is split into a defensive half and an attacking half by a dotted line. Two small mini-gates are set up on the deep baseline, while a full goal and keeper sit at the opposite end."
+      },
+      "setup": {
+        "player_roles": "2 attacking players (blue) start in their defensive half against 1 lone defender (orange). 1 resting defender waits on the edge of the opposite attacking half."
+      },
+      "explanation": "The 2 blue attackers combine in a 2v1 scenario to build out of their half. Once they cross the dotted line into the attacking half, the resting defender springs to life, turning the exercise into a live 2v2 match. The blues must quickly lock down a shot on goal. If the orange defenders win the ball, they look to score by passing through either of the 2 mini-gates on the deep baseline.",
+      "coaching_points": [
+        "Exploit the initial 2v1 numerical overload quickly before the second defender can close down the space.",
+        "The ball carrier must commit the active defender by driving directly at them before slipping a pass to their teammate.",
+        "Maintain high attacking transitions; look to finish within 6 seconds of entering the attacking half."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: Central Combinations to Break the Line",
+      "type": "Tactical Attacking Phase",
+      "pitch_diagram": {
+        "pitch_type": "Two-Thirds Pitch Central Corridor",
+        "image_description": "The area extends from the halfway line to the main goal. Cones delineate a wide central corridor, restricting play away from the extreme flanks. A back 4 and 1 defensive midfielder (5 defenders) protect the penalty area against a midfield trio and a front pair (5 attackers)."
+      },
+      "setup": {
+        "player_distribution": "5 attackers line up in a 3-2 structure facing a 4-1 low defensive block anchored by the goalkeeper.",
+        "starting_point": "Play always begins from a deep neutral midfielder acting as the server on the halfway line."
+      },
+      "explanation": "The attacking midfield trio looks to circulate the ball cleanly to pull the opposing defensive midfielder out of alignment. The objective is to split the lines with a penetrative pass into the feet of the two strikers. The strikers must work in tandem—one dropping short to link play, while the other breaks into the space behind the center-backs to receive and score.",
+      "coaching_points": [
+        "Strikers must coordinate their movements on different vertical lines to disrupt the central defenders' reference points.",
+        "Midfielders must use disguised passes (looking one way, passing another) to open up tight central lanes.",
+        "The receiving striker must adopt a half-turned body shape to allow them to spin and strike or lay off on one touch."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Match with Restricted Finishing Windows",
+      "type": "Conditioned Match",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch Layout",
+        "image_description": "A traditional 11v11 match structure across the full pitch pitch layout. An arc-shaped 'finishing zone' is highlighted extending 20 meters symmetrically outward from the goal posts to track specific shooting constraints."
+      },
+      "setup": {
+        "initial_alignment": "Both teams deploy in their standard club formations (e.g., 4-3-3 vs. 4-2-3-1), contesting a full-intensity match under normal rules."
+      },
+      "explanation": "A regular competitive game with a technical modification: goals scored from outside the 20-meter finishing zone count as 1 goal, but any goal scored inside the zone on a one-touch or two-touch maximum restriction counts for 3 goals. This constraint forces players to create high-value chances inside the box and rewards instinctive finishing.",
+      "coaching_points": [
+        "Wingers and fullbacks must look to deliver early, low cross selections that bypass the recovering center-backs.",
+        "Attacking players inside the box must stay on their toes, anticipating rebounds, deflections, and loose balls.",
+        "Apply aggressive counter-pressing the exact second possession is turned over in the final third to pin the opponent deep."
+      ]
+    }
+  ]
+}

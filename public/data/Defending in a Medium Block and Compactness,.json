@@ -1,0 +1,86 @@
+{
+  "document_info": {
+    "title": "U14 Boys Costa Rica Tour - Training Session 10",
+    "topic": "Talent Development: Defending in a Medium Block and Compactness",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: Shifting Shuttles & Block Alignment",
+      "type": "Technical / Defensive Shifting & Body Shape",
+      "pitch_diagram": {
+        "pitch_type": "20x25m Grid with Three Horizontal Gates",
+        "image_description": "A rectangular 20x25m grid divided horizontally into three equal sections by training markers. Three 4m-wide passing gates, made of tall yellow cones, are positioned across the middle line. Players are divided into an attacking line on the perimeter and a defensive unit of three shifting laterally in the center.",
+        "tactical_layout": {
+          "dimensions": "20m x 25m outer grid",
+          "equipment": "3 yellow cone gates (4m wide each) spaced evenly across the central horizontal axis",
+          "stations": "Attacking perimeter stations passing across, central defensive trio tracking the ball"
+        }
+      },
+      "setup": {
+        "player_distribution": "6 attacking players distribute themselves along both deep endlines to pass the ball back and forth. 3 active defenders set up as a compact unit in the central corridor, dynamically shifting based on ball movement."
+      },
+      "explanation": "The attacking players circulate the ball along the endlines, attempting to find a window to pass through any of the three central yellow gates to the opposite side. The defensive trio must shift as a cohesive unit. The closest defender applies pressure to line up with the ball, while the other two tuck inside to cover the adjacent gates. Outfield players rotate roles every 3 minutes.",
+      "coaching_points": [
+        "Defenders must shift in relation to the ball's movement, maintaining strict distance between each other (no more than 4–5 meters apart).",
+        "The pressing defender must approach with a low, side-on body shape to block direct forward passing lanes.",
+        "The covering defenders must stay slightly deeper than the presser, keeping their eyes on both the ball carrier and potential receivers behind them."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "4v4 Plus 2: Subdivided Possession Mid-Block Game",
+      "type": "Tactical Possession / Pressing & Covering Transitions",
+      "pitch_diagram": {
+        "pitch_type": "30x20m Central Grid with Flank Tracks",
+        "image_description": "A 30x20m grid split vertically into three zones: a central grid (20x20m) and two narrow 5m flank corridors along the touchlines. 4 attacking players (blue) look to keep possession against 4 defending players (orange), supported by 2 neutral bounce players (green) locked inside the wide channels."
+      },
+      "setup": {
+        "player_roles": "4 blues and 4 oranges battle inside the central box, while 2 green neutral players track up and down the wide flank lanes to provide outside outlets."
+      },
+      "explanation": "The blue team looks to retain possession inside the central grid, using the wide neutral players to create numerical overloads. The orange team drops into a compact medium defensive block, looking to screen central penetrative options. If the orange team wins the ball, they must quickly pass to either wide neutral player before transitioning to become the new possession group.",
+      "coaching_points": [
+        "The out-of-possession unit must stay tightly compact, prioritizing protection of the central corridor over chasing wide options early.",
+        "Use the touchline to your advantage; force the play out wide into the flank tracks, then slide the block over to trap the ball carrier.",
+        "Maintain immediate vertical transition into an attacking shape the second possession is secured."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: 8v7 Mid-Block Collective Containment",
+      "type": "Tactical Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Two-Thirds Pitch Mid-Block Alignment",
+        "image_description": "The layout utilizes two-thirds of a standard pitch. A full goal with a keeper sits at the baseline, protected by a back 4 and 3 central midfielders (7 defenders). The attacking team deploys a deep back 3, 3 midfielders, and 2 split forwards (8 attackers), starting from the halfway line."
+      },
+      "setup": {
+        "player_distribution": "The attacking team looks to build out in a 3-3-2 shape from the halfway line. The defending unit sets up a disciplined 4-3 medium defensive block, establishing a clear line of restraint 30 meters out from goal."
+      },
+      "explanation": "Play always starts with the attacking center-backs on the halfway line. The attacking team aims to pass through or around the mid-block structure to score on the main goal. The defending unit drops off to their line of restraint, remaining compact and refusing to step out until specific triggers occur. Once a bad touch or a slow lateral pass happens, the block steps up together to compress the playing space.",
+      "coaching_points": [
+        "The midfield trio must protect the center circle, moving laterally together to prevent line-breaking passes into the forwards' feet.",
+        "The defensive backline must coordinate with the midfield line, stepping up or dropping off in unison to keep a tight vertical gap (10–12 meters maximum).",
+        "Communication is vital; midfielders must pass on dropping runners to the center-backs to avoid breaking the horizontal defensive chain."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Medium Block Conditioned Match",
+      "type": "Conditioned Match",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch with Marked Mid-Block Zones",
+        "image_description": "A full-field competitive 11v11 match. Bright horizontal cone lines are placed across the pitch 30 meters and 50 meters out from each goal line, creating a clear 20-meter central 'Mid-Block Zone' to govern defensive positioning rules."
+      },
+      "setup": {
+        "initial_alignment": "Both squads line up in their standard competitive systems (e.g., matching 4-4-2 or 4-3-3 frameworks), operating under high game intensity."
+      },
+      "explanation": "A regular match with a specific tactical constraint: when the opponent builds play from the back, the defending team must drop all outfield players inside the 20-meter central 'Mid-Block Zone' before applying active pressure. If the defending team wins a turnover inside this zone and scores within 10 seconds, the goal counts for 3 points.",
+      "coaching_points": [
+        "Show defensive patience; do not break the mid-block structure by chasing the opponent's center-backs high up the pitch.",
+        "When the ball is forced wide into the mid-block zone, the entire team must slide over rapidly to create localized overloads around the ball.",
+        "The goalkeeper must stay connected to the backline, positioning themselves on the edge of the penalty area to sweep up long balls over the top."
+      ]
+    }
+  ]
+}

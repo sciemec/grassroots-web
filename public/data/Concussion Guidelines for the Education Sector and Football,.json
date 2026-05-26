@@ -1,0 +1,114 @@
+{
+  "document_info": {
+    "title": "The FA Concussion Guidelines",
+    "subtitle": "If In Doubt, Sit Them Out: Concussion Guidelines for the Education Sector and Football",
+    "publisher": "The Football Association (The FA)",
+    "target_audience": "Coaches, Teachers, Parents, Team Managers, and Match Officials",
+    "core_principle": "If In Doubt, Sit Them Out"
+  },
+  "executive_summary": {
+    "core_message": "Concussion must be taken seriously to safeguard the long-term health and welfare of players. These guidelines outline how to recognize a potential concussion, immediate actions to take for removal from play, and a structured, safe protocol for returning to academic and sports activities."
+  },
+  "recognizing_concussion": {
+    "definition": "A concussion is a traumatic brain injury caused by a direct or indirect blow to the head, face, neck, or elsewhere on the body, causing an impulsive force transmitted to the head.",
+    "visible_clues_signs": [
+      "Dazed, blank, or vacant look",
+      "Lying motionless on the ground or slow to get up",
+      "Unsteady on feet, balance problems, or falling over",
+      "Loss of consciousness or responsiveness",
+      "Confused, unaware of play, or answering questions slowly",
+      "Grabbing or clutching the head",
+      "Injury or trauma visible on face or head"
+    ],
+    "symptoms_reported_by_player": [
+      "Headache or pressure in the head",
+      "Nausea or vomiting",
+      "Dizziness or balance issues",
+      "Blurred or double vision",
+      "Sensitivity to light or noise",
+      "Feeling sluggish, hazy, foggy, or groggy",
+      "Difficulty concentrating or remembering",
+      "Feeling unusually emotional, irritable, or sad"
+    ],
+    "red_flags_immediate_emergency_action": [
+      "Neck pain or tenderness",
+      "Double vision",
+      "Weakness or tingling/burning in arms or legs",
+      "Severe or increasing headache",
+      "Seizures or convulsions",
+      "Loss of consciousness or deteriorating conscious state",
+      "Repeated vomiting",
+      "Increasingly restless, agitated, or combative behavior"
+    ]
+  },
+  "immediate_management_protocol": {
+    "step_1": "Remove the player from play immediately if a concussion is suspected.",
+    "step_2": "Do not leave the player alone. Ensure they are monitored by a responsible adult constantly.",
+    "step_3": "Do not allow the player to drive a motor vehicle or ride a bicycle.",
+    "step_4": "If any 'Red Flags' are present, arrange immediate transfer to an emergency department / hospital."
+  },
+  "graduated_return_to_play_grtp_framework": {
+    "principles": [
+      "A player must be completely symptom-free before entering the physical stages of the GRTP protocol.",
+      "Each stage must last for a minimum of 24 hours.",
+      "If any symptoms return during a stage, the player must drop back to the previous symptom-free stage and rest for 24 hours before attempting to progress again."
+    ],
+    "stages": [
+      {
+        "stage_number": 1,
+        "stage_name": "Initial Rest",
+        "minimum_duration": "24-48 hours",
+        "activity_allowed": "Complete physical and cognitive rest. Minimize screen time (phones, TV, computers) and reading. School attendance may need modification."
+      },
+      {
+        "stage_number": 2,
+        "stage_name": "Light Aerobic Exercise",
+        "minimum_duration": "24 hours",
+        "activity_allowed": "Light walking, jogging, or stationary cycling at low intensity. No resistance training, no head impact, no twisting movements."
+      },
+      {
+        "stage_number": 3,
+        "stage_name": "Sport-Specific Exercise",
+        "minimum_duration": "24 hours",
+        "activity_allowed": "Running drills, ball-tracking drills, and basic passing arrays. No heading, no tackling, no contact scenarios."
+      },
+      {
+        "stage_number": 4,
+        "stage_name": "Non-Contact Training Drills",
+        "minimum_duration": "24 hours",
+        "activity_allowed": "More complex training patterns, passing combinations, and coordinated tactical drills. Resistance training can be re-introduced."
+      },
+      {
+        "stage_number": 5,
+        "stage_name": "Full Contact Practice",
+        "minimum_duration": "24 hours",
+        "activity_allowed": "Requires formal medical clearance. Participation in normal training sessions, competitive match simulations, tackling, and heading activities."
+      },
+      {
+        "stage_number": 6,
+        "stage_name": "Return to Play",
+        "minimum_duration": "N/A",
+        "activity_allowed": "Full clearance for competitive match selection and standard physical exertion."
+      }
+    ]
+  },
+  "return_to_education_framework": {
+    "core_thesis": "Cognitive recovery must take priority over sports recovery. A student athlete must successfully return to a full academic workload without symptoms before progressing to the advanced physical stages of the GRTP.",
+    "academic_modifications": [
+      "Shorter school days or frequent rest breaks during lessons",
+      "Avoidance of loud or highly stimulating environments (music class, noisy cafeterias)",
+      "Extensions on assignments, homework deadlines, and postponement of formal examinations"
+    ]
+  },
+  "the_triad_communication_model": {
+    "image_description": "A structural flowchart showing three interconnecting nodes arranged in a cycle: 'School/Teacher', 'Parent/Guardian', and 'Football Club/Coach'. Arrows point bidirectionally between all three groups to illustrate that information regarding a player's symptoms, academic behavior, and physical status must be shared fluidly to safely manage recovery.",
+    "tactical_layout": {
+      "central_focus": "The Safety of the Child / Player",
+      "reporting_lines": {
+        "Club-to-Parent": "Coach reports the initial injury incident, symptoms observed, and removal from play.",
+        "Parent-to-School": "Parents notify teachers of the concussion to activate temporary academic accommodations.",
+        "School-to-Parent-to-Club": "School tracks cognitive tolerance, reporting symptom clearance to parents before physical training resumes at the club."
+      }
+    }
+  }
+}

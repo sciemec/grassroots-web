@@ -1,0 +1,86 @@
+{
+  "document_info": {
+    "title": "France U17 Training Session: Defending in a High Block",
+    "topic": "Defending, High Pressing, and Collective Aggression",
+    "structure": "4-Part Progressive Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Pressing & Body Shape Warm-Up",
+      "type": "Technical / Pressing Mechanics",
+      "pitch_diagram": {
+        "pitch_type": "15x15m Passing Diamonds",
+        "image_description": "Multiple 15x15m diamond-shaped grids set up across the training area. Mannequins or tracking poles are placed at the top and bottom apexes. Players are positioned at each corner of the diamond, executing a circular passing sequence with one active player stepping out to apply passive pressing pressure.",
+        "tactical_layout": {
+          "dimensions": "15m x 15m diamond configurations",
+          "equipment": "Training poles or mannequins to simulate structural passing references",
+          "stations": "4 corner stations forming a coordinated passing loop"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players are split evenly into groups of 5 to 6 per diamond grid to maximize repetitions and keep physiological intensity high."
+      },
+      "explanation": "The ball is circulated rapidly around the diamond pattern on one or two touches. As the ball travels from the base player to the wide player, the central player must aggressively sprint out to close down the space, adopting a curved recovery run. They stall 1–2 meters short of the receiver, anchoring their body shape to force the pass back inside, before resetting their defensive position.",
+      "coaching_points": [
+        "Sprinting speed to close down space must be maximum, but deceleration must be controlled to prevent being easily bypassed.",
+        "Adopt a low, side-on body stance with knees bent, using the lead foot to guide the direction of the next pass.",
+        "Check shoulders and maintain spatial awareness of potential passing lanes hiding directly behind the pressing cover shadow."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "6v4 Rondo: Pressing Trigger & Cover Shadows",
+      "type": "Tactical Rondo / Overload Box",
+      "pitch_diagram": {
+        "pitch_type": "25x20m Subdivided Grid",
+        "image_description": "A rectangular grid divided into two equal halves by a dotted line. 6 attacking players (in blue) position themselves along the perimeter and inside the grid, while 4 defending players (in orange) work tightly inside the center to screen passes and hunt down turnovers."
+      },
+      "setup": {
+        "player_roles": "6 attacking possession players vs. 4 central defending blocks. 2 attackers occupy the endlines, 2 on the sidelines, and 2 operate as central pivot targets."
+      },
+      "explanation": "The 6 attackers look to keep possession and pass across the dividing line to the opposite side. The 4 defenders must work as a compact block. When a specific trigger occurs (such as a poor touch, a slow lofted ball, or a pass played backwards), the nearest defender triggers a heavy press while the remaining 3 slide over instantly to cover passing lanes. If defenders win the ball, they quickly score by passing into mini-nets on the edge.",
+      "coaching_points": [
+        "The first defender must apply direct pressure to the ball to force the attacker's head down, eliminating their vision.",
+        "Supporting defenders must read the pressing trigger in unison, jumping aggressively to tight-mark the closest options.",
+        "Utilize personal cover shadows effectively to block lines into central pivot players behind the initial press."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: Midfield High Block (9v8)",
+      "type": "Tactical Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Two-Thirds Pitch Setup",
+        "image_description": "The session advances onto a large two-thirds pitch format. A full-sized goal with a keeper sits at the baseline, defended by a back 4 and 4 midfielders (8 defenders). The pressing unit sets up with a front 3, a midfield trio, and 3 advanced defenders pushing high up towards the halfway line (9 attackers)."
+      },
+      "setup": {
+        "player_distribution": "The building team looks to pass out of the back in a 4-4 structure. The defending team implements a high-pressing 3-4-2 block, locking lines forward to pinch the playing space completely."
+      },
+      "explanation": "Play initiates from the goalkeeper or a coach deep in the defensive zone. The possession team tries to play through or over the high block to score by crossing the halfway line. The pressing unit sets their engagement line high, locking the opposition onto one side of the pitch. They trap the ball carrier against the touchline, looking to create high turnovers and launch immediate counter-attacks on goal.",
+      "coaching_points": [
+        "The front three must coordinate their angling runs to cut the pitch completely in half, forcing the play into a predictable side.",
+        "The defensive backline must push up aggressively toward the halfway line to eliminate gaps between the lines.",
+        "Locking the opponent against the touchline serves as an extra defender; commit fully to the tackle once the trap closes."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Coordinated High Press Match",
+      "type": "Conditioned Match",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch with High Pressing Thresholds",
+        "image_description": "A comprehensive 11v11 match across the full pitch layout. Bright horizontal lines are painted 35 meters out from each goal to mark clear tactical pressing thresholds for the high block engagement zones."
+      },
+      "setup": {
+        "initial_alignment": "Both squads deploy in standard game formations (e.g., 1-4-3-3 vs 1-4-2-3-1), balancing tactical responsibilities across all zones."
+      },
+      "explanation": "A regular competitive match with a scoring incentive: any goal scored within 8 seconds of winning a turnover inside the opponent's 35-meter defensive threshold counts double. If the building team bypasses the high block cleanly and scores, they get an extra point. This forces maximum pressing aggression from the out-of-possession unit while testing build-up composure.",
+      "coaching_points": [
+        "Collective aggression is key; if one player fails to press or lags behind, the entire high-block structure collapses.",
+        "Goalkeepers must play a high starting position as a sweeper-keeper to mop up long direct clearance balls played over the top.",
+        "Maintain absolute communication from back to front, ensuring midfielders pass on runners as the block shifts dynamically."
+      ]
+    }
+  ]
+}

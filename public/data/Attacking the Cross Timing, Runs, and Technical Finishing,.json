@@ -1,0 +1,99 @@
+{
+  "document_info": {
+    "title": "U14 Boys Costa Rica Tour - Training Session 9",
+    "topic": "Attacking the Cross: Timing, Runs, and Technical Finishing",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: Flank Combinations & Unopposed Crossing",
+      "type": "Technical / Passing, Overlapping & Crossing Pattern",
+      "pitch_diagram": {
+        "pitch_type": "Half Pitch Wing Channel Setup",
+        "image_description": "The practice takes place on one side of a standard field extending from the halfway line to the main penalty box, including the full right flank corridor. Two horizontal lines of training cones mark out a designated crossing lane. A full-sized goal with a goalkeeper anchors the baseline.",
+        "tactical_layout": {
+          "dimensions": "Attacking third and flank channel",
+          "equipment": "Cones marking a wide crossing channel, 1 full goal",
+          "stations": "Station A (Deep Central Midfield), Station B (Wide Winger), Station C (Fullback)"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players are split evenly among three starting stations: A, B, and C. The ball starts at Station A. To keep technical intensity high, the exercise is mirrored on the opposite flank using a separate group of players."
+      },
+      "explanation": "Player A starts by passing wide to Player B. Player B controls the ball and cuts diagonally inward, simulating dragging an opponent's fullback away from the flank. This serves as the cue for Player C, who breaks forward from a deep position to overlap into the vacated wide channel. Player B slips a pass into Player C's path, and Player C delivers a first-time cross into the penalty box for Player A, who has made a timed run forward to finish.",
+      "coaching_points": [
+        "The overlapping player (Player C) must time their forward burst perfectly to hit the wide zone at full speed without stopping their run.",
+        "The cross must target specific zones: either driven low across the face of the goal, or hung up to the back post depending on the goalkeeper's positioning.",
+        "The central attacker (Player A) must delay their run into the box, sprinting into the danger area only when the cross is about to be delivered."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "3v2 to 4v3 Transition Crossing Game",
+      "type": "Tactical Overload / Decisive Wide Entry",
+      "pitch_diagram": {
+        "pitch_type": "35x25m Box Appended to Penalty Area",
+        "image_description": "A 35x25m playing grid placed vertically ahead of the penalty area, split down the center into a defensive half and an attacking half by a dashed line. The grid includes one wide flank lane. A full-sized goal and goalkeeper sit at the base.",
+        "tactical_layout": {
+          "dimensions": "35m x 25m grid including one wide corridor",
+          "player_alignment": "Blue group attacking with a numerical advantage in the build-up half against two orange defenders"
+        }
+      },
+      "setup": {
+        "player_roles": "3 attacking players (blue) build play in the defensive half against 2 active defenders (orange). 1 wide attacking winger tracks along the isolated flank channel, and 1 resting defender waits inside the attacking half."
+      },
+      "explanation": "The 3 blue attackers combine in their half to bypass the 2 orange defenders. Once they cross the dotted line, the ball must be shifted wide to the winger tracking the flank corridor. As the ball travels wide, the resting defender engages, establishing a live 4v3 matching block in the box. The wide winger crosses for the 3 central attackers, who must coordinate their runs to finish past the keeper.",
+      "coaching_points": [
+        "Circulate the ball quickly in the initial 3v2 zone to commit defenders and open up the passing lane to the wide player.",
+        "As soon as the ball moves wide, central attackers must explode into the box, crossing paths to confuse the tracking defenders.",
+        "Defenders must drop quickly, matching the runners' speeds and keeping body contact inside the penalty box."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: Synchronized Flank Attacks (6v5)",
+      "type": "Tactical Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Two-Thirds Pitch with Isolated Flanks",
+        "image_description": "The layout spans two-thirds of a standard field. Regular vertical cone lines define wide corridors along both sidelines from the halfway line to the penalty box. A full goal with a goalkeeper is positioned at the baseline, protected by a back 4 and 1 defensive midfielder (5 defenders). The attacking unit fields a midfield trio and a front 3 (6 attackers).",
+        "tactical_layout": {
+          "field_constraints": "Flanks restricted to isolate wingers and fullbacks during the build-up phase",
+          "attacking_unit": "6 blue players structured in a 3-3 shape to overload the wide zones",
+          "defensive_unit": "5 orange outfield defenders working as a compact low block"
+        }
+      },
+      "setup": {
+        "player_distribution": "6 attackers face a compact 5-man defensive block anchored by the goalkeeper. Play triggers from a deep central playmaker near the halfway line."
+      },
+      "explanation": "The attacking midfield trio uses quick horizontal ball circulation to shift the 5-man defensive block from side to side. The primary objective is to shift the ball wide into either isolated flank corridor. Once the ball is wide, the nearest fullback must execute an underlap or overlap to create a 2v1 advantage. The wide player crosses into the box, where the remaining attackers must attack 3 distinct areas: the near post, far post, and penalty spot.",
+      "coaching_points": [
+        "Attackers inside the box must attack their designated areas with aggression—the near post runner must try to nick it, while the far post runner covers deep overthrows.",
+        "The cross delivery must be varied: look for low, hard cut-backs if the defensive line drops too deep or clears out the penalty spot.",
+        "The opposite wide winger must tuck inside to attack the back post, acting as a critical frame-finishing option."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Match with Flank Assist Incentives",
+      "type": "Conditioned Match",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch with Outer Flank tracks",
+        "image_description": "A full-field competitive 11v11 match. Vertical cone lines are drawn along both sidelines from the halfway line to the penalty box, creating 8-meter wide 'Crossing Corridors' to govern specific tactical scoring rewards.",
+        "tactical_layout": {
+          "field_dimensions": "Full 11v11 match configuration",
+          "special_zones": "8m-wide crossing lanes mapped out on both flanks of the attacking half"
+        }
+      },
+      "setup": {
+        "initial_alignment": "Both squads line up in their standard competitive systems (e.g., matching 4-3-3 frameworks), operating under high game intensity and standard rules."
+      },
+      "explanation": "A regular match with a tactical condition: any normal goal counts as 1 point. However, if a team successfully moves the ball into the designated 'Crossing Corridor', delivers a cross, and scores from it, the goal counts for 3 points. This constraint encourages teams to widen the pitch, utilize flank overloads, and maximize crossing volume.",
+      "coaching_points": [
+        "Midfielders must look to switch the point of attack quickly, catching the opposition block out before they can slide over to cover the crossing corridor.",
+        "Attacking players inside the box must stay on the move, avoiding static positioning so they can attack the ball dynamically.",
+        "Defensively, the fullbacks must step out to press the ball carrier inside the corridor, while the midfielders drop back into the box to track central runners."
+      ]
+    }
+  ]
+}

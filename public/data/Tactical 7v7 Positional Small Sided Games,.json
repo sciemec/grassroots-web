@@ -1,0 +1,148 @@
+{
+  "document_info": {
+    "title": "Catalan Academy Coaching U7-12",
+    "topic": "Tactical 7v7 Positional Small Sided Games",
+    "publisher": "SoccerTutor.com",
+    "source_file": "catalan-academy-coaching-u7–12-7v7-ssg-build-up-play.pdf"
+  },
+  "session_practices": [
+    {
+      "practice_id": "1a",
+      "name": "Academy Playing Philosophy 7v7 (3-2-1) Small Sided Game",
+      "pitch_diagram": {
+        "page_reference": 2,
+        "pitch_type": "7-a-Side Pitch",
+        "image_description": "A 3D tactical view of a 7v7 soccer match on a green pitch. Two teams (one in white jerseys, one in blue jerseys) are organized in identical tactical shapes mirroring each other across the halfway line. The coach is positioned on the bottom sideline near the halfway line.",
+        "tactical_layout": {
+          "formation": "3-2-1",
+          "team_white": {
+            "positions": {
+              "Goalkeeper": "Positioned inside the penalty box at the top of the screen",
+              "Centre Back (CB)": "Central defender inside the defensive penalty arc",
+              "Left Back (LB)": "Positioned wide left in the defensive half",
+              "Right Back (RB)": "Positioned wide right in the defensive half",
+              "Central Midfielders (CM)": "Two players spaced laterally across the central midfield line",
+              "Forward (F)": "Lone striker positioned just beyond the center circle in the attacking half"
+            }
+          },
+          "team_blue": {
+            "positions": {
+              "Goalkeeper": "Positioned inside the penalty box at the bottom of the screen",
+              "Centre Back (CB)": "Central defender inside the defensive penalty arc",
+              "Left Back (LB)": "Positioned wide left in the defensive half",
+              "Right Back (RB)": "Positioned wide right in the defensive half",
+              "Central Midfielders (CM)": "Two players spaced laterally across the central midfield line",
+              "Forward (F)": "Lone striker positioned right on the center spot inside the center circle"
+            }
+          },
+          "annotations": [
+            {
+              "label": "Both teams in 3-2-1 formation",
+              "target": "Points to the structural alignment of both teams"
+            },
+            {
+              "label": "Coach feeds balls in to keep the game flowing",
+              "target": "Points to the coach standing on the bottom right sideline with soccer balls"
+            }
+          ]
+        }
+      },
+      "setup": {
+        "area": "7-a-Side pitch"
+      },
+      "practice_description": [
+        "Both teams are using the Barcelona 7v7 formation (3-2-1).",
+        "Coach Focus: Observe the correct positioning on the pitch.",
+        "The coach stops the game each time a mistake occurs to explain it to the players.",
+        "The coach also takes time to make important points: Open up wide and long, use all the space, overlap, etc.",
+        "We take care of each position, and which role the player has to develop depending on that position.",
+        "The players change positions every 10 minutes.",
+        "Halfway through, the coaches gather the players together to go over crucial points."
+      ],
+      "coaching_dialogue_example": {
+        "scenario": "A player is not providing support.",
+        "coach_question": "What can you do?",
+        "player_answer": "Overlap: Now the defence has a problem!"
+      }
+    },
+    {
+      "practice_id": "5",
+      "name": "\"Build Up Play Options\" 7v7 (3-2-1) Small Sided Game",
+      "variation": "5a (Option 1): Central Midfielder's Decision to Pass or Switch Play",
+      "pitch_diagram": {
+        "page_reference": 3,
+        "pitch_type": "7-a-Side Pitch",
+        "image_description": "A detailed 3D tactical drawing mapping passing sequences and positional movements out of the defensive backline. Yellow and blue dashed lines highlight prospective passing lanes, while solid black lines show player movements or curved ball tracks across zones.",
+        "tactical_layout": {
+          "formation": "3-2-1",
+          "player_actions_and_cues": [
+            {
+              "zone": "Bottom-right defensive zone",
+              "action": "Player adjusts body shape to receive, with visual cues: 'Body shape - half-turn, use back foot'. Indicates a wide Right Back (RB) option.",
+              "annotations": ["Passing sequences labeled 1, 2, 3a, 3b, 4a, 4b mapping distribution paths."]
+            },
+            {
+              "zone": "Central midfield",
+              "action": "Central Midfielder (CM) is highlighted making a tactical choice.",
+              "annotations": ["CM decision: Wall pass or switch, based on LB's position."]
+            },
+            {
+              "zone": "Left wing attacking/midfield zone",
+              "action": "A highlighted circular region labeled 'SPACE' shows an advanced Left Back (LB) exploding into room.",
+              "annotations": [
+                "Get into line of the pass",
+                "Depending on CM & RB positions, 3 options are available",
+                "Positional indicators for LB (Deep) vs. LB (Advanced)"
+              ],
+              "sequence_markers": ["5b", "5c", "5d", "6b", "60"]
+            }
+          ]
+        }
+      },
+      "setup": {
+        "area": "7-a-Side pitch"
+      },
+      "practice_description": [
+        "Barcelona 7v7 formation (3-2-1)."
+      ],
+      "tactical_focus": [
+        "Adjusting midfield and full back positions for build-up solutions.",
+        "Scanning before receiving.",
+        "Using correct body shape.",
+        "Choosing the right pass to progress, recycle, or switch play."
+      ],
+      "positional_roles": {
+        "Diagram 5a Description (Option 1) - Coach Focus": "Central midfielder's decision to combine or switch play depending on the full back's positioning.",
+        "Centre Back (CB)": "Distribute calmly, play forward when possible, or recycle.",
+        "Full Backs (LB+RB)": "Positioned deep or advanced to provide different options.",
+        "Central Midfielders (CM)": "Support play, scan, and decide on wall pass or switch.",
+        "Forward (F)": "Offer a central option by dropping short or running in behind."
+      }
+    }
+  ],
+  "methodology_and_insights": {
+    "coaching_philosophy": {
+      "question": "How do the coaches challenge players to think and learn during games?",
+      "answer": "The coaches ask players questions during the small sided games to develop better decision-making and after, to see what they have learned.",
+      "credited_source": {
+        "name": "Mickey Castiella",
+        "role": "Academy Coach"
+      }
+    },
+    "coaching_tips": "Using the 3-2-1 shape for 7v7, the players develop an understanding of how to utilise the full width and depth of the pitch, and use quick combination play."
+  },
+  "supplementary_media_pages": [
+    {
+      "page_reference": 5,
+      "content_description": "Promotional material showcasing the product ecosystem for 'Catalan Academy Coaching U7-12: The World's Best Youth Training Program'. Features a book cover design with a youth soccer player wearing an FC Barcelona-inspired blue and red kit, displaying text for '110 Practices' and highlighting availability on full-color print and digital platforms (PC, Mac, iOS, Android, Chromebook). Includes a link to a 'FREE Coach Viewer APP'."
+    },
+    {
+      "page_reference": 6,
+      "content_description": "Product feature overview highlighting that users can 'Read eBooks Aloud and Translate into 50+ Languages' (including English, Español, Français, Deutsch, Italiano, Chinese, and Arabic). Features sample screenshots of digital training apps illustrating 'Pep Guardiola Practices' and specific drills like '1. Passing and Showing to Receive in an Attacking Combination with Lay-off, Dribble and Finish'."
+    },
+    {
+      "page_reference": 7,
+      "content_description": "Software user interface screenshot of 'Tactics Manager' by SoccerTutor.com. It displays a digital tactical whiteboard used to plan training sessions. A soccer field diagram is split into 5 tactical horizontal zones ('Zone 1' to 'Zone 5'). Red and white player avatars are plotted with black curved lines showing runs, yellow dashed lines showing passes, and a right-hand sidebar menu showing tool arrays for drawing lines, adding equipment, and formatting text under user 'George'."
+    }
+  ]
+}

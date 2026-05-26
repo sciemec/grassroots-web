@@ -1,0 +1,91 @@
+{
+  "document_info": {
+    "title": "Mamelodi Sundowns Academy: U15 Technical & Tactical Training Session Plan",
+    "topic": "Defending, Pressing, and Transition Systems",
+    "structure": "4-Part Progressive Academy Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Defending in 1v1 Situations",
+      "type": "Technical / Tactical Isolation",
+      "pitch_diagram": {
+        "pitch_type": "Dual Parallel Channels",
+        "image_description": "Two identical 50x25m grids set up parallel to each other. In the center of each grid, two 5m-wide gates are placed 10m apart using cones. Players line up at starting points on opposite ends of the grids, with a central defender stationed inside the area facing the oncoming attackers.",
+        "tactical_layout": {
+          "dimensions": "50m x 25m grids",
+          "gate_setup": "Two 5m gates marked with cones, spaced 10m apart in the center of each channel",
+          "starting_points": "Marked 20m from the imaginary halfway line at both ends of each grid"
+        }
+      },
+      "setup": {
+        "player_distribution": "Split the group into 2 teams across the 2 areas. Equal numbers of players line up at each starting point, with one active defender positioned 5m in front of the center gates facing the attackers."
+      },
+      "explanation": "The sequence starts with 1 attacking player dribbling directly towards the defender. The attacker attempts to unbalance the defender and dribble through either of the central gates, while the defender aims to delay, intercept, or shepherd them away.",
+      "coaching_points": [
+        "Defenders should initiate the press from the center when approaching the ball carrier and then determine where to shepherd them.",
+        "Defenders should approach the ball carrier with an open and side-on stance, making it easier to adjust their body and show the attacker in a particular direction.",
+        "Attackers must try to throw the defender off balance and keep them guessing as to which gate they will go through.",
+        "The defensive pressure should be intensified as the exercise goes on to match real-game scenarios."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "4v4 Plus 4 – Possession Transition Game",
+      "type": "Directional Possession & Pressing Transitions",
+      "pitch_diagram": {
+        "pitch_type": "Split Half-Grids",
+        "image_description": "A playing grid divided equally into two distinct halves. One neutral (green) player is positioned at either far end of the active half where the ball starts. Two teams of four battle inside one half, looking to win the ball and switch play to the opposite end."
+      },
+      "setup": {
+        "player_roles": "Two active teams (Blues and Oranges) playing 4v4 inside one half, supported by neutral green players at the end lines acting as target outlets."
+      },
+      "explanation": "The blues start in possession and combine with the green neutral players to retain the ball inside their starting half. The oranges must press aggressively to win the ball. Once the oranges win possession, they must immediately transfer it across the dividing line to the other half where their target teammate is waiting. The orange team then enters that half to retain possession, and the blue team must rapidly transition to become the new pressing unit in that half. Every time a team wins the ball back, they look to transfer possession to the opposite side.",
+      "coaching_points": [
+        "Immediate transition from attacking to defending upon losing possession.",
+        "Aggressive pressing angles to cut off the escape pass to the opposite half.",
+        "Using neutral players to create numerical overloads and maintain possession structure."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "11v11 Plus 2: Zonal Overload & Direct Attack",
+      "type": "Tactical Game Concept",
+      "pitch_diagram": {
+        "pitch_type": "70x50m Central Quad Grid",
+        "image_description": "A full 70x50m playing area featuring a large 50x40m central box subdivided cleanly into 4 equal squares. At both far ends of the pitch, 3 distinct target gates (marked by poles) are aligned 15m apart from one another. Goalkeepers guard the endlines behind the gates.",
+        "tactical_layout": {
+          "pitch_dimensions": "70m x 50m",
+          "central_area": "50m x 40m grid split into 4 equal quadrants",
+          "scoring_gates": "3 gates constructed of poles, spaced 15m apart at each endline"
+        }
+      },
+      "setup": {
+        "player_distribution": "Two full teams of 11 players plus 2 neutral central players. Both teams are locked into a 4-4-2 formation. All outfield players start inside the central 4-square grid except for the goalkeepers who anchor the ends."
+      },
+      "explanation": "The orange team starts with possession and looks to build up play using the 2 neutral players inside the central grids to create central overloads. If a team regains possession in the opponent's half, they are highly encouraged to launch direct, vertical attacks toward the gates. However, if they regain possession inside their own defensive half, they must recycle play and restart with their goalkeeper before moving forward. To score a point, a player must cleanly dribble the ball through any of the opponent's 3 end gates.",
+      "coaching_points": [
+        "If an opponent moves into another zone to receive the ball, the player tracking them should communicate with a teammate to ensure that the player is picked up.",
+        "If a teammate presses the ball carrier (such as a centre-back stepping up), then covering players must step up in unison and get tight to potential receiving players."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Attack v. Defence - Pressing the Goal Kick",
+      "type": "Functional Phase of Play",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch Phase",
+        "image_description": "An 11v11 game setup focusing heavily on build-up play vs high pressing out of a goal kick scenario. The orange defensive line is held high at the halfway line, while their attacking players are primed on the edge of the opposition penalty box to compress the space."
+      },
+      "setup": {
+        "initial_alignment": "The ball starts with the blue goalkeeper. The orange team sets up high up the pitch, locking their backline strictly on the halfway line with their forwards pushed deep into the blue team's defensive third to force a high press."
+      },
+      "explanation": "The blues must build up play from the goalkeeper and attempt to mount a controlled attack out of the back. As soon as the blue team successfully progresses the ball into the final third, the orange goalkeeper must quickly drop back into their goal frame, and the blue goalkeeper must aggressively push up into the central midfield area to act as a sweeper-keeper option. The orange team must press immediately from the initial pass and try to turn the ball over high up the pitch.",
+      "coaching_points": [
+        "Teams should build play using a defined structure and look to make typical structural combinations to move smoothly from defence to attack.",
+        "The team out of possession must press aggressively as a coordinated unit and actively cut off any potential short passing lanes.",
+        "When defending, players must stay highly compact and remain within 10m of a teammate to block central passing channels."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "session_info": {
+    "format": "7v7 Tactical",
+    "system_of_play": "3-2-1",
+    "philosophical_influence": "F.C. Barcelona Academy Playing Philosophy",
+    "core_coaching_methodology": {
+      "style": "Guided Discovery & Active Intervention",
+      "description": "Coaches use freeze-play interventions to correct positioning mistakes in real-time, and ask targeted questions rather than lecturing to develop player decision-making and gauge learning retention."
+    }
+  },
+  "practices": [
+    {
+      "id": 1,
+      "name": "Academy Playing Philosophy 7v7 (3-2-1) Small Sided Game",
+      "type": "Positional Small Sided Game",
+      "setup": {
+        "area": "7-a-Side pitch",
+        "team_alignments": "Both teams structured in a 3-2-1 formation"
+      },
+      "coaching_focus": [
+        "Observation and correction of structural positioning on the pitch.",
+        "Maximizing space by opening up wide and long.",
+        "Encouraging attacking movements such as overlapping runs."
+      ],
+      "procedural_notes": [
+        "The coach stops the game immediately when a mistake occurs to explain it contextually.",
+        "Players rotate positions every 10 minutes to develop holistic spatial awareness and role competence.",
+        "A formal mid-session tactical review is conducted halfway through to reinforce crucial principles."
+      ],
+      "coaching_scenarios": [
+        {
+          "problem": "A player is static and not providing support.",
+          "coach_question": "What can you do?",
+          "expected_player_response": "Overlap: Now the defence has a problem!"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Build Up Play Options 7v7 (3-2-1) Small Sided Game",
+      "variation": "5a (Option 1): Central Midfielder's Decision to Pass or Switch Play",
+      "type": "Positional Small Sided Game",
+      "setup": {
+        "area": "7-a-Side pitch",
+        "team_alignments": "3-2-1 structural constraints"
+      },
+      "tactical_objectives": [
+        "Adjusting midfield and fullback lines to create passing lanes out of the back.",
+        "Pre-receipt scanning (checking shoulders) and maintaining an open body shape.",
+        "Selecting the optimal passing line to progress, recycle, or switch the point of attack."
+      ],
+      "main_coaching_focus": "The Central Midfielder's decision-making process to combine via a central wall-pass or switch play wide based entirely on the structural positioning of the opponent and the attacking fullback.",
+      "positional_roles": {
+        "Centre Back (CB)": "Distribute calmly, prioritize penetrative forward passes when open, or recycle possession safely.",
+        "Full Backs (LB / RB)": "Stagger lines by dropping deep or pushing advanced to alter the opponent's defensive reference points.",
+        "Central Midfielders (CM)": "Provide underlying support, execute pre-scanning, and dictate whether to use a wall-pass or switch play.",
+        "Forward (F)": "Act as a focal point by dropping short into pockets of space or stretching the opponent by running in behind."
+      }
+    }
+  ],
+  "coaching_tips": {
+    "source": "Mickey Castiella (Academy Coach)",
+    "key_takeaway": "Utilizing the 3-2-1 shape inherently teaches youth players how to maximize the full width and depth of a football pitch while encouraging rapid, tight combination play inside the blocks."
+  }
+}

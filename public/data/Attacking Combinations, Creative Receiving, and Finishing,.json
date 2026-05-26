@@ -1,0 +1,87 @@
+{
+  "document_info": {
+    "title": "Session Programme: Passing and Receiving to Score",
+    "topic": "Attacking Combinations, Creative Receiving, and Finishing",
+    "structure": "4-Part Progressive Technical & Tactical Session"
+  },
+  "session_practices": [
+    {
+      "part": 1,
+      "name": "Technical Warm-Up: Corner Passing & Receiving Rotations",
+      "type": "Technical / Ball Familiarity & Body Shape",
+      "pitch_diagram": {
+        "pitch_type": "20x20m Corner Grid Setup",
+        "image_description": "A square 20x20m training area with cones marking the four corners and a small central diamond of markers. Players are distributed across the corner stations, circulating two balls simultaneously in a clockwise pattern through directional combinations.",
+        "tactical_layout": {
+          "dimensions": "20m x 20m outer grid",
+          "central_element": "A 3x3m central diamond gate used as an awareness reference",
+          "stations": "4 corner stations labeled clockwise A, B, C, and D"
+        }
+      },
+      "setup": {
+        "player_distribution": "Players line up evenly behind the four corner cones. Two balls start at opposite corners (A and C) to maintain high technical density and constant focus."
+      },
+      "explanation": "Player A passes diagonally to Player B, who checked off their cone. Player B receives on their back foot, opens their body shape, and fires a pass to Player C. Player C lays it off into the path of Player D making an overlapping run. Players follow their pass to rotate to the next station.",
+      "coaching_points": [
+        "Receive the ball on the back foot with an open body shape to look forward immediately.",
+        "Passes must be delivered with proper weight to the safe side of the teammate, away from an imaginary defender.",
+        "Check away from the cone before receiving to simulate escaping a tight marker."
+      ]
+    },
+    {
+      "part": 2,
+      "name": "Directional 4v2 Grid Transition Game",
+      "type": "Tactical Overload / Possession to Target",
+      "pitch_diagram": {
+        "pitch_type": "Double Subdivided Rectangular Grid",
+        "image_description": "A 30x15m grid divided into two equal 15x15m squares. 4 attacking players (blue) look to keep possession against 2 active defenders (orange) inside one half, trying to complete a sequence before transferring the ball across the dividing line to target teammates."
+      },
+      "setup": {
+        "player_roles": "4 attackers look to create maximum width and depth in the active zone vs. 2 trailing defenders, while 2 resting defenders wait in the opposite half."
+      },
+      "explanation": "The 4 blue attackers look to complete 4 consecutive passes inside their box against 2 orange defenders. Once achieved, they look for a opening to pass across the line to their forward target in the other box. Two attackers immediately sprint across to support their teammate, creating a new 4v2 in the opposite zone, while the other 2 defenders step up to press.",
+      "coaching_points": [
+        "Create passing angles immediately by adjusting your support position relative to the ball and the defenders.",
+        "Recognize when to play safe to retain possession vs. when to execute a penetrative pass into the next zone.",
+        "Defenders must shift quickly to seal the central line and block forward passing channels."
+      ]
+    },
+    {
+      "part": 3,
+      "name": "Phase of Play: 3v2 to 4v3 Crossing & Finishing",
+      "type": "Tactical Attacking Phase",
+      "pitch_diagram": {
+        "pitch_type": "Half Pitch with Dual Flank Windows",
+        "image_description": "An attacking phase of play taking place inside the final third of a standard field. A full goal with a keeper is at the base. Central lines outline a tight box for a 3v2 central overload, while 2 wide flank channels are designated for overlapping wingers."
+      },
+      "setup": {
+        "player_distribution": "3 central attackers and 1 wide winger face 2 central defenders. 1 defensive midfielder tracks back from the edge of the final third zone to alter defensive balance.",
+        "starting_point": "Play triggers from a central deep playmaker serving a pass into the active attacking box."
+      },
+      "explanation": "The 3 central attackers combine to draw the 2 defenders out of position. They can choose to attack the goal directly via quick combinations, or split the ball wide to the winger. If the ball moves wide, a fullback overlaps to deliver a cross. The central attackers must cross their runs to attack the front post, back post, and penalty spot.",
+      "coaching_points": [
+        "Attacking runs into the box must be dynamic, explosive, and synchronized with the wide cross delivery.",
+        "The winger must assess the defensive block line before choosing between a driven low cross, a chipped ball to the back post, or a cut-back.",
+        "Attackers should look for rebounds and second-ball scraps if the initial shot is blocked or parried by the goalkeeper."
+      ]
+    },
+    {
+      "part": 4,
+      "name": "11v11 Game with Attacking Overload Scoring Conditions",
+      "type": "Conditioned Match",
+      "pitch_diagram": {
+        "pitch_type": "Full Pitch Layout",
+        "image_description": "A full-field 11v11 tactical match. The pitch features a dashed line across the final 25 meters on both ends to designate a specific attacking zone where special scoring rules apply to reward creative forward movement."
+      },
+      "setup": {
+        "initial_alignment": "Both squads line up in their standard match formations (e.g., 4-3-3 vs. 4-4-2), playing with full competitive rules."
+      },
+      "explanation": "A regular game with one key tactical constraint: any goal scored from a third-man combination or a creative back-foot turn that penetrates the 25-meter attacking line counts for 3 goals. This constraint encourages players to look for progressive passes into pockets of space and rewards forward risks.",
+      "coaching_points": [
+        "Midfielders must constantly scan the pitch to spot vertical passing lanes into the forwards early.",
+        "Forwards must play on different lines, with one dropping short to drag a center-back out while the other breaks into the space behind.",
+        "Maintain defensive shape and structure behind the ball to control the defensive transition if possession is lost."
+      ]
+    }
+  ]
+}
