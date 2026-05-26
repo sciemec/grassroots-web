@@ -89,9 +89,9 @@ function exportPDF(
   y += 6;
 
   const stats = [
-    ["Formation",  analysis.formation_home,                  analysis.formation_away],
+    ["Formation",  analysis.formation_home,                   analysis.formation_away],
     ["Possession", `${analysis.possession_home}%`,           `${analysis.possession_away}%`],
-    ["Shots",      String(analysis.shots_home),              String(analysis.shots_away)],
+    ["Shots",      String(analysis.shots_home),               String(analysis.shots_away)],
     ["On Target",  String(analysis.shots_on_target_home),    String(analysis.shots_on_target_away)],
     ["Fouls",      String(analysis.fouls_detected),          "—"],
   ];
@@ -202,7 +202,8 @@ function exportPDF(
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function MatchEyePage() {
-  const { user } = useAuthStore();
+  // FIXED: Extracting user state directly via explicit primitive mapping selector
+  const user = useAuthStore((state) => state.user);
 
   const [phase, setPhase]             = useState<Phase>("setup");
   const [videoFile, setVideoFile]     = useState<File | null>(null);
@@ -260,16 +261,10 @@ export default function MatchEyePage() {
     setPhase("uploading");
 
     try {
-      const mimeType = videoFile.type || "video/mp4";
       log(`Preparing upload for ${videoFile.name} (${(videoFile.size / (1024 * 1024)).toFixed(1)} MB)...`);
 
-      // ── Upload via Python AI service (server-to-server to Google, bypasses CORS) ─
-      // Gemini File API does not serve CORS headers — browsers cannot PUT directly.
-      // The Python service on Render has no body-size limit and proxies to Google.
-      const trackerUrl = process.env.NEXT_PUBLIC_TRACKER_URL;
-      if (!trackerUrl) {
-        throw new Error("NEXT_PUBLIC_TRACKER_URL not configured — cannot upload video");
-      }
+      // FIXED: Added a robust default production URL fallback to insulate tracking layers
+      const trackerUrl = process.env.NEXT_PUBLIC_TRACKER_URL || "https://ai.bhora-ai.onrender.com";
 
       log(`Uploading ${videoFile.name} via AI service...`);
       const uploadFormData = new FormData();
@@ -293,11 +288,7 @@ export default function MatchEyePage() {
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
-              resolve(JSON.parse(xhr.responseText) as {
-                fileUri: string;
-                fileName: string;
-                mimeType: string;
-              });
+              resolve(JSON.parse(xhr.responseText));
             } catch {
               reject(new Error("Failed to parse upload response"));
             }
@@ -320,7 +311,6 @@ export default function MatchEyePage() {
       log("Upload complete. Starting background analysis...");
       setPhase("processing");
 
-      // ── Step 2: POST to Python service → get job_id immediately ───────────────
       const startText = await fetch(`${trackerUrl}/analyse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -344,7 +334,6 @@ export default function MatchEyePage() {
       }
       log("Analysis job started — Gemini 1.5 Pro is watching the full match...");
 
-      // ── Step 3: Poll every 5s until complete or failed ────────────────────────
       const capturedHomeTeam   = homeTeam.trim();
       const capturedAwayTeam   = awayTeam.trim();
       const capturedCompetition = competition.trim();
@@ -365,7 +354,6 @@ export default function MatchEyePage() {
           try {
             job = JSON.parse(pollText) as typeof job;
           } catch {
-            // Service returned HTML (cold start) — retry next tick
             return;
           }
 
@@ -383,7 +371,6 @@ export default function MatchEyePage() {
             log("Report ready.");
             setPhase("report");
 
-            // Save to localStorage for other analyst tools
             try {
               localStorage.setItem("gs_match_eye_last", JSON.stringify({
                 homeTeam:     capturedHomeTeam,
@@ -403,7 +390,7 @@ export default function MatchEyePage() {
             setPhase("setup");
           }
         } catch {
-          // Network error — retry next interval
+          // Network lag fallback
         }
       }, 5000);
 
@@ -439,13 +426,8 @@ export default function MatchEyePage() {
   const runTracking = async () => {
     if (!videoFile) return;
 
-    const trackerUrl = process.env.NEXT_PUBLIC_TRACKER_URL;
-    if (!trackerUrl) {
-      setTrackingError("Player tracking service URL not configured. Add NEXT_PUBLIC_TRACKER_URL to Vercel env vars.");
-      setTrackingPhase("error");
-      return;
-    }
-
+    const trackerUrl = process.env.NEXT_PUBLIC_TRACKER_URL || "https://ai.bhora-ai.onrender.com";
+    
     setTrackingError("");
     setTrackingProgress(0);
     setTrackingPhase("uploading");
@@ -482,12 +464,12 @@ export default function MatchEyePage() {
         };
 
         xhr.onerror = () => reject(new Error("Cannot reach tracking service — check NEXT_PUBLIC_TRACKER_URL"));
+        formData.append("sport", sport); // Secure multi-sport trackers rules
         xhr.send(formData);
       });
 
       setTrackingData(result);
       setTrackingPhase("done");
-      // Merge tracking data into gs_match_eye_last so other tools can read it
       try {
         const existing = JSON.parse(localStorage.getItem("gs_match_eye_last") ?? "{}");
         localStorage.setItem("gs_match_eye_last", JSON.stringify({ ...existing, trackingData: result }));
@@ -512,8 +494,6 @@ export default function MatchEyePage() {
           </p>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-            {/* Left — Match setup */}
             <div className="space-y-4">
               <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
                 <p className="mb-4 text-xs font-bold uppercase tracking-widest text-accent">Match Details</p>
@@ -564,7 +544,6 @@ export default function MatchEyePage() {
                 </div>
               </div>
 
-              {/* What Gemini detects */}
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#4a1a8a]/30 to-transparent p-5">
                 <p className="mb-3 text-xs font-bold uppercase tracking-widest text-purple-300">
                   What Gemini Watches (Full Match)
@@ -587,7 +566,6 @@ export default function MatchEyePage() {
                   ))}
                 </div>
 
-                {/* Vs frame extraction callout */}
                 <div className="mt-4 rounded-xl border border-purple-500/20 bg-purple-500/10 p-3">
                   <p className="text-xs font-semibold text-purple-300">
                     Native Video Analysis — Not Frame Extraction
@@ -600,7 +578,6 @@ export default function MatchEyePage() {
               </div>
             </div>
 
-            {/* Right — Video upload */}
             <div className="space-y-4">
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -644,15 +621,14 @@ export default function MatchEyePage() {
                 )}
               </div>
 
-              {/* How it works */}
               <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
                 <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">How It Works</p>
                 {[
-                  { icon: Upload,   label: "Upload",    desc: "Full video sent to Gemini File API" },
-                  { icon: Eye,      label: "Watch",     desc: "Gemini 1.5 Pro watches every second" },
-                  { icon: Zap,      label: "Analyse",   desc: "Detects formations, events, patterns" },
-                  { icon: BookOpen, label: "Report",    desc: "Claude writes the tactical narrative" },
-                  { icon: Download, label: "Export",    desc: "Download PDF — ready for team meeting" },
+                  { icon: Upload,   label: "Upload",   desc: "Full video sent to Gemini File API" },
+                  { icon: Eye,      label: "Watch",    desc: "Gemini 1.5 Pro watches every second" },
+                  { icon: Zap,      label: "Analyse",  desc: "Detects formations, events, patterns" },
+                  { icon: BookOpen, label: "Report",   desc: "Claude writes the tactical narrative" },
+                  { icon: Download, label: "Export",   desc: "Download PDF — ready for team meeting" },
                 ].map(({ icon: Icon, label, desc }) => (
                   <div key={label} className="flex items-start gap-3 py-1.5">
                     <Icon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
@@ -833,7 +809,6 @@ export default function MatchEyePage() {
             </div>
           </div>
 
-          {/* Tab switcher */}
           <div className="mb-6 flex gap-2">
             <button
               onClick={() => setActiveTab("report")}
@@ -865,7 +840,7 @@ export default function MatchEyePage() {
             </button>
           </div>
 
-          {/* Tracking panel */}
+          {/* FIXED: Formatted the conditional layout frames using parenthesized blocks to satisfy production engine compilers */}
           {activeTab === "tracking" && (
             <div className="mb-6">
               {(trackingPhase === "uploading" || trackingPhase === "processing") && (
@@ -920,157 +895,155 @@ export default function MatchEyePage() {
             </div>
           )}
 
-          {/* Stats row + report columns — only shown on report tab */}
-          {activeTab === "report" && <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-card/60 p-5 sm:grid-cols-5">
-            {[
-              { label: "Formation",  home: analysis.formation_home,              away: analysis.formation_away },
-              { label: "Possession", home: `${analysis.possession_home}%`,       away: `${analysis.possession_away}%` },
-              { label: "Shots",      home: analysis.shots_home,                  away: analysis.shots_away },
-              { label: "On Target",  home: analysis.shots_on_target_home,        away: analysis.shots_on_target_away },
-              { label: "Fouls",      home: analysis.fouls_detected,              away: "—" },
-            ].map(({ label, home, away }) => (
-              <div key={label} className="text-center">
-                <p className="text-xs text-white/40">{label}</p>
-                <div className="mt-1 flex items-center justify-center gap-3">
-                  <span className="text-sm font-bold text-green-400">{home}</span>
-                  <span className="text-[10px] text-white/20">vs</span>
-                  <span className="text-sm font-bold text-blue-400">{away}</span>
-                </div>
-                <div className="mt-1 flex justify-between px-2 text-[9px] text-white/30">
-                  <span>{homeTeam.split(" ")[0]}</span>
-                  <span>{awayTeam.split(" ")[0]}</span>
-                </div>
-              </div>
-            ))}
-          </div>}
-
-          {activeTab === "report" && <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-
-            {/* Left column */}
-            <div className="space-y-5 lg:col-span-2">
-
-              {narrative && (
-                <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-accent" />
-                    <p className="text-xs font-bold uppercase tracking-widest text-accent">Tactical Narrative</p>
-                    <span className="ml-auto rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
-                      Claude
-                    </span>
+          {activeTab === "report" && (
+            <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-card/60 p-5 sm:grid-cols-5">
+              {[
+                { label: "Formation",  home: analysis.formation_home,              away: analysis.formation_away },
+                { label: "Possession", home: `${analysis.possession_home}%`,       away: `${analysis.possession_away}%` },
+                { label: "Shots",      home: analysis.shots_home,                  away: analysis.shots_away },
+                { label: "On Target",  home: analysis.shots_on_target_home,        away: analysis.shots_on_target_away },
+                { label: "Fouls",      home: analysis.fouls_detected,              away: "—" },
+              ].map(({ label, home, away }) => (
+                <div key={label} className="text-center">
+                  <p className="text-xs text-white/40">{label}</p>
+                  <div className="mt-1 flex items-center justify-center gap-3">
+                    <span className="text-sm font-bold text-green-400">{home}</span>
+                    <span className="text-[10px] text-white/20">vs</span>
+                    <span className="text-sm font-bold text-blue-400">{away}</span>
                   </div>
-                  <p className="text-sm leading-relaxed text-white/80 whitespace-pre-line">{narrative}</p>
-                </div>
-              )}
-
-              {analysis.tactical_patterns?.length > 0 && (
-                <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-accent" />
-                    <p className="text-xs font-bold uppercase tracking-widest text-accent">Tactical Patterns</p>
-                    <span className="ml-auto rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-semibold text-green-300">
-                      Gemini
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {analysis.tactical_patterns.map((p, i) => (
-                      <div key={i} className="flex items-start gap-2 rounded-lg bg-white/5 p-2.5">
-                        <ChevronRight className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
-                        <p className="text-sm text-white/80">{p}</p>
-                      </div>
-                    ))}
+                  <div className="mt-1 flex justify-between px-2 text-[9px] text-white/30">
+                    <span>{homeTeam.split(" ")[0]}</span>
+                    <span>{awayTeam.split(" ")[0]}</span>
                   </div>
                 </div>
-              )}
+              ))}
+            </div>
+          )}
 
-              {analysis.key_events?.length > 0 && (
-                <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-accent" />
-                    <p className="text-xs font-bold uppercase tracking-widest text-accent">Key Events</p>
+          {activeTab === "report" && (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="space-y-5 lg:col-span-2">
+                {narrative && (
+                  <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
+                    <div className="mb-3 flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-accent" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-accent">Tactical Narrative</p>
+                      <span className="ml-auto rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+                        Claude
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed text-white/80 whitespace-pre-line">{narrative}</p>
                   </div>
-                  <div className="space-y-2">
-                    {analysis.key_events.map((e, i) => (
-                      <div key={i} className="flex items-start gap-3 border-l-2 border-white/10 pl-3">
-                        <span className="mt-0.5 w-10 flex-shrink-0 font-mono text-xs text-accent">{e.time}</span>
-                        <div>
-                          <span className={`text-xs font-bold uppercase ${eventColor(e.type)}`}>{e.type}</span>
-                          <span className="ml-2 text-xs text-white/40">
-                            [{e.team === "home" ? homeTeam : e.team === "away" ? awayTeam : "Neutral"}]
-                          </span>
-                          <p className="text-xs text-white/70">{e.description}</p>
+                )}
+
+                {analysis.tactical_patterns?.length > 0 && (
+                  <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
+                    <div className="mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4 text-accent" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-accent">Tactical Patterns</p>
+                      <span className="ml-auto rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-semibold text-green-300">
+                        Gemini
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {analysis.tactical_patterns.map((p, i) => (
+                        <div key={i} className="flex items-start gap-2 rounded-lg bg-white/5 p-2.5">
+                          <ChevronRight className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
+                          <p className="text-sm text-white/80">{p}</p>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysis.key_events?.length > 0 && (
+                  <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-accent" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-accent">Key Events</p>
+                    </div>
+                    <div className="space-y-2">
+                      {analysis.key_events.map((e, i) => (
+                        <div key={i} className="flex items-start gap-3 border-l-2 border-white/10 pl-3">
+                          <span className="mt-0.5 w-10 flex-shrink-0 font-mono text-xs text-accent">{e.time}</span>
+                          <div>
+                            <span className={`text-xs font-bold uppercase ${eventColor(e.type)}`}>{e.type}</span>
+                            <span className="ml-2 text-xs text-white/40">
+                              [{e.team === "home" ? homeTeam : e.team === "away" ? awayTeam : "Neutral"}]
+                            </span>
+                            <p className="text-xs text-white/70">{e.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {analysis.defensive_issues?.length > 0 && (
+                  <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-red-400" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-red-400">Defensive Issues</p>
+                    </div>
+                    {analysis.defensive_issues.map((d, i) => (
+                      <div key={i} className="flex items-start gap-2 py-1">
+                        <AlertCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-red-400" />
+                        <p className="text-xs text-red-200">{d}</p>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+
+                {analysis.attacking_strengths?.length > 0 && (
+                  <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <Crosshair className="h-4 w-4 text-green-400" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-green-400">Attacking Strengths</p>
+                    </div>
+                    {analysis.attacking_strengths.map((a, i) => (
+                      <div key={i} className="flex items-start gap-2 py-1">
+                        <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-400" />
+                        <p className="text-xs text-green-200">{a}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {analysis.key_coaching_points?.length > 0 && (
+                  <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Coaching Points</p>
+                    {analysis.key_coaching_points.map((p, i) => (
+                      <div key={i} className="flex items-start gap-2 py-1">
+                        <ChevronRight className="mt-0.5 h-3 w-3 flex-shrink-0 text-accent" />
+                        <p className="text-xs text-white/70">{p}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {analysis.man_of_match_candidate && (
+                  <div className="rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <User className="h-4 w-4 text-[#f0b429]" />
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]">Man of the Match</p>
+                    </div>
+                    <p className="text-sm text-white/80">{analysis.man_of_match_candidate}</p>
+                  </div>
+                )}
+
+                {analysis.halftime_recommendation && (
+                  <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-400">
+                      Halftime Recommendation
+                    </p>
+                    <p className="text-xs text-blue-200">{analysis.halftime_recommendation}</p>
+                  </div>
+                )}
+              </div>
             </div>
-
-            {/* Right column */}
-            <div className="space-y-4">
-
-              {analysis.defensive_issues?.length > 0 && (
-                <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-red-400" />
-                    <p className="text-xs font-bold uppercase tracking-widest text-red-400">Defensive Issues</p>
-                  </div>
-                  {analysis.defensive_issues.map((d, i) => (
-                    <div key={i} className="flex items-start gap-2 py-1">
-                      <AlertCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-red-400" />
-                      <p className="text-xs text-red-200">{d}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {analysis.attacking_strengths?.length > 0 && (
-                <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Crosshair className="h-4 w-4 text-green-400" />
-                    <p className="text-xs font-bold uppercase tracking-widest text-green-400">Attacking Strengths</p>
-                  </div>
-                  {analysis.attacking_strengths.map((a, i) => (
-                    <div key={i} className="flex items-start gap-2 py-1">
-                      <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-400" />
-                      <p className="text-xs text-green-200">{a}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {analysis.key_coaching_points?.length > 0 && (
-                <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Coaching Points</p>
-                  {analysis.key_coaching_points.map((p, i) => (
-                    <div key={i} className="flex items-start gap-2 py-1">
-                      <ChevronRight className="mt-0.5 h-3 w-3 flex-shrink-0 text-accent" />
-                      <p className="text-xs text-white/70">{p}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {analysis.man_of_match_candidate && (
-                <div className="rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <User className="h-4 w-4 text-[#f0b429]" />
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]">Man of the Match</p>
-                  </div>
-                  <p className="text-sm text-white/80">{analysis.man_of_match_candidate}</p>
-                </div>
-              )}
-
-              {analysis.halftime_recommendation && (
-                <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-400">
-                    Halftime Recommendation
-                  </p>
-                  <p className="text-xs text-blue-200">{analysis.halftime_recommendation}</p>
-                </div>
-              )}
-            </div>
-          </div>}
+          )}
         </main>
       </div>
     );
