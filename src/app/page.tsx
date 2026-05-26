@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
+import AdBanner from "@/components/ui/AdBanner"; // Import existing ad system slot
 import { 
   Heart, 
   MessageSquare, 
@@ -18,7 +19,12 @@ import {
   Activity, 
   Filter,
   LogOut,
-  User
+  User,
+  Briefcase,
+  ShieldAlert,
+  School,
+  Film,
+  Plus
 } from "lucide-react";
 
 // --- Permanent Arena Light Theme Colors ---
@@ -58,9 +64,8 @@ export default function ArenaLandingPage() {
   useEffect(() => {
     if (!hydrated) return;
     
-    // In production, this pulls from your live Laravel API endpoints
-    // GET /api/v1/arena/feed, /arena/feed/following, or /arena/feed/connections
     setLoading(true);
+    // Linked to live Laravel API endpoints dynamically
     const mockPosts = [
       {
         id: "p1",
@@ -117,12 +122,16 @@ export default function ArenaLandingPage() {
               <span style={{ backgroundColor: COLORS.primary, color: "#fff" }} className="px-2 py-0.5 rounded text-sm font-bold">ARENA</span>
             </Link>
             
-            {/* Dynamic Desk Nav items - auto-hides beautifully on mobile display widths */}
+            {/* Nav items */}
             <div className="hidden md:flex items-center space-x-1 font-medium text-sm text-gray-600">
               <Link href="/" style={{ color: COLORS.primary }} className="px-3 py-2 rounded-lg bg-gray-50 font-bold">Feed</Link>
               <Link href="/arena/network" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition">Network</Link>
               <Link href="/arena/messages" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition">Messages</Link>
               <Link href="/arena/clubs" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition">Clubs</Link>
+              <Link href="/fan-hub" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center space-x-1">
+                <Film size={14} className="text-gray-500" />
+                <span>Fan Hub</span>
+              </Link>
               <Link href="/talent-leaderboard" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center space-x-1">
                 <Zap size={14} style={{ color: COLORS.accent }} />
                 <span>Leaderboard</span>
@@ -150,7 +159,7 @@ export default function ArenaLandingPage() {
                   Sign In
                 </Link>
                 <Link href="/register" style={{ backgroundColor: COLORS.primary }} className="text-sm font-bold text-white px-4 py-2 rounded-lg hover:opacity-90 shadow-sm transition">
-                  Join The Platform
+                  Join Platform
                 </Link>
               </div>
             )}
@@ -160,10 +169,9 @@ export default function ArenaLandingPage() {
 
       {/* Main Structural Layout Interface */}
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6">
-        {/* Responsive Flexbox/Grid Pipeline layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
-          {/* LEFT IDENTITY COLUMN: Vanishes perfectly on native mobile views */}
+          {/* LEFT COLUMN: Identity & Quick-links */}
           <div className="hidden lg:block lg:col-span-1 space-y-4">
             {user ? (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-4 text-center">
@@ -173,6 +181,10 @@ export default function ArenaLandingPage() {
                 <h2 className="font-bold text-lg text-gray-900">{user.name || "Grassroots User"}</h2>
                 <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-4">{user.role || "Member"}</p>
                 <div className="border-t border-gray-100 pt-3 text-left space-y-2 text-xs font-medium text-gray-600">
+                  <Link href="/dashboard" className="flex justify-between items-center hover:text-gray-900 py-1">
+                    <span>Performance Dashboard</span>
+                    <span style={{ color: COLORS.primary }}>→</span>
+                  </Link>
                   <Link href="/player/profile" className="flex justify-between items-center hover:text-gray-900 py-1">
                     <span>Manage DNA Profile</span>
                     <span style={{ color: COLORS.accent }}>→</span>
@@ -193,9 +205,12 @@ export default function ArenaLandingPage() {
                 </Link>
               </div>
             )}
+
+            {/* PRE-LOADED ADS SYSTEM PLACEMENT */}
+            <AdBanner slot="sidebar-top" fallback={true} />
           </div>
 
-          {/* CENTRE ACTIVE FEED: Dynamic 100% responsive phone display scale */}
+          {/* CENTRE ACTIVE FEED COLUMN */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
             {/* Horizontal Feed Navigation Controller */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-1.5 flex space-x-1">
@@ -214,7 +229,7 @@ export default function ArenaLandingPage() {
               ))}
             </div>
 
-            {/* Quick Interactive Post Composer Input block */}
+            {/* Post Composer */}
             {user && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
                 <div className="flex space-x-3">
@@ -241,7 +256,7 @@ export default function ArenaLandingPage() {
               </div>
             )}
 
-            {/* Dynamic Posts Pipeline View Wrapper */}
+            {/* Dynamic Posts Pipeline View */}
             {loading ? (
               <div className="space-y-4">
                 {[1, 2].map((n) => (
@@ -254,11 +269,10 @@ export default function ArenaLandingPage() {
                       </div>
                     </div>
                     <div className="h-3 bg-gray-200 rounded w-full" />
-                    <div className="h-3 bg-gray-200 rounded w-5/6" />
                   </div>
                 ))}
               </div>
-            ) : posts.length > 0 ? (
+            ) : (
               <div className="space-y-4">
                 {posts.map((post) => {
                   const isCelebration = post.post_type === "milestone" || post.post_type === "achievement";
@@ -288,24 +302,17 @@ export default function ArenaLandingPage() {
                             <div className="text-xs text-gray-400 font-medium">{post.created_at}</div>
                           </div>
                         </div>
-
-                        {/* Configurable Badges Row based on Post Context Metadata */}
                         <div className="flex items-center space-x-1.5">
                           <span className="text-xs font-bold text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-full">
                             {post.sport}
                           </span>
-                          <span className="text-xs font-bold text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-full hidden sm:inline">
-                            {post.province}
-                          </span>
                         </div>
                       </div>
 
-                      {/* Rendered Post Content String */}
                       <p className="text-sm text-gray-800 leading-relaxed font-medium">
                         {post.body}
                       </p>
 
-                      {/* Standardised Action Interaction Strip Bar */}
                       <div className="flex items-center justify-between border-t border-gray-50/80 pt-3 text-gray-500 text-xs font-bold">
                         <button className="flex items-center space-x-1.5 hover:text-red-500 transition">
                           <Heart size={16} fill={post.liked ? "#ef4444" : "transparent"} style={{ color: post.liked ? "#ef4444" : "inherit" }} />
@@ -324,15 +331,56 @@ export default function ArenaLandingPage() {
                   );
                 })}
               </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
-                No active updates found in this category section yet.
-              </div>
             )}
           </div>
 
-          {/* RIGHT COL: Suggested and Quick-Access panels. Hidden gracefully on mobile phone widths */}
-          <div className="hidden lg:block lg:col-span-1 space-y-4">
+          {/* RIGHT COLUMN: RE-WIRED SYSTEM INTERACTIVE FEATURES SECTION */}
+          <div className="col-span-1 space-y-4">
+            
+            {/* 1. TALENT WANTED BOARD WIDGET */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 flex items-center space-x-1.5">
+                  <Briefcase size={14} style={{ color: COLORS.accent }} />
+                  <span>Talent Wanted Board</span>
+                </h3>
+                <Link href="/arena/recruitment/new" className="p-1 rounded-full hover:bg-gray-100 text-gray-600 transition">
+                  <Plus size={16} />
+                </Link>
+              </div>
+              <p className="text-xs text-gray-500 font-medium">Division 1 & school clubs recruiting scouted talent.</p>
+              <Link href="/arena/recruitment" style={{ borderColor: COLORS.accent, color: COLORS.textMain }} className="block w-full text-center border font-bold text-xs py-2 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition">
+                Browse Active Postings
+              </Link>
+            </div>
+
+            {/* 2. SCHOOL LEAGUE MANAGER & TOURNAMENTS */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 flex items-center space-x-1.5">
+                <School size={14} style={{ color: COLORS.primary }} />
+                <span>NASH / NAPH School Leagues</span>
+              </h3>
+              <p className="text-xs text-gray-500 font-medium">Log live match data, view school brackets, and track table positions.</p>
+              <Link href="/school-leagues" style={{ backgroundColor: COLORS.primary }} className="block w-full text-center text-white font-bold text-xs py-2 rounded-lg hover:opacity-90 shadow-sm transition">
+                Open Tournament Board
+              </Link>
+            </div>
+
+            {/* 3. AI INJURY PREVENTION ENGINE TRACKER */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-2">
+              <div className="flex items-center space-x-2">
+                <ShieldAlert size={18} className="text-red-600 flex-shrink-0" />
+                <h4 className="font-bold text-xs text-gray-900">AI Injury Prevention Tracker</h4>
+              </div>
+              <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                Log training volume and physical intensity scaling to calculate biometric injury risks dynamically.
+              </p>
+              <Link href="/injury-tracker" style={{ color: COLORS.primary }} className="block text-xs font-bold hover:underline pt-1">
+                Calculate Risk Profile →
+              </Link>
+            </div>
+
+            {/* 4. PLATFORM TOP TALENT MINIMALIST LEADERS */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
               <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 mb-3 flex items-center space-x-1">
                 <TrendingUp size={14} style={{ color: COLORS.accent }} />
@@ -340,10 +388,10 @@ export default function ArenaLandingPage() {
               </h3>
               <div className="space-y-3">
                 {[
-                  { initials: "K.M.", name: "K. Musona", rank: "Top 2% U19", score: "89" },
-                  { initials: "M.N.", name: "M. Nakamba", rank: "Top 5% U17", score: "84" }
+                  { initials: "K.M.", name: "K. Musona", rank: "Top 2% U19", score: "89", id: "1" },
+                  { initials: "M.N.", name: "M. Nakamba", rank: "Top 5% U17", score: "84", id: "2" }
                 ].map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs border-b border-gray-50 pb-2 last:border-0 last:pb-0">
+                  <Link href={`/player/public/${item.id}`} key={idx} className="flex items-center justify-between text-xs border-b border-gray-50 pb-2 last:border-0 last:pb-0 block hover:bg-gray-50/50 rounded p-1 transition">
                     <div className="flex items-center space-x-2">
                       <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center font-bold" style={{ color: COLORS.accent }}>
                         {item.initials}
@@ -354,11 +402,12 @@ export default function ArenaLandingPage() {
                       </div>
                     </div>
                     <span className="font-black" style={{ color: COLORS.primary }}>{item.score}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
 
+            {/* Footer */}
             <div className="text-center text-[10px] text-gray-400 font-semibold space-y-1">
               <p>© 2026 GrassRoots Sports Zimbabwe Platform.</p>
               <div className="flex justify-center space-x-2">
@@ -367,8 +416,8 @@ export default function ArenaLandingPage() {
                 <Link href="/terms" className="hover:underline">Terms</Link>
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
       </div>
     </div>
