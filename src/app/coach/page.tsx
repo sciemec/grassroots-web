@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
-import AdBanner from "@/components/ui/AdBanner";
+import { AdBanner } from "@/components/ui/AdBanner"; // FIXED: Corrected to named import to resolve Error #130
 import { 
   Users, 
   Activity, 
