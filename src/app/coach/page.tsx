@@ -98,8 +98,9 @@ export default function DynamicCoachHubPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {activeRoles.map((role) => (
-            <div 
+            <Link
               key={role.id}
+              href={`/coach/technical-staff/${role.id}`}
               className="h-full rounded-2xl border border-gray-200 p-5 bg-white shadow-sm flex flex-col justify-between transition-all hover:shadow-md hover:border-[#1a5c2a]"
             >
               <div>
@@ -126,17 +127,16 @@ export default function DynamicCoachHubPage() {
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {role.focusCategories.map((cat) => (
-                    <Link
+                    <span
                       key={cat}
-                      href={`/player/drills?category=${cat}`}
-                      className="rounded-lg bg-gray-100 border border-gray-200/60 px-2 py-1 text-[10px] font-bold text-gray-700 capitalize transition-colors hover:bg-[#f0b429] hover:text-[#1c3d22] hover:border-[#f0b429]"
+                      className="rounded-lg bg-gray-100 border border-gray-200/60 px-2 py-1 text-[10px] font-bold text-gray-700 capitalize"
                     >
                       {cat.replace(/_/g, " ")}
-                    </Link>
+                    </span>
                   ))}
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
