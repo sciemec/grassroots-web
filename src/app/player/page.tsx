@@ -11,7 +11,10 @@ import {
   Clock, 
   User, 
   Compass,
-  Zap
+  Zap,
+  BookOpen,
+  Apple,
+  Award
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -36,11 +39,27 @@ export default function PlayerHubDashboardPage() {
       badge: "🎯 Specialized Track"
     },
     {
+      title: "My Digital Talent Passport",
+      subtitle: "Review your verified school profiles, academic averages, and share your public athletic CV.",
+      href: "/player/passport", // ✅ FIXED: Bound cleanly to your built talent passport route
+      icon: BookOpen,
+      accent: "bg-purple-50 text-purple-700 border border-purple-100",
+      badge: "📋 Passport Active"
+    },
+    {
+      title: "Nutrition & Fuel Engine",
+      subtitle: "Log daily traditional meal variations, caloric constraints, and look over personalized active diet plans.",
+      href: "/player/nutrition", // ✅ FIXED: Bound cleanly to your built nutrition feature route
+      icon: Apple,
+      accent: "bg-amber-50 text-[#c8962a] border border-amber-200",
+      badge: "🥗 Fuel Engine Active"
+    },
+    {
       title: "Matchday Live Center",
       subtitle: "View tactical text commentary streams, live radio feeds, and scores.",
       href: "/fan/live-commentary",
       icon: Trophy,
-      accent: "bg-amber-50 text-[#c8962a] border border-amber-200",
+      accent: "bg-red-50 text-red-600 border border-red-100",
       badge: "⚽ In-Play Arena"
     },
     {
@@ -50,6 +69,14 @@ export default function PlayerHubDashboardPage() {
       icon: Activity,
       accent: "bg-blue-50 text-blue-700 border border-blue-100",
       badge: "⚡ Bio Analytics"
+    },
+    {
+      title: "Milestones & Career Trophies",
+      subtitle: "Browse your full historical log of matching team career breakthroughs and performance honors.",
+      href: "/player/progress", // ✅ FIXED: Bound cleanly to your merged milestones track
+      icon: Award,
+      accent: "bg-orange-50 text-orange-600 border border-orange-100",
+      badge: "✨ Career Milestones"
     }
   ];
 
