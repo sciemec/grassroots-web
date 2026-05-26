@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useContext } from 'react';
 import { useSearchParams } from 'next/navigation'; // Correct Next.js App Router Hook
-import { CoachSessionContext } from '../layout'; // Connect directly to our active dynamic registry stream
+import { CoachSessionContext } from '../context'; // Pointed directly to your isolated context file
 
 export default function PitchProCanvas() {
   const searchParams = useSearchParams();
@@ -9,7 +9,7 @@ export default function PitchProCanvas() {
   const [activeSession, setActiveSession] = useState(null);
 
   useEffect(() => {
-    // 1. Next.js hook natively pulls URL param strings without creating URLSearchParams manually
+    // 1. Next.js hook natively extracts URL query parameters without manual string mapping
     const sessionId = searchParams.get('session');
 
     if (sessionId && sessions && sessions.length > 0) {
@@ -49,13 +49,13 @@ export default function PitchProCanvas() {
           {activeSession.drills && activeSession.drills.map((drill, index) => (
             <div key={index} style={styles.drillScaleCard}>
               <div style={styles.partHeader}>
-                PART {drill.part}: {drill.name} 
+                PART {drill.part}: {drill.name || 'Tactical Drill Vector'}
                 <span style={styles.scaleBadge}>({drill.scale || 'Unit Scale'})</span>
               </div>
               
-              {/* Supports both structured width objects or raw dimensions fallback string strings */}
+              {/* Supports both custom dimensions strings or raw layout specifications fallback numbers */}
               <div style={styles.gridSizeTag}>
-                Status: Grid Configured
+                📏 Boundaries: {drill.dimensions || (drill.gridDimensions ? `${drill.gridDimensions.width}m x ${drill.gridDimensions.length}m` : 'Flexible Field')}
               </div>
               <p style={styles.focusSummary}>
                 {drill.keyFocus || drill.explanation || "No specialized instruction notes annotated."}
@@ -91,7 +91,7 @@ const styles = {
   topMetaNav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', backgroundColor: '#1f2937', padding: '15px 20px', borderRadius: '10px', border: '1px solid #374151' },
   sessionTitle: { margin: 0, fontSize: '20px', fontWeight: 'bold', color: '#10b981' },
   subtitle: { margin: '4px 0 0 0', fontSize: '13px', color: '#9ca3af' },
-  backBtn: { backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: '0.2s' },
+  backBtn: { backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
   workspaceGrid: { display: 'flex', gap: '20px', flexWrap: 'wrap' },
   drillDetailsPane: { width: '320px', display: 'flex', flexDirection: 'column', gap: '12px' },
   panelTitle: { fontSize: '15px', color: '#9ca3af', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 4px 0' },

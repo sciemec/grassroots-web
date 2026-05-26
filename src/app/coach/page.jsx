@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useContext } from 'react';
-import { CoachSessionContext } from './layout'; // Connected straight to your live dynamic layout context
+import { CoachSessionContext } from './context'; // Pointed directly to your isolated context file
 
 export default function CoachDashboard() {
   const { sessions } = useContext(CoachSessionContext); // Subscribed to dynamic local storage array registry
