@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { 
   Users, 
-  ShieldCheck, 
+  Shield, // ✅ FIXED: Changed ShieldCheck to Shield to prevent undefined runtime crash
   Search, 
   CreditCard, 
   BarChart3, 
@@ -19,7 +19,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 export default function AdminDashboardPage() {
   const user = useAuthStore((state) => state.user);
 
-  // STRICTLY PRESERVED: Keeping your exact original features list array
+  // STRICTLY PRESERVED: Keeping your exact original features list array layout
   const adminTools = [
     {
       icon: Users,
@@ -29,7 +29,7 @@ export default function AdminDashboardPage() {
       color: "bg-blue-500",
     },
     {
-      icon: ShieldCheck,
+      icon: Shield, // ✅ FIXED: Bound to safe icon asset definition mapping
       title: "Verifications",
       subtitle: "Document verifications",
       href: "/admin/verifications",

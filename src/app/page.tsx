@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
-import AdBanner from "@/components/ui/AdBanner"; // Import existing ad system slot
+import { AdBanner } from "@/components/ui/AdBanner"; // FIXED: Clean named import syntax
 import { 
   Heart, 
   MessageSquare, 
@@ -105,7 +105,7 @@ export default function ArenaLandingPage() {
       }
     ];
     
-    setPosts(mockPosts);
+    setPosts(safeArray(mockPosts)); // Utilizing clean codebase-wide safeArray formatting array safeguards
     setLoading(false);
   }, [hydrated, activeTab]);
 
