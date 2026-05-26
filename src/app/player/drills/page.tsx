@@ -11,7 +11,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { POSITION_FOCUS_MAP } from "@/config/position-focus";
 import {
-  ALL_DRILLS, DRILL_CATEGORIES,
+  DRILLS, DRILL_CATEGORIES,
   type TrainingDrill, type DrillCategory,
 } from "@/data/training-drills";
 import api from "@/lib/api";
@@ -196,7 +196,6 @@ function CategorySection({
 }) {
   const [open, setOpen] = useState(initialOpen);
 
-  // Sync open state if position filters change initial values
   useEffect(() => {
     setOpen(initialOpen);
   }, [initialOpen]);
@@ -241,7 +240,6 @@ export default function DrillsPage() {
   const searchParams = useSearchParams();
   const urlCategoryFilter = searchParams.get("category");
 
-  // FIXED: Explicit primitive store mapping layout selection to prevent hydration crash loops
   const user = useAuthStore((state) => state.user);
   const userPosition = (user?.position || "striker").toLowerCase();
   const focusConfig = POSITION_FOCUS_MAP[userPosition] || POSITION_FOCUS_MAP.striker;
@@ -296,19 +294,19 @@ export default function DrillsPage() {
         try {
           const payload = res.data?.data ?? res.data;
           const raw: ApiDrill[] = Array.isArray(payload) ? payload : [];
-          if (raw.length >= ALL_DRILLS.length) {
+          if (raw.length >= DRILLS.length) {
             setDrills(raw.map(mapApiDrill));
           } else {
-            setDrills(ALL_DRILLS);
+            setDrills(DRILLS);
             setUsingFallback(raw.length > 0);
           }
         } catch {
-          setDrills(ALL_DRILLS);
+          setDrills(DRILLS);
           setUsingFallback(true);
         }
       })
       .catch(() => {
-        setDrills(ALL_DRILLS);
+        setDrills(DRILLS);
         setUsingFallback(true);
       })
       .finally(() => setLoading(false));
@@ -318,7 +316,6 @@ export default function DrillsPage() {
     ? DRILL_CATEGORIES.find((c) => c.id === activeModal.category) ?? DRILL_CATEGORIES[0]
     : null;
 
-  // Compute final targeted filter categories array based on active hub configuration toggles
   const activeTargetCategories = urlCategoryFilter 
     ? [urlCategoryFilter] 
     : isPositionFiltered 
@@ -334,7 +331,6 @@ export default function DrillsPage() {
       )
     : null;
 
-  // Group current drills filtered by category constraints smoothly
   const grouped = DRILL_CATEGORIES
     .filter((cat) => activeTargetCategories.includes(cat.id))
     .map((cat) => ({
@@ -347,7 +343,6 @@ export default function DrillsPage() {
       <Sidebar />
 
       <main className="flex-1 overflow-auto">
-        {/* Top bar Layout Framework */}
         <div className="sticky top-0 z-10 border-b bg-white px-6 py-4 shadow-sm">
           <div className="flex items-center gap-3">
             <Link href="/player" className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors">
@@ -382,7 +377,6 @@ export default function DrillsPage() {
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Dynamic Position Filter Indicator Badge Bar */}
           {!urlCategoryFilter && (
             <div className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-2.5">
@@ -407,7 +401,6 @@ export default function DrillsPage() {
             </div>
           )}
 
-          {/* Coach-assigned drills */}
           {assignedDrills.filter((a) => !dismissedIds.has(a.id)).length > 0 && (
             <div className="rounded-2xl border border-[#c8962a]/30 bg-white p-4 space-y-3 shadow-sm">
               <div className="flex items-center gap-2">
@@ -444,7 +437,6 @@ export default function DrillsPage() {
             </div>
           )}
 
-          {/* Fallback notice */}
           {usingFallback && !loading && (
             <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               <WifiOff className="h-4 w-4 flex-shrink-0 text-[#c8962a]" />
@@ -455,7 +447,6 @@ export default function DrillsPage() {
             </div>
           )}
 
-          {/* Loading skeletons */}
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -498,7 +489,6 @@ export default function DrillsPage() {
                 ))}
               </div>
 
-              {/* Training Formats quick-access */}
               <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
                   Target Field Layout Formats
