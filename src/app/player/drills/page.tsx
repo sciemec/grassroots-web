@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Clock, ChevronDown, ChevronUp, ArrowLeft,
-  Wrench, Eye, MessageSquare, Package, X, WifiOff, UserPlus,
+  Wrench, Eye, MessageSquare, Package, X, WifiOff, UserPlus, Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { POSITION_FOCUS_MAP } from "@/config/position-focus";
 import {
   ALL_DRILLS, DRILL_CATEGORIES,
   type TrainingDrill, type DrillCategory,
@@ -67,7 +68,6 @@ function DrillModal({ drill, cat, onClose }: { drill: TrainingDrill; cat: DrillC
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
       <div className="relative w-full sm:max-w-2xl max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-card shadow-2xl">
-        {/* Colour header */}
         <div className="sticky top-0 rounded-t-2xl px-6 py-5" style={{ backgroundColor: cat.hex }}>
           <button
             onClick={onClose}
@@ -92,7 +92,6 @@ function DrillModal({ drill, cat, onClose }: { drill: TrainingDrill; cat: DrillC
         </div>
 
         <div className="space-y-6 p-6">
-          {/* Setup */}
           {drill.setup && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Setup</p>
@@ -100,7 +99,6 @@ function DrillModal({ drill, cat, onClose }: { drill: TrainingDrill; cat: DrillC
             </div>
           )}
 
-          {/* Equipment */}
           {drill.equipment.length > 0 && (
             <div>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -116,7 +114,6 @@ function DrillModal({ drill, cat, onClose }: { drill: TrainingDrill; cat: DrillC
             </div>
           )}
 
-          {/* Instructions */}
           {drill.instructions.length > 0 && (
             <div>
               <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Step-by-Step</p>
@@ -136,7 +133,6 @@ function DrillModal({ drill, cat, onClose }: { drill: TrainingDrill; cat: DrillC
             </div>
           )}
 
-          {/* Coaching Focus */}
           {drill.coachingFocus && (
             <div className="rounded-xl border-l-4 bg-muted/40 px-4 py-3" style={{ borderLeftColor: cat.hex }}>
               <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -146,7 +142,6 @@ function DrillModal({ drill, cat, onClose }: { drill: TrainingDrill; cat: DrillC
             </div>
           )}
 
-          {/* Camera Focus */}
           {drill.cameraFocus && (
             <div className="rounded-xl border-l-4 border-sky-400 bg-sky-500/5 px-4 py-3">
               <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-sky-600">
@@ -192,17 +187,24 @@ function DrillRow({ drill, cat, onOpen }: { drill: TrainingDrill; cat: DrillCate
 
 // ─── Category Section ──────────────────────────────────────────────────────────
 function CategorySection({
-  cat, drills, onDrillOpen,
+  cat, drills, onDrillOpen, initialOpen = false,
 }: {
   cat: DrillCategory;
   drills: TrainingDrill[];
   onDrillOpen: (drill: TrainingDrill) => void;
+  initialOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
+
+  // Sync open state if position filters change initial values
+  useEffect(() => {
+    setOpen(initialOpen);
+  }, [initialOpen]);
+
   if (drills.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-2xl border">
+    <div className="overflow-hidden rounded-2xl border bg-white">
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-5 py-4 transition-opacity hover:opacity-90"
@@ -210,7 +212,7 @@ function CategorySection({
       >
         <div className="text-left">
           <p className="font-semibold text-white">{cat.label}</p>
-          <p className="mt-0.5 text-xs text-white/70">{drills.length} drills · {drills[0]?.skillId} focus</p>
+          <p className="mt-0.5 text-xs text-white/70">{drills.length} drills · {drills[0]?.skillId || "positional"} focus</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white">
@@ -236,7 +238,14 @@ function CategorySection({
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function DrillsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const searchParams = useSearchParams();
+  const urlCategoryFilter = searchParams.get("category");
+
+  // FIXED: Explicit primitive store mapping layout selection to prevent hydration crash loops
+  const user = useAuthStore((state) => state.user);
+  const userPosition = (user?.position || "striker").toLowerCase();
+  const focusConfig = POSITION_FOCUS_MAP[userPosition] || POSITION_FOCUS_MAP.striker;
+
   const [drills, setDrills] = useState<TrainingDrill[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
@@ -244,8 +253,9 @@ export default function DrillsPage() {
   const [activeModal, setActiveModal] = useState<TrainingDrill | null>(null);
   const [assignedDrills, setAssignedDrills] = useState<AssignedDrill[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [isPositionFiltered, setIsPositionFiltered] = useState(!urlCategoryFilter);
 
-  // Load coach-assigned drills — tries API first, falls back to localStorage
+  // Load coach-assigned drills
   useEffect(() => {
     const fetchAssigned = async () => {
       try {
@@ -256,7 +266,7 @@ export default function DrillsPage() {
           return;
         }
       } catch { /* fall through to localStorage */ }
-      // localStorage fallback — same device demo (coach + player on same browser)
+      
       try {
         const raw = localStorage.getItem("gs_futurefit_assignments");
         if (raw) {
@@ -281,21 +291,16 @@ export default function DrillsPage() {
   };
 
   useEffect(() => {
-    // guests allowed — no login redirect
-
     api.get("/drills")
       .then((res) => {
         try {
           const payload = res.data?.data ?? res.data;
           const raw: ApiDrill[] = Array.isArray(payload) ? payload : [];
-          // Only use API drills if the backend has a fuller library than the built-in set.
-          // If the API returns fewer drills than ALL_DRILLS it means the DB isn't seeded yet —
-          // fall back to the built-in library so all 9 categories are populated.
           if (raw.length >= ALL_DRILLS.length) {
             setDrills(raw.map(mapApiDrill));
           } else {
             setDrills(ALL_DRILLS);
-            setUsingFallback(raw.length > 0); // only show offline banner if API returned partial data
+            setUsingFallback(raw.length > 0);
           }
         } catch {
           setDrills(ALL_DRILLS);
@@ -309,10 +314,16 @@ export default function DrillsPage() {
       .finally(() => setLoading(false));
   }, [user, router]);
 
-
   const modalCat = activeModal
     ? DRILL_CATEGORIES.find((c) => c.id === activeModal.category) ?? DRILL_CATEGORIES[0]
     : null;
+
+  // Compute final targeted filter categories array based on active hub configuration toggles
+  const activeTargetCategories = urlCategoryFilter 
+    ? [urlCategoryFilter] 
+    : isPositionFiltered 
+      ? focusConfig.targetDrillCategories 
+      : DRILL_CATEGORIES.map(c => c.id);
 
   const searchResults = search.trim()
     ? drills.filter((d) =>
@@ -323,44 +334,46 @@ export default function DrillsPage() {
       )
     : null;
 
-  // Group current drills by category
-  const grouped = DRILL_CATEGORIES.map((cat) => ({
-    cat,
-    drills: drills.filter((d) => d.category === cat.id),
-  }));
+  // Group current drills filtered by category constraints smoothly
+  const grouped = DRILL_CATEGORIES
+    .filter((cat) => activeTargetCategories.includes(cat.id))
+    .map((cat) => ({
+      cat,
+      drills: drills.filter((d) => d.category === cat.id),
+    }));
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-[#f4f2ee]">
       <Sidebar />
 
       <main className="flex-1 overflow-auto">
-        {/* Top bar */}
-        <div className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur px-6 py-4">
+        {/* Top bar Layout Framework */}
+        <div className="sticky top-0 z-10 border-b bg-white px-6 py-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
-              <ArrowLeft className="h-4 w-4" />
+            <Link href="/player" className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors">
+              <ArrowLeft className="h-4 w-4 text-gray-700" />
             </Link>
             <div className="flex-1">
-              <h1 className="text-xl font-bold">Drill Library</h1>
-              <p className="text-xs text-muted-foreground">
-                {loading ? "Loading…" : `${drills.length} drills across ${DRILL_CATEGORIES.length} categories`}
+              <h1 className="text-xl font-bold text-gray-900">Drill Academy</h1>
+              <p className="text-xs text-gray-500">
+                {loading ? "Loading…" : `${drills.length} drills available across your platform parameters`}
               </p>
             </div>
           </div>
 
           <div className="mt-3 relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search drills, categories, skills…"
+              placeholder="Search drills, categories, target skills…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border bg-background py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-ring"
+              className="w-full rounded-xl border border-gray-200 bg-[#f4f2ee] py-2.5 pl-9 pr-4 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-[#1a5c2a] focus:border-[#1a5c2a]"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -369,13 +382,38 @@ export default function DrillsPage() {
         </div>
 
         <div className="p-6 space-y-4">
+          {/* Dynamic Position Filter Indicator Badge Bar */}
+          {!urlCategoryFilter && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-[#c8962a]">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 capitalize">{userPosition} Training Track</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">Showing workouts specialized directly for your registered pitch coordinates.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPositionFiltered(!isPositionFiltered)}
+                className={`text-xs font-bold px-4 py-2 rounded-xl border transition-all ${
+                  isPositionFiltered 
+                    ? "bg-green-50 border-green-200 text-[#1a5c2a]" 
+                    : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {isPositionFiltered ? "🎯 Filtering Active" : "🌐 View Full Catalog"}
+              </button>
+            </div>
+          )}
+
           {/* Coach-assigned drills */}
           {assignedDrills.filter((a) => !dismissedIds.has(a.id)).length > 0 && (
-            <div className="rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4 space-y-3">
+            <div className="rounded-2xl border border-[#c8962a]/30 bg-white p-4 space-y-3 shadow-sm">
               <div className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-[#f0b429]" />
-                <p className="text-sm font-bold text-white">Assigned by Your Coach</p>
-                <span className="ml-auto rounded-full bg-[#f0b429]/20 px-2 py-0.5 text-[10px] font-bold text-[#f0b429]">
+                <UserPlus className="h-4 w-4 text-[#c8962a]" />
+                <p className="text-sm font-bold text-gray-900">Assigned by Your Coach</p>
+                <span className="ml-auto rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-[#c8962a]">
                   {assignedDrills.filter((a) => !dismissedIds.has(a.id)).length} new
                 </span>
               </div>
@@ -385,17 +423,17 @@ export default function DrillsPage() {
                   .slice()
                   .reverse()
                   .map((a) => (
-                    <div key={a.id} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+                    <div key={a.id} className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{a.drillName}</p>
-                        <p className="text-[10px] text-white/40 mt-0.5">{a.formatLabel} format · {new Date(a.assignedAt).toLocaleDateString()}</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{a.drillName}</p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">{a.formatLabel} format · {new Date(a.assignedAt).toLocaleDateString()}</p>
                         {a.message && (
-                          <p className="mt-1 text-xs text-[#f0b429]/80 italic">&ldquo;{a.message}&rdquo;</p>
+                          <p className="mt-1 text-xs text-[#c8962a] font-medium italic">&ldquo;{a.message}&rdquo;</p>
                         )}
                       </div>
                       <button
                         onClick={() => dismissAssignment(a.id)}
-                        className="shrink-0 rounded-lg p-1 text-white/20 hover:text-white/50 transition-colors mt-0.5"
+                        className="shrink-0 rounded-lg p-1 text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
                         aria-label="Dismiss"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -408,11 +446,11 @@ export default function DrillsPage() {
 
           {/* Fallback notice */}
           {usingFallback && !loading && (
-            <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
-              <WifiOff className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <WifiOff className="h-4 w-4 flex-shrink-0 text-[#c8962a]" />
               <span>
-                <span className="font-semibold">Offline library loaded.</span>{" "}
-                {drills.length} built-in drills available — your team&apos;s drills will sync when the server is back.
+                <span className="font-semibold">Local library loaded.</span>{" "}
+                {drills.length} default metrics available — active drills will auto-sync on next handshake connection block.
               </span>
             </div>
           )}
@@ -420,20 +458,19 @@ export default function DrillsPage() {
           {/* Loading skeletons */}
           {loading ? (
             <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-16 rounded-2xl bg-white border border-gray-200 animate-pulse" />
               ))}
             </div>
           ) : searchResults !== null ? (
-            /* Search results */
             <>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-500">
                 {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for &ldquo;{search}&rdquo;
               </p>
               {searchResults.length === 0 ? (
-                <div className="rounded-2xl border border-dashed p-12 text-center">
-                  <p className="font-medium">No drills found</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Try a different search term</p>
+                <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center bg-white">
+                  <p className="font-medium text-gray-900">No drills found</p>
+                  <p className="mt-1 text-sm text-gray-500">Try modifying your text criteria search constraints</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -447,25 +484,24 @@ export default function DrillsPage() {
               )}
             </>
           ) : (
-            /* Category accordion */
             <>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Total Drills",  value: drills.length },
-                  { label: "Categories",    value: grouped.filter(g => g.drills.length > 0).length },
-                  { label: "Duration",      value: "1 min each" },
+                  { label: "Target Drills",  value: drills.filter(d => activeTargetCategories.includes(d.category)).length },
+                  { label: "Active Tracks", value: grouped.filter(g => g.drills.length > 0).length },
+                  { label: "Target Duration",     value: "1 min each" },
                 ].map(({ label, value }) => (
-                  <div key={label} className="rounded-xl border bg-card p-3 text-center">
-                    <p className="text-lg font-bold">{value}</p>
-                    <p className="text-xs text-muted-foreground">{label}</p>
+                  <div key={label} className="rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
+                    <p className="text-lg font-bold text-gray-900">{value}</p>
+                    <p className="text-xs text-gray-500">{label}</p>
                   </div>
                 ))}
               </div>
 
               {/* Training Formats quick-access */}
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Training Formats
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
+                  Target Field Layout Formats
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -476,23 +512,26 @@ export default function DrillsPage() {
                     <Link
                       key={href}
                       href={href}
-                      className="rounded-xl border border-white/10 bg-card/60 p-3 text-center transition-colors hover:bg-white/5"
+                      className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-center transition-colors hover:border-[#1a5c2a] group"
                     >
                       <p className="text-xl">{emoji}</p>
-                      <p className="mt-1 text-xs font-semibold text-white">{label}</p>
+                      <p className="mt-1 text-xs font-semibold text-gray-700 group-hover:text-[#1a5c2a]">{label}</p>
                     </Link>
                   ))}
                 </div>
               </div>
 
-              {grouped.map(({ cat, drills: catDrills }) => (
-                <CategorySection
-                  key={cat.id}
-                  cat={cat}
-                  drills={catDrills}
-                  onDrillOpen={(drill) => setActiveModal(drill)}
-                />
-              ))}
+              <div className="space-y-3">
+                {grouped.map(({ cat, drills: catDrills }) => (
+                  <CategorySection
+                    key={cat.id}
+                    cat={cat}
+                    drills={catDrills}
+                    onDrillOpen={(drill) => setActiveModal(drill)}
+                    initialOpen={isPositionFiltered || urlCategoryFilter !== null}
+                  />
+                ))}
+              </div>
             </>
           )}
         </div>
