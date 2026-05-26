@@ -1,275 +1,34 @@
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* --- Native CSS Adaptive Structural Normalization Rules --- */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Force Native Table scrolling overflows to protect compact phone layouts */
+.gs-table-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Strict mobile field font size safety. Prevents micro-zooming layouts on focus standard input boxes */
+@media screen and (max-width: 768px) {
+  input, 
+  select, 
+  textarea {
+    font-size: 16px !important; /* Forces system engines to retain flat user scaling profiles on screen */
   }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   GRASSROOTS SPORT — Zimbabwe Theme
-   Colours: deep forest green · Zimbabwe gold · red · white text
-   Background: dark navy-green with bold diagonal gold chevron lines
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-/* ── African Pattern Palette ──────────────────────────────────────────────── */
-:root {
-  --gold:         #E6A817;
-  --gold-light:   #F5C842;
-  --terracotta:   #A0522D;
-  --terra-light:  #C1714A;
-  --charcoal:     #2C2416;
-  --teal-accent:  #3A7D6B;
-  --warm-bg:      #EDE0C4;
-  --card-bg:      rgba(255, 248, 230, 0.82);
-
-}
-
-@layer base {
-  :root {
-    /* ── Background colours — Concept B light palette ─────────── */
-    --background:          #f4f2ee;
-    --foreground:          #1a1a1a;
-
-    /* Cards: clean white panels */
-    --card:                #ffffff;
-    --card-foreground:     #1a1a1a;
-
-    /* Popovers */
-    --popover:             #ffffff;
-    --popover-foreground:  #1a1a1a;
-
-    /* Primary action: forest green */
-    --primary:             #1a5c2a;
-    --primary-foreground:  #ffffff;
-
-    /* Secondary: light grey */
-    --secondary:           #f3f4f6;
-    --secondary-foreground:#1a1a1a;
-
-    /* Muted elements */
-    --muted:               #f3f4f6;
-    --muted-foreground:    #6b7280;
-
-    /* Accent: Zimbabwe gold */
-    --accent:              #c8962a;
-    --accent-foreground:   #ffffff;
-
-    /* Destructive: Zimbabwe red */
-    --destructive:         #e53e3e;
-
-    /* Borders and inputs */
-    --border:              rgba(0,0,0,0.10);
-    --input:               rgba(0,0,0,0.10);
-    --ring:                #c8962a;
-
-    /* Charts */
-    --chart-1:             #1a5c2a;
-    --chart-2:             #c8962a;
-    --chart-3:             #e53e3e;
-    --chart-4:             #60a5fa;
-    --chart-5:             #fb923c;
-
-    /* Border radius — matches mobile */
-    --radius: 1rem;
-
-    /* Sidebar */
-    --sidebar:                    #f4f2ee;
-    --sidebar-foreground:         #1a1a1a;
-    --sidebar-primary:            #1a5c2a;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent:             #f3f4f6;
-    --sidebar-accent-foreground:  #1a1a1a;
-    --sidebar-border:             rgba(0,0,0,0.10);
-    --sidebar-ring:               #c8962a;
-  }
-
-  .dark {
-    /* Mirror :root — single Concept B light theme */
-    --background:          #f4f2ee;
-    --foreground:          #1a1a1a;
-    --card:                #ffffff;
-    --card-foreground:     #1a1a1a;
-    --popover:             #ffffff;
-    --popover-foreground:  #1a1a1a;
-    --primary:             #1a5c2a;
-    --primary-foreground:  #ffffff;
-    --secondary:           #f3f4f6;
-    --secondary-foreground:#1a1a1a;
-    --muted:               #f3f4f6;
-    --muted-foreground:    #6b7280;
-    --accent:              #c8962a;
-    --accent-foreground:   #ffffff;
-    --destructive:         #e53e3e;
-    --border:              rgba(0,0,0,0.10);
-    --input:               rgba(0,0,0,0.10);
-    --ring:                #c8962a;
-    --chart-1:             #1a5c2a;
-    --chart-2:             #c8962a;
-    --chart-3:             #e53e3e;
-    --chart-4:             #60a5fa;
-    --chart-5:             #fb923c;
-    --radius:              1rem;
-    --sidebar:                    #f4f2ee;
-    --sidebar-foreground:         #1a1a1a;
-    --sidebar-primary:            #1a5c2a;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent:             #f3f4f6;
-    --sidebar-accent-foreground:  #1a1a1a;
-    --sidebar-border:             rgba(0,0,0,0.10);
-    --sidebar-ring:               #c8962a;
-  }
-
-  .theme {
-    --font-sans: var(--font-sans);
-  }
-
-  * {
-    border-color: var(--border);
-    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
-  }
-
-  html {
-    font-family: var(--font-sans), sans-serif;
-    background-color: #f4f2ee;
-  }
-
-  body {
-    color: var(--foreground);
-    background: transparent;
-  }
-}
-
-/* ── Cards: white backgrounds with subtle border ────────────────────────── */
-.rounded-xl.border.bg-card,
-.rounded-2xl.border.bg-card {
-  background-color: #ffffff;
-  border-color: rgba(0,0,0,0.10);
-}
-
-/* ── Hub card subtitle gold text — brighter ─────────────────────────────── */
-.hub-card .hub-card-sub {
-  font-size: 0.75rem;
-  color: #f5c542;
-  position: relative;
-  z-index: 1;
-}
-
-
-/* ── Grassroots Logo Watermark ───────────────────────────────────────────────
-   Apply class="gs-watermark" to any page wrapper for the subtle bottom-right
-   logo. The chevron + watermark combine to create the full branded look.
-────────────────────────────────────────────────────────────────────────────── */
-.gs-watermark {
-  position: relative;
-}
-.gs-watermark::after {
-  content: "";
-  position: absolute;
-  bottom: -20px;
-  right: -20px;
-  width: 380px;
-  height: 380px;
-  background-image: url("/logo_v2.png");
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-position: center;
-  opacity: 0.06;
-  pointer-events: none;
-  mix-blend-mode: overlay;
-  z-index: 0;
-}
-
-/* ── African pattern feature card hover accent ───────────────────────────────
-   Gold → terracotta → teal gradient bottom line appears on hover.
-   Applied to landing page feature cards.
-────────────────────────────────────────────────────────────────────────────── */
-.feature-card-african {
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.feature-card-african::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #E6A817 0%, #C1714A 50%, #3A7D6B 100%);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.feature-card-african:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(27,94,32,0.1);
-}
-.feature-card-african:hover::after { opacity: 1; }
-
-/* ── Hub Feature Cards ───────────────────────────────────────────────────────
-   Mobile-style colored hub cards matching the Bhora AI card style.
-────────────────────────────────────────────────────────────────────────────── */
-.hub-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 1rem;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-height: 120px;
-  transition: transform 0.15s, opacity 0.15s;
-}
-.hub-card:hover {
-  transform: translateY(-2px);
-  opacity: 0.95;
-}
-.hub-card:active {
-  transform: scale(0.97);
-}
-.hub-card .hub-card-icon {
-  position: absolute;
-  bottom: -8px;
-  right: -8px;
-  opacity: 0.13;
-  width: 88px;
-  height: 88px;
-}
-.hub-card .hub-card-title {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.2;
-  position: relative;
-  z-index: 1;
-}
-.hub-card .hub-card-sub {
-  font-size: 0.75rem;
-  color: #f0b429;
-  position: relative;
-  z-index: 1;
-}
-.hub-card .hub-card-open {
-  margin-top: auto;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-  position: relative;
-  z-index: 1;
-}
-
-/* ── Scrollbar — thin gold on light ─────────────────────────────────────────  */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #f4f2ee; }
-::-webkit-scrollbar-thumb { background: rgba(200,150,42,0.35); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(200,150,42,0.6); }
-
-/* ── PWA splash / safe areas ─────────────────────────────────────────────── */
-body {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+/* Fluid helper boundaries for custom widgets */
+.arena-card-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
