@@ -10,93 +10,84 @@ const tools = [
   {
     icon: Camera,
     title: "Match Eye",
-    subtitle: "Upload a match video. Gemini watches it. Claude writes the full tactical report.",
+    subtitle: "Upload a match video. Gemini watches it natively. Claude writes the full tactical report.",
     href: "/analyst/match-eye",
-    bg: "bg-gradient-to-br from-[#1a1a5c] to-[#0a0a2d]",
     live: true,
     featured: true,
   },
   {
     icon: Brain,
     title: "Match Brain",
-    subtitle: "One session. Six outputs. Touch, xG, passes, heatmaps, zones & AI report — all synced",
+    subtitle: "One session. Six outputs. Touch, xG, passes, heatmaps, zones & AI report — all synced.",
     href: "/analyst/match-brain",
-    bg: "bg-gradient-to-br from-[#4a1a8a] to-[#1a0a3d]",
     live: true,
     featured: true,
   },
   {
     icon: Target,
     title: "Live Match Collector",
-    subtitle: "Log events on a real pitch — xG auto-calculated",
+    subtitle: "Log events on a real pitch — xG metrics auto-calculated from coordinates instantly.",
     href: "/analyst/live-match",
-    bg: "bg-gradient-to-br from-[#006400] to-[#003d00]",
     live: true,
   },
   {
     icon: BarChart2,
     title: "xG & Shot Analysis",
-    subtitle: "Post-match shot map with expected goals timeline",
+    subtitle: "Post-match shot map with expected goals rolling timeline tracking logs.",
     href: "/analyst/xg-analysis",
-    bg: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]",
     live: true,
     matchEye: true,
   },
   {
     icon: FileText,
     title: "AI Tactical Report",
-    subtitle: "Claude generates a 5-section match report from your data",
+    subtitle: "Claude generates a professional, complete 5-section match report from your dataset.",
     href: "/analyst/tactical-report",
-    bg: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]",
     live: true,
     matchEye: true,
   },
   {
     icon: Network,
     title: "Pass Map Network",
-    subtitle: "Visual passing diagram — who played to who and where",
+    subtitle: "Visual passing matrix diagram — who played to who and where spatial zones overlay.",
     href: "/analyst/pass-map",
-    bg: "bg-gradient-to-br from-[#1a6b3c] to-[#0d3d20]",
     live: true,
   },
   {
     icon: Map,
     title: "Player Heatmaps",
-    subtitle: "Where each player spent time on the pitch",
+    subtitle: "Where each specific squad player spent high-intensity time on the pitch.",
     href: "/analyst/heatmaps",
-    bg: "bg-gradient-to-br from-[#d35400] to-[#a04000]",
     live: true,
     matchEye: true,
   },
   {
     icon: TrendingUp,
     title: "Season Intelligence",
-    subtitle: "Rolling xG, form guide, squad depth trends",
+    subtitle: "Rolling team xG charts, form guides, and squad positional depth trends.",
     href: "/analyst/season",
-    bg: "bg-gradient-to-br from-[#7d6608] to-[#4a3d05]",
     live: true,
     matchEye: true,
   },
   {
     icon: Layers,
     title: "Match Map",
-    subtitle: "Tap pitch to log shots & passes together — live or post-match",
+    subtitle: "Tap pitch canvas to log shots & passes together — live or post-match workflow.",
     href: "/analyst/match-map",
-    bg: "bg-gradient-to-br from-[#c0392b] to-[#7b241c]",
     live: true,
   },
   {
     icon: Activity,
     title: "Smart Touch Tracker",
-    subtitle: "Tap player numbers as they touch the ball — AI infers formation, zones & key players",
+    subtitle: "Tap player numbers on touches — AI infers formation changes, zones & key players.",
     href: "/analyst/touch-tracker",
-    bg: "bg-gradient-to-br from-[#1a3a6b] to-[#0d1f3d]",
     live: true,
   },
 ];
 
 export default function AnalystHubPage() {
-  const { user } = useAuthStore();
+  // FIXED: Split primitive selector completely insulates against React #185 loops
+  const user = useAuthStore((state) => state.user);
   const [hasMatchEye, setHasMatchEye] = useState(false);
 
   useEffect(() => {
@@ -107,79 +98,116 @@ export default function AnalystHubPage() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-background">
+    // FIXED: Upgraded container to standard institutional light canvas bg layout
+    <div className="flex h-screen bg-[#f4f2ee]">
       <Sidebar />
       <main className="gs-watermark flex-1 overflow-auto p-6">
 
-        {/* Header */}
-        <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">
+        {/* Header Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#c8962a]">
             Analyst Hub — Professional Analytics
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-white">
+          <h1 className="mt-1 text-2xl font-black text-gray-900">
             {user?.name?.split(" ")[0] ?? "Analyst"} 👋
           </h1>
-          <p className="mt-0.5 text-sm italic text-accent/80">
+          <p className="mt-1 text-sm font-medium italic text-[#1a5c2a]">
             Match intelligence — Data that wins trophies
           </p>
         </div>
 
-        {/* Tools grid */}
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent/70">
+        {/* Tools Grid Area */}
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-500 pl-1">
           Analytics Tools
         </p>
+        
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tools.map((tool) => {
             const Icon = tool.icon;
             const card = (
-              <div className={`relative rounded-2xl border border-white/10 p-5 transition-all ${
+              // FIXED: Re-templated cards to match clean white backgrounds with dark green branding pop
+              <div className={`relative h-full rounded-2xl border border-gray-200 p-5 bg-white shadow-sm transition-all flex flex-col justify-between ${
                 tool.live
-                  ? `${tool.bg} cursor-pointer hover:scale-[1.02] hover:shadow-lg`
-                  : "bg-card/40 opacity-60 cursor-not-allowed"
+                  ? "cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-[#1a5c2a]"
+                  : "opacity-50 cursor-not-allowed bg-gray-50"
               }`}>
-                <Icon className="mb-3 h-6 w-6 text-white" />
-                <p className="text-sm font-bold text-white">{tool.title}</p>
-                <p className="mt-1 text-xs text-white/70">{tool.subtitle}</p>
-                {!tool.live && (
-                  <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white/60">
-                    <Lock className="h-2.5 w-2.5" /> Coming Soon
-                  </span>
-                )}
-                {tool.live && !tool.featured && !('matchEye' in tool && hasMatchEye) && (
-                  <span className="absolute right-3 top-3 rounded-full bg-[#f0b429] px-2 py-0.5 text-[10px] font-bold text-[#1a3a1a]">
-                    LIVE
-                  </span>
-                )}
-                {'matchEye' in tool && hasMatchEye && (
-                  <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[#f0b429] px-2 py-0.5 text-[10px] font-bold text-[#1a3a1a]">
-                    <Camera className="h-2.5 w-2.5" /> Match Eye Data
-                  </span>
-                )}
-                {tool.featured && (
-                  <span className="absolute right-3 top-3 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#4a1a8a]">
-                    NEW
-                  </span>
-                )}
+                <div>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 text-white bg-[#1a5c2a]`}>
+                    <Icon size={20} />
+                  </div>
+                  <p className="text-base font-bold text-gray-900 group-hover:text-[#1a5c2a]">
+                    {tool.title}
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
+                    {tool.subtitle}
+                  </p>
+                </div>
+
+                {/* Badge Overlay Layout Placements */}
+                <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-end min-h-[24px]">
+                  {!tool.live && (
+                    <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold text-gray-500 border border-gray-200">
+                      <Lock className="h-2.5 w-2.5" /> Coming Soon
+                    </span>
+                  )}
+                  {tool.live && !tool.featured && !('matchEye' in tool && hasMatchEye) && (
+                    <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-[#1a5c2a]">
+                      LIVE
+                    </span>
+                  )}
+                  {'matchEye' in tool && hasMatchEye && (
+                    <span className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
+                      <Camera className="h-2.5 w-2.5" /> Match Eye Data
+                    </span>
+                  )}
+                  {tool.featured && (
+                    <span className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-black text-[#c8962a]">
+                      NEW
+                    </span>
+                  )}
+                </div>
               </div>
             );
+
             return tool.live
-              ? <Link key={tool.title} href={tool.href}>{card}</Link>
+              ? <Link key={tool.title} href={tool.href} className="group">{card}</Link>
               : <div key={tool.title}>{card}</div>;
           })}
         </div>
 
-        {/* Pitch to pro banner */}
-        <div className="mt-6 rounded-2xl border border-[#f0b429]/30 bg-gradient-to-r from-[#f0b429]/10 to-transparent p-5">
-          <p className="text-sm font-bold text-[#f0b429]">
-            Professional Club Analytics — Powered by GrassRoots Sports
-          </p>
-          <p className="mt-1 text-xs text-white/60">
-            The same data tools used by European clubs — built for Zimbabwe at $99/month.
-            Wyscout charges €299/month. You pay less. You get more local context.
-          </p>
+        {/* Pitch to Pro Banner Panel */}
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-[#c8962a] shrink-0 mt-0.5">
+              <SparklesIcon className="h-5 w-5 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Professional Club Analytics — Powered by GrassRoots Sports
+              </p>
+              <p className="mt-1 text-xs text-gray-500 leading-relaxed max-w-3xl">
+                The same digital data structures utilized by top-tier elite European academies — custom built for the local Zimbabwean sports ecosystem at $99/month. Global competitors charge up to €299/month without any local NASH/NAPH or ZIFA regional context leagues integration metrics.
+              </p>
+            </div>
+          </div>
+          <Link 
+            href="/player/subscription"
+            className="bg-[#1a5c2a] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-green-800 transition-colors whitespace-nowrap"
+          >
+            Upgrade Department
+          </Link>
         </div>
 
       </main>
     </div>
+  );
+}
+
+// Simple fallback icon for helper banner utility mapping
+function SparklesIcon(props: React.ComponentProps<"svg">) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l-.813-5.096L3 15l5.187-.813L9 9l.813 5.187L15 15l-5.187.813zM18.25 5.25L17.5 8l-.75-2.75L14 4.5l2.75-.75L17.5 1l.75 2.75L21 4.5l-2.75.75z" />
+    </svg>
   );
 }
