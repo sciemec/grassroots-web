@@ -1,535 +1,209 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Search, Clock, ChevronDown, ChevronUp, ArrowLeft,
-  Wrench, Eye, MessageSquare, Package, X, WifiOff, UserPlus, Sparkles,
-} from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+// ✅ FIXED: Replaced 'Brain' with 'Cpu' to prevent lucide undefined import crash
+import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Cpu, Camera } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import { POSITION_FOCUS_MAP } from "@/config/position-focus";
-import {
-  DRILLS, DRILL_CATEGORIES,
-  type TrainingDrill, type DrillCategory,
-} from "@/data/training-drills";
-import api from "@/lib/api";
 
-// ─── Assigned drill shape (from FutureFit coach assignment) ───────────────────
-interface AssignedDrill {
-  id: string;
-  drillName: string;
-  formatLabel: string;
-  playerNames: string;
-  message: string;
-  assignedAt: string;
-}
+const tools = [
+  {
+    icon: Camera,
+    title: "Match Eye",
+    subtitle: "Upload a match video. Gemini watches it natively. Claude writes the full tactical report.",
+    href: "/analyst/match-eye",
+    live: true,
+    featured: true,
+  },
+  {
+    icon: Cpu, // ✅ FIXED: Safe icon component mapping
+    title: "Match Brain",
+    subtitle: "One session. Six outputs. Touch, xG, passes, heatmaps, zones & AI report — all synced.",
+    href: "/analyst/match-brain",
+    live: true,
+    featured: true,
+  },
+  {
+    icon: Target,
+    title: "Live Match Collector",
+    subtitle: "Log events on a real pitch — xG metrics auto-calculated from coordinates instantly.",
+    href: "/analyst/live-match",
+    live: true,
+  },
+  {
+    icon: BarChart2,
+    title: "xG & Shot Analysis",
+    subtitle: "Post-match shot map with expected goals rolling timeline tracking logs.",
+    href: "/analyst/xg-analysis",
+    live: true,
+    matchEye: true,
+  },
+  {
+    icon: FileText,
+    title: "AI Tactical Report",
+    subtitle: "Claude generates a professional, complete 5-section match report from your dataset.",
+    href: "/analyst/tactical-report",
+    live: true,
+    matchEye: true,
+  },
+  {
+    icon: Network,
+    title: "Pass Map Network",
+    subtitle: "Visual passing matrix diagram — who played to who and where spatial zones overlay.",
+    href: "/analyst/pass-map",
+    live: true,
+  },
+  {
+    icon: Map,
+    title: "Player Heatmaps",
+    subtitle: "Where each specific squad player spent high-intensity time on the pitch.",
+    href: "/analyst/heatmaps",
+    live: true,
+    matchEye: true,
+  },
+  {
+    icon: TrendingUp,
+    title: "Season Intelligence",
+    subtitle: "Rolling team xG charts, form guides, and squad positional depth trends.",
+    href: "/analyst/season",
+    live: true,
+    matchEye: true,
+  },
+  {
+    icon: Layers,
+    title: "Match Map",
+    subtitle: "Tap pitch canvas to log shots & passes together — live or post-match workflow.",
+    href: "/analyst/match-map",
+    live: true,
+  },
+  {
+    icon: Activity,
+    title: "Smart Touch Tracker",
+    subtitle: "Tap player numbers on touches — AI infers formation changes, zones & key players.",
+    href: "/analyst/touch-tracker",
+    live: true,
+  },
+];
 
-// ─── API drill shape ───────────────────────────────────────────────────────────
-interface ApiDrill {
-  id: string | number;
-  name: string;
-  category?: string;
-  focus_area?: string;
-  difficulty?: string;
-  description?: string;
-  instructions?: string;
-  reps?: string | null;
-  duration_minutes?: number | null;
-  age_phase?: string;
-}
-
-/** Map API response to our TrainingDrill shape so the UI is consistent */
-function mapApiDrill(d: ApiDrill): TrainingDrill {
-  const catId = d.category ?? "attacking_skills";
-  const catInfo = DRILL_CATEGORIES.find((c) => c.id === catId) ?? DRILL_CATEGORIES[0];
-  const steps = d.instructions
-    ? d.instructions.split(/\n|\d+\./).map((s) => s.trim()).filter(Boolean)
-    : ["Follow your coach's guidance for this drill."];
-
-  return {
-    id: String(d.id),
-    name: d.name,
-    category: catInfo.id,
-    categoryLabel: catInfo.label,
-    skillId: d.focus_area ?? "general",
-    durationSeconds: d.duration_minutes ? d.duration_minutes * 60 : 60,
-    setup: d.description ?? "",
-    equipment: [],
-    instructions: steps,
-    coachingFocus: d.focus_area ?? "",
-    cameraFocus: "",
-  };
-}
-
-// ─── Drill Detail Modal ────────────────────────────────────────────────────────
-function DrillModal({ drill, cat, onClose }: { drill: TrainingDrill; cat: DrillCategory; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full sm:max-w-2xl max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-card shadow-2xl">
-        <div className="sticky top-0 rounded-t-2xl px-6 py-5" style={{ backgroundColor: cat.hex }}>
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-4 rounded-full bg-white/20 p-1.5 text-white hover:bg-white/30 transition-colors"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/70">{drill.categoryLabel}</p>
-          <h2 className="text-xl font-bold text-white">{drill.name}</h2>
-          <div className="mt-2 flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs text-white/80">
-              <Clock className="h-3.5 w-3.5" />
-              {drill.durationSeconds}s
-            </span>
-            {drill.skillId && (
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium capitalize text-white">
-                {drill.skillId}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-6 p-6">
-          {drill.setup && (
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Setup</p>
-              <p className="text-sm leading-relaxed">{drill.setup}</p>
-            </div>
-          )}
-
-          {drill.equipment.length > 0 && (
-            <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                <Package className="h-3.5 w-3.5" /> Equipment
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {drill.equipment.map((item) => (
-                  <span key={item} className="rounded-full border bg-muted px-3 py-1 text-xs">
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {drill.instructions.length > 0 && (
-            <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Step-by-Step</p>
-              <ol className="space-y-3">
-                {drill.instructions.map((step, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span
-                      className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                      style={{ backgroundColor: cat.hex }}
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="text-sm leading-relaxed">{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {drill.coachingFocus && (
-            <div className="rounded-xl border-l-4 bg-muted/40 px-4 py-3" style={{ borderLeftColor: cat.hex }}>
-              <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                <MessageSquare className="h-3.5 w-3.5" /> Coaching Focus
-              </p>
-              <p className="text-sm">{drill.coachingFocus}</p>
-            </div>
-          )}
-
-          {drill.cameraFocus && (
-            <div className="rounded-xl border-l-4 border-sky-400 bg-sky-500/5 px-4 py-3">
-              <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-sky-600">
-                <Eye className="h-3.5 w-3.5" /> Camera Focus
-              </p>
-              <p className="text-sm">{drill.cameraFocus}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Drill Row ─────────────────────────────────────────────────────────────────
-function DrillRow({ drill, cat, onOpen }: { drill: TrainingDrill; cat: DrillCategory; onOpen: () => void }) {
-  return (
-    <button
-      onClick={onOpen}
-      className="flex w-full items-center gap-4 rounded-xl border bg-card px-4 py-3.5 text-left transition-colors hover:bg-muted/40"
-    >
-      <div
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
-        style={{ backgroundColor: cat.hex }}
-      >
-        <Wrench className="h-4 w-4 text-white" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-medium">{drill.name}</p>
-        {drill.setup && (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{drill.setup}</p>
-        )}
-      </div>
-      <div className="flex flex-shrink-0 items-center gap-2">
-        <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" />{drill.durationSeconds}s
-        </span>
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    </button>
-  );
-}
-
-// ─── Category Section ──────────────────────────────────────────────────────────
-function CategorySection({
-  cat, drills, onDrillOpen, initialOpen = false,
-}: {
-  cat: DrillCategory;
-  drills: TrainingDrill[];
-  onDrillOpen: (drill: TrainingDrill) => void;
-  initialOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(initialOpen);
-
-  useEffect(() => {
-    setOpen(initialOpen);
-  }, [initialOpen]);
-
-  if (drills.length === 0) return null;
-
-  return (
-    <div className="overflow-hidden rounded-2xl border bg-white">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-5 py-4 transition-opacity hover:opacity-90"
-        style={{ backgroundColor: cat.hex }}
-      >
-        <div className="text-left">
-          <p className="font-semibold text-white">{cat.label}</p>
-          <p className="mt-0.5 text-xs text-white/70">{drills.length} drills · {drills[0]?.skillId || "positional"} focus</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white">
-            {drills.length}
-          </span>
-          {open ? <ChevronUp className="h-5 w-5 text-white" /> : <ChevronDown className="h-5 w-5 text-white" />}
-        </div>
-      </button>
-
-      {open && (
-        <div className="divide-y bg-card">
-          {drills.map((drill) => (
-            <div key={drill.id} className="px-4 py-2">
-              <DrillRow drill={drill} cat={cat} onOpen={() => onDrillOpen(drill)} />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Page ──────────────────────────────────────────────────────────────────────
-export default function DrillsPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const urlCategoryFilter = searchParams.get("category");
-
+export default function AnalystHubPage() {
   const user = useAuthStore((state) => state.user);
-  const userPosition = (user?.position || "striker").toLowerCase();
-  const focusConfig = POSITION_FOCUS_MAP[userPosition] || POSITION_FOCUS_MAP.striker;
+  const [hasMatchEye, setHasMatchEye] = useState(false);
 
-  const [drills, setDrills] = useState<TrainingDrill[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [usingFallback, setUsingFallback] = useState(false);
-  const [search, setSearch] = useState("");
-  const [activeModal, setActiveModal] = useState<TrainingDrill | null>(null);
-  const [assignedDrills, setAssignedDrills] = useState<AssignedDrill[]>([]);
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const [isPositionFiltered, setIsPositionFiltered] = useState(!urlCategoryFilter);
-
-  // Load coach-assigned drills
   useEffect(() => {
-    const fetchAssigned = async () => {
-      try {
-        const res = await api.get("/player/assigned-drills");
-        const payload = res.data?.data ?? res.data;
-        if (Array.isArray(payload) && payload.length > 0) {
-          setAssignedDrills(payload as AssignedDrill[]);
-          return;
-        }
-      } catch { /* fall through to localStorage */ }
-      
-      try {
-        const raw = localStorage.getItem("gs_futurefit_assignments");
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) setAssignedDrills(parsed as AssignedDrill[]);
-        }
-      } catch { /* ignore */ }
-    };
-    fetchAssigned();
-
-    const dismissed = localStorage.getItem("gs_dismissed_assignments");
-    if (dismissed) setDismissedIds(new Set(JSON.parse(dismissed) as string[]));
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      setHasMatchEye(!!raw);
+    } catch {}
   }, []);
-
-  const dismissAssignment = (id: string) => {
-    setDismissedIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      try { localStorage.setItem("gs_dismissed_assignments", JSON.stringify(Array.from(next))); } catch { /* ignore */ }
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    api.get("/drills")
-      .then((res) => {
-        try {
-          const payload = res.data?.data ?? res.data;
-          const raw: ApiDrill[] = Array.isArray(payload) ? payload : [];
-          if (raw.length >= DRILLS.length) {
-            setDrills(raw.map(mapApiDrill));
-          } else {
-            setDrills(DRILLS);
-            setUsingFallback(raw.length > 0);
-          }
-        } catch {
-          setDrills(DRILLS);
-          setUsingFallback(true);
-        }
-      })
-      .catch(() => {
-        setDrills(DRILLS);
-        setUsingFallback(true);
-      })
-      .finally(() => setLoading(false));
-  }, [user, router]);
-
-  const modalCat = activeModal
-    ? DRILL_CATEGORIES.find((c) => c.id === activeModal.category) ?? DRILL_CATEGORIES[0]
-    : null;
-
-  const activeTargetCategories = urlCategoryFilter 
-    ? [urlCategoryFilter] 
-    : isPositionFiltered 
-      ? focusConfig.targetDrillCategories 
-      : DRILL_CATEGORIES.map(c => c.id);
-
-  const searchResults = search.trim()
-    ? drills.filter((d) =>
-        d.name.toLowerCase().includes(search.toLowerCase()) ||
-        d.categoryLabel.toLowerCase().includes(search.toLowerCase()) ||
-        d.skillId.toLowerCase().includes(search.toLowerCase()) ||
-        d.setup.toLowerCase().includes(search.toLowerCase())
-      )
-    : null;
-
-  const grouped = DRILL_CATEGORIES
-    .filter((cat) => activeTargetCategories.includes(cat.id))
-    .map((cat) => ({
-      cat,
-      drills: drills.filter((d) => d.category === cat.id),
-    }));
 
   return (
     <div className="flex h-screen bg-[#f4f2ee]">
       <Sidebar />
+      <main className="gs-watermark flex-1 overflow-auto p-6">
 
-      <main className="flex-1 overflow-auto">
-        <div className="sticky top-0 z-10 border-b bg-white px-6 py-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <Link href="/player" className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors">
-              <ArrowLeft className="h-4 w-4 text-gray-700" />
-            </Link>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">Drill Academy</h1>
-              <p className="text-xs text-gray-500">
-                {loading ? "Loading…" : `${drills.length} drills available across your platform parameters`}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3 relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search drills, categories, target skills…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-[#f4f2ee] py-2.5 pl-9 pr-4 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-[#1a5c2a] focus:border-[#1a5c2a]"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+        {/* Header Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#c8962a]">
+            Analyst Hub — Professional Analytics
+          </p>
+          <h1 className="mt-1 text-2xl font-black text-gray-900">
+            {user?.name?.split(" ")[0] ?? "Analyst"} 👋
+          </h1>
+          <p className="mt-1 text-sm font-medium italic text-[#1a5c2a]">
+            Match intelligence — Data that wins trophies
+          </p>
         </div>
 
-        <div className="p-6 space-y-4">
-          {!urlCategoryFilter && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-[#c8962a]">
-                  <Sparkles size={18} />
-                </div>
+        {/* Tools Grid Area */}
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-500 pl-1">
+          Analytics Tools
+        </p>
+        
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {tools.map((tool) => {
+            const Icon = tool.icon;
+            const card = (
+              <div className={`relative h-full rounded-2xl border border-gray-200 p-5 bg-white shadow-sm transition-all flex flex-col justify-between ${
+                tool.live
+                  ? "cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-[#1a5c2a]"
+                  : "opacity-50 cursor-not-allowed bg-gray-50"
+              }`}>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900 capitalize">{userPosition} Training Track</h4>
-                  <p className="text-xs text-gray-500 mt-0.5">Showing workouts specialized directly for your registered pitch coordinates.</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsPositionFiltered(!isPositionFiltered)}
-                className={`text-xs font-bold px-4 py-2 rounded-xl border transition-all ${
-                  isPositionFiltered 
-                    ? "bg-green-50 border-green-200 text-[#1a5c2a]" 
-                    : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {isPositionFiltered ? "🎯 Filtering Active" : "🌐 View Full Catalog"}
-              </button>
-            </div>
-          )}
-
-          {assignedDrills.filter((a) => !dismissedIds.has(a.id)).length > 0 && (
-            <div className="rounded-2xl border border-[#c8962a]/30 bg-white p-4 space-y-3 shadow-sm">
-              <div className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-[#c8962a]" />
-                <p className="text-sm font-bold text-gray-900">Assigned by Your Coach</p>
-                <span className="ml-auto rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-[#c8962a]">
-                  {assignedDrills.filter((a) => !dismissedIds.has(a.id)).length} new
-                </span>
-              </div>
-              <div className="space-y-2">
-                {assignedDrills
-                  .filter((a) => !dismissedIds.has(a.id))
-                  .slice()
-                  .reverse()
-                  .map((a) => (
-                    <div key={a.id} className="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{a.drillName}</p>
-                        <p className="text-[10px] text-gray-500 mt-0.5">{a.formatLabel} format · {new Date(a.assignedAt).toLocaleDateString()}</p>
-                        {a.message && (
-                          <p className="mt-1 text-xs text-[#c8962a] font-medium italic">&ldquo;{a.message}&rdquo;</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => dismissAssignment(a.id)}
-                        className="shrink-0 rounded-lg p-1 text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
-                        aria-label="Dismiss"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {usingFallback && !loading && (
-            <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <WifiOff className="h-4 w-4 flex-shrink-0 text-[#c8962a]" />
-              <span>
-                <span className="font-semibold">Local library loaded.</span>{" "}
-                {drills.length} default metrics available — active drills will auto-sync on next handshake connection block.
-              </span>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-2xl bg-white border border-gray-200 animate-pulse" />
-              ))}
-            </div>
-          ) : searchResults !== null ? (
-            <>
-              <p className="text-sm text-gray-500">
-                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for &ldquo;{search}&rdquo;
-              </p>
-              {searchResults.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center bg-white">
-                  <p className="font-medium text-gray-900">No drills found</p>
-                  <p className="mt-1 text-sm text-gray-500">Try modifying your text criteria search constraints</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {searchResults.map((drill) => {
-                    const cat = DRILL_CATEGORIES.find((c) => c.id === drill.category) ?? DRILL_CATEGORIES[0];
-                    return (
-                      <DrillRow key={drill.id} drill={drill} cat={cat} onOpen={() => setActiveModal(drill)} />
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Target Drills",  value: drills.filter(d => activeTargetCategories.includes(d.category)).length },
-                  { label: "Active Tracks", value: grouped.filter(g => g.drills.length > 0).length },
-                  { label: "Target Duration",     value: "1 min each" },
-                ].map(({ label, value }) => (
-                  <div key={label} className="rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
-                    <p className="text-lg font-bold text-gray-900">{value}</p>
-                    <p className="text-xs text-gray-500">{label}</p>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 text-white bg-[#1a5c2a]">
+                    <Icon size={20} />
                   </div>
-                ))}
-              </div>
+                  <p className="text-base font-bold text-gray-900">
+                    {tool.title}
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
+                    {tool.subtitle}
+                  </p>
+                </div>
 
-              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
-                  Target Field Layout Formats
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: "Rondo",       href: "/player/training-formats/rondo",    emoji: "⭕" },
-                    { label: "Small-Sided", href: "/player/training-formats/ssg",      emoji: "⚽" },
-                    { label: "Shooting",    href: "/player/training-formats/shooting", emoji: "🎯" },
-                  ].map(({ label, href, emoji }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-center transition-colors hover:border-[#1a5c2a] group"
-                    >
-                      <p className="text-xl">{emoji}</p>
-                      <p className="mt-1 text-xs font-semibold text-gray-700 group-hover:text-[#1a5c2a]">{label}</p>
-                    </Link>
-                  ))}
+                <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-end min-h-[24px]">
+                  {!tool.live && (
+                    <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold text-gray-500 border border-gray-200">
+                      <Lock className="h-2.5 w-2.5" /> Coming Soon
+                    </span>
+                  )}
+                  {tool.live && !tool.featured && !('matchEye' in tool && hasMatchEye) && (
+                    <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-[#1a5c2a]">
+                      LIVE
+                    </span>
+                  )}
+                  {'matchEye' in tool && hasMatchEye && (
+                    <span className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
+                      <Camera className="h-2.5 w-2.5" /> Match Eye Data
+                    </span>
+                  )}
+                  {tool.featured && (
+                    <span className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-black text-[#c8962a]">
+                      NEW
+                    </span>
+                  )}
                 </div>
               </div>
+            );
 
-              <div className="space-y-3">
-                {grouped.map(({ cat, drills: catDrills }) => (
-                  <CategorySection
-                    key={cat.id}
-                    cat={cat}
-                    drills={catDrills}
-                    onDrillOpen={(drill) => setActiveModal(drill)}
-                    initialOpen={isPositionFiltered || urlCategoryFilter !== null}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+            return tool.live
+              ? <Link key={tool.title} href={tool.href} className="group">{card}</Link>
+              : <div key={tool.title}>{card}</div>;
+          })}
         </div>
-      </main>
 
-      {activeModal && modalCat && (
-        <DrillModal drill={activeModal} cat={modalCat} onClose={() => setActiveModal(null)} />
-      )}
+        {/* Pitch to Pro Banner Panel */}
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-[#c8962a] shrink-0 mt-0.5">
+              <SparklesIcon className="h-5 w-5 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">
+                Professional Club Analytics — Powered by GrassRoots Sports
+              </p>
+              <p className="mt-1 text-xs text-gray-500 leading-relaxed max-w-3xl">
+                The same digital data structures utilized by top-tier elite European academies — custom built for the local Zimbabwean sports ecosystem at $99/month. Global competitors charge up to €299/month without any local NASH/NAPH or ZIFA regional context leagues integration metrics.
+              </p>
+            </div>
+          </div>
+          <Link 
+            href="/player/subscription"
+            className="bg-[#1a5c2a] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-green-800 transition-colors whitespace-nowrap"
+          >
+            Upgrade Department
+          </Link>
+        </div>
+
+      </main>
     </div>
+  );
+}
+
+function SparklesIcon(props: React.ComponentProps<"svg">) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l-.813-5.096L3 15l5.187-.813L9 9l.813 5.187L15 15l-5.187.813zM18.25 5.25L17.5 8l-.75-2.75L14 4.5l2.75-.75L17.5 1l.75 2.75L21 4.5l-2.75.75z" />
+    </svg>
   );
 }
