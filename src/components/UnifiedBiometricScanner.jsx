@@ -10,83 +10,89 @@ export default function UnifiedBiometricScanner({ onCaptureMetric }) {
   const [liveTelemetry, setLiveTelemetry] = useState({ rating: 'Ready', score: 0, color: '#94a3b8' });
 
   useEffect(() => {
-    // Import MediaPipe dynamically to keep server-side rendering loops clean
+    // 🚨 BUILD GUARD: Stop execution if Next.js is pre-rendering this page on the server side
+    if (typeof window === 'undefined' || !navigator.mediaDevices) return;
+
     let poseInstance = null;
     let localStream = null;
+    let frameLoopActive = true;
 
     async function initializeScanner() {
-      const { Pose } = await import('@mediapipe/pose');
-      
-      poseInstance = new Pose({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
-      });
-
-      poseInstance.setOptions({
-        modelComplexity: 1,
-        smoothLandmarks: true,
-        minDetectionConfidence: 0.6,
-        minTrackingConfidence: 0.6
-      });
-
-      poseInstance.onResults((results) => {
-        if (!results.poseLandmarks || !canvasRef.current) return;
-        
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-
-        // Run your custom metrics processing calculation logic
-        const telemetry = processBiometricFrame(results.poseLandmarks, activeMode);
-        setLiveTelemetry(telemetry);
-
-        // Draw basic visual tracking lines over critical skeletal joints
-        if (results.poseLandmarks[24] && results.poseLandmarks[26]) {
-          ctx.beginPath();
-          ctx.moveTo(results.poseLandmarks[24].x * canvas.width, results.poseLandmarks[24].y * canvas.height);
-          ctx.lineTo(results.poseLandmarks[26].x * canvas.width, results.poseLandmarks[26].y * canvas.height);
-          ctx.strokeStyle = telemetry.color || '#3b82f6';
-          ctx.lineWidth = 6;
-          ctx.stroke();
-        }
-      });
-
       try {
+        // Dynamically import MediaPipe packages ONLY inside the client browser environment
+        const { Pose } = await import('@mediapipe/pose');
+        
+        poseInstance = new Pose({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+        });
+
+        poseInstance.setOptions({
+          modelComplexity: 1,
+          smoothLandmarks: true,
+          minDetectionConfidence: 0.6,
+          minTrackingConfidence: 0.6
+        });
+
+        poseInstance.onResults((results) => {
+          if (!results.poseLandmarks || !canvasRef.current) return;
+          
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+          const telemetry = processBiometricFrame(results.poseLandmarks, activeMode);
+          setLiveTelemetry(telemetry);
+
+          if (results.poseLandmarks[24] && results.poseLandmarks[26]) {
+            ctx.beginPath();
+            ctx.moveTo(results.poseLandmarks[24].x * canvas.width, results.poseLandmarks[24].y * canvas.height);
+            ctx.lineTo(results.poseLandmarks[26].x * canvas.width, results.poseLandmarks[26].y * canvas.height);
+            ctx.strokeStyle = telemetry.color || '#3b82f6';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+          }
+        });
+
         localStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment', width: 640, height: 480 }
         });
-        if (videoRef.current) {
+        
+        if (videoRef.current && frameLoopActive) {
           videoRef.current.srcObject = localStream;
           videoRef.current.play();
           setStreamActive(true);
         }
+
+        // Trigger loop frame cycles safely
+        const triggerFrameProcessing = async () => {
+          if (videoRef.current && videoRef.current.readyState >= 2 && poseInstance && frameLoopActive) {
+            await poseInstance.send({ image: videoRef.current });
+          }
+          if (frameLoopActive) {
+            requestAnimationFrame(triggerFrameProcessing);
+          }
+        };
+        
+        requestAnimationFrame(triggerFrameProcessing);
+
       } catch (err) {
-        console.error("Camera access failed:", err);
+        console.error("Camera initializer error logs:", err);
       }
     }
 
     initializeScanner();
 
-    // Frame loops processing update cycles
-    let frameLoopActive = true;
-    const triggerFrameProcessing = async () => {
-      if (videoRef.current && videoRef.current.readyState >= 2 && poseInstance && frameLoopActive) {
-        await poseInstance.send({ image: videoRef.current });
-      }
-      requestAnimationFrame(triggerFrameProcessing);
-    };
-    
-    setTimeout(triggerFrameProcessing, 1500);
-
     return () => {
       frameLoopActive = false;
-      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
     };
   }, [activeMode]);
 
   return (
     <div style={styles.container}>
-      {/* MODE SELECTOR TOGGLE HUD BAR */}
       <div style={styles.toggleBar}>
         <button style={activeMode === 'SPRINT_KNEE_DRIVE' ? styles.activeTab : styles.tab} onClick={() => setActiveMode('SPRINT_KNEE_DRIVE')}>
           🏃‍♂️ Knee Drive Sprint Test
@@ -100,7 +106,6 @@ export default function UnifiedBiometricScanner({ onCaptureMetric }) {
         <video ref={videoRef} style={{ display: 'none' }} playsInline muted />
         <canvas ref={canvasRef} style={styles.canvasView} width="640" height="480" />
         
-        {/* TELEMETRY HEADING CARD MATRICES */}
         <div style={{ ...styles.hudMetricsOverlay, borderLeftColor: liveTelemetry.color }}>
           <div style={styles.hudMetaLabel}>LIVE BIOMETRIC TELEMETRY</div>
           <div style={{ ...styles.hudRatingText, color: liveTelemetry.color }}>{liveTelemetry.rating}</div>
