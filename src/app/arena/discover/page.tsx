@@ -70,7 +70,6 @@ export default function DiscoverAthletesPage() {
   async function fetchAthletes() {
     setLoading(true);
     try {
-      // Constructing standard API query path string
       const token = localStorage.getItem("auth_token") || useAuthStore.getState().token;
       
       const response = await fetch(
@@ -89,7 +88,6 @@ export default function DiscoverAthletesPage() {
 
       const json = await response.json();
       
-      // Handle standard Laravel pagination wrapper structure cleanly
       if (json && json.data) {
         setAthletes(json.data.length > 0 ? json.data : localFallbacks);
       } else if (Array.isArray(json)) {
@@ -99,7 +97,6 @@ export default function DiscoverAthletesPage() {
       }
     } catch (error) {
       console.warn("API route dropped out. Engaging secure local profile fallback records.", error);
-      // DEFENSIVE ARCHITECTURE: Fall back cleanly to pre-populated data records instead of setting error layouts
       setAthletes(localFallbacks);
     } finally {
       setLoading(false);
@@ -116,7 +113,7 @@ export default function DiscoverAthletesPage() {
 
       <main className="flex-1 overflow-auto p-6">
         
-        {/* Header Block — Styled in Gold Accent high visibility parameters */}
+        {/* ✅ CLEANED HEADER BLOCK: Completely removed H.E. Quote, ZIFA logo logs, and Munhumutapa texts */}
         <div className="bg-[#f0b429] text-[#1c3d22] rounded-2xl p-6 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-widest opacity-90">
@@ -210,7 +207,6 @@ export default function DiscoverAthletesPage() {
                       )}
                     </div>
                     
-                    {/* THUTO AI Score Badge layout tracking gold/green standard parameters */}
                     <div className="bg-emerald-50 border border-emerald-200 text-[#1a5c2a] rounded-xl px-2.5 py-1 text-right shadow-xs">
                       <p className="text-[10px] font-black uppercase tracking-wider leading-none">THUTO Score</p>
                       <p className="text-base font-black leading-none mt-0.5">{player.thuto_score}</p>
