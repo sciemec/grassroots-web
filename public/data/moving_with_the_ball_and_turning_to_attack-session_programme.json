@@ -1,0 +1,430 @@
+{
+  "document_info": {
+    "title": "Session Programme: Moving with the Ball and Turning to Attack",
+    "organization": "England Football Learning",
+    "structure": "6-Week Progressive Curriculum Block"
+  },
+  "curriculum_overview": {
+    "week_1": "Finding space to attack",
+    "week_2": "Escaping the defender",
+    "week_3": "Turning to play forward",
+    "week_4": "Scanning and turning",
+    "week_5": "Moving with deception",
+    "week_6": "Positioning to turn"
+  },
+  "weekly_session_plans": [
+    {
+      "week": 1,
+      "theme": "Finding space to attack",
+      "objectives": [
+        "Recognise space to attack into",
+        "Work with a teammate to beat defenders",
+        "Improve decision-making skills when moving with the ball and turning"
+      ],
+      "coaching_points": [
+        "Ask players to think about how they can beat a defender using their movement or a teammate.",
+        "Encourage players to look around to identify where the space is, where the opposition is, and where their teammates are.",
+        "Encourage players to create passing angles by finding areas of space where the player on the ball can see them.",
+        "Ask your players to think about how they time their movement. If they move too early, the defender may follow them and mark. If they move too late, the space may disappear, and the defender can intercept.",
+        "Help the players understand the end zone game by relating it to positions on the pitch. Passing into a target player can represent a midfielder playing into the feet of a striker."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Bib Steal",
+          "pitch_diagram": {
+            "image_description": "A square training area marked with yellow cones at the corners and midpoints. Inside, six players are scattered. Four are styled as blue/cyan figures, and two are yellow-striped figures. White dashed lines with arrowheads depict individual chaotic running paths as players circulate to steal bibs.",
+            "tactical_layout": {
+              "dimensions": "20x15-yard area"
+            }
+          },
+          "description": "Set up a 20x15-yard area. Each player has a bib tucked into their shorts in line with their hip. Players try to steal other bibs while protecting their own. If they steal a bib, they tuck that into their shorts. If they lose their bib, they try to get another one."
+        },
+        {
+          "type": "Practice one",
+          "name": "Double Trouble",
+          "pitch_diagram": {
+            "image_description": "A rectangular pitch with mini-goals at the left and right baselines. On the left side, a blue/cyan goalkeeper stands in goal, while an active blue/cyan defender tracks an oncoming yellow-striped attacking pair. One attacker has a ball at their feet near the centerline, with passing options indicated by dashed white lines. A second attacking pair waits in reserve near the right corner.",
+            "tactical_layout": {
+              "dimensions": "35x25-yard pitch",
+              "equipment": "2 goals"
+            }
+          },
+          "description": "Put a goal at each end of your 35x25-yard pitch. Have a keeper and a defender at one end with pairs of attackers opposite. Attackers move and combine to try to score. If the defender wins the ball, they work with the keeper to attack the opposite end. When play resets, the next pair have a go."
+        },
+        {
+          "type": "Practice two",
+          "name": "End Zone Game",
+          "pitch_diagram": {
+            "image_description": "The same rectangular field area, but the baseline goals are removed and replaced by vertical shaded end zones. Inside each end zone stands a grey-shaded neutral target player. In the central sector, a yellow-striped player in possession completes a pass to a blue/cyan teammate, who targets a deep pass into the right end zone.",
+            "tactical_layout": {
+              "dimensions": "35x25-yard pitch with dual baseline end zones"
+            }
+          },
+          "description": "Use the same area but use end zones instead of goals. Have a neutral target player in each end zone. Teams work together to get the ball to a target player to score a point. If they do, they get the ball back and try to get it to the target player at the other end to score again."
+        },
+        {
+          "type": "Practice three",
+          "name": "Small-Sided Game",
+          "pitch_diagram": {
+            "image_description": "A match layout on the same pitch with goals returned to both baselines. A yellow-striped midfielder in possession carries the ball forward, utilizing passing lanes to find a breaking teammate, while blue/cyan defenders adjust their shape to close the spaces.",
+            "tactical_layout": {
+              "dimensions": "35x25-yard pitch with 2 goals"
+            }
+          },
+          "description": "Use the same area again but use the goals at both ends. Players take part in a match to put their learning into action."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "theme": "Escaping the defender",
+      "objectives": [
+        "Develop their moving with the ball and turning skills",
+        "Use their speed and moving with the ball technique to attack space",
+        "Work with a teammate to beat defenders",
+        "Improve decision-making skills when moving with the ball and turning"
+      ],
+      "coaching_points": [
+        "Ask players to think about how they can beat a defender using their movement or a teammate.",
+        "Set up a 'tactics zone' for double trouble. Use this space to speak to individual players about what you've seen and get them thinking about what they can do better next time.",
+        "Encourage players to use their body to protect the ball by being in between the opponent and the ball.",
+        "Encourage players to use their speed to move with the ball into space.",
+        "When near a defender, get players to think about taking smaller touches and keeping the ball close to them. When there's space, encourage players to take bigger touches to drive into the space."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Bib Steal (Half Pitch)",
+          "pitch_diagram": {
+            "image_description": "A compact half-pitch grid populated by multiple blue/cyan and yellow-striped figures executing multi-directional running loops to grab bibs from adjacent players' waistlines.",
+            "tactical_layout": {
+              "dimensions": "Half of a 35x25-yard pitch"
+            }
+          },
+          "description": "Use half of your 35x25-yard pitch for the bib steal arrival activity. Each player has a bib tucked into their shorts in line with their hip. Players try to steal other bibs while protecting their own. If they lose their bib, they try to get another one."
+        },
+        {
+          "type": "Arrival activity - continued",
+          "name": "Bib Steal with Safe Zones",
+          "pitch_diagram": {
+            "image_description": "The same half-pitch grid layout upgraded to include a distinct vertical shaded 'safe zone' on the left touchline. Inside the safe zone, a blue/cyan player keeps a ball stationary and unopposed, while multiple pairs continue to clash over ball mastery and bib tags in the open grid sector.",
+            "tactical_layout": {
+              "dimensions": "Half-pitch configuration with a side safe zone"
+            }
+          },
+          "description": "To progress this activity, give a ball to each player and add in a safe zone. The aim of the game is the same, but players can go into the safe zone to be unopposed for a bit if they need to."
+        },
+        {
+          "type": "Practice one",
+          "name": "Divided Small-Sided Game",
+          "pitch_diagram": {
+            "image_description": "A field split down the center circle by a vertical line into two separate, narrow pitches. Each narrow half contains a small goal at its top and bottom baseline. Isolated 2v2 small-sided matches are active simultaneously on both sides, focusing on turns and short dribbling paths.",
+            "tactical_layout": {
+              "dimensions": "Two parallel independent half-pitch channels"
+            }
+          },
+          "description": "Play a small-sided game on each half of your pitch. Place a mini-goal, or use cones to create goals, on each side. This game gives players the chance to practise turning and dribbling with the ball."
+        },
+        {
+          "type": "Practice two",
+          "name": "Double Trouble with Extra Defender",
+          "pitch_diagram": {
+            "image_description": "A vertical half-pitch setup featuring a goalkeeper and a yellow-striped defender protecting a goal at the right baseline against a blue/cyan attacking pair. An extra yellow-striped defender stands off the pitch near the top touchline, waiting to rotate into play.",
+            "tactical_layout": {
+              "dimensions": "Half-pitch layout with 1 goal and an external rotation station"
+            }
+          },
+          "description": "Use half of your pitch. Have a keeper and a defender at one end, with pairs of attackers at the other. Have an extra defender off the pitch. They swap with the other defender after each attacking pair has had a go. Attackers combine to try to score. When play resets, the next pair have their turn. If the defender wins the ball they dribble through some cones at the side or halfway to score."
+        },
+        {
+          "type": "Practice three",
+          "name": "Full-Pitch Small-Sided Game",
+          "pitch_diagram": {
+            "image_description": "An open full-pitch 4v4 match configuration with goals returned to both baselines. A yellow-striped playmaker controls the ball in the middle third, initiating a combination sequence with wide runners.",
+            "tactical_layout": {
+              "dimensions": "Full 35x25-yard field with 2 goals"
+            }
+          },
+          "description": "Finish the session with a small-sided game using the whole pitch and a goal at each end. This gives players more space and opportunity to practise what they've been learning."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "theme": "Turning to play forward",
+      "objectives": [
+        "Develop their ability to twist, turn, dodge and weave",
+        "Work with a teammate to beat defenders",
+        "Improve decision-making skills when moving with the ball and turning"
+      ],
+      "coaching_points": [
+        "Ask players to think about how they can beat a defender using their movement or a teammate.",
+        "When near a defender, get players to think about taking smaller touches and keeping the ball close to them. When there's space, encourage players to take bigger touches to drive into the space.",
+        "Before receiving, encourage your players to adopt an open body shape to allow them to turn and play forward if they have space.",
+        "Ask players to think about how they can use clever, disguised movements to lose a defender. They might move away from the ball to create space for them to drop into, for instance. Or they might move towards the ball to create space in behind for them to spin into."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Spiderweb Tig",
+          "pitch_diagram": {
+            "image_description": "A square 30x30-yard grid. Multiple yellow-striped figures attempt to dodge two blue/cyan taggers who are shown with dynamic throw trajectories mapping the release of a bib toward the players.",
+            "tactical_layout": {
+              "dimensions": "30x30-yard area"
+            }
+          },
+          "description": "Set up a 30x30-yard area. Choose two players to be taggers and give each a bib (spiderweb). To tag someone, they throw their spiderweb at them. If it connects with a player, the tagger gets a point. The others need to dodge the spiderwebs. The tagger with the most points wins."
+        },
+        {
+          "type": "Practice one",
+          "name": "Twist and Turn Perimeter Passing",
+          "pitch_diagram": {
+            "image_description": "The same square area populated by a group of yellow-striped perimeter players standing outside the boundary lines, each holding a ball. Inside the box, four blue/cyan midfielders execute checking runs to receive a pass from the outside, turn on the half-turn, and find an open teammate on an adjacent exterior line.",
+            "tactical_layout": {
+              "dimensions": "30x30-yard grid with outer and inner player divisions"
+            }
+          },
+          "description": "Use the same space and split your group into two teams. Have one start on the outside of the area and one on the inside. Give the outside players a ball each. They pass to a player in the middle without a ball. They turn and move before passing to another outside player."
+        },
+        {
+          "type": "Practice one - continued",
+          "name": "Twist and Turn via Gates",
+          "pitch_diagram": {
+            "image_description": "The same perimeter passing layout, but multiple small gates made of pairs of mini cones are added across the internal grid space. A blue/cyan central receiver is shown controlling a pass, turning sharply to dribble through a yellow cone gate, and looking out to return the ball wide.",
+            "tactical_layout": {
+              "dimensions": "30x30-yard grid with inner cone gates"
+            }
+          },
+          "description": "Progress this practice by using cones to create different sized gates inside the area. Players on the inside need to control the ball, turn and dribble through a gate before passing the ball to a player on the outside."
+        },
+        {
+          "type": "Practice two",
+          "name": "End Zone Progression Match",
+          "pitch_diagram": {
+            "image_description": "A rectangular pitch layout with vertical end zones at both baselines containing a grey-shaded neutral target player. Passing sequences connect across lines from a blue/cyan deep block up to a yellow-striped midfielder who turns inside to find the target player.",
+            "tactical_layout": {
+              "dimensions": "Field with target end zones"
+            }
+          },
+          "description": "Place an end zone at each end of your pitch. Have a target player in each end zone. Teams work together to get the ball to their target player to score a point. Play restarts with the other team who try to work the ball to their own target player."
+        },
+        {
+          "type": "Practice three",
+          "name": "Full-Field Scrimmage Integration",
+          "pitch_diagram": {
+            "image_description": "A clean full-field 4v4 match layout with standard goals returned to the perimeters. A blue/cyan midfielder adopts an open body orientation on the half-turn to accept a square ball and feed an advanced striker.",
+            "tactical_layout": {
+              "dimensions": "Full pitch layout with 2 goals"
+            }
+          },
+          "description": "Finish the session with a small-sided game using the whole pitch and a goal at each end. This gives players the opportunity to put their moving with the ball and turning skills into practice."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "theme": "Scanning and turning",
+      "objectives": [
+        "Understand the importance of scanning before, during, and after turning",
+        "Work on different turns",
+        "Improve decision-making skills when moving with the ball and turning"
+      ],
+      "coaching_points": [
+        "Remind players to scan before, during, and after receiving the ball, so they know where and when to move and turn.",
+        "Give players some examples of turns they could use to escape any interference, such as a 'Cruyff' turn, outside hook, or drag-back. Encourage them to use different types of turns when they're on the ball. Observe which turns they're using and offer support if needed.",
+        "Coordination skills are key in the arrival activity. Ask players to think about their turns as they're throwing or retrieving their bibs.",
+        "Ensure players understand the importance of keeping the ball close to their body when they receive and turn with the ball. Keeping a tight turning circle helps players when they face opposition or interference."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Spiderweb Tig with Balls",
+          "pitch_diagram": {
+            "image_description": "A large 40x35-yard area where every blue/cyan and yellow-striped figure has a ball at their feet. A panel on the right sidebar acts as a digital counter listing vertically stacked rows: 'Royal Cannons - 0', 'Royal Cannons - 2', 'Royal Cannons - 5', down to baseline metrics to track tag points.",
+            "tactical_layout": {
+              "dimensions": "40x35-yard grid with a scoring panel"
+            }
+          },
+          "description": "Set up a 40x35-yard area. Give everyone a ball and a bib (a spiderweb). To tag someone, players throw their spiderweb at another player's ball. If it connects, the tagger gets a point. They do this while trying to dodge other spiderwebs. The tagger with the most points wins."
+        },
+        {
+          "type": "Practice one",
+          "name": "Three-Channel Restricted Match",
+          "pitch_diagram": {
+            "image_description": "A field divided longitudinally into three vertical channels by dashed lines, featuring a narrower central channel. Outfield configurations show teams operating across the tracks, with a yellow-striped player receiving a pass in the central tight track and executing a turnaround under pressure.",
+            "tactical_layout": {
+              "dimensions": "Pitches with three horizontal/vertical channels"
+            }
+          },
+          "description": "Use the same area and add goals at each end. Split the area into three channels and make the middle one smaller to help players with pitch geography and to encourage them to receive and turn in tight areas. To score, the ball has to have travelled in at least two of the channels."
+        },
+        {
+          "type": "Practice two",
+          "name": "Criss-Cross Turn-and-Pass Loop",
+          "pitch_diagram": {
+            "image_description": "A half-pitch area populated by three distinct colors or teams of players. Multiple soccer balls are active simultaneously, with dashed white arcs tracing cross-passing layouts as players control, execute a designated turn pattern, and release a pass across lines.",
+            "tactical_layout": {
+              "dimensions": "Half-pitch area with multi-ball deployment"
+            }
+          },
+          "description": "Use half of the previous area for this activity. Split players into three teams. Give each team a ball. Players keep moving and passing within the area in this unopposed with interference practice. Players need to complete a different turn each time they receive the ball."
+        },
+        {
+          "type": "Practice three",
+          "name": "Small-Sided Game Integration",
+          "pitch_diagram": {
+            "image_description": "A comprehensive match layout with goals at both baselines. Blue/cyan and yellow-striped figures engage in a standard game structure, showing checking runs, tight turning circles, and quick ball releases.",
+            "tactical_layout": {
+              "dimensions": "Standard pitch configuration with 2 goals"
+            }
+          },
+          "description": "Finish the session by returning to a small-sided game. This is an opportunity to notice if the players can put their learning into practice and have improved their ability to move with the ball and turn."
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "theme": "Moving with deception",
+      "objectives": [
+        "Change direction and speed while moving with the ball",
+        "Scan for space to discover when and where to move and turn",
+        "Use deception and disguise to move with the ball and turn while under pressure"
+      ],
+      "coaching_points": [
+        "Remind players to scan before, during and after receiving the ball, so they know where and when to move and turn.",
+        "Support players to understand how a change in direction and speed can help them beat defenders and progress forward.",
+        "Encourage players to use feints and body movement to disguise their intentions when moving with the ball.",
+        "Ask players to think about when they can move forward with the ball, or when they may have to turn and utilise support players to play away from pressure."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "The Great Escape",
+          "pitch_diagram": {
+            "image_description": "A square 35x35-yard area featuring four small gates along the outer perimeters marked by pairs of cones. On the right sideline, a vertical corridor marked by blue cones forms an entrance funnel. A large cluster of blue/cyan and yellow-striped attackers with balls wait inside the funnel, facing two grey-shaded defender guards positioned centrally inside the main grid.",
+            "tactical_layout": {
+              "dimensions": "35x35-yard area with an entry funnel and 4 side gates"
+            }
+          },
+          "description": "Set up a 35x35-yard area. Put four different sized gates around the edge of the area and mark out a funnel using cones to act as an entrance point. Two players act as guards and start inside the area. The rest have a ball each and start in the funnel."
+        },
+        {
+          "type": "Arrival activity - continued",
+          "name": "Great Escape Breakout",
+          "pitch_diagram": {
+            "image_description": "The same great escape layout, showing multiple attackers breaking out of the entry funnel into the main grid space. Dribbling tracks map out players turning, executing feints to bypass the two central guards, and escaping through the side cone gates.",
+            "tactical_layout": {
+              "dimensions": "35x35-yard tactical escape matrix"
+            }
+          },
+          "description": "Players with a ball must dribble into the area and try to escape through a gate for a point. The guards get a point for winning the ball off a player. Keep rotating guards after a few minutes to give everyone a chance of playing both roles."
+        },
+        {
+          "type": "Practice one",
+          "name": "Connect Four Grid Game",
+          "pitch_diagram": {
+            "image_description": "A rectangular pitch containing an embedded 6v6-yard corner square at all four quadrant corners. Multiple pairs of outfielders combine inside the grid, with a blue/cyan player using a change of pace to drive their ball into a corner square.",
+            "tactical_layout": {
+              "dimensions": "Pitch layout containing four 6x6-yard corner squares"
+            }
+          },
+          "description": "Add a 6x6-yard square to each corner of the pitch. Put players in pairs and give them a ball, except for two defending pairs. The pairs with a ball combine with their teammate to get the ball into one of the squares. Then they do the same until they have reached all four squares."
+        },
+        {
+          "type": "Practice one - continued",
+          "name": "Connect Four Defended Matrix",
+          "pitch_diagram": {
+            "image_description": "The same corner square layout, showing the two defending pairs actively screening and blocking access to the corner quadrants. An attacking pair uses fake turns and body movement to shift a defender block out of alignment and slip a pass into a corner cell.",
+            "tactical_layout": {
+              "dimensions": "Corner squares grid with active screening defenders"
+            }
+          },
+          "description": "The defending pairs try to stop the others from getting to all four squares, but they can't enter the squares themselves. If a defending pair win the ball, they become an attacking pair and try to connect all four squares. The pair who have lost the ball, try to win a ball back."
+        },
+        {
+          "type": "Practice two",
+          "name": "End Zones with Bounce Outlets",
+          "pitch_diagram": {
+            "image_description": "A full 45x35-yard pitch featuring 6-yard horizontal end zones at both baselines. Inside the pitch, two active teams combine, while multiple grey-shaded 'bounce' players track along the exterior sidelines to act as structural outlets.",
+            "tactical_layout": {
+              "dimensions": "Full 45x35-yard pitch with dual end zones and peripheral tracks"
+            }
+          },
+          "description": "Create six-yard end zones on your full 45x35-yard pitch. Split players into three teams. Two teams compete in the area to pass to their target player in an end zone to score. The passer then becomes the new target player. The third team are bounce players around the area. Rotate teams frequently."
+        },
+        {
+          "type": "Practice three",
+          "name": "Three-Team Support Game",
+          "pitch_diagram": {
+            "image_description": "The same match field configuration with goals at both baselines. Two teams contest a match inside, while the third team is deployed along the outer touchlines to act as external support walls for whichever team is in possession.",
+            "tactical_layout": {
+              "dimensions": "Full match pitch with 2 goals and outer wall tracks"
+            }
+          },
+          "description": "Finish the session by going into a game. Have three teams with one acting as support players around the outside for the team on the ball. This game is an opportunity to notice if players can put their learning into practice and that they've improved their ability to move with the ball and turn."
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "theme": "Positioning to turn",
+      "objectives": [
+        "Understand the need to have appropriate positioning on the pitch, and correct body shape, to move and turn with the ball",
+        "Recognise space to dribble through",
+        "Change direction and speed while moving with the ball"
+      ],
+      "coaching_points": [
+        "Remind players to scan before, during, and after receiving the ball to recognise and exploit the space is around them and notice where their teammates are.",
+        "Ensure your players think about their body shape when they're receiving the ball to provide opportunities to move with the ball positively. An open body shape encourages moving forwards with the ball to attack opponents.",
+        "Ask your players to try and anticipate the turns and movements of their teammates. This allows them to position themselves in between the defender when the ball eventually makes its way towards them."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Gate Guards Challenge",
+          "pitch_diagram": {
+            "image_description": "A field containing dozens of small cone gates of varying widths scattered randomly. Multiple attackers with balls weave through the space, while several grey-shaded guard players stand inside the gates to apply passive tracking pressure.",
+            "tactical_layout": {
+              "dimensions": "Pitch area scattered with randomized cone gates"
+            }
+          },
+          "description": "Set up multiple gates across your pitch and vary the size of them. Have some players as gate guards and the rest as attackers. Give each attacker a ball. They aim to dribble through gates for a point. Guards can't tackle but can tag attackers inside a gate to reset their score to zero."
+        },
+        {
+          "type": "Practice one",
+          "name": "Open Small-Sided Game",
+          "pitch_diagram": {
+            "image_description": "A large 45x40-yard area featuring full goals at both baselines. A standard small-sided match is live, with players utilizing open body positions and quick switches of pace to drive into space.",
+            "tactical_layout": {
+              "dimensions": "Full 45x40-yard pitch with 2 goals"
+            }
+          },
+          "description": "Use the full 45x40-yard area and put a goal at each end. Then let your players take part in a small-sided game. Give players freedom to express themselves. Observe to make sure they have the right challenge and give praise when they showcase good moving with the ball and turning skills."
+        },
+        {
+          "type": "Practice two",
+          "name": "Connect Four Team Game",
+          "pitch_diagram": {
+            "image_description": "The matching corner square grid layout from week 5. Two teams compete for a single ball, attempting to pass or cleanly dribble into any of the four un-defended 6x6-yard corner squares to claim a point.",
+            "tactical_layout": {
+              "dimensions": "Pitch configuration containing four 6x6-yard corner boxes"
+            }
+          },
+          "description": "Add a 6x6-yard square to each corner of your pitch for connect four. Keep your players in two teams. Players work with teammates to pass or dribble into a square for a point. When they do that, they then work it into a different square. Players are unopposed when in a square."
+        },
+        {
+          "type": "Practice three",
+          "name": "Wide Corner Outlet Match",
+          "pitch_diagram": {
+            "image_description": "A final full-pitch match with goals at both ends, leaving the four 6x6-yard corner boxes active on the field layout. Attacking lines show players utilizing the corner cells as wide areas to build crossing opportunities into the box.",
+            "tactical_layout": {
+              "dimensions": "Full match field with 2 goals and 4 active corner cells"
+            }
+          },
+          "description": "Finish the session by going back into a small-sided game. Use the same area as the last practice, leaving the corner squares in to represent wide areas to cross or pass from. Challenge players to think about how they can get into those areas and how they can assist their teammates."
+        }
+      ]
+    }
+  ]
+}

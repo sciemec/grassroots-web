@@ -1,0 +1,416 @@
+{
+  "document_info": {
+    "title": "Session Programme: Marking and Intercepting to Defend",
+    "topic": "Defensive Positioning, Scanning, and Transition Systems",
+    "structure": "6-Week Progressive Curriculum Block",
+    "source_organization": "England Football Learning"
+  },
+  "curriculum_overview": {
+    "week_1": "Marking rivals",
+    "week_2": "Defend as friends",
+    "week_3": "Interception perfection",
+    "week_4": "Table football",
+    "week_5": "Intercept as a team",
+    "week_6": "Festival week"
+  },
+  "weekly_session_plans": [
+    {
+      "week": 1,
+      "theme": "Marking rivals",
+      "objectives": [
+        "Understand what marking is",
+        "Become positive and enthusiastic defenders",
+        "Use scanning, movement, and positioning skills to mark an opponent or zone"
+      ],
+      "coaching_points": [
+        "Focus on really good movement to close the ball down. Encourage players to try to stay close to their opponent to prevent them from receiving the ball easily.",
+        "Encourage players to be goal-side of their opponents to stop them from having an easy route to goal.",
+        "Ask players to think about their body positioning. Being able to see their opponent and the ball at the same time can help with anticipating an opponent's next move. And adopting a side-on stance at the right time can help them steal the ball."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Cat and Mouse",
+          "pitch_diagram": {
+            "image_description": "A top-down view of a 5x5-yard square layout on a green pitch template with four small yellow tracking cones at the corner vertices. Four players are shown outside: a yellow-striped player at the apex, a grey-striped player on the left, a white player at the base, and a blue player tightly tracking the bottom left space. A black-and-white patterned cat/mouse icon is placed dynamically on the right flank outside the grid, connected to dashed movement arcs tracking the outer perimeter paths.",
+            "tactical_layout": {
+              "dimensions": "5x5-yard square area",
+              "player_positions": "1v1 active runners positioned on the outside limits, prohibited from entering or cutting through the inner grid zone."
+            }
+          },
+          "description": "Create a 5x5-yard square. Have a 1v1 with players starting opposite each other on the outside of the area. Players run around the area. They can't go through it. The cat has 15 seconds to tag the mouse. Players swap roles after the time limit or if the mouse is caught."
+        },
+        {
+          "type": "Practice one",
+          "name": "Stadium Game",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard rectangular playing pitch symmetrically bisected down the exact center by a white dashed halfway line to outline two distinct stadium halves. The left stadium contains an active 1v1 battle where a blue player tightly presses a yellow-striped player holding a soccer ball. The right stadium mirrors this configuration with an active blue defender stepping out to close down a yellow-striped attacker in possession of a second ball. White double-headed vertical arrows track along the sidelines to indicate vertical movement constraints.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard pitch split horizontally into two identical halves",
+              "player_positions": "Parallel 1v1 isolation units locked into their assigned stadium halves."
+            }
+          },
+          "description": "Create a 30x20-yard area with a halfway line. Pair players up. Allocate each player to a team and give them a half to act as their stadium. One player in each pair starts with a ball. The aim is to have the ball under control in your own stadium after 30 seconds."
+        },
+        {
+          "type": "Practice two",
+          "name": "3v3 Rivals",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard field showing flat training markers arranged in a structural 'T' layout to segment the pitch into three distinct horizontal and vertical zones. On the left side, a yellow-striped attacker with a ball is tightly marked by a blue defender who uses their body to cover the central passing angle. In the right half, two yellow-striped players pass the ball between their zones, while two blue defenders actively shift across and adjust their cover alignment to anticipate the interception.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard space split into three zones using flat markers",
+              "player_positions": "3v3 total alignment with 1v1 matchups locked inside each subdivided zone."
+            }
+          },
+          "description": "Put flat markers down in a 'T' shape to split the stadium game pitch into three areas for 3v3 rivals. Have a 1v1 in each area. Players are locked in. One team starts with the ball. The aim is to keep possession as a team. The team off the ball must work together to mark effectively to win it back."
+        },
+        {
+          "type": "Practice two - progression",
+          "name": "Directional Stadium Progression",
+          "pitch_diagram": {
+            "image_description": "An advanced variation of the 3v3 rivals layout. The segmented 'T' pitch layout is upgraded with multiple directional scoring markers along both vertical endlines. Colorful target gates made of cones are placed on the left and right baseline perimeters, with curved passing tracks illustrating long ball distribution from the defensive lines into the advanced attacking sectors.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard tactical area containing endline scoring channels",
+              "scoring_mechanics": "Directional progression enabled via end zones, cone gates, or mini-goals."
+            }
+          },
+          "description": "You could progress this game to make it directional by adding end zones, gates or goals. Overall, play for five to seven minutes, then have a break before playing another round."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "theme": "Defend as friends",
+      "objectives": [
+        "Become positive and enthusiastic defenders",
+        "Use scanning, movement, and positioning skills to mark an opponent or zone",
+        "Communicate with teammates to defend effectively"
+      ],
+      "coaching_points": [
+        "Encourage players to scan to help them think about where the space may be and where their opponent may go.",
+        "Challenge players to stay close to their opponent, anticipate their moves, and use their body, and quick footwork, to block their path.",
+        "Ask players to communicate with teammates, stay alert, and move quickly to challenge an opponent."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Cat and Mouse with Ball",
+          "pitch_diagram": {
+            "image_description": "A 5x5-yard square layout identically mirroring the week 1 arrival activity with four yellow tracking cones at the corner vertices. A yellow-striped attacker stands at the apex, a blue defender tracks from the base, and a grey-striped player stands wide left. A soccer ball icon is explicitly appended to the blue player's feet at the base, and a black-and-white patterned target icon is positioned on the right flank outside the grid boundary.",
+            "tactical_layout": {
+              "dimensions": "5x5-yard square area",
+              "player_positions": "1v1 configuration on the outer edge, with the mouse carrying a soccer ball."
+            }
+          },
+          "description": "For cat and mouse, create a 5x5-yard square. Have a 1v1 with players starting opposite each other. The mouse carries a football. Players run around the area. They can't go through it. The cat has 15 seconds to tag the mouse. Players swap roles after the time limit or if the mouse is caught."
+        },
+        {
+          "type": "Practice one",
+          "name": "Five-Section Possession Grid",
+          "pitch_diagram": {
+            "image_description": "A large 30x20-yard rectangular pitch segmented into five interconnected structural zones. White dashed boundaries define three narrow vertical middle tracks and two wider horizontal flank blocks. In each individual section, an isolated 1v1 duel is active between a blue player and a yellow-striped player. White passing arrows track between adjacent zones to show a continuous possession sequence linking the team together.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard grid split cleanly into five sections",
+              "player_positions": "1v1 isolated pairings locked into their respective cells, relying on team passing connection."
+            }
+          },
+          "description": "Create a 30x20-yard area and split it into five sections. Have a 1v1 in each. Players are locked in. One team starts with the ball. The other side work together to win it back. The aim is to keep possession as a team. Teams score a point when all their players have had the ball without losing it."
+        },
+        {
+          "type": "Practice two",
+          "name": "3v2 End-to-End Channel Game",
+          "pitch_diagram": {
+            "image_description": "A field layout tracking the outer end channels of the prior section game, with the central zones left blank. At the far left endline, an isolated blue attacker faces a yellow-striped marker. In the wide central track, a blue attacker with a ball is heavily pressed by two yellow-striped defenders who work together to block forward angles. At the far right endline, a lone blue attacker is tracked closely by a yellow-striped defender.",
+            "tactical_layout": {
+              "dimensions": "Isolated end channels extraction",
+              "player_positions": "3v2 tactical configuration consisting of attackers anchored on both endlines, with a central 1v2 overload inside the middle sector."
+            }
+          },
+          "description": "Use the end channels from the last game for this 3v2 practice. Have an attacker at both ends of the channel, with one in the middle against two defenders. Attackers try to get it from one side to the other. Defenders work together mark, cover and intercept to win the ball."
+        },
+        {
+          "type": "Practice three",
+          "name": "Cone Turnover Overload",
+          "pitch_diagram": {
+            "image_description": "A full field match layout where the middle vertical channels have been removed entirely. A horizontal line of five blue cones is aligned along the top touchline, and five yellow cones are aligned along the bottom touchline. In the center circle, a yellow-striped player plays a short pass to a teammate breakout line, while a blue player sprints toward the top perimeter line to access a standalone target cone marker.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard open pitch layout with perimeter cone arrays",
+              "scoring_mechanics": "Working the ball over the end line triggers a tactical overload by forcing the scorer to manually turn a perimeter cone over."
+            }
+          },
+          "description": "Return to the rivals game but remove the middle channels. Put a line of cones down each side of the pitch. Teams combine to try to work the ball over the end line to score. The scorer then runs off to turn one of their cones over. This then creates an overload for the opposition."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "theme": "Interception perfection",
+      "objectives": [
+        "Become positive and enthusiastic defenders",
+        "Communicate with teammates to defend effectively",
+        "Understand the importance of a positive action after they intercept the ball"
+      ],
+      "coaching_points": [
+        "Encourage players to communicate to work together effectively and adjust their positioning.",
+        "Get players to think about 'why' 'when' and 'how' when it comes to intercepting. Closing down at the right time, or staying compact, will minimise the danger of being 'played through' and help them to win the ball.",
+        "When intercepting, challenge players to think about what they need to do before, during and after an interception.",
+        "Before: Try to judge whether an interception is possible. Try to make sure you can see the path of the ball and relevant attackers. Try to make sure you can see the space you want to use when you win the ball.",
+        "During: Try to be prepared to use different surfaces to make first contact.",
+        "After: Try to leave attackers behind with your first touch. Try to follow up the interception with good positive actions and techniques, for example, a pass, dribble or shot."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Handball Interception Box",
+          "pitch_diagram": {
+            "image_description": "A square 20x20-yard boundary box on a green field template. Inside the box, a cluster of seven yellow-striped players are scattered randomly, passing a soccer ball through the air using their hands. In the center of the grid, two blue tagger/interceptor players work together as a tight pair, stepping out to close down the local target and block the aerial passing trajectories.",
+            "tactical_layout": {
+              "dimensions": "20x20-yard square area",
+              "player_positions": "Multi-player possession unit circulating the ball manually against a central pair of active interceptors."
+            }
+          },
+          "description": "Set up a 20x20-yard box for this arrival activity. Have two taggers or interceptors. The rest have one ball between them and must use their hands to throw and catch. They can't move with the ball. The pair have 30 seconds to intercept it. They swap roles if they succeed, or the time runs out."
+        },
+        {
+          "type": "Carousel - practice one",
+          "name": "Central Square Interception",
+          "pitch_diagram": {
+            "image_description": "A 20x20-yard outer square grid containing a smaller 6x6-yard square inner box marked out by four yellow cones in the dead center. Four yellow-striped players are anchored outside on the four perimeter lines. Inside the inner cone box, two blue defenders step out to apply pressure, with solid white passing lanes mapping prospective straight passes directly through the central grid.",
+            "tactical_layout": {
+              "dimensions": "20x20-yard outer box with an embedded central square zone",
+              "player_positions": "4 outer perimeter attackers passing through a central zone guarded by 2 active defenders."
+            }
+          },
+          "description": "Create a 20x20-yard box for the first carousel activity. Put a square in the middle of it. Have four attackers around the outside of the box, and two defenders inside the middle square. Attackers look to play through the square for a point, or through the two defenders for two points."
+        },
+        {
+          "type": "Carousel - practice one continued",
+          "name": "Defensive Breakout Tracking",
+          "pitch_diagram": {
+            "image_description": "A continuation of the central square interception diagram. A blue defender inside the inner cone grid has cleanly intercepted the soccer ball and is shown executing a dynamic breakout run down toward the bottom right baseline. A dashed tracking line shows a yellow-striped perimeter attacker sprinting diagonally inward to track back, close down the angle, and stop the defender from crossing the outer boundary line.",
+            "tactical_layout": {
+              "dimensions": "20x20-yard tactical box featuring baseline breakout paths",
+              "scoring_mechanics": "Interception triggers a transition where defenders can break out to cross the outer boundary lines or corners for 2 points."
+            }
+          },
+          "description": "If the defenders manage to get any touch on the ball, they get a point. But if they intercept a pass, they can break out to try to get the ball over the line - or into one of the corners-to score two points. Attackers can enter the area to stop them."
+        },
+        {
+          "type": "Carousel - practice two",
+          "name": "Rivals Endline Scoring Game",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard open rectangular field containing five blue cones aligned along the top touchline and five yellow cones along the bottom touchline. Inside the field, a yellow-striped player with a ball looks to combine with two teammates. A compact block of three blue defenders executes a lateral shift, with a dashed breakout line showing an intercepted ball being driven over the opposite end line to score.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard field layout with outer cone arrays",
+              "player_positions": "3v3 total competitive alignment focused on marking, covering, and intercepting to score over the end lines."
+            }
+          },
+          "description": "The second carousel activity needs a 30x20-yard area for 3v3 rivals. Teams combine and work the ball over the end line to score. The out of possession team look to mark, cover and intercept to win the ball, before working it over the line to score. Whoever scores runs to turn a cone over."
+        },
+        {
+          "type": "Carousel practice three",
+          "name": "Possession Escape Rondo",
+          "pitch_diagram": {
+            "image_description": "A standard 20x20-yard square area where a group of five yellow-striped players pass a soccer ball on the floor in a loose circle to maintain possession. Inside the ring, two blue defenders apply heavy pressing pressure. A standalone gray cone marker is placed on the left sideline, with a dashed dribbling line indicating an escape path out of the box.",
+            "tactical_layout": {
+              "dimensions": "20x20-yard circle rondo area",
+              "scoring_mechanics": "Defenders score 1 point by cleanly intercepting the ball and dribbling completely out of the boundary grid."
+            }
+          },
+          "description": "For the final part of the carousel, use the arrival activity area. Here, play a possession-based game, where a group of players look to keep the ball, and two defenders try to win it back. If the defenders succeed, they score a point by dribbling out of the area with the ball."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "theme": "Table football",
+      "objectives": [
+        "Become positive and enthusiastic defenders",
+        "Understand what intercepting is",
+        "Work on their positioning",
+        "Read the game and anticipate where the ball may go"
+      ],
+      "coaching_points": [
+        "Encourage players to constantly scan the pitch to be aware of the positions and movements of both their teammates and opponents. This helps them anticipate passes and be ready to intercept.",
+        "Teach players to position themselves between the ball or the player they're marking and the goal. Their body should be oriented in a way that allows them to quickly move towards the ball but also be aware of the goal they're protecting.",
+        "Ask players to think about the timing of their movement. This is vital for intercepting. They need to consider not moving too early to encourage more dangerous passes. But if they move too late, they may not be able to get to the ball.",
+        "Encourage players to look up and assess their options once they've intercepted the ball. Whether it's passing to a teammate, driving forward or even clearing the ball, players need to quickly decide what to do next."
+      ],
+      "activities": [
+        {
+          "type": "Practice one",
+          "name": "Table Football 2v2 + Target",
+          "pitch_diagram": {
+            "image_description": "Two identical 15x10-yard vertical rectangular pitches side-by-side, each featuring horizontal dashed lines marking off end zones at the top and bottom perimeters. Inside each main central sector, a balanced 2v2 outfield battle is active. At the far top endline of the left pitch, a yellow-striped target player waits inside their end zone, while a blue target player waits inside the bottom end zone. The right pitch mirrors this exact structural configuration.",
+            "tactical_layout": {
+              "dimensions": "Parallel 15x10-yard vertical grids with dedicated end zones",
+              "player_positions": "2v2 central match block with 1 target player anchored inside each deep end zone."
+            }
+          },
+          "description": "Create parallel 15x10-yard pitches with end zones for 3v3 table football. Have a 2v2 in the middle with each team having a target player in their own end zone. Teams aim to get the ball to their target player for a point. If this happens, the opposition restart the game with the ball."
+        },
+        {
+          "type": "Practice two",
+          "name": "Interceptor Central Zone Game",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard pitch divided horizontally into three fields: two wider outer areas and a narrow central corridor defined by white lines. Two blue interceptor players are positioned inside the central zone, facing outward. A single yellow-striped passer occupies the top outer half holding a soccer ball, and a matching yellow-striped passer stands inside the bottom half. White passing tracks map direct vertical passing lines crossing through the central interceptor zone.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard grid with an embedded central intersection corridor",
+              "player_positions": "2 central interceptors locked inside the middle zone screening vertical passes exchanged between 2 outer target players."
+            }
+          },
+          "description": "Create a 30x20-yard pitch with end zones at each end and a zone in the middle. Two interceptors start in the middle zone. A passer starts in each area between the zones. Passers aim to pass to each other without the ball being intercepted. They score a point for every ten successful passes."
+        },
+        {
+          "type": "Practice two - continued",
+          "name": "Interceptor Breakout 1v1",
+          "pitch_diagram": {
+            "image_description": "A tactical continuation of the interceptor central zone diagram. A blue interceptor has stepped out of the middle corridor to cut out a pass, triggering a live 1v1 breakout duel against the yellow-striped attacker. A solid white line shows the blue defender driving with the ball toward the top end zone. A standalone gray cone icon is placed on the left touchline to track the overall point value for this specific transition.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard pitch with transitional breakout mechanics",
+              "scoring_mechanics": "Intercepting a pass permits the defender to break out to target the far end zone for a 2-point score."
+            }
+          },
+          "description": "If an interceptor cuts out a pass they get a point, but they can also break out to create a 1v1. If they manage to get to the end zone with the ball, they score two points and the teams swap roles. You can also change the teams around so players experience facing others."
+        },
+        {
+          "type": "Practice three",
+          "name": "Tri-Third Positional Match",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard pitch cleanly divided into equal horizontal thirds by white lines, featuring a full goal and goalkeeper at both endlines. The top defensive third contains a blue goalkeeper, two yellow-striped defenders, and one blue attacker. The middle third contains a balanced 2v2 midfield pairing dueling for a ball. The bottom third contains two yellow-striped defenders, one blue attacker, and a yellow-striped goalkeeper guarding the baseline goal.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard field split horizontally into equal thirds",
+              "player_positions": "Players are structurally locked into assigned thirds (2v1 in final thirds, 2v2 in central midfield) to practice playing through lines."
+            }
+          },
+          "description": "Create a pitch that's split into thirds and has a goal and keepers at each end. Have two defenders and an attacker in each final third, and a 2v2 in the middle. Players are locked into their thirds. Teams aim to play through the thirds to create a chance for their attacker to score."
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "theme": "Intercept as a team",
+      "objectives": [
+        "Become positive and enthusiastic defenders",
+        "Make informed decisions of when to mark and when to intercept"
+      ],
+      "coaching_points": [
+        "Remind defenders to position themselves strategically, anticipating the movements of the attackers. They should stay on their toes, ready to react quickly to any changing situations.",
+        "Encourage players to react positively when they make an interception by launching a counter-attack if possible."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Gate Escape Game",
+          "pitch_diagram": {
+            "image_description": "A large 30x20-yard rectangular grid where multiple small target gates made of yellow cones are placed intermittently around the outer perimeter edges. Inside the field, a group of blue attacking players look to escape through the gates, using quick footwork and changes of direction to evade three yellow-striped defenders who make curved runs to tag them and block their escape paths.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard boundary area with multiple outer cone gates",
+              "player_positions": "Multi-player attacking group attempting to escape via outer gates against a trailing unit of active taggers."
+            }
+          },
+          "description": "For the escape game, create a 30x20-yard area with multiple gates around the edge of it. Have a few defenders with the rest being attackers. The defenders need to stop players escaping through a gate by tagging them. When they tag their third player, they swap roles with them."
+        },
+        {
+          "type": "Arrival activity - continued",
+          "name": "Gate Escape Progression",
+          "pitch_diagram": {
+            "image_description": "A continuation of the gate escape grid. A blue attacker has successfully dodged a yellow-striped defender and crossed through a perimeter cone gate on the top touchline. White dashed recovery arrows show tagged attackers resetting their positions inside the main central matrix, with a yellow-striped defender shifting across to cover an open gate lane.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard gate network with dynamic role rotation",
+              "scoring_mechanics": "Attackers accumulate 1 point per clean escape. Reaching 10 successful escapes triggers a role swap to defender."
+            }
+          },
+          "description": "Attackers carry on playing if they've been tagged - unless they need to swap roles with a defender. Attackers score a point each time they escape through a gate without being tagged. If they do this ten times, they then become a defender."
+        },
+        {
+          "type": "Practice one",
+          "name": "Target Line Interception Box",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard grid featuring a narrow horizontal central zone and full goals on the baselines. The left sector contains a blue goalkeeper and a 2v1 overload where two blue attackers combine to pass around a yellow-striped defender. The narrow middle zone contains a single yellow-striped defender locked inside the tracking track. The right sector contains two yellow-striped defenders tightly marking a lone blue attacker.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard pitch with a central interception channel and baseline goals",
+              "player_positions": "Asymmetric multi-zone setup designed to train intercepting passing lines feeding into an isolated target striker."
+            }
+          },
+          "description": "Create a 30x20-yard area with end zones and a middle zone. Put a goal at one end. Have a defender in the middle zone, two attackers in one area between zones, and two defenders and one attacker in between the other zones. Attackers try to play through to their teammate who then goes for goal."
+        },
+        {
+          "type": "Practice one - continued",
+          "name": "Mid-Zone Breakout Transition",
+          "pitch_diagram": {
+            "image_description": "A tactical continuation of the target line interception box. The locked defender inside the narrow middle zone has cleanly intercepted a pass and is shown driving with the ball down toward the right end zone. White dashed tracking arrows show the blue attackers from the adjacent grid transitioning to chase back, while a standalone gray target icon highlights the final scoring target.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard multi-zone pitch with dynamic breakout rules",
+              "scoring_mechanics": "An interception by any defender permits a breakout run to target the opposite end zone for a score."
+            }
+          },
+          "description": "The defender in the middle zone is locked in and tries to intercept a pass or tackle an attacker that's dribbled into their zone. If any defender wins the ball, they break out and try to get the ball into the end zone to score."
+        },
+        {
+          "type": "Practice two",
+          "name": "Multi-Goal Footy Match",
+          "pitch_diagram": {
+            "image_description": "A comprehensive 30x20-yard pitch featuring horizontal end zones on both baselines, a full goal and keeper, and multiple small cone goals. The top baseline contains five individual mini cone goals lined up side-by-side, while the bottom baseline features three mini cone goals. A group of yellow-striped and blue players are distributed inside a 5v5 match configuration, with a single yellow-striped defender anchored deep inside their own end zone.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard pitch with asymmetric multi-goal baselines (5 goals vs 3 goals)",
+              "player_positions": "5v5 or 6v6 match play, with a structural constraint restricting teams to maximum 1 defender inside their own end zone."
+            }
+          },
+          "description": "Create a 30x20-yard area with end zones for this 5v5 or 6v6 'multi-goal footy' game. Have five goals at one end and three goals at the other. Teams can only have one player in their own end zone. Scoring in the goal that's guarded is worth three points. Scoring in the others is worth one point."
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "theme": "Festival week",
+      "objectives": [
+        "Know when and how to press",
+        "Understand when to apply pressure and when to cover a teammate",
+        "Work on their positioning skills"
+      ],
+      "coaching_points": [
+        "Emphasise the importance of communicating with teammates. Players need to work together to take up the right positions. This will increase the chances of intercepting and help dictate where attackers can go.",
+        "Encourage players to mark opponents closely to given themselves the opportunity to nick the ball if it is played to them."
+      ],
+      "activities": [
+        {
+          "type": "Practice one",
+          "name": "Asymmetric Multi-Goal Festival",
+          "pitch_diagram": {
+            "image_description": "A replication of the multi-goal footy pitch layout. A 5v5 match is active inside the central area, with five mini goals on the top baseline and three mini goals on the bottom baseline, reinforcing the asymmetric defensive tracking patterns developed in week 5.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard multi-goal field (5 goals vs 3 goals)",
+              "player_positions": "5v5 match configuration with a 1-player maximum restriction inside the defensive end zones."
+            }
+          },
+          "description": "Create a 30x20-yard area with end zones for this 5v5 'multi-goal footy' game. Have five goals at one end and three goals at the other. Teams can only have one player in their own end zone. Scoring in the goal that's guarded is worth three points. Scoring in the others is worth one point."
+        },
+        {
+          "type": "Practice two",
+          "name": "Direct Rivals 5v5 Match",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard open pitch layout with small goals on the left and right baselines. Five blue players and five yellow-striped players are paired up across the entire pitch area, creating five distinct 1v1 isolation duels scattered dynamically across the pitch template to emphasize direct man-marking patterns.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard match play grid",
+              "player_positions": "5v5 match structured around explicit 1v1 direct rival tracking assignments across the pitch."
+            }
+          },
+          "description": "Create a 30x20-yard area for a version of 5v5 rivals. Each player has a direct rival to stop scoring. Players get a point each time they do that and if they score themselves. At the end of the match, each pair adds a goal to their team's overall tally if they've won their individual rivals match."
+        },
+        {
+          "type": "Practice three",
+          "name": "Five-Zone 1v1 Progressional Match",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard pitch divided cleanly into five vertical zones by white lines, featuring goals on the left and right baselines. In each vertical strip, an isolated 1v1 duel is active between a blue player and a yellow-striped player. White passing arrows track between adjacent zones to illustrate players working together to progress the ball through the blocks.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard pitch split vertically into five equal zones",
+              "player_positions": "1v1 pairings locked into separate zones, requiring teammates to pass between cells to build an attack on goal."
+            }
+          },
+          "description": "Create a 30x20-yard area with a goal at each end. Split the pitch up into five zones. Two teams are matched up with a direct opponent and locked into zones so there's a 1v1 in each. Players work with teammates to progress the ball into other zones as they try to score in the goal they're attacking."
+        }
+      ]
+    }
+  ]
+}

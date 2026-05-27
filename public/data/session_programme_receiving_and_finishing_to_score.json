@@ -1,0 +1,452 @@
+{
+  "document_info": {
+    "title": "Session Programme: Receiving and Finishing to Score",
+    "organization": "England Football Learning",
+    "structure": "6-Week Progressive Curriculum Block",
+    "source_file": "session_programme_receiving_and_finishing_to_score.pdf"
+  },
+  "curriculum_overview": {
+    "week_1": "Receiving techniques",
+    "week_2": "Receiving under pressure",
+    "week_3": "Techniques to score",
+    "week_4": "Receive to score",
+    "week_5": "Applying the finish",
+    "week_6": "Festival week"
+  },
+  "weekly_session_plans": [
+    {
+      "week": 1,
+      "theme": "Receiving techniques",
+      "objectives": [
+        "Work out how to receive the ball using a variety of techniques",
+        "Develop confidence in receiving the ball",
+        "Learn how to receive the ball opposed and unopposed"
+      ],
+      "coaching_points": [
+        "Encourage your players to try to scan before receiving the ball. Make sure they're looking at their teammates and opposition players.",
+        "Make sure your players learn how to use a variety of receiving techniques to help with any situation.",
+        "Ask players to make sure they're using their body to protect the ball."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity - area one",
+          "name": "Anticlockwise Diamond Flow",
+          "pitch_diagram": {
+            "image_description": "A square green grass background containing a four-cone diamond grid. Four players are stationed at the vertices: two yellow-and-black striped figures are positioned at the top and bottom cones, each starting with a ball, while two blue/cyan figures stand at the left and right flank cones. White arrows map out a continuous, anticlockwise passing pattern around the outer limits of the diamond.",
+            "tactical_layout": {
+              "dimensions": "10x10-yard diamond space",
+              "equipment": "4 yellow cones forming a standard diamond grid"
+            }
+          },
+          "description": "Set up three diamond areas using cones - have a player on each one. Players on the top and bottom cones need a ball. On the first pitch, players pass anticlockwise around the area. Players receive on the back foot outside the cone then pass. After a bit, change the direction of passing."
+        },
+        {
+          "type": "Arrival activity - area two",
+          "name": "Inverted Diamond Pivot",
+          "pitch_diagram": {
+            "image_description": "The same four-cone diamond structure, but illustrating a different movement pattern. The two blue/cyan flank players are shown dynamically checking or running inward into the absolute center of the diamond to collect a vertical pass from the top or bottom yellow-striped teammates, turning inside to redirect the ball.",
+            "tactical_layout": {
+              "dimensions": "10x10-yard diamond area",
+              "movement_mechanics": "Flank players check into the central space to receive on the half-turn and complete a pass to the opposite end."
+            }
+          },
+          "description": "In the next area, players on the side cones drop into the middle to receive the ball and turn to play to the other player on the cone. Swap players over after 90 seconds."
+        },
+        {
+          "type": "Arrival activity - area three",
+          "name": "Central One-Two Combination",
+          "pitch_diagram": {
+            "image_description": "The final stage of the diamond grid layout. Two blue/cyan players are combined inside the center of the diamond. Passing vectors track a low ball served inward from a deep yellow-striped player to the central pair, who complete a quick one-touch combination pass between themselves before spinning to distribute wide.",
+            "tactical_layout": {
+              "dimensions": "10x10-yard diamond matrix",
+              "player_positions": "2 central combination pivots supported by 2 endline target servers."
+            }
+          },
+          "description": "For the final part of the arrival activity carousel, two players are in the middle. They receive a pass from a player on a cone, play a one-two, then turn and pass to the player on the other cone. Swap players over after 90 seconds. Rotate players around each area."
+        },
+        {
+          "type": "Practice - area one",
+          "name": "Tri-Third Target Transition",
+          "pitch_diagram": {
+            "image_description": "A field split cleanly into horizontal thirds by dashed lines. A single dark grey neutral target icon with a white target star stands behind both baselines. Inside the middle third, a balanced 2v2 outfield matchup is contested between cyan and yellow-striped groups, with passing vectors showing the ball being progressively moved through the center into the target players.",
+            "tactical_layout": {
+              "dimensions": "Pitch divided into three equal horizontal thirds",
+              "peripheral_elements": "2 target servers locked behind opposite baselines",
+              "player_positions": "2v2 central unit looking to create passing lanes to connect end-to-end lines."
+            }
+          },
+          "description": "Split a pitch into thirds for the first carousel activity. Have a target player at each end with a 2v2 in the middle. Teams work it from one end to the other. When a target player has the ball, the in-possession team go into their third. The opposition can't enter here until a pass has been made."
+        },
+        {
+          "type": "Practice - area two",
+          "name": "Central Box Catchment Match",
+          "pitch_diagram": {
+            "image_description": "A match field with mini-goals at both ends and a small square area marked by four yellow cones in the dead center. Outfielders battle across the pitch, with a passing indicator line tracing a forward ball hit toward a cyan midfielder checking into the central box.",
+            "tactical_layout": {
+              "dimensions": "Pitch with an embedded central box constraint",
+              "rules_constraints": "Attacking units must cleanly locate and complete a pass to a receiver inside the box before unlocking a shot on goal."
+            }
+          },
+          "description": "Create a pitch with a goal at each end and a box in the middle. When attacking, the team must receive the ball in the box before they can go for goal. The opposing team can't enter the box until the player has received the ball. The receiver can only have two touches in here."
+        },
+        {
+          "type": "Practice - area three",
+          "name": "Turnover Cone Overload Match",
+          "pitch_diagram": {
+            "image_description": "A full match pitch layout with goals on both ends. Three yellow cones are grouped along the top touchline, and three blue cones sit on the bottom touchline. In the middle third, a cyan player with the ball drives forward, while a yellow-striped counterpart runs completely off the field toward the side tracking zone.",
+            "tactical_layout": {
+              "dimensions": "Small-sided match pitch with perimeter cone tracking markers",
+              "scoring_mechanics": "Scoring a goal requires the scorer to physically run out of bounds to collect a tracking cone, creating an immediate temporary overload scenario."
+            }
+          },
+          "description": "For the final carousel activity, have a pitch with a goal and some footballs at each end. Put some cones at the side of the pitch. When a goal is scored, the scorer must get a cone and put it next to their goal. The opposition restart play quickly - this creates a 2v1 for a small moment of time."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "theme": "Receiving under pressure",
+      "objectives": [
+        "Develop how to receive the ball under pressure",
+        "Improve their confidence in receiving the ball",
+        "Learn how to receive the ball opposed and unopposed"
+      ],
+      "coaching_points": [
+        "Encourage your players to try to scan before receiving the ball. Make sure they're looking at their teammates and opposition players.",
+        "Make sure your players learn how to use a variety of receiving techniques to help with any situation.",
+        "Ask players to make sure they're using their body to protect the ball."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity - area one",
+          "name": "Perimeter to Pivot Transfer Box",
+          "pitch_diagram": {
+            "image_description": "A large rectangular box enclosing a multi-player rondo-like structure. Five yellow-striped players are scattered along the outside perimeters holding balls. Inside the central matrix, six blue/cyan figures execute quick checking runs to receive passes from the outside, control them, and transfer them out to a free perimeter player.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard outer grid area",
+              "player_positions": "Perimeter servers feeding an active unit of un-ball-carrying central movers."
+            }
+          },
+          "description": "Create a 40x30-yard area. Have a group of players on the outside with a ball and a group in the middle without a ball. Players in the middle receive the ball off a player from the outside. They then transfer the ball to a different player on the outside who doesn't have a ball."
+        },
+        {
+          "type": "Practice one",
+          "name": "Central Zone Entry Overload (3v2)",
+          "pitch_diagram": {
+            "image_description": "A vertical pitch grid cleanly split into three horizontal thirds, containing full goals on the perimeters. A blue/cyan midfielder is positioned inside the central zone, facing away from goal. A yellow-striped attacker serves a ball forward into the central player's feet, while white dashed line tracks map two trailing teammates sprinting from deep to build an attack.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard pitch split horizontally into vertical thirds",
+              "player_positions": "1 isolated target receiver in the middle box vs. a trailing 2-man defensive line, unlocking a live 3v2 match upon entry."
+            }
+          },
+          "description": "Set up an 40x30-yard area with a goal at each end and a middle zone. An attacker starts in the zone with a defender just outside it. Once the attacking team pass to the zone player, the others run onto the pitch and the 3v2 game is live. After a goal, the attacking team rotate the player in the middle."
+        },
+        {
+          "type": "Practice one - progression",
+          "name": "Asymmetric Midfield Checker Entry",
+          "pitch_diagram": {
+            "image_description": "The same tri-third vertical pitch setup, but showcasing alternative entry positions. One attacker and one defender start grouped on the lower touchline, while two attackers and a defender start on the upper line. Solid passing vectors show a player checking aggressively into the empty central zone to receive the vertical service.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard match matrix with lateral starting stations",
+              "drill_modifications": "Starting structures are pushed to the flanks, forcing an active diagonal checking run to activate the 3v2 or 3v3 overload."
+            }
+          },
+          "description": "Progress the drill by having an attacker and a defender start at one side of the area and two attackers and a defender on the other side. The lone attacker drops into the middle to receive the ball. As soon as the pass is played, the 3v2 game is live. You can add another defender to make it a 3v3."
+        },
+        {
+          "type": "Practice two",
+          "name": "Parallel 3v3 Match Integration",
+          "pitch_diagram": {
+            "image_description": "A field layout showing small goals at both perimeters. Six players are configured in a traditional 3v3 match structure, passing and tackling under high game intensity.",
+            "tactical_layout": {
+              "dimensions": "Standard parallel small-sided fields",
+              "rules_constraints": "Kick-ins utilized for sideline restarts with rapid team rotation intervals."
+            }
+          },
+          "description": "Finish the session off by setting up parallel pitches with a goal at each end for multiple 3v3 games. If the ball goes out, use kick-ins to restart. Play for three minutes then rotate teams around to play against others."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "theme": "Techniques to score",
+      "objectives": [
+        "Learn a variety of finishes to score",
+        "Improve their confidence in using these variety of finishes"
+      ],
+      "coaching_points": [
+        "Encourage your players to try to scan before receiving the ball. Make sure they're looking at their teammates and opposition players.",
+        "Make sure your players learn how to use a variety of finishing techniques to help with any situation.",
+        "Ask players to think about whether to control the ball or to try to finish first time."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Multi-Gate Passing Navigation",
+          "pitch_diagram": {
+            "image_description": "A large 40x30-yard field filled with dozens of small gates made of cone pairs. The gates are placed at randomized angles and various widths across the surface. Multiple pairs of blue/cyan and yellow-striped players navigate the space dynamically, completing passes through the open gates.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard field space",
+              "equipment": "Dozens of multi-colored training cones establishing varied passing windows"
+            }
+          },
+          "description": "Set up a 40x30-yard area and fill it with different sized gates. Players work in pairs, pass and receive through as many gates as they can in a set time. You could add a scoring system for each size gate or add in a couple of defenders to progress this arrival activity."
+        },
+        {
+          "type": "Practice one",
+          "name": "Diamond Goal-Net Clearance Match",
+          "pitch_diagram": {
+            "image_description": "A square field layout marked as a vertical diamond with full goals sitting at the top and bottom vertices, guarded by keepers. White dashed lines indicate an inner diamond tracking track. Inside, a 2v2 match is active, with extra balls stacked neatly inside both nets to govern a net-emptying challenge.",
+            "tactical_layout": {
+              "dimensions": "Diamond-shaped match field boundary",
+              "equipment": "2 goals, 6 stacked soccer balls split evenly inside the nets"
+            }
+          },
+          "description": "Create a diamond area with a goal at each end for this 2v2 practice. Put three footballs in each goal and start with one ball in the middle. Teams aim to empty their net before the other team by scoring. If a team scores, they grab a ball from their own net and start the game again."
+        },
+        {
+          "type": "Practice two",
+          "name": "Endline Service Press Phase",
+          "pitch_diagram": {
+            "image_description": "A rectangular field containing horizontal dashed end zones on both ends and a central midfield. Two yellow-striped defenders stand on their deep baseline, hitting a long vertical pass forward to a cyan attacking pair locked inside their own end line zone. As the pass rolls forward, the defenders sprint out high to press.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard area with baseline end zones",
+              "starting_action": "Defenders serve the ball from the endline to the attackers to trigger an active pressing phase."
+            }
+          },
+          "description": "Create an 40x30-yard area with a goal in an end zone on both ends—place cones and footballs at the side. Two defenders start on their end line—they pass the ball to the attackers who are in their own zone. As soon as the pass is made, the defenders can press. Attackers can only shoot when out of their zone."
+        },
+        {
+          "type": "Practice two - continued",
+          "name": "Cone Shuttle Reset Transition",
+          "pitch_diagram": {
+            "image_description": "A continuation of the endline service press diagram. An attacker has executed a shot, and a curved dashed line maps out the two defenders running completely off the pitch around side cone markers before tracking back onto the playing grid, while the attackers quickly collect a new ball to attack.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard pitch with side recovery markers",
+              "scoring_mechanics": "A goal or out-of-bounds trigger forces defenders into a side running loop, creating a brief attacking opportunity."
+            }
+          },
+          "description": "If the attackers score, or the ball goes out, the defenders need to run around the cones and back onto the pitch, while the attackers grab another ball and start an attack. Play two rounds then swap roles."
+        },
+        {
+          "type": "Practice three",
+          "name": "Half-Pitch Restricted 1v1 Duel",
+          "pitch_diagram": {
+            "image_description": "A 40x30-yard pitch divided horizontally into two halves by a solid centerline, with goals on both perimeters. Two yellow-striped defenders are placed in the upper half, and two cyan attackers occupy the lower half. One defender passes a ball across the midline to an attacker, launching a 1v1 duel where the attacker carries the ball forward.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard pitch with a central halfway line axis",
+              "rules_constraints": "Attackers are strictly prohibited from shooting while inside their own defensive half."
+            }
+          },
+          "description": "Set up a 40x30-yard pitch with a goal at each end and a halfway line. Have two defenders at one end and two attackers at the other. One defender passes to an attacker to start a 1v1 game. The attacker can't shoot from their own half. If a goal is scored, or the ball goes out, the next pair have their turn."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "theme": "Receive to score",
+      "objectives": [
+        "Learn how to receive the ball to score",
+        "Improve confidence and bravery to receive and finish",
+        "Develop decision making when receiving the ball"
+      ],
+      "coaching_points": [
+        "Encourage your players to try to scan before receiving the ball. Make sure they're looking at their teammates and opposition players.",
+        "Make sure your players learn how to use a variety of receiving and finishing techniques to help with any situation.",
+        "Ask players to think about how they could use their body to protect the ball."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Noughts & Crosses Core Grid",
+          "pitch_diagram": {
+            "image_description": "A simple 3x3 grid formed by nine yellow cones. Two teams of three start huddled together on the exact central cone marker. White dashed tracking paths map out players sprinting outward toward open perimeter cones to line up three matching teammates in a row.",
+            "tactical_layout": {
+              "dimensions": "9-cone matrix grid footprint",
+              "player_positions": "Two teams of three executing an athletic cognitive alignment challenge from a shared central base."
+            }
+          },
+          "description": "Set up a grid using nine cones. Have two teams of three start on the middle cone. When someone shouts 'go', players run to a free cone and try to make a row of three with their teammates. Only one player can be on a cone at a time. The first team to create three-in-a-row wins the round."
+        },
+        {
+          "type": "Practice one",
+          "name": "Locked Tri-Third Match with Bounce Outlets",
+          "pitch_diagram": {
+            "image_description": "A full 40x40-yard match area split horizontally into equal thirds, with goals on both ends. Inside the final thirds, a 2v1 structural distribution is locked in (two defenders marking one attacker), while a 2v2 unit battles in the center circle. Two dark grey neutral target icons with stars sit outside the touchlines to act as un-tacklable sideline bounce options.",
+            "tactical_layout": {
+              "dimensions": "40x40-yard pitch split horizontally into thirds",
+              "peripheral_elements": "2 external bounce options tracking along the touchlines",
+              "player_constraints": "Outfielders are locked into their assigned thirds to maintain positioning, with a ground-only ball condition."
+            }
+          },
+          "description": "Create a pitch that's split into thirds with a goal at each end. Two defenders and an attacker start in each final third with a 2v2 in the middle. Players are locked in. Have a bounce player outside the 40x40-yard area on each side. Players combine to score but the ball must be played on the floor."
+        },
+        {
+          "type": "Practice two",
+          "name": "Asymmetric Pivot Entry Game",
+          "pitch_diagram": {
+            "image_description": "Two vertical pitches side by side. The left pitch details three cyan attackers combining at the baseline to fire an initial pass into a target teammate operating inside a small central zone, while two yellow-striped defenders look to block lines from the opposite end zone.",
+            "tactical_layout": {
+              "dimensions": "Parallel independent vertical grid layouts",
+              "player_positions": "Asymmetric layout mapping a baseline attacking line passing into a central pivot to unlock a forward thrust against deep defenders."
+            }
+          },
+          "description": "Set up two pitches with a goal at one end. This is the end the defenders start at. Have two attackers start on the end line opposite, and one in the middle. The attackers pass to their teammate in the middle to start the game. Attackers try to score. Defenders try to get the ball to the end line."
+        },
+        {
+          "type": "Practice three",
+          "name": "Unlocked Tri-Third Match",
+          "pitch_diagram": {
+            "image_description": "The matching tri-third pitch setup from practice one. This time, a blue/cyan midfielder has received a pass, and white dashed line tracks show multiple central players bursting across the lines to enter the final third together to support the attack.",
+            "tactical_layout": {
+              "dimensions": "40x40-yard multi-zone match grid",
+              "drill_progressions": "Central midfielders unlock to join final third attacks, or lines are removed completely to allow free-flowing match play."
+            }
+          },
+          "description": "Return to the 'whole' part of the practice. You can progress this by allowing the players from the middle zone can join the attack once the ball is in the final third. You can also unlock all players to allow them to go anywhere on the pitch."
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "theme": "Applying the finish",
+      "objectives": [
+        "Learn how to receive the ball to score",
+        "Improve confidence and bravery to receive and finish",
+        "Develop decision making when receiving the ball"
+      ],
+      "coaching_points": [
+        "Encourage your players to try to scan before receiving the ball. Make sure they're looking at their teammates and opposition players.",
+        "Make sure your players learn how to use a variety of receiving and finishing techniques to help with any situation.",
+        "Ask players to think about how they could use their body to protect the ball."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Parallel 3v3 Match Shuttles",
+          "pitch_diagram": {
+            "image_description": "Two small rectangular pitches displayed side-by-side with goals on both ends. Active 3v3 outfield matches are underway on both fields, with players testing passing speed under a tight two-minute timeframe.",
+            "tactical_layout": {
+              "dimensions": "Parallel small-sided fields",
+              "drill_modifications": "Conditioned variables can be added, restricting scoring patterns to one-touch finishes or long-range shots from the defensive half."
+            }
+          },
+          "description": "Set up parallel small pitches for a 3v3 arrival activity. Have a goal at each end. Play for two minutes then rotate players or teams around. Progress this by adding a condition, for example, teams can only score with a one-touch finish or they can only score from their own half."
+        },
+        {
+          "type": "Practice one",
+          "name": "Numbered Perimeter Outlets Match (4v4 + 4)",
+          "pitch_diagram": {
+            "image_description": "A single 20x40-yard rectangular pitch containing a goal at one end. A 4v4 competitive outfield unit combines inside the central grid. Positioned completely outside the field boundaries are four dark grey neutral outlet players holding extra balls, configured as numbered targets on the perimeters.",
+            "tactical_layout": {
+              "dimensions": "20x40-yard field area containing 1 goal",
+              "peripheral_elements": "4 numbered external targets stationed along the sidelines",
+              "player_positions": "Central 4v4 unit matching numerical callouts to link up with external servers before shooting."
+            }
+          },
+          "description": "Create an 20x40-yard area with a goal at one end. Have a 4v4 in the middle with four players on the outside. Number those players and shout one out. They pass to someone in the middle then combine to score. The other team can only shoot if they win the ball, give it to an outside player and get it back."
+        },
+        {
+          "type": "Practice two",
+          "name": "Bounce Outlet Match & King-of-the-Court",
+          "pitch_diagram": {
+            "image_description": "The matching 20x40-yard pitch framework, but upgraded to feature goals at both opposite ends. The 4v4 match is live, and the four external perimeter players now act as universal 'bounce' options supporting whichever team holds possession.",
+            "tactical_layout": {
+              "dimensions": "20x40-yard double-goal pitch",
+              "scoring_mechanics": " King-of-the-court format where scoring twice or winning a three-minute round allows the victors to stay on the pitch."
+            }
+          },
+          "description": "Use the same pitch but add a goal at the other end. Play a 4v4 game but the players on the outside are now bounce players for both teams. Play for three minutes or until one side scores two. The winning side stays on while the other team switches with the bounce players."
+        },
+        {
+          "type": "Practice three",
+          "name": "Format Scaling Finale",
+          "pitch_diagram": {
+            "image_description": "Two distinct alternative pitch options for session scaling. The left layout displays a full 5v5 match containing two touchline bounce options. The right layout splits the pitch down into parallel 3v3 fields to maximize technical repetitions.",
+            "tactical_layout": {
+              "dimensions": "Flexible pitch selection scaling models",
+              "player_positions": "Choice between a 5v5 + 2 bounce template or twin parallel 3v3 setups."
+            }
+          },
+          "description": "Finish the session with either a game of 5v5 with two bounce players or two 3v3 games."
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "theme": "Festival week",
+      "objectives": [
+        "Learn how to receive the ball to score",
+        "Improve confidence and bravery to receive and finish",
+        "Develop decision making when receiving the ball"
+      ],
+      "coaching_points": [
+        "Encourage your players to try to scan before receiving the ball. Make sure they're looking at their teammates and opposition players.",
+        "Make sure your players learn how to use a variety of receiving and finishing techniques to help with any situation.",
+        "Ask players to think about how they could use their body to protect the ball."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Festival Bounce-Outlet Rondo",
+          "pitch_diagram": {
+            "image_description": "A match pitch layout with goals on both ends. A 4v4 match is underway in the center circle, flanked by four dark grey target icons with stars placed on the exterior sidelines to act as universal support options.",
+            "tactical_layout": {
+              "dimensions": "Standard small-sided pitch with 2 goals",
+              "peripheral_elements": "4 external bounce outlets on the perimeter lines"
+            }
+          },
+          "description": "Set up a pitch with a goal at each end. Have a 4v4 in the middle with four bounce players on the outside. Both teams can use the bounce players. Play for three minutes or until one side scores two. The winning side stays on while the other team switches with the bounce players."
+        },
+        {
+          "type": "Practice one",
+          "name": "Triple-Pitch Carousel Framework",
+          "pitch_diagram": {
+            "image_description": "A macro-overview layout showing three distinct 40x30-yard pitches aligned side-by-side to build a rotational tournament carousel. Narrow vertical 'safe zones' are marked between the pitches using yellow cones to isolate the fields.",
+            "tactical_layout": {
+              "structure": "Three separate 40x30-yard match fields aligned in parallel",
+              "special_features": "Cone-defined intermediate safety zones separating the tournament grids."
+            }
+          },
+          "description": "Set up three 40x30-yard pitches with a goal at each end. Put safe zones in between each pitch. Each pitch hosts a 3v3 activity. Teams play on each pitch for four minutes, then move to the next one. Rotate everyone around so teams play on each pitch twice. Remember to build in breaks after each activity."
+        },
+        {
+          "type": "Practice one - pitch one",
+          "name": "Football Bingo Station (Pitch 1)",
+          "pitch_diagram": {
+            "image_description": "A detailed layout of the first tournament pitch. A vertical center line split matches 3v3 configurations. Below the baseline goal, three small bingo-card graphics—labeled 'Xs' (yellow grid) and 'Os' (cyan grid) flanking a central checklist board—monitor tactical finishing styles.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard match grid",
+              "game_modifications": "Integration of a whiteboard scoring checklist to track and cross off specific finishing methods."
+            }
+          },
+          "description": "On the first pitch, teams play football bingo. Challenge teams to score in different ways and put them on a whiteboard at the side of the pitch. If a team scores using that finish or technique, they cross it off the whiteboard. First team to cross all finishes off - or has the most finishes - wins."
+        },
+        {
+          "type": "Practice one - pitch two",
+          "name": "Tri-Third Un-Locked Progression (Pitch 2)",
+          "pitch_diagram": {
+            "image_description": "The second tournament pitch layout. White dashed lines divide the field into three horizontal segments. Outfielders flow freely across all lines, with a passing trajectory showing a combination linking across all three zones before a shot is taken.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard field split horizontally into thirds",
+              "rules_constraints": "Outfielders are entirely unlocked across zones but must pass through all three thirds before unlocking a shot."
+            }
+          },
+          "description": "On the second pitch, teams have to play through the thirds before being able to score. Players can go anywhere on the pitch as they aren't locked into zones."
+        },
+        {
+          "type": "Practice one - pitch three",
+          "name": "Cone Scurry Overload Station (Pitch 3)",
+          "pitch_diagram": {
+            "image_description": "The third tournament pitch layout. A line of six training cones is placed along the right sideline. A white dashed line tracks a cyan player who has just scored sprinting completely off the field toward the cones, while the yellow-striped opposition quickly restarts a counter-attack.",
+            "tactical_layout": {
+              "dimensions": "40x30-yard match pitch with sideline cone arrays",
+              "scoring_mechanics": "Scoring a goal forces the scorer to leave the field to grab a tracking cone, creating an immediate tactical transition phase."
+            }
+          },
+          "description": "On the third pitch, if a player scores, they run to grab a cone from the side and put it next to their goal. The team who conceded can start play straight away to try to take advantage of the overload."
+        }
+      ]
+    }
+  ]
+}

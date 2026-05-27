@@ -1,0 +1,422 @@
+{
+  "document_info": {
+    "title": "Session Programme: Passing and Receiving to Score",
+    "organization": "England Football Learning",
+    "structure": "6-Week Progressive Curriculum Block",
+    "source_file": "session_programme _passing_and_receiving_to_score.pdf"
+  },
+  "curriculum_overview": {
+    "week_1": "Building technique",
+    "week_2": "Combine with a partner",
+    "week_3": "Receiving in space",
+    "week_4": "Passing to penetrate",
+    "week_5": "Combinations to play forward",
+    "week_6": "Passing to score festival"
+  },
+  "weekly_session_plans": [
+    {
+      "week": 1,
+      "theme": "Building technique",
+      "objectives": [
+        "Learn to use a wide variety of passes[cite: 19]",
+        "Be aware of the factors that may impact decisions including the space available, first touch, and options once you get the ball[cite: 19]"
+      ],
+      "coaching_points": [
+        "Allow for your players to practise multiple techniques and decide which methods work best[cite: 19].",
+        "Challenge players to think about how they can move the ball out of their feet to create an angle to play a longer pass[cite: 19].",
+        "Encourage bravery in passing and moving quickly[cite: 19].",
+        "Consider if space and time is impacting execution of the pass[cite: 19].",
+        "Encourage players to scan and consider their positioning[cite: 19]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Playing in the Grids",
+          "pitch_diagram": {
+            "image_description": "A 20x20-yard outer square grid divided internally into four equal square quadrants by a horizontal and vertical dashed centerline[cite: 19]. Four neutral player icons (black outfits with a target emblem) are placed on the outside borders, one on each side[cite: 19]. Inside the quadrants, multiple distinct small teams of two or three players are active (colored in yellow-and-black stripes, cyan, and black-and-white stripes), with each group possessing their own active soccer ball[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "20x20-yard square area subdivided into 4 matching cells[cite: 19]",
+              "peripheral_elements": "4 outer neutral players stationed along the boundary lines[cite: 19]",
+              "player_positions": "Small teams starting inside separate grids with individual balls[cite: 19]."
+            }
+          },
+          "description": "Create a 20x20-yard area and split it into four grids[cite: 19]. Have four neutral players positioned around the area[cite: 19]. Everyone else are in teams of two or three in the area depending on your numbers[cite: 19]. Teams start in different grids, and each team starts with a ball[cite: 19]."
+        },
+        {
+          "type": "Arrival activity - continued",
+          "name": "Grid Passing Flow",
+          "pitch_diagram": {
+            "image_description": "The identical four-quadrant grid system, but illustrating dynamic player movement[cite: 19]. White solid and dashed lines map out passes traveling from an interior yellow-striped player to an outer neutral target, who controls and passes back to a teammate[cite: 19]. Additional arrow tracks indicate outfield teams shifting between different quadrants while neutral players track up and down their assigned boundaries[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Subdivided 20x20-yard area[cite: 19]",
+              "movement_mechanics": "Teams dynamically migrate between grids, passing back and forth with shifting line-constrained neutral players[cite: 19]."
+            }
+          },
+          "description": "One player in each team passes to neutral player[cite: 19]. The neutral player, receives and passes back to someone else in that team[cite: 19]. That player then receives and passes to a different neutral player[cite: 19]. Teams move between grids, and the neutral players move up and down their line[cite: 19]."
+        },
+        {
+          "type": "Practice one",
+          "name": "End Zones Pitch Breakdown",
+          "pitch_diagram": {
+            "image_description": "The initial area is divided in half vertically by a solid white boundary to create two independent, parallel fields[cite: 19]. Each long pitch features dark shaded horizontal end zones at both top and bottom baselines[cite: 19]. Inside the left pitch, a cyan player controls the ball in the central zone and hits a diagonal pass forward to a cyan target teammate anchored inside the deep end zone, while yellow-striped defenders mark underneath[cite: 19]. The right pitch mirrors this sequence with a yellow-striped combination[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Two parallel independent vertical pitches[cite: 19]",
+              "special_features": "Horizontal shaded end zones terminating both ends of the fields[cite: 19]",
+              "player_positions": "Central outfield combatants aiming to find a designated target teammate locked inside the deep end space[cite: 19]."
+            }
+          },
+          "description": "Half your area to create two pitches with end zones[cite: 19]. Each side has a target player to aim for in an end zone[cite: 19]. Players combine with teammates to pass to their target player, earning them a point[cite: 19]. Play then restarts with the other team[cite: 19]. Play for three minutes then swap teams around[cite: 19]."
+        },
+        {
+          "type": "Practice two",
+          "name": "Passing Bingo",
+          "pitch_diagram": {
+            "image_description": "The exact same double-pitch template layout as Practice One, but small square match tokens depicting 'X' (yellow matrix pattern) and 'O' (cyan grid pattern) are displayed at the bottom of the graphic below the pitches, representing the structural team-wide bingo assignment tracks[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Parallel vertical match fields[cite: 19]",
+              "game_modifications": "Integration of a 9-cell technical checklist grid to reward diverse passing execution[cite: 19]."
+            }
+          },
+          "description": "Agree on nine passes to achieve, like a left-foot pass or a chipped pass[cite: 19]. Put these in a bingo grid[cite: 19]. Allocate one team as 'Xs' and one as 'Os' then play a normal game on each pitch[cite: 19]. When an action has been completed players mark it off[cite: 19]. Teams try to get three in a row to win[cite: 19]."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "theme": "Combine with a partner",
+      "objectives": [
+        "Explore two-player moves[cite: 19]",
+        "Work together as a team[cite: 19]"
+      ],
+      "coaching_points": [
+        "Consider using variations on two-player moves[cite: 19].",
+        "Consider key capabilities such as scanning, positioning, and technique[cite: 19].",
+        "Allow players to make their own choices on which moves work best[cite: 19].",
+        "Encourage players to get their heads up to scan for teammates and space[cite: 19].",
+        "Get players to think about their positioning by asking 'can you see the ball, and can the ball see your feet?'[cite: 19]"
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Channel Passing & Cone Shuttles",
+          "pitch_diagram": {
+            "image_description": "A playing area split down the center circle by a white dashed halfway line to delineate two narrow 20x15-yard horizontal channels[cite: 19]. A row of flat yellow cones cuts down the exact middle of each channel, and a small mini-goal stands at the left baseline[cite: 19]. Inside the top channel, two yellow-striped players pass a ball between each other while weaving sequentially up and down the cone row[cite: 19]. The bottom channel mirrors this with a cyan pairing[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Two separate 20x15-yard horizontal passing channels[cite: 19]",
+              "equipment": "A central row of yellow markers and 1 target mini-goal frame per channel[cite: 19]",
+              "player_positions": "Pairs of outfielders working in tandem to circulate the ball around the marker line[cite: 19]."
+            }
+          },
+          "description": "Split your pitch down the middle to create two 20x15-yard channels[cite: 19]. Each channel has a line of cones down the middle and a mini-goal at the end where the players start[cite: 19]. In twos, players pass and move down the channel and back[cite: 19]. They then pass into the mini-goal to score[cite: 19]."
+        },
+        {
+          "type": "Arrival activity - continued",
+          "name": "Core Move Integration",
+          "pitch_diagram": {
+            "image_description": "The same dual-channel setup, but illustrating complex combination paths[cite: 19]. In the top channel, a grey ghost icon and overlapping curved white lines show a player executing a back-side overlap run around their passing partner[cite: 19]. In the lower channel, a cyan player plays a diagonal pass to trigger a synchronized combination path[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Two parallel 20x15-yard tracks[cite: 19]",
+              "drill_modifications": "Integration of dynamic two-player core moves (e.g., overlaps) during the shuttle phase[cite: 19]."
+            }
+          },
+          "description": "Progress the arrival activity by introducing the two-player core moves, such as an overlap, and challenging players to use them as they move up and down the channel[cite: 19]."
+        },
+        {
+          "type": "Practice one",
+          "name": "2v1 Overload to Goal",
+          "pitch_diagram": {
+            "image_description": "The double-channel layout is retained, but upgraded to feature mini-goals on both the left and right perimeters of each channel[cite: 19]. In the top corridor, a grey shadow figure and solid passing line show two cyan attackers using an wall-pass combination to bypass an isolated yellow-striped defender to shoot into the left goal[cite: 19]. The lower corridor shows a matching 2v1 battle under live pressure[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Two parallel 20x15-yard fields with mini-goals at each end[cite: 19]",
+              "player_positions": "A 2v1 active attacking overload scenario inside each restricted corridor[cite: 19]."
+            }
+          },
+          "description": "For this 2v1 activity, use the same pitches but have a mini-goal at each end[cite: 19]. The two players combine to beat their opponent and score[cite: 19]. Encourage them to try different two-player core moves to get past the defender[cite: 19]. If the defender wins the ball, they try to score at the other end[cite: 19]."
+        },
+        {
+          "type": "Practice two",
+          "name": "Small-Sided Combination Matches",
+          "pitch_diagram": {
+            "image_description": "Two distinct vertical match fields arranged side-by-side with full goals anchoring all perimeters[cite: 19]. Inside the left pitch, a cyan squad of three circulates the ball cleanly against a yellow-striped trio[cite: 19]. The right pitch maps an identical small-sided competitive match setup, showcasing free-flowing player positioning[cite: 19]. At the bottom center, yellow matrix and cyan grid icons represent the competing tactical units[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Two standalone vertical small-sided match pitches[cite: 19]",
+              "rules_constraints": "Match play incorporating bonus point rewards for core combinations, pass-ins, and retreat lines[cite: 19]."
+            }
+          },
+          "description": "Progress to small-sided games on pitches that have a goal at each end[cite: 19]. Encourage players to use two-player core moves by giving teams a bonus point if they use one[cite: 19]. Use pass-ins if the ball goes off the side of the pitch and use the retreat line rule after a goal has been scored[cite: 19]."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "theme": "Receiving in space",
+      "objectives": [
+        "Explore what it means to be effective at receiving[cite: 19]",
+        "Understand how receiving can impact your next move or decision[cite: 19]"
+      ],
+      "coaching_points": [
+        "Ask players to pass the ball how they'd like to receive it and encourage them to make some kind of connection before they pass the ball, such as communication or eye contact[cite: 19].",
+        "Once players have passed the ball, ask them to move into a new space to be ready to receive again[cite: 19].",
+        "Remind players to scan and think about what's around them[cite: 19]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Ball Tag Possession Grid",
+          "pitch_diagram": {
+            "image_description": "A square 25x25-yard area containing a chaotic mix of players[cite: 19]. A team of black outfit figures acts as the active taggers[cite: 19]. Outfield squads (colored in cyan, yellow-striped, and black-striped) are distributed across the grid passing three separate balls around to ensure the target player cannot be tagged[cite: 19]. White tracking lines illustrate rapid pass-and-move loops to evade the defenders[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "25x25-yard square grid area[cite: 19]",
+              "player_roles": "1 team of designated taggers hunting players holding possession across 3 separate active balls[cite: 19]."
+            }
+          },
+          "description": "Set up a 25x25-yard area. Split your group into four teams[cite: 19]. Three teams have a ball[cite: 19]. The other team are the taggers[cite: 19]. Taggers can only tag a player who has a ball[cite: 19]. The other teams support each other by passing and moving to avoid being tagged[cite: 19]. Players high-five a tagged player to free them[cite: 19]."
+        },
+        {
+          "type": "Practice one",
+          "name": "Around the Clock Circle",
+          "pitch_diagram": {
+            "image_description": "A field containing a large circle outlined by flat markers inside one half[cite: 19]. Four players—one representing each sub-team (cyan, yellow-striped, black-striped, and target-black)—are clumped inside the center of the ring[cite: 19]. The remaining teammates are spread evenly around the outer perimeter of the circle, holding balls and delivering passes inward[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Circular tracking ring embedded in a half-pitch area[cite: 19]",
+              "player_positions": "Central turning receivers inside the ring fed continuously by static outer baseline teammates[cite: 19]."
+            }
+          },
+          "description": "Use cones to create a circle within half of your pitch[cite: 19]. Split your group into teams of three or four players[cite: 19]. One player from each team starts in the middle with everyone else spread around the area[cite: 19]. Each team can have one or two footballs between them[cite: 19]."
+        },
+        {
+          "type": "Practice one - continued",
+          "name": "Dynamic Clock Scanning",
+          "pitch_diagram": {
+            "image_description": "The exact same circle passing layout, but white solid lines show central players receiving from one outer teammate, executing a sharp turn on the floor, and immediately distributing a pass to a free runner on a different part of the outer ring[cite: 19]. Outer perimeter players are shown shifting positions laterally[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Circular passing matrix[cite: 19]",
+              "drill_progressions": "Perimeter passers unlock to migrate around the circle, forcing central receivers to scan dynamically before turning[cite: 19]."
+            }
+          },
+          "description": "Players in the middle receive the ball, then turn and pass to a teammate who's free[cite: 19]. They then receive another pass and repeat[cite: 19]. Progress the practice by allowing players on the outside to move around so those in the middle need to scan to find them[cite: 19]."
+        },
+        {
+          "type": "Practice two",
+          "name": "Connect Four Corner Squares",
+          "pitch_diagram": {
+            "image_description": "A rectangular 35x20-yard pitch featuring an embedded shaded 5x5-yard square box at all four quadrant corners[cite: 19]. Inside the main central sector, a blue-cyan group of attackers circulates the ball against a yellow-striped defensive block[cite: 19]. A white dashed line charts an attacker executing an explosive forward run to enter an open corner square to receive a lofted pass from a teammate[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "35x20-yard grid containing 4 corner target squares[cite: 19]",
+              "player_positions": "Attacking vs. defending outfield units competing to locate and complete an entry pass into any corner cell[cite: 19]."
+            }
+          },
+          "description": "Set up a 35x20-yard area with a square in each corner[cite: 19]. Have one attacking team versus one defending team[cite: 19]. Attackers need to pass to a teammate in a square to score[cite: 19]. Defenders need to stop them from scoring[cite: 19]. If they win the ball, the defenders then become attackers[cite: 19]."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "theme": "Passing to penetrate",
+      "objectives": [
+        "Develop understanding on penetrative passes[cite: 19]",
+        "Look at the timing and techniques for when these passes can be made[cite: 19]",
+        "Consider how penetrative passes can help us score goals[cite: 19]"
+      ],
+      "coaching_points": [
+        "Get your players to think about the timing of their passes[cite: 19].",
+        "Encourage your players to think about how you can help other players to pass forward with the previous pass or movement[cite: 19].",
+        "Explore how to best use body shape and receiving angles to play forward[cite: 19].",
+        "Use the right terminology for your players to encourage them to scan and pick their next pass—reminding them to 'keep the ball away from the fire' can help young players spot danger (opponents) and beat the press[cite: 19]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Passing Gates Channel",
+          "pitch_diagram": {
+            "image_description": "A vertical 20x15-yard pitch with mini-goals at the top and bottom baselines, divided into two halves by a centerline containing two pairs of yellow cones that form twin narrow gates[cite: 19]. A yellow-striped attacker in the lower half controls a pass from a partner and drives a low ball through the left cone gate into the upper half where two cyan players wait[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "20x15-yard area with a central gate axis[cite: 19]",
+              "equipment": "4 yellow cones forming 2 central passing gates, 2 mini-goals[cite: 19]",
+              "player_positions": "Teams restricted to their respective halves, circulating possession before attempting a gate pass[cite: 19]."
+            }
+          },
+          "description": "For this activity, set up an 20x15 yard area with two gates across the middle and a mini-goal at each end[cite: 19]. Teams have their own half, and one starts with the ball[cite: 19]. They pass it between themselves before passing through a gate to the other team[cite: 19]."
+        },
+        {
+          "type": "Arrival activity - continued",
+          "name": "Through-Ball Target Upgrades",
+          "pitch_diagram": {
+            "image_description": "The same central gate pitch layout, but illustrating an advanced scoring sequence[cite: 19]. A yellow-striped player hits an aggressive driven pass completely through the right cone gate, bypassing the centerline axis to fire the ball directly into the deep baseline mini-goal[cite: 19]. A yellow banner at the bottom center reads 'Lions'[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "20x15-yard target area[cite: 19]",
+              "scoring_mechanics": "Points awarded for penetrating the gates beyond the baseline, with premium rewards for hitting the mini-goal[cite: 19]."
+            }
+          },
+          "description": "Progress the activity by adding competition[cite: 19]. Teams score one point if their pass through a gate goes beyond the end line, and multiple points if they can pass into the opposition's mini-goal[cite: 19]. This gets teams to start thinking about how to play a through-ball beyond defenders[cite: 19]."
+        },
+        {
+          "type": "Practice one",
+          "name": "Breaking the Line 2v1 Grid",
+          "pitch_diagram": {
+            "image_description": "A vertical field split by a dashed halfway line, with mini-goals at both perimeters[cite: 19]. Inside the upper half, two yellow-striped attackers pass around an isolated cyan defender[cite: 19]. Along the centerline, a second cyan defender tracks laterally, executing a screening shift to block the passing lane heading down into the lower half where two yellow-striped partners wait[cite: 19]. A baseline text label reads '2 points'[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Vertical field split by a centerline axis[cite: 19]",
+              "player_positions": "2v1 attacking overloads active inside both halves, separated by a shifting mid-line screening defender[cite: 19]."
+            }
+          },
+          "description": "On the same pitches, have two attackers and one defender in each half[cite: 19]. But adjust the teams and pitches to match your numbers[cite: 19]. In this practice, attackers combine to beat the press and pass to the attackers in the other half[cite: 19]. They get a point each time they successfully do this[cite: 19]."
+        },
+        {
+          "type": "Practice one - continued",
+          "name": "Defensive Role Swap Tracking",
+          "pitch_diagram": {
+            "image_description": "The matching 2v1 breaking-the-line diagram, but illustrating defensive shifts[cite: 19]. The central screening defender has stepped forward into the upper zone to apply heavy pressure on the ball carrier, while the original pressing defender drops back horizontally to assume the halfway line screening role[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Line-breaking training grid[cite: 19]",
+              "defensive_mechanics": "Defenders execute a continuous press-and-cover role rotation whenever the ball transitions between halves[cite: 19]."
+            }
+          },
+          "description": "Defenders always have one screening on the halfway line with the other defender going to press[cite: 19]. They swap roles when the ball goes into the other half[cite: 19]. If the defenders win the ball, they try to score in a mini-goal[cite: 19]."
+        },
+        {
+          "type": "Practice two",
+          "name": "Table Football Tri-Thirds Match",
+          "pitch_diagram": {
+            "image_description": "A comprehensive match pitch cleanly divided into equal horizontal thirds by white dashed lines, featuring full goals on the left and right perimeters guarded by goalkeepers[cite: 19]. Outfield players are locked inside their zones (showing a 3v2 structure in the left defensive third, a 2v2 in central midfield, and an isolated 2v2 in the final attacking third), passing between cells to feed the striker[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Full pitch layout split horizontally into vertical thirds[cite: 19]",
+              "player_constraints": "All outfielders are locked inside assigned thirds to prevent vertical containment breaking, emphasizing passing accuracy through lines[cite: 19]."
+            }
+          },
+          "description": "Split your whole area into thirds and have a goal at each end[cite: 19]. Players are assigned a third and locked into them[cite: 19]. The aim is to work the ball through the thirds to get it to a forward who tries to score[cite: 19]."
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "theme": "Combinations to play forward",
+      "objectives": [
+        "Play progressive, forward passes[cite: 19]",
+        "Consider weight and direction of pass to create goal scoring opportunities[cite: 19]"
+      ],
+      "coaching_points": [
+        "Get your players to consider techniques and the weight of pass[cite: 19].",
+        "Support players to have a positive first touch to help the next move[cite: 19].",
+        "Ask players to think about their positioning in 'through the gates'—if the receiver stands slightly behind a gate rather than directly in it, it will force the passer to deliver a longer pass[cite: 19].",
+        "To keep the intensity high, challenge players to 'not let the ball stop'[cite: 19].",
+        "Utilize the whole-part-whole structure to observe player performance in the initial phase and address technical needs during the isolated practice segment[cite: 19]."
+      ],
+      "activities": [
+        {
+          "type": "Practice one",
+          "name": "Set-Up Zones with Unopposed End Striking",
+          "pitch_diagram": {
+            "image_description": "A 25x20-yard playing pitch featuring full goals on the left and right perimeters, with a solid line defining a narrow end zone box in front of each goal mouth[cite: 19]. Inside the central playing sector, a crowded match is active[cite: 19]. A yellow-striped attacker uses a slick combination to slide a pass through a gap into their target partner anchored inside the right end zone[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "25x20-yard pitch with dual baseline end zones and goals[cite: 19]",
+              "player_positions": "Central match play unit looking to pick out and connect with 2 designated target players anchored inside the deep end zone box[cite: 19]."
+            }
+          },
+          "description": "Create a 25x20 yard pitch with goals and an end zone at each end[cite: 19]. Split your players into two teams[cite: 19]. Each team has two target players in one of the end zones[cite: 19]. Teams combine to pass to their target players[cite: 19]. After receiving a pass, target players turn and score unopposed[cite: 19]."
+        },
+        {
+          "type": "Practice two",
+          "name": "Multi-Gate Technical Matrix",
+          "pitch_diagram": {
+            "image_description": "An open training grid completely filled with dozens of small 'gates' made of cone pairs scattered at random angles and varying widths (using pairs of orange, blue, black, and cyan cones)[cite: 19]. Multiple pairs of players (cyan and yellow-striped groups) weave dynamically through the space, passing balls cleanly through the gates to partners on the move[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Open grid space scattered with randomized multi-colored cone gates[cite: 19]",
+              "player_positions": "Pairs or trios navigating the space continuously to execute diverse passing methods through gates[cite: 19]."
+            }
+          },
+          "description": "Using cones, place loads of 'gates' around your pitch[cite: 19]. Vary the size and angle of the gates[cite: 19]. Split players into pairs or threes[cite: 19]. Challenge them to pass through the gates to a teammate using different techniques[cite: 19]. Players move around the area to pass through different gates[cite: 19]."
+        },
+        {
+          "type": "Practice three",
+          "name": "Set-Up Zones with Goalkeepers & Block Defenders",
+          "pitch_diagram": {
+            "image_description": "The matching baseline end zone field from Practice One, but full-sized goalkeepers are now inserted into the nets[cite: 19]. Inside the left end zone, a cyan attacker controls a pass while being tightly closed down by an active yellow-striped defender who has been added to guard the zone[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "25x20-yard pitch with contested end zones and goalkeepers[cite: 19]",
+              "drill_progressions": "End zones are upgraded to include active goalkeepers and tracking defenders to challenge the receiving strike phase[cite: 19]."
+            }
+          },
+          "description": "Return to the original practice but this time, add goalkeepers[cite: 19]. If players need a further challenge, add a defender in the end zones, too[cite: 19]."
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "theme": "Passing to score festival",
+      "objectives": [
+        "Revisit key passing and receiving techniques from previous weeks[cite: 19]",
+        "Work back through activities from previous weeks adding competitive elements for positive skill execution[cite: 19]",
+        "Compete to gain points toward a cumulative session total[cite: 19]"
+      ],
+      "coaching_points": [
+        "Remind players to pass with purpose—whether utilizing first-time passing, combination play, or core moves to break blocks[cite: 19].",
+        "Employ diverse coaching interventions, such as 'stop, stand still' freezes or fluid 'drive-by' feedback[cite: 19].",
+        "Balance active instructional support with ample freedom to let players demonstrate independent problem-solving and tactical understanding[cite: 19].",
+        "Adapt popular activities from prior weeks while maintaining strict alignment with the core technical goals[cite: 19]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Festival Passing Gates",
+          "pitch_diagram": {
+            "image_description": "A structural replica of the week 4 arrival activity diagram, detailing a vertical 20x15-yard pitch with twin central cone gates and mini-goals on the perimeters[cite: 19]. A yellow-striped midfielder plays a sharp through-ball passing vector through the right gate to a partner breaking towards the goal line[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Two parallel 20x15-yard match fields with central gates[cite: 19]",
+              "scoring_mechanics": "1 point awarded for gate passes clearing the line, 3 points for scoring directly into the mini-goal[cite: 19]."
+            }
+          },
+          "description": "Create two 20x15 yard pitches with two gates across the middle and a mini-goal at each end[cite: 19]. Teams have their own half[cite: 19]. One starts with the ball[cite: 19]. Teams get one point if they pass through a gate and it goes beyond the end line and three points if they pass into the opposition's mini-goal[cite: 19]."
+        },
+        {
+          "type": "Practice one",
+          "name": "One-Touch Small-Sided Festival Match",
+          "pitch_diagram": {
+            "image_description": "A match visual mirroring the week 2 practice 2 layout, with twin vertical fields hosting small-sided games[cite: 19]. Outfielders are actively engaged in standard positions, but text rules highlight a strict restriction on shooting mechanics[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Parallel vertical small-sided pitches[cite: 19]",
+              "rules_constraints": "Goals can only be scored via a one-touch finish, using pass-ins for restarts, with hands completely prohibited for saves[cite: 19]."
+            }
+          },
+          "description": "Progress into small-sided games on your pitches[cite: 19]. Teams can only score with a one-touch finish[cite: 19]. Use pass-ins if the ball goes off the side of the pitch, but there are no corners[cite: 19]. Players also can't use their hands to make a save[cite: 19]."
+        },
+        {
+          "type": "Practice two",
+          "name": "Multi-Team Connect Four Matrix",
+          "pitch_diagram": {
+            "image_description": "A rectangular field containing an embedded shaded square cell at all four corner quadrants[cite: 19]. Three separate attacking groups (colored in yellow-striped, cyan, and black-striped) operate simultaneously, each squad working with their own distinct soccer ball[cite: 19]. A single defensive group made of black outfit figures tracks centrally, shifting to block the lanes[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Field layout featuring 4 corner target square blocks[cite: 19]",
+              "player_roles": "3 separate attacking units with 3 active balls vs. 1 consolidated central defensive group attempting to block entries[cite: 19]."
+            }
+          },
+          "description": "Put a square in each corner of your area[cite: 19]. Have three teams of attackers, one team of defenders[cite: 19]. Attackers have a ball per team[cite: 19]. They get a point for passing to a teammate in a square[cite: 19]. They do this as many times as possible in one minute—but must score in a different square each time[cite: 19]."
+        },
+        {
+          "type": "Practice two - continued",
+          "name": "Defensive Mini-Goal Counter Transitions",
+          "pitch_diagram": {
+            "image_description": "The identical corner square layout, but showcasing a defensive transition phase[cite: 19]. A mini-goal has been added onto the left and right touchline perimeters[cite: 19]. A black outfit defender has cleanly intercepted one of the balls and is shown firing a pass into the right touchline mini-goal, with white arrows mapping tracking block movements[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Corner square area with added touchline mini-goals[cite: 19]",
+              "scoring_mechanics": "Defenders accumulate 1 point per ball interception touch, and 3 premium points for intercepting and scoring in the mini-goals[cite: 19]."
+            }
+          },
+          "description": "Defenders try to stop the attackers from scoring[cite: 19]. If they manage to touch a football, they get one point[cite: 19]. If they win the ball and score in a mini-goal, they get three points[cite: 19]. Play 90-second rounds and rotate the defending team until every team has had a go at defending[cite: 19]."
+        },
+        {
+          "type": "Practice three",
+          "name": "Three-Goal Endline Finale",
+          "pitch_diagram": {
+            "image_description": "A wide match field where each baseline features three separate scoring targets: one large central goal frame and two small mini-goals anchored in the far corners[cite: 19]. A cyan attacker controls the ball in midfield, using a slick pass-and-move path to slide the ball forward to a teammate who executes an instinctive first-time shot[cite: 19].",
+            "tactical_layout": {
+              "dimensions": "Full match field featuring asymmetric three-goal baselines[cite: 19]",
+              "scoring_mechanics": "1 point awarded for any successful standard finish, with a 2-point premium bonus triggered by first-time finishes[cite: 19]."
+            }
+          },
+          "description": "Finish with a small-sided game on a pitch that has a large goal and two mini-goals at each end[cite: 19]. Teams get a point for scoring in any of the goals they're attacking[cite: 19]. But if they score with a first-time finish, they get two points[cite: 19]."
+        }
+      ]
+    }
+  ]
+}

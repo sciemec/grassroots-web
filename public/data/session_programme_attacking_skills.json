@@ -1,0 +1,232 @@
+{
+  "document_info": {
+    "title": "Session Programme: Attacking Skills",
+    "organization": "England Football Learning",
+    "structure": "6-Week Progressive Attacking Curriculum Block",
+    "source_file": "football_knowledge.pdf"
+  },
+  "curriculum_overview": {
+    "week_1": "2v2 to score",
+    "week_2": "create to score",
+    "week_3": "pass, turn, score",
+    "week_4": "width for deception",
+    "week_5": "playing out to attack",
+    "week_6": "scoring as a team"
+  },
+  "weekly_session_plans": [
+    {
+      "week": 1,
+      "theme": "2v2 to score",
+      "objectives": [
+        "Pass and receive in tight areas[cite: 26].",
+        "Work with teammates to create space[cite: 26].",
+        "Know when to pass or shoot[cite: 26]."
+      ],
+      "coaching_points": [
+        "Look for players' movement to receive, technique to receive and shoot, and their creativity in tight areas[cite: 26].",
+        "Encourage players to think about how they can use their scanning, movement and deception skills effectively to find the best solution[cite: 26].",
+        "Get players to consider how they can help create space and become a passing option for their teammate when they're not on the ball[cite: 26].",
+        "Ask players to be brave and stay on the ball for the right amount of time to move defenders and create early shooting windows[cite: 26]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "5v5 Main & Nested Grid Setup",
+          "pitch_diagram": {
+            "image_description": "A top-down view of a rectangular green soccer pitch divided vertically into two halves by a central white line, with standard goals positioned on both the left and right baselines[cite: 26]. A nested grid is mapped out inside using white dashed lines, showing an hourglass-like funnel shape that remains wide near both goals but narrows sharply as it approaches the halfway line intersection[cite: 26]. Two teams (one in cyan jerseys, one in yellow-and-black striped jerseys) are active, featuring a 5v5 outfielder distribution across the entire block[cite: 26]."
+          },
+          "description": "Create a pitch with a halfway line and a goal at each end[cite: 26]. Use flat markers to make a second pitch within that, one which is wide near the goals and narrow towards the halfway line to create the area for the next activity[cite: 26]. Play a normal 5v5 game using the whole pitch[cite: 26]."
+        },
+        {
+          "type": "Practice one",
+          "name": "Nested Funnel 2v2 + Goalkeeper Isolation",
+          "pitch_diagram": {
+            "image_description": "The exact same field layout as the arrival activity, but two small white mini-goals have been placed horizontally directly along the centerline on the outer touchline perimeters[cite: 26]. Outfielders are now divided evenly into isolated halves inside the nested funnel zones, with the cyan player on the left half passing a soccer ball against a yellow-striped defender while a goalkeeper guards the large baseline goal[cite: 26]."
+          },
+          "description": "Put two mini-goals either side of the halfway line[cite: 26]. This splits your original pitch into two smaller ones and creates a 2v2 with a goalkeeper in the bigger goal[cite: 26]. The two attackers need to combine to score in the big goal, while the defenders try to win the ball back and score in the mini-goals[cite: 26]."
+        },
+        {
+          "type": "Practice two",
+          "name": "5v5 Game Reversion",
+          "pitch_diagram": {
+            "image_description": "The pitch setup returns exactly to the arrival activity layout, with the centerline mini-goals removed completely to open up the entire pitch area[cite: 26]. Teams are fully unlocked, and passing paths illustrate collaborative link-up combinations between outfielders moving across the midline[cite: 26]."
+          },
+          "description": "Remove the mini-goals and return to the original 5v5 game[cite: 26]. Observe how the players now combine with teammates after the 'part' section of the session[cite: 26]."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "theme": "Create to score",
+      "objectives": [
+        "Link up with teammates[cite: 26].",
+        "Use movement to make space[cite: 26].",
+        "Get repetition of passing and receiving[cite: 26].",
+        "Practise finishing[cite: 26]."
+      ],
+      "coaching_points": [
+        "Encourage players to scan their surroundings to track opponents and teammates, informing choices on whether to pass, turn, or retain possession[cite: 26].",
+        "Observe the six core capabilities: positioning to receive, off-the-ball movement to construct or clear space, run timing to stay onside, mechanical passing/receiving execution, and finishing techniques[cite: 26]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Guarded Penalty Box Box Game",
+          "pitch_diagram": {
+            "image_description": "A rectangular playing field with goals on both perimeters[cite: 26]. On the far left end, a square box defined by a white dashed line is built around the penalty area[cite: 26]. Inside this square box, two cyan attackers are locked as guards, while one yellow-striped defender marks them[cite: 26]. Outside the box, a 3v3 match plays out in the remainder of the field, backed by a yellow-striped goalkeeper at the far right end[cite: 26]."
+          },
+          "description": "Create a pitch with a goal at each end for this 5v5 game[cite: 26]. Put a square area around one goal[cite: 26]. The attackers have five outfielders, with two locked in the square guarding their goal[cite: 26]. The defenders have a keeper and four outfielders, with one locked in the square[cite: 26]. Both sides look to combine to score[cite: 26]."
+        },
+        {
+          "type": "Practice one",
+          "name": "1v1 Box Breakout Progression",
+          "pitch_diagram": {
+            "image_description": "The exact same grid as the arrival activity, but one of the cyan attackers has stepped completely out of the left square area into the central zone[cite: 26]. This creates a 4v3 numerical overload for the cyan team in the middle of the field, while leaving a strict 1v1 isolation matchup inside the dashed penalty box[cite: 26]."
+          },
+          "description": "Progress the activity by allowing one of the attacking team's players out of the square[cite: 26]. This creates an overload in the middle of the pitch and leaves a 1v1 in the box[cite: 26]."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "theme": "Pass, turn, score",
+      "objectives": [
+        "Pass and turn under pressure[cite: 26].",
+        "Know when and where to pass and turn[cite: 26].",
+        "Combine with teammates[cite: 26].",
+        "Practise finishing[cite: 26]."
+      ],
+      "coaching_points": [
+        "Rotate players systematically to ensure equal exposure to attacking and defending roles[cite: 26].",
+        "On a narrow pitch layout, utilize 'go-to-show' movements—running away to drag a defender before quickly checking back into the vacated space to receive[cite: 26].",
+        "Implement deception inside the six core capabilities across scanning, body positioning on the half-turn, deceptive turns, technical ball striking, and movement timing[cite: 26]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Triple-Goal Narrow 3v3s",
+          "pitch_diagram": {
+            "image_description": "A narrow rectangular pitch layout divided cleanly into two halves by a vertical dashed halfway line[cite: 26]. Each endline features three distinct scoring targets: one large central goal frame and two tiny white mini-goals angled in the far corners[cite: 26]. Isolated 3v3 outfield matches are running simultaneously in both separate halves[cite: 26]."
+          },
+          "description": "Create a narrow pitch with a halfway line[cite: 26]. Put a large goal and two mini-goals at each end[cite: 26]. Have a 3v3 in each half[cite: 26]. The attacking team start with the ball in each half—they combine with teammates to try to score[cite: 26]. Scoring in the large goal is worth one point[cite: 26]. Scoring in a mini-goal is worth two[cite: 26]."
+        },
+        {
+          "type": "Practice one",
+          "name": "Goalkeeper Insertion & Score Modification",
+          "pitch_diagram": {
+            "image_description": "The identical narrow six-goal field layout from the arrival activity, but two grey-shaded goalkeeper icons have now been inserted directly into the large central goals at both ends of the pitch to act as active shot-stoppers[cite: 26]."
+          },
+          "description": "Progress this practice by bringing in your two goalkeepers from their own activity[cite: 26]. Put one in each large goal[cite: 26]. You can amend the scoring system to reflect this change and encourage the attacking team to aim for the larger goal[cite: 26]."
+        },
+        {
+          "type": "Practice two",
+          "name": "Locked-Half Field Transition Game",
+          "pitch_diagram": {
+            "image_description": "The corner mini-goals are removed, leaving only the large baseline goals active[cite: 26]. Outfielders are locked into their respective halves, with the team out of possession defending their block, while passing tracks show the ball being combined and driven across the centerline to feed teammates in the forward half[cite: 26]."
+          },
+          "description": "Play one big game using the large goals but start with players being locked in their halves[cite: 26]. Players need to win the ball and pass it to their teammates in the other half so they can try to score[cite: 26]. Progress this further by allowing players to step in to create an overload[cite: 26]."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "theme": "Width for deception",
+      "objectives": [
+        "Know when, how and why to use width[cite: 26].",
+        "Work on different types of crosses[cite: 26].",
+        "Develop their movement skills to get out wide[cite: 26].",
+        "Practise finishing from a cross into the box[cite: 26]."
+      ],
+      "coaching_points": [
+        "Utilize wide corridors to relieve central congestion, shifting the defensive block to generate dynamic central gaps[cite: 26].",
+        "Vary crossing deliveries, practicing low cut-backs near the byline or early, lofted service targeting the far post[cite: 26].",
+        "Coordinate the timing of central attacking runs into the box to synchronize with the delivery phase from the wide channel[cite: 26]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "4v4 Box with Exterior Flank Outlets",
+          "pitch_diagram": {
+            "image_description": "A short, square central grid with small goals on the left and right baselines[cite: 26]. Inside the box, a balanced 4v4 outfield match is underway[cite: 26]. Stationed completely outside the touchline boundaries on the upper and lower borders are two pairs of wide outlet players (one cyan, one yellow-striped on each side) tracking along the flanks[cite: 26]."
+          },
+          "description": "Set up a small area for a 4v4—put a goal at each end[cite: 26]. Each team also has two wide players outside the area one on each side of the pitch[cite: 26]. Teams need to work with all their teammates to make four passes[cite: 26]. Then they can try to score in either goal[cite: 26]. Play for three rounds[cite: 26]."
+        },
+        {
+          "type": "Practice one",
+          "name": "Expanded Wide Match with Flank Channels",
+          "pitch_diagram": {
+            "image_description": "A significantly wider rectangular pitch featuring goals at both ends[cite: 26]. Long white dashed lines are drawn parallel to the touchlines, carving out wide horizontal wing channels on both the top and bottom flanks[cite: 26]. Outfielders compete inside an un-locked 6v6 match layout, naturally flowing into the side tracks to create width[cite: 26]."
+          },
+          "description": "Create a wide pitch with a goal at each end for a 6v6 practice[cite: 26]. Use flat markers to create channels out wide on both sides[cite: 26]. Players take part in a normal game but should naturally make use of the width[cite: 26]. You can add scoring systems to encourage teams to cross and score from the channels[cite: 26]."
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "theme": "Playing out to attack",
+      "objectives": [
+        "Develop confidence on the ball under pressure[cite: 26].",
+        "Improve passing and receiving skills[cite: 26].",
+        "Use combination play to create goalscoring opportunities[cite: 26].",
+        "Work on finishing[cite: 26]."
+      ],
+      "coaching_points": [
+        "Maintain optimal support structures to offer clean passing paths, building player confidence against aggressive defensive pressure[cite: 26].",
+        "Incorporate two-player and three-player combination mechanics (e.g., wall passes, overlaps) to unbalance the low block[cite: 26].",
+        "Focus heavily on finishing technique and the precise timing of attacking runs inside the box[cite: 26]."
+      ],
+      "activities": [
+        {
+          "type": "Practice one",
+          "name": "Asymmetric Safe Zone Match with Wide Outlets",
+          "pitch_diagram": {
+            "image_description": "A field layout containing goals on opposite perimeters[cite: 26]. Around the right-hand goal, a large 10x20-yard rectangular box is outlined with a dashed line to act as a defensive safe zone, flanked by two small mini-goals nearby[cite: 26]. Two cyan wide players track the top touchline outside the box, and two yellow-striped wide players track the bottom touchline[cite: 26]."
+          },
+          "description": "Place a goal at each end, with a 10x20-yard safe zone around one and two mini-goals nearby[cite: 26]. Each team has a player on each wing outside the area[cite: 26]. The attacking team start with the ball and combine to score[cite: 26]. If the defenders win possession, they score in a mini-goal or pass to the opposing keeper[cite: 26]."
+        },
+        {
+          "type": "Practice one - continued",
+          "name": "Inverted Wide Player Overload",
+          "pitch_diagram": {
+            "image_description": "The exact same field layout, but tactical passing arrows show a wide wing player receiving the ball, inverting, and driving directly inside into the central corridor to establish an attacking numerical advantage[cite: 26]."
+          },
+          "description": "Progress this activity by allowing wide players to come inside to create an overload when they receive the ball[cite: 26]. You can also allow the defending team to attack and score in the large goal[cite: 26]."
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "theme": "Scoring as a team",
+      "objectives": [
+        "Get repetition of finishing[cite: 26].",
+        "Shoot from different distances[cite: 26].",
+        "Understand roles and responsibilities around scoring in game situations[cite: 26].",
+        "Understand security behind the ball[cite: 26]."
+      ],
+      "coaching_points": [
+        "Promote an aggressive, first-time shooting mindset; early strikes prevent goalkeepers from setting their footwork and body position[cite: 26].",
+        "Build a resilient, positive psychological profile where players react to missed opportunities by immediately hunting the next sequence[cite: 26].",
+        "Create space creatively via decoy runs, blind-side movements, or opening receiving angles to stretch defensive chains[cite: 26].",
+        "Balance advanced attacking numbers with strict counter-pressing coverage behind the ball to control the defensive transition phase[cite: 26]."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Diamond Field Locked 3v3s",
+          "pitch_diagram": {
+            "image_description": "A field layout configured as a wide 35-yard diamond-shaped grid on a green template, containing goals at the far left and right vertices[cite: 26]. A vertical dashed white centerline cuts directly across the middle to divide the diamond into two halves[cite: 26]. Outfielders are locked into a 3v3 structure inside each separate half ahead of their goalkeepers[cite: 26]."
+          },
+          "description": "Create a 35-yard diamond area[cite: 26]. Have a halfway line and two goals[cite: 26]. Lock players in to have a 3v3 and a keeper in each half[cite: 26]. To start, a team gets a free pass to give it to their teammates in the other half—they try to score[cite: 26]. Then the game goes back and forth[cite: 26]. Players stay locked in but can tackle[cite: 26]."
+        },
+        {
+          "type": "Practice one",
+          "name": "3-Touch Maximum Tri-Third Match",
+          "pitch_diagram": {
+            "image_description": "A standard rectangular field cleanly split horizontally into equal thirds by parallel white dashed lines, featuring goals on both perimeters[cite: 26]. Outfielders are completely unlocked and flow dynamically across all thirds[cite: 26]. A yellow-striped attacker near the right penalty area is shown ready to shoot within a restricted final-third zone[cite: 26]."
+          },
+          "description": "Create a pitch split into thirds for a small-sided game—players aren't locked into thirds[cite: 26]. A keeper starts with the ball and distributes it anywhere[cite: 26]. Once it's worked into the final third players can't play more than three passes before shooting[cite: 26]. The opposition get the ball if this is breached[cite: 26]."
+        }
+      ]
+    }
+  ]
+}

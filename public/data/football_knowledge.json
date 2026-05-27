@@ -1,0 +1,102 @@
+{
+  "document_info": {
+    "title": "Special Olympics Football Coaching Guide",
+    "subtitle": "Teaching Football Skills",
+    "created_date": "February 2004",
+    "organization": "Special Olympics"
+  },
+  "table_of_contents": [
+    "The Warm-Up", "Sample Warm-Up Routine", "The Cool-Down", "Stretching (Upper Body, Low Back & Glutes, Lower Body)",
+    "Stretching - Quick Reference Guidelines", "Using Plyometrics in Football Training", "Rhythm Drills", "Butt Kicks",
+    "Aerobic Fitness for Football Players", "Steady Pace Runs", "Anaerobic Fitness for Football Players", "Fartlek Runs",
+    "Shuttle Runs", "Strength Training for Football Players", "Sample Strength-Training Routine", "Control-Receiving (Skill Progression, Teaching, Cushioning)",
+    "Faults & Fixes Chart (Control-Receiving)", "Ball Control", "Control-Receiving Drills", "Coaches Tips for Control-Receiving - At-A-Glance",
+    "Dribbling (Skill Progression, Teaching)", "Faults & Fixes Chart (Dribbling)", "Dribbling Drills", "Coaches Tips for Dribbling - At-A-Glance",
+    "Passing (Skill Progression, Teaching)", "Basic Tips on Organizing Passing Practices", "Faults & Fixes Chart (Passing)", "Passing Drills",
+    "Coaches Tips for Passing - At-A-Glance", "Shooting (Skill Progression, Teaching)", "Faults & Fixes Chart (Shooting)", "Shooting Drills",
+    "Coaches Tips for Shooting - At-A-Glance", "Tackling (Skill Progression, Teaching, Front/Side/Ground/Sliding Blocks)", "Faults & Fixes Chart (Tackling)", "Tackling Drills",
+    "Coaches Tips for Tackling - At-A-Glance", "Heading (Skill Progression, Teaching)", "Faults & Fixes Chart (Heading)", "Heading Drills",
+    "Accurate Contact with the Ball", "Attacking the Ball", "Coaches Tips for Heading - At-A-Glance", "Goalkeeping (Skill Progression, Selecting a GK, Handling, Diving, Distributing)",
+    "Faults & Fixes Chart (Goalkeeping)", "Goalkeeping Drills", "Coaches Tips for Goalkeeping - At-A-Glance", "Understanding the Game",
+    "Football Concepts & Strategies", "Simple Game Principles", "Teaching Basic Restarts", "Team Play (Formations & Selecting Positions)",
+    "Coaches Tips for Team Play - At-A-Glance", "The Football Pitch", "Modifications & Adaptations", "Mental Preparation & Training",
+    "Home Training Guide", "Weekly Home Training"
+  ],
+  "section_content": {
+    "warm_up": {
+      "overview": "The warm-up starts slowly and systematically, gradually involving all muscles and body parts to prepare the athlete for training and competition while providing mental preparation and reducing injury risk by increasing muscle elasticity.",
+      "types": {
+        "passive": "Increasing body temperature via external means like massages, heating pads, or hot showers (beneficial for athletes with physical limitations).",
+        "general": "Increasing overall body temperature through major muscle group movements not necessarily tied to the activity (e.g., jogging).",
+        "specific": "Concentrating on exact body positions and movements to be used in the activity (e.g., swinging the leg as if shooting)."
+      },
+      "sequence_table": [
+        {"activity": "Slow aerobic run", "purpose": "Heat muscles", "time_minimum": "5 minutes"},
+        {"activity": "Stretching", "purpose": "Increase range of movement", "time_minimum": "10 minutes"},
+        {"activity": "Football Drills", "purpose": "Coordination preparation for training/competition", "time_minimum": "10 minutes"}
+      ]
+    },
+    "cool_down": {
+      "overview": "Gradually reduces body temperature and heart rate, dispersing accumulated lactic acid to prevent cramping, stiffness, and muscle soreness next day.",
+      "sequence_table": [
+        {"activity": "Slow aerobic run", "purpose": "Lowers body temperature and gradually reduces heart rate", "time_minimum": "5 minutes"},
+        {"activity": "Light stretching", "purpose": "Removes waste from muscles", "time_minimum": "5 minutes"}
+      ]
+    },
+    "stretching_guidelines": {
+      "technique": "Hold an easy stretch at the point of tension for 15-30 seconds. As tension lessens, move further into a developmental stretch for another 15 seconds. Repeat 4-5 times per side. Exhale when leaning into the stretch.",
+      "unsafe_stretches": ["Neck Backward Bending", "Trunk Backward Bending", "Spinal Roll"],
+      "biomechanical_illustrations": [
+        {
+          "image_description": "Two diagrams highlighting calf stretch footprints. The incorrect diagram shows a foot turned outward at an angle with a black cross through it. The correct diagram shows the rear foot aligned parallel with the front foot pointing straight forward.",
+          "tactical_layout": "Labels: 'Incorrect' vs 'Correct'. Annotation: 'Feet point straight ahead'."
+        },
+        {
+          "image_description": "Two diagrams illustrating a seated forward leg stretch. The incorrect variation shows a curved, slouched upper spine with a black cross over the shoulders. The correct variation features an upright flat back pivoting purely from the hips.",
+          "tactical_layout": "Labels: 'Incorrect' vs 'Correct'. Annotation: Arrow pointing to the lower lumbar spine indicating flattening."
+        }
+      ]
+    },
+    "drills_and_methodology": [
+      {
+        "skill": "Control-Receiving",
+        "lower_ability_drill": "Control and Shoot",
+        "diagram_layout": {
+          "image_description": "A tactical drill diagram containing a square goal box guarded by a coach icon 'C'. A single execution pathway line maps a ball rolled diagonally to an attacking player 'X' who controls, drives forward through an open space line, and shoots into the goal box while trailing players wait behind.",
+          "tactical_layout": "Elements: C (Coach/Server), X (Active Attacker), Delta (Cones marking the shooting threshold), XXX (Queue line)."
+        }
+      },
+      {
+        "skill": "Goalkeeping",
+        "intermediate_drill": "Goalie in the Middle",
+        "diagram_layout": {
+          "image_description": "A tactical diagram detailing a central rectangular goal box labeled 'GK'. In each of the four corners outside the block, an attacking player position marked 'X' with a ball icon faces inward, indicating multi-directional incoming shots to test goalkeeper agility.",
+          "tactical_layout": "Elements: Central GK box, 4 perimeter X markers with directional arrows pointing inward."
+        }
+      },
+      {
+        "skill": "Understanding the Game",
+        "concept_activity": "Attack/Defend 1v1",
+        "diagram_layout": {
+          "image_description": "A tactical field diagram outlining a 15x10-yard rectangular pitch with goals on the left and right baselines. In the center, a 1v1 matchup is mapped out between active players X1 and O1 with a solid black line showing a direct forward drive toward the right target goal.",
+          "tactical_layout": "Elements: X1 (Active Attacker), O1 (Active Defender), X2/X3 and O2/O3 (Teammates positioned out of bounds waiting for deployment)."
+        }
+      }
+    ],
+    "weekly_home_training_guide": {
+      "routine": [
+        {"exercise": "Jogging/Running", "instructions": "Jog around for 5-10 minutes to warm up muscles."},
+        {"exercise": "Triceps Stretch", "instructions": "Raise arms over head, bend right arm behind back, pull elbow gently with left hand. Hold 10s, repeat 5x per arm."},
+        {"exercise": "Hamstring Stretch", "instructions": "Extend legs straight out together, bend at hips, reach toward ankles bringing chest to knees. Push through heels, toes up. Hold 15s, repeat 5x."},
+        {"exercise": "Push-Ups", "instructions": "Hands shoulder-width apart, straight back on toes. Lower chest until elbows are parallel to shoulders. Push up fully extending arms. Repeat 5-10x."},
+        {"exercise": "Sit-Ups", "instructions": "Lie on back, knees bent, hands on chest or shoulders. Squeeze abdominals to pull shoulders up to a sitting position. Repeat 10x for 2-3 sets."},
+        {"exercise": "Butt Kicks", "instructions": "Jog in place with a straight back and slight forward body lean, rapidly bringing heels to buttocks alternating legs. Perform for 15 seconds for 3 sets."},
+        {"exercise": "Ball Dancing", "instructions": "Alternating legs, lightly tap the top of the ball with the sole of the right foot, then the sole of the left foot. Perform for 15 seconds."}
+      ],
+      "visual_carousel": {
+        "image_description": "A composite grid displaying soccer skill illustrations. Day 1 displays an athlete balancing a soccer ball on their thigh labeled 'Juggling/Trapping'. Day 2 shows an athlete executing a strike into an open field labeled 'Shooting'. Day 3 shows a low-angle close-up of a soccer cleat locking behind a ball labeled 'Control-Receiving'. Day 4 displays an athlete running over a line marker labeled 'Dribbling'. The bottom block displays two players fighting over a ball in a gridded space labeled 'Game Play - Minifootball'.",
+        "tactical_layout": "Horizontal row mapping 4 distinct technical days, grounded by a large tactical match visual at the base."
+      }
+    }
+  ]
+}

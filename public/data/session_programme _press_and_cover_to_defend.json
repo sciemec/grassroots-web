@@ -1,0 +1,178 @@
+{
+  "document_info": {
+    "title": "Session Programme: Press and Cover to Defend",
+    "topic": "Defensive Pressing Angles, Support Distance, and Counter-Attacking Triggers",
+    "structure": "6-Week Progressive Curriculum Block",
+    "source_organization": "England Football Learning",
+    "source_file": "session_programme _press_and_cover_to_defend.pdf"
+  },
+  "curriculum_overview": {
+    "week_1": "Read and react",
+    "week_2": "Pressing for glory",
+    "week_3": "Cover and recover",
+    "week_4": "Pressing duels",
+    "week_5": "Defending in small numbers",
+    "week_6": "Games week"
+  },
+  "weekly_session_plans": [
+    {
+      "week": 1,
+      "theme": "Read and react",
+      "objectives": [
+        "Learn to use a wide variety of defensive pressing angles",
+        "Be aware of the factors that may impact decisions including space available, opponent's first touch, and options once the ball is won."
+      ],
+      "coaching_points": [
+        "Encourage your players to hurry the player on the ball and close the space as quickly as possible.",
+        "Challenge players to get within arm's-length of their opponent to help them press and put their opponent under pressure.",
+        "Get players to think about how they approach an opponent when they press. If they approach straight on, they give the opponent a chance to go to either side of them. But if the defender presses at an angle, they limit the attacker's options. They can dictate where they go.",
+        "Ask players how best to support their teammates throughout the session."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Multi-Pitch Read and React Games",
+          "pitch_diagram": {
+            "image_description": "Two separate small-sided pitches shown side by side on a green grass graphic template. The left pitch is split in half horizontally by a central white line. The right pitch is divided vertically into three separate running channels. Blue/cyan and yellow-striped player figures are distributed across both fields competing for soccer balls.",
+            "tactical_layout": {
+              "dimensions": "Two parallel small-sided pitches",
+              "left_pitch_mechanics": "Divided horizontally by a center line.",
+              "right_pitch_mechanics": "Divided longitudinally into three distinct structural channels."
+            }
+          },
+          "description": "Create appropriately sized parallel pitches for the numbers you have. Put a halfway line on one and channels on the other. Get players into small-sided games on these pitches as they arrive and encourage them to work together to win the ball back quickly."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "theme": "Pressing for glory",
+      "objectives": [
+        "Hurry the player on the ball to win possession",
+        "Adopt a side-on, low body position to force play in a predictable direction"
+      ],
+      "coaching_points": [
+        "Focus on decelerating upon approach rather than sprinting wildly past the ball carrier.",
+        "Ensure the second defender is communicating explicit instructions regarding which direction to force the attacker."
+      ],
+      "activities": [
+        {
+          "type": "Practice variant",
+          "name": "Pressing for Glory Grids",
+          "pitch_diagram": {
+            "image_description": "A 30x20-yard vertical pitch configuration showing small goals at opposite ends. Players are aligned in 3v3 blocks, where defenders actively slide across to cut off passing options based on the ball's movement.",
+            "tactical_layout": {
+              "dimensions": "30x20-yard rectangular grid setup",
+              "equipment": "2 mini goals anchored on the endlines"
+            }
+          },
+          "description": "Set up a standard small-sided pitch with clear boundary zones. Teams look to keep possession while the out-of-possession group coordinates dynamic pressing lines to hurry touches and win high turnovers."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "theme": "Cover and recover",
+      "objectives": [
+        "Establish optimal supporting distances between the pressing and covering players",
+        "Recover tracking structures rapidly when broken by a dribbler"
+      ],
+      "coaching_points": [
+        "The covering defender must stay at an appropriate angle to see both the ball carrier and adjacent attacking runners.",
+        "If the primary presser is bypassed, the covering player steps out to become the new presser while the first defender recovers underneath."
+      ],
+      "activities": [
+        {
+          "type": "Practice variant",
+          "name": "Cover and Recover Channels",
+          "pitch_diagram": {
+            "image_description": "A field split into horizontal thirds. Blue/cyan defenders are shown working in tandem inside the central third, dropping diagonally to cover a passing lane feeding into an advanced target zone.",
+            "tactical_layout": {
+              "dimensions": "Pitch divided into three functional tactical zones"
+            }
+          },
+          "description": "Players are structurally organized across the zones. Attackers aim to pass through or break the lines, forcing the defending group to coordinate their tracking lines, provide cover depth, and prevent penetration."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "theme": "Pressing duels",
+      "objectives": [
+        "Improve individual 1v1 and 2v2 containment profiles",
+        "Time the tackle safely to steal the ball without committing fouls"
+      ],
+      "coaching_points": [
+        "Stay on your feet as long as possible; avoid sliding or diving in early.",
+        "Use your front foot to jab at the ball when the attacker exposes it on a heavy touch."
+      ],
+      "activities": [
+        {
+          "type": "Practice variant",
+          "name": "Isolation Dueling Boxes",
+          "pitch_diagram": {
+            "image_description": "A square training box divided into dual 1v1 corridors. Attackers carry the ball straight at defenders who approach at an angle from opposite cones.",
+            "tactical_layout": {
+              "dimensions": "15x15-yard grid configurations"
+            }
+          },
+          "description": "Continuous high-repetition 1v1 and 2v2 duels inside restricted spaces. Attackers attempt to beat their marker to cross the end line, while defenders aim to win the ball clean and launch a counter-drive."
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "theme": "Defending in small numbers",
+      "objectives": [
+        "Coordinate pressing lines inside small units (3v3 and 4v4)",
+        "Lock play into an isolated flank channel to suffocate space"
+      ],
+      "coaching_points": [
+        "Recognize structural triggers to press collectively: square lateral passes, backward options, or body orientation facing away from goal.",
+        "Squeeze the space together to keep the distances compact, ensuring the lines cannot be split by central penetration."
+      ],
+      "activities": [
+        {
+          "type": "Practice variant",
+          "name": "Flank-Locked Small Sided Game",
+          "pitch_diagram": {
+            "image_description": "A pitch showing highlighted vertical corridors along both touchlines. Players are grouped centrally, with passing paths forcing entries wide where defenders slide across to create a local overload.",
+            "tactical_layout": {
+              "dimensions": "Small-sided pitch with marked side channels"
+            }
+          },
+          "description": "A conditioned match layout where shifting possession wide triggers a heavy unit press. Defenders look to seal the touchline, trap the attacker, and intercept square escape choices."
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "theme": "Games week",
+      "objectives": [
+        "Apply all learned principles of pressing angles and cover support inside open match play",
+        "Win the ball cleanly to switch immediately from defense to counter-attack"
+      ],
+      "coaching_points": [
+        "Encourage players to think about their position so that they are ready to press the ball.",
+        "Encourage players to stay on their feet where possible. Challenge them to win the ball cleanly and start a counter-attack.",
+        "Get players to think about their positioning. Have they got the distance right between themselves, their teammates, and the opposition? They need to have the right distance to offer good covering support but also be in a position where they could engage the opponent.",
+        "Encourage your players to look for triggers to press. If the opponent is facing their own goal, takes a heavy touch, or is going to receive a longer, slower, pass, players should try to press. It can help force their opponent backwards or help them win the ball back.",
+        "Encourage players to think about how they press. They need to decelerate when approaching someone, rather than just running at them. So, they need to slow down, be side-on, and bend their knees to stay down when close to an opponent."
+      ],
+      "activities": [
+        {
+          "type": "Practice one",
+          "name": "Asymmetric Three-Pitch Small-Sided Games",
+          "pitch_diagram": {
+            "image_description": "A macro tactical layout containing three distinct small-sided fields of varying configurations labeled small, medium, and large. Shaded areas on two of the fields outline specialized 'safe zones' on the flanks where unique pressing restrictions are active.",
+            "tactical_layout": {
+              "structure": "Three separate independent pitches (small, medium, large)",
+              "special_features": "Safe zones included on two of the pitches where players can be pressed but not tackled."
+            }
+          },
+          "description": "Set up small, medium, and large pitches. Add safe zones on two pitches. Players can be pressed here but not tackled. Challenge one team to start by passing to the other team. As soon as they pass, they must rush to press high, while their teammate offers good cover. Ensure players rotate around the pitches so they play on each one. And, if you and the players want to, progress the games by removing all of the safe zones."
+        }
+      ]
+    }
+  ]
+}

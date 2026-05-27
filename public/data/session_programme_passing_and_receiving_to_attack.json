@@ -1,0 +1,203 @@
+{
+  "document_info": {
+    "title": "Session Programme: Passing and Receiving to Attack",
+    "topic": "Possession Progression, Spacing Principles, and Line-Breaking Passes",
+    "structure": "6-Week Progressive Curriculum Block",
+    "source_organization": "England Football Learning",
+    "source_file": "session_programme_passing_and_receiving_to_attack.pdf"
+  },
+  "curriculum_overview": {
+    "week_1": "Connecting with teammates",
+    "week_2": "The lions' den",
+    "week_3": "Around the clock",
+    "week_4": "Creating and exploiting space",
+    "week_5": "Eliminating the opposition",
+    "week_6": "Festival week"
+  },
+  "weekly_session_plans": [
+    {
+      "week": 1,
+      "theme": "Connecting with teammates",
+      "objectives": [
+        "Use scanning and movement off the ball to connect with teammates on the ball",
+        "Make informed decisions on when and where to pass"
+      ],
+      "coaching_points": [
+        "Look for individual movement off-the-ball to see if players are aligning themselves with their teammate—and communicating with them—to make a connection.",
+        "Emphasise the need to align the timing of the pass with the receiver's movement.",
+        "Ask players to think about whether it's best for the pass to be into the receiver's feet or played into space."
+      ],
+      "activities": [
+        {
+          "type": "Arrival activity",
+          "name": "Noughts & Crosses Cones Grid",
+          "pitch_diagram": {
+            "image_description": "Two identical 10x10-yard square matrices placed side-by-side on a green field backdrop. Each grid contains nine cones laid out in a 3x3 pattern. Two teams of three line up at a base marker, sprinting into the grid one-by-one to place a bib or move a cone, attempting to align three in a row horizontally, vertically, or diagonally.",
+            "tactical_layout": {
+              "dimensions": "Two separate 10x10-yard 3x3 cone matrices",
+              "player_positions": "Two teams of three competing in a relay-style cognitive coordination race."
+            }
+          },
+          "description": "Create two 10x10-yard grids using nine cones for each one. Two teams of three start on the middle cone. On 'Go', they run to form a three-in-a-row with their teammates. Teams get a point for successfully doing that. The first team to then do it three times, wins."
+        },
+        {
+          "type": "Practice one",
+          "name": "Circular Target-Gate Passing",
+          "pitch_diagram": {
+            "image_description": "A circular playing grid with a 10-yard radius. Inside the circle, two small square boxes are placed symmetrically on opposite sides, each occupied by a goalkeeper. Outfield players are paired up in different colors, passing a ball dynamically back and forth between pairs through the central spaces while avoiding intercepts.",
+            "tactical_layout": {
+              "dimensions": "Circle with a 10-yard radius",
+              "inner_elements": "Two standalone small square keeper boxes inside the circle area.",
+              "player_positions": "Pairs of outfield players moving freely inside the circular space around the keeper squares."
+            }
+          },
+          "description": "Create a circle with a ten-yard radius. Within that, place two small squares down. A goalkeeper stays inside each one. Pair the rest of the players up. Give each pair a ball. Teams look to pass between another pair. If the receiver then passes it to a keeper, they gain a point. Keepers then return the ball to the other team. Play for five minutes, then the pair with the most points wins."
+        }
+      ]
+    },
+    {
+      "week": 2,
+      "theme": "The lions' den",
+      "objectives": [
+        "Receive the ball under pressure in central areas",
+        "Protect the ball with their body and turn to play forward"
+      ],
+      "coaching_points": [
+        "Encourage central receivers to check their shoulders to scan for trailing defenders before the ball arrives.",
+        "Adopt a side-on, low body position on the half-turn to shield the ball while maximizing progressive vision."
+      ],
+      "activities": [
+        {
+          "type": "Practice variant",
+          "name": "Lions' Den Subdivided Box",
+          "pitch_diagram": {
+            "image_description": "A large outer square grid containing a smaller nested square in the center designated as the 'Lions' Den'. Perimeter players circulate the ball along the outer boundary lines, attempting to fire a firm pass into central target midfielders operating inside the heavily congested inner square under tight defensive pressure.",
+            "tactical_layout": {
+              "dimensions": "25x25-yard outer box with an embedded 8x8-yard inner box",
+              "player_positions": "Outer perimeter passers feeding central pivot players locked inside the inner grid against active tracking defenders."
+            }
+          },
+          "description": "Perimeter teams pass to retain possession before slicing a vertical entry pass into the central 'den'. The central midfielder must control, protect under physical contact, and turn inside the box to switch play out to an opposite side teammate."
+        }
+      ]
+    },
+    {
+      "week": 3,
+      "theme": "Around the clock",
+      "objectives": [
+        "Vary the weight and direction of passes based on space",
+        "Execute rapid circular ball circulation to break low blocks"
+      ],
+      "coaching_points": [
+        "Pass to the receiver's back foot to naturally encourage them to open up their body and transition play swiftly.",
+        "Adjust support angles continuously relative to the moving ball to maintain clean triangles."
+      ],
+      "activities": [
+        {
+          "type": "Practice variant",
+          "name": "Around the Clock Passing Ring",
+          "pitch_diagram": {
+            "image_description": "A circular rondo layout where attackers are distributed symmetrically around the circumference of a large circle like numbers on a clock face. Two active defenders are trapped inside the center, chasing the ball as the outer group executes rapid one-touch and two-touch passing patterns.",
+            "tactical_layout": {
+              "dimensions": "20-yard diameter circle area",
+              "player_positions": "Perimeter possession ring surrounding a central 1v2 or 2v2 defensive unit."
+            }
+          },
+          "description": "Outer players must keep possession by passing around or directly across the clock-face structure. The central group looks to squeeze spaces, block passing lines, and intercept. If an intercept occurs, roles rotate immediately."
+        }
+      ]
+    },
+    {
+      "week": 4,
+      "theme": "Creating and exploiting space",
+      "objectives": [
+        "Understand the use of height, width, and depth to construct space",
+        "Recognise when to drive into space with the ball vs when to pass"
+      ],
+      "coaching_points": [
+        "Wide players must lock onto the touchlines to pull the opposing defensive structure laterally apart.",
+        "Forwards should execute deep vertical runs to drop the defensive line, creating a pocket of space in the midfield for teammates to inherit."
+      ],
+      "activities": [
+        {
+          "type": "Practice variant",
+          "name": "Stretched Grid 4v4 + Outlets",
+          "pitch_diagram": {
+            "image_description": "A rectangular field layout containing goals at both ends. Horizontal dashed channels run along both flanks. Inside the central pitch grid, a 4v4 match is contested, while neutral wide outlet players operate inside the flank tracks to offer constant structural width.",
+            "tactical_layout": {
+              "dimensions": "35x25-yard pitch with 5m wide wing corridors",
+              "player_positions": "4v4 central unit supported by 2 un-tacklable wide players locked in the side tracks."
+            }
+          },
+          "description": "Teams combine centrally to pull defenders inward before utilizing the wide neutral outlets to create an attacking overload, delivering crossing options or driving entries inside the box."
+        }
+      ]
+    },
+    {
+      "week": 5,
+      "theme": "Eliminating the opposition",
+      "objectives": [
+        "Execute line-breaking passes that completely eliminate pressing lines",
+        "Coordinate the timing of advanced third-man forward runs"
+      ],
+      "coaching_points": [
+        "The pass through the lines must be firm and incisive; slow passes allow defenders to slide and intercept easily.",
+        "Attackers must only enter the designated forward end zones after the line-breaking pass has been cleanly hit to prevent running offside."
+      ],
+      "activities": [
+        {
+          "type": "Practice one",
+          "name": "Tri-Third Elimination End Zones",
+          "pitch_diagram": {
+            "image_description": "A vertical pitch grid split cleanly into three horizontal zones, containing full goals on both ends. Shaded end zones sit inside the final thirds. Attackers combine in the initial defensive third before trying to fire a penetrative pass completely through the opposition midfield layer into the end zone space.",
+            "tactical_layout": {
+              "dimensions": "40x25-yard pitch divided horizontally into functional thirds",
+              "special_features": "Includes a protected end zone sector where defenders cannot track until after the pass is executed."
+            }
+          },
+          "description": "Create an area split into thirds with goals at each end. Teams build possession out of their defensive third, attempting to play through the opposition block and into the advanced end zone to set up a teammate to score. Defenders can't enter this end zone, while attackers can only enter after the pass has been made."
+        },
+        {
+          "type": "Practice two",
+          "name": "Asymmetric Height & Width Matrix",
+          "pitch_diagram": {
+            "image_description": "The same rectangular field area from practice one, but the end zone and goal at the top end have been removed. Instead, a single goal is placed dead-center inside the middle sector. One team focuses on attacking wide goals to create height and width, while the other team attacks the central single goal.",
+            "tactical_layout": {
+              "dimensions": "40x25-yard pitch layout with asymmetric goal configurations"
+            }
+          },
+          "description": "Use the same area but remove a goal and the end zone at one end. Place the other goal in the centre. The team attacking the wide goals will focus on creating height, width and depth in their play, while the team attacking the single goal will play more centrally and into feet. After a while, swap ends."
+        }
+      ]
+    },
+    {
+      "week": 6,
+      "theme": "Festival week",
+      "objectives": [
+        "Create and exploit space to connect fluidly with teammates",
+        "Decide effectively whether to pass into space or feet",
+        "Decide whether to receive to turn or receive to pass"
+      ],
+      "coaching_points": [
+        "Encourage players to think about using height, width and depth to create space—and where they need to pass to best support their teammates.",
+        "Try using drive-by coaching interactions. Take opportunities to move in and out of the games to give information to individuals with minimal disruption to ball-rolling time. Waiting for the ball to go out of play is an ideal opportunity."
+      ],
+      "activities": [
+        {
+          "type": "Practice one",
+          "name": "Festival Multi-Pitch Carousel Games",
+          "pitch_diagram": {
+            "image_description": "A macro tactical layout detailing three individual 30x20-yard fields aligned side-by-side to construct a rotational carousel network. Pitch one features four small goals inside each corner. Pitch two features goals on the ends with a highlighted diamond gate in the exact center. Pitch three displays a standard small-sided match setup.",
+            "tactical_layout": {
+              "structure": "Three separate independent 30x20-yard small-sided fields (Pitches 1, 2, and 3)",
+              "pitch_1_elements": "4 corner goals.",
+              "pitch_2_elements": "2 end goals and an embedded central diamond passing gate.",
+              "pitch_3_elements": "Standard 2-goal small-sided setup."
+            }
+          },
+          "description": "Create three 30x20-yard pitches for 3v3 games. On pitch one, put a goal in each corner. On pitch two, put a goal at each end with a diamond in the middle; players can either play around the diamond or one can go inside to play a pass unopposed. On pitch three, put a goal at each end. Rotate teams dynamically after five minutes."
+        }
+      ]
+    }
+  ]
+}
