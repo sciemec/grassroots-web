@@ -1,82 +1,173 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { mockPlayerMetrics } from '../../../data/playerMetrics';
 
-export default function PlayerScoutingProfile() {
+export default function PlayerScoutingPassport() {
   const params = useParams();
-  const playerId = params.id;
+  const [player, setPlayer] = useState(null);
 
-  // Mock telemetry data matching our grassroots metrics structure
-  const playerStats = {
-    name: "Tinashe Moyo",
-    age: 14,
-    team: "Highlanders U14 Academy",
-    position: "Forward",
-    metrics: { pace: 88, shooting: 82, passing: 75, dribbling: 85, stamina: 80 },
-    matchHistory: [
-      { opponent: "Dynamos Juniors", goals: 2, assists: 1, rating: 8.9 },
-      { opponent: "CAPS Jnr Academy", goals: 1, assists: 0, rating: 7.5 }
-    ]
-  };
+  useEffect(() => {
+    // Extract unique identifier string from URL path params
+    const activeId = params?.id;
+    if (activeId && mockPlayerMetrics[activeId]) {
+      setPlayer(mockPlayerMetrics[activeId]);
+    } else {
+      // Fallback: Default to our sample profile if a random ID is generated
+      setPlayer(mockPlayerMetrics["PLAYER-ZW-2026-9904"]);
+    }
+  }, [params]);
+
+  if (!player) {
+    return <div style={styles.loading}>Loading structural talent verification matrix...</div>;
+  }
 
   return (
     <div style={styles.container}>
-      {/* HEADER SECTION */}
+      {/* SCOUT VIEW UPPER DASHBOARD BANNER */}
       <div style={styles.profileHeader}>
-        <div style={styles.avatarMock}>🏃‍♂️</div>
         <div>
-          <h1 style={styles.playerName}>{playerStats.name}</h1>
-          <p style={styles.playerMeta}>{playerStats.position} • {playerStats.team}</p>
+          <span style={styles.verifiedTag}>✓ FIFA CONNECT REGISTERED • {player.fifaConnectId}</span>
+          <h1 style={styles.playerName}>{player.name}</h1>
+          <p style={styles.metaSubText}>
+            🏃‍♂️ {player.age} Years Old • ⚽ {player.currentClub} • 📍 Harare Region
+          </p>
+        </div>
+        <div style={styles.radarBadge}>
+          <div style={styles.radarLabel}>CONSISTENCY INDEX</div>
+          <div style={styles.radarScore}>{player.scoutingVectors.scoutConsistencyIndex}%</div>
         </div>
       </div>
 
-      {/* METRICS PERFORMANCE MATRIX */}
-      <div style={styles.grid}>
-        <div style={styles.card}>
-          <h3 style={styles.cardTitle}>Scouting Attribute Metrics</h3>
-          {Object.entries(playerStats.metrics).map(([key, value]) => (
-            <div key={key} style={styles.metricRow}>
-              <span style={styles.metricName}>{key.toUpperCase()}</span>
-              <div style={styles.barOuter}>
-                <div style={{...styles.barInner, width: `${value}%`}}></div>
-              </div>
-              <span style={styles.metricValue}>{value}</span>
-            </div>
-          ))}
+      {/* CORE PERFORMANCE GRID METRICS MATRIX */}
+      <div style={styles.matrixGrid}>
+        
+        {/* BLOCK 1: ATHLETIC BASELINES ENGINE */}
+        <div style={styles.metricCard}>
+          <h3 style={styles.cardHeading}>⚡ Physical Baselines Filter</h3>
+          <div style={styles.statRow}>
+            <span>30m Sprint Acceleration:</span>
+            <strong style={styles.highlightText}>{player.athleticBaselines.sprint30m_secs}s</strong>
+          </div>
+          <div style={styles.statRow}>
+            <span>Stamina Target (10k Run):</span>
+            <strong>{player.athleticBaselines.stamina_10k_mins} mins</strong>
+          </div>
+          <div style={styles.statRow}>
+            <span>Vertical Explosion Lift:</span>
+            <strong>{player.athleticBaselines.verticalJump_cm} cm</strong>
+          </div>
+          <div style={styles.statRow}>
+            <span>Illinois Agility Drill Vector:</span>
+            <strong>{player.athleticBaselines.agility_illinois_secs}s</strong>
+          </div>
         </div>
 
-        {/* MATCH TIMELINE HISTORY */}
-        <div style={styles.card}>
-          <h3 style={styles.cardTitle}>Recent Match Log Performance</h3>
-          {playerStats.matchHistory.map((match, idx) => (
-            <div key={idx} style={styles.matchRow}>
-              <div>
-                <strong style={{color: '#111827'}}>vs {match.opponent}</strong>
-                <p style={{margin: 0, fontSize: '12px', color: '#6b7280'}}>Goals: {match.goals} | Assists: {match.assists}</p>
-              </div>
-              <span style={styles.ratingTag}>⭐ {match.rating}</span>
+        {/* BLOCK 2: TECHNICAL ATTRIBUTE PROFILE */}
+        <div style={styles.metricCard}>
+          <h3 style={styles.cardHeading}>🎯 Technical Execution</h3>
+          
+          <div style={styles.progressSection}>
+            <div style={styles.progressLabelRow}>
+              <span>Short Passing Accuracy</span>
+              <span>{player.technicalExecution.passingAccuracy_short}%</span>
             </div>
-          ))}
+            <div style={styles.progressBarBg}>
+              <div style={{ ...styles.progressBarFill, width: `${player.technicalExecution.passingAccuracy_short}%`, backgroundColor: '#3b82f6' }}></div>
+            </div>
+          </div>
+
+          <div style={styles.progressSection}>
+            <div style={styles.progressLabelRow}>
+              <span>Positive First Touch Level</span>
+              <span>{player.technicalExecution.firstTouchRating}%</span>
+            </div>
+            <div style={styles.progressBarBg}>
+              <div style={{ ...styles.progressBarFill, width: `${player.technicalExecution.firstTouchRating}%`, backgroundColor: '#10b981' }}></div>
+            </div>
+          </div>
+
+          <div style={styles.statRow} style={{ marginTop: '15px' }}>
+            <span>Preferred Tactical Foot:</span>
+            <strong style={{ color: '#10b981' }}>{player.technicalExecution.preferredFoot}-Footed</strong>
+          </div>
         </div>
+
+        {/* BLOCK 3: COGNITIVE OVERLAY PRINCIPLES */}
+        <div style={styles.metricCard}>
+          <h3 style={styles.cardHeading}>🧠 Tactical Cognition Radar</h3>
+          
+          <div style={styles.progressSection}>
+            <div style={styles.progressLabelRow}>
+              <span>Spatial Awareness Index</span>
+              <span>{player.tacticalCognition.spaceAwareness}%</span>
+            </div>
+            <div style={styles.progressBarBg}>
+              <div style={{ ...styles.progressBarFill, width: `${player.tacticalCognition.spaceAwareness}%`, backgroundColor: '#f59e0b' }}></div>
+            </div>
+          </div>
+
+          <div style={styles.progressSection}>
+            <div style={styles.progressLabelRow}>
+              <span>Positional Discipline Matrix</span>
+              <span>{player.tacticalCognition.positionalDiscipline}%</span>
+            </div>
+            <div style={styles.progressBarBg}>
+              <div style={{ ...styles.progressBarFill, width: `${player.tacticalCognition.positionalDiscipline}%`, backgroundColor: '#8b5cf6' }}></div>
+            </div>
+          </div>
+
+          <div style={styles.statRow} style={{ marginTop: '15px' }}>
+            <span>Transition Reaction Factor:</span>
+            <strong>{player.tacticalCognition.transitionReaction_secs}s</strong>
+          </div>
+        </div>
+
+        {/* BLOCK 4: SCOUT RECOMMENDATION MATCHING VECTOR */}
+        <div style={{ ...styles.metricCard, gridColumn: '1 / -1', backgroundColor: '#1e3a8a', color: '#ffffff' }}>
+          <h3 style={{ ...styles.cardHeading, color: '#93c5fd' }}>🕵️‍♂️ Talent ID Positioning Recommendation</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: '#bfdbfe' }}>PRIMARY SCOUT PROFILE ROLE</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{player.scoutingVectors.primaryRole}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: '#bfdbfe' }}>PRO TEMPLATE ARCHETYPE STYLE MATCH</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981' }}>{player.scoutingVectors.playerStyleMatch}</div>
+            </div>
+            <button 
+              style={styles.actionBtn}
+              onClick={() => alert(`Opening connection loop request channel for profile ID: ${player.playerId}`)}
+            >
+              Request Verification Data Log
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
 }
 
+// Scannable interface styling object model parameters
 const styles = {
-  container: { padding: '30px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif', backgroundColor: '#f9fafb', minHeight: '100vh' },
-  profileHeader: { display: 'flex', alignItems: 'center', gap: '20px', backgroundColor: '#1e3a8a', padding: '25px', borderRadius: '12px', color: '#ffffff', marginBottom: '30px' },
-  avatarMock: { width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' },
-  playerName: { margin: 0, fontSize: '24px', fontWeight: 'bold' },
-  playerMeta: { margin: '4px 0 0 0', color: '#93c5fd', fontSize: '14px', fontWeight: '500' },
-  grid: { display: 'flex', gap: '25px', flexWrap: 'wrap' },
-  card: { flex: 1, minWidth: '300px', backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
-  cardTitle: { margin: '0 0 20px 0', fontSize: '16px', color: '#1f2937', fontWeight: 'bold', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' },
-  metricRow: { display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '12px' },
-  metricName: { width: '90px', fontSize: '11px', fontWeight: 'bold', color: '#4b5563' },
-  barOuter: { flex: 1, height: '10px', backgroundColor: '#e5e7eb', borderRadius: '5px', overflow: 'hidden' },
-  barInner: { height: '100%', backgroundColor: '#10b981', borderRadius: '5px' },
-  metricValue: { width: '25px', fontSize: '13px', fontWeight: 'bold', color: '#111827', textAlign: 'right' },
-  matchRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' },
-  ratingTag: { backgroundColor: '#fef3c7', color: '#d97706', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }
+  container: { maxWidth: '1000px', margin: '40px auto', padding: '25px', fontFamily: 'Segoe UI, Roboto, sans-serif', backgroundColor: '#f9fafb', borderRadius: '16px', border: '1px solid #e5e7eb' },
+  profileHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px dashed #e5e7eb', paddingBottom: '25px', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' },
+  verifiedTag: { fontSize: '11px', backgroundColor: '#d1fae5', color: '#065f46', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', letterSpacing: '0.5px' },
+  playerName: { fontSize: '28px', fontWeight: 'bold', color: '#111827', margin: '8px 0 4px 0' },
+  metaSubText: { margin: 0, fontSize: '14px', color: '#4b5563', fontWeight: '500' },
+  radarBadge: { backgroundColor: '#111827', color: '#ffffff', padding: '15px 20px', borderRadius: '12px', textAlign: 'center' },
+  radarLabel: { fontSize: '10px', color: '#9ca3af', letterSpacing: '1px', fontWeight: 'bold' },
+  radarScore: { fontSize: '28px', fontWeight: 'bold', color: '#10b981', marginTop: '2px' },
+  matrixGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' },
+  metricCard: { backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
+  cardHeading: { margin: '0 0 15px 0', fontSize: '15px', fontWeight: 'bold', color: '#1f2937', borderBottom: '1px solid #f3f4f6', paddingBottom: '8px' },
+  statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#4b5563', padding: '6px 0', borderBottom: '1px inset #f9fafb' },
+  highlightText: { color: '#ef4444', fontSize: '14px' },
+  progressSection: { marginBottom: '12px' },
+  progressLabelRow: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#4b5563', marginBottom: '4px', fontWeight: '500' },
+  progressBarBg: { width: '100%', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: '4px' },
+  actionBtn: { backgroundColor: '#ffffff', color: '#1e3a8a', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: '0.2s', alignSelf: 'center' },
+  loading: { textAlign: 'center', marginTop: '120px', color: '#6b7280', fontSize: '14px', fontFamily: 'sans-serif' }
 };

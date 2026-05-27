@@ -1,0 +1,41 @@
+{
+  "playerId": "PLAYER-ZW-2026-9904",
+  "fifaConnectId": "1A2B3C4D5E6F", 
+  "lastUpdated": "2026-05-27T14:00:00Z",
+  "athleticBaselines": {
+    "sprint30m_secs": 3.92,
+    "stamina_10k_mins": 41.5,
+    "verticalJump_cm": 58.0,
+    "agility_illinois_secs": 14.8
+  },
+  "technicalExecution": {
+    "preferredFoot": "Left",
+    "passingAccuracy_short": 84.5,
+    "passingAccuracy_long": 61.2,
+    "firstTouchRating": 78.0,
+    "finishingConversionRate": 22.4
+  },
+  "tacticalCognition": {
+    "spaceAwareness": 82.0,
+    "transitionReaction_secs": 1.4,
+    "decisionMakingSpeed": 79.5,
+    "positionalDiscipline": 85.0
+  },
+  "scoutingVectors": {
+    "primaryRole": "Inverted Winger",
+    "secondaryRole": "Attacking Midfielder",
+    "playerStyleMatch": "Bukayo Saka",
+    "scoutConsistencyIndex": 81.4
+  },
+  "sessionHistoryLog": [
+    {
+      "sessionId": "FIFA-U14-CR-04",
+      "date": "2026-05-20",
+      "coachPerformanceNotes": "Excellent utilization of wide channels during overloading transition drills. Exceptional positive first touch under unit-scale pressure.",
+      "drillRatings": {
+        "part1_rondo": 8.5,
+        "part2_match_shape": 7.8
+      }
+    }
+  ]
+}
