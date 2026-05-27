@@ -1,213 +1,109 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  Trophy, 
-  Target, 
-  Flame, 
-  Activity, 
-  ChevronRight, 
-  Sparkles, 
-  Clock, 
-  User, 
-  Compass,
-  Zap,
-  BookOpen,
-  Apple,
-  Award
-} from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
-import { ThutoChat } from "@/components/thuto/ThutoChat"; // ✅ FIXED: Imported the core THUTO AI engine
-import { POSITION_FOCUS_MAP } from "@/config/position-focus";
+import { safeArray } from "@/lib/safe-array";
+import { AdBanner } from "@/components/ui/AdBanner";
+import { 
+  Dumbbell, 
+  Activity, 
+  Film, 
+  UserCheck, 
+  TrendingUp, 
+  BookOpen, 
+  Award,
+  Zap,
+  Target,
+  Bell,
+  ArrowRight
+} from "lucide-react";
 
-export default function PlayerHubDashboardPage() {
-  const user = useAuthStore((state) => state.user);
-  
-  const rawPosition = (user?.position || "striker").toLowerCase();
-  const currentFocus = POSITION_FOCUS_MAP[rawPosition] || POSITION_FOCUS_MAP.striker;
+const COLORS = {
+  bg: "#f4f2ee",
+  primary: "#1a5c2a",
+  accent: "#c8962a",
+  border: "#e5e7eb"
+};
 
-  const actionTracks = [
-    {
-      title: "Positional Drill Academy",
-      subtitle: "Access targeted training circuits curated specifically for your profile.",
-      href: "/player/drills",
-      icon: Target,
-      accent: "bg-emerald-50 text-[#1a5c2a] border border-emerald-100",
-      badge: "🎯 Specialized Track"
-    },
-    {
-      title: "My Digital Talent Passport",
-      subtitle: "Review your verified school profiles, academic averages, and share your public athletic CV.",
-      href: "/player/passport",
-      icon: BookOpen,
-      accent: "bg-purple-50 text-purple-700 border border-purple-100",
-      badge: "📋 Passport Active"
-    },
-    {
-      title: "Nutrition & Fuel Engine",
-      subtitle: "Log daily traditional meal variations, caloric constraints, and look over personalized active diet plans.",
-      href: "/player/nutrition",
-      icon: Apple,
-      accent: "bg-amber-50 text-[#c8962a] border border-amber-200",
-      badge: "🥗 Fuel Engine Active"
-    },
-    {
-      title: "Matchday Live Center",
-      subtitle: "View tactical text commentary streams, live radio feeds, and scores.",
-      href: "/fan/live-commentary",
-      icon: Trophy,
-      accent: "bg-red-50 text-red-600 border border-red-100",
-      badge: "⚽ In-Play Arena"
-    },
-    {
-      title: "Physical Conditioning & Form",
-      subtitle: "Monitor dynamic performance metrics, speed loads, and attributes.",
-      href: "/player/fitness",
-      icon: Activity,
-      accent: "bg-blue-50 text-blue-700 border border-blue-100",
-      badge: "⚡ Bio Analytics"
-    },
-    {
-      title: "Milestones & Career Trophies",
-      subtitle: "Browse your full historical log of matching team career breakthroughs and performance honors.",
-      href: "/player/progress",
-      icon: Award,
-      accent: "bg-orange-50 text-orange-600 border border-orange-100",
-      badge: "✨ Career Milestones"
+export default function PlayerHubHomeDashboard() {
+  // Split Zustand selectors to strictly prevent React #185 infinite loops
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Zustand Hydration Guard
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+    } else {
+      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+      return unsub;
     }
+  }, []);
+
+  if (!hydrated) return null;
+
+  // The 11 Consolidated Player Workflow Hub Cards
+  const playerWorkflowCards = [
+    { title: "Train Now", sub: "Launch active training session schedules", href: "/player/pitch", icon: Activity, bg: "bg-emerald-50", text: "text-emerald-700" },
+    { title: "Drills Library", sub: "Access 500+ multi-sport structured exercises[cite: 1]", href: "/player/drills", icon: Dumbbell, bg: "bg-amber-50", text: "text-amber-700" },
+    { title: "My Passport", sub: "Manage public shareable talent profiling passport[cite: 1]", href: "/player/passport", icon: BookOpen, bg: "bg-purple-50", text: "text-purple-700" },
+    { title: "Scout Profile", sub: "Review AI evaluation rankings and market value[cite: 1]", href: "/player/talent-id", icon: Target, bg: "bg-blue-50", text: "text-blue-700" },
+    { title: "My Videos", sub: "Highlight vault, showcases, & clip captures[cite: 1]", href: "/player/vault", icon: Film, bg: "bg-indigo-50", text: "text-indigo-700" },
+    { title: "My Journey", sub: "Track continuous development progress points[cite: 1]", href: "/player/progress", icon: TrendingUp, bg: "bg-teal-50", text: "text-teal-700" },
+    { title: "Success Engine", sub: "Configure active milestone mission logs[cite: 1]", href: "/player/goal", icon: Zap, bg: "bg-orange-50", text: "text-orange-700" },
+    { title: "Identity Verification", sub: "Upload official ID and validation selfies[cite: 1]", href: "/player/verification", icon: UserCheck, bg: "bg-slate-50", text: "text-slate-700" }
   ];
 
   return (
-    <div className="flex h-screen bg-[#f4f2ee]">
-      <Sidebar />
-
-      <main className="flex-1 overflow-auto p-6 relative"> {/* Added relative positioning framework context */}
-        
-        {/* Greeting Banner */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#c8962a]">
-              Athlete Development — Grassroots Track
-            </p>
-            <h1 className="mt-1 text-2xl font-black text-gray-900">
-              Welcome Back, {user?.name?.split(" ")[0] ?? "Player"}! 👋
-            </h1>
-            <p className="mt-1 text-sm font-medium italic text-[#1a5c2a]">
-              Train Smart. Build Profile. Get Scouted.
-            </p>
-          </div>
-
-          <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider border shadow-xs text-center shrink-0 self-start sm:self-center ${currentFocus.badgeColor}`}>
-            ⚽ {currentFocus.title}
-          </div>
-        </div>
-
-        {/* Highlight Strip */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
-          <div className="bg-[#f0b429] text-[#1c3d22] rounded-2xl p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-wider opacity-85">Weekly Milestone</p>
-              <h3 className="text-xl font-black mt-1">3x 10km Running Run</h3>
-            </div>
-            <div className="bg-white/20 p-2.5 rounded-xl">
-              <Flame size={20} />
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Assigned Workouts</p>
-              <h3 className="text-2xl font-black mt-1 text-gray-900">Ready to Review</h3>
-            </div>
-            <div className="bg-gray-100 p-2.5 rounded-xl text-gray-700">
-              <Zap size={20} />
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Scout Visibility Status</p>
-              <h3 className="text-sm font-black text-emerald-700 mt-2 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg inline-block w-fit">
-                ● Live on Talent Hub
-              </h3>
-            </div>
-            <div className="bg-gray-100 p-2.5 rounded-xl text-gray-700">
-              <Compass size={20} />
+    <div style={{ backgroundColor: COLORS.bg, minHeight: "100vh" }} className="w-full antialiased text-gray-900 font-sans">
+      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm h-16">
+        <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
+          <Link href="/dashboard" className="text-xl font-black tracking-wider flex items-center space-x-2">
+            <span style={{ color: COLORS.primary }}>PLAYER</span>
+            <span style={{ backgroundColor: COLORS.primary, color: "#fff" }} className="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-widest">HUB</span>
+          </Link>
+          <div className="flex items-center space-x-4">
+            <Link href="/arena" className="text-xs font-bold text-gray-600 hover:text-gray-900 transition bg-gray-100 px-3 py-2 rounded-lg">Go to The Arena Feed</Link>
+            <div className="h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{ backgroundColor: COLORS.primary }}>
+              {user?.name ? user.name.charAt(0).toUpperCase() : "P"}
             </div>
           </div>
         </div>
+      </nav>
 
-        {/* Specialization Block */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">
-            Your Positional Physical Focus Specialization
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {currentFocus.physicalFocus.map((attribute) => (
-              <span 
-                key={attribute}
-                className="bg-gray-100 border border-gray-200 text-gray-800 px-3 py-1.5 rounded-xl text-xs font-bold capitalize"
-              >
-                ⚡ {attribute.replace(/_/g, " ")}
-              </span>
-            ))}
-          </div>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-8">
+          <h1 className="text-2xl font-black tracking-tight text-gray-900">Player Operations Hub</h1>
+          <p className="text-sm text-gray-500 mt-1">Select an active operational component department to track metrics or launch core modules[cite: 1].</p>
         </div>
 
-        {/* Module Tracks Area */}
-        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-500 pl-1">
-          Player Academy Modules
-        </p>
-
-        <div className="space-y-3 mb-16"> {/* Added padding margin bottom to prevent layout overlap */}
-          {actionTracks.map((track) => {
-            const IconComponent = track.icon;
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {playerWorkflowCards.map((card, idx) => {
+            const IconComponent = card.icon;
             return (
-              <Link
-                key={track.title}
-                href={track.href}
-                className="group w-full rounded-2xl border border-gray-200 p-5 bg-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#1a5c2a] hover:shadow-md"
-              >
-                <div className="flex items-start sm:items-center gap-4">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${track.accent}`}>
+              <Link href={card.href} key={idx} className="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col justify-between hover:shadow-md transition group">
+                <div>
+                  <div className={`p-3 rounded-xl inline-block ${card.bg} ${card.text} mb-4`}>
                     <IconComponent size={20} />
                   </div>
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900 group-hover:text-[#1a5c2a] transition-colors">
-                      {track.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5 max-w-2xl leading-relaxed">
-                      {track.subtitle}
-                    </p>
-                  </div>
+                  <h3 className="font-black text-gray-900 text-sm mb-1 group-hover:text-green-800 transition">{card.title}</h3>
+                  <p className="text-xs text-gray-400 font-medium leading-relaxed mb-4">{card.sub}</p>
                 </div>
-
-                <div className="flex items-center justify-between sm:justify-end gap-3 border-t border-gray-50 pt-3 sm:pt-0 sm:border-0">
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-[#f0b429] text-[#1c3d22] px-2.5 py-1 rounded-xl shadow-xs">
-                    {track.badge}
-                  </span>
-                  <ChevronRight size={16} className="text-gray-400 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all hidden sm:block" />
+                <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-auto text-[11px] font-bold text-gray-400 group-hover:text-gray-700 transition">
+                  <span>Open Module</span>
+                  <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
             );
           })}
         </div>
 
-        {/* Localized Strategy Insight Banner Footer */}
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-[#c8962a] shrink-0">
-            <Sparkles size={16} className="animate-pulse" />
-          </div>
-          <p className="text-xs text-gray-500 leading-relaxed font-medium">
-            Your personal tracking metric logs sync directly across local high school team registers and active academy scouting databases automatically to accelerate player identification loops.
-          </p>
+        <div className="mt-8">
+          <AdBanner slot="sidebar-top" fallback={true} />
         </div>
-
-        {/* ✅ FIXED: Restored permanent floating THUTO AI circle token overlay */}
-        <ThutoChat />
-
-      </main>
+      </div>
     </div>
   );
 }
