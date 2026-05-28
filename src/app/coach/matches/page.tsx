@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trophy, X, ChevronDown, ChevronUp, MessageCircle, Loader2, Copy, Check } from "lucide-react";
+import { 
+  ArrowLeft, Plus, Trophy, X, ChevronDown, ChevronUp, 
+  MessageCircle, Loader2, Copy, Check, Video, Film, CloudUpload 
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -22,6 +25,7 @@ interface MatchRecord {
   red_cards: number;
   notes: string | null;
   outcome: "W" | "D" | "L";
+  video_url?: string | null; // Tracks uploaded match film
 }
 
 const FORMATIONS = ["4-3-3", "4-4-2", "4-2-3-1", "3-5-2", "5-3-2"];
@@ -49,6 +53,10 @@ export default function CoachMatchesPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
+  // Video Upload Local States
+  const [uploadingMatchId, setUploadingMatchId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<string>("");
+
   const { data, isLoading } = useQuery<{ data: MatchRecord[] }>({
     queryKey: ["coach-matches"],
     queryFn: () => api.get("/matches").then((r) => r.data),
@@ -68,6 +76,63 @@ export default function CoachMatchesPage() {
     mutationFn: (id: string) => api.delete(`/matches/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["coach-matches"] }),
   });
+
+  // Save the video URL path reference to your database backend
+  const updateMatchVideo = useMutation({
+    mutationFn: ({ matchId, videoUrl }: { matchId: string; videoUrl: string }) => 
+      api.put(`/matches/${matchId}`, { video_url: videoUrl }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["coach-matches"] });
+      setUploadProgress("Match film attached successfully! 🎉");
+      setTimeout(() => setUploadProgress(""), 4000);
+    },
+    onError: () => {
+      setUploadProgress("Failed to link video file to match logs.");
+    }
+  });
+
+  // Direct Storage Bucket Upload Pipeline (Bypassing server payloads)
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>, matchId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingMatchId(matchId);
+      setUploadProgress("Getting secure upload link...");
+
+      // Step 1: Call your backend API endpoint to create a temporary secure Presigned ticket URL
+      const response = await fetch("/api/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+      });
+      
+      const { uploadUrl, fileKey } = await response.json();
+      if (!uploadUrl) throw new Error("Unauthorized storage payload configuration");
+
+      setUploadProgress("Streaming match film to storage bucket...");
+
+      // Step 2: PUT the file directly into Cloudflare R2 / S3 storage (Zero Vercel Timeout Risk)
+      const uploadResult = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadResult.ok) throw new Error("Direct-to-bucket multi-part streaming failed");
+
+      setUploadProgress("Saving link reference to system database...");
+
+      // Step 3: Mutate your match log record with the final relative file path url key string
+      updateMatchVideo.mutate({ matchId, videoUrl: fileKey });
+
+    } catch (err) {
+      console.error(err);
+      setUploadProgress("Error uploading match file. Please verify bucket parameters.");
+    } finally {
+      setUploadingMatchId(null);
+    }
+  };
 
   const generateReport = async (m: MatchRecord) => {
     setReportLoading(m.id);
@@ -263,6 +328,7 @@ export default function CoachMatchesPage() {
           <div className="space-y-2">
             {matches.map((m) => {
               const isOpen = expanded === m.id;
+              const isCurrentlyUploading = uploadingMatchId === m.id;
               return (
                 <div key={m.id} className="overflow-hidden rounded-xl border bg-card">
                   <button
@@ -277,6 +343,7 @@ export default function CoachMatchesPage() {
                         <p className="font-semibold">{m.our_score} – {m.their_score} vs {m.opponent}</p>
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize text-muted-foreground">{m.venue}</span>
                         {m.formation && <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{m.formation}</span>}
+                        {m.video_url && <span className="flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600">🎬 Film Linked</span>}
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {new Date(m.date).toLocaleDateString("en-ZW", { day: "numeric", month: "long", year: "numeric" })}
@@ -287,16 +354,67 @@ export default function CoachMatchesPage() {
                   </button>
 
                   {isOpen && (
-                    <div className="border-t px-5 py-4">
+                    <div className="border-t px-5 py-4 bg-card/50">
                       <div className="mb-3 flex flex-wrap gap-4 text-sm">
                         <span>🟨 {m.yellow_cards} yellow{m.yellow_cards !== 1 ? "s" : ""}</span>
                         <span>🟥 {m.red_cards} red{m.red_cards !== 1 ? "s" : ""}</span>
                         {m.scorers && <span>⚽ {m.scorers}</span>}
                       </div>
                       {m.notes && (
-                        <p className="mb-3 rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">{m.notes}</p>
+                        <p className="mb-4 rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">{m.notes}</p>
                       )}
-                      <div className="flex flex-wrap gap-2">
+
+                      {/* INTEGRATED: VIDEO PLAYER & UPLOADER MATRIX CONTAINER */}
+                      <div className="mb-4 border-t pt-4">
+                        <h4 className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <Film className="h-3.5 w-3.5" /> Match Video Analysis
+                        </h4>
+                        
+                        {m.video_url ? (
+                          <div className="rounded-xl border bg-background p-3 max-w-xl">
+                            <div className="flex items-center gap-2 text-sm text-blue-600 font-medium mb-2">
+                              <Video className="h-4 w-4" /> Attached Performance Media
+                            </div>
+                            {/* Uses browser stream player safely optimized for storage endpoints */}
+                            <video 
+                              src={`${process.env.NEXT_PUBLIC_STORAGE_CDN_URL || ''}/${m.video_url}`} 
+                              controls 
+                              className="w-full rounded-lg bg-black aspect-video max-h-64"
+                            />
+                          </div>
+                        ) : (
+                          <div className="max-w-md rounded-xl border border-dashed p-4 bg-background">
+                            <label className="flex flex-col items-center justify-center gap-2 cursor-pointer p-2">
+                              <CloudUpload className={`h-6 w-6 ${isCurrentlyUploading ? 'text-primary animate-bounce' : 'text-muted-foreground'}`} />
+                              <div className="text-center">
+                                <span className="text-xs font-semibold text-primary block">
+                                  {isCurrentlyUploading ? "Transferring file..." : "Click to attach match film"}
+                                </span>
+                                <span className="text-[11px] text-muted-foreground">Accepts raw .mp4, .mov game files</span>
+                              </div>
+                              <input 
+                                type="file" 
+                                accept="video/*" 
+                                className="hidden" 
+                                disabled={isCurrentlyUploading}
+                                onChange={(e) => handleVideoUpload(e, m.id)}
+                              />
+                            </label>
+                            
+                            {uploadingMatchId === m.id && uploadProgress && (
+                              <div className="mt-2 text-center text-xs font-medium text-blue-600 animate-pulse flex items-center justify-center gap-1.5">
+                                <Loader2 className="h-3 w-3 animate-spin" /> {uploadProgress}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* Dynamic global update message overlay filter row */}
+                        {!isCurrentlyUploading && uploadProgress && expanded === m.id && (
+                          <div className="mt-2 text-xs font-semibold text-green-600">{uploadProgress}</div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 border-t pt-3">
                         <button
                           onClick={() => generateReport(m)}
                           disabled={reportLoading === m.id}
@@ -314,6 +432,7 @@ export default function CoachMatchesPage() {
                           <X className="h-3.5 w-3.5" /> Delete
                         </button>
                       </div>
+
                       {reports[m.id] && (
                         <div className="mt-3 rounded-xl border border-green-500/20 bg-green-500/5 p-3">
                           <div className="mb-2 flex items-center justify-between">
