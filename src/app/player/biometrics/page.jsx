@@ -4,18 +4,16 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Activity, ShieldCheck } from 'lucide-react';
 
-// --- Permanent Arena Premium Light Theme Colors ---
 const COLORS = {
-  bg: "#f4f2ee",     // Warm Off-White
-  primary: "#1a5c2a", // Forest Green
-  accent: "#c8962a",  // Gold
+  bg: "#f4f2ee",
+  primary: "#1a5c2a",
+  accent: "#c8962a",
   border: "#e5e7eb"
 };
 
 export default function PlayerBiometricMentor() {
   return (
     <div style={{ backgroundColor: COLORS.bg }} className="min-h-screen text-gray-900 font-sans antialiased pb-12">
-      {/* Sticky Premium Light Nav Bar */}
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 h-16 shadow-sm">
         <div className="max-w-4xl mx-auto h-full px-4 flex items-center justify-between">
           <Link href="/player" className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition">
@@ -28,7 +26,6 @@ export default function PlayerBiometricMentor() {
         </div>
       </nav>
 
-      {/* Main Container */}
       <div className="max-w-md mx-auto px-4 mt-12 text-center">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 space-y-6">
           <div 
@@ -45,7 +42,6 @@ export default function PlayerBiometricMentor() {
             </p>
           </div>
 
-          {/* XGBoost Status Indicator Card */}
           <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 flex items-center space-x-3 text-left">
             <ShieldCheck style={{ color: COLORS.accent }} className="shrink-0" size={20} />
             <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
