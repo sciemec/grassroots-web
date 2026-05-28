@@ -72,7 +72,7 @@ export default function CoachHubDashboard() {
 
   if (!hydrated) return null;
 
-  // The 9 Strategic Coaching Departments Config Array
+  // Your ORIGINAL 9 Strategic Coaching Departments Config Array
   const departments = [
     {
       id: "tactical-command",
