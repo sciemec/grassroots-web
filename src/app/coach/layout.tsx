@@ -7,7 +7,7 @@ import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
 import ThutoChatCoach from "@/components/thuto/ThutoChatCoach";
 
-// 1. Initialize and EXPORT the missing context that sub-pages are looking for
+// 1. THIS IS THE CRITICAL EXPORT THAT CLEARS THE ERROR:
 export const CoachSessionContext = createContext<any>(null);
 
 export default function CoachLayout({ children }: { children: React.ReactNode }) {
@@ -30,7 +30,7 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // 2. Wrap the tree with the context provider value so sub-pages don't read 'undefined'
+  // 2. WRAP CHILDREN IN THE VALID PROVIDER VALUE:
   return (
     <CoachSessionContext.Provider value={{ coach: user }}>
       <GuestGateProvider>
