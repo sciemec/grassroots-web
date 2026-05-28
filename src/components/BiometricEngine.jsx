@@ -6,10 +6,14 @@ export default function BiometricEngine({ mode = 'coach', onAnalysisComplete }) 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [metrics, setMetrics] = useState({ kneeAngle: 0, forwardLean: 0, symmetry: 100 });
+  const [techMetrics, setTechMetrics] = useState({
+    bodyLean: 0,
+    supportBaseWidth: 0,
+    controlStability: 100,
+    technicalRating: 'Evaluating...'
+  });
 
   useEffect(() => {
-    // Initialize the browser-side MediaPipe Pose context loop
     const pose = new Pose({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
     });
@@ -17,8 +21,8 @@ export default function BiometricEngine({ mode = 'coach', onAnalysisComplete }) 
     pose.setOptions({
       modelComplexity: 1,
       smoothLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6,
     });
 
     pose.onResults((results) => {
@@ -27,44 +31,59 @@ export default function BiometricEngine({ mode = 'coach', onAnalysisComplete }) 
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the HUD overlay frame
       ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
-      // Extract raw joint coordinates (Hip, Knee, Ankle for sprinting metrics)
-      const hip = results.poseLandmarks[24];
-      const knee = results.poseLandmarks[26];
-      const ankle = results.poseLandmarks[28];
+      // Extract critical mechanics joints
+      const leftShoulder = results.poseLandmarks[11];
+      const rightShoulder = results.poseLandmarks[12];
+      const leftHip = results.poseLandmarks[23];
+      const rightHip = results.poseLandmarks[24];
+      const leftAnkle = results.poseLandmarks[27];
+      const rightAnkle = results.poseLandmarks[28];
 
-      if (hip && knee && ankle) {
-        // Calculate joint angle vector
-        const angle = Math.abs(
-          (Math.atan2(ankle.y - knee.y, ankle.x - knee.x) -
-            Math.atan2(hip.y - knee.y, hip.x - knee.x)) *
-            (180 / Math.PI)
+      if (leftShoulder && leftHip && leftAnkle && rightAnkle) {
+        // 1. Calculate Shooting Angle / Body Lean Vector
+        const trunkLeanAngle = Math.abs(
+          (Math.atan2(leftHip.y - leftShoulder.y, leftHip.x - leftShoulder.x) * 180) / Math.PI
         );
+        const displayLean = Math.round(trunkLeanAngle);
 
-        const currentAngle = Math.round(angle > 180 ? 360 - angle : angle);
-        const lean = Math.round((hip.x - results.poseLandmarks[12].x) * 100); // Trunk lean
+        // 2. Calculate Foot Placement / Support Base Width
+        const baseWidth = Math.abs(leftAnkle.x - rightAnkle.x) * 100; // Relative pixel distance scale
+        const displayBase = Math.round(baseWidth);
 
-        setMetrics({
-          kneeAngle: currentAngle,
-          forwardLean: lean,
-          symmetry: Math.round(85 + Math.random() * 10), // Calculated balance vector
+        // 3. Estimate Ball Control Stability via Hip-to-Ankle Proximity Drift
+        const centerOfGravityX = (leftHip.x + rightHip.x) / 2;
+        const driftDistance = Math.abs(leftAnkle.x - centerOfGravityX) * 100;
+        const stabilityScore = Math.max(0, Math.min(100, Math.round(100 - (driftDistance * 2.5))));
+
+        // 4. Determine Automated Technical Quality Rating
+        let rating = 'Developing Form';
+        if (displayLean >= 83 && displayLean <= 95 && stabilityScore > 75) {
+          rating = 'Elite Tier Execution';
+        } else if (stabilityScore > 60) {
+          rating = 'Proficient Mechanics';
+        }
+
+        setTechMetrics({
+          bodyLean: displayLean,
+          supportBaseWidth: displayBase,
+          controlStability: stabilityScore,
+          technicalRating: rating
         });
 
-        // Draw basic skeletal lines for visual validation
+        // Render color-coded visual feedback directly onto the video overlay
         ctx.beginPath();
-        ctx.moveTo(hip.x * canvas.width, hip.y * canvas.height);
-        ctx.lineTo(knee.x * canvas.width, knee.y * canvas.height);
-        ctx.lineTo(ankle.x * canvas.width, ankle.y * canvas.height);
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 4;
+        ctx.moveTo(leftShoulder.x * canvas.width, leftShoulder.y * canvas.height);
+        ctx.lineTo(leftHip.x * canvas.width, leftHip.y * canvas.height);
+        ctx.lineTo(leftAnkle.x * canvas.width, leftAnkle.y * canvas.height);
+        // Green lines indicate strong, controlled mechanics; red highlights technical drift
+        ctx.strokeStyle = stabilityScore > 70 ? '#10b981' : '#ef4444';
+        ctx.lineWidth = 5;
         ctx.stroke();
       }
     });
 
-    // Handle frame tracking pipeline animation loops
     let active = true;
     const processVideo = () => {
       if (videoRef.current && videoRef.current.readyState >= 2 && active) {
@@ -74,10 +93,7 @@ export default function BiometricEngine({ mode = 'coach', onAnalysisComplete }) 
     };
 
     if (analyzing) processVideo();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [analyzing]);
 
   return (
@@ -86,12 +102,13 @@ export default function BiometricEngine({ mode = 'coach', onAnalysisComplete }) 
         <video ref={videoRef} style={{ display: 'none' }} playsInline muted loop />
         <canvas ref={canvasRef} style={styles.canvasView} width="640" height="480" />
         
-        {/* REAL-TIME BIOMETRIC DATA METRIC HOVER CARD */}
+        {/* HUD TECHNICAL INSIGHTS PANEL OVERLAY */}
         <div style={styles.dataCard}>
-          <div style={styles.cardHeader}>🔴 KINEMATIC INSIGHTS LIVE</div>
-          <div style={styles.metricItem}>🦵 Knee Extension: <strong>{metrics.kneeAngle}°</strong></div>
-          <div style={styles.metricItem}>🏃‍♂️ Sprint Lean Vector: <strong>{metrics.forwardLean}°</strong></div>
-          <div style={styles.metricItem}>⚖️ Biomechanical Balance: <strong>{metrics.symmetry}%</strong></div>
+          <div style={styles.cardHeader}>📊 CORE PERFORMANCE RATINGS</div>
+          <div style={styles.metricItem}>🎯 Mechanics Class: <span style={{color: '#10b981', fontWeight: 'bold'}}>{techMetrics.technicalRating}</span></div>
+          <div style={styles.metricItem}>📐 Shooting Lean Angle: <strong>{techMetrics.bodyLean}°</strong></div>
+          <div style={styles.metricItem}>🦶 Support Foot Placement: <strong>{techMetrics.supportBaseWidth}cm scale</strong></div>
+          <div style={styles.metricItem}>⚽ Control Radius Stability: <strong>{techMetrics.controlStability}%</strong></div>
         </div>
       </div>
 
@@ -112,9 +129,9 @@ export default function BiometricEngine({ mode = 'coach', onAnalysisComplete }) 
         {mode === 'coach' && (
           <button 
             style={styles.commitBtn}
-            onClick={() => onAnalysisComplete && onAnalysisComplete(metrics)}
+            onClick={() => onAnalysisComplete && onAnalysisComplete(techMetrics)}
           >
-            💾 Push Data to Player Passport
+            💾 Append Tech Scores to Player Card
           </button>
         )}
       </div>
@@ -123,13 +140,13 @@ export default function BiometricEngine({ mode = 'coach', onAnalysisComplete }) 
 }
 
 const styles = {
-  container: { backgroundColor: '#111827', padding: '20px', borderRadius: '12px', color: '#fff' },
+  container: { backgroundColor: '#111827', padding: '20px', borderRadius: '12px', color: '#fff', fontFamily: 'sans-serif' },
   hudContainer: { position: 'relative', width: '100%', maxWidth: '640px', margin: '0 auto', overflow: 'hidden', borderRadius: '8px', border: '2px solid #374151' },
   canvasView: { width: '100%', height: 'auto', display: 'block', backgroundColor: '#000' },
-  dataCard: { position: 'absolute', top: '15px', right: '15px', backgroundColor: 'rgba(17, 24, 39, 0.85)', padding: '12px', borderRadius: '8px', border: '1px solid #10b981', fontFamily: 'monospace', minWidth: '200px' },
-  cardHeader: { fontSize: '11px', color: '#10b981', fontWeight: 'bold', marginBottom: '8px', letterSpacing: '0.5px' },
-  metricItem: { fontSize: '13px', margin: '4px 0', display: 'flex', justifyContent: 'space-between' },
-  controlRow: { marginTop: '15px', display: 'flex', gap: '15px', justifyContent: 'space-between', flexWrap: 'wrap' },
+  dataCard: { position: 'absolute', top: '15px', right: '15px', backgroundColor: 'rgba(17, 24, 39, 0.9)', padding: '15px', borderRadius: '8px', border: '1px solid #3b82f6', minWidth: '260px' },
+  cardHeader: { fontSize: '11px', color: '#3b82f6', fontWeight: 'bold', marginBottom: '10px', letterSpacing: '0.5px' },
+  metricItem: { fontSize: '13px', margin: '6px 0', display: 'flex', justifyContent: 'space-between' },
+  controlRow: { marginTop: '15px', display: 'flex', gap: '15px', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'center' },
   fileInput: { fontSize: '13px', color: '#9ca3af' },
-  commitBtn: { backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }
+  commitBtn: { backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)' }
 };
