@@ -2,15 +2,16 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-// 🚀 FIX: Dynamically import the heavy BiometricEngine with SSR disabled.
-// This prevents Next.js from trying to pre-render the camera/TensorFlow module on the server side.
+// 🚀 FIX 1 & 2 combined: 
+// 1. We use the absolute '@/' path alias so Webpack doesn't look in the wrong directory levels.
+// 2. We use next/dynamic with ssr: false so it safely renders exclusively in the user's browser.
 const BiometricEngine = dynamic(
   () => import('@/components/BiometricEngine'),
   { 
     ssr: false,
     loading: () => (
-      <div style={{ color: '#94a3b8', fontSize: '14px', fontWeight: '600' }}>
-        Initializing MediaPipe Telemetry Camera...
+      <div style={{ color: '#94a3b8', fontSize: '14px', fontWeight: '600', textAlign: 'center', padding: '40px' }}>
+        Initializing MediaPipe Telemetry Camera Engine...
       </div>
     )
   }
@@ -91,7 +92,7 @@ export default function PlayerBiometricMentor() {
 // Seamless layout dashboard inline styles configuration
 const styles = {
   container: { padding: '40px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', boxSizing: 'border-box' },
-  headerBanner: { backgroundColor: '#0f172a', borderRadius: '16px', padding: '32px', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)', flexWrap: 'wrap', gap: '20px' },
+  headerBanner: { backgroundColor: '#0f172a', borderRadius: '16px', padding: '32px', color: '#ffffff', display: 'flex', justifyContext: 'space-between', alignItems: 'center', marginBottom: '32px', boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)', flexWrap: 'wrap', gap: '20px' },
   headerTextContainer: { flex: 1 },
   liveBadge: { backgroundColor: '#ef4444', color: '#ffffff', fontSize: '11px', fontWeight: '800', padding: '4px 8px', borderRadius: '6px', letterSpacing: '0.5px', display: 'inline-block', marginBottom: '12px' },
   mainTitle: { fontSize: '26px', fontWeight: '800', margin: '0 0 8px 0', letterSpacing: '-0.5px' },
