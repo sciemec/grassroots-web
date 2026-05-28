@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Video, UploadCloud, AlertCircle, FileVideo, Sparkles } from "lucide-react";
+import { ArrowLeft, Video, UploadCloud, AlertCircle, FileVideo, Sparkles, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -16,6 +16,7 @@ export default function MatchEyeSetupPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(""); // Tracks live pipeline checkpoints
 
   // Drag and Drop Ingestion Event Handlers
   const handleDragOver = (e: React.DragEvent) => {
@@ -45,131 +46,157 @@ export default function MatchEyeSetupPage() {
     }
   };
 
+  // Pipeline Content Validation Matrix
   const validateAndSetFile = (file: File) => {
-    // Basic structural validation check for video content files
     if (!file.type.startsWith("video/")) {
-      setError("Unsupported format. Please supply a valid MP4, MOV, or AVI match recording.");
+      setError("Unsupported media template type. Please upload a structured video component format (MP4, MOV, AVI).");
       return;
     }
-    // Limit to 500MB on local pipeline for native Gemini upload configurations
-    if (file.size > 500 * 1024 * 1024) {
-      setError("File exceeds the maximum 500MB baseline allocation constraint.");
+
+    const MAX_SIZE = 500 * 1024 * 1024; // 500MB target boundary limit checks
+    if (file.size > MAX_SIZE) {
+      setError(`File size configuration exceeds allocation capacities. File size: ${(file.size / (1024 * 1024)).toFixed(1)}MB. Limit: 500MB.`);
       return;
     }
+
     setSelectedFile(file);
   };
 
+  // 🚀 NO MORE MOCKING: Real Direct-To-Storage Upload Processor
   const handleProcessVideo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) {
-      setError("Please stage a match video file entry before initializing computer vision ingestion.");
-      return;
-    }
-    
+    if (!selectedFile) return;
+
     setIsUploading(true);
     setError("");
+    setUploadStatus("Acquiring secure upload token ticket...");
 
     try {
-      // Mock integration point: write logic parameters for local localStorage validation
-      localStorage.setItem("gs_match_eye_last", JSON.stringify({
-        fileName: selectedFile.name,
-        timestamp: Date.now(),
-        status: "processing"
-      }));
+      // Step 1: Request a secure single-use Presigned upload link from your Next.js API
+      const response = await fetch("/api/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          filename: selectedFile.name, 
+          contentType: selectedFile.type 
+        }),
+      });
+
+      if (!response.ok) throw new Error("Could not initialize upload channel permissions.");
       
-      // Route onwards into visual dashboard feedback area
+      const { uploadUrl, fileKey } = await response.json();
+      if (!uploadUrl) throw new Error("Storage destination permission access denied.");
+
+      setUploadStatus("Streaming raw footage directly to storage bucket...");
+
+      // Step 2: Stream the video bytes directly to your bucket (bypassing Vercel's size thresholds completely)
+      const uploadResult = await fetch(uploadUrl, {
+        method: "PUT",
+        body: selectedFile,
+        headers: { "Content-Type": selectedFile.type },
+      });
+
+      if (!uploadResult.ok) throw new Error("Data sync connection dropped during chunk transfer.");
+
+      setUploadStatus("Analyzing footprint telemetry metrics...");
+
+      // Step 3: Register the true, permanent file storage key path to local history records
+      localStorage.setItem(
+        "gs_match_eye_last",
+        JSON.stringify({
+          filename: selectedFile.name,
+          fileKey: fileKey, // Real bucket location path (e.g., 'uploads/1716...-game.mp4')
+          status: "processing",
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // Step 4: Proceed cleanly to the live analyst visual deck
       router.push("/analyst");
-    } catch (err) {
-      setError("An operational ingestion pipeline error occurred. Please verify connectivity bounds.");
+
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "An unexpected network interruption occurred during upload streams.");
       setIsUploading(false);
+      setUploadStatus("");
     }
   };
 
+  if (!user) return null;
+
   return (
-    // CANVAS: Premium institutional light layout matrix base 
-    <div className="flex h-screen bg-[#f4f2ee]">
+    <div className="flex h-screen bg-gray-50/50">
       <Sidebar />
-      
-      <main className="flex-1 overflow-auto p-6">
-        {/* Navigation Context Bar */}
-        <div className="mb-6 flex items-center gap-3">
-          <Link href="/analyst" className="rounded-lg p-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
+      <main className="flex-1 overflow-auto p-6 lg:p-10">
+        {/* Navigation back trace */}
+        <div className="mb-8 flex items-center gap-3">
+          <Link href="/coach" className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-600 shadow-sm hover:bg-gray-50 transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#c8962a]">Computer Vision Module</p>
-            <h1 className="text-xl font-black text-gray-900">Match Eye Pipeline</h1>
+            <h1 className="text-2xl font-black tracking-tight text-gray-900">Match Eye Pipeline</h1>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mt-0.5">Automated Multi-Modal Video Analytics Ingestion</p>
           </div>
         </div>
 
-        {/* Informational Explainer Row Card */}
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-[#c8962a] shrink-0">
-              <Video size={16} />
+        <div className="max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex gap-4 rounded-xl bg-green-50/50 border border-green-100 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1a5c2a] text-white">
+              <Video size={20} />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">Native Multimodal Tracking Core</p>
-              <p className="mt-0.5 text-xs text-gray-600 leading-relaxed">
-                Upload your raw game footprint video records directly. Gemini watches the file natively to extract positional parameters, while custom LLM subagents generate structured tactical breakdowns instantly.
+              <h3 className="text-sm font-bold text-gray-900">AI-Driven Match Intelligence</h3>
+              <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                Upload your high-definition full match or training scrimmage videos. The multimodal analytical engine automatically compiles player metrics, velocity changes, spatial overlays, and maps technical breakdowns.
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Primary Functional Area Form Layout Component Grid */}
-        <div className="max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <form onSubmit={handleProcessVideo} className="space-y-6">
-            
-            {/* Native Media Drag/Drop Input Wrapper - High Visibility Contrast Rules */}
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-700">Footage Raw File Entry *</p>
-              
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`relative rounded-2xl border-2 border-dashed p-8 text-center flex flex-col items-center justify-center transition-all ${
-                  isDragging
-                    ? "border-[#1a5c2a] bg-green-50/50"
-                    : selectedFile
-                    ? "border-emerald-300 bg-emerald-50/20"
-                    : "border-gray-300 bg-[#f4f2ee] hover:bg-gray-100/70"
-                }`}
-              >
-                <input
-                  id="matchEyeVideoInput"
-                  name="match_eye_raw_video"
-                  type="file"
-                  accept="video/*"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
+          <form onSubmit={handleProcessVideo} className="space-y-5">
+            {/* Visual Dropzone Component Layout */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 text-center transition-all ${
+                isDragging
+                  ? "border-emerald-500 bg-emerald-50/30 scale-[0.99]"
+                  : selectedFile
+                  ? "border-[#1a5c2a]/40 bg-green-50/10"
+                  : "border-gray-300 bg-gray-50 hover:border-gray-400"
+              }`}
+            >
+              <input
+                type="file"
+                id="match-video-file"
+                accept="video/*"
+                onChange={handleFileChange}
+                disabled={isUploading}
+                className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              />
 
+              <div className="flex flex-col SkinnerLayout elements center items-center gap-3">
                 {!selectedFile ? (
                   <>
-                    <div className="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 mb-3 shadow-sm">
-                      <UploadCloud size={22} className="text-gray-500" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-gray-500 shadow-inner">
+                      <UploadCloud size={22} />
                     </div>
-                    {/* FIXED TEXT: Converted light fonts into crisp high-density charcoal metrics */}
-                    <p className="text-sm font-bold text-gray-900">
-                      Drag and drop your match file here, or <span className="text-[#1a5c2a] underline cursor-pointer">browse files</span>
-                    </p>
-                    <p className="mt-1.5 text-xs text-gray-500 font-medium">
-                      Supports MP4, MOV, or AVI structural footprints up to 500MB allocation capacity limits.
-                    </p>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Drag and drop footage resource</p>
+                      <p className="mt-1 text-xs text-gray-500">Supports standard container sizes up to 500MB</p>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <div className="w-12 h-12 rounded-full bg-[#1a5c2a] flex items-center justify-center text-white mb-3 shadow-sm">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-[#1a5c2a] shadow-sm animate-pulse">
                       <FileVideo size={22} />
                     </div>
-                    <p className="text-sm font-bold text-gray-900 truncate max-w-md">
-                      {selectedFile.name}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500 font-bold">
-                      {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB — Staged Ready
-                    </p>
+                    <div>
+                      <p className="text-sm font-extrabold text-gray-900 truncate max-w-sm">{selectedFile.name}</p>
+                      <p className="mt-1 text-xs font-semibold text-gray-500">
+                        File Weight Class: {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
                     <p className="mt-3 text-[10px] uppercase font-black tracking-wider text-[#1a5c2a] bg-emerald-100/60 px-2.5 py-0.5 rounded-full border border-emerald-200">
                       Click or drag to swap resource file
                     </p>
@@ -177,6 +204,14 @@ export default function MatchEyeSetupPage() {
                 )}
               </div>
             </div>
+
+            {/* Live Pipeline Status Feedback Row */}
+            {isUploading && uploadStatus && (
+              <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3.5 text-xs font-semibold text-amber-900 animate-pulse">
+                <Loader2 className="h-4 w-4 shrink-0 text-amber-600 animate-spin" />
+                <span>{uploadStatus}</span>
+              </div>
+            )}
 
             {error && (
               <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-800">
@@ -195,8 +230,17 @@ export default function MatchEyeSetupPage() {
                   : "bg-[#1a5c2a] hover:bg-green-800"
               }`}
             >
-              <Sparkles size={14} className={isUploading ? "animate-spin" : ""} />
-              {isUploading ? "Uploading & Analyzing Footage..." : "Initialize Match Eye Analysis"}
+              {isUploading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Streaming Ingestion Data...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  Initialize Match Eye Analysis
+                </>
+              )}
             </button>
           </form>
         </div>
