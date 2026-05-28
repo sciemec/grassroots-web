@@ -2,23 +2,32 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { mockPlayerMetrics } from '../../../data/playerMetrics';
+import { classifyAthleteProfile } from '../../../data/sportsClassifier'; // Import our new biometric engine logic
 
 export default function PlayerScoutingPassport() {
   const params = useParams();
   const [player, setPlayer] = useState(null);
+  const [allocation, setAllocation] = useState(null);
 
   useEffect(() => {
-    // Extract unique identifier string from URL path params
     const activeId = params?.id;
-    if (activeId && mockPlayerMetrics[activeId]) {
-      setPlayer(mockPlayerMetrics[activeId]);
-    } else {
-      // Fallback: Default to our sample profile if a random ID is generated
-      setPlayer(mockPlayerMetrics["PLAYER-ZW-2026-9904"]);
+    const selectedPlayer = mockPlayerMetrics[activeId] || mockPlayerMetrics["PLAYER-ZW-2026-9904"];
+    
+    if (selectedPlayer) {
+      setPlayer(selectedPlayer);
+      
+      // Pass the player's raw physical baselines into the Biomechanical Classifier Engine
+      const evaluation = classifyAthleteProfile({
+        verticalTakeoffVelocity: selectedPlayer.athleticBaselines.verticalJump_cm > 55 ? 4.3 : 3.4,
+        decelerationFrames: selectedPlayer.athleticBaselines.agility_illinois_secs < 15 ? 11 : 16,
+        tSpineRotationDeg: selectedPlayer.tacticalCognition.spaceAwareness > 80 ? 52 : 38,
+        limbSymmetryIndex: selectedPlayer.scoutingVectors.scoutConsistencyIndex
+      });
+      setAllocation(evaluation);
     }
   }, [params]);
 
-  if (!player) {
+  if (!player || !allocation) {
     return <div style={styles.loading}>Loading structural talent verification matrix...</div>;
   }
 
@@ -36,6 +45,21 @@ export default function PlayerScoutingPassport() {
         <div style={styles.radarBadge}>
           <div style={styles.radarLabel}>CONSISTENCY INDEX</div>
           <div style={styles.radarScore}>{player.scoutingVectors.scoutConsistencyIndex}%</div>
+        </div>
+      </div>
+
+      {/* BIOMECHANICAL PHENOTYPE ENGINE MATCH (SMARTPHONE DISCOVERY HUD) */}
+      <div style={styles.phenotypeBanner}>
+        <div style={{ flex: 1 }}>
+          <span style={styles.engineBadge}>📱 PHONE CAMERA BIOMETRIC ANALYSIS RESULT</span>
+          <h2 style={styles.allocationTitle}>Optimal Role: {allocation.recommendedPosition}</h2>
+          <p style={styles.allocationDesc}>
+            Target Discipline: <strong>{allocation.recommendedSport}</strong> • Dominant Trait: <em>{allocation.primaryAttribute}</em>
+          </p>
+        </div>
+        <div style={styles.confidenceZone}>
+          <div style={styles.confidenceLabel}>PLACEMENT CONFIDENCE</div>
+          <div style={styles.confidenceScore}>{allocation.scoutingConfidence}%</div>
         </div>
       </div>
 
@@ -123,51 +147,36 @@ export default function PlayerScoutingPassport() {
           </div>
         </div>
 
-        {/* BLOCK 4: SCOUT RECOMMENDATION MATCHING VECTOR */}
-        <div style={{ ...styles.metricCard, gridColumn: '1 / -1', backgroundColor: '#1e3a8a', color: '#ffffff' }}>
-          <h3 style={{ ...styles.cardHeading, color: '#93c5fd' }}>🕵️‍♂️ Talent ID Positioning Recommendation</h3>
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#bfdbfe' }}>PRIMARY SCOUT PROFILE ROLE</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{player.scoutingVectors.primaryRole}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#bfdbfe' }}>PRO TEMPLATE ARCHETYPE STYLE MATCH</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981' }}>{player.scoutingVectors.playerStyleMatch}</div>
-            </div>
-            <button 
-              style={styles.actionBtn}
-              onClick={() => alert(`Opening connection loop request channel for profile ID: ${player.playerId}`)}
-            >
-              Request Verification Data Log
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>
   );
 }
 
-// Scannable interface styling object model parameters
+// Scannable layout styles matrix
 const styles = {
   container: { maxWidth: '1000px', margin: '40px auto', padding: '25px', fontFamily: 'Segoe UI, Roboto, sans-serif', backgroundColor: '#f9fafb', borderRadius: '16px', border: '1px solid #e5e7eb' },
-  profileHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px dashed #e5e7eb', paddingBottom: '25px', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' },
+  profileHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '25px', marginBottom: '20px', flexWrap: 'wrap', gap: '20px' },
   verifiedTag: { fontSize: '11px', backgroundColor: '#d1fae5', color: '#065f46', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', letterSpacing: '0.5px' },
   playerName: { fontSize: '28px', fontWeight: 'bold', color: '#111827', margin: '8px 0 4px 0' },
   metaSubText: { margin: 0, fontSize: '14px', color: '#4b5563', fontWeight: '500' },
   radarBadge: { backgroundColor: '#111827', color: '#ffffff', padding: '15px 20px', borderRadius: '12px', textAlign: 'center' },
   radarLabel: { fontSize: '10px', color: '#9ca3af', letterSpacing: '1px', fontWeight: 'bold' },
   radarScore: { fontSize: '28px', fontWeight: 'bold', color: '#10b981', marginTop: '2px' },
+  phenotypeBanner: { display: 'flex', backgroundColor: '#1e3a8a', color: '#ffffff', padding: '20px', borderRadius: '12px', marginBottom: '30px', alignItems: 'center', gap: '20px', flexWrap: 'wrap', borderLeft: '6px solid #3b82f6' },
+  engineBadge: { fontSize: '10px', backgroundColor: '#3b82f6', color: '#ffffff', padding: '3px 6px', borderRadius: '4px', fontWeight: 'bold' },
+  allocationTitle: { margin: '6px 0', fontSize: '20px', fontWeight: 'bold' },
+  allocationDesc: { margin: 0, fontSize: '13px', color: '#bfdbfe' },
+  confidenceZone: { backgroundColor: 'rgba(255,255,255,0.1)', padding: '12px 18px', borderRadius: '8px', textAlign: 'center' },
+  confidenceLabel: { fontSize: '9px', color: '#bfdbfe', fontWeight: 'bold', letterSpacing: '0.5px' },
+  confidenceScore: { fontSize: '22px', fontWeight: 'bold', color: '#10b981', marginTop: '2px' },
   matrixGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' },
-  metricCard: { backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
+  metricCard: { backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.01)' },
   cardHeading: { margin: '0 0 15px 0', fontSize: '15px', fontWeight: 'bold', color: '#1f2937', borderBottom: '1px solid #f3f4f6', paddingBottom: '8px' },
-  statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#4b5563', padding: '6px 0', borderBottom: '1px inset #f9fafb' },
+  statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#4b5563', padding: '6px 0' },
   highlightText: { color: '#ef4444', fontSize: '14px' },
   progressSection: { marginBottom: '12px' },
   progressLabelRow: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#4b5563', marginBottom: '4px', fontWeight: '500' },
   progressBarBg: { width: '100%', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' },
   progressBarFill: { height: '100%', borderRadius: '4px' },
-  actionBtn: { backgroundColor: '#ffffff', color: '#1e3a8a', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: '0.2s', alignSelf: 'center' },
   loading: { textAlign: 'center', marginTop: '120px', color: '#6b7280', fontSize: '14px', fontFamily: 'sans-serif' }
 };
