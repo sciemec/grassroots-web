@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, createContext } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
 import ThutoChatCoach from "@/components/thuto/ThutoChatCoach";
+
+// 1. Initialize and EXPORT the missing context that sub-pages are looking for
+export const CoachSessionContext = createContext<any>(null);
 
 export default function CoachLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -27,11 +30,14 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  // 2. Wrap the tree with the context provider value so sub-pages don't read 'undefined'
   return (
-    <GuestGateProvider>
-      <GuestBanner />
-      {children}
-      <ThutoChatCoach />
-    </GuestGateProvider>
+    <CoachSessionContext.Provider value={{ coach: user }}>
+      <GuestGateProvider>
+        <GuestBanner />
+        {children}
+        <ThutoChatCoach />
+      </GuestGateProvider>
+    </CoachSessionContext.Provider>
   );
 }
