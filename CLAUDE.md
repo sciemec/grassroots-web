@@ -7096,3 +7096,70 @@ No changes needed — production-ready.
 ### WHAT STILL NEEDS DOING (25 May 2026)
 
 No outstanding items — all confirmed done by Nigel on 25 May 2026.
+
+---
+
+## SESSION LOG — 29 May 2026
+
+### Theme — Match Eye Gemini File API Fix
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Match Eye `process-video` Route — Gemini File API Fix ✅
+
+**Commit:** `f09a461` — pushed to `sciemec/grassroots-web` main → Vercel auto-deployed
+
+**Root cause:**
+`fileData.fileUri` in the Gemini SDK only accepts URIs obtained from the **Gemini File API**
+(e.g. `https://generativelanguage.googleapis.com/v1beta/files/...`).
+The old route constructed a raw R2 CDN URL and passed it directly as `fileUri` — Gemini
+rejects this, causing every Match Eye analysis to fail.
+
+**File fixed:** `src/app/analyst/process-video/route.js`
+
+**Old broken pattern:**
+```js
+const videoStreamUrl = `${process.env.R2_PUBLIC_URL}/${fileKey}`;
+aiClient.models.generateContent({
+  contents: [{ parts: [{ fileData: { fileUri: videoStreamUrl } }] }]  // ← REJECTED by Gemini
+});
+```
+
+**New correct pipeline:**
+1. `export const maxDuration = 300` — extends Vercel function timeout to 5 minutes
+2. `fetch(videoUrl)` — downloads video bytes from R2
+3. `aiClient.files.upload({ file: videoBlob, config: { mimeType } })` — uploads to Gemini File API
+4. Poll `aiClient.files.get(geminiFile.name)` every 5s until `state === 'ACTIVE'` (max 3 min / 36 attempts)
+5. `generateContent` with `fileData: { fileUri: geminiFile.uri }` — correct File API URI
+6. `aiClient.files.delete(geminiFile.name)` in `finally` block — quota/billing hygiene
+
+**SDK used:** `@google/genai` v2.7.0 (already in `package.json`) — `aiClient.files.upload/get/delete`
+
+---
+
+### ALSO IDENTIFIED IN THIS SESSION (Deep Audit — not yet fixed)
+
+These items were found during a full codebase audit. They require Nigel's action or a future session:
+
+| Item | Finding | Action Required |
+|---|---|---|
+| `GOOGLE_AI_API_KEY` in Vercel | Must be set for Match Eye to work | Verify in Vercel dashboard → Environment Variables |
+| `GROQ_API_KEY` in Vercel | NOT confirmed set | Add to Vercel — all THUTO AI chat broken without this |
+| `R2_*` vars (5 vars) | NOT confirmed set | Add to Vercel — video storage / showcase clips broken |
+| `src/app/analyst/match-eye/page.tsx` | Old 214-line version with fake setTimeout timers deployed; sophisticated CLAUDE.md version (Gemini File API browser upload, YOLOv8 tab) is NOT deployed | Rebuild page to match CLAUDE.md architecture if needed |
+| `NEXT_PUBLIC_TRACKER_URL` | Zero references in `src/` — YOLOv8 tracking tab never wired up on the deployed page | Wire up or document as deferred |
+| `/player/success-engine/` directory | Orphaned v1 directory alongside v2 `/player/success/` | Delete `src/app/player/success-engine/` |
+| `province_admin` hub | 13 pages in `src/app/province-admin/` with no CLAUDE.md mention and no test credentials | Document in CLAUDE.md or confirm status |
+
+---
+
+### WHAT STILL NEEDS DOING (29 May 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GOOGLE_AI_API_KEY` in Vercel | Unconfirmed | Verify in Vercel dashboard — Match Eye broken without it |
+| `GROQ_API_KEY` in Vercel | NOT set | Add to Vercel env vars — THUTO AI chat broken |
+| `R2_*` vars (5 vars) | NOT confirmed | Add to Vercel — video/showcase/fan hub broken |
+| Match Eye page architecture | Old simple version deployed | Rebuild to CLAUDE.md spec if full Gemini/YOLOv8 version needed |
