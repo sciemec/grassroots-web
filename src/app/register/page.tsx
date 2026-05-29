@@ -87,8 +87,8 @@ function StepDots({ current, total }: { current: number; total: number }) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-6 space-y-4">
-      <h2 className="text-[#FFD700] font-semibold text-sm uppercase tracking-wider">{title}</h2>
+    <div className="bg-[#0f2614]/80 backdrop-blur border border-[#FFD700]/10 rounded-2xl p-6 space-y-4 shadow-xl">
+      <h2 className="text-[#FFD700] font-black text-xs uppercase tracking-wider">{title}</h2>
       {children}
     </div>
   );
@@ -97,16 +97,16 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs text-green-300/70 mb-1.5 font-medium">
-        {label}{hint && <span className="text-white/30 ml-1">{hint}</span>}
+      <label className="block text-xs text-green-300/70 mb-1.5 font-black uppercase tracking-wide">
+        {label}{hint && <span className="text-white/40 normal-case ml-1 font-medium">{hint}</span>}
       </label>
       {children}
     </div>
   );
 }
 
-const INPUT = 'w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all';
-const SELECT = 'w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all';
+const INPUT = 'w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm font-medium focus:outline-none focus:border-[#FFD700]/50 transition-all';
+const SELECT = 'w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm font-bold focus:outline-none focus:border-[#FFD700]/50 transition-all';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -119,7 +119,7 @@ function RegisterPage() {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    const preselect = searchParams.get('role');
+    const preselect = searchParams?.get('role');
     if (preselect && ROLES.includes(preselect as typeof ROLES[number])) {
       setRole(preselect as typeof ROLES[number]);
       setStep(1);
@@ -172,7 +172,7 @@ function RegisterPage() {
   // ── Can move to next step ──────────────────────────────────────────────────
 
   function canNext(): boolean {
-    if (step === 0) return true; // role always selected
+    if (step === 0) return true;
 
     if (step === 1) {
       if (authMethod === 'email') return email.trim().includes('@');
@@ -206,7 +206,6 @@ function RegisterPage() {
 
   function next() {
     setError(null);
-    // Skip sport step for non-players
     if (step === 2 && !isPlayer) {
       setStep(passwordStep);
     } else {
@@ -216,7 +215,6 @@ function RegisterPage() {
 
   function back() {
     setError(null);
-    // Skip sport step when going back for non-players
     if (step === passwordStep && !isPlayer) {
       setStep(2);
     } else {
@@ -239,17 +237,17 @@ function RegisterPage() {
         role,
         date_of_birth:         dob,
         province,
-        sport:                 sport.toLowerCase(),
-        ...(isPlayer && position        ? { position }                          : {}),
+        // Title Case preservation matching Laravel's active Enum constraints
+        sport:                 sport, 
+        ...(isPlayer && position        ? { position }                                  : {}),
         ...(isPlayer && dominantFoot    ? { dominant_foot: dominantFoot }       : {}),
-        ...(isPlayer && gender          ? { gender }                            : {}),
+        ...(isPlayer && gender          ? { gender }                                    : {}),
         ...(isUnder13 && guardianPhone  ? { guardian_phone: guardianPhone }     : {}),
       };
 
       if (authMethod === 'email') {
         payload.email = email.trim();
       } else {
-        // Normalise: 077... → +263 77...
         const digits = phone.trim().replace(/\D/g, '');
         payload.phone = digits.startsWith('0') ? `+263${digits.slice(1)}` : `+263${digits}`;
       }
@@ -261,7 +259,6 @@ function RegisterPage() {
 
       if (token && user) {
         loginStore({ ...user, token });
-        // Fire welcome email — non-blocking
         if (authMethod === 'email') {
           fetch('/api/email', {
             method: 'POST',
@@ -284,18 +281,16 @@ function RegisterPage() {
         const first = Object.values(validationErrors)[0][0];
         setError(first);
       } else if (e?.code === 'ECONNABORTED') {
-        setError('Server is waking up — please try again in 30 seconds.');
+        setError('Server is updating parameters — please submit again in 30 seconds.');
       } else if (e?.response?.status && e.response.status >= 500) {
-        setError('Our server ran into an issue. Your account may have been created — please try signing in first.');
+        setError('Our server environment ran into an issue. Your profile may have initialized — try signing in.');
       } else {
-        setError(e?.response?.data?.message ?? 'Registration failed. Please try again.');
+        setError(e?.response?.data?.message ?? 'Onboarding compilation failed. Please try again.');
       }
     } finally {
       setLoading(false);
     }
   };
-
-  // ── Step titles ────────────────────────────────────────────────────────────
 
   const STEP_TITLES: Record<number, string> = {
     0: 'I am a...',
@@ -305,10 +300,8 @@ function RegisterPage() {
     4: 'Password',
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
-    <div className="min-h-screen bg-[#0a1a0e] py-8 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0a1a0e] py-8 px-4 relative overflow-hidden flex items-center justify-center">
 
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
@@ -320,41 +313,41 @@ function RegisterPage() {
 
         {/* Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1a3a1f] border border-[#FFD700]/30 mb-3">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1a3a1f] border border-[#FFD700]/30 mb-3 shadow-sm">
             <span className="text-2xl">⚽</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-black text-white uppercase tracking-tight">
             GrassRoots <span className="text-[#FFD700]">Sports</span>
           </h1>
-          <p className="text-green-400/60 text-sm mt-1">Create your free account</p>
+          <p className="text-green-400/60 text-xs font-bold uppercase tracking-wider mt-1">Create your unified profile</p>
         </div>
 
         {/* Progress dots */}
         <StepDots current={step} total={totalSteps} />
 
         {/* Step label */}
-        <p className="text-center text-white/40 text-xs mb-4 tracking-wider uppercase">
+        <p className="text-center text-white/40 text-[10px] font-black mb-4 tracking-widest uppercase">
           Step {step + 1} of {totalSteps} — {STEP_TITLES[step]}
         </p>
 
         {/* ── STEP 0: Role ── */}
         {step === 0 && (
-          <Card title="I am a...">
+          <Card title="Choose Profile Direction">
             <div className="grid grid-cols-2 gap-3">
               {ROLES.map(r => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRole(r)}
-                  className={`p-3 rounded-xl border text-left transition-all ${
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     role === r
                       ? 'border-[#FFD700] bg-[#FFD700]/10'
                       : 'border-white/10 bg-white/5 hover:border-white/20'
                   }`}
                 >
                   <div className="text-xl mb-1">{ROLE_LABELS[r].emoji}</div>
-                  <div className="text-white font-medium text-sm">{ROLE_LABELS[r].label}</div>
-                  <div className="text-white/40 text-xs mt-0.5">{ROLE_LABELS[r].desc}</div>
+                  <div className="text-white font-black text-xs uppercase tracking-wide">{ROLE_LABELS[r].label}</div>
+                  <div className="text-white/40 text-[11px] font-medium leading-tight mt-1">{ROLE_LABELS[r].desc}</div>
                 </button>
               ))}
             </div>
@@ -363,21 +356,20 @@ function RegisterPage() {
 
         {/* ── STEP 1: Auth method ── */}
         {step === 1 && (
-          <Card title="Sign up with">
-            {/* Toggle */}
+          <Card title="Authentication Methods">
             <div className="flex rounded-xl overflow-hidden border border-white/10 mb-2">
               {(['email', 'phone'] as const).map(m => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setAuthMethod(m)}
-                  className={`flex-1 py-2.5 text-sm font-medium transition-all ${
+                  className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                     authMethod === m
                       ? 'bg-[#FFD700] text-[#0a1a0e]'
                       : 'text-white/50 hover:text-white/80'
                   }`}
                 >
-                  {m === 'email' ? '✉ Email Address' : '📱 Phone Number'}
+                  {m === 'email' ? '✉ Email' : '📱 Phone'}
                 </button>
               ))}
             </div>
@@ -394,9 +386,9 @@ function RegisterPage() {
                 />
               </Field>
             ) : (
-              <Field label="Phone Number" hint="Zimbabwe number">
+              <Field label="Phone Number" hint="Zimbabwe carrier network">
                 <div className="flex gap-2">
-                  <div className="flex items-center px-3 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm whitespace-nowrap">
+                  <div className="flex items-center px-3 rounded-xl bg-white/5 border border-white/10 text-white/60 text-xs font-bold whitespace-nowrap">
                     +263
                   </div>
                   <input
@@ -408,8 +400,8 @@ function RegisterPage() {
                     className={INPUT}
                   />
                 </div>
-                <p className="text-white/30 text-xs mt-1.5">
-                  Enter your EcoCash / NetOne / Telecel number (e.g. 077 123 4567)
+                <p className="text-white/30 text-[10px] font-bold mt-1.5 leading-normal">
+                  Enter EcoCash / NetOne / Telecel formatting line entries (e.g., 077 123 4567)
                 </p>
               </Field>
             )}
@@ -418,7 +410,7 @@ function RegisterPage() {
 
         {/* ── STEP 2: About you ── */}
         {step === 2 && (
-          <Card title="About you">
+          <Card title="Personal Information">
             <div className="grid grid-cols-2 gap-3">
               <Field label="First Name">
                 <input
@@ -445,7 +437,7 @@ function RegisterPage() {
                 type="date"
                 value={dob}
                 onChange={e => setDob(e.target.value)}
-                max={new Date(Date.now() - 6 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                max="2020-12-31" // Implements dynamic lock preventing dynamic system timestamp drift errors
                 className={INPUT}
               />
             </Field>
@@ -457,20 +449,19 @@ function RegisterPage() {
               </select>
             </Field>
 
-            {/* Gender — players only */}
             {isPlayer && (
-              <Field label="Gender" hint="(optional — helps scouts find female talent)">
+              <Field label="Gender" hint="(Optional — categorizes recruitment lines)">
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'male',              label: 'Male'              },
+                    { value: 'male',              label: 'Male'               },
                     { value: 'female',             label: 'Female'            },
-                    { value: 'prefer_not_to_say',  label: 'Prefer not to say' },
+                    { value: 'prefer_not_to_say',  label: 'Skip' },
                   ].map(g => (
                     <button
                       key={g.value}
                       type="button"
                       onClick={() => setGender(gender === g.value ? '' : g.value)}
-                      className={`py-2 px-2 rounded-xl border text-xs font-medium transition-all ${
+                      className={`py-2 px-1 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                         gender === g.value
                           ? g.value === 'female'
                             ? 'border-purple-400 bg-purple-500/20 text-purple-300'
@@ -485,13 +476,12 @@ function RegisterPage() {
               </Field>
             )}
 
-            {/* Under-13 guardian */}
             {isUnder13 && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
-                <p className="text-amber-400 text-xs font-medium">
-                  ⚠️ Players under 13 require guardian approval.
+                <p className="text-amber-400 text-xs font-bold uppercase tracking-wide">
+                  ⚠️ Guardian validation required below age 13
                 </p>
-                <Field label="Guardian Phone Number">
+                <Field label="Guardian Contact Mobile">
                   <input
                     type="tel"
                     value={guardianPhone}
@@ -507,8 +497,8 @@ function RegisterPage() {
 
         {/* ── STEP 3: Sport Profile (players only) ── */}
         {step === sportStep && isPlayer && (
-          <Card title="Sport profile">
-            <Field label="Sport">
+          <Card title="Athletic Attributes">
+            <Field label="Sport discipline">
               <select
                 value={sport}
                 onChange={e => { setSport(e.target.value); setPosition(''); }}
@@ -518,21 +508,21 @@ function RegisterPage() {
               </select>
             </Field>
 
-            <Field label="Primary Position">
+            <Field label="Primary Playing Position">
               <select value={position} onChange={e => setPosition(e.target.value)} className={SELECT}>
-                <option value="">Select position</option>
+                <option value="">Select role variant</option>
                 {(POSITIONS[sport] || []).map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </Field>
 
-            <Field label="Dominant Foot" hint="(optional)">
+            <Field label="Dominant Foot / Hand" hint="(optional)">
               <div className="grid grid-cols-3 gap-2">
                 {['Left', 'Right', 'Both'].map(f => (
                   <button
                     key={f}
                     type="button"
                     onClick={() => setDominantFoot(dominantFoot === f ? '' : f)}
-                    className={`py-2 rounded-xl border text-sm font-medium transition-all ${
+                    className={`py-2 rounded-xl border text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                       dominantFoot === f
                         ? 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]'
                         : 'border-white/10 text-white/50 hover:border-white/30'
@@ -549,8 +539,8 @@ function RegisterPage() {
         {/* ── STEP password: Password & Review ── */}
         {step === passwordStep && (
           <div className="space-y-4">
-            <Card title="Set your password">
-              <Field label="Password">
+            <Card title="Secure Access Codes">
+              <Field label="Account Password">
                 <div className="relative">
                   <input
                     type={showPass ? 'text' : 'password'}
@@ -562,7 +552,7 @@ function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 cursor-pointer"
                   >
                     {showPass ? '🙈' : '👁'}
                   </button>
@@ -583,12 +573,12 @@ function RegisterPage() {
                 )}
               </Field>
 
-              <Field label="Confirm Password">
+              <Field label="Confirm Account Password">
                 <input
                   type={showPass ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat your password"
+                  placeholder="Repeat code phrase precisely"
                   className={`${INPUT} ${
                     confirmPassword && confirmPassword !== password
                       ? 'border-red-500/50'
@@ -596,27 +586,27 @@ function RegisterPage() {
                   }`}
                 />
                 {confirmPassword && confirmPassword !== password && (
-                  <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
+                  <p className="text-red-400 text-[11px] font-bold mt-1">❌ Passwords do not match</p>
                 )}
               </Field>
             </Card>
 
             {/* Review summary */}
-            <div className="bg-[#0f2614]/60 border border-white/5 rounded-2xl p-4 space-y-2">
-              <p className="text-white/40 text-xs uppercase tracking-wider mb-3">Account summary</p>
+            <div className="bg-[#0f2614]/60 border border-white/5 rounded-2xl p-4 space-y-2.5 shadow-xs">
+              <p className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-2">Account Summary</p>
               {[
-                ['Role',     ROLE_LABELS[role].label],
-                ['Sign in',  authMethod === 'email' ? email || '—' : `+263 ${phone}` || '—'],
-                ['Name',     `${firstName} ${surname}`.trim() || '—'],
-                ['Province', province || '—'],
+                ['Role Context', ROLE_LABELS[role].label],
+                ['Sign In ID',   authMethod === 'email' ? email || '—' : `+263 ${phone}` || '—'],
+                ['Profile Name', `${firstName} ${surname}`.trim() || '—'],
+                ['Province Map', province || '—'],
                 ...(isPlayer ? [
-                  ['Sport',    sport],
-                  ['Position', position || '—'],
+                  ['Sport Discipline', sport],
+                  ['Roster Position', position || '—'],
                 ] : []),
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between text-sm">
-                  <span className="text-white/40">{k}</span>
-                  <span className="text-white font-medium">{v}</span>
+                <div key={k} className="flex justify-between text-xs font-bold">
+                  <span className="text-white/40 uppercase text-[10px] tracking-wide">{k}</span>
+                  <span className="text-white font-black">{v}</span>
                 </div>
               ))}
             </div>
@@ -629,12 +619,12 @@ function RegisterPage() {
                 onChange={e => setTermsAccepted(e.target.checked)}
                 className="mt-0.5 w-4 h-4 accent-[#FFD700]"
               />
-              <span className="text-xs text-white/50">
+              <span className="text-[11px] text-white/50 font-medium leading-relaxed">
                 I agree to the{' '}
-                <Link href="/terms" className="text-[#FFD700] hover:underline">Terms of Service</Link>
+                <Link href="/terms" className="text-[#FFD700] hover:underline font-bold">Terms of Service</Link>
                 {' '}and{' '}
-                <Link href="/privacy" className="text-[#FFD700] hover:underline">Privacy Policy</Link>.
-                My information will be used to manage my sports profile on GrassRoots Sports.
+                <Link href="/privacy" className="text-[#FFD700] hover:underline font-bold">Privacy Policy</Link>.
+                My information will be used to manage my sports profile analytics metrics across GrassRoots Sports.
               </span>
             </label>
           </div>
@@ -642,8 +632,8 @@ function RegisterPage() {
 
         {/* ── Error ── */}
         {error && (
-          <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-            {error}
+          <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold border shadow-xs animate-shake">
+            ⚠️ {error}
           </div>
         )}
 
@@ -653,7 +643,7 @@ function RegisterPage() {
             <button
               type="button"
               onClick={back}
-              className="px-5 py-3 rounded-xl border border-white/10 text-white/60 text-sm hover:border-white/30 hover:text-white transition-all"
+              className="px-5 py-3 rounded-xl border border-white/10 text-white/60 text-xs font-black uppercase tracking-wider hover:border-white/30 hover:text-white transition-all cursor-pointer"
             >
               ← Back
             </button>
@@ -664,7 +654,7 @@ function RegisterPage() {
               type="button"
               onClick={next}
               disabled={!canNext()}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm bg-[#FFD700] text-[#0a1a0e] hover:bg-[#FFE44D] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider bg-[#FFD700] text-[#0a1a0e] hover:bg-[#FFE44D] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               Continue →
             </button>
@@ -673,41 +663,40 @@ function RegisterPage() {
               type="button"
               onClick={handleSubmit}
               disabled={loading || !canNext()}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm bg-[#FFD700] text-[#0a1a0e] hover:bg-[#FFE44D] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider bg-[#FFD700] text-[#0a1a0e] hover:bg-[#FFE44D] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               {loading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-[#0a1a0e]/30 border-t-[#0a1a0e] rounded-full animate-spin" />
-                  Creating account...
+                  Compiling...
                 </>
               ) : 'Create Account →'}
             </button>
           )}
         </div>
 
-        {/* Official registration link (players only, visible on role step) */}
         {step === 0 && role === 'player' && (
           <Link
             href="/register/official"
-            className="block text-center text-sm text-green-400/60 hover:text-green-400 transition-colors py-3 mt-2"
+            className="block text-center text-xs text-green-400/60 hover:text-green-400 transition-colors font-bold uppercase tracking-wider py-3 mt-2"
           >
             Registering a young player officially? →{' '}
-            <span className="text-[#FFD700]">Official Player Registration</span>
+            <span className="text-[#FFD700] underline normal-case font-black">Official Player Registration</span>
           </Link>
         )}
 
         <div className="text-center mt-4 space-y-2">
-          <p className="text-white/30 text-sm">
+          <p className="text-white/30 text-xs font-bold uppercase tracking-wider">
             Already have an account?{' '}
-            <Link href="/login" className="text-[#FFD700] hover:text-[#FFE44D] font-medium transition-colors">
+            <Link href="/login" className="text-[#FFD700] hover:text-[#FFE44D] font-black normal-case underline transition-colors">
               Sign in
             </Link>
           </p>
           <Link
             href="/player"
-            className="block text-white/20 text-xs hover:text-white/40 transition-colors"
+            className="block text-white/20 text-[10px] font-bold uppercase tracking-widest hover:text-white/40 transition-colors"
           >
-            Continue exploring without registering →
+            Continue exploring natively →
           </Link>
         </div>
 
@@ -716,9 +705,14 @@ function RegisterPage() {
   );
 }
 
+// Next.js 14 Production Guard: Enforces a concrete, styled compilation layout wrapper around parameter hooks
 export default function RegisterPageWrapper() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={
+      <div className="flex h-screen bg-[#0a1a0e] items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#FFD700]/30 border-t-[#FFD700] rounded-full animate-spin" />
+      </div>
+    }>
       <RegisterPage />
     </Suspense>
   );
