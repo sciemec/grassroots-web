@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronRight, ChevronLeft, Building2, MapPin, User, CheckCircle2, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Building2, MapPin, User, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,10 +25,10 @@ interface Province {
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
 const STEP_LABELS = [
-  { label: 'Location',    icon: MapPin },
-  { label: 'Club',        icon: Building2 },
-  { label: 'Contact',     icon: User },
-  { label: 'Review',      icon: CheckCircle2 },
+  { label: 'Location',     icon: MapPin },
+  { label: 'Club',         icon: Building2 },
+  { label: 'Contact',      icon: User },
+  { label: 'Review',       icon: CheckCircle2 },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -111,31 +111,48 @@ export default function ClubRegistrationPage() {
   const handleSubmit = async () => {
     setSubmitting(true);
     setError('');
+    
+    // Defensive parameter packet supporting single and flat structural routing signatures simultaneously
+    const payload = {
+      province_id:    selectedProvince!.id,
+      zone_id:        selectedZone!.id,
+      name:           clubName.trim(),
+      suburb:         suburb.trim(),
+      home_ground:    homeGround.trim() || null,
+      contact_name:   contactName.trim(),
+      contact_phone:  contactPhone.trim() || null,
+      contact_email:  contactEmail.trim().toLowerCase(),
+      password:       contactPassword,
+      // Nested model mapping interface protecting against unhandled backend database separation requirements
+      user: {
+        name: contactName.trim(),
+        email: contactEmail.trim().toLowerCase(),
+        password: contactPassword,
+        role: 'coach'
+      }
+    };
+
     try {
       const res = await fetch(`${API_URL}/clubs/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          province_id:    selectedProvince!.id,
-          zone_id:        selectedZone!.id,
-          name:           clubName.trim(),
-          suburb:         suburb.trim(),
-          home_ground:    homeGround.trim() || null,
-          contact_name:   contactName.trim(),
-          contact_phone:  contactPhone.trim() || null,
-          contact_email:  contactEmail.trim(),
-          password:       contactPassword,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const body = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message ?? `Error ${res.status}`);
+        // Robust backend validator loop captures exact field array validation items gracefully
+        if (body.errors) {
+          const firstErrorField = Object.keys(body.errors)[0];
+          throw new Error(body.errors[firstErrorField][0]);
+        }
+        throw new Error(body?.error ?? body?.message ?? `Server Error ${res.status}`);
       }
 
       router.push('/login?club_registered=1');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+      setError(err instanceof Error ? err.message : 'Club registration dropped out. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -148,32 +165,32 @@ export default function ClubRegistrationPage() {
 
       {/* Header */}
       <div className="mb-8 text-center">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f0b429] mb-4">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f0b429] mb-4 shadow-sm">
           <Building2 className="h-7 w-7 text-[#1a3a1a]" />
         </div>
-        <h1 className="text-2xl font-bold text-white">Register Your Club</h1>
-        <p className="mt-1 text-sm text-white/60">Join Zimbabwe&apos;s grassroots sports network</p>
+        <h1 className="text-2xl font-black text-white">Register Your Club</h1>
+        <p className="mt-1 text-sm text-green-100 font-medium">Join Zimbabwe&apos;s grassroots sports network</p>
       </div>
 
       {/* Step indicator */}
-      <div className="mb-8 flex items-center gap-2">
+      <div className="mb-8 flex items-center gap-2 max-w-full overflow-x-auto px-2 py-1">
         {STEP_LABELS.map((s, i) => {
           const num = i + 1;
           const active = step === num;
           const done   = step > num;
           return (
-            <div key={s.label} className="flex items-center gap-2">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all
-                ${done   ? 'bg-[#f0b429] text-[#1a3a1a]' : ''}
-                ${active ? 'bg-white text-[#1a5c2a]' : ''}
-                ${!active && !done ? 'bg-white/20 text-white/50' : ''}`}>
+            <div key={s.label} className="flex items-center gap-2 shrink-0">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all border
+                ${done   ? 'bg-[#f0b429] border-[#f0b429] text-[#1a3a1a]' : ''}
+                ${active ? 'bg-white border-white text-[#1a5c2a]' : ''}
+                ${!active && !done ? 'bg-white/10 border-white/10 text-white/40' : ''}`}>
                 {done ? '✓' : num}
               </div>
-              <span className={`hidden sm:block text-xs font-medium ${active ? 'text-white' : 'text-white/40'}`}>
+              <span className={`hidden sm:block text-xs font-black uppercase tracking-wider ${active ? 'text-white' : 'text-white/40'}`}>
                 {s.label}
               </span>
               {i < STEP_LABELS.length - 1 && (
-                <div className={`h-px w-8 ${done ? 'bg-[#f0b429]' : 'bg-white/20'}`} />
+                <div className={`h-px w-6 sm:w-8 ${done ? 'bg-[#f0b429]' : 'bg-white/20'}`} />
               )}
             </div>
           );
@@ -181,34 +198,34 @@ export default function ClubRegistrationPage() {
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 shadow-xl">
 
         {/* ── STEP 1: Location ── */}
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
               <MapPin className="h-5 w-5 text-[#f0b429]" /> Province &amp; Zone
             </h2>
 
             {/* Province */}
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
-                Province
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
+                Select Club Province
               </label>
               {loadingProvinces ? (
-                <div className="flex items-center gap-2 text-white/50 text-sm py-3">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading provinces…
+                <div className="flex items-center gap-2 text-white/50 text-xs py-3 font-bold">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#f0b429]" /> Loading active structures…
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-1">
                   {provinces.map(p => (
                     <button key={p.id} type="button"
                       onClick={() => setSelectedProvince(p)}
-                      className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all
+                      className={`rounded-xl border px-4 py-3 text-left text-xs font-black uppercase tracking-wider transition-all cursor-pointer
                         ${selectedProvince?.id === p.id
-                          ? 'border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]'
+                          ? 'border-[#f0b429] bg-[#f0b429]/20 text-[#f0b429]'
                           : 'border-white/10 bg-white/5 text-white hover:border-white/30'}`}>
-                      {p.name}
+                      🇿🇼 {p.name}
                     </button>
                   ))}
                 </div>
@@ -217,31 +234,33 @@ export default function ClubRegistrationPage() {
 
             {/* Zone */}
             {selectedProvince && (
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
-                  Zone
+              <div className="animate-fade-in">
+                <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
+                  Select Administrative Zone
                 </label>
                 {loadingZones ? (
-                  <div className="flex items-center gap-2 text-white/50 text-sm py-3">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading zones…
+                  <div className="flex items-center gap-2 text-white/50 text-xs py-3 font-bold">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#f0b429]" /> Tracing regional map boundaries…
                   </div>
                 ) : zones.length === 0 ? (
-                  <p className="text-sm text-white/40 py-2">No zones found for this province.</p>
+                  <p className="text-xs font-bold text-amber-300 py-2 flex items-center gap-1.5">
+                    <AlertCircle size={14} /> No active zones configured for this province yet.
+                  </p>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
                     {zones.map(z => (
                       <button key={z.id} type="button"
                         onClick={() => setSelectedZone(z)}
-                        className={`rounded-xl border px-4 py-3 text-left transition-all
+                        className={`rounded-xl border p-3 text-left transition-all cursor-pointer
                           ${selectedZone?.id === z.id
-                            ? 'border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]'
+                            ? 'border-[#f0b429] bg-[#f0b429]/20 text-[#f0b429]'
                             : 'border-white/10 bg-white/5 text-white hover:border-white/30'}`}>
-                          <p className="text-sm font-semibold">{z.name}</p>
-                          {z.suburbs?.length > 0 && (
-                            <p className="text-xs text-white/40 mt-0.5 truncate">
-                              {z.suburbs.slice(0, 3).join(', ')}
-                            </p>
-                          )}
+                        <p className="text-xs font-black uppercase tracking-wider">{z.name}</p>
+                        {z.suburbs?.length > 0 && (
+                          <p className="text-[10px] font-medium text-white/40 mt-0.5 truncate">
+                            {z.suburbs.slice(0, 2).join(', ')}
+                          </p>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -254,51 +273,51 @@ export default function ClubRegistrationPage() {
         {/* ── STEP 2: Club details ── */}
         {step === 2 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
               <Building2 className="h-5 w-5 text-[#f0b429]" /> Club Details
             </h2>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
-                Club Name <span className="text-red-400">*</span>
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
+                Official Club Name <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 value={clubName}
                 onChange={e => setClubName(e.target.value)}
-                placeholder="e.g. Borrowdale United FC"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
+                placeholder="e.g., Borrowdale United FC"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
-                Suburb <span className="text-red-400">*</span>
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
+                Operational Suburb <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 value={suburb}
                 onChange={e => setSuburb(e.target.value)}
-                placeholder="e.g. Borrowdale"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
+                placeholder="e.g., Borrowdale"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
               {(selectedZone?.suburbs?.length ?? 0) > 0 && (
-                <p className="mt-1.5 text-xs text-white/40">
-                  Suburbs in {selectedZone?.name}: {selectedZone?.suburbs?.join(', ')}
+                <p className="mt-1.5 text-[10px] font-bold text-white/40 leading-normal">
+                  Configured mapping in {selectedZone?.name}: {selectedZone?.suburbs?.join(', ')}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
-                Home Ground <span className="text-white/30">(optional)</span>
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
+                Primary Home Ground <span className="text-white/30 font-medium">(optional)</span>
               </label>
               <input
                 type="text"
                 value={homeGround}
                 onChange={e => setHomeGround(e.target.value)}
-                placeholder="e.g. Borrowdale Primary School Grounds"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
+                placeholder="e.g., Borrowdale Primary Grounds"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
           </div>
@@ -307,65 +326,65 @@ export default function ClubRegistrationPage() {
         {/* ── STEP 3: Contact coach ── */}
         {step === 3 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <User className="h-5 w-5 text-[#f0b429]" /> Contact Coach Account
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
+              <User className="h-5 w-5 text-[#f0b429]" /> Lead Contact Profile
             </h2>
-            <p className="text-xs text-white/50">
-              This creates your login account. You will be the registered contact for this club.
+            <p className="text-xs font-medium text-white/50 leading-relaxed">
+              This compiles your administrative authentication credentials. You will be assigned as the primary supervisor profile for this club roster.
             </p>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
                 Full Name <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 value={contactName}
                 onChange={e => setContactName(e.target.value)}
-                placeholder="e.g. Tendai Moyo"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
+                placeholder="e.g., Tendai Moyo"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
                 Email Address <span className="text-red-400">*</span>
               </label>
               <input
                 type="email"
                 value={contactEmail}
                 onChange={e => setContactEmail(e.target.value)}
-                placeholder="coach@example.com"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
+                placeholder="coach@yourdomain.com"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
-                Password <span className="text-red-400">*</span>
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
+                Security Password <span className="text-red-400">*</span>
               </label>
               <input
                 type="password"
                 value={contactPassword}
                 onChange={e => setContactPassword(e.target.value)}
                 placeholder="Minimum 8 characters"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
               {contactPassword.length > 0 && contactPassword.length < 8 && (
-                <p className="mt-1 text-xs text-red-400">Password must be at least 8 characters</p>
+                <p className="mt-1 text-[10px] font-bold text-red-300">⚠️ Code length must span at least 8 characters</p>
               )}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70 uppercase tracking-wide">
-                Phone Number <span className="text-white/30">(optional)</span>
+              <label className="mb-1.5 block text-[10px] font-black text-green-200 uppercase tracking-widest">
+                Mobile Phone <span className="text-white/30 font-medium">(optional)</span>
               </label>
               <input
                 type="tel"
                 value={contactPhone}
                 onChange={e => setContactPhone(e.target.value)}
-                placeholder="e.g. 0771 234 567"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-[#f0b429] focus:outline-none"
+                placeholder="e.g., 0771 234 567"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
           </div>
@@ -374,11 +393,11 @@ export default function ClubRegistrationPage() {
         {/* ── STEP 4: Review ── */}
         {step === 4 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-[#f0b429]" /> Review &amp; Submit
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
+              <CheckCircle2 className="h-5 w-5 text-[#f0b429]" /> Review Parameters
             </h2>
 
-            <div className="rounded-xl border border-white/10 bg-white/5 divide-y divide-white/10">
+            <div className="rounded-xl border border-white/10 bg-white/5 divide-y divide-white/5 max-h-48 overflow-y-auto pr-1">
               {[
                 { label: 'Province',    value: selectedProvince?.name },
                 { label: 'Zone',        value: selectedZone?.name },
@@ -389,21 +408,20 @@ export default function ClubRegistrationPage() {
                 { label: 'Email',       value: contactEmail },
                 { label: 'Phone',       value: contactPhone || '—' },
               ].map(row => (
-                <div key={row.label} className="flex justify-between px-4 py-3">
-                  <span className="text-xs text-white/50 uppercase tracking-wide">{row.label}</span>
-                  <span className="text-sm text-white font-medium text-right max-w-[55%] truncate">{row.value}</span>
+                <div key={row.label} className="flex justify-between px-3 py-2.5 items-baseline">
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-wider shrink-0">{row.label}</span>
+                  <span className="text-xs text-white font-bold text-right max-w-[65%] truncate">{row.value}</span>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-300">
-              Your club registration will be reviewed by your Zone Administrator before it is activated.
-              You will receive an email once approved.
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[11px] font-semibold text-amber-200 leading-relaxed">
+              📢 Note: Your structured registration profile packet will undergo verification loops by the regional Zone Administrator before access is granted.
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                {error}
+              <div className="rounded-xl border border-red-500/30 bg-red-500/20 px-4 py-2.5 text-xs font-bold text-red-200 border shadow-xs animate-shake">
+                ⚠️ {error}
               </div>
             )}
           </div>
@@ -413,19 +431,19 @@ export default function ClubRegistrationPage() {
         <div className="mt-6 flex items-center justify-between gap-3">
           {step > 1 ? (
             <button type="button" onClick={back}
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white hover:border-white/30 transition-all">
+              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:border-white/30 transition-all cursor-pointer">
               <ChevronLeft className="h-4 w-4" /> Back
             </button>
           ) : (
             <Link href="/register/who"
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white hover:border-white/30 transition-all">
+              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:border-white/30 transition-all">
               <ChevronLeft className="h-4 w-4" /> Back
             </Link>
           )}
 
           {step < 4 ? (
             <button type="button" onClick={next} disabled={!canNext()}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold transition-all
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs
                 ${canNext()
                   ? 'bg-[#f0b429] text-[#1a3a1a] hover:bg-[#f5c542]'
                   : 'bg-white/10 text-white/30 cursor-not-allowed'}`}>
@@ -433,9 +451,9 @@ export default function ClubRegistrationPage() {
             </button>
           ) : (
             <button type="button" onClick={handleSubmit} disabled={submitting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#f0b429] px-4 py-3 text-sm font-semibold text-[#1a3a1a] hover:bg-[#f5c542] transition-all disabled:opacity-50">
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2.5 text-xs font-black uppercase tracking-wider text-[#1a3a1a] hover:bg-[#f5c542] transition-all disabled:opacity-50 cursor-pointer shadow-sm">
               {submitting ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>
+                <><Loader2 className="h-4 w-4 animate-spin" /> Verifying...</>
               ) : (
                 <><CheckCircle2 className="h-4 w-4" /> Register Club</>
               )}
@@ -445,9 +463,9 @@ export default function ClubRegistrationPage() {
       </div>
 
       {/* Footer link */}
-      <p className="mt-6 text-xs text-white/40">
-        Already have an account?{' '}
-        <Link href="/login" className="text-[#f0b429] hover:underline">Sign in</Link>
+      <p className="mt-6 text-xs font-bold text-white/40">
+        Already managing an entity?{' '}
+        <Link href="/login" className="text-[#f0b429] hover:underline font-black">Sign in</Link>
       </p>
     </div>
   );
