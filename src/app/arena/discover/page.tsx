@@ -113,7 +113,6 @@ export default function DiscoverAthletesPage() {
 
       <main className="flex-1 overflow-auto p-6">
         
-        {/* ✅ CLEANED HEADER BLOCK: Completely removed H.E. Quote, ZIFA logo logs, and Munhumutapa texts */}
         <div className="bg-[#f0b429] text-[#1c3d22] rounded-2xl p-6 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-widest opacity-90">
