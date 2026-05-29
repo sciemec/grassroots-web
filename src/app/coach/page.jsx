@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -214,7 +215,7 @@ export default function CoachHubPage() {
           <div className="lg:col-span-2 space-y-4 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-600">
-                <Sparkles size={16} className="animate-spin-slow" />
+                <Sparkles size={16} />
               </div>
               <div>
                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">THUTO Expert System</span>
