@@ -15,6 +15,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (user.role !== "admin") { router.push(`/${user.role}`); return; }
   }, [hasHydrated, user, router]);
 
-  if (!hasHydrated || !user) return null;
+  if (!hasHydrated || !user || user.role !== "admin") return null;
   return <>{children}</>;
 }
