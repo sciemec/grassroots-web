@@ -110,8 +110,8 @@ const REACTION_EMOJI: Record<string, string> = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function initials(name: string): string {
-  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+function initials(name: string | null | undefined): string {
+  return (name ?? "?").split(" ").map((w) => w[0] ?? "").join("").toUpperCase().slice(0, 2) || "?";
 }
 
 function timeAgo(iso: string): string {

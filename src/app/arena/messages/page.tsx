@@ -54,8 +54,8 @@ function ArenaNav() {
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-function initials(name: string): string {
-  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+function initials(name: string | null | undefined): string {
+  return (name ?? "?").split(" ").map((w) => w[0] ?? "").join("").toUpperCase().slice(0, 2) || "?";
 }
 
 function timeAgo(iso: string): string {
