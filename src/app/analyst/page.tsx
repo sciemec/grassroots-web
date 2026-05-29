@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
-import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Brain, Camera } from "lucide-react";
+import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Brain, Camera, Scan } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+
+// Dynamic import — MediaPipe uses browser globals, must skip SSR
+const BiometricScanner = dynamic(() => import("@/components/BiometricScanner"), { ssr: false });
 
 const tools = [
   {
@@ -82,6 +86,15 @@ const tools = [
     subtitle: "Tap player numbers on touches — AI infers formation changes, zones & key players.",
     href: "/analyst/touch-tracker",
     live: true,
+  },
+  {
+    icon: Scan,
+    title: "Biometric Scan",
+    subtitle: "Open camera or upload a clip — MediaPipe draws the skeleton and scores technique live.",
+    href: "#biometric",
+    live: true,
+    featured: true,
+    biometric: true,
   },
 ];
 
@@ -169,10 +182,30 @@ export default function AnalystHubPage() {
               </div>
             );
 
+            if ('biometric' in tool) {
+              return (
+                <button
+                  key={tool.title}
+                  className="group text-left"
+                  onClick={() => document.getElementById("biometric")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                >
+                  {card}
+                </button>
+              );
+            }
+
             return tool.live
               ? <Link key={tool.title} href={tool.href} className="group">{card}</Link>
               : <div key={tool.title}>{card}</div>;
           })}
+        </div>
+
+        {/* Inline Biometric Scanner — opens camera right here, no navigation */}
+        <div className="mt-6" id="biometric">
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-500 pl-1">
+            Biometric Body Analysis
+          </p>
+          <BiometricScanner />
         </div>
 
         {/* Pitch to Pro Banner Panel */}

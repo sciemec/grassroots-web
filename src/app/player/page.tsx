@@ -1,10 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
 import { AdBanner } from "@/components/ui/AdBanner";
+
+// Dynamic import keeps Next.js SSR happy — MediaPipe uses browser globals
+const BiometricScanner = dynamic(() => import("@/components/BiometricScanner"), { ssr: false });
 import { 
   Dumbbell, 
   Activity, 
@@ -172,6 +176,14 @@ export default function PlayerHubHomeDashboard() {
               </Link>
             );
           })}
+        </div>
+
+        {/* Biometric Scan — inline AI pose analysis */}
+        <div className="mt-6">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 pl-1">
+            AI Body Analysis
+          </p>
+          <BiometricScanner />
         </div>
 
         {/* Global Banner Placement Slot */}

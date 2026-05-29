@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
 import { AdBanner } from "@/components/ui/AdBanner";
+
+// Dynamic import — MediaPipe uses browser globals, must skip SSR
+const BiometricScanner = dynamic(() => import("@/components/BiometricScanner"), { ssr: false });
 import { 
   Users, 
   Activity, 
@@ -269,6 +273,14 @@ export default function CoachHubDashboard() {
               </Link>
             );
           })}
+        </div>
+
+        {/* Biometric Scan panel — inline AI athlete body analysis */}
+        <div className="mt-6">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 pl-1">
+            Athlete Body Analysis
+          </p>
+          <BiometricScanner />
         </div>
 
         {/* Global Banner Ad unit layout */}
