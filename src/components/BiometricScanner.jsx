@@ -90,10 +90,16 @@ export default function BiometricScanner() {
     try {
       await ensurePose();
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false,
-      });
+      // Try rear camera (mobile) first, fall back to any camera (desktop)
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = stream;
 
       if (videoRef.current) {
@@ -103,10 +109,14 @@ export default function BiometricScanner() {
         loop();
       }
     } catch (err) {
-      const msg =
-        err.name === "NotAllowedError"
-          ? "Camera permission denied. Please allow camera access and try again."
-          : "Could not open camera. Try uploading a video clip instead.";
+      let msg = "Could not open camera. Try uploading a video clip instead.";
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        msg = "Camera access was blocked. Click the camera icon in your browser address bar and allow access, then try again.";
+      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        msg = "No camera found on this device. Try uploading a recorded video clip instead.";
+      } else if (err.name === "NotReadableError") {
+        msg = "Camera is in use by another app. Close other apps using the camera and try again.";
+      }
       setError(msg);
       setPhase("idle");
     }
