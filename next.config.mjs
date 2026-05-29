@@ -11,7 +11,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   transpilePackages: ["firebase"],
-  serverExternalPackages: ["@google/genai"],
 
   webpack: (config) => {
     // Disable symlink resolution to avoid Windows readlink EISDIR issues
