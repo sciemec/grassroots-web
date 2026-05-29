@@ -22,7 +22,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import { NotificationBell } from "./notification-bell";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { ZimSidebarPanel } from "@/components/ui/zim-independence";
+
 import { AdBanner } from "@/components/ui/AdBanner";
 
 type NavItem = { href: string; label: string; icon: React.ElementType; roles: string[] };
@@ -245,9 +245,6 @@ function NavContent({ onNavClick }: { onNavClick?: () => void }) {
           );
         })}
       </nav>
-
-      {/* Zimbabwe Independence Day Panel */}
-      <ZimSidebarPanel />
 
       {/* User + Logout */}
       {user && (

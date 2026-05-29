@@ -15,7 +15,7 @@ export const ZimPresidentBanner = () => {
   useEffect(() => {
     const now = new Date();
     // PREVIEW MODE: always show (remove this line and uncomment date check for production)
-    const inWindow = true; // now >= new Date("2026-04-01") && now < new Date("2026-05-01");
+    const inWindow = false; // now >= new Date("2026-04-01") && now < new Date("2026-05-01");
     if (inWindow) {
       const wasDismissed = sessionStorage.getItem("zim_banner_dismissed");
       if (!wasDismissed) {
@@ -469,7 +469,7 @@ export const ZimSidebarPanel = () => {
 
   useEffect(() => {
     // PREVIEW MODE: always show
-    const inWindow = true; // new Date() >= new Date("2026-04-01") && new Date() < new Date("2026-05-01");
+    const inWindow = false; // new Date() >= new Date("2026-04-01") && new Date() < new Date("2026-05-01");
     if (inWindow) setShow(true);
   }, []);
 
