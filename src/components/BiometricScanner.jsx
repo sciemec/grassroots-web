@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Camera, Upload, X, Scan, ChevronDown, AlertCircle } from "lucide-react";
-import { processBiometricFrame } from "@/utils/biomechanicsEngine";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Camera, Upload, X, Scan, ChevronDown, AlertCircle, Save, CheckCircle2 } from "lucide-react";
+import { processBiometricFrame, detectAsymmetry } from "@/utils/biomechanicsEngine";
+import { useAuthStore } from "@/lib/auth-store";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 // ─── Analysis mode config ───────────────────────────────────────────────────
 const MODES = [
@@ -32,22 +35,34 @@ const SKELETON_LINKS = [
   [24, 26], [26, 28], [28, 30], [28, 32],               // right leg
 ];
 
+const LS_KEY = "gs_biometric_scans";
+
+function saveScanToStorage(entry) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+    const updated = [entry, ...existing].slice(0, 20); // keep last 20
+    localStorage.setItem(LS_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
-export default function BiometricScanner() {
-  const [open, setOpen]           = useState(false);
-  const [mode, setMode]           = useState("SPRINT_KNEE_DRIVE");
-  const [phase, setPhase]         = useState("idle"); // idle | scanning | stopped
-  const [result, setResult]       = useState(null);
-  const [framesDone, setFramesDone] = useState(0);
-  const [error, setError]         = useState(null);
+export default function BiometricScanner({ token }) {
+  const [open, setOpen]               = useState(false);
+  const [mode, setMode]               = useState("SPRINT_KNEE_DRIVE");
+  const [phase, setPhase]             = useState("idle"); // idle | scanning | stopped
+  const [result, setResult]           = useState(null);
+  const [asymmetry, setAsymmetry]     = useState(null);
+  const [framesDone, setFramesDone]   = useState(0);
+  const [error, setError]             = useState(null);
+  const [saving, setSaving]           = useState(false);
+  const [saved, setSaved]             = useState(false);
 
   const videoRef  = useRef(null);
   const canvasRef = useRef(null);
-  const streamRef = useRef(null); // MediaStream (camera)
-  const poseRef   = useRef(null); // MediaPipe Pose instance
-  const rafRef    = useRef(null); // requestAnimationFrame id
+  const streamRef = useRef(null);
+  const poseRef   = useRef(null);
+  const rafRef    = useRef(null);
 
-  // Always stop camera when component is removed from DOM
   useEffect(() => () => stopAll(), []);
 
   function stopAll() {
@@ -62,7 +77,6 @@ export default function BiometricScanner() {
       poseRef.current.onResults(onResults);
       return poseRef.current;
     }
-    // Dynamic import keeps Next.js SSR happy — MediaPipe uses browser globals
     const mp = await import("@mediapipe/pose");
     const pose = new mp.Pose({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
@@ -84,13 +98,14 @@ export default function BiometricScanner() {
   async function startCamera() {
     setError(null);
     setResult(null);
+    setAsymmetry(null);
     setFramesDone(0);
+    setSaved(false);
     setPhase("scanning");
 
     try {
       await ensurePose();
 
-      // Try rear camera (mobile) first, fall back to any camera (desktop)
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -126,13 +141,13 @@ export default function BiometricScanner() {
   async function handleUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Reset file input so the same file can be re-selected
     e.target.value = "";
 
     setError(null);
     setResult(null);
+    setAsymmetry(null);
     setFramesDone(0);
+    setSaved(false);
     stopAll();
     setPhase("scanning");
 
@@ -159,7 +174,7 @@ export default function BiometricScanner() {
         });
       }
       videoLoop();
-    } catch (err) {
+    } catch {
       setError("Could not analyse this video. Try the live camera instead.");
       setPhase("idle");
       URL.revokeObjectURL(objectUrl);
@@ -177,7 +192,7 @@ export default function BiometricScanner() {
   }
 
   // ── MediaPipe results callback ───────────────────────────────────────────
-  function onResults(results) {
+  const onResults = useCallback((results) => {
     const canvas = canvasRef.current;
     const video  = videoRef.current;
     if (!canvas || !video) return;
@@ -196,12 +211,21 @@ export default function BiometricScanner() {
 
     try {
       const analysis = processBiometricFrame(results.poseLandmarks, mode);
-      if (analysis) {
+      if (analysis && !analysis.status) {
         setResult(analysis);
         setFramesDone(n => n + 1);
       }
+
+      // Asymmetry detection — runs every frame, updates state every 10 frames
+      setFramesDone(n => {
+        if (n % 10 === 0) {
+          const asym = detectAsymmetry(results.poseLandmarks);
+          if (asym.detected) setAsymmetry(asym);
+        }
+        return n + 1;
+      });
     } catch {}
-  }
+  }, [mode]);
 
   // ── Draw green skeleton on canvas ────────────────────────────────────────
   function drawSkeleton(ctx, lm, w, h) {
@@ -227,6 +251,43 @@ export default function BiometricScanner() {
     }
   }
 
+  // ── Save scan ────────────────────────────────────────────────────────────
+  async function saveScan() {
+    if (!result || saved) return;
+    setSaving(true);
+
+    const entry = {
+      mode,
+      score: result.score100 ?? 0,
+      level: result.level ?? "Raw",
+      asymmetry_score: asymmetry?.asymmetryScore ?? 0,
+      asymmetry_diff:  asymmetry?.asymmetryDiff  ?? 0,
+      weak_side:       asymmetry?.weakSide       ?? null,
+      frames_analysed: framesDone,
+      session_date:    new Date().toISOString().slice(0, 10),
+      mode_label:      MODES.find(m => m.id === mode)?.label ?? mode,
+    };
+
+    // Always save locally first for instant feedback + offline support
+    saveScanToStorage(entry);
+
+    // Then try the backend (non-blocking)
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      await fetch(`${API}/player/biomechanics`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(entry),
+      });
+    } catch {
+      // localStorage copy already saved — backend sync is best-effort
+    }
+
+    setSaving(false);
+    setSaved(true);
+  }
+
   function handleStop() {
     stopAll();
     setPhase("stopped");
@@ -236,8 +297,10 @@ export default function BiometricScanner() {
     stopAll();
     setPhase("idle");
     setResult(null);
+    setAsymmetry(null);
     setError(null);
     setFramesDone(0);
+    setSaved(false);
   }
 
   function handleClose() {
@@ -245,9 +308,10 @@ export default function BiometricScanner() {
     setOpen(false);
   }
 
-  const levelStyle = result ? (LEVEL_STYLE[result.level] ?? LEVEL_STYLE.Raw) : null;
-  const isScanning = phase === "scanning";
-  const isStopped  = phase === "stopped";
+  const levelStyle  = result?.level ? (LEVEL_STYLE[result.level] ?? LEVEL_STYLE.Raw) : null;
+  const isScanning  = phase === "scanning";
+  const isStopped   = phase === "stopped";
+  const canSave     = isStopped && result && !saved;
 
   // ── Collapsed pill ───────────────────────────────────────────────────────
   if (!open) {
@@ -292,7 +356,7 @@ export default function BiometricScanner() {
       </div>
 
       <div className="p-5">
-        {/* Mode selector — always visible */}
+        {/* Mode selector */}
         <div className="mb-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
             Analysis Mode
@@ -301,7 +365,7 @@ export default function BiometricScanner() {
             {MODES.map((m) => (
               <button
                 key={m.id}
-                onClick={() => { setMode(m.id); setResult(null); }}
+                onClick={() => { setMode(m.id); setResult(null); setAsymmetry(null); setSaved(false); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                   mode === m.id
                     ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
@@ -325,7 +389,7 @@ export default function BiometricScanner() {
           </div>
         )}
 
-        {/* Idle state — action buttons */}
+        {/* Idle state */}
         {phase === "idle" && (
           <div className="flex gap-3">
             <button
@@ -351,7 +415,6 @@ export default function BiometricScanner() {
               className="relative rounded-xl overflow-hidden bg-black w-full"
               style={{ aspectRatio: "4/3" }}
             >
-              {/* The same video element serves both camera stream and uploaded video */}
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -389,19 +452,35 @@ export default function BiometricScanner() {
                   >
                     {levelStyle.mark} — {MODES.find((m) => m.id === mode)?.label}
                   </span>
-                  {result.score != null && (
+                  {result.score100 != null && (
                     <span className="text-sm font-black" style={{ color: levelStyle.text }}>
-                      {result.score}
+                      {result.score100}
                       <span className="text-xs font-medium">/100</span>
                     </span>
                   )}
                 </div>
-                {result.details && (
-                  <p className="text-xs text-gray-600 leading-relaxed mt-0.5">{result.details}</p>
+                {result.rating && (
+                  <p className="text-xs text-gray-600 leading-relaxed mt-0.5">{result.rating}</p>
                 )}
                 {framesDone > 0 && (
                   <p className="text-[10px] text-gray-400 mt-1">{framesDone} frames analysed</p>
                 )}
+              </div>
+            )}
+
+            {/* Asymmetry warning */}
+            {asymmetry?.isAsymmetric && (
+              <div className="rounded-xl p-3 border border-amber-200 bg-amber-50 flex items-start gap-2">
+                <AlertCircle size={13} className="text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-amber-700">
+                    Asymmetry detected — {asymmetry.weakSide} side compensation
+                  </p>
+                  <p className="text-[11px] text-amber-600 mt-0.5">
+                    L knee: {asymmetry.leftKneeAngle}° vs R knee: {asymmetry.rightKneeAngle}°
+                    {" "}({asymmetry.asymmetryDiff}° difference). Imbalances &gt;10° increase injury risk.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -426,6 +505,21 @@ export default function BiometricScanner() {
                 Upload
                 <input type="file" accept="video/*" className="hidden" onChange={handleUpload} />
               </label>
+              {saved ? (
+                <div className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 size={12} />
+                  Saved
+                </div>
+              ) : canSave ? (
+                <button
+                  onClick={saveScan}
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold bg-[#1a5c2a] text-white hover:bg-green-800 transition disabled:opacity-50"
+                >
+                  <Save size={12} />
+                  {saving ? "Saving…" : "Save Scan"}
+                </button>
+              ) : null}
             </div>
           </div>
         )}
