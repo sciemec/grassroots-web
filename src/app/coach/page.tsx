@@ -14,6 +14,18 @@ import { loadKnowledgeForRole } from "@/lib/coaching-knowledge";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
 
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+}
+
+interface SquadStats {
+  total_players: number;
+  active_injuries: number;
+  match_alerts: number;
+}
+
 export default function CoachHubPage() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -22,12 +34,12 @@ export default function CoachHubPage() {
 
   const [activeRole, setActiveRole] = useState("head_coach");
   const [query, setQuery] = useState("");
-  const [chatHistory, setChatHistory] = useState([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [loadingAi, setLoadingAi] = useState(false);
-  const [squadStats, setSquadStats] = useState({ total_players: 0, active_injuries: 0, match_alerts: 0 });
+  const [squadStats, setSquadStats] = useState<SquadStats>({ total_players: 0, active_injuries: 0, match_alerts: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
-  
-  const chatEndRef = useRef(null);
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Authenticated route protection matching hydration patterns
   useEffect(() => {
@@ -45,17 +57,17 @@ export default function CoachHubPage() {
   useEffect(() => {
     if (!token || !user) return;
     setLoadingStats(true);
-    
+
     Promise.allSettled([
       fetch(`${API}/api/v1/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
       fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json())
     ]).then(([squadRes, injuryRes]) => {
       const playersList = squadRes.status === "fulfilled" ? (squadRes.value.data ?? squadRes.value) : [];
       const injuriesList = injuryRes.status === "fulfilled" ? (injuryRes.value.data ?? injuryRes.value) : [];
-      
+
       setSquadStats({
         total_players: Array.isArray(playersList) ? playersList.length : 0,
-        active_injuries: Array.isArray(injuriesList) ? injuriesList.filter(i => !i.recovered_at).length : 0,
+        active_injuries: Array.isArray(injuriesList) ? injuriesList.filter((i: { recovered_at: string | null }) => !i.recovered_at).length : 0,
         match_alerts: 2 // Sample localized active notifications tracking pipeline
       });
     }).catch(err => console.error("Error optimizing hub data streams:", err))
@@ -78,11 +90,11 @@ export default function CoachHubPage() {
   const roleConfig = COACHING_STAFF_ROLES[activeRole] || COACHING_STAFF_ROLES.head_coach;
   const knowledge = loadKnowledgeForRole(activeRole);
 
-  const handleAiQuery = async (e) => {
+  const handleAiQuery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || loadingAi) return;
 
-    const userMessage = { id: String(Date.now()), role: "user", text: query.trim() };
+    const userMessage: ChatMessage = { id: String(Date.now()), role: "user", text: query.trim() };
     setChatHistory((prev) => [...prev, userMessage]);
     setQuery("");
     setLoadingAi(true);
@@ -110,7 +122,7 @@ export default function CoachHubPage() {
       } else {
         throw new Error("API stream connection dropped out.");
       }
-    } catch (err) {
+    } catch {
       setChatHistory((prev) => [
         ...prev,
         { id: String(Date.now() + 1), role: "assistant", text: "Maziwisa! I encountered a temporary processing gap. Let's trace that strategy drill loop again." }
@@ -122,7 +134,7 @@ export default function CoachHubPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 antialiased font-sans flex flex-col lg:flex-row">
-      
+
       {/* Left Control Panel: Staff Framework Selection */}
       <aside className="w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-6 space-y-6 shrink-0">
         <div>
@@ -143,8 +155,8 @@ export default function CoachHubPage() {
                 key={key}
                 onClick={() => { setActiveRole(key); setChatHistory([]); }}
                 className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition-all cursor-pointer border ${
-                  isSelected 
-                    ? "bg-[#1a5c2a] border-[#1a5c2a] text-white shadow-xs" 
+                  isSelected
+                    ? "bg-[#1a5c2a] border-[#1a5c2a] text-white shadow-xs"
                     : "bg-white border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
@@ -169,7 +181,7 @@ export default function CoachHubPage() {
 
       {/* Main Panel Track */}
       <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-        
+
         {/* Dynamic Metric Overview Strip */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs">
@@ -209,7 +221,7 @@ export default function CoachHubPage() {
 
         {/* THUTO Intelligence Suite Integration */}
         <section className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm grid grid-cols-1 lg:grid-cols-5 gap-6">
-          
+
           {/* Framework Context Sheet Descriptions */}
           <div className="lg:col-span-2 space-y-4 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
             <div className="flex items-center gap-2">
@@ -225,7 +237,7 @@ export default function CoachHubPage() {
             <div className="space-y-3 bg-gray-50 border border-gray-100 rounded-2xl p-4">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider leading-none">Target Execution Vectors</p>
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {roleConfig.keyPerformanceIndicators?.map((kpi, i) => (
+                {roleConfig.keyPerformanceIndicators?.map((kpi: string, i: number) => (
                   <span key={i} className="bg-white border border-gray-200 text-gray-700 font-bold text-[10px] px-2.5 py-1 rounded-lg shadow-2xs">
                     🎯 {kpi}
                   </span>
@@ -236,13 +248,13 @@ export default function CoachHubPage() {
             <div className="space-y-2">
               <p className="text-xs font-black uppercase text-gray-400 tracking-wide">Suggested Diagnostics</p>
               <div className="space-y-1.5">
-                {knowledge.sampleQuestions?.slice(0, 3).map((qText, idx) => (
+                {knowledge.sampleQuestions?.slice(0, 3).map((qText: string, idx: number) => (
                   <button
                     key={idx}
                     onClick={() => setQuery(qText)}
                     className="w-full text-left p-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl text-xs font-medium text-gray-700 transition-all truncate"
                   >
-                    💡 "{qText}"
+                    💡 &ldquo;{qText}&rdquo;
                   </button>
                 ))}
               </div>
@@ -251,7 +263,7 @@ export default function CoachHubPage() {
 
           {/* Interactive Live Dialogue Terminal */}
           <div className="lg:col-span-3 flex flex-col h-[400px] justify-between">
-            
+
             {/* Thread Canvas */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4 scrollbar-thin">
               {chatHistory.length === 0 ? (
