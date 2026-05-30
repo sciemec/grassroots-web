@@ -32,7 +32,7 @@ export default function EnhancedPlayerHub() {
   const [aiLoading, setAiLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
 
-  const pos: PositionFocusConfig = POSITION_FOCUS_MAP[positionId];
+  const pos = POSITION_FOCUS_MAP[positionId] ?? POSITION_FOCUS_MAP.fallback;
 
   // ── Brand Optimization States ──────────────────────────────────────────────
   const [height, setHeight] = useState("178");
