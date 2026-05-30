@@ -20,6 +20,12 @@ const nextConfig = {
     // as an empty module and the build does not fail.
     config.resolve.alias['@google/genai'] = false;
     config.resolve.alias['@anthropic-ai/sdk'] = false;
+    // Vercel build cache keeps restoring a stale coach/page.jsx that has
+    // invalid TypeScript type-import syntax (invalid in .jsx files).
+    // The file no longer exists in git (renamed to page.tsx) but Vercel
+    // persists it across builds. Map its absolute path to false so webpack
+    // treats it as an empty module and never tries to compile it.
+    config.resolve.alias[`${process.cwd()}/src/app/coach/page.jsx`] = false;
     return config;
   },
 
