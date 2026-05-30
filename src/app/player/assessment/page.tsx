@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Target, Play, CheckCircle2, Brain, Loader2, TrendingUp,
-  Activity, ChevronRight, Star, Zap,
+  Activity, ChevronRight, Star, Zap, Scan, AlertCircle,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -109,9 +110,27 @@ function scoreLabel(score: number) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+interface BiometricScan {
+  mode: string;
+  mode_label: string;
+  score: number;
+  level: "Elite" | "Good" | "Raw";
+  asymmetry_score: number;
+  asymmetry_diff: number;
+  weak_side: string | null;
+  frames_analysed: number;
+  session_date: string;
+}
+
+const BIOMETRIC_LEVEL_COLOR: Record<string, string> = {
+  Elite: "#22c55e",
+  Good:  "#f0b429",
+  Raw:   "#ef4444",
+};
+
 export default function AssessmentPage() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<"field" | "apk">("field");
+  const [activeTab, setActiveTab] = useState<"field" | "apk" | "biometric">("field");
 
   // Field tests state
   const [positionGroup, setPositionGroup] = useState("");
@@ -119,6 +138,9 @@ export default function AssessmentPage() {
   const [results, setResults]             = useState<Record<string, string>>({});
   const [aiReport, setAiReport]           = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
+
+  // Biometric scan history from localStorage
+  const [bioScans, setBioScans] = useState<BiometricScan[]>([]);
 
   // APK sessions state
   const [sessions, setSessions]         = useState<TrainingSession[]>([]);
@@ -128,6 +150,17 @@ export default function AssessmentPage() {
   const [reportLoading, setReportLoading]     = useState(false);
 
   useEffect(() => { /* auth handled by layout.tsx */ }, [user]);
+
+  // Load biometric scans from localStorage when tab switches
+  useEffect(() => {
+    if (activeTab !== "biometric") return;
+    try {
+      const raw = JSON.parse(localStorage.getItem("gs_biometric_scans") || "[]");
+      setBioScans(Array.isArray(raw) ? raw : []);
+    } catch {
+      setBioScans([]);
+    }
+  }, [activeTab]);
 
   // Load APK sessions when tab switches to "apk"
   useEffect(() => {
@@ -237,6 +270,17 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           >
             <Activity className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
             APK Sessions
+          </button>
+          <button
+            onClick={() => setActiveTab("biometric")}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+              activeTab === "biometric"
+                ? "bg-[#f0b429] text-[#1a3a1a]"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <Scan className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
+            Biometric
           </button>
         </div>
 
@@ -634,6 +678,141 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   </div>
                 )}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ── BIOMETRIC SCAN HISTORY TAB ── */}
+        {activeTab === "biometric" && (
+          <div className="mx-auto max-w-2xl">
+            {bioScans.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+                <Scan className="mx-auto mb-3 h-10 w-10 text-white/30" />
+                <p className="text-white/60 text-sm">No biometric scans saved yet.</p>
+                <p className="mt-1 text-xs text-white/40">
+                  Run a body scan from the Player Hub or Analyst Hub, then tap "Save Scan" to track your progress here.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Summary stats */}
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  {(["Elite", "Good", "Raw"] as const).map((lvl) => {
+                    const count = bioScans.filter(s => s.level === lvl).length;
+                    return (
+                      <div key={lvl} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                        <p className="text-xl font-black" style={{ color: BIOMETRIC_LEVEL_COLOR[lvl] }}>{count}</p>
+                        <p className="text-xs text-white/50 mt-0.5">{lvl} scans</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Score trend chart */}
+                <div className="rounded-2xl border border-white/10 bg-card/60 p-5 mb-4 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="h-4 w-4 text-[#f0b429]" />
+                    <h3 className="font-semibold text-white text-sm">Score Trend</h3>
+                  </div>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={[...bioScans].reverse().slice(-12).map((s, i) => ({
+                      name: `#${i + 1}`,
+                      score: s.score,
+                      level: s.level,
+                      date: s.session_date,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                      <YAxis domain={[0, 100]} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
+                        labelStyle={{ color: "#fff", fontSize: 11 }}
+                        formatter={(value: number, _: string, entry: { payload: { date: string; level: string } }) => [
+                          `${value}/100 — ${entry.payload.level}`,
+                          entry.payload.date,
+                        ]}
+                      />
+                      <Bar dataKey="score" radius={[4, 4, 0, 0]}>
+                        {[...bioScans].reverse().slice(-12).map((s, i) => (
+                          <Cell key={i} fill={BIOMETRIC_LEVEL_COLOR[s.level] ?? "#6b7280"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Asymmetry trend */}
+                {bioScans.some(s => s.asymmetry_diff > 0) && (
+                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 mb-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertCircle className="h-4 w-4 text-amber-400" />
+                      <h3 className="font-semibold text-amber-300 text-sm">Asymmetry History</h3>
+                    </div>
+                    <ResponsiveContainer width="100%" height={140}>
+                      <BarChart data={[...bioScans].reverse().slice(-12).map((s, i) => ({
+                        name: `#${i + 1}`,
+                        diff: s.asymmetry_diff,
+                        side: s.weak_side,
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                        <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
+                          labelStyle={{ color: "#fff", fontSize: 11 }}
+                          formatter={(value: number, _: string, entry: { payload: { side: string | null } }) => [
+                            `${value}° difference${entry.payload.side ? ` (${entry.payload.side} side weaker)` : ""}`,
+                            "Asymmetry",
+                          ]}
+                        />
+                        <Bar dataKey="diff" radius={[4, 4, 0, 0]}>
+                          {[...bioScans].reverse().slice(-12).map((s, i) => (
+                            <Cell key={i} fill={s.asymmetry_diff > 10 ? "#f59e0b" : "#22c55e"} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <p className="text-[10px] text-amber-400/70 mt-2">
+                      Green = symmetric (&lt;10°). Amber = compensation detected (&gt;10°). Persistent imbalance = injury risk.
+                    </p>
+                  </div>
+                )}
+
+                {/* Recent scans list */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Recent Scans</p>
+                  {bioScans.slice(0, 10).map((s, i) => (
+                    <div key={i} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white"
+                          style={{ backgroundColor: BIOMETRIC_LEVEL_COLOR[s.level] ?? "#6b7280" }}
+                        >
+                          {s.score}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-white">{s.mode_label}</p>
+                          <p className="text-[11px] text-white/40">{s.session_date} · {s.frames_analysed} frames</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{
+                            color: BIOMETRIC_LEVEL_COLOR[s.level],
+                            backgroundColor: `${BIOMETRIC_LEVEL_COLOR[s.level]}20`,
+                          }}
+                        >
+                          {s.level}
+                        </span>
+                        {s.asymmetry_diff > 10 && (
+                          <p className="text-[10px] text-amber-400 mt-0.5">⚠ {s.asymmetry_diff}° gap</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}

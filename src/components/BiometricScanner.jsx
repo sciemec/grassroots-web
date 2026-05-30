@@ -46,7 +46,8 @@ function saveScanToStorage(entry) {
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
-export default function BiometricScanner({ token }) {
+export default function BiometricScanner() {
+  const token = useAuthStore((s) => s.token);
   const [open, setOpen]               = useState(false);
   const [mode, setMode]               = useState("SPRINT_KNEE_DRIVE");
   const [phase, setPhase]             = useState("idle"); // idle | scanning | stopped
@@ -213,16 +214,16 @@ export default function BiometricScanner({ token }) {
       const analysis = processBiometricFrame(results.poseLandmarks, mode);
       if (analysis && !analysis.status) {
         setResult(analysis);
-        setFramesDone(n => n + 1);
       }
 
       // Asymmetry detection — runs every frame, updates state every 10 frames
       setFramesDone(n => {
-        if (n % 10 === 0) {
+        const next = n + 1;
+        if (next % 10 === 0) {
           const asym = detectAsymmetry(results.poseLandmarks);
           if (asym.detected) setAsymmetry(asym);
         }
-        return n + 1;
+        return next;
       });
     } catch {}
   }, [mode]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, Eye, EyeOff, CheckCircle, Loader2, ArrowLeft } from "lucide-react";
@@ -9,8 +9,10 @@ import api from "@/lib/api";
 function ResetPasswordForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const token = params.get("token") ?? "";
-  const email = params.get("email") ?? "";
+  
+  // Next.js Search Parameters extraction
+  const token = params?.get("token") ?? "";
+  const email = params?.get("email") ?? "";
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -26,13 +28,35 @@ function ResetPasswordForm() {
     if (!valid) return;
     setLoading(true);
     setError("");
+    
     try {
-      await api.post("/auth/reset-password", { token, email, password, password_confirmation: confirm });
+      // Posts straight through to your Laravel AuthController mapping fields accurately
+      await api.post("/auth/reset-password", { 
+        token, 
+        email, 
+        password, 
+        password_confirmation: confirm 
+      });
+      
       setDone(true);
       setTimeout(() => router.push("/login"), 3000);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? "Reset failed. The link may have expired. Request a new one.");
+      const resData = (err as { response?: { data?: any } })?.response?.data;
+      
+      // ✅ UP TO DATE RESILIENT ERROR PARSING: Automatically maps Laravel's error payloads
+      if (resData) {
+        if (resData.error) {
+          setError(resData.error);
+        } else if (resData.message) {
+          setError(resData.message);
+        } else if (resData.errors?.password) {
+          setError(resData.errors.password[0]); // Captures backend password strength rule responses
+        } else {
+          setError("Reset validation failed. The secure token may have expired. Please request a new one.");
+        }
+      } else {
+        setError("Network connection dropped out. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -49,7 +73,7 @@ function ResetPasswordForm() {
           <span className="text-4xl">⚽</span>
           <h1 className="mt-3 text-2xl font-bold text-white">Create new password</h1>
           <p className="mt-1 text-sm text-green-200">
-            {done ? "Password updated!" : "Choose a strong password for your account"}
+            {done ? "Password updated successfully!" : "Choose a secure new password for your Grassroots account"}
           </p>
         </div>
 
@@ -58,23 +82,27 @@ function ResetPasswordForm() {
             <div className="text-center">
               <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-300" />
               <h2 className="mb-2 text-lg font-semibold text-white">Password updated!</h2>
-              <p className="mb-6 text-sm text-green-200">Redirecting you to sign in…</p>
+              <p className="mb-6 text-sm text-green-200">Redirecting you to sign in dashboard details…</p>
               <Link
                 href="/login"
-                className="block w-full rounded-xl bg-white py-3 text-center text-sm font-semibold text-green-900 hover:bg-green-50 transition-colors"
+                className="block w-full rounded-xl bg-white py-3 text-center text-sm font-bold text-green-900 hover:bg-green-50 transition-colors"
               >
                 Sign in now
               </Link>
             </div>
           ) : !token ? (
             <div className="text-center">
-              <p className="mb-4 text-sm text-red-300">Invalid or missing reset token.</p>
-              <Link href="/forgot-password" className="text-sm text-white hover:underline">Request a new reset link</Link>
+              <p className="mb-4 text-sm text-red-300">⚠️ Secure verification token is invalid or missing.</p>
+              <Link href="/forgot-password" className="text-sm text-white underline font-medium hover:text-green-200">
+                Request a fresh reset link
+              </Link>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
               {email && (
-                <p className="text-xs text-center text-green-200 mb-4">Resetting password for <strong>{email}</strong></p>
+                <p className="text-xs text-center text-green-200 mb-4 bg-white/5 py-1.5 rounded-lg">
+                  Resetting credentials for: <strong className="text-white">{email}</strong>
+                </p>
               )}
 
               {/* New password */}
@@ -108,7 +136,7 @@ function ResetPasswordForm() {
                         style={{ width: `${(strength / 3) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs text-green-200">{strengthLabel[strength]}</span>
+                    <span className="text-xs text-green-200 font-bold">{strengthLabel[strength]}</span>
                   </div>
                 )}
               </div>
@@ -130,26 +158,28 @@ function ResetPasswordForm() {
                   />
                 </div>
                 {confirm && password !== confirm && (
-                  <p className="mt-1 text-xs text-red-300">Passwords don&apos;t match</p>
+                  <p className="mt-1 text-xs text-red-300 font-medium">❌ Passwords do not match</p>
                 )}
               </div>
 
               {error && (
-                <p className="rounded-lg bg-red-500/20 px-4 py-2.5 text-sm text-red-200">{error}</p>
+                <p className="rounded-lg bg-red-500/20 px-4 py-2.5 text-sm text-red-200 font-medium border border-red-500/20">
+                  ⚠️ {error}
+                </p>
               )}
 
               <button
                 type="submit"
                 disabled={loading || !valid}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-semibold text-green-900 hover:bg-green-50 disabled:opacity-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-bold text-green-900 hover:bg-green-50 disabled:opacity-50 transition-colors cursor-pointer shadow-xs"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                {loading ? "Updating…" : "Set new password"}
+                {loading ? "Updating password..." : "Set new password"}
               </button>
 
               <Link
                 href="/login"
-                className="flex items-center justify-center gap-1.5 text-sm text-green-200 hover:text-white transition-colors"
+                className="flex items-center justify-center gap-1.5 text-sm text-green-200 hover:text-white transition-colors font-semibold"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to sign in
               </Link>
@@ -161,9 +191,14 @@ function ResetPasswordForm() {
   );
 }
 
+// ✅ Next.js 14 Production Guard: Enforces isolated build boundaries to protect search queries parsing
 export default function ResetPasswordPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <div className="flex h-screen bg-green-950 items-center justify-center">
+        <Loader2 className="animate-spin text-white" size={24} />
+      </div>
+    }>
       <ResetPasswordForm />
     </Suspense>
   );
