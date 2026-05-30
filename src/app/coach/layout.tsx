@@ -30,6 +30,12 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  // Block render entirely for non-coach users — redirect fires in useEffect above.
+  // This prevents the coach hub flashing for one frame before the redirect lands.
+  if (!user || (user.role !== "coach" && user.role !== "admin")) {
+    return null;
+  }
+
   // 2. WRAP CHILDREN IN THE VALID PROVIDER VALUE:
   return (
     <CoachSessionContext.Provider value={{ coach: user }}>
