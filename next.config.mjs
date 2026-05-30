@@ -19,6 +19,7 @@ const nextConfig = {
     // the package is not installed. Resolve it to false so webpack treats it
     // as an empty module and the build does not fail.
     config.resolve.alias['@google/genai'] = false;
+    config.resolve.alias['@anthropic-ai/sdk'] = false;
     return config;
   },
 
