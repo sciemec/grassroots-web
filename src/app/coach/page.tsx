@@ -5,14 +5,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Shield, Users, Flame, ShieldAlert, Target, Activity,
-  Dumbbell, HeartPulse, Briefcase, BookOpen, Tag, ChevronRight,
-  MessageSquare, Send, Bot, Trophy, Sparkles, Loader2, Award
+  Dumbbell, HeartPulse, Briefcase, ChevronRight,
+  Send, Bot, Sparkles, Loader2,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { COACHING_STAFF_ROLES } from "@/config/coaching-staff";
-import { loadKnowledgeForRole } from "@/lib/coaching-knowledge";
+import { COACHING_STAFF_ROLES, getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
+import { loadKnowledgeForRole, type SessionPoint } from "@/lib/coaching-knowledge";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
+
+const ROLE_EMOJIS: Record<string, string> = {
+  head_coach:          "🎽",
+  assistant_coach:     "👥",
+  attack_coach:        "🔥",
+  defence_coach:       "🛡️",
+  gk_coach:            "🥅",
+  performance_analyst: "📊",
+  fitness_coach:       "🏋️",
+  team_physio:         "🩺",
+  team_manager:        "💼",
+};
 
 interface ChatMessage {
   id: string;
@@ -23,58 +35,58 @@ interface ChatMessage {
 interface SquadStats {
   total_players: number;
   active_injuries: number;
-  match_alerts: number;
 }
 
-export default function CoachHubPage() {
-  const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
-  const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const router = useRouter();
+const FOOTBALL_ROLES = COACHING_STAFF_ROLES.football ?? [];
 
-  const [activeRole, setActiveRole] = useState("head_coach");
-  const [query, setQuery] = useState("");
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [loadingAi, setLoadingAi] = useState(false);
-  const [squadStats, setSquadStats] = useState<SquadStats>({ total_players: 0, active_injuries: 0, match_alerts: 0 });
-  const [loadingStats, setLoadingStats] = useState(true);
+export default function CoachHubPage() {
+  const user        = useAuthStore((s) => s.user);
+  const token       = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const router      = useRouter();
+
+  const [activeRole,    setActiveRole]    = useState(FOOTBALL_ROLES[0]?.id ?? "head_coach");
+  const [query,         setQuery]         = useState("");
+  const [chatHistory,   setChatHistory]   = useState<ChatMessage[]>([]);
+  const [loadingAi,     setLoadingAi]     = useState(false);
+  const [knowledge,     setKnowledge]     = useState<SessionPoint[]>([]);
+  const [squadStats,    setSquadStats]    = useState<SquadStats>({ total_players: 0, active_injuries: 0 });
+  const [loadingStats,  setLoadingStats]  = useState(true);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Authenticated route protection matching hydration patterns
+  // Auth guard
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
-    if (user.role !== "coach" && user.role !== "admin") {
-      router.replace("/arena");
-    }
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "coach" && user.role !== "admin") router.replace("/arena");
   }, [hasHydrated, user, router]);
 
-  // Fetch live operational squad metrics from the backend
+  // Load knowledge base for the selected role
+  useEffect(() => {
+    const rc = getRoleConfig(activeRole);
+    if (!rc) return;
+    loadKnowledgeForRole(rc.focusCategories).then(setKnowledge).catch(() => setKnowledge([]));
+  }, [activeRole]);
+
+  // Fetch squad + injury counts
   useEffect(() => {
     if (!token || !user) return;
     setLoadingStats(true);
-
     Promise.allSettled([
-      fetch(`${API}/api/v1/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-      fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json())
+      fetch(`${API}/api/v1/coach/squad`,    { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
     ]).then(([squadRes, injuryRes]) => {
-      const playersList = squadRes.status === "fulfilled" ? (squadRes.value.data ?? squadRes.value) : [];
-      const injuriesList = injuryRes.status === "fulfilled" ? (injuryRes.value.data ?? injuryRes.value) : [];
-
+      const players  = squadRes.status  === "fulfilled" ? (squadRes.value.data  ?? squadRes.value)  : [];
+      const injuries = injuryRes.status === "fulfilled" ? (injuryRes.value.data ?? injuryRes.value) : [];
       setSquadStats({
-        total_players: Array.isArray(playersList) ? playersList.length : 0,
-        active_injuries: Array.isArray(injuriesList) ? injuriesList.filter((i: { recovered_at: string | null }) => !i.recovered_at).length : 0,
-        match_alerts: 2 // Sample localized active notifications tracking pipeline
+        total_players:   Array.isArray(players)  ? players.length : 0,
+        active_injuries: Array.isArray(injuries) ? injuries.filter((i: { recovered_at: string | null }) => !i.recovered_at).length : 0,
       });
-    }).catch(err => console.error("Error optimizing hub data streams:", err))
-      .finally(() => setLoadingStats(false));
+    }).catch(() => {/* silent */}).finally(() => setLoadingStats(false));
   }, [token, user]);
 
-  // Auto-scroll chat history window instance
+  // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
@@ -87,46 +99,42 @@ export default function CoachHubPage() {
     );
   }
 
-  const roleConfig = COACHING_STAFF_ROLES[activeRole] || COACHING_STAFF_ROLES.head_coach;
-  const knowledge = loadKnowledgeForRole(activeRole);
+  const roleConfig: StaffRoleConfig = getRoleConfig(activeRole) ?? FOOTBALL_ROLES[0];
+
+  const handleRoleSwitch = (roleId: string) => {
+    setActiveRole(roleId);
+    setChatHistory([]);
+  };
 
   const handleAiQuery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || loadingAi) return;
 
-    const userMessage: ChatMessage = { id: String(Date.now()), role: "user", text: query.trim() };
-    setChatHistory((prev) => [...prev, userMessage]);
+    const userMsg: ChatMessage = { id: String(Date.now()), role: "user", text: query.trim() };
+    setChatHistory(prev => [...prev, userMsg]);
     setQuery("");
     setLoadingAi(true);
 
     try {
-      const response = await fetch(`${API}/api/v1/ai-coach/query`, {
+      const res = await fetch(`${API}/api/v1/ask`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          query: userMessage.text,
-          coaching_framework: activeRole,
-          system_prompt: knowledge.frameworkPrompt
-        })
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ question: userMsg.text, role: roleConfig.id, language: "en" }),
       });
 
-      if (response.ok) {
-        const json = await response.json();
-        setChatHistory((prev) => [
-          ...prev,
-          { id: String(Date.now() + 1), role: "assistant", text: json.reply ?? json.response }
-        ]);
+      if (res.ok) {
+        const json = await res.json();
+        const text = json.answer ?? json.reply ?? json.response ?? "No response received.";
+        setChatHistory(prev => [...prev, { id: String(Date.now() + 1), role: "assistant", text }]);
       } else {
-        throw new Error("API stream connection dropped out.");
+        throw new Error("request failed");
       }
     } catch {
-      setChatHistory((prev) => [
-        ...prev,
-        { id: String(Date.now() + 1), role: "assistant", text: "Maziwisa! I encountered a temporary processing gap. Let's trace that strategy drill loop again." }
-      ]);
+      setChatHistory(prev => [...prev, {
+        id: String(Date.now() + 1),
+        role: "assistant",
+        text: "Maziwisa! I encountered a temporary processing gap. Let's trace that strategy drill loop again.",
+      }]);
     } finally {
       setLoadingAi(false);
     }
@@ -135,25 +143,25 @@ export default function CoachHubPage() {
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 antialiased font-sans flex flex-col lg:flex-row">
 
-      {/* Left Control Panel: Staff Framework Selection */}
+      {/* Left Panel — Staff Role Selector */}
       <aside className="w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-6 space-y-6 shrink-0">
         <div>
           <div className="flex items-center gap-2 text-[#1a5c2a] font-black text-xs uppercase tracking-widest">
             <Shield size={14} />
             <span>Tactical Hub Console</span>
           </div>
-          <h1 className="text-xl font-black text-gray-900 mt-1">Coachub Engine</h1>
+          <h1 className="text-xl font-black text-gray-900 mt-1">CoachHub Engine</h1>
           <p className="text-xs font-bold text-gray-400 mt-0.5">Zimbabwe Grassroots Framework</p>
         </div>
 
         <div className="space-y-1">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Select Staff Directives</p>
-          {Object.entries(COACHING_STAFF_ROLES).map(([key, role]) => {
-            const isSelected = activeRole === key;
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Select Staff Role</p>
+          {FOOTBALL_ROLES.map((role) => {
+            const isSelected = activeRole === role.id;
             return (
               <button
-                key={key}
-                onClick={() => { setActiveRole(key); setChatHistory([]); }}
+                key={role.id}
+                onClick={() => handleRoleSwitch(role.id)}
                 className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition-all cursor-pointer border ${
                   isSelected
                     ? "bg-[#1a5c2a] border-[#1a5c2a] text-white shadow-xs"
@@ -161,15 +169,14 @@ export default function CoachHubPage() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${isSelected ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
-                    {key === "head_coach" && "🎽"}
-                    {key === "tactician" && "📋"}
-                    {key === "fitness_trainer" && "🏋️"}
-                    {key === "medic" && "🩺"}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${isSelected ? "bg-white/20" : "bg-gray-100"}`}>
+                    {ROLE_EMOJIS[role.id] ?? "👤"}
                   </div>
                   <div>
                     <p className="text-xs font-black uppercase tracking-wide leading-tight">{role.title}</p>
-                    <p className={`text-[10px] font-medium leading-none mt-0.5 ${isSelected ? "text-white/80" : "text-gray-400"}`}>{role.focusDepartment}</p>
+                    <p className={`text-[10px] font-medium leading-none mt-0.5 truncate max-w-[160px] ${isSelected ? "text-white/70" : "text-gray-400"}`}>
+                      {role.description}
+                    </p>
                   </div>
                 </div>
                 <ChevronRight size={14} className={isSelected ? "text-white" : "text-gray-400"} />
@@ -179,16 +186,16 @@ export default function CoachHubPage() {
         </div>
       </aside>
 
-      {/* Main Panel Track */}
+      {/* Main Panel */}
       <main className="flex-1 p-6 space-y-6 overflow-y-auto">
 
-        {/* Dynamic Metric Overview Strip */}
+        {/* Metric Strip */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs">
-            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Active Roster Size</span>
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Active Roster</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-black text-gray-900">{loadingStats ? "..." : squadStats.total_players}</span>
-              <span className="text-xs font-bold text-gray-400">Registered Athletes</span>
+              <span className="text-2xl font-black text-gray-900">{loadingStats ? "…" : squadStats.total_players}</span>
+              <span className="text-xs font-bold text-gray-400">Players</span>
             </div>
             <Link href="/coach/squad" className="text-[11px] font-black text-[#1a5c2a] uppercase tracking-wide flex items-center gap-0.5 mt-2 hover:underline">
               Manage Squad <ChevronRight size={12} />
@@ -196,12 +203,12 @@ export default function CoachHubPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs">
-            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Medical Bay Isolation</span>
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Medical Bay</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className={`text-2xl font-black ${squadStats.active_injuries > 0 ? "text-red-600" : "text-gray-900"}`}>
-                {loadingStats ? "..." : squadStats.active_injuries}
+                {loadingStats ? "…" : squadStats.active_injuries}
               </span>
-              <span className="text-xs font-bold text-gray-400">Players Sidelined</span>
+              <span className="text-xs font-bold text-gray-400">Sidelined</span>
             </div>
             <Link href="/coach/injuries" className="text-[11px] font-black text-[#1a5c2a] uppercase tracking-wide flex items-center gap-0.5 mt-2 hover:underline">
               Track Recovery <ChevronRight size={12} />
@@ -209,7 +216,7 @@ export default function CoachHubPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs">
-            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Strategic Preparation</span>
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Strategic Prep</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-black text-gray-900">Active</span>
             </div>
@@ -219,10 +226,10 @@ export default function CoachHubPage() {
           </div>
         </section>
 
-        {/* THUTO Intelligence Suite Integration */}
+        {/* THUTO Intelligence Suite */}
         <section className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-          {/* Framework Context Sheet Descriptions */}
+          {/* Role Context */}
           <div className="lg:col-span-2 space-y-4 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-600">
@@ -230,48 +237,54 @@ export default function CoachHubPage() {
               </div>
               <div>
                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">THUTO Expert System</span>
-                <h3 className="text-base font-black text-gray-900">{roleConfig.title} Framework</h3>
+                <h3 className="text-base font-black text-gray-900">{roleConfig.title}</h3>
               </div>
             </div>
 
-            <div className="space-y-3 bg-gray-50 border border-gray-100 rounded-2xl p-4">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider leading-none">Target Execution Vectors</p>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {roleConfig.keyPerformanceIndicators?.map((kpi: string, i: number) => (
-                  <span key={i} className="bg-white border border-gray-200 text-gray-700 font-bold text-[10px] px-2.5 py-1 rounded-lg shadow-2xs">
-                    🎯 {kpi}
+            <p className="text-xs text-gray-500 leading-relaxed">{roleConfig.description}</p>
+
+            {/* Focus categories as pills */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Focus Areas</p>
+              <div className="flex flex-wrap gap-1.5">
+                {roleConfig.focusCategories.map((cat) => (
+                  <span key={cat} className="bg-white border border-gray-200 text-gray-700 font-bold text-[10px] px-2.5 py-1 rounded-lg shadow-2xs">
+                    🎯 {cat.replace(/_/g, " ")}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-xs font-black uppercase text-gray-400 tracking-wide">Suggested Diagnostics</p>
-              <div className="space-y-1.5">
-                {knowledge.sampleQuestions?.slice(0, 3).map((qText: string, idx: number) => (
-                  <button
-                    key={idx}
-                    onClick={() => setQuery(qText)}
-                    className="w-full text-left p-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl text-xs font-medium text-gray-700 transition-all truncate"
-                  >
-                    💡 &ldquo;{qText}&rdquo;
-                  </button>
-                ))}
+            {/* Knowledge base session points as suggested prompts */}
+            {knowledge.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-black uppercase text-gray-400 tracking-wide">Suggested Diagnostics</p>
+                <div className="space-y-1.5">
+                  {knowledge.slice(0, 2).flatMap((sp) =>
+                    sp.points.slice(0, 2).map((point, idx) => (
+                      <button
+                        key={`${sp.source}-${idx}`}
+                        onClick={() => setQuery(point)}
+                        className="w-full text-left p-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl text-xs font-medium text-gray-700 transition-all line-clamp-2"
+                      >
+                        💡 {point}
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Interactive Live Dialogue Terminal */}
-          <div className="lg:col-span-3 flex flex-col h-[400px] justify-between">
-
-            {/* Thread Canvas */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4 scrollbar-thin">
+          {/* Chat Terminal */}
+          <div className="lg:col-span-3 flex flex-col h-[420px] justify-between">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4">
               {chatHistory.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
                   <Bot size={36} className="text-gray-300 mb-2" />
                   <p className="text-xs font-black uppercase tracking-wider text-gray-700">Framework Terminal Online</p>
                   <p className="text-xs font-medium max-w-xs mt-1">
-                    Ask me tactical layout metrics, player recovery outlines, or local training drill routines tailored for your squad.
+                    Ask tactical layout metrics, player recovery outlines, or training drill routines for your squad.
                   </p>
                 </div>
               ) : (
@@ -291,24 +304,23 @@ export default function CoachHubPage() {
               )}
               {loadingAi && (
                 <div className="flex gap-2.5 max-w-[85%] mr-auto items-center">
-                  <div className="w-7 h-7 rounded-lg text-xs font-black bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
                     <Loader2 className="animate-spin" size={14} />
                   </div>
                   <div className="bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl rounded-tl-none px-4 py-2 text-xs font-bold uppercase tracking-widest animate-pulse">
-                    Analyzing Parameters...
+                    Analyzing Parameters…
                   </div>
                 </div>
               )}
               <div ref={chatEndRef} />
             </div>
 
-            {/* Input Form Module */}
             <form onSubmit={handleAiQuery} className="flex gap-2 border-t border-gray-100 pt-3 bg-white">
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={`Ask our ${roleConfig.title} assistant...`}
+                placeholder={`Ask the ${roleConfig.title} assistant…`}
                 className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] transition-all"
               />
               <button
@@ -319,7 +331,6 @@ export default function CoachHubPage() {
                 <Send size={16} />
               </button>
             </form>
-
           </div>
         </section>
 
