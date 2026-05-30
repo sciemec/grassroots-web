@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, X, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Loader2, Brain } from "lucide-react";
+import { ArrowLeft, Plus, X, Activity, CheckCircle2, AlertTriangle, ShieldAlert, Loader2, Brain, Scan } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { ProGate } from "@/components/ui/pro-gate";
@@ -70,6 +70,12 @@ export default function InjuryTrackerPage() {
     expected_return: "",
     notes: "",
   });
+  const [bioRisk, setBioRisk] = useState<{
+    asymmetryDiff: number;
+    weakSide: string | null;
+    level: string;
+    date: string;
+  } | null>(null);
 
   useEffect(() => {
     if (useAuthStore.persist.hasHydrated()) {
@@ -79,6 +85,29 @@ export default function InjuryTrackerPage() {
       return unsub;
     }
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const raw = localStorage.getItem("gs_biometric_scans");
+      if (!raw) return;
+      const scans = JSON.parse(raw) as Array<{
+        asymmetry_diff: number;
+        weak_side: string | null;
+        level: string;
+        session_date: string;
+      }>;
+      const asymmetric = [...scans].reverse().find((s) => s.asymmetry_diff > 10);
+      if (asymmetric) {
+        setBioRisk({
+          asymmetryDiff: asymmetric.asymmetry_diff,
+          weakSide: asymmetric.weak_side,
+          level: asymmetric.level,
+          date: asymmetric.session_date,
+        });
+      }
+    } catch { /* ignore */ }
+  }, [hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -140,7 +169,10 @@ export default function InjuryTrackerPage() {
           return `- Player: ${inj.initials ?? "Unknown"}, Injury: ${inj.injury_type} (${inj.body_part}), Severity: ${inj.severity}, Status: ${inj.status}, Days injured: ${daysSince}${inj.notes ? `, Notes: ${inj.notes}` : ""}`;
         })
         .join("\n");
-      const message = `You are a sports medicine AI for Zimbabwe grassroots sport. Given these squad injuries:\n${injurySummary}\n\nProvide:\n1. OVERALL SQUAD INJURY RISK LEVEL: Low / Medium / High (and why in one sentence)\n2. PLAYERS AT RISK: Which players risk aggravating their injuries and why\n3. TRAINING LOAD RECOMMENDATIONS: Specific advice for training sessions this week\n\nKeep it concise and practical for a grassroots coach with limited medical resources.`;
+      const bioContext = bioRisk
+        ? `\n\nBIOMETRIC SCAN DATA (from MediaPipe pose analysis):\n- Knee asymmetry detected: ${bioRisk.asymmetryDiff}° difference between left and right knee angles\n- Weak side: ${bioRisk.weakSide ?? "unknown"}\n- Performance level at time of scan: ${bioRisk.level}\n- This compensation pattern is a known precursor to hamstring and groin injuries.\n`
+        : "";
+      const message = `You are a sports medicine AI for Zimbabwe grassroots sport. Given these squad injuries:\n${injurySummary}${bioContext}\nProvide:\n1. OVERALL SQUAD INJURY RISK LEVEL: Low / Medium / High (and why in one sentence)\n2. PLAYERS AT RISK: Which players risk aggravating their injuries and why\n3. TRAINING LOAD RECOMMENDATIONS: Specific advice for training sessions this week${bioRisk ? "\n4. CORRECTIVE DRILLS: 2–3 specific exercises to fix the " + bioRisk.asymmetryDiff + "° knee asymmetry (weak " + (bioRisk.weakSide ?? "side") + ")" : ""}\n\nKeep it concise and practical for a grassroots coach with limited medical resources.`;
       const reply = await queryAI(message, "coach");
       setAiReport(reply);
     } catch (err: unknown) {
@@ -196,6 +228,29 @@ export default function InjuryTrackerPage() {
             </div>
           ))}
         </div>
+
+        {/* Biometric Risk Signal */}
+        {bioRisk && (
+          <div className="mb-6 rounded-xl border border-amber-400/40 bg-amber-400/10 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-400/20">
+                <Scan className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-sm text-amber-800">Biometric Risk Signal Detected</p>
+                <p className="mt-0.5 text-xs text-amber-700">
+                  Last scan ({new Date(bioRisk.date).toLocaleDateString("en-ZW", { day: "numeric", month: "short" })}) shows{" "}
+                  <strong>{bioRisk.asymmetryDiff}° knee asymmetry</strong>
+                  {bioRisk.weakSide ? ` — weak side: ${bioRisk.weakSide}` : ""}. Compensation
+                  patterns like this are a leading indicator of hamstring and groin injuries.
+                </p>
+                <p className="mt-1.5 text-xs font-medium text-amber-600">
+                  Run &quot;AI Risk Check&quot; below for corrective drill recommendations.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add injury form */}
         {showForm && (

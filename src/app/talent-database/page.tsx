@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, Users, Globe, MapPin, Loader2, UserPlus, ExternalLink, Trophy } from "lucide-react";
+import { Search, Users, Globe, MapPin, Loader2, UserPlus, ExternalLink, Trophy, Scan, TrendingUp, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { ProGate } from "@/components/ui/pro-gate";
@@ -32,6 +32,15 @@ interface Player {
   rating?: number | null;
 }
 
+interface BioTalentScore {
+  composite: number;
+  sprint: number;
+  ballControl: number;
+  consistency: number;
+  improvement: number;
+  scanCount: number;
+}
+
 export default function TalentDatabasePage() {
   const router = useRouter();
   const { user, _hasHydrated } = useAuthStore();
@@ -44,6 +53,39 @@ export default function TalentDatabasePage() {
   const [error, setError] = useState<string>("");
   const [shortlisted, setShortlisted] = useState<Set<string>>(new Set());
   const [searched, setSearched] = useState(false);
+  const [bioTalentScore, setBioTalentScore] = useState<BioTalentScore | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("gs_biometric_scans");
+      if (!raw) return;
+      const scans = JSON.parse(raw) as Array<{ mode: string; score: number; session_date: string }>;
+      if (scans.length < 2) return;
+
+      const sprintScans = scans.filter((s) => s.mode === "SPRINT_KNEE_DRIVE");
+      const juggleScans = scans.filter((s) => s.mode === "JUGGLING_CUSHION");
+
+      const sprint = sprintScans.length > 0
+        ? Math.round(sprintScans.reduce((sum, s) => sum + s.score, 0) / sprintScans.length)
+        : 50;
+      const ballControl = juggleScans.length > 0
+        ? Math.round(juggleScans.reduce((sum, s) => sum + s.score, 0) / juggleScans.length)
+        : 50;
+
+      const allScores = scans.map((s) => s.score);
+      const mean = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+      const stddev = Math.sqrt(allScores.reduce((sum, s) => sum + (s - mean) ** 2, 0) / allScores.length);
+      const consistency = Math.round(Math.max(0, Math.min(100, 100 - stddev * 1.5)));
+
+      // scans stored newest-first; compare oldest 3 vs latest 3
+      const earliestAvg = scans.slice(-3).reduce((s, c) => s + c.score, 0) / Math.min(3, scans.length);
+      const latestAvg = scans.slice(0, 3).reduce((s, c) => s + c.score, 0) / Math.min(3, scans.length);
+      const improvement = Math.round(Math.min(100, Math.max(0, 50 + (latestAvg - earliestAvg))));
+
+      const composite = Math.round(sprint * 0.3 + ballControl * 0.3 + consistency * 0.2 + improvement * 0.2);
+      setBioTalentScore({ composite, sprint, ballControl, consistency, improvement, scanCount: scans.length });
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -120,6 +162,43 @@ export default function TalentDatabasePage() {
             </div>
           ))}
         </div>
+
+        {/* Biometric Talent Score (personal — shown when scan history exists) */}
+        {bioTalentScore && (
+          <div className="mb-5 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-5">
+            <div className="flex items-start gap-4 flex-wrap">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-[#f0b429]/20">
+                <Scan className="h-6 w-6 text-[#c8962a]" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-bold text-[#7a5a00]">Your Biometric Talent Score</p>
+                  <span className="rounded-full bg-[#f0b429] px-2.5 py-0.5 text-xs font-bold text-[#1a3a1a]">
+                    {bioTalentScore.composite}/100
+                  </span>
+                  <span className="text-xs text-[#9a7a20]">from {bioTalentScore.scanCount} scans</span>
+                </div>
+                <p className="mt-1 text-xs text-[#9a7a20]">
+                  Composite score calculated from your AI biometric assessments. Based on sprint drive, ball control, consistency and improvement rate.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {[
+                    { label: "Sprint Drive", value: bioTalentScore.sprint, icon: TrendingUp, weight: "30%" },
+                    { label: "Ball Control", value: bioTalentScore.ballControl, icon: Trophy, weight: "30%" },
+                    { label: "Consistency", value: bioTalentScore.consistency, icon: CheckCircle, weight: "20%" },
+                    { label: "Improvement", value: bioTalentScore.improvement, icon: TrendingUp, weight: "20%" },
+                  ].map(({ label, value, weight }) => (
+                    <div key={label} className="rounded-xl border border-[#f0b429]/30 bg-white/40 px-3 py-2 text-center">
+                      <p className="text-lg font-bold text-[#7a5a00]">{value}</p>
+                      <p className="text-xs text-[#9a7a20] font-medium">{label}</p>
+                      <p className="text-xs text-[#c8a050]">×{weight}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filter bar */}
         <div className="mb-5 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-4">
