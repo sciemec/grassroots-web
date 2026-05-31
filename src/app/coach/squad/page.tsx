@@ -46,7 +46,7 @@ export default function CoachSquadPage() {
     fetchSquad();
   }, [user, router]);
 
-  // Load biometric data for each player from localStorage
+  // Load coach's squad biometric analytics overview parameters
   const loadBiometricData = (playerId: string): { formScore?: number; fatigueLevel?: number } => {
     try {
       const sessionsKey = `training_sessions_${playerId}`;
@@ -74,7 +74,6 @@ export default function CoachSquadPage() {
         const _r = res.data?.data ?? res.data; 
         const rawSquad = Array.isArray(_r) ? _r : [];
         
-        // Enrich squad with biometric data from localStorage
         const enrichedSquad = rawSquad.map((member: SquadMember) => ({
           ...member,
           ...loadBiometricData(member.player?.id || member.player_id)
@@ -144,7 +143,6 @@ export default function CoachSquadPage() {
     return matchSearch && matchStatus;
   });
 
-  // Calculate team average form
   const avgForm = squad.length > 0 
     ? Math.round(squad.reduce((sum, p) => sum + (p.formScore || 0), 0) / squad.length)
     : 0;
@@ -327,7 +325,7 @@ export default function CoachSquadPage() {
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Joined</th>
                     <th className="px-4 py-3 font-medium"></th>
-                  </td>
+                  </tr>
                 </thead>
                 <tbody className="divide-y">
                   {filtered.map((m) => {
