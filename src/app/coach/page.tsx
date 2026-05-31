@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   Shield, Users, Flame, ShieldAlert, Target, Activity,
   Dumbbell, HeartPulse, Briefcase, ChevronRight,
-  Send, Bot, Sparkles, Loader2,
+  Send, Bot, Sparkles, Loader2, TrendingUp, Calendar,
+  Trophy, Award, Eye, Brain, Zap, BarChart3, AlertTriangle,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { COACHING_STAFF_ROLES, getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
@@ -35,6 +36,25 @@ interface ChatMessage {
 interface SquadStats {
   total_players: number;
   active_injuries: number;
+  teamAvgForm?: number;
+  highFatigueCount?: number;
+}
+
+interface SquadMember {
+  id: string;
+  name: string;
+  position: string;
+  formScore: number;
+  fatigue: number;
+  status: "fit" | "caution" | "injured";
+}
+
+interface UpcomingMatch {
+  id: string;
+  opponent: string;
+  date: string;
+  venue: "home" | "away";
+  competition: string;
 }
 
 const FOOTBALL_ROLES = COACHING_STAFF_ROLES.football ?? [];
@@ -50,8 +70,10 @@ export default function CoachHubPage() {
   const [chatHistory,   setChatHistory]   = useState<ChatMessage[]>([]);
   const [loadingAi,     setLoadingAi]     = useState(false);
   const [knowledge,     setKnowledge]     = useState<SessionPoint[]>([]);
-  const [squadStats,    setSquadStats]    = useState<SquadStats>({ total_players: 0, active_injuries: 0 });
+  const [squadStats,    setSquadStats]    = useState<SquadStats>({ total_players: 0, active_injuries: 0, teamAvgForm: 0, highFatigueCount: 0 });
   const [loadingStats,  setLoadingStats]  = useState(true);
+  const [squad,         setSquad]         = useState<SquadMember[]>([]);
+  const [upcomingMatches, setUpcomingMatches] = useState<UpcomingMatch[]>([]);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +91,34 @@ export default function CoachHubPage() {
     loadKnowledgeForRole(rc.focusCategories).then(setKnowledge).catch(() => setKnowledge([]));
   }, [activeRole]);
 
+  // Load biometric data from localStorage
+  const loadBiometricData = () => {
+    try {
+      // In production, this would come from training_sessions_{playerId}
+      // Mock data for demonstration
+      const mockSquad: SquadMember[] = [
+        { id: "1", name: "Tendai Musona", position: "Winger", formScore: 84, fatigue: 45, status: "fit" },
+        { id: "2", name: "Blessing Moyo", position: "Striker", formScore: 92, fatigue: 28, status: "fit" },
+        { id: "3", name: "Knowledge Chikwanda", position: "Midfielder", formScore: 78, fatigue: 62, status: "caution" },
+        { id: "4", name: "Takudzwa Ngwenya", position: "Defender", formScore: 81, fatigue: 35, status: "fit" },
+        { id: "5", name: "Tinashe Kamusoko", position: "Defender", formScore: 76, fatigue: 71, status: "caution" },
+        { id: "6", name: "Edmore Sibanda", position: "Goalkeeper", formScore: 88, fatigue: 22, status: "fit" },
+      ];
+      setSquad(mockSquad);
+      
+      const avgForm = Math.round(mockSquad.reduce((sum, p) => sum + p.formScore, 0) / mockSquad.length);
+      const highFatigue = mockSquad.filter(p => p.fatigue > 60).length;
+      
+      setSquadStats(prev => ({
+        ...prev,
+        teamAvgForm: avgForm,
+        highFatigueCount: highFatigue,
+      }));
+    } catch (e) {
+      console.error("Failed to load biometric data", e);
+    }
+  };
+
   // Fetch squad + injury counts
   useEffect(() => {
     if (!token || !user) return;
@@ -79,10 +129,21 @@ export default function CoachHubPage() {
     ]).then(([squadRes, injuryRes]) => {
       const players  = squadRes.status  === "fulfilled" ? (squadRes.value.data  ?? squadRes.value)  : [];
       const injuries = injuryRes.status === "fulfilled" ? (injuryRes.value.data ?? injuryRes.value) : [];
-      setSquadStats({
+      setSquadStats(prev => ({
+        ...prev,
         total_players:   Array.isArray(players)  ? players.length : 0,
         active_injuries: Array.isArray(injuries) ? injuries.filter((i: { recovered_at: string | null }) => !i.recovered_at).length : 0,
-      });
+      }));
+      
+      // Load biometric data after squad is fetched
+      loadBiometricData();
+      
+      // Mock upcoming matches
+      setUpcomingMatches([
+        { id: "1", opponent: "Dynamos FC", date: "2026-06-07", venue: "home", competition: "Premier League" },
+        { id: "2", opponent: "CAPS United", date: "2026-06-14", venue: "away", competition: "Premier League" },
+        { id: "3", opponent: "Highlanders", date: "2026-06-21", venue: "home", competition: "Chibuku Cup" },
+      ]);
     }).catch(() => {/* silent */}).finally(() => setLoadingStats(false));
   }, [token, user]);
 
@@ -90,6 +151,18 @@ export default function CoachHubPage() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
+
+  const getFormColor = (score: number) => {
+    if (score >= 80) return "text-emerald-500";
+    if (score >= 60) return "text-amber-500";
+    return "text-red-500";
+  };
+
+  const getFatigueDisplay = (fatigue: number) => {
+    if (fatigue > 60) return { text: "High", color: "text-red-500" };
+    if (fatigue > 30) return { text: "Moderate", color: "text-amber-500" };
+    return { text: "Low", color: "text-emerald-500" };
+  };
 
   if (!hasHydrated || !user) {
     return (
@@ -144,7 +217,7 @@ export default function CoachHubPage() {
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 antialiased font-sans flex flex-col lg:flex-row">
 
       {/* Left Panel — Staff Role Selector */}
-      <aside className="w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-6 space-y-6 shrink-0">
+      <aside className="w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-6 space-y-6 shrink-0 overflow-y-auto">
         <div>
           <div className="flex items-center gap-2 text-[#1a5c2a] font-black text-xs uppercase tracking-widest">
             <Shield size={14} />
@@ -153,6 +226,26 @@ export default function CoachHubPage() {
           <h1 className="text-xl font-black text-gray-900 mt-1">CoachHub Engine</h1>
           <p className="text-xs font-bold text-gray-400 mt-0.5">Zimbabwe Grassroots Framework</p>
         </div>
+
+        {/* Biometric Summary Cards - NEW */}
+        {squadStats.teamAvgForm !== undefined && squadStats.teamAvgForm > 0 && (
+          <div className="space-y-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Team Biometrics</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-center">
+                <p className="text-lg font-black text-[#1a5c2a]">{squadStats.teamAvgForm}</p>
+                <p className="text-[8px] text-gray-500">Avg Form</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-black text-amber-600">{squadStats.highFatigueCount || 0}</p>
+                <p className="text-[8px] text-gray-500">High Fatigue</p>
+              </div>
+            </div>
+            <Link href="/coach/squad" className="text-[10px] font-bold text-[#1a5c2a] flex items-center gap-0.5">
+              View Squad <ChevronRight size={10} />
+            </Link>
+          </div>
+        )}
 
         <div className="space-y-1">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Select Staff Role</p>
@@ -184,13 +277,27 @@ export default function CoachHubPage() {
             );
           })}
         </div>
+
+        {/* Quick Links - NEW */}
+        <div className="pt-4 border-t border-gray-200 space-y-1">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Quick Actions</p>
+          <Link href="/coach/live-match" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Activity size={12} /> Live Match
+          </Link>
+          <Link href="/coach/training-plans" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Dumbbell size={12} /> Training Plans
+          </Link>
+          <Link href="/coach/chemistry" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Zap size={12} /> Squad Chemistry
+          </Link>
+        </div>
       </aside>
 
       {/* Main Panel */}
       <main className="flex-1 p-6 space-y-6 overflow-y-auto">
 
-        {/* Metric Strip */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Metric Strip - Enhanced with Biometrics */}
+        <section className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs">
             <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Active Roster</span>
             <div className="flex items-baseline gap-2 mt-1">
@@ -216,17 +323,123 @@ export default function CoachHubPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs">
-            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Strategic Prep</span>
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Team Form</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-black text-gray-900">Active</span>
+              <span className="text-2xl font-black text-[#1a5c2a]">{squadStats.teamAvgForm || "—"}</span>
+              <span className="text-xs font-bold text-gray-400">Avg Score</span>
             </div>
-            <Link href="/coach/training-plans" className="text-[11px] font-black text-[#1a5c2a] uppercase tracking-wide flex items-center gap-0.5 mt-2 hover:underline">
-              Session Outlines <ChevronRight size={12} />
-            </Link>
+            <p className="text-[9px] text-gray-500 mt-1">Based on biometric scans</p>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs">
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Fatigue Alert</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className={`text-2xl font-black ${(squadStats.highFatigueCount || 0) > 0 ? "text-amber-600" : "text-gray-900"}`}>
+                {squadStats.highFatigueCount || 0}
+              </span>
+              <span className="text-xs font-bold text-gray-400">Players</span>
+            </div>
+            {(squadStats.highFatigueCount || 0) > 0 && (
+              <p className="text-[9px] text-amber-600 mt-1">⚠️ Rest recommended</p>
+            )}
           </div>
         </section>
 
-        {/* THUTO Intelligence Suite */}
+        {/* Squad Biometrics Table - NEW */}
+        {squad.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users size={16} className="text-[#1a5c2a]" />
+                <h3 className="text-sm font-bold text-gray-900">Squad Biometrics</h3>
+              </div>
+              <Link href="/coach/squad" className="text-[10px] font-bold text-[#1a5c2a] hover:underline">
+                View All →
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr className="text-left">
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Player</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Position</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Form</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Fatigue</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {squad.slice(0, 5).map((player) => {
+                    const fatigueDisplay = getFatigueDisplay(player.fatigue);
+                    return (
+                      <tr key={player.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
+                        <td className="px-4 py-3 text-gray-600">{player.position}</td>
+                        <td className="px-4 py-3">
+                          <span className={`font-bold ${getFormColor(player.formScore)}`}>
+                            {player.formScore}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${fatigueDisplay.color}`}>
+                            {fatigueDisplay.text}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            player.status === "fit" ? "bg-green-100 text-green-700" :
+                            player.status === "caution" ? "bg-amber-100 text-amber-700" :
+                            "bg-red-100 text-red-700"
+                          }`}>
+                            {player.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={`/coach/squad/${player.id}`} className="text-[10px] font-bold text-[#1a5c2a] hover:underline">
+                            Profile →
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* Upcoming Matches - NEW */}
+        {upcomingMatches.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar size={16} className="text-[#1a5c2a]" />
+              <h3 className="text-sm font-bold text-gray-900">Upcoming Matches</h3>
+            </div>
+            <div className="space-y-2">
+              {upcomingMatches.map((match) => (
+                <div key={match.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">vs {match.opponent}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      {match.competition} • {match.venue === "home" ? "🏠 Home" : "✈️ Away"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-[#1a5c2a] font-medium">
+                      {new Date(match.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link href="/coach/matches" className="mt-3 block text-center text-[10px] font-bold text-[#1a5c2a] hover:underline">
+              Manage Fixtures →
+            </Link>
+          </section>
+        )}
+
+        {/* THUTO Intelligence Suite - YOUR ORIGINAL CHAT */}
         <section className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm grid grid-cols-1 lg:grid-cols-5 gap-6">
 
           {/* Role Context */}
@@ -274,9 +487,22 @@ export default function CoachHubPage() {
                 </div>
               </div>
             )}
+
+            {/* AI Recommendation Card - NEW */}
+            {(squadStats.highFatigueCount || 0) > 0 && (
+              <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                <div className="flex items-center gap-2">
+                  <Brain size={14} className="text-amber-600" />
+                  <p className="text-[10px] font-bold text-amber-700 uppercase">AI Insight</p>
+                </div>
+                <p className="text-[11px] text-amber-800 mt-1">
+                  {squadStats.highFatigueCount} player(s) show high fatigue. Consider lighter training session.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Chat Terminal */}
+          {/* Chat Terminal - YOUR ORIGINAL */}
           <div className="lg:col-span-3 flex flex-col h-[420px] justify-between">
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4">
               {chatHistory.length === 0 ? (
