@@ -7057,8 +7057,6 @@ All items confirmed BUILT AND DEPLOYED by Nigel (25 May 2026):
 | `/arena/clubs/new` page | ✅ DONE |
 | Chemistry migrations on Render | ✅ DONE |
 | Week 5 — Player Chemistry View (`/players/similar`) | ✅ DONE |
-| `GROQ_API_KEY` in Vercel | ✅ DONE |
-| `R2_*` vars (5 vars) in Vercel | ✅ DONE |
 
 ---
 
@@ -7141,25 +7139,330 @@ aiClient.models.generateContent({
 
 ### ALSO IDENTIFIED IN THIS SESSION (Deep Audit — not yet fixed)
 
-These items were found during a full codebase audit. They require Nigel's action or a future session:
-
-| Item | Finding | Action Required |
-|---|---|---|
-| `GOOGLE_AI_API_KEY` in Vercel | Must be set for Match Eye to work | Verify in Vercel dashboard → Environment Variables |
-| `GROQ_API_KEY` in Vercel | NOT confirmed set | Add to Vercel — all THUTO AI chat broken without this |
-| `R2_*` vars (5 vars) | NOT confirmed set | Add to Vercel — video storage / showcase clips broken |
-| `src/app/analyst/match-eye/page.tsx` | Old 214-line version with fake setTimeout timers deployed; sophisticated CLAUDE.md version (Gemini File API browser upload, YOLOv8 tab) is NOT deployed | Rebuild page to match CLAUDE.md architecture if needed |
-| `NEXT_PUBLIC_TRACKER_URL` | Zero references in `src/` — YOLOv8 tracking tab never wired up on the deployed page | Wire up or document as deferred |
-| `/player/success-engine/` directory | Orphaned v1 directory alongside v2 `/player/success/` | Delete `src/app/player/success-engine/` |
-| `province_admin` hub | 13 pages in `src/app/province-admin/` with no CLAUDE.md mention and no test credentials | Document in CLAUDE.md or confirm status |
-
 ---
 
 ### WHAT STILL NEEDS DOING (29 May 2026)
 
-| Item | Status | Action Required |
-|---|---|---|
-| `GOOGLE_AI_API_KEY` in Vercel | Unconfirmed | Verify in Vercel dashboard — Match Eye broken without it |
-| `GROQ_API_KEY` in Vercel | NOT set | Add to Vercel env vars — THUTO AI chat broken |
-| `R2_*` vars (5 vars) | NOT confirmed | Add to Vercel — video/showcase/fan hub broken |
 | Match Eye page architecture | Old simple version deployed | Rebuild to CLAUDE.md spec if full Gemini/YOLOv8 version needed |
+markdown
+# GrassRoots Sports - Claude Code Master Playbook
+
+---
+
+## 🔴 THE REAL PRIORITY (May 2026)
+
+**Zero users. Stop building. Start onboarding ONE coach.**
+
+The platform has 50+ routes, AI features, social graphs, recruitment boards.
+**No one is using it.**
+
+### What matters RIGHT NOW:
+
+| Priority | Action | Success Metric |
+|---|---|---|
+| 1 | Get ONE coach at ONE school to log ONE match | Coach completes match entry |
+| 2 | Fix only the errors that coach encounters | Zero blockers for that coach |
+| 3 | Send coach the WhatsApp report | Coach reads the report |
+| 4 | Ask: "What would make you use this weekly?" | One actionable answer |
+
+### What does NOT matter right now:
+- New features
+- UI polish
+- Performance optimization
+- Additional sports
+- Anything that doesn't help the first coach
+
+---
+
+## 🛑 THE BUG-FIX PROTOCOL — MANDATORY
+
+**THE RULE: No code until Nigel says "YES" to the fix plan.**
+
+### STEP 1: Nigel Provides Evidence
+❌ ERROR: [paste exact error message]
+📍 WHERE: [page URL or route]
+📁 FILE: [file path if known]
+
+text
+
+### STEP 2: Claude States Understanding (ONE SENTENCE)
+I understand: [One sentence restating the problem]
+
+text
+
+### STEP 3: Claude Shows Root Cause (NO CODE)
+ROOT CAUSE:
+Line [number] in [file] tries to [action] but [reason it fails]
+
+text
+
+### STEP 4: Claude Shows The Fix (3 LINES MAX)
+FIX:
+Replace lines [start-end] in [file]:
+--- OLD ---
+[paste exact old lines]
++++ NEW +++
+[paste exact new lines]
+
+text
+
+### STEP 5: Nigel Approves
+- "YES" → Claude writes the code
+- "NO" → Claude stops
+- "SHOW ANOTHER WAY" → Claude suggests alternative
+
+**Claude cannot write code until Nigel says YES.**
+
+### WHAT CLAUDE MUST NEVER DO
+- Write code before approval
+- Change multiple files for one bug
+- Write more than 3 lines per fix
+- Guess at missing information
+
+---
+
+## 🔴 GEMINI PROMPT TEMPLATE
+
+Use this EVERY time:
+
+```markdown
+## EXACT INSTRUCTION FOR GEMINI
+
+**File to change:** [full path]
+
+**What this file does now:** [one sentence]
+
+**What is broken:** [paste exact error message]
+
+**Lines to change (X-Y):** 
+[paste existing code]
+
+**What these lines should become:**
+[paste new code]
+
+**CONSTRAINTS:**
+- Do not change any other file
+- Do not add features I didn't ask for
+- Show me the fix on 3 lines maximum
+
+**Wait for me to say "yes" before writing anything.**
+🔴 PRE-COMMIT CHECK SCRIPT
+Save as .husky/pre-commit:
+
+bash
+#!/bin/bash
+echo "🔍 Running GrassRoots pre-commit checks..."
+
+HAS_ERRORS=0
+
+# Bug 1: Zustand object selector (React #185)
+if git diff --cached --name-only | grep -E '\.(ts|tsx)$' | xargs grep -l "useAuthStore((s) => ({.*})" 2>/dev/null; then
+    echo "❌ ERROR: Zustand object selector causes React #185 infinite loop"
+    echo "   Fix: Split into separate selectors"
+    HAS_ERRORS=1
+fi
+
+# Bug 2: Unsafe array extraction
+if git diff --cached --unified=0 | grep -E "\.data\?\?\[\]" | grep -v "Array.isArray" > /dev/null 2>&1; then
+    echo "❌ ERROR: Unsafe array extraction causes 't.map is not a function'"
+    echo "   Fix: Use Array.isArray() check or safeArray() utility"
+    HAS_ERRORS=1
+fi
+
+# Bug 3: Hardcoded API URL
+if git diff --cached --name-only | xargs grep -l "localhost:8000\|bhora-ai.onrender.com" 2>/dev/null; then
+    echo "❌ ERROR: Hardcoded API URL found"
+    echo "   Fix: Use process.env.NEXT_PUBLIC_API_URL"
+    HAS_ERRORS=1
+fi
+
+# Bug 4: UUID typed as number
+if git diff --cached --unified=0 | grep -E ":\s*number.*id|id:\s*number" > /dev/null 2>&1; then
+    echo "❌ ERROR: UUID typed as number (all IDs are strings)"
+    echo "   Fix: Change type from 'number' to 'string'"
+    HAS_ERRORS=1
+fi
+
+if [ $HAS_ERRORS -eq 1 ]; then
+    echo ""
+    echo "❌ Pre-commit failed. Fix errors above."
+   
+else
+    echo "✅ Pre-commit checks passed"
+    exit 0
+fi
+Installation:
+bash
+mkdir -p .husky
+chmod +x .husky/pre-commit
+npx husky install
+npx husky add .husky/pre-commit "bash .husky/pre-commit"
+✅ SAFE ARRAY PATTERN (PERMANENT)
+NEVER use:
+
+typescript
+res.data?.data ?? res.data ?? []  // ❌
+ALWAYS use:
+
+typescript
+const _r = res.data?.data ?? res.data;
+Array.isArray(_r) ? _r : []  // ✅
+// OR:
+import { safeArray } from "@/lib/safe-array";
+safeArray(res.data)  // ✅
+🔴 REACT #185 — ZUSTAND OBJECT SELECTOR (PERMANENT)
+NEVER use:
+
+typescript
+const { user, token } = useAuthStore((s) => ({ user: s.user, token: s.token }));
+ALWAYS use:
+
+typescript
+const user = useAuthStore((s) => s.user);
+const token = useAuthStore((s) => s.token);
+🔐 AUTH PRINCIPLES
+Current auth methods: Email/Password only. Google OAuth REMOVED.
+
+Login Page (/login):
+Email input, Password input, "Sign In" button
+
+"Forgot password?" link
+
+"Create account" link
+
+Registration (/register/[role]):
+Full name, Email, Password, Role selector
+
+"Create Account" button
+
+🚨 KNOWN ISSUES
+Render cold starts — First API call takes 30-60 seconds on free tier
+
+/ask is the correct AI endpoint — NOT /ai-coach/query
+
+Dev-bypass token — nnygel@live.com / test1234 sets dev-token (401 expected)
+
+📁 ALL BUILT ROUTES
+Core Auth
+text
+/login, /register/player, /register/coach, /register/scout, /register/fan
+Player Hub
+text
+/player, /player/ai-coach, /player/profile, /player/public/[id]
+/player/showcase, /player/vault, /player/media, /player/success
+/player/success/checkin, /player/sessions/new, /player/stats
+/player/stats/new, /player/assessment, /player/talent-id
+/player/valuation, /player/potential, /player/verification
+/player/notifications, /player/goal, /player/passport
+Coach Hub
+text
+/coach, /coach/live-match, /coach/squad, /coach/training-plans
+/coach/set-pieces, /coach/chemistry, /coach/patterns
+/coach/recruitment, /coach/ai-insights
+Scout Hub
+text
+/scout, /scout/reports, /scout/compare, /scout/shortlist
+Fan Hub
+text
+/fan, /fan/discover, /fan/following, /fan-hub
+Arena Social Hub
+text
+/arena, /arena/network, /arena/messages, /arena/discover
+/arena/notifications, /arena/profile/[id], /arena/clubs
+/arena/clubs/[id], /arena/clubs/[id]/review, /arena/clubs/new
+/arena/recruitment, /arena/recruitment/[id], /arena/recruitment/new
+Analyst Hub
+text
+/analyst, /analyst/live-match, /analyst/match-eye
+/analyst/tactical-report, /analyst/heatmaps
+/analyst/pass-map, /analyst/season
+Admin
+text
+/admin, /admin/fan-hub, /admin/users, /admin/verifications
+Public
+text
+/talent-leaderboard, /passport/[id], /business-hub, /video-studio
+🔧 ENVIRONMENT VARIABLES
+Required in Vercel:
+bash
+NEXT_PUBLIC_API_URL = https://bhora-ai.onrender.com/api/v1
+
+R2_ACCOUNT_ID = [SET ✅]
+R2_ACCESS_KEY_ID = [SET ✅]
+R2_SECRET_ACCESS_KEY = [SET ✅]
+R2_BUCKET = grassroots-videos
+R2_PUBLIC_URL = [SET ✅]
+🔑 TEST CREDENTIALS
+Email	Password	Role
+admin@grassrootssports.live	Admin123!	admin
+player@grassrootssports.live	Player123!	player
+coach@grassrootssports.live	Coach123!	coach
+scout@grassrootssports.live	Scout123!	scout
+Dev-bypass: nnygel@live.com / test1234 (sets dev-token)
+
+✅ CONFIRMED WORKING (as of 30 May 2026)
+Item	Status
+Login/Registration	✅
+Player profile with PotentialCard	✅
+Public player profiles	✅
+Arena feed with posts	✅
+Fan Hub video upload	✅
+THUTO AI chat	✅
+All Arena Sprint 5 endpoints	✅
+Chemistry migrations	✅
+R2_* vars	✅
+GROQ_API_KEY	✅
+📝 SESSION LOG — 30 May 2026
+Current Status:
+Platform built: 50+ routes complete
+
+Users: ZERO active
+
+Environment variables: All confirmed set
+
+Priority: Onboard ONE coach
+
+What Was Added:
+Bug-Fix Protocol (no code without approval, 3-line limit)
+
+Pre-commit check script (catches 4 common bugs)
+
+Gemini prompt template (stops unsanctioned changes)
+
+Safe array pattern (prevents t.map is not a function)
+
+React #185 rule (prevents infinite loops)
+
+What Still Needs Doing:
+Onboard first coach (ONLY priority)
+
+Delete orphaned /player/success-engine/ directory
+
+🇿🇼 NORTH STAR
+"Does this help the FIRST coach complete ONE match?"
+
+"Train Anywhere in Zimbabwe. Use AI to Get Recognized." 🇿🇼
+
+This is the master playbook. Follow it exactly. No deviations.
+
+text
+
+---
+
+**That's the complete file.** 
+
+Copy everything from the code block above, paste it into a new file, and save it as `CLAUDE.md` in your project root (`D:/bhora-ai/grassroots-web/CLAUDE.md`).
+
+This one file contains:
+1. The priority shift (onboard one coach)
+2. The Bug-Fix Protocol
+3. The Gemini prompt template
+4. The pre-commit check script
+5. Safe array pattern
+6. React #185 fix
+7. All built routes
+8. Environment variables
+9. Test credentials
+10. Current status
+
+
