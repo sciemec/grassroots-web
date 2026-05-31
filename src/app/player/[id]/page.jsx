@@ -1,182 +1,181 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { mockPlayerMetrics } from '../../../data/playerMetrics';
-import { classifyAthleteProfile } from '../../../data/sportsClassifier'; // Import our new biometric engine logic
+"use client";
 
-export default function PlayerScoutingPassport() {
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, TrendingUp, BarChart3, Calendar, Download } from "lucide-react";
+import { getStoredSessions, calculatePerformanceTrends, exportScoutReport, PlayerPerformance } from "@/lib/performance-tracker";
+import { Sidebar } from "@/components/layout/sidebar";
+
+export default function PlayerProgressPage() {
   const params = useParams();
-  const [player, setPlayer] = useState(null);
-  const [allocation, setAllocation] = useState(null);
+  const playerId = params.playerId as string;
+  const [performance, setPerformance] = useState<PlayerPerformance | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const activeId = params?.id;
-    const selectedPlayer = mockPlayerMetrics[activeId] || mockPlayerMetrics["PLAYER-ZW-2026-9904"];
-    
-    if (selectedPlayer) {
-      setPlayer(selectedPlayer);
-      
-      // Pass the player's raw physical baselines into the Biomechanical Classifier Engine
-      const evaluation = classifyAthleteProfile({
-        verticalTakeoffVelocity: selectedPlayer.athleticBaselines.verticalJump_cm > 55 ? 4.3 : 3.4,
-        decelerationFrames: selectedPlayer.athleticBaselines.agility_illinois_secs < 15 ? 11 : 16,
-        tSpineRotationDeg: selectedPlayer.tacticalCognition.spaceAwareness > 80 ? 52 : 38,
-        limbSymmetryIndex: selectedPlayer.scoutingVectors.scoutConsistencyIndex
-      });
-      setAllocation(evaluation);
-    }
-  }, [params]);
+    const sessions = getStoredSessions(playerId);
+    const trends = calculatePerformanceTrends(sessions);
+    setPerformance(trends);
+    setLoading(false);
+  }, [playerId]);
 
-  if (!player || !allocation) {
-    return <div style={styles.loading}>Loading structural talent verification matrix...</div>;
+  const handleExport = () => {
+    if (performance) {
+      const report = exportScoutReport(performance);
+      navigator.clipboard.writeText(report);
+      alert("Scout report copied to clipboard!");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-950">
+        <Sidebar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent mx-auto" />
+            <p className="mt-3 text-xs text-gray-500">Loading player data...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!performance) {
+    return (
+      <div className="flex h-screen bg-gray-950">
+        <Sidebar />
+        <main className="flex-1 p-8">
+          <div className="rounded-2xl border border-gray-800 bg-gray-900/30 p-12 text-center">
+            <p className="text-gray-500">No training sessions found for this player.</p>
+            <Link href="/coach/squad" className="mt-4 inline-block text-emerald-500 hover:text-emerald-400">
+              ← Back to Squad
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
-    <div style={styles.container}>
-      {/* SCOUT VIEW UPPER DASHBOARD BANNER */}
-      <div style={styles.profileHeader}>
-        <div>
-          <span style={styles.verifiedTag}>✓ FIFA CONNECT REGISTERED • {player.fifaConnectId}</span>
-          <h1 style={styles.playerName}>{player.name}</h1>
-          <p style={styles.metaSubText}>
-            🏃‍♂️ {player.age} Years Old • ⚽ {player.currentClub} • 📍 Harare Region
+    <div className="flex h-screen bg-gray-950">
+      <Sidebar />
+      <main className="flex-1 overflow-auto p-8">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/coach/squad" className="rounded-xl border border-gray-800 bg-gray-900/50 p-2.5 text-gray-400 hover:bg-gray-800">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-white">{performance.playerName}</h1>
+              <p className="text-xs text-gray-500">{performance.sport} • {performance.position}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export Scout Report
+          </button>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+          <div className="rounded-xl border border-gray-800 bg-gray-900/30 p-4">
+            <p className="text-[10px] font-bold uppercase text-gray-500">Total Sessions</p>
+            <p className="text-2xl font-black text-white">{performance.totalSessions}</p>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-900/30 p-4">
+            <p className="text-[10px] font-bold uppercase text-gray-500">Avg. Form Score</p>
+            <p className="text-2xl font-black text-emerald-500">{performance.averages.overallForm}</p>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-900/30 p-4">
+            <p className="text-[10px] font-bold uppercase text-gray-500">Improvement</p>
+            <p className={`text-2xl font-black ${performance.trends.improvementRate > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {performance.trends.improvementRate > 0 ? '+' : ''}{performance.trends.improvementRate}%
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-800 bg-gray-900/30 p-4">
+            <p className="text-[10px] font-bold uppercase text-gray-500">Consistency</p>
+            <p className="text-2xl font-black text-amber-500">{performance.trends.consistencyScore}%</p>
+          </div>
+        </div>
+
+        {/* Performance Graph */}
+        <div className="mb-6 rounded-xl border border-gray-800 bg-gray-900/30 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
+            <h2 className="text-sm font-bold text-white">Performance Over Time</h2>
+          </div>
+          
+          <div className="relative h-64">
+            <div className="absolute bottom-0 left-0 right-0 flex items-end gap-1 h-48">
+              {performance.sessions.slice().reverse().map((session, i) => {
+                const height = (session.metrics.overallForm / 100) * 180;
+                const isImproving = i > 0 && session.metrics.overallForm > performance.sessions[performance.sessions.length - i].metrics.overallForm;
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center">
+                    <div 
+                      className={`w-full rounded-t transition-all ${isImproving ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                      style={{ height: `${height}px`, minHeight: '4px' }}
+                    />
+                    <div className="text-[8px] text-gray-600 mt-2 -rotate-45 origin-top-left">
+                      {new Date(session.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          
+          <p className="text-[10px] text-gray-500 text-center mt-4">
+            Green bars = improvement from previous session • Gold bars = dip in form
           </p>
         </div>
-        <div style={styles.radarBadge}>
-          <div style={styles.radarLabel}>CONSISTENCY INDEX</div>
-          <div style={styles.radarScore}>{player.scoutingVectors.scoutConsistencyIndex}%</div>
-        </div>
-      </div>
 
-      {/* BIOMECHANICAL PHENOTYPE ENGINE MATCH (SMARTPHONE DISCOVERY HUD) */}
-      <div style={styles.phenotypeBanner}>
-        <div style={{ flex: 1 }}>
-          <span style={styles.engineBadge}>📱 PHONE CAMERA BIOMETRIC ANALYSIS RESULT</span>
-          <h2 style={styles.allocationTitle}>Optimal Role: {allocation.recommendedPosition}</h2>
-          <p style={styles.allocationDesc}>
-            Target Discipline: <strong>{allocation.recommendedSport}</strong> • Dominant Trait: <em>{allocation.primaryAttribute}</em>
-          </p>
-        </div>
-        <div style={styles.confidenceZone}>
-          <div style={styles.confidenceLabel}>PLACEMENT CONFIDENCE</div>
-          <div style={styles.confidenceScore}>{allocation.scoutingConfidence}%</div>
-        </div>
-      </div>
-
-      {/* CORE PERFORMANCE GRID METRICS MATRIX */}
-      <div style={styles.matrixGrid}>
-        
-        {/* BLOCK 1: ATHLETIC BASELINES ENGINE */}
-        <div style={styles.metricCard}>
-          <h3 style={styles.cardHeading}>⚡ Physical Baselines Filter</h3>
-          <div style={styles.statRow}>
-            <span>30m Sprint Acceleration:</span>
-            <strong style={styles.highlightText}>{player.athleticBaselines.sprint30m_secs}s</strong>
+        {/* Session History Table */}
+        <div className="rounded-xl border border-gray-800 bg-gray-900/30 overflow-hidden">
+          <div className="border-b border-gray-800 px-5 py-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-emerald-500" />
+              <h2 className="text-sm font-bold text-white">Session History</h2>
+            </div>
           </div>
-          <div style={styles.statRow}>
-            <span>Stamina Target (10k Run):</span>
-            <strong>{player.athleticBaselines.stamina_10k_mins} mins</strong>
-          </div>
-          <div style={styles.statRow}>
-            <span>Vertical Explosion Lift:</span>
-            <strong>{player.athleticBaselines.verticalJump_cm} cm</strong>
-          </div>
-          <div style={styles.statRow}>
-            <span>Illinois Agility Drill Vector:</span>
-            <strong>{player.athleticBaselines.agility_illinois_secs}s</strong>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="border-b border-gray-800 bg-gray-900/50">
+                <tr>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase text-gray-500">Date</th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase text-gray-500">Type</th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase text-gray-500">Form</th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase text-gray-500">Power</th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase text-gray-500">Symmetry</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {performance.sessions.slice(0, 20).map((session) => (
+                  <tr key={session.sessionId} className="hover:bg-gray-800/30">
+                    <td className="px-5 py-3 text-xs text-gray-300">
+                      {new Date(session.timestamp).toLocaleDateString()}
+                    </td>
+                    <td className="px-5 py-3 text-xs text-gray-300 capitalize">{session.sport}</td>
+                    <td className="px-5 py-3">
+                      <span className={`text-xs font-bold ${session.metrics.overallForm > 80 ? 'text-emerald-500' : session.metrics.overallForm > 60 ? 'text-amber-500' : 'text-red-500'}`}>
+                        {session.metrics.overallForm}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-xs text-gray-300">{session.metrics.explosivePower}%</td>
+                    <td className="px-5 py-3 text-xs text-gray-300">{session.metrics.symmetryScore}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-
-        {/* BLOCK 2: TECHNICAL ATTRIBUTE PROFILE */}
-        <div style={styles.metricCard}>
-          <h3 style={styles.cardHeading}>🎯 Technical Execution</h3>
-          
-          <div style={styles.progressSection}>
-            <div style={styles.progressLabelRow}>
-              <span>Short Passing Accuracy</span>
-              <span>{player.technicalExecution.passingAccuracy_short}%</span>
-            </div>
-            <div style={styles.progressBarBg}>
-              <div style={{ ...styles.progressBarFill, width: `${player.technicalExecution.passingAccuracy_short}%`, backgroundColor: '#3b82f6' }}></div>
-            </div>
-          </div>
-
-          <div style={styles.progressSection}>
-            <div style={styles.progressLabelRow}>
-              <span>Positive First Touch Level</span>
-              <span>{player.technicalExecution.firstTouchRating}%</span>
-            </div>
-            <div style={styles.progressBarBg}>
-              <div style={{ ...styles.progressBarFill, width: `${player.technicalExecution.firstTouchRating}%`, backgroundColor: '#10b981' }}></div>
-            </div>
-          </div>
-
-          <div style={styles.statRow} style={{ marginTop: '15px' }}>
-            <span>Preferred Tactical Foot:</span>
-            <strong style={{ color: '#10b981' }}>{player.technicalExecution.preferredFoot}-Footed</strong>
-          </div>
-        </div>
-
-        {/* BLOCK 3: COGNITIVE OVERLAY PRINCIPLES */}
-        <div style={styles.metricCard}>
-          <h3 style={styles.cardHeading}>🧠 Tactical Cognition Radar</h3>
-          
-          <div style={styles.progressSection}>
-            <div style={styles.progressLabelRow}>
-              <span>Spatial Awareness Index</span>
-              <span>{player.tacticalCognition.spaceAwareness}%</span>
-            </div>
-            <div style={styles.progressBarBg}>
-              <div style={{ ...styles.progressBarFill, width: `${player.tacticalCognition.spaceAwareness}%`, backgroundColor: '#f59e0b' }}></div>
-            </div>
-          </div>
-
-          <div style={styles.progressSection}>
-            <div style={styles.progressLabelRow}>
-              <span>Positional Discipline Matrix</span>
-              <span>{player.tacticalCognition.positionalDiscipline}%</span>
-            </div>
-            <div style={styles.progressBarBg}>
-              <div style={{ ...styles.progressBarFill, width: `${player.tacticalCognition.positionalDiscipline}%`, backgroundColor: '#8b5cf6' }}></div>
-            </div>
-          </div>
-
-          <div style={styles.statRow} style={{ marginTop: '15px' }}>
-            <span>Transition Reaction Factor:</span>
-            <strong>{player.tacticalCognition.transitionReaction_secs}s</strong>
-          </div>
-        </div>
-
-      </div>
+      </main>
     </div>
   );
 }
-
-// Scannable layout styles matrix
-const styles = {
-  container: { maxWidth: '1000px', margin: '40px auto', padding: '25px', fontFamily: 'Segoe UI, Roboto, sans-serif', backgroundColor: '#f9fafb', borderRadius: '16px', border: '1px solid #e5e7eb' },
-  profileHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '25px', marginBottom: '20px', flexWrap: 'wrap', gap: '20px' },
-  verifiedTag: { fontSize: '11px', backgroundColor: '#d1fae5', color: '#065f46', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', letterSpacing: '0.5px' },
-  playerName: { fontSize: '28px', fontWeight: 'bold', color: '#111827', margin: '8px 0 4px 0' },
-  metaSubText: { margin: 0, fontSize: '14px', color: '#4b5563', fontWeight: '500' },
-  radarBadge: { backgroundColor: '#111827', color: '#ffffff', padding: '15px 20px', borderRadius: '12px', textAlign: 'center' },
-  radarLabel: { fontSize: '10px', color: '#9ca3af', letterSpacing: '1px', fontWeight: 'bold' },
-  radarScore: { fontSize: '28px', fontWeight: 'bold', color: '#10b981', marginTop: '2px' },
-  phenotypeBanner: { display: 'flex', backgroundColor: '#1e3a8a', color: '#ffffff', padding: '20px', borderRadius: '12px', marginBottom: '30px', alignItems: 'center', gap: '20px', flexWrap: 'wrap', borderLeft: '6px solid #3b82f6' },
-  engineBadge: { fontSize: '10px', backgroundColor: '#3b82f6', color: '#ffffff', padding: '3px 6px', borderRadius: '4px', fontWeight: 'bold' },
-  allocationTitle: { margin: '6px 0', fontSize: '20px', fontWeight: 'bold' },
-  allocationDesc: { margin: 0, fontSize: '13px', color: '#bfdbfe' },
-  confidenceZone: { backgroundColor: 'rgba(255,255,255,0.1)', padding: '12px 18px', borderRadius: '8px', textAlign: 'center' },
-  confidenceLabel: { fontSize: '9px', color: '#bfdbfe', fontWeight: 'bold', letterSpacing: '0.5px' },
-  confidenceScore: { fontSize: '22px', fontWeight: 'bold', color: '#10b981', marginTop: '2px' },
-  matrixGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' },
-  metricCard: { backgroundColor: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.01)' },
-  cardHeading: { margin: '0 0 15px 0', fontSize: '15px', fontWeight: 'bold', color: '#1f2937', borderBottom: '1px solid #f3f4f6', paddingBottom: '8px' },
-  statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#4b5563', padding: '6px 0' },
-  highlightText: { color: '#ef4444', fontSize: '14px' },
-  progressSection: { marginBottom: '12px' },
-  progressLabelRow: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#4b5563', marginBottom: '4px', fontWeight: '500' },
-  progressBarBg: { width: '100%', height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: '4px' },
-  loading: { textAlign: 'center', marginTop: '120px', color: '#6b7280', fontSize: '14px', fontFamily: 'sans-serif' }
-};

@@ -1,217 +1,224 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, Calendar, Star } from "lucide-react";
-import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar,
-} from "recharts";
+import { ArrowLeft, TrendingUp, Calendar, Award, LineChart, Activity } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
-import api from "@/lib/api";
+import { PlayerSidebar } from "@/components/layout/player-sidebar";
 
-interface Session {
-  id: string;
-  focus_area: string;
-  overall_score: number | null;
-  status: string;
-  created_at: string;
+interface TrainingSession {
+  overallForm: number;
+  explosivePower: number;
+  symmetryScore: number;
+  kneeAngle: number;
+  kneeRating: string;
+  timestamp: string;
+  duration: number;
 }
 
-export default function ProgressPage() {
+export default function PlayerProgressPage() {
   const { user } = useAuthStore();
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [latestBiometric, setLatestBiometric] = useState<TrainingSession | null>(null);
+  const [improvement, setImprovement] = useState(0);
 
   useEffect(() => {
-    if (!user) return; // guests see empty state with demo charts
-    setLoading(true);
-    api.get("/player/sessions?per_page=50")
-      .then((res) => {
-        const raw = res.data?.data ?? res.data;
-        setSessions(Array.isArray(raw) ? raw : []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user]);
+    // Load training sessions
+    const stored = localStorage.getItem(`training_sessions_${user?.id}`);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setSessions(parsed);
+      
+      if (parsed.length > 0) {
+        setLatestBiometric(parsed[0]);
+        
+        // Calculate improvement from first to last
+        if (parsed.length >= 2) {
+          const first = parsed[parsed.length - 1];
+          const last = parsed[0];
+          const improvementPercent = ((last.overallForm - first.overallForm) / first.overallForm) * 100;
+          setImprovement(Math.round(improvementPercent));
+        }
+      }
+    }
+  }, [user?.id]);
 
-  const completed = sessions.filter((s) => s.status === "completed" && s.overall_score !== null);
+  // Get rating color
+  const getRatingColor = (rating: string) => {
+    switch(rating) {
+      case 'ELITE': return 'text-emerald-500';
+      case 'GOOD': return 'text-blue-500';
+      default: return 'text-red-500';
+    }
+  };
 
-  // Score trend over time
-  const trendData = completed.slice(-12).map((s, i) => ({
-    label: `S${i + 1}`,
-    score: s.overall_score,
-    date: new Date(s.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short" }),
-  }));
+  // Get form score color
+  const getFormColor = (score: number) => {
+    if (score >= 80) return 'text-emerald-500';
+    if (score >= 60) return 'text-amber-500';
+    return 'text-red-500';
+  };
 
-  // Sessions per focus area
-  const focusCounts: Record<string, { count: number; totalScore: number }> = {};
-  completed.forEach((s) => {
-    if (!s.focus_area) return;
-    const k = s.focus_area;
-    focusCounts[k] = focusCounts[k] ?? { count: 0, totalScore: 0 };
-    focusCounts[k].count += 1;
-    focusCounts[k].totalScore += s.overall_score ?? 0;
-  });
-  const focusData = Object.entries(focusCounts).map(([name, { count, totalScore }]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    sessions: count,
-    avgScore: count > 0 ? Math.round(totalScore / count) : 0,
-  })).sort((a, b) => b.sessions - a.sessions).slice(0, 6);
-
-  // Radar skills breakdown
-  const radarData = [
-    "dribbling", "shooting", "passing", "defending", "fitness", "heading"
-  ].map((skill) => {
-    const entries = completed.filter((s) => s.focus_area === skill);
-    const avg = entries.length ? Math.round(entries.reduce((sum, s) => sum + (s.overall_score ?? 0), 0) / entries.length) : 20;
-    return { skill: skill.charAt(0).toUpperCase() + skill.slice(1), score: avg };
-  });
-
-  const totalSessions = sessions.length;
-  const completedCount = completed.length;
-  const avgScore = completedCount ? Math.round(completed.reduce((sum, s) => sum + (s.overall_score ?? 0), 0) / completedCount) : 0;
-  const bestScore = completedCount ? Math.max(...completed.map((s) => s.overall_score ?? 0)) : 0;
-
-  // Sessions by week (last 8 weeks)
-  const weeklyData = Array.from({ length: 8 }, (_, i) => {
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - (7 - i) * 7);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-    const count = sessions.filter((s) => {
-      const d = new Date(s.created_at);
-      return d >= weekStart && d < weekEnd;
-    }).length;
-    return { week: `W${i + 1}`, sessions: count };
-  });
+  if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mb-6 flex items-center gap-3">
-          <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold">My Progress</h1>
-            <p className="text-sm text-muted-foreground">Your development journey</p>
-          </div>
-        </div>
-
-        {/* Summary cards */}
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[
-            { label: "Total sessions", value: totalSessions, icon: Calendar, color: "text-blue-500" },
-            { label: "Completed", value: completedCount, icon: TrendingUp, color: "text-green-500" },
-            { label: "Avg score", value: `${avgScore}%`, icon: Star, color: "text-yellow-500" },
-            { label: "Best score", value: `${bestScore}%`, icon: Star, color: "text-orange-500" },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="rounded-xl border bg-card p-5">
-              <Icon className={`h-5 w-5 ${color} mb-2`} />
-              <p className="text-2xl font-bold">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-
-        {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-48 animate-pulse rounded-xl bg-muted" />
-            ))}
-          </div>
-        ) : completed.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-12 text-center">
-            <TrendingUp className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">No performance data yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Complete training sessions to see your progress charts</p>
-            <Link href="/player/sessions/new"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-              Start a session
+    <div className="flex h-screen bg-gray-950">
+      <PlayerSidebar />
+      
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
+          
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <Link href="/player" className="flex items-center gap-2 text-gray-400 hover:text-white">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm">Back to Hub</span>
             </Link>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <span className="text-xs text-gray-500">Your Athletic Journey</span>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Score trend */}
-            <div className="rounded-xl border bg-card p-5">
-              <h2 className="mb-4 font-semibold">Score Trend (last 12 sessions)</h2>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
-                    formatter={(v) => [`${v}%`, "Score"]}
-                  />
-                  <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
 
-            {/* Weekly sessions */}
-            <div className="rounded-xl border bg-card p-5">
-              <h2 className="mb-4 font-semibold">Weekly Training Volume</h2>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={weeklyData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v) => [v, "Sessions"]} />
-                  <Bar dataKey="sessions" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          {/* Hero */}
+          <div className="mb-6 rounded-2xl bg-gradient-to-r from-emerald-900/40 to-blue-900/40 p-5 border border-emerald-800/30">
+            <h1 className="text-xl font-black text-white">My Progress</h1>
+            <p className="text-sm text-gray-400 mt-1">
+              Track your improvement over time. Scouts see this graph on your profile.
+            </p>
+          </div>
 
-            {/* Skills radar + focus areas */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-xl border bg-card p-5">
-                <h2 className="mb-4 font-semibold">Skills Radar</h2>
-                <ResponsiveContainer width="100%" height={220}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11 }} />
-                    <Radar dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
-                  </RadarChart>
-                </ResponsiveContainer>
+          {/* Stats Summary */}
+          {latestBiometric && (
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+                <p className="text-[10px] text-gray-500 uppercase">Current Form</p>
+                <p className={`text-2xl font-black ${getFormColor(latestBiometric.overallForm)}`}>
+                  {latestBiometric.overallForm}
+                </p>
+                <p className="text-[10px] text-gray-600">out of 100</p>
               </div>
-              <div className="rounded-xl border bg-card p-5">
-                <h2 className="mb-4 font-semibold">Focus Area Breakdown</h2>
-                <div className="space-y-3">
-                  {focusData.map(({ name, sessions: cnt, avgScore: avg }) => (
-                    <div key={name}>
-                      <div className="mb-1 flex justify-between text-sm">
-                        <span className="font-medium">{name}</span>
-                        <span className="text-muted-foreground">{cnt} sessions · {avg}% avg</span>
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+                <p className="text-[10px] text-gray-500 uppercase">Total Sessions</p>
+                <p className="text-2xl font-black text-white">{sessions.length}</p>
+                <p className="text-[10px] text-gray-600">training sessions logged</p>
+              </div>
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+                <p className="text-[10px] text-gray-500 uppercase">Improvement</p>
+                <p className={`text-2xl font-black ${improvement >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {improvement >= 0 ? '+' : ''}{improvement}%
+                </p>
+                <p className="text-[10px] text-gray-600">since first session</p>
+              </div>
+            </div>
+          )}
+
+          {/* Performance Graph */}
+          {sessions.length >= 2 ? (
+            <div className="mb-6 rounded-2xl border border-gray-800 bg-gray-900/30 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <LineChart className="h-4 w-4 text-emerald-500" />
+                <h2 className="text-sm font-bold text-white">Form Score Trend</h2>
+              </div>
+              
+              <div className="relative h-48">
+                <div className="absolute bottom-0 left-0 right-0 flex items-end gap-1 h-40">
+                  {(() => {
+                    const reversed = sessions.slice().reverse();
+                    return reversed.map((session, i) => {
+                    const height = (session.overallForm / 100) * 160;
+                    const isImproving = i > 0 && session.overallForm > reversed[i - 1].overallForm;
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center group">
+                        <div 
+                          className={`w-full rounded-t transition-all cursor-pointer ${isImproving ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                          style={{ height: `${Math.max(height, 4)}px`, minHeight: '4px' }}
+                          title={`Session ${i+1}: ${session.overallForm}`}
+                        />
+                        <div className="text-[8px] text-gray-600 mt-1 -rotate-45 origin-top-left">
+                          {i+1}
+                        </div>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${avg}%` }} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  });
+                  })()}
                 </div>
               </div>
+
+              <p className="mt-4 text-center text-[9px] text-gray-500">
+                Session progression (oldest → newest) • Green = improving • Gold = maintaining/dip
+              </p>
             </div>
-          {/* Milestones link */}
-          <Link
-            href="/player/milestones"
-            className="flex items-center justify-between rounded-xl border bg-card px-5 py-4 transition-colors hover:bg-muted/40"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/20">
-                <Star className="h-4 w-4 text-orange-400" />
+          ) : (
+            <div className="mb-6 rounded-2xl border border-gray-800 bg-gray-900/30 p-8 text-center">
+              <Activity className="mx-auto mb-3 h-8 w-8 text-gray-600" />
+              <p className="text-sm text-gray-500">Not enough data yet</p>
+              <p className="text-xs text-gray-600 mt-1">
+                Complete 2+ training sessions to see your progress graph
+              </p>
+              <Link href="/player/train" className="mt-4 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white">
+                Start Training →
+              </Link>
+            </div>
+          )}
+
+          {/* Session History */}
+          {sessions.length > 0 && (
+            <div className="rounded-2xl border border-gray-800 bg-gray-900/30 overflow-hidden">
+              <div className="border-b border-gray-800 px-5 py-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-emerald-500" />
+                  <h2 className="text-sm font-bold text-white">Session History</h2>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold">My Milestones</p>
-                <p className="text-xs text-muted-foreground">Celebrate your personal achievements →</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="border-b border-gray-800 bg-gray-900/50">
+                    <tr>
+                      <th className="px-4 py-3 text-[10px] text-gray-500 uppercase">Date</th>
+                      <th className="px-4 py-3 text-[10px] text-gray-500 uppercase">Form</th>
+                      <th className="px-4 py-3 text-[10px] text-gray-500 uppercase">Power</th>
+                      <th className="px-4 py-3 text-[10px] text-gray-500 uppercase">Knee</th>
+                      <th className="px-4 py-3 text-[10px] text-gray-500 uppercase">Symmetry</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800">
+                    {sessions.slice(0, 20).map((session, idx) => (
+                      <tr key={idx} className="hover:bg-gray-800/30">
+                        <td className="px-4 py-3 text-xs text-gray-400">
+                          {new Date(session.timestamp).toLocaleDateString()}
+                        </td>
+                        <td className={`px-4 py-3 text-xs font-bold ${getFormColor(session.overallForm)}`}>
+                          {session.overallForm}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-300">{session.explosivePower}%</td>
+                        <td className={`px-4 py-3 text-xs font-bold ${getRatingColor(session.kneeRating)}`}>
+                          {session.kneeAngle}°
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-300">{session.symmetryScore}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </Link>
-          </div>
-        )}
+          )}
+
+          {/* Call to Action */}
+          {sessions.length === 0 && (
+            <div className="mt-6 rounded-xl border border-emerald-800/30 bg-emerald-600/10 p-5 text-center">
+              <Award className="mx-auto mb-2 h-8 w-8 text-emerald-500" />
+              <p className="text-sm font-bold text-white">Get Your Biometric Profile</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Complete a 30-second assessment to generate your athlete profile
+              </p>
+              <Link href="/player/train" className="mt-4 inline-block rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white">
+                Start Now →
+              </Link>
+            </div>
+          )}
+
+        </div>
       </main>
     </div>
   );
