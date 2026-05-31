@@ -2,12 +2,41 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, Upload, X, Scan, ChevronDown, AlertCircle, Save, CheckCircle2 } from "lucide-react";
-import { processBiometricFrame, detectAsymmetry } from "@/utils/biomechanicsEngine";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-// ─── Analysis mode config ───────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface AnalysisResult {
+  score100: number;
+  level: "Elite" | "Good" | "Raw";
+  rating: string;
+  angle?: number;
+}
+
+interface AsymmetryResult {
+  detected: boolean;
+  isAsymmetric: boolean;
+  weakSide: "left" | "right";
+  leftKneeAngle: number;
+  rightKneeAngle: number;
+  asymmetryDiff: number;
+  asymmetryScore: number;
+}
+
+interface ScanEntry {
+  mode: string;
+  score: number;
+  level: string;
+  asymmetry_score: number;
+  asymmetry_diff: number;
+  weak_side: string | null;
+  frames_analysed: number;
+  session_date: string;
+  mode_label: string;
+}
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 const MODES = [
   {
     id: "SPRINT_KNEE_DRIVE",
@@ -21,13 +50,12 @@ const MODES = [
   },
 ];
 
-const LEVEL_STYLE = {
+const LEVEL_STYLE: Record<string, { bg: string; border: string; text: string; mark: string }> = {
   Elite: { bg: "#f0fdf4", border: "#86efac", text: "#166534", mark: "ELITE" },
   Good:  { bg: "#fefce8", border: "#fde047", text: "#854d0e", mark: "GOOD"  },
   Raw:   { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b", mark: "RAW"   },
 };
 
-// MediaPipe pose connections we care about (indices into landmarks array)
 const SKELETON_LINKS = [
   [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],   // arms
   [11, 23], [12, 24], [23, 24],                         // torso
@@ -37,42 +65,131 @@ const SKELETON_LINKS = [
 
 const LS_KEY = "gs_biometric_scans";
 
-function saveScanToStorage(entry) {
+// ─── Helper Functions ───────────────────────────────────────────────────────
+function calculateAngle(a: any, b: any, c: any): number {
+  if (!a || !b || !c) return 0;
+  const radians = Math.atan2(c.y - b.y, c.x - b.x) -
+                  Math.atan2(a.y - b.y, a.x - b.x);
+  let angle = Math.abs((radians * 180) / Math.PI);
+  if (angle > 180) angle = 360 - angle;
+  return Math.round(angle);
+}
+
+function processBiometricFrame(landmarks: any[], mode: string): AnalysisResult | null {
+  if (!landmarks || landmarks.length < 28) return null;
+  
+  const leftHip = landmarks[23];
+  const leftKnee = landmarks[25];
+  const leftAnkle = landmarks[27];
+  
+  const kneeAngle = calculateAngle(leftHip, leftKnee, leftAnkle);
+  
+  let level: "Elite" | "Good" | "Raw" = "Raw";
+  let rating = "";
+  let score100 = 40;
+  
+  if (kneeAngle < 90) {
+    level = "Elite";
+    rating = "High knee drive — explosive mechanics detected";
+    score100 = Math.min(100, 85 + (90 - kneeAngle));
+  } else if (kneeAngle < 120) {
+    level = "Good";
+    rating = "Solid knee drive — efficient form";
+    score100 = Math.min(85, 70 + (120 - kneeAngle) / 2);
+  } else {
+    level = "Raw";
+    rating = "Low knee drive — needs work on hip flexion";
+    score100 = Math.max(40, 70 - (kneeAngle - 120) / 2);
+  }
+  
+  return { score100, level, rating, angle: kneeAngle };
+}
+
+function detectAsymmetry(landmarks: any[]): AsymmetryResult {
+  if (!landmarks || landmarks.length < 28) {
+    return {
+      detected: false,
+      isAsymmetric: false,
+      weakSide: "left",
+      leftKneeAngle: 0,
+      rightKneeAngle: 0,
+      asymmetryDiff: 0,
+      asymmetryScore: 0,
+    };
+  }
+  
+  const leftHip = landmarks[23];
+  const leftKnee = landmarks[25];
+  const leftAnkle = landmarks[27];
+  const rightHip = landmarks[24];
+  const rightKnee = landmarks[26];
+  const rightAnkle = landmarks[28];
+  
+  const leftKneeAngle = calculateAngle(leftHip, leftKnee, leftAnkle);
+  const rightKneeAngle = calculateAngle(rightHip, rightKnee, rightAnkle);
+  const asymmetryDiff = Math.abs(leftKneeAngle - rightKneeAngle);
+  const isAsymmetric = asymmetryDiff > 10;
+  const weakSide = leftKneeAngle < rightKneeAngle ? "left" : "right";
+  const asymmetryScore = Math.min(100, Math.round(asymmetryDiff * 2));
+  
+  return {
+    detected: isAsymmetric,
+    isAsymmetric,
+    weakSide,
+    leftKneeAngle,
+    rightKneeAngle,
+    asymmetryDiff,
+    asymmetryScore,
+  };
+}
+
+function saveScanToStorage(entry: ScanEntry): void {
   try {
     const existing = JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-    const updated = [entry, ...existing].slice(0, 20); // keep last 20
+    const updated = [entry, ...existing].slice(0, 20);
     localStorage.setItem(LS_KEY, JSON.stringify(updated));
-  } catch {}
+  } catch {
+    // silent fail
+  }
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
-export default function BiometricScanner() {
-  const token = useAuthStore((s) => s.token);
-  const [open, setOpen]               = useState(false);
-  const [mode, setMode]               = useState("SPRINT_KNEE_DRIVE");
-  const [phase, setPhase]             = useState("idle"); // idle | scanning | stopped
-  const [result, setResult]           = useState(null);
-  const [asymmetry, setAsymmetry]     = useState(null);
-  const [framesDone, setFramesDone]   = useState(0);
-  const [error, setError]             = useState(null);
-  const [saving, setSaving]           = useState(false);
-  const [saved, setSaved]             = useState(false);
+interface BiometricScannerProps {
+  onScanComplete?: (data: ScanEntry) => void;
+}
 
-  const videoRef  = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
-  const poseRef   = useRef(null);
-  const rafRef    = useRef(null);
+export default function BiometricScanner({ onScanComplete }: BiometricScannerProps = {}) {
+  const token = useAuthStore((s) => s.token);
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState("SPRINT_KNEE_DRIVE");
+  const [phase, setPhase] = useState<"idle" | "scanning" | "stopped">("idle");
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [asymmetry, setAsymmetry] = useState<AsymmetryResult | null>(null);
+  const [framesDone, setFramesDone] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const poseRef = useRef<any>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => () => stopAll(), []);
 
   function stopAll() {
-    if (rafRef.current)    cancelAnimationFrame(rafRef.current);
-    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
-    if (videoRef.current)  { videoRef.current.srcObject = null; videoRef.current.src = ""; }
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.src = "";
+    }
   }
 
-  // ── Load / reuse MediaPipe Pose ──────────────────────────────────────────
   async function ensurePose() {
     if (poseRef.current) {
       poseRef.current.onResults(onResults);
@@ -80,7 +197,7 @@ export default function BiometricScanner() {
     }
     const mp = await import("@mediapipe/pose");
     const pose = new mp.Pose({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+      locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
     });
     pose.setOptions({
       modelComplexity: 1,
@@ -95,7 +212,6 @@ export default function BiometricScanner() {
     return pose;
   }
 
-  // ── Start live camera ────────────────────────────────────────────────────
   async function startCamera() {
     setError(null);
     setResult(null);
@@ -107,7 +223,7 @@ export default function BiometricScanner() {
     try {
       await ensurePose();
 
-      let stream;
+      let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } },
@@ -124,7 +240,7 @@ export default function BiometricScanner() {
         await videoRef.current.play();
         loop();
       }
-    } catch (err) {
+    } catch (err: any) {
       let msg = "Could not open camera. Try uploading a video clip instead.";
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
         msg = "Camera access was blocked. Click the camera icon in your browser address bar and allow access, then try again.";
@@ -138,8 +254,7 @@ export default function BiometricScanner() {
     }
   }
 
-  // ── Handle video file upload ──────────────────────────────────────────────
-  async function handleUpload(e) {
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
@@ -158,6 +273,8 @@ export default function BiometricScanner() {
       await ensurePose();
 
       const video = videoRef.current;
+      if (!video) throw new Error("Video element not found");
+      
       video.src = objectUrl;
       video.srcObject = null;
       video.muted = true;
@@ -170,7 +287,11 @@ export default function BiometricScanner() {
           return;
         }
         rafRef.current = requestAnimationFrame(async () => {
-          try { await poseRef.current.send({ image: videoRef.current }); } catch {}
+          try {
+            if (poseRef.current && videoRef.current) {
+              await poseRef.current.send({ image: videoRef.current });
+            }
+          } catch {}
           videoLoop();
         });
       }
@@ -182,7 +303,6 @@ export default function BiometricScanner() {
     }
   }
 
-  // ── rAF loop (camera mode) ───────────────────────────────────────────────
   function loop() {
     rafRef.current = requestAnimationFrame(async () => {
       if (streamRef.current?.active && poseRef.current && videoRef.current) {
@@ -192,18 +312,19 @@ export default function BiometricScanner() {
     });
   }
 
-  // ── MediaPipe results callback ───────────────────────────────────────────
-  const onResults = useCallback((results) => {
+  const onResults = useCallback((results: any) => {
     const canvas = canvasRef.current;
-    const video  = videoRef.current;
+    const video = videoRef.current;
     if (!canvas || !video) return;
 
-    const w = video.videoWidth  || 640;
+    const w = video.videoWidth || 640;
     const h = video.videoHeight || 480;
-    canvas.width  = w;
+    canvas.width = w;
     canvas.height = h;
 
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    
     ctx.clearRect(0, 0, w, h);
 
     if (!results.poseLandmarks?.length) return;
@@ -212,11 +333,10 @@ export default function BiometricScanner() {
 
     try {
       const analysis = processBiometricFrame(results.poseLandmarks, mode);
-      if (analysis && !analysis.status) {
+      if (analysis && analysis.score100) {
         setResult(analysis);
       }
 
-      // Asymmetry detection — runs every frame, updates state every 10 frames
       setFramesDone(n => {
         const next = n + 1;
         if (next % 10 === 0) {
@@ -228,10 +348,9 @@ export default function BiometricScanner() {
     } catch {}
   }, [mode]);
 
-  // ── Draw green skeleton on canvas ────────────────────────────────────────
-  function drawSkeleton(ctx, lm, w, h) {
+  function drawSkeleton(ctx: CanvasRenderingContext2D, lm: any[], w: number, h: number) {
     ctx.strokeStyle = "#22c55e";
-    ctx.lineWidth   = 2;
+    ctx.lineWidth = 2;
     for (const [a, b] of SKELETON_LINKS) {
       const p = lm[a];
       const q = lm[b];
@@ -252,29 +371,27 @@ export default function BiometricScanner() {
     }
   }
 
-  // ── Save scan ────────────────────────────────────────────────────────────
   async function saveScan() {
     if (!result || saved) return;
     setSaving(true);
 
-    const entry = {
+    const entry: ScanEntry = {
       mode,
       score: result.score100 ?? 0,
       level: result.level ?? "Raw",
       asymmetry_score: asymmetry?.asymmetryScore ?? 0,
-      asymmetry_diff:  asymmetry?.asymmetryDiff  ?? 0,
-      weak_side:       asymmetry?.weakSide       ?? null,
+      asymmetry_diff: asymmetry?.asymmetryDiff ?? 0,
+      weak_side: asymmetry?.weakSide ?? null,
       frames_analysed: framesDone,
-      session_date:    new Date().toISOString().slice(0, 10),
-      mode_label:      MODES.find(m => m.id === mode)?.label ?? mode,
+      session_date: new Date().toISOString().slice(0, 10),
+      mode_label: MODES.find(m => m.id === mode)?.label ?? mode,
     };
 
-    // Always save locally first for instant feedback + offline support
     saveScanToStorage(entry);
 
-    // Then try the backend (non-blocking)
+    // Try backend (non-blocking)
     try {
-      const headers = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
       await fetch(`${API}/player/biomechanics`, {
         method: "POST",
@@ -282,9 +399,11 @@ export default function BiometricScanner() {
         body: JSON.stringify(entry),
       });
     } catch {
-      // localStorage copy already saved — backend sync is best-effort
+      // localStorage copy already saved
     }
 
+    if (onScanComplete) onScanComplete(entry);
+    
     setSaving(false);
     setSaved(true);
   }
@@ -309,12 +428,11 @@ export default function BiometricScanner() {
     setOpen(false);
   }
 
-  const levelStyle  = result?.level ? (LEVEL_STYLE[result.level] ?? LEVEL_STYLE.Raw) : null;
-  const isScanning  = phase === "scanning";
-  const isStopped   = phase === "stopped";
-  const canSave     = isStopped && result && !saved;
+  const levelStyle = result?.level ? LEVEL_STYLE[result.level] ?? LEVEL_STYLE.Raw : null;
+  const isScanning = phase === "scanning";
+  const isStopped = phase === "stopped";
+  const canSave = isStopped && result && !saved;
 
-  // ── Collapsed pill ───────────────────────────────────────────────────────
   if (!open) {
     return (
       <button
@@ -335,10 +453,8 @@ export default function BiometricScanner() {
     );
   }
 
-  // ── Expanded panel ───────────────────────────────────────────────────────
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      {/* Header bar */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700">
@@ -411,7 +527,6 @@ export default function BiometricScanner() {
         {/* Camera / video view */}
         {(isScanning || isStopped) && (
           <div className="space-y-3">
-            {/* Video + skeleton canvas stacked */}
             <div
               className="relative rounded-xl overflow-hidden bg-black w-full"
               style={{ aspectRatio: "4/3" }}

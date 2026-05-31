@@ -55,6 +55,15 @@ interface ProfileData {
   } | null;
 }
 
+interface BiometricData {
+  overallForm: number;
+  explosivePower: number;
+  symmetryScore: number;
+  recommendedPosition: string | null;
+  lastScanDate: string | null;
+  hasData: boolean;
+}
+
 // ─── ArenaNav ─────────────────────────────────────────────────────────────────
 
 function ArenaNav() {
@@ -100,7 +109,7 @@ function ArenaNav() {
   );
 }
 
-// ─── StatBox ──────────────────────────────────────────────────────────────────
+// ─── StatBox ─────────────────────────────────────────────────────────────────
 
 function StatBox({ label, value, icon: Icon, color }: {
   label: string; value: string | number; icon: React.ElementType; color: string;
@@ -172,6 +181,83 @@ function PostCard({ post }: { post: ArenaPost }) {
   );
 }
 
+// ─── BiometricCard ───────────────────────────────────────────────────────────
+
+function BiometricCard({ biometricData }: { biometricData: BiometricData | null }) {
+  if (!biometricData || !biometricData.hasData) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl shadow-sm p-5" style={{ backgroundColor: "#1a3d26" }}>
+      <div className="flex items-center gap-2 mb-4">
+        <Activity className="h-4 w-4" style={{ color: "#c8962a" }} />
+        <h3 className="text-sm font-bold text-white">Biometric Profile</h3>
+        <span className="text-[10px] text-green-400 bg-green-800/50 px-2 py-0.5 rounded-full">Verified by AI</span>
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center">
+          <p className="text-2xl font-bold" style={{ color: "#c8962a" }}>{biometricData.overallForm}</p>
+          <p className="text-[9px] text-green-300">Form Score</p>
+        </div>
+        <div className="text-center">
+          <p className="text-2xl font-bold text-white">{biometricData.explosivePower}%</p>
+          <p className="text-[9px] text-green-300">Power</p>
+        </div>
+        <div className="text-center">
+          <p className="text-2xl font-bold text-white">{biometricData.symmetryScore}%</p>
+          <p className="text-[9px] text-green-300">Symmetry</p>
+        </div>
+      </div>
+      {biometricData.recommendedPosition && (
+        <div className="mt-4 rounded-lg bg-green-800/30 p-3 text-center border border-green-700/50">
+          <p className="text-xs text-green-400">AI-Recommended Role</p>
+          <p className="text-sm font-bold text-white">{biometricData.recommendedPosition}</p>
+        </div>
+      )}
+      {biometricData.lastScanDate && (
+        <p className="text-[9px] text-green-500 text-center mt-3">
+          Last scan: {new Date(biometricData.lastScanDate).toLocaleDateString()}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Load Biometric Data from localStorage ───────────────────────────────────
+
+function loadBiometricData(playerId: string | number): BiometricData {
+  try {
+    const sessionsKey = `training_sessions_${playerId}`;
+    const stored = localStorage.getItem(sessionsKey);
+    if (stored) {
+      const sessions = JSON.parse(stored);
+      if (sessions && sessions.length > 0) {
+        const latest = sessions[0];
+        return {
+          overallForm: latest.overallForm || latest.metrics?.overallForm || 0,
+          explosivePower: latest.explosivePower || latest.metrics?.explosivePower || 0,
+          symmetryScore: latest.symmetryScore || latest.metrics?.symmetryScore || 0,
+          recommendedPosition: latest.recommendedPosition || null,
+          lastScanDate: latest.timestamp || null,
+          hasData: true
+        };
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load biometric data", e);
+  }
+  
+  return {
+    overallForm: 0,
+    explosivePower: 0,
+    symmetryScore: 0,
+    recommendedPosition: null,
+    lastScanDate: null,
+    hasData: false
+  };
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ArenaProfilePage() {
@@ -184,6 +270,7 @@ export default function ArenaProfilePage() {
   const [data, setData]       = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
+  const [biometricData, setBiometricData] = useState<BiometricData | null>(null);
 
   const [following, setFollowing]     = useState(false);
   const [connecting, setConnecting]   = useState(false);
@@ -202,6 +289,10 @@ export default function ArenaProfilePage() {
         setData(json);
         setFollowing(json.is_following ?? false);
         setConnStatus(json.connection_status ?? "none");
+        
+        // Load biometric data from localStorage using the profile ID
+        const bio = loadBiometricData(profileId);
+        setBiometricData(bio);
       })
       .catch(() => setError("Failed to load profile."))
       .finally(() => setLoading(false));
@@ -488,6 +579,9 @@ export default function ArenaProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* BIOMETRIC CARD - NEW SECTION */}
+        <BiometricCard biometricData={biometricData} />
 
         {/* Recent posts */}
         {data?.posts && data.posts.length > 0 && (

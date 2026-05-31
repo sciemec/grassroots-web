@@ -15,11 +15,13 @@ const nextConfig = {
   webpack: (config) => {
     // Disable symlink resolution to avoid Windows readlink EISDIR issues
     config.resolve.symlinks = false;
+    
     // @sentry/node bundles auto-instrumentation for @google/genai even when
     // the package is not installed. Resolve it to false so webpack treats it
     // as an empty module and the build does not fail.
     config.resolve.alias['@google/genai'] = false;
     config.resolve.alias['@anthropic-ai/sdk'] = false;
+    
     // Vercel build cache keeps restoring a stale coach/page.jsx that has
     // invalid TypeScript type-import syntax (invalid in .jsx files).
     // The file no longer exists in git (renamed to page.tsx) but Vercel
@@ -34,7 +36,7 @@ const nextConfig = {
    *   Cross-Origin-Opener-Policy: same-origin
    *   Cross-Origin-Embedder-Policy: require-corp
    *
-   * These headers are applied to all routes.  Without them the FFmpeg WASM
+   * These headers are applied to all routes. Without them the FFmpeg WASM
    * module will throw "SharedArrayBuffer is not defined" at runtime.
    *
    * NOTE: These headers also affect HLS.js and any third-party iframes.

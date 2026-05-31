@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  MessageSquare, Send, ChevronDown, X, Throws,
+  MessageSquare, Send, ChevronDown, X,
   Trophy, Star, Zap, Globe, Users, Briefcase,
   Bell, Search, Video, Image, Activity, Target,
   TrendingUp, Eye, Calendar, BookOpen, Shield,
@@ -15,7 +15,9 @@ import { safeArray } from "@/lib/safe-array";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+type FeedTab = "for-you" | "milestones" | "regional";
 
 interface PostUser {
   id: string;
@@ -75,24 +77,24 @@ interface LeftPanelData {
   thuto_score: number | null;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────
 
 const ROLE_BADGE: Record<string, { label: string; color: string }> = {
-  player:  { label: "Player",  color: "#1a5c2a" },
-  coach:   { label: "Coach",   color: "#1e40af" },
-  scout:   { label: "Scout",   color: "#7c3aed" },
-  fan:     { label: "Fan",     color: "#b45309" },
-  admin:   { label: "Admin",   color: "#dc2626" },
-  analyst: { label: "Analyst", color: "#0891b2" },
+  player:  { label: "Player",   color: "#1a5c2a" },
+  coach:   { label: "Coach",    color: "#1e40af" },
+  scout:   { label: "Scout",    color: "#7c3aed" },
+  fan:     { label: "Fan",      color: "#b45309" },
+  admin:   { label: "Admin",    color: "#dc2626" },
+  analyst: { label: "Analyst",  color: "#0891b2" },
 };
 
 const POST_TYPE_META: Record<string, { label: string; color: string }> = {
-  milestone:         { label: "Milestone",        color: "#c8962a" },
-  achievement:       { label: "Achievement",       color: "#1a5c2a" },
-  scout_activity:    { label: "Scout Activity",    color: "#7c3aed" },
-  session_milestone: { label: "Session Milestone", color: "#0891b2" },
-  prediction_upgrade:{ label: "Level Up",          color: "#c8962a" },
-  standard:          { label: "",                  color: "" },
+  milestone:          { label: "Milestone",         color: "#c8962a" },
+  achievement:        { label: "Achievement",       color: "#1a5c2a" },
+  scout_activity:     { label: "Scout Activity",    color: "#7c3aed" },
+  session_milestone:  { label: "Session Milestone", color: "#0891b2" },
+  prediction_upgrade: { label: "Level Up",          color: "#c8962a" },
+  standard:           { label: "",                  color: "" },
 };
 
 const REACTIONS = [
@@ -107,7 +109,19 @@ const REACTION_EMOJI: Record<string, string> = {
   heart: "❤️", fire: "🔥", strong: "💪", trophy: "🏆", clap: "👏",
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const TAB_LABELS: Record<FeedTab, string> = {
+  "for-you": "For You Feed",
+  "milestones": "Milestones Only",
+  "regional": "Regional Standings",
+};
+
+const TAB_ENDPOINT: Record<FeedTab, string> = {
+  "for-you": "/arena/posts",
+  "milestones": "/arena/posts?type=milestone",
+  "regional": "/arena/posts?filter=regional",
+};
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
 function initials(name: string | null | undefined): string {
   if (!name) return "?";
@@ -131,7 +145,7 @@ function authHeaders(token: string | null): HeadersInit {
                : { "Content-Type": "application/json" };
 }
 
-// ── ArenaNav ──────────────────────────────────────────────────────────────────
+// ─── ArenaNav ──────────────────────────────────────────────────────────────
 
 function ArenaNav({ user, token }: { user: any; token: string | null }) {
   const router = useRouter();
@@ -156,10 +170,10 @@ function ArenaNav({ user, token }: { user: any; token: string | null }) {
   const homePath = user ? roleHomePath(user.role as Parameters<typeof roleHomePath>[0]) : "/";
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-xs">
+    <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
         <Link href={homePath} className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#1a5c2a] flex items-center justify-center text-white font-black text-xl shadow-xs">
+          <div className="w-9 h-9 rounded-xl bg-[#1a5c2a] flex items-center justify-center text-white font-black text-xl shadow-sm">
             G
           </div>
           <div className="leading-none hidden sm:block">
@@ -172,7 +186,7 @@ function ArenaNav({ user, token }: { user: any; token: string | null }) {
         <div className="hidden lg:flex items-center gap-1">
           {[
             { href: "/player", label: "⚽ Player Hub" },
-            { href: "/coach", label: "🎽 Coach Hub" },
+            { href: "/coach", label: "📋 Coach Hub" },
             { href: "/scout", label: "🔍 Scout Hub" },
             { href: "/fan", label: "👥 Fan Hub" },
             { href: "/analyst", label: "📊 Analyst Hub" },
@@ -215,7 +229,7 @@ function ArenaNav({ user, token }: { user: any; token: string | null }) {
                   <p className="text-[10px] font-bold text-[#1a5c2a] uppercase tracking-wider mt-0.5">{user?.role}</p>
                 </div>
                 <Link href={homePath} className="block px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
-                  Dashboard Dashboard
+                  Dashboard Hub
                 </Link>
                 <Link href={`/arena/profile/${user?.id}`} className="block px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
                   Arena Profile
@@ -235,7 +249,7 @@ function ArenaNav({ user, token }: { user: any; token: string | null }) {
   );
 }
 
-// ── PostComposer ──────────────────────────────────────────────────────────────
+// ─── PostComposer ──────────────────────────────────────────────────────────
 
 function PostComposer({ user, token, onPosted }: { user: any; token: string | null; onPosted: (post: ArenaPost) => void }) {
   const [body, setBody] = useState("");
@@ -277,7 +291,7 @@ function PostComposer({ user, token, onPosted }: { user: any; token: string | nu
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4 shadow-xs">
+    <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4 shadow-sm">
       <div className="flex gap-3">
         <div className="w-9 h-9 rounded-xl bg-[#1a5c2a] text-white font-black text-sm flex items-center justify-center shrink-0">
           {initials(user?.name)}
@@ -348,7 +362,7 @@ function PostComposer({ user, token, onPosted }: { user: any; token: string | nu
               <button
                 onClick={handleSubmit}
                 disabled={!body.trim() || submitting}
-                className="bg-[#1a5c2a] text-white px-5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-40 transition-all shadow-xs"
+                className="bg-[#1a5c2a] text-white px-5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-40 transition-all shadow-sm"
               >
                 {submitting ? "Posting..." : "Post Update"}
               </button>
@@ -360,7 +374,7 @@ function PostComposer({ user, token, onPosted }: { user: any; token: string | nu
   );
 }
 
-// ── CommentSection ────────────────────────────────────────────────────────────
+// ─── CommentSection ────────────────────────────────────────────────────────
 
 function CommentSection({ postId, token }: { postId: string; token: string | null }) {
   const [comments, setComments] = useState<ArenaComment[]>([]);
@@ -404,7 +418,7 @@ function CommentSection({ postId, token }: { postId: string; token: string | nul
               <div className="w-6 h-6 rounded-md bg-gray-200 text-gray-700 font-bold flex items-center justify-center shrink-0">
                 {initials(c.user?.name)}
               </div>
-              <div className="bg-white border border-gray-100 rounded-xl px-2.5 py-1.5 flex-1 shadow-2xs">
+              <div className="bg-white border border-gray-100 rounded-xl px-2.5 py-1.5 flex-1 shadow-sm">
                 <span className="font-black text-gray-900 block">{c.user?.name || "User"}</span>
                 <span className="text-gray-700 mt-0.5 block font-medium leading-normal">{c.body}</span>
                 <span className="text-[9px] font-bold text-gray-400 block mt-1">{timeAgo(c.created_at)}</span>
@@ -423,7 +437,7 @@ function CommentSection({ postId, token }: { postId: string; token: string | nul
           />
           <button
             onClick={pushComment}
-            className="bg-[#1a5c2a] text-white p-1.5 rounded-xl flex items-center justify-center shadow-xs"
+            className="bg-[#1a5c2a] text-white p-1.5 rounded-xl flex items-center justify-center shadow-sm"
           >
             <Send size={14} />
           </button>
@@ -433,7 +447,7 @@ function CommentSection({ postId, token }: { postId: string; token: string | nul
   );
 }
 
-// ── PostCard ──────────────────────────────────────────────────────────────────
+// ─── PostCard ──────────────────────────────────────────────────────────────
 
 function PostCard({ post, token }: { post: ArenaPost; token: string | null }) {
   const [myReaction, setMyReaction] = useState<string | null>(post.my_reaction ?? (post.liked ? "heart" : null));
@@ -447,7 +461,7 @@ function PostCard({ post, token }: { post: ArenaPost; token: string | null }) {
     const isToggleOff = prev === type;
 
     setMyReaction(isToggleOff ? null : type);
-    setLikeCount((c) => destructionOff ? c - 1 : prev ? c : c + 1);
+    setLikeCount((c) => isToggleOff ? c - 1 : prev ? c : c + 1);
 
     try {
       await fetch(`${API}/api/v1/arena/posts/${post.id}/like`, {
@@ -464,7 +478,7 @@ function PostCard({ post, token }: { post: ArenaPost; token: string | null }) {
   const isCelebration = post.post_type === "milestone" || post.post_type === "achievement";
 
   return (
-    <div className={`border rounded-2xl p-5 mb-4 shadow-xs transition-all bg-white ${
+    <div className={`border rounded-2xl p-5 mb-4 shadow-sm transition-all bg-white ${
       isCelebration ? "border-emerald-200 bg-emerald-50/10" : "border-gray-200"
     }`}>
       <div className="flex gap-3 items-start justify-between">
@@ -496,8 +510,8 @@ function PostCard({ post, token }: { post: ArenaPost; token: string | null }) {
       <p className="text-sm font-medium text-gray-800 leading-relaxed mt-4 whitespace-pre-wrap">{post.body}</p>
 
       {post.milestone_label && (
-        <div className="mt-3 inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 font-black text-xs px-3 py-1 rounded-xl shadow-2xs">
-          🏅 {post.milestone_label}
+        <div className="mt-3 inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 font-black text-xs px-3 py-1 rounded-xl shadow-sm">
+          🏆 {post.milestone_label}
         </div>
       )}
 
@@ -513,7 +527,7 @@ function PostCard({ post, token }: { post: ArenaPost; token: string | null }) {
             </div>
           )}
           <button onClick={() => handleReact(myReaction ?? "heart")} className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider hover:text-red-500">
-            <span>{myReaction ? REACTION_EMOJI[myReaction] : "🤍"}</span>
+            <span>{myReaction ? REACTION_EMOJI[myReaction] : "❤️"}</span>
             <span>{likeCount}</span>
           </button>
         </div>
@@ -529,7 +543,7 @@ function PostCard({ post, token }: { post: ArenaPost; token: string | null }) {
   );
 }
 
-// ── Widgets & Panels ─────────────────────────────────────────────────────────
+// ─── Widgets & Panels ──────────────────────────────────────────────────────
 
 function LeftPanel({ user, token }: { user: any; token: string | null }) {
   const [data, setData] = useState<LeftPanelData>({ scout_views: 0, following: 0, followers: 0, sessions: 0, peak_level_label: null, thuto_score: null });
@@ -557,7 +571,7 @@ function LeftPanel({ user, token }: { user: any; token: string | null }) {
 
   return (
     <aside className="space-y-4">
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="h-12 bg-gradient-to-r from-[#1a5c2a] to-emerald-700" />
         <div className="p-4 pt-0 -mt-6 text-center">
           <div className="w-12 h-12 rounded-xl bg-[#1a5c2a] border-4 border-white text-white font-black text-base mx-auto flex items-center justify-center shadow-sm">
@@ -590,10 +604,10 @@ function LeftPanel({ user, token }: { user: any; token: string | null }) {
       </div>
 
       {/* Navigation Mapping */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-xs space-y-3 font-black text-xs uppercase tracking-wider text-gray-500">
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-3 font-black text-xs uppercase tracking-wider text-gray-500">
         <div>
-          <p className="text-[9px] font-bold text-gray-400 tracking-widest mb-1">Navigation Navigation</p>
-          <Link href="/arena" className="flex items-center gap-2 py-1 text-[#1a5c2a]">🏠 Home Feed</Link>
+          <p className="text-[9px] font-bold text-gray-400 tracking-widest mb-1">Navigation Hub</p>
+          <Link href="/arena" className="flex items-center gap-2 py-1 text-[#1a5c2a]">🏡 Home Feed</Link>
           <Link href="/arena/discover" className="flex items-center gap-2 py-1 hover:text-gray-900">🌍 Discover Athletes</Link>
           <Link href="/talent-leaderboard" className="flex items-center gap-2 py-1 hover:text-gray-900">🏆 THUTO Top 50</Link>
         </div>
@@ -615,7 +629,7 @@ function RightPanel({ token }: { token: string | null }) {
   return (
     <aside className="space-y-4">
       {scouts.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-xs">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 block animate-pulse" />
             Verified Scouts Active ({scouts.length})
@@ -637,7 +651,7 @@ function RightPanel({ token }: { token: string | null }) {
       )}
 
       {trending.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-xs">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3 flex items-center gap-1.5">
             <TrendingUp size={14} className="text-[#1a5c2a]" /> Trending Zimbabwe
           </h3>
@@ -655,7 +669,7 @@ function RightPanel({ token }: { token: string | null }) {
   );
 }
 
-// ── Core Arena App Component ──────────────────────────────────────────────────
+// ─── Core Arena App Component ──────────────────────────────────────────────
 
 export default function ArenaFeedPage() {
   const user = useAuthStore((s) => s.user);
@@ -711,7 +725,7 @@ export default function ArenaFeedPage() {
         <LeftPanel user={user} token={token} />
 
         <div className="md:col-span-2 space-y-4">
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="flex border-b border-gray-100 font-black text-xs uppercase tracking-wider">
               {(Object.keys(TAB_LABELS) as FeedTab[]).map((tab) => (
                 <button
@@ -736,8 +750,8 @@ export default function ArenaFeedPage() {
               <Loader2 className="animate-spin text-[#1a5c2a]" size={28} />
             </div>
           ) : posts.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-xs">
-              <span className="text-3xl block">🏟️</span>
+            <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
+              <span className="text-3xl block">🏜️</span>
               <h4 className="text-sm font-black text-gray-900 mt-3">The Arena feed is currently peaceful</h4>
               <p className="text-xs font-bold text-gray-400 mt-1">Be the first player in your region to post a development insight!</p>
             </div>

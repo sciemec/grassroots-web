@@ -1,24 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, BarChart3, Calendar, Download } from "lucide-react";
+import { ArrowLeft, TrendingUp, Calendar, Download } from "lucide-react";
 import { getStoredSessions, calculatePerformanceTrends, exportScoutReport, PlayerPerformance } from "@/lib/performance-tracker";
 import { Sidebar } from "@/components/layout/sidebar";
 
-export default function PlayerProgressPage() {
-  const params = useParams();
-  const playerId = params.playerId as string;
+interface PlayerProgressPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function PlayerProgressPage({ params }: PlayerProgressPageProps) {
+  // Unwrap Next.js dynamic routing parameters safely
+  const resolvedParams = use(params);
+  const playerId = resolvedParams.id;
+
   const [performance, setPerformance] = useState<PlayerPerformance | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!playerId) return;
     const sessions = getStoredSessions(playerId);
     const trends = calculatePerformanceTrends(sessions);
     setPerformance(trends);
-    setLoading(false);
-  }, [playerId]);
+    loading && setLoading(false);
+  }, [playerId, loading]);
 
   const handleExport = () => {
     if (performance) {
@@ -117,12 +123,12 @@ export default function PlayerProgressPage() {
                 const height = (session.metrics.overallForm / 100) * 180;
                 const isImproving = i > 0 && session.metrics.overallForm > performance.sessions[performance.sessions.length - i].metrics.overallForm;
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center">
+                  <div key={session.sessionId || i} className="flex-1 flex flex-col items-center">
                     <div 
                       className={`w-full rounded-t transition-all ${isImproving ? 'bg-emerald-500' : 'bg-amber-500'}`}
                       style={{ height: `${height}px`, minHeight: '4px' }}
                     />
-                    <div className="text-[8px] text-gray-600 mt-2 -rotate-45 origin-top-left">
+                    <div className="text-[8px] text-gray-600 mt-2 -rotate-45 origin-top-left whitespace-nowrap">
                       {new Date(session.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </div>
                   </div>
