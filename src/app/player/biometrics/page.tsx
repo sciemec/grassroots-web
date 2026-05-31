@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, History, Award, TrendingUp } from "lucide-react";
+import { ArrowLeft, History, TrendingUp } from "lucide-react";
 import BiometricScanner from "@/components/BiometricScanner";
 
 type TabType = "sprint" | "juggling" | "classification";
@@ -68,9 +68,9 @@ export default function PlayerBiometricsPage() {
             Juggling Rhythm
           </button>
           <button
-            onClick={() => setActiveTab("classify")}
+            onClick={() => setActiveTab("classification")}
             className={`flex-1 rounded-lg py-2.5 text-xs font-bold uppercase tracking-wider transition-all ${
-              activeTab === "classify"
+              activeTab === "classification"
                 ? "bg-emerald-600 text-white shadow-lg"
                 : "text-gray-500 hover:bg-gray-800 hover:text-gray-300"
             }`}
@@ -148,3 +148,4 @@ export default function PlayerBiometricsPage() {
       </div>
     </div>
   );
+}
