@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 // ✅ FIXED: Imported PlayerSidebar cleanly to align with line 98
-import { PlayerSidebar } from "@/components/layout/sidebar";
+import { PlayerSidebar } from "@/components/layout/player-sidebar";
 
 interface TrainingSession {
   overallForm: number;
@@ -21,7 +21,7 @@ interface TrainingSession {
 }
 
 export default function PlayerTrainingProgressPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [latestBiometric, setLatestBiometric] = useState<TrainingSession | null>(null);
