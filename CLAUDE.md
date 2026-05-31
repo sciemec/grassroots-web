@@ -7449,7 +7449,7 @@ text
 
 ---
 
-**That's the complete file.** 
+**That's the complete file.**
 
 Copy everything from the code block above, paste it into a new file, and save it as `CLAUDE.md` in your project root (`D:/bhora-ai/grassroots-web/CLAUDE.md`).
 
@@ -7464,5 +7464,176 @@ This one file contains:
 8. Environment variables
 9. Test credentials
 10. Current status
+
+---
+
+## SESSION LOG — 1 June 2026
+
+### Theme — AI Training Lab + Biometric Progress Tracking + Coach Biometric Scanner
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Overview
+
+Introduced the full **AI Training Lab** system — a complete biometric scanning and progress tracking
+stack. 18 files changed (10 new, 8 replaced). New TypeScript modules for biomechanics math,
+MediaPipe Pose and Holistic scanning components, player-specific training hub pages, and
+a dedicated player sidebar. Coach and player hubs updated to surface biometric data throughout.
+
+---
+
+### FILES CHANGED (18 total)
+
+#### NEW FILES (10)
+
+| File | Purpose |
+|---|---|
+| `src/app/player/training/page.tsx` | Player Training hub — entry point with "Start Scan" and "View Progress" CTAs |
+| `src/app/player/training/scan/page.tsx` | Live biometric scanner page — loads BiometricScanner with camera feed |
+| `src/app/player/training/progress/page.tsx` | Progress graphs and session history — reads from `gs_biometric_scans` localStorage |
+| `src/app/player/brand/page.tsx` | Brand Studio — player photo and profile enhancement tools |
+| `src/app/player/story/page.tsx` | My Story — player's personal journey narrative page |
+| `src/components/layout/player-sidebar.tsx` | Dedicated player hub sidebar with AI Training Lab + My Progress nav links |
+| `src/utils/biomechanicsEngine.ts` | Core biometric math — `calculateJointAngle`, `detectAsymmetry`, `processBiometricFrame`, `AnalysisResult` + `AsymmetryResult` interfaces |
+| `src/components/BiometricScanner.tsx` | Reusable scanner using MediaPipe Pose (33 landmarks) — 2 modes: `SPRINT_KNEE_DRIVE` + `JUGGLING_CUSHION`, canvas overlay, `onScanComplete` callback, localStorage save to `gs_biometric_scans` |
+| `src/lib/biometric-engine.ts` | Full biometric engine — `analyzeKneeDrive`, `analyzeHeadTilt`, `analyzeCoreDrift`, `analyzeSymmetry`, `classifyAthleteProfile`, `analyzeTouchCushion`, `BiometricMetrics` interface |
+| `src/lib/performance-tracker.ts` | Session storage and performance trend computation — reads/writes scan history |
+
+Also created (TypeScript migration of deleted JSX/JS originals):
+- `src/app/coach/biometrics/page.tsx` — Coach Biometric Talent ID page (see below)
+- `src/components/HolisticScanner.tsx` — MediaPipe Holistic Landmarker (543-point full-body: pose + face + hands)
+- `src/utils/biomechanicsEngine.ts` — TypeScript port of the original `.js` engine
+
+#### DELETED FILES (3 — replaced by TypeScript versions)
+
+| Deleted | Replaced by |
+|---|---|
+| `src/app/coach/biometrics/page.jsx` | `src/app/coach/biometrics/page.tsx` |
+| `src/components/BiometricScanner.jsx` | `src/components/BiometricScanner.tsx` |
+| `src/utils/biomechanicsEngine.js` | `src/utils/biomechanicsEngine.ts` |
+
+#### REPLACED / UPDATED FILES (8)
+
+| File | Change |
+|---|---|
+| `src/app/player/page.tsx` | Complete redesign — biometric summary cards, Arena preview, development cards, light theme |
+| `src/components/layout/sidebar.tsx` | Added "AI Training Lab" and "My Progress" nav items to player section |
+| `src/app/coach/squad/page.tsx` | Added Form Score and Fatigue columns to squad table |
+| `src/app/arena/profile/[id]/page.tsx` | Added Biometric Card to public Arena profile page |
+| `src/app/coach/live-match/page.tsx` | Added Live Fatigue Monitoring Panel with per-player alerts |
+| `src/app/coach/talent-id/page.tsx` | Added Biometric Profile Card to talent identification page |
+| `src/app/coach/page.tsx` | Complete redesign — biometric summary row, squad table, upcoming fixtures |
+| `src/app/player/brand/page.tsx` | (replacement — previous placeholder replaced with full Brand Studio) |
+| `src/app/player/talent-id/page.tsx` | Updated to include biometric readout section |
+
+---
+
+### BUG FIXES APPLIED — `src/app/coach/biometrics/page.tsx`
+
+Two bugs fixed this session:
+
+**Bug 1 — React #185 infinite loop (line 18)**
+```tsx
+// BEFORE (broken):
+const { user } = useAuthStore();
+
+// AFTER (fixed):
+const user = useAuthStore((s) => s.user);
+```
+Root cause: Zustand object-destructure creates a new object reference every render → triggers
+an infinite re-render loop (React error #185). Fix: use individual selector.
+
+**Bug 2 — Prop mismatch on BiometricScanner (line 139)**
+```tsx
+// BEFORE (broken):
+<BiometricScanner player={selectedPlayer} />
+
+// AFTER (fixed):
+<BiometricScanner onScanComplete={(data) => console.log("Scan complete for", selectedPlayer?.name, data)} />
+```
+Root cause: `BiometricScanner` TypeScript interface only accepts `onScanComplete?: (data: ScanEntry) => void`.
+The `player` prop does not exist — TypeScript would error at build time. Fix: pass the correct callback prop.
+
+---
+
+### BIOMETRIC SCAN MODES
+
+| Mode | Logic | Elite | Good | Raw |
+|---|---|---|---|---|
+| `SPRINT_KNEE_DRIVE` | Hip→Knee→Ankle angle (right leg) | <90° (score 70-100) | 90–120° (score 40-70) | >120° (score 0-40) |
+| `JUGGLING_CUSHION` | Head tilt + vertical ankle drift | tilt≤40, drift<15 | tilt≤40 OR drift<30 | else |
+
+Score100 is normalised 0–100 for display. Stored in `gs_biometric_scans` localStorage key.
+
+---
+
+### NEW ROUTES ADDED (1 June 2026)
+
+```
+/player/training              AI Training Lab hub — scan or view progress
+/player/training/scan         Live biometric scanner (camera + MediaPipe Pose)
+/player/training/progress     Progress charts + scan history
+/player/brand                 Brand Studio — player photo/profile enhancement
+/player/story                 My Story — personal journey page
+```
+
+---
+
+### BIOMETRIC DATA FLOW
+
+```
+Player opens /player/training/scan
+  → BiometricScanner loads MediaPipe Pose (33 landmarks)
+  → Real-time canvas overlay draws skeleton on video feed
+  → processBiometricFrame() calculates score per frame
+  → On scan complete: ScanEntry saved to localStorage gs_biometric_scans
+  → /player/training/progress reads gs_biometric_scans
+  → Renders trend graphs + session history
+
+Coach opens /coach/biometrics
+  → Selects player from squad list (fetched from /api/v1/coach/squad)
+  → BiometricScanner loads with onScanComplete callback
+  → Scan result logged against selectedPlayer.name
+
+Coach opens /coach/squad
+  → Squad table shows Form Score + Fatigue columns (from API or localStorage)
+```
+
+---
+
+### WHAT STILL NEEDS DOING (1 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `/player/success-engine/` orphaned directory | NOT YET DELETED | Delete `src/app/player/success-engine/` if it exists — page lives at `/player/success` |
+| Coach biometric scan → backend persist | Not yet built | `POST /api/v1/coach/squad/{playerId}/biometric-scan` — saves scan entry to player record |
+| Player scan → backend persist | Not yet built | `POST /api/v1/player/biometric-scans` — syncs localStorage scans to DB |
+| `GET /api/v1/training/sessions/{id}/report` | Confirm live on Render | Test: `curl -H "Authorization: Bearer {token}" https://bhora-ai.onrender.com/api/v1/sessions/{id}/report` |
+| `GROQ_API_KEY` | NOT confirmed set | Add to Vercel env vars if missing — THUTO AI broken without this |
+
+---
+
+### BIOMETRIC ENGINE — KEY FORMULAS
+
+**Joint Angle (calculateJointAngle):**
+```typescript
+const radians = Math.atan2(last.y - middle.y, last.x - middle.x)
+              - Math.atan2(first.y - middle.y, first.x - middle.x);
+let angle = Math.abs((radians * 180.0) / Math.PI);
+if (angle > 180.0) angle = 360.0 - angle;
+```
+
+**Bilateral Asymmetry:**
+- Left knee angle vs right knee angle
+- diff > 10° → `isAsymmetric: true`
+- `asymmetryScore = min(100, round(diff × 3.3))` → 0 = symmetric, 100 = severe
+
+**Athlete Classifier (`classifyAthleteProfile`):**
+- Elite Vertical Power: `verticalTakeoffVelocity > 4.2 && decelerationFrames ≤ 15` → Winger/GK/Guard
+- Multi-directional: `decelerationFrames < 12 && tSpineRotationDeg > 40` → DM/Fullback
+- Deep Mobility: `tSpineRotationDeg ≥ 50 && limbSymmetryIndex > 90` → Box-to-Box/Fast Bowler
+- Default: Center Back / Target Forward
 
 
