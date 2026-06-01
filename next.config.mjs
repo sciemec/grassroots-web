@@ -12,9 +12,19 @@ const nextConfig = {
   },
   transpilePackages: ["firebase"],
 
-  webpack: (config) => {
-    // Disable symlink resolution to avoid Windows readlink EISDIR issues
+  webpack: (config, { dev }) => {
+    // Force Webpack to drop path-guessing symlink sweeps to avoid Windows readlink EISDIR crashes
     config.resolve.symlinks = false;
+    
+    // Explicitly inject path context survival overrides into the root configuration schema
+    if (config.infrastructureLogging) {
+      config.infrastructureLogging.appendOnly = true;
+    }
+
+    // Force webpack to drop corrupt file caches on Windows environments during production builds
+    if (!dev) {
+      config.cache = false;
+    }
     
     // @sentry/node bundles auto-instrumentation for @google/genai even when
     // the package is not installed. Resolve it to false so webpack treats it
@@ -28,13 +38,14 @@ const nextConfig = {
     // persists it across builds. Map its absolute path to false so webpack
     // treats it as an empty module and never tries to compile it.
     config.resolve.alias[`${process.cwd()}/src/app/coach/page.jsx`] = false;
+    
     return config;
   },
 
   /**
    * FFmpeg.wasm requires SharedArrayBuffer which requires:
-   *   Cross-Origin-Opener-Policy: same-origin
-   *   Cross-Origin-Embedder-Policy: require-corp
+   * Cross-Origin-Opener-Policy: same-origin
+   * Cross-Origin-Embedder-Policy: require-corp
    *
    * These headers are applied to all routes. Without them the FFmpeg WASM
    * module will throw "SharedArrayBuffer is not defined" at runtime.
@@ -72,6 +83,10 @@ const nextConfig = {
 export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
+
+  // ⚡ CRITICAL FIX: Tell Sentry to stop running custom asset/symlink sweeps on Windows
+  disableServerWebpackPlugin: true,
+  disableClientWebpackPlugin: true,
 
   // Only upload source maps in CI/production builds
   silent: true,
