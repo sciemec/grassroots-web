@@ -1,14 +1,16 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  MessageSquare, Send, ChevronDown, X,
+  MessageSquare, Send, ChevronDown, 
   Trophy, Star, Zap, Globe, Users, Briefcase,
   Bell, Search, Video, Image, Activity, Target,
   TrendingUp, Eye, Calendar, BookOpen, Shield,
-  Flame, CheckCircle, Loader2, MapPin, ChevronRight
+  Flame, CheckCircle, Loader2, MapPin, ChevronRight,
+  Newspaper, Radio, Award
 } from "lucide-react";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
@@ -18,6 +20,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 type FeedTab = "for-you" | "milestones" | "regional";
+type NewsTab = "local" | "global";
 
 interface PostUser {
   id: string;
@@ -63,9 +66,24 @@ interface ScoutOnline {
   province: string;
 }
 
-interface TrendingTag {
-  tag: string;
-  count: number;
+interface FootballResult {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  status: "LIVE" | "FT";
+  minute?: string;
+  league: string;
+}
+
+interface NewsItem {
+  id: string;
+  title: string;
+  outlet: string;
+  time: string;
+  category: "local" | "global";
+  url?: string;
 }
 
 interface LeftPanelData {
@@ -86,15 +104,6 @@ const ROLE_BADGE: Record<string, { label: string; color: string }> = {
   fan:     { label: "Fan",      color: "#b45309" },
   admin:   { label: "Admin",    color: "#dc2626" },
   analyst: { label: "Analyst",  color: "#0891b2" },
-};
-
-const POST_TYPE_META: Record<string, { label: string; color: string }> = {
-  milestone:          { label: "Milestone",         color: "#c8962a" },
-  achievement:        { label: "Achievement",       color: "#1a5c2a" },
-  scout_activity:     { label: "Scout Activity",    color: "#7c3aed" },
-  session_milestone:  { label: "Session Milestone", color: "#0891b2" },
-  prediction_upgrade: { label: "Level Up",          color: "#c8962a" },
-  standard:           { label: "",                  color: "" },
 };
 
 const REACTIONS = [
@@ -182,7 +191,6 @@ function ArenaNav({ user, token }: { user: any; token: string | null }) {
           </div>
         </Link>
 
-        {/* Global Hub Connectors */}
         <div className="hidden lg:flex items-center gap-1">
           {[
             { href: "/player", label: "⚽ Player Hub" },
@@ -543,7 +551,7 @@ function PostCard({ post, token }: { post: ArenaPost; token: string | null }) {
   );
 }
 
-// ─── Widgets & Panels ──────────────────────────────────────────────────────
+// ─── LeftPanel Widget ──────────────────────────────────────────────────────
 
 function LeftPanel({ user, token }: { user: any; token: string | null }) {
   const [data, setData] = useState<LeftPanelData>({ scout_views: 0, following: 0, followers: 0, sessions: 0, peak_level_label: null, thuto_score: null });
@@ -603,7 +611,6 @@ function LeftPanel({ user, token }: { user: any; token: string | null }) {
         </div>
       </div>
 
-      {/* Navigation Mapping */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-3 font-black text-xs uppercase tracking-wider text-gray-500">
         <div>
           <p className="text-[9px] font-bold text-gray-400 tracking-widest mb-1">Navigation Hub</p>
@@ -616,18 +623,112 @@ function LeftPanel({ user, token }: { user: any; token: string | null }) {
   );
 }
 
+// ─── RightPanel Widget (Match Center & News Deck) ──────────────────────────
+
 function RightPanel({ token }: { token: string | null }) {
   const [scouts, setScouts] = useState<ScoutOnline[]>([]);
-  const [trending, setTrending] = useState<TrendingTag[]>([]);
+  const [newsTab, setNewsTab] = useState<NewsTab>("local");
+  
+  // Real-time placeholders that safely simulate live football states
+  const [results, setResults] = useState<FootballResult[]>([
+    { id: "1", homeTeam: "Dynamos", awayTeam: "Highlanders", homeScore: 1, awayScore: 0, status: "LIVE", minute: "74'", league: "Castle Lager Premier League" },
+    { id: "2", homeTeam: "CAPS United", awayTeam: "Ngezi Platinum", homeScore: 2, awayScore: 2, status: "FT", league: "Castle Lager Premier League" },
+    { id: "3", homeTeam: "Mamelodi Sundowns", awayTeam: "Orlando Pirates", homeScore: 1, awayScore: 1, status: "LIVE", minute: "42'", league: "DSTV Premiership" },
+    { id: "4", homeTeam: "Real Madrid", awayTeam: "Barcelona", homeScore: 3, awayScore: 2, status: "FT", league: "UEFA Champions League" }
+  ]);
+
+  const [news, setNews] = useState<NewsItem[]>([]);
 
   useEffect(() => {
     const h = authHeaders(token);
     fetch(`${API}/api/v1/arena/scouts-online`, { headers: h }).then((r) => r.json()).then((d) => setScouts(safeArray(d.data ?? d))).catch(() => {});
-    fetch(`${API}/api/v1/arena/trending`, { headers: h }).then((r) => r.json()).then((d) => setTrending(safeArray(d.data ?? d))).catch(() => {});
+    
+    // Simulating aggregated football streams across outlets
+    setNews([
+      { id: "n1", title: "ZIFA targets advanced youth talent analytics pathways ahead of regional games", outlet: "Soccer24", time: "2h ago", category: "local" },
+      { id: "n2", title: "National High School tournament stars land professional scout lookouts", outlet: "The Herald", time: "5h ago", category: "local" },
+      { id: "n3", title: "Chipo M. climbs THUTO Matrix Leaderboards to hit regional peak rank criteria", outlet: "Grassroots Analytics", time: "1d ago", category: "local" },
+      { id: "n4", title: "Morocco scales up soccer academy infrastructure investment models", outlet: "CAF Online", time: "4h ago", category: "global" },
+      { id: "n5", title: "European scouts emphasize algorithmic biometric profiling for African prospects", outlet: "Sky Sports", time: "8h ago", category: "global" }
+    ]);
   }, [token]);
+
+  const filteredNews = news.filter(item => item.category === newsTab);
 
   return (
     <aside className="space-y-4">
+      {/* ⚽ Match Center Widget */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+        <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3 flex items-center gap-2">
+          <Award size={14} className="text-[#1a5c2a]" /> Football Match Center
+        </h3>
+        <div className="space-y-3">
+          {results.map((match) => (
+            <div key={match.id} className="border-b border-gray-50 pb-2.5 last:border-0 last:pb-0">
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide truncate mb-1">{match.league}</p>
+              <div className="flex items-center justify-between text-xs font-medium">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <p className="text-gray-950 font-black truncate">{match.homeTeam}</p>
+                  <p className="text-gray-950 font-black truncate">{match.awayTeam}</p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 ml-2">
+                  <div className="bg-gray-50 rounded px-1.5 py-1 text-center font-black min-w-6">
+                    <p className="text-gray-900">{match.homeScore}</p>
+                    <p className="text-gray-900">{match.awayScore}</p>
+                  </div>
+                  <div className="text-right min-w-10">
+                    <span className={`inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
+                      match.status === "LIVE" ? "bg-red-500 text-white animate-pulse" : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {match.status}
+                    </span>
+                    {match.minute && <p className="text-[10px] text-red-500 font-bold mt-0.5">{match.minute}</p>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 📰 Integrated Sports News Widget */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-3">
+          <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+            <Newspaper size={14} className="text-[#1a5c2a]" /> News Desk
+          </h3>
+          <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
+            {(["local", "global"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setNewsTab(tab)}
+                className={`text-[9px] font-black uppercase px-2 py-1 rounded-md transition-all ${
+                  newsTab === tab ? "bg-white text-[#1a5c2a] shadow-sm" : "text-gray-400 hover:text-gray-700"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {filteredNews.map((item) => (
+            <div key={item.id} className="border-b border-gray-50 pb-2 last:border-0 last:pb-0 group cursor-pointer">
+              <h4 className="text-xs font-bold text-gray-800 line-clamp-2 group-hover:text-[#1a5c2a] transition-colors leading-snug">
+                {item.title}
+              </h4>
+              <div className="flex items-center gap-2 mt-1 text-[10px] font-bold text-gray-400">
+                <span className="text-[#1a5c2a]">{item.outlet}</span>
+                <span>•</span>
+                <span>{item.time}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Verified Scouts Widget */}
       {scouts.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3 flex items-center gap-2">
@@ -649,22 +750,6 @@ function RightPanel({ token }: { token: string | null }) {
           </div>
         </div>
       )}
-
-      {trending.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-          <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3 flex items-center gap-1.5">
-            <TrendingUp size={14} className="text-[#1a5c2a]" /> Trending Zimbabwe
-          </h3>
-          <div className="space-y-2">
-            {trending.slice(0, 5).map((t) => (
-              <div key={t.tag} className="flex justify-between items-center text-xs font-bold">
-                <span className="text-[#1a5c2a]">#{t.tag}</span>
-                <span className="text-gray-400 text-[10px]">{t.count} updates</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </aside>
   );
 }
@@ -680,11 +765,6 @@ export default function ArenaFeedPage() {
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
   const [posts, setPosts] = useState<ArenaPost[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (!user) router.replace("/login");
-  }, [hasHydrated, user, router]);
 
   const fetchFeed = async () => {
     if (!token) return;
@@ -702,6 +782,11 @@ export default function ArenaFeedPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!user) router.replace("/login");
+  }, [hasHydrated, user, router]);
 
   useEffect(() => {
     if (hasHydrated && user) {
