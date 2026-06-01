@@ -749,24 +749,20 @@ export default function ArenaFeedPage() {
   const [posts, setPosts] = useState<ArenaPost[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Moving constants completely inside the component scope to protect bundle references
-  const TAB_LABELS: Record<FeedTab, string> = {
-    "for-you": "For You Feed",
-    "milestones": "Milestones Only",
-    "regional": "Regional Standings",
-  };
-
-  const TAB_ENDPOINT: Record<FeedTab, string> = {
-    "for-you": "/arena/posts",
-    "milestones": "/arena/posts?type=milestone",
-    "regional": "/arena/posts?filter=regional",
-  };
+  // Hardcode fixed raw array loops to prevent Webpack reference tree optimization crashes completely
+  const AVAILABLE_TABS = [
+    { id: "for-you", label: "For You Feed", endpoint: "/arena/posts" },
+    { id: "milestones", label: "Milestones Only", endpoint: "/arena/posts?type=milestone" },
+    { id: "regional", label: "Regional Standings", endpoint: "/arena/posts?filter=regional" }
+  ] as const;
 
   const fetchFeed = async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const endpoint = TAB_ENDPOINT[activeTab];
+      const currentTabConfig = AVAILABLE_TABS.find(t => t.id === activeTab);
+      const endpoint = currentTabConfig ? currentTabConfig.endpoint : "/arena/posts";
+      
       const res = await fetch(`${API}/api/v1${endpoint}`, { headers: authHeaders(token) });
       if (res.ok) {
         const json = await res.json();
@@ -808,17 +804,17 @@ export default function ArenaFeedPage() {
         <div className="md:col-span-2 space-y-4">
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="flex border-b border-gray-100 font-black text-xs uppercase tracking-wider">
-              {(Object.keys(TAB_LABELS) as FeedTab[]).map((tab) => (
+              {AVAILABLE_TABS.map((tab) => (
                 <button
-                  key={tab}
-                  onClick={() => { setActiveTab(tab); setPosts([]); }}
+                  key={tab.id}
+                  onClick={() => { setActiveTab(tab.id); setPosts([]); }}
                   className={`flex-1 text-center py-3 border-b-2 transition-all cursor-pointer ${
-                    activeTab === tab
+                    activeTab === tab.id
                       ? "text-[#1a5c2a] border-[#1a5c2a]"
                       : "text-gray-400 border-transparent hover:text-gray-700"
                   }`}
                 >
-                  {TAB_LABELS[tab]}
+                  {tab.label}
                 </button>
               ))}
             </div>
