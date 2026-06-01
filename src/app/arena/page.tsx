@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -116,18 +115,6 @@ const REACTIONS = [
 
 const REACTION_EMOJI: Record<string, string> = {
   heart: "❤️", fire: "🔥", strong: "💪", trophy: "🏆", clap: "👏",
-};
-
-const TAB_LABELS: Record<FeedTab, string> = {
-  "for-you": "For You Feed",
-  "milestones": "Milestones Only",
-  "regional": "Regional Standings",
-};
-
-const TAB_ENDPOINT: Record<FeedTab, string> = {
-  "for-you": "/arena/posts",
-  "milestones": "/arena/posts?type=milestone",
-  "regional": "/arena/posts?filter=regional",
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -623,41 +610,37 @@ function LeftPanel({ user, token }: { user: any; token: string | null }) {
   );
 }
 
-// ─── RightPanel Widget (Match Center & News Deck) ──────────────────────────
+// ─── RightPanel Widget ─────────────────────────────────────────────────────
 
 function RightPanel({ token }: { token: string | null }) {
   const [scouts, setScouts] = useState<ScoutOnline[]>([]);
   const [newsTab, setNewsTab] = useState<NewsTab>("local");
   
-  // Real-time placeholders that safely simulate live football states
-  const [results, setResults] = useState<FootballResult[]>([
+  const [results] = useState<FootballResult[]>([
     { id: "1", homeTeam: "Dynamos", awayTeam: "Highlanders", homeScore: 1, awayScore: 0, status: "LIVE", minute: "74'", league: "Castle Lager Premier League" },
     { id: "2", homeTeam: "CAPS United", awayTeam: "Ngezi Platinum", homeScore: 2, awayScore: 2, status: "FT", league: "Castle Lager Premier League" },
     { id: "3", homeTeam: "Mamelodi Sundowns", awayTeam: "Orlando Pirates", homeScore: 1, awayScore: 1, status: "LIVE", minute: "42'", league: "DSTV Premiership" },
     { id: "4", homeTeam: "Real Madrid", awayTeam: "Barcelona", homeScore: 3, awayScore: 2, status: "FT", league: "UEFA Champions League" }
   ]);
 
-  const [news, setNews] = useState<NewsItem[]>([]);
+  const [news] = useState<NewsItem[]>([
+    { id: "n1", title: "ZIFA targets advanced youth talent analytics pathways ahead of regional games", outlet: "Soccer24", time: "2h ago", category: "local" },
+    { id: "n2", title: "National High School tournament stars land professional scout lookouts", outlet: "The Herald", time: "5h ago", category: "local" },
+    { id: "n3", title: "Chipo M. climbs THUTO Matrix Leaderboards to hit regional peak rank criteria", outlet: "Grassroots Analytics", time: "1d ago", category: "local" },
+    { id: "n4", title: "Morocco scales up soccer academy infrastructure investment models", outlet: "CAF Online", time: "4h ago", category: "global" },
+    { id: "n5", title: "European scouts emphasize algorithmic biometric profiling for African prospects", outlet: "Sky Sports", time: "8h ago", category: "global" }
+  ]);
 
   useEffect(() => {
     const h = authHeaders(token);
     fetch(`${API}/api/v1/arena/scouts-online`, { headers: h }).then((r) => r.json()).then((d) => setScouts(safeArray(d.data ?? d))).catch(() => {});
-    
-    // Simulating aggregated football streams across outlets
-    setNews([
-      { id: "n1", title: "ZIFA targets advanced youth talent analytics pathways ahead of regional games", outlet: "Soccer24", time: "2h ago", category: "local" },
-      { id: "n2", title: "National High School tournament stars land professional scout lookouts", outlet: "The Herald", time: "5h ago", category: "local" },
-      { id: "n3", title: "Chipo M. climbs THUTO Matrix Leaderboards to hit regional peak rank criteria", outlet: "Grassroots Analytics", time: "1d ago", category: "local" },
-      { id: "n4", title: "Morocco scales up soccer academy infrastructure investment models", outlet: "CAF Online", time: "4h ago", category: "global" },
-      { id: "n5", title: "European scouts emphasize algorithmic biometric profiling for African prospects", outlet: "Sky Sports", time: "8h ago", category: "global" }
-    ]);
   }, [token]);
 
   const filteredNews = news.filter(item => item.category === newsTab);
 
   return (
     <aside className="space-y-4">
-      {/* ⚽ Match Center Widget */}
+      {/* Match Center */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
         <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3 flex items-center gap-2">
           <Award size={14} className="text-[#1a5c2a]" /> Football Match Center
@@ -691,7 +674,7 @@ function RightPanel({ token }: { token: string | null }) {
         </div>
       </div>
 
-      {/* 📰 Integrated Sports News Widget */}
+      {/* News Desk */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-3">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
@@ -728,7 +711,7 @@ function RightPanel({ token }: { token: string | null }) {
         </div>
       </div>
 
-      {/* Verified Scouts Widget */}
+      {/* Verified Scouts */}
       {scouts.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3 flex items-center gap-2">
@@ -765,6 +748,19 @@ export default function ArenaFeedPage() {
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
   const [posts, setPosts] = useState<ArenaPost[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Moving constants completely inside the component scope to protect bundle references
+  const TAB_LABELS: Record<FeedTab, string> = {
+    "for-you": "For You Feed",
+    "milestones": "Milestones Only",
+    "regional": "Regional Standings",
+  };
+
+  const TAB_ENDPOINT: Record<FeedTab, string> = {
+    "for-you": "/arena/posts",
+    "milestones": "/arena/posts?type=milestone",
+    "regional": "/arena/posts?filter=regional",
+  };
 
   const fetchFeed = async () => {
     if (!token) return;
