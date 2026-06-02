@@ -3,7 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Eye, EyeOff, ArrowLeft, CheckCircle2, Camera, Loader2, ExternalLink, Brain, Sparkles, MessageCircle } from "lucide-react";
+import { 
+  User, 
+  Eye, 
+  EyeOff, 
+  ArrowLeft, 
+  CheckCircle2, 
+  Camera, 
+  Loader2, 
+  ExternalLink, 
+  Brain, 
+  Sparkles, 
+  MessageCircle,
+  Award
+} from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
@@ -19,20 +32,23 @@ import { SPORT_MAP, SportKey } from "@/config/sports";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 
+// 🔄 INTEGRATION COUPLING: Import your newly upgraded position engine models
+import { getPositionConfig, POSITION_ICON_REGISTRY } from "@/config/positions";
+
 // ── Player similarity lookup ──────────────────────────────────────────────────
 const PLAYER_SIMILARITIES: Record<string, Record<string, string[]>> = {
   football: {
-    "centre forward":        ["Knowledge Musona (youth)", "Nyasha Mushekwi"],
-    "striker":               ["Khama Billiat (early career)", "Knowledge Musona"],
-    "right winger":          ["Khama Billiat", "Tino Kadewere (youth)"],
-    "left winger":           ["Tino Kadewere", "Khama Billiat"],
-    "attacking midfielder":  ["Marvelous Nakamba (youth)", "Devon Chafa"],
-    "central midfielder":    ["Marvelous Nakamba", "Marshal Munetsi"],
-    "defensive midfielder":  ["Teenage Hadebe (youth)", "Takudzwa Chimwemwe"],
-    "centre back":           ["Teenage Hadebe", "Hardlife Zvirekwi"],
-    "right back":            ["Method Mwanjali", "Ronald Pfumbidzai"],
-    "left back":             ["Alec Mudimu", "Ronald Pfumbidzai"],
-    "goalkeeper":            ["Talbert Shumba", "Edmore Sibanda"],
+    "centre forward":         ["Knowledge Musona (youth)", "Nyasha Mushekwi"],
+    "striker":                ["Khama Billiat (early career)", "Knowledge Musona"],
+    "right winger":           ["Khama Billiat", "Tino Kadewere (youth)"],
+    "left winger":            ["Tino Kadewere", "Khama Billiat"],
+    "attacking midfielder":   ["Marvelous Nakamba (youth)", "Devon Chafa"],
+    "central midfielder":     ["Marvelous Nakamba", "Marshal Munetsi"],
+    "defensive midfielder":   ["Teenage Hadebe (youth)", "Takudzwa Chimwemwe"],
+    "centre back":            ["Teenage Hadebe", "Hardlife Zvirekwi"],
+    "right back":             ["Method Mwanjali", "Ronald Pfumbidzai"],
+    "left back":              ["Alec Mudimu", "Ronald Pfumbidzai"],
+    "goalkeeper":             ["Talbert Shumba", "Edmore Sibanda"],
   },
   netball: {
     "goal shooter":  ["Perpetua Mujuru (NASH)", "Tendai Mhlanga"],
@@ -125,7 +141,7 @@ export default function PlayerProfilePage() {
   const watchedValues = watch();
 
   useEffect(() => {
-    if (!user) return; // guests see the form with empty/default values
+    if (!user) return;
     api.get("/profile")
       .then((res) => {
         setProfile(res.data);
@@ -170,7 +186,6 @@ export default function PlayerProfilePage() {
     if (!profile) return;
     setGeneratingNarrative(true);
     try {
-      // Fetch Ubuntu stats alongside narrative generation
       const ubuntuRes    = await api.get("/ubuntu/connections").catch(() => null);
       const partnerCount = ((ubuntuRes?.data?.data ?? []) as unknown[]).length;
       const sessionsLed  = (ubuntuRes?.data?.sessions_led ?? 0) as number;
@@ -232,7 +247,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     if (!whatsappPhone.trim()) return;
     setSavingWhatsapp(true);
     try {
-      // Normalise: 07XXXXXXX → 2637XXXXXXX
       let phone = whatsappPhone.replace(/\s+/g, "");
       if (phone.startsWith("07")) phone = "263" + phone.slice(1);
       await api.patch("/profile", { whatsapp_phone: phone });
@@ -303,6 +317,25 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
   }
 
   const { count, total, pct } = calcCompletion(profile, watchedValues);
+
+  // 📐 HYDRATION COMPONENT EXTENSION: Dynamically read configuration settings based on active input changes
+  // We use watchedValues.position or fallback to checking the user profile state maps cleanly
+  const activePositionKey = (watchedValues.position || "").toLowerCase();
+  
+  // Normalize string matching to hook seamlessly into: striker, midfielder, defender, goalkeeper
+  let lookupKey = "fallback";
+  if (activePositionKey.includes("striker") || activePositionKey.includes("forward") || activePositionKey.includes("winger")) {
+    lookupKey = "striker";
+  } else if (activePositionKey.includes("midfielder")) {
+    lookupKey = "midfielder";
+  } else if (activePositionKey.includes("back") || activePositionKey.includes("defender")) {
+    lookupKey = "defender";
+  } else if (activePositionKey.includes("goalkeeper") || activePositionKey.includes("keeper")) {
+    lookupKey = "goalkeeper";
+  }
+
+  const dynamicConfig = getPositionConfig(lookupKey, watchedValues.age_group);
+  const LiveIconComponent = POSITION_ICON_REGISTRY[lookupKey] || Award;
 
   return (
     <div className="flex h-screen bg-background">
@@ -408,6 +441,30 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               </p>
             )}
           </div>
+
+          {/* DYNAMIC METRIC DISCOVERY CARDS: Renders live derived metrics from config on active position select */}
+          {watchedValues.position && (
+            <div className="mb-8 rounded-2xl border bg-card p-5 shadow-xs border-primary/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`p-2.5 rounded-xl border ${dynamicConfig.badgeColor}`}>
+                  <LiveIconComponent size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">{dynamicConfig.title}</h3>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dynamic Developmental Targets ({watchedValues.age_group ? watchedValues.age_group.toUpperCase() : "GENERAL"})</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {dynamicConfig.successMetrics.map((metric) => (
+                  <div key={metric.label} className="border-l-4 border-[#f0b429] bg-muted/40 px-3 py-2 rounded-r-xl">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight truncate">{metric.label}</p>
+                    <p className="text-base font-black text-white mt-0.5">{metric.target}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Gender banner — shown once when gender is unset */}
           {!loading && profile && !gender && (
@@ -677,7 +734,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </button>
           </form>
 
-          {/* QR Profile Card — only shown to logged-in users */}
+          {/* QR Profile Card ─ only shown to logged-in users */}
           {user && (
             <div className="mt-6 mb-6">
               <QRProfileCard

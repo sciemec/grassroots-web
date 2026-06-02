@@ -1,425 +1,357 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/auth-store";
-import { safeArray } from "@/lib/safe-array";
-import { AdBanner } from "@/components/ui/AdBanner"; // FIXED: Clean named import syntax
 import { 
-  Heart, 
-  MessageSquare, 
-  Share2, 
-  Award, 
-  Zap, 
-  Bell, 
-  Users, 
-  TrendingUp, 
-  MapPin, 
-  Activity, 
-  Filter,
-  LogOut,
-  User,
-  Briefcase,
-  ShieldAlert,
-  School,
-  Film,
-  Plus
+  Search, 
+  Camera, 
+  UploadCloud, 
+  Video,
+  CheckCircle2, 
+  Loader2, 
+  ArrowRight,
+  Sparkles,
+  Zap,
+  Lock,
+  Flame,
+  Award,
+  QrCode,
+  Radio,
+  BookOpen,
+  Activity,
+  GraduationCap,
+  MapPin
 } from "lucide-react";
 
-// --- Permanent Arena Light Theme Colors ---
-const COLORS = {
-  bg: "#f4f2ee",
-  primary: "#1a5c2a", // Forest Green
-  accent: "#c8962a",  // Gold
-  border: "#e5e7eb",
-  textMain: "#111827",
-  textMuted: "#6b7280"
-};
-
-export default function ArenaLandingPage() {
+export default function GrassrootsSportsLanding() {
   const router = useRouter();
   
-  // FIXED: Split selectors to strictly prevent React #185 infinite re-render loops
-  const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
-  const logout = useAuthStore((s) => s.logout);
+  // Sandbox state machinery
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [playerName, setPlayerName] = useState("");
+  const [testType, setTestType] = useState("20m_sprint");
+  const [recording, setRecording] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [showGateModal, setShowGateModal] = useState(false);
+  const [calculatedMetric, setCalculatedMetric] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [hydrated, setHydrated] = useState(false);
-  const [activeTab, setActiveTab] = useState("for-you");
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Live Wire Ticker State Loop
+  const [wireIndex, setWireIndex] = useState(0);
 
-  // Zustand Async Hydration Guard
+  const activityWire = [
+    "⚡ K.M. (U17 Striker, Harare) just clocked a 2.84s 20m sprint line benchmark!",
+    "🍀 Coach Moyo (Matabeleland North) logged a 4-3-3 tactical blueprint loop.",
+    "🔥 T.N. (U13 Midfielder, Bulawayo) cleared a 45cm vertical leap threshold classification.",
+    "🛡️ Zimbiru Primary School NASH cohort profile synced into the National Talent Database.",
+    "⚡ S.G. (Senior Tier Wingback, Manicaland) logged a 15-second manual heart rate recovery index.",
+    "🍀 Teach for Zimbabwe Mobile Lab Ingestion Engine activated for Hwange District schools."
+  ];
+
   useEffect(() => {
-    if (useAuthStore.persist.hasHydrated()) {
-      setHydrated(true);
-    } else {
-      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-      return unsub;
+    const interval = setInterval(() => {
+      setWireIndex((prev) => (prev + 1) % activityWire.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [activityWire.length]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVideoFile(file);
+      if (!playerName) setPlayerName("Trial Athlete");
     }
-  }, []);
+  };
 
-  // Fetch Feed with Fallback
-  useEffect(() => {
-    if (!hydrated) return;
+  const handleBiometricPipeline = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!videoFile && !recording) return;
     
-    setLoading(true);
-    // Linked to live Laravel API endpoints dynamically
-    const mockPosts = [
-      {
-        id: "p1",
-        post_type: "prediction_upgrade",
-        body: "⬆️ Talent level upgraded to Premier Soccer League! Dynamic progress logged from physical metrics.",
-        sport: "Football",
-        province: "Harare",
-        like_count: 14,
-        comment_count: 3,
-        liked: true,
-        created_at: "2h ago",
-        user: { name: "Tendai P.", role: "player", initials: "T.P." }
-      },
-      {
-        id: "p2",
-        post_type: "milestone",
-        body: "🔥 Score improved to 84 (was 76) — keep going! Biomechanics training schedule completed.",
-        sport: "Netball",
-        province: "Bulawayo",
-        like_count: 8,
-        comment_count: 1,
-        liked: false,
-        created_at: "5h ago",
-        user: { name: "Chipo M.", role: "player", initials: "C.M." }
-      },
-      {
-        id: "p3",
-        post_type: "standard",
-        body: "Solid session with the U17 squad today. Working on front foot passing fundamentals to break low blocks.",
-        sport: "Football",
-        province: "Mashonaland Central",
-        like_count: 22,
-        comment_count: 7,
-        liked: false,
-        created_at: "1d ago",
-        user: { name: "Coach Nigel", role: "coach", initials: "C.N." }
-      }
-    ];
-    
-    setPosts(safeArray(mockPosts)); // Utilizing clean codebase-wide safeArray formatting array safeguards
-    setLoading(false);
-  }, [hydrated, activeTab]);
+    setProcessing(true);
 
-  if (!hydrated) return null;
+    // High-speed sandbox metric simulation
+    setTimeout(() => {
+      let derivedMetric = "";
+      if (testType === "20m_sprint") derivedMetric = "Estimated 2.85s Burst Line";
+      else if (testType === "vertical_leap") derivedMetric = "65cm Vertical Separation";
+      else derivedMetric = "Elite Technical Agility Grade";
+
+      setCalculatedMetric(derivedMetric);
+      setProcessing(false);
+      setShowGateModal(true);
+    }, 2500);
+  };
 
   return (
-    <div style={{ backgroundColor: COLORS.bg, minHeight: "100vh" }} className="w-full antialiased text-gray-900 font-sans">
-      {/* Sticky White Global Navigation Panel */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm h-16">
-        <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link href="/" className="text-xl font-black tracking-wider flex items-center space-x-2">
-              <span style={{ color: COLORS.primary }}>THE</span>
-              <span style={{ backgroundColor: COLORS.primary, color: "#fff" }} className="px-2 py-0.5 rounded text-sm font-bold">ARENA</span>
-            </Link>
-            
-            {/* Nav items */}
-            <div className="hidden md:flex items-center space-x-1 font-medium text-sm text-gray-600">
-              <Link href="/" style={{ color: COLORS.primary }} className="px-3 py-2 rounded-lg bg-gray-50 font-bold">Feed</Link>
-              <Link href="/arena/network" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition">Network</Link>
-              <Link href="/arena/messages" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition">Messages</Link>
-              <Link href="/arena/clubs" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition">Clubs</Link>
-              <Link href="/fan-hub" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center space-x-1">
-                <Film size={14} className="text-gray-500" />
-                <span>Fan Hub</span>
-              </Link>
-              <Link href="/talent-leaderboard" className="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center space-x-1">
-                <Zap size={14} style={{ color: COLORS.accent }} />
-                <span>Leaderboard</span>
-              </Link>
+    <div className="min-h-screen bg-[#f4f2ee] text-gray-900 selection:bg-[#f0b429]/30 antialiased">
+      
+      {/* 🏁 ULTRA-LEAN BRAND NAVIGATION HEADER WITH STRATEGIC BRANDING */}
+      <nav className="bg-[#1c3d22] border-b-2 border-[#f0b429] px-4 sm:px-6 py-4 shadow-md sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="bg-[#f0b429] p-1.5 rounded-lg text-[#1c3d22] font-black text-xs">GRS</div>
+            <span className="text-white font-black text-sm tracking-wider uppercase group-hover:text-[#f0b429] transition-colors">Grassroots Sports</span>
+          </Link>
+
+          {/* TEACH FOR ZIMBABWE STRATEGIC PARTNER LOGO BLOCK */}
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-1.5 rounded-xl border border-white/10 shadow-xs">
+            <GraduationCap size={16} className="text-[#f0b429]" />
+            <div className="text-left">
+              <span className="block text-[8px] font-black uppercase tracking-widest text-[#f0b429] leading-none">Strategic Education Partner</span>
+              <span className="text-[11px] font-black tracking-tight text-white uppercase">Teach For Zimbabwe</span>
             </div>
           </div>
-
-          <div className="flex items-center space-x-4">
-            {user ? (
-              <div className="flex items-center space-x-3">
-                <Link href="/arena/notifications" className="p-2 text-gray-500 hover:text-gray-900 relative rounded-full hover:bg-gray-100">
-                  <Bell size={20} />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </Link>
-                <div className="h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{ backgroundColor: COLORS.primary }}>
-                  {user.name ? user.name.charAt(0).toUpperCase() : <User size={16} />}
-                </div>
-                <button onClick={() => logout()} className="hidden sm:flex text-xs font-semibold text-red-600 border border-red-200 px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition">
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link href="/login" className="text-sm font-semibold text-gray-700 px-4 py-2 hover:bg-gray-50 rounded-lg transition">
-                  Sign In
-                </Link>
-                <Link href="/register" style={{ backgroundColor: COLORS.primary }} className="text-sm font-bold text-white px-4 py-2 rounded-lg hover:opacity-90 shadow-sm transition">
-                  Join Platform
-                </Link>
-              </div>
-            )}
-          </div>
+          
+          <Link href="/login" className="text-gray-200 border border-white/20 hover:bg-white/10 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all">
+            Sign In Account
+          </Link>
         </div>
       </nav>
 
-      {/* Main Structural Layout Interface */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          
-          {/* LEFT COLUMN: Identity & Quick-links */}
-          <div className="hidden lg:block lg:col-span-1 space-y-4">
-            {user ? (
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-4 text-center">
-                <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-xl font-bold text-white" style={{ backgroundColor: COLORS.primary }}>
-                  {user.name ? user.name.substring(0,2).toUpperCase() : "GR"}
-                </div>
-                <h2 className="font-bold text-lg text-gray-900">{user.name || "Grassroots User"}</h2>
-                <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-4">{user.role || "Member"}</p>
-                <div className="border-t border-gray-100 pt-3 text-left space-y-2 text-xs font-medium text-gray-600">
-                  <Link href="/dashboard" className="flex justify-between items-center hover:text-gray-900 py-1">
-                    <span>Performance Dashboard</span>
-                    <span style={{ color: COLORS.primary }}>→</span>
-                  </Link>
-                  <Link href="/player/profile" className="flex justify-between items-center hover:text-gray-900 py-1">
-                    <span>Manage DNA Profile</span>
-                    <span style={{ color: COLORS.accent }}>→</span>
-                  </Link>
-                  <Link href="/arena/network" className="flex justify-between items-center hover:text-gray-900 py-1">
-                    <span>Connections Tracker</span>
-                    <span className="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-bold">Live</span>
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 text-center">
-                <Award size={36} className="mx-auto mb-2" style={{ color: COLORS.accent }} />
-                <h3 className="font-bold text-sm text-gray-800">Zimbabwe's Social Hub</h3>
-                <p className="text-xs text-gray-500 mt-1 mb-3">Track statistics, connect with local coaches, and get scouted.</p>
-                <Link href="/register" style={{ backgroundColor: COLORS.accent }} className="block w-full text-center text-white font-bold text-xs py-2 rounded-lg hover:opacity-90 shadow-sm transition">
-                  Create Free Profile
-                </Link>
-              </div>
-            )}
-
-            {/* PRE-LOADED ADS SYSTEM PLACEMENT */}
-            <AdBanner slot="sidebar-top" fallback={true} />
-          </div>
-
-          {/* CENTRE ACTIVE FEED COLUMN */}
-          <div className="col-span-1 lg:col-span-2 space-y-4">
-            {/* Horizontal Feed Navigation Controller */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-1.5 flex space-x-1">
-              {["for-you", "following", "connections"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  style={{ 
-                    backgroundColor: activeTab === tab ? "#f3f4f6" : "transparent",
-                    color: activeTab === tab ? COLORS.primary : COLORS.textMuted
-                  }}
-                  className="flex-1 text-center py-2 text-xs font-bold rounded-xl uppercase tracking-wider transition"
-                >
-                  {tab.replace("-", " ")}
-                </button>
-              ))}
-            </div>
-
-            {/* Post Composer */}
-            {user && (
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-                <div className="flex space-x-3">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0" style={{ backgroundColor: COLORS.primary }}>
-                    {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-                  </div>
-                  <div className="w-full">
-                    <textarea 
-                      placeholder="Share training progress, match outcomes, or media clips..." 
-                      className="w-full border-0 resize-none text-sm text-gray-800 focus:ring-0 placeholder-gray-400 p-1 min-h-[60px]"
-                      maxLength={280}
-                    />
-                    <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-2">
-                      <div className="flex space-x-2 text-xs font-semibold text-gray-500">
-                        <span className="px-2 py-1 bg-gray-100 rounded-lg">#Football</span>
-                        <span className="px-2 py-1 bg-gray-100 rounded-lg">#Harare</span>
-                      </div>
-                      <button style={{ backgroundColor: COLORS.accent }} className="text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm hover:opacity-90 transition">
-                        Post to Arena
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Dynamic Posts Pipeline View */}
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2].map((n) => (
-                  <div key={n} className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3 animate-pulse">
-                    <div className="flex space-x-3 items-center">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                      <div className="space-y-1.5 flex-1">
-                        <div className="h-3 bg-gray-200 rounded w-1/4" />
-                        <div className="h-2.5 bg-gray-200 rounded w-1/6" />
-                      </div>
-                    </div>
-                    <div className="h-3 bg-gray-200 rounded w-full" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {posts.map((post) => {
-                  const isCelebration = post.post_type === "milestone" || post.post_type === "achievement";
-                  const isLevelUp = post.post_type === "prediction_upgrade";
-
-                  return (
-                    <div 
-                      key={post.id} 
-                      style={{ 
-                        backgroundColor: isCelebration ? "#f0fdf4" : "#ffffff",
-                        borderColor: isCelebration ? "#bbf7d0" : isLevelUp ? "#fde68a" : COLORS.border
-                      }}
-                      className="rounded-2xl border shadow-sm p-4 space-y-3 transition"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: COLORS.primary }}>
-                            {post.user.initials}
-                          </div>
-                          <div>
-                            <div className="font-bold text-sm text-gray-900 flex items-center space-x-2">
-                              <span>{post.user.name}</span>
-                              <span className="text-xs font-medium text-gray-400 capitalize px-1.5 py-0.2 bg-gray-100 rounded">
-                                {post.user.role}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-400 font-medium">{post.created_at}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-1.5">
-                          <span className="text-xs font-bold text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-full">
-                            {post.sport}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p className="text-sm text-gray-800 leading-relaxed font-medium">
-                        {post.body}
-                      </p>
-
-                      <div className="flex items-center justify-between border-t border-gray-50/80 pt-3 text-gray-500 text-xs font-bold">
-                        <button className="flex items-center space-x-1.5 hover:text-red-500 transition">
-                          <Heart size={16} fill={post.liked ? "#ef4444" : "transparent"} style={{ color: post.liked ? "#ef4444" : "inherit" }} />
-                          <span>{post.like_count}</span>
-                        </button>
-                        <button className="flex items-center space-x-1.5 hover:text-blue-500 transition">
-                          <MessageSquare size={16} />
-                          <span>{post.comment_count}</span>
-                        </button>
-                        <button className="flex items-center space-x-1.5 hover:text-green-600 transition">
-                          <Share2 size={16} />
-                          <span>Share</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT COLUMN: RE-WIRED SYSTEM INTERACTIVE FEATURES SECTION */}
-          <div className="col-span-1 space-y-4">
-            
-            {/* 1. TALENT WANTED BOARD WIDGET */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 flex items-center space-x-1.5">
-                  <Briefcase size={14} style={{ color: COLORS.accent }} />
-                  <span>Talent Wanted Board</span>
-                </h3>
-                <Link href="/arena/recruitment/new" className="p-1 rounded-full hover:bg-gray-100 text-gray-600 transition">
-                  <Plus size={16} />
-                </Link>
-              </div>
-              <p className="text-xs text-gray-500 font-medium">Division 1 & school clubs recruiting scouted talent.</p>
-              <Link href="/arena/recruitment" style={{ borderColor: COLORS.accent, color: COLORS.textMain }} className="block w-full text-center border font-bold text-xs py-2 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition">
-                Browse Active Postings
-              </Link>
-            </div>
-
-            {/* 2. SCHOOL LEAGUE MANAGER & TOURNAMENTS */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-3">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 flex items-center space-x-1.5">
-                <School size={14} style={{ color: COLORS.primary }} />
-                <span>NASH / NAPH School Leagues</span>
-              </h3>
-              <p className="text-xs text-gray-500 font-medium">Log live match data, view school brackets, and track table positions.</p>
-              <Link href="/school-leagues" style={{ backgroundColor: COLORS.primary }} className="block w-full text-center text-white font-bold text-xs py-2 rounded-lg hover:opacity-90 shadow-sm transition">
-                Open Tournament Board
-              </Link>
-            </div>
-
-            {/* 3. AI INJURY PREVENTION ENGINE TRACKER */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-2">
-              <div className="flex items-center space-x-2">
-                <ShieldAlert size={18} className="text-red-600 flex-shrink-0" />
-                <h4 className="font-bold text-xs text-gray-900">AI Injury Prevention Tracker</h4>
-              </div>
-              <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                Log training volume and physical intensity scaling to calculate biometric injury risks dynamically.
-              </p>
-              <Link href="/injury-tracker" style={{ color: COLORS.primary }} className="block text-xs font-bold hover:underline pt-1">
-                Calculate Risk Profile →
-              </Link>
-            </div>
-
-            {/* 4. PLATFORM TOP TALENT MINIMALIST LEADERS */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 mb-3 flex items-center space-x-1">
-                <TrendingUp size={14} style={{ color: COLORS.accent }} />
-                <span>Trending Talent Profiles</span>
-              </h3>
-              <div className="space-y-3">
-                {[
-                  { initials: "K.M.", name: "K. Musona", rank: "Top 2% U19", score: "89", id: "1" },
-                  { initials: "M.N.", name: "M. Nakamba", rank: "Top 5% U17", score: "84", id: "2" }
-                ].map((item, idx) => (
-                  <Link href={`/player/public/${item.id}`} key={idx} className="flex items-center justify-between text-xs border-b border-gray-50 pb-2 last:border-0 last:pb-0 block hover:bg-gray-50/50 rounded p-1 transition">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center font-bold" style={{ color: COLORS.accent }}>
-                        {item.initials}
-                      </div>
-                      <div>
-                        <div className="font-bold text-gray-800">{item.name}</div>
-                        <div className="text-gray-400 font-medium">{item.rank}</div>
-                      </div>
-                    </div>
-                    <span className="font-black" style={{ color: COLORS.primary }}>{item.score}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="text-center text-[10px] text-gray-400 font-semibold space-y-1">
-              <p>© 2026 GrassRoots Sports Zimbabwe Platform.</p>
-              <div className="flex justify-center space-x-2">
-                <Link href="/privacy" className="hover:underline">Privacy</Link>
-                <span>·</span>
-                <Link href="/terms" className="hover:underline">Terms</Link>
-              </div>
-            </div>
-
-          </div>
+      {/* 📡 LIVE REGIONAL ACTIVITY WIRE */}
+      <div className="bg-[#fffbeb] border-b border-amber-100 py-2.5 px-4 overflow-hidden">
+        <div className="max-w-6xl mx-auto flex items-center gap-2">
+          <span className="flex items-center gap-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0 shadow-3xs">
+            <Radio size={10} className="animate-pulse" /> Live Wire
+          </span>
+          <p className="text-xs font-bold text-amber-900 transition-all duration-500 ease-in-out truncate">
+            {activityWire[wireIndex]}
+          </p>
         </div>
       </div>
+
+      {/* 🌟 MISSION MANIFESTO HERO */}
+      <header className="bg-gradient-to-b from-[#1c3d22] to-[#142c18] text-white py-16 px-6 text-center">
+        <div className="max-w-3xl mx-auto space-y-4">
+          <span className="inline-flex items-center gap-1 bg-[#f0b429] text-[#1c3d22] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+            <Zap size={11} className="fill-current animate-pulse" /> The Core Protocol
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-none">
+            Identify. Nurture. <span className="text-[#f0b429]">Market.</span>
+          </h1>
+          <p className="text-xs sm:text-sm font-semibold text-gray-300 max-w-lg mx-auto leading-relaxed">
+            A digitized talent production line built specifically for Zimbabwean footballers. Strip away the middleman, back your profile with verifiable metrics, and build a global talent passport.
+          </p>
+        </div>
+      </header>
+
+      <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-8">
+
+        {/* 🎛️ ECOSYSTEM INFRASTRUCTURE QUICK-LINKS */}
+        <section className="space-y-2">
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Ecosystem Infrastructure Quick-Links</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            
+            <Link href="/player/success" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-amber-50 text-[#c8962a]"><Zap size={16} /></div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">THUTO Success Engine</h4>
+                  <p className="text-[11px] text-gray-400 font-semibold truncate">Streak monitoring & daily check-ins</p>
+                </div>
+              </div>
+              <ArrowRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors shrink-0" />
+            </Link>
+
+            <Link href="/player/passport" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700"><BookOpen size={16} /></div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">Talent Passport</h4>
+                  <p className="text-[11px] text-gray-400 font-semibold truncate">Verified public A4 scout portfolio</p>
+                </div>
+              </div>
+              <ArrowRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors shrink-0" />
+            </Link>
+
+            <Link href="/player/training" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700"><Activity size={16} /></div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">AI Training Lab</h4>
+                  <p className="text-[11px] text-gray-400 font-semibold truncate">Live MediaPipe camera frame scans</p>
+                </div>
+              </div>
+              <ArrowRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors shrink-0" />
+            </Link>
+
+          </div>
+        </section>
+
+        {/* 🗺️ THE TRILOGY CONVERSION FUNNEL */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-3xs space-y-2">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#c8962a] flex items-center justify-center font-black text-sm">1</div>
+            <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">1. Identify</h3>
+            <p className="text-xs text-gray-500 font-semibold leading-relaxed">Upload a quick video drill in-browser to extract instant, unforgeable speed and power metrics.</p>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-3xs space-y-2">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-sm">2</div>
+            <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">2. Nurture</h3>
+            <p className="text-xs text-gray-500 font-semibold leading-relaxed">Unlock dedicated position metrics and receive targeted, data-light training routines from the THUTO AI agent.</p>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-3xs space-y-2">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black text-sm">3</div>
+            <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">3. Market</h3>
+            <p className="text-xs text-gray-500 font-semibold leading-relaxed">Generate a scannable QR Talent Passport. Share a high-speed digital profile with international scouts instantly.</p>
+          </div>
+        </div>
+
+        {/* 🧬 THE SANDBOX CORE PIPELINE INTERFACE */}
+        <div className="bg-white border border-gray-200 rounded-3xl p-5 sm:p-8 shadow-sm">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="text-center space-y-1">
+              <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight flex items-center justify-center gap-1.5">
+                <Search size={18} className="text-[#1c3d22]" /> Step 1: Initialize Identification Ingestion
+              </h2>
+              <p className="text-xs text-gray-500 font-semibold max-w-md mx-auto">
+                No setup barriers. Drop your drill tape below to begin metric synchronization.
+              </p>
+            </div>
+
+            <form onSubmit={handleBiometricPipeline} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-500 mb-1 tracking-wider">Athlete Moniker</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    placeholder="e.g. Knowledge Moyo" 
+                    className="w-full text-xs bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-3 outline-none focus:bg-white focus:border-gray-400 font-bold transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-gray-500 mb-1 tracking-wider">Biometric Focus Paradigm</label>
+                  <select 
+                    value={testType}
+                    onChange={(e) => setTestType(e.target.value)}
+                    className="w-full text-xs bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-3 outline-none focus:bg-white focus:border-gray-400 font-bold cursor-pointer transition-all"
+                  >
+                    <option value="20m_sprint">20m Direct Acceleration Vector</option>
+                    <option value="vertical_leap">Vertical Leap Separation</option>
+                  </select>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-200 hover:border-[#f0b429] bg-gray-50/50 hover:bg-white rounded-2xl p-6 sm:p-8 text-center cursor-pointer transition-all space-y-2 group"
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="video/*" 
+                  className="hidden" 
+                />
+                <div className="w-10 h-10 rounded-full bg-white border flex items-center justify-center text-gray-400 group-hover:text-[#c8962a] shadow-xs mx-auto transition-transform group-hover:scale-105">
+                  <UploadCloud size={18} />
+                </div>
+                {videoFile ? (
+                  <div>
+                    <p className="text-xs font-black text-gray-900 max-w-xs mx-auto truncate">Staged: {videoFile.name}</p>
+                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tight mt-0.5">Ingestion node loaded completely</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs font-black text-gray-800">Select performance drill video file</p>
+                    <p className="text-[10px] text-gray-400 font-semibold mt-0.5">Vertical smartphone camera configurations supported</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecording(!recording);
+                    if (!recording) setVideoFile(new File([""], "device_lens_sandbox.mp4"));
+                  }}
+                  className={`flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wider border px-4 py-3 rounded-xl transition-all ${
+                    recording ? 'bg-red-50 border-red-200 text-red-600 animate-pulse' : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Camera size={14} /> {recording ? "Kill Feed" : "Capture Live Video"}
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={processing || (!videoFile && !recording)}
+                  className="flex-1 bg-[#1c3d22] hover:bg-[#224b2a] text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-40 transition-colors shadow-sm flex items-center justify-center gap-2"
+                >
+                  {processing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Compiling Velocity Matrices...
+                    </>
+                  ) : (
+                    "Extract AI Performance Profile"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 🛑 UPGRADED HIGH-CONVERSION ONBOARDING GATE MODAL */}
+      {showGateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 text-center border-t-4 border-[#f0b429]">
+            <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-[#c8962a] mx-auto">
+              <Lock size={20} />
+            </div>
+            
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-gray-900 tracking-tight uppercase">Talent Ingest Identity Guard</h3>
+              <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+                <CheckCircle2 size={12} /> Matrix Score Locked: {calculatedMetric}
+              </p>
+            </div>
+
+            <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+              Your biometric track vectors have successfully compiled! To initialize Step 2 (**Nurture**) and step into Step 3 (**Market**) to generate your scannable QR passport for local or international scout review loops, map your player parameters securely now.
+            </p>
+
+            {/* Blurred Mock Hub Analytics Visual Hook Element */}
+            <div className="border border-gray-100 bg-gray-50 rounded-xl p-3 flex items-center justify-between select-none filter blur-[2px] opacity-25">
+              <div className="flex items-center gap-2">
+                <Award size={16} />
+                <div className="h-2 w-24 bg-gray-400 rounded"></div>
+              </div>
+              <QrCode size={16} />
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              {/* 🚀 FIXED: Directly wires parameters to trigger the new registration folder proxy interceptor automatically */}
+              <button 
+                onClick={() => router.push(`/register?role=player&name=${encodeURIComponent(playerName)}&pipeline=complete`)}
+                className="w-full bg-[#1c3d22] hover:bg-[#234c2b] text-white py-3 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5"
+              >
+                Claim Talent Passport & View Data <ArrowRight size={14} />
+              </button>
+              <button 
+                onClick={() => setShowGateModal(false)}
+                className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors py-1"
+              >
+                Dismiss & Discard Score
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="border-t border-gray-200 bg-white py-6 mt-12 text-center px-4">
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+          Grassroots Sports Development Network © 2026 • Identify, Nurture, and Market Talent
+        </p>
+      </footer>
     </div>
   );
 }
