@@ -1,339 +1,119 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard, ShieldCheck, Shield, Users, Dumbbell, CreditCard, UserSearch,
-  ClipboardList, BarChart2, Bell, Heart, LogOut, Brain, Trophy, Star,
-  UserCircle, Apple, TrendingUp, Target, Layers, Zap, Radio, CreditCard as SubIcon,
-  Film, Activity, FileText, Crosshair, Tv2, Swords, Sparkles, BookOpen,
-  Menu, X, ScanSearch, Briefcase, LineChart, Camera, Globe2,
-  Map, Thermometer, TrendingUp as SeasonIcon, Flame, Award, GraduationCap,
-  MessageSquare,
-  Rss,
-  Building2,
+import { usePathname, useRouter } from "next/navigation";
+import { 
+  Zap, 
+  Activity, 
+  BookOpen, 
+  Award, 
+  Users, 
+  TrendingUp, 
+  LogOut, 
+  Target,
+  GraduationCap
 } from "lucide-react";
-
-import { cn } from "@/lib/utils";
-import { useAuthStore, useEffectiveRole, roleHomePath, UserRole } from "@/lib/auth-store";
-import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/firebase";
-import { NotificationBell } from "./notification-bell";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
-
-import { AdBanner } from "@/components/ui/AdBanner";
-
-type NavItem = { href: string; label: string; icon: React.ElementType; roles: string[] };
-
-const navItems: NavItem[] = [
-  // ─── Admin ────────────────────────────────────────────────────────────────
-  { href: "/admin",                  label: "Admin Hub",      icon: LayoutDashboard, roles: ["admin"] },
-  { href: "/province-admin",         label: "Province Admin", icon: Shield,          roles: ["admin"] },
-  { href: "/province-admin/leagues", label: "Leagues",        icon: Trophy,          roles: ["admin"] },
-  { href: "/admin/users",            label: "Users",          icon: Users,           roles: ["admin"] },
-  { href: "/admin/verifications",    label: "Verifications",  icon: ShieldCheck,     roles: ["admin"] },
-  { href: "/admin/scout-requests",   label: "Scout Requests", icon: ClipboardList,   roles: ["admin"] },
-  { href: "/admin/subscriptions",    label: "Subscriptions",  icon: CreditCard,      roles: ["admin"] },
-  { href: "/admin/stats",            label: "Platform Stats", icon: BarChart2,       roles: ["admin"] },
-  { href: "/admin/announcements",    label: "Announcements",  icon: Bell,            roles: ["admin"] },
-  { href: "/admin/fan-hub",          label: "Fan Hub Mod",    icon: Film,            roles: ["admin"] },
-  { href: "/business-hub",           label: "Business Hub",   icon: Briefcase,       roles: ["admin"] },
-  { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["admin"] },
-  { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["admin"] },
-  // ─── Coach ────────────────────────────────────────────────────────────────
-  { href: "/coach",                  label: "Coach Hub",      icon: LayoutDashboard, roles: ["coach"] },
-  { href: "/coach/success",          label: "Success Engine", icon: Flame,           roles: ["coach"] },
-  { href: "/coach/squad",            label: "My Squad",       icon: Users,           roles: ["coach"] },
-  { href: "/coach/scouting",         label: "Scouting",       icon: ScanSearch,      roles: ["coach"] },
-  { href: "/coach/training-plans",   label: "Training Plans", icon: Layers,          roles: ["coach"] },
-  { href: "/coach/conditioning",     label: "Conditioning",   icon: Activity,        roles: ["coach"] },
-  { href: "/coach/tactics",          label: "Tactics Board",  icon: ClipboardList,   roles: ["coach"] },
-  { href: "/coach/matches",             label: "Matches",          icon: Trophy,      roles: ["coach"] },
-  { href: "/knowledge",               label: "Knowledge Base",   icon: BookOpen,    roles: ["coach"] },
-  { href: "/coach/tactical-analysis",  label: "Tactical Analysis", icon: Crosshair,  roles: ["coach"] },
-  { href: "/coach/live-match",          label: "Live Match",       icon: Tv2,         roles: ["coach"] },
-  { href: "/coach/patterns",            label: "Strategic Patterns", icon: SeasonIcon, roles: ["coach"] },
-  { href: "/coach/chemistry",           label: "Squad Chemistry",    icon: Zap,        roles: ["coach"] },
-  { href: "/coach/technical-staff",     label: "Coaching Center",    icon: Users,      roles: ["coach"] },
-  { href: "/coach/recruitment",         label: "Recruitment",        icon: Briefcase,  roles: ["coach"] },
-  { href: "/coach/stats",               label: "Season Stats",     icon: BarChart2,   roles: ["coach"] },
-  { href: "/video-studio",           label: "Video Studio",   icon: Film,            roles: ["coach"] },
-  { href: "/video-analysis",         label: "Video Analysis", icon: Sparkles,        roles: ["coach"] },
-  { href: "/injury-tracker",         label: "Injury Tracker", icon: Activity,        roles: ["coach"] },
-  { href: "/streaming",              label: "Live Matches",   icon: Radio,           roles: ["coach"] },
-  { href: "/streaming/broadcast",    label: "Broadcast",      icon: Tv2,             roles: ["coach"] },
-  { href: "/tournaments",             label: "Tournaments",    icon: Trophy,          roles: ["coach"] },
-  { href: "/business-hub",           label: "Business Hub",   icon: Briefcase,       roles: ["coach"] },
-  { href: "/analyst",                label: "Analyst Hub",    icon: LineChart,       roles: ["coach"] },
-  { href: "/sports/netball",         label: "Netball Hub",    icon: Globe2,          roles: ["coach"] },
-  { href: "/coach/notifications",    label: "Notifications",  icon: Bell,            roles: ["coach"] },
-  { href: "/arena",                   label: "Arena Feed",       icon: Rss,             roles: ["coach"] },
-  { href: "/arena/network",          label: "My Network",       icon: Users,           roles: ["coach"] },
-  { href: "/arena/discover",         label: "Discover Athletes",icon: UserSearch,      roles: ["coach"] },
-  { href: "/arena/notifications",    label: "Arena Alerts",     icon: Bell,            roles: ["coach"] },
-  { href: "/arena/messages",         label: "Messages",         icon: MessageSquare,   roles: ["coach"] },
-  { href: "/arena/clubs",            label: "Clubs",            icon: Building2,       roles: ["coach"] },
-  { href: "/coach/profile",          label: "My Profile",     icon: UserCircle,      roles: ["coach"] },
-  // ─── Scout ────────────────────────────────────────────────────────────────
-  { href: "/scout",           label: "Find Players",  icon: UserSearch,  roles: ["scout"] },
-  { href: "/scout/shortlist", label: "Shortlist",     icon: Star,        roles: ["scout"] },
-  { href: "/scout/reports",   label: "PDF Reports",   icon: FileText,    roles: ["scout"] },
-  { href: "/tournaments",     label: "Tournaments",   icon: Trophy,      roles: ["scout"] },
-  { href: "/business-hub",    label: "Business Hub",  icon: Briefcase,   roles: ["scout"] },
-  { href: "/sports/netball",  label: "Netball Hub",   icon: Globe2,      roles: ["scout"] },
-  { href: "/scout/profile",   label: "My Profile",    icon: UserCircle,  roles: ["scout"] },
-  { href: "/arena",                 label: "Arena Feed",       icon: Rss,             roles: ["scout"] },
-  { href: "/arena/network",         label: "My Network",       icon: Users,           roles: ["scout"] },
-  { href: "/arena/discover",        label: "Discover Athletes",icon: UserSearch,      roles: ["scout"] },
-  { href: "/arena/notifications",   label: "Arena Alerts",     icon: Bell,            roles: ["scout"] },
-  { href: "/arena/messages",        label: "Messages",         icon: MessageSquare,   roles: ["scout"] },
-  { href: "/arena/clubs",           label: "Clubs",            icon: Building2,       roles: ["scout"] },
-  // ─── Player ───────────────────────────────────────────────────────────────
-  { href: "/player",                      label: "My Hub",          icon: LayoutDashboard, roles: ["player"] },
-  { href: "/player/success",              label: "Success Engine",  icon: Flame,           roles: ["player"] },
-  { href: "/knowledge",                   label: "Knowledge Base",  icon: BookOpen,        roles: ["player"] },
-  { href: "/player/drills",               label: "Drills",          icon: Dumbbell,        roles: ["player"] },
-  { href: "/player/conditioning",         label: "Conditioning",    icon: Activity,        roles: ["player"] },
-  { href: "/player/training-formats",     label: "Training Formats",icon: Layers,          roles: ["player"] },
-  { href: "/player/sessions",             label: "Sessions",        icon: Target,          roles: ["player"] },
-  { href: "/player/milestones",           label: "Milestones",      icon: Trophy,          roles: ["player"] },
-  { href: "/player/progress",             label: "Progress",        icon: TrendingUp,      roles: ["player"] },
-  { href: "/player/talent-id",            label: "Talent ID",       icon: Zap,             roles: ["player"] },
-  { href: "/player/passport",             label: "My Passport",     icon: BookOpen,        roles: ["player"] },
-  { href: "/player/similar",              label: "Players Like You", icon: Heart,           roles: ["player"] },
-  { href: "/player/business-school",      label: "Business School",  icon: GraduationCap,   roles: ["player"] },
-  { href: "/player/assessment",           label: "Assessment",      icon: Target,          roles: ["player"] },
-  { href: "/player/nutrition",            label: "Nutrition",       icon: Apple,           roles: ["player"] },
-  { href: "/player/development",          label: "Dev Phases",      icon: Layers,          roles: ["player"] },
-  { href: "/player/subscription",         label: "Subscription",    icon: SubIcon,         roles: ["player"] },
-  { href: "/player/verification",         label: "Verification",    icon: ShieldCheck,     roles: ["player"] },
-  { href: "/player/profile",              label: "My Profile",      icon: UserCircle,      roles: ["player"] },
-  { href: "/player/my-card",              label: "My Card",         icon: Award,           roles: ["player"] },
-  { href: "/video-studio",               label: "Video Studio",    icon: Film,            roles: ["player"] },
-  { href: "/video-analysis",             label: "Video Analysis",  icon: Sparkles,        roles: ["player"] },
-  { href: "/injury-tracker",             label: "Injury Tracker",  icon: Activity,        roles: ["player"] },
-  { href: "/streaming",                   label: "Live Matches",    icon: Radio,           roles: ["player"] },
-  { href: "/player/sports",               label: "My Sports",       icon: Swords,          roles: ["player"] },
-  { href: "/tournaments",                 label: "Tournaments",     icon: Trophy,          roles: ["player"] },
-  { href: "/player/vault",                label: "Highlight Vault", icon: Film,            roles: ["player"] },
-  { href: "/player/media",               label: "Media Gallery",   icon: Layers,          roles: ["player"] },
-  { href: "/player/record",              label: "Record Drill",    icon: Camera,          roles: ["player"] },
-  { href: "/business-hub",                label: "Business Hub",    icon: Briefcase,       roles: ["player"] },
-  { href: "/sports/netball",              label: "Netball Hub",     icon: Globe2,          roles: ["player"] },
-  { href: "/player/notifications",        label: "Notifications",   icon: Bell,            roles: ["player"] },
-  { href: "/arena",                       label: "Arena Feed",       icon: Rss,             roles: ["player"] },
-  { href: "/arena/network",               label: "My Network",       icon: Users,           roles: ["player"] },
-  { href: "/arena/discover",              label: "Discover Athletes",icon: UserSearch,      roles: ["player"] },
-  { href: "/arena/notifications",         label: "Arena Alerts",     icon: Bell,            roles: ["player"] },
-  { href: "/arena/messages",              label: "Messages",         icon: MessageSquare,   roles: ["player"] },
-  { href: "/arena/clubs",                 label: "Clubs",            icon: Building2,       roles: ["player"] },
-  // ─── Fan ──────────────────────────────────────────────────────────────────
-  { href: "/fan",                label: "Dashboard",      icon: LayoutDashboard, roles: ["fan"] },
-  { href: "/fan/discover",       label: "Discover",       icon: Star,            roles: ["fan"] },
-  { href: "/fan/following",      label: "Following",      icon: Heart,           roles: ["fan"] },
-  { href: "/fan/leaderboard",    label: "Leaderboard",    icon: Trophy,          roles: ["fan"] },
-  { href: "/tournaments",        label: "Tournaments",    icon: Swords,          roles: ["fan"] },
-  { href: "/streaming",          label: "Live Matches",   icon: Radio,           roles: ["fan"] },
-  { href: "/sports/netball",     label: "Netball Hub",    icon: Globe2,          roles: ["fan"] },
-  { href: "/business-hub",       label: "Business Hub",   icon: Briefcase,       roles: ["fan"] },
-  { href: "/arena",                  label: "Arena Feed",       icon: Rss,             roles: ["fan"] },
-  { href: "/arena/network",          label: "My Network",       icon: Users,           roles: ["fan"] },
-  { href: "/arena/discover",         label: "Discover Athletes",icon: UserSearch,      roles: ["fan"] },
-  { href: "/arena/notifications",    label: "Arena Alerts",     icon: Bell,            roles: ["fan"] },
-  { href: "/arena/messages",         label: "Messages",         icon: MessageSquare,   roles: ["fan"] },
-  { href: "/arena/clubs",            label: "Clubs",            icon: Building2,       roles: ["fan"] },
-  // ─── Analyst ──────────────────────────────────────────────────────────────
-  { href: "/analyst",                      label: "Analyst Hub",       icon: LineChart,   roles: ["analyst"] },
-  { href: "/analyst/match-brain",          label: "Match Brain",       icon: Brain,       roles: ["analyst"] },
-  { href: "/analyst/live-match",           label: "Live Collector",    icon: Flame,       roles: ["analyst"] },
-  { href: "/analyst/touch-tracker",        label: "Touch Tracker",     icon: Activity,    roles: ["analyst"] },
-  { href: "/analyst/xg-analysis",          label: "xG Analysis",       icon: Target,      roles: ["analyst"] },
-  { href: "/analyst/tactical-report",      label: "Tactical Report",   icon: ClipboardList, roles: ["analyst"] },
-  { href: "/analyst/pass-map",             label: "Pass Map",          icon: Map,         roles: ["analyst"] },
-  { href: "/analyst/heatmaps",             label: "Player Heatmaps",   icon: Thermometer, roles: ["analyst"] },
-  { href: "/analyst/season",               label: "Season Intelligence", icon: SeasonIcon, roles: ["analyst"] },
-  { href: "/analyst/match-eye",            label: "Match Eye",           icon: Camera,     roles: ["analyst"] },
-];
-
-const HUB_TABS: { role: UserRole; label: string; color: string }[] = [
-  { role: "admin",    label: "Admin",    color: "bg-purple-500 text-white" },
-  { role: "player",   label: "Player",   color: "bg-blue-500 text-white" },
-  { role: "coach",    label: "Coach",    color: "bg-green-500 text-white" },
-  { role: "scout",    label: "Scout",    color: "bg-orange-500 text-white" },
-  { role: "fan",      label: "Fan",      color: "bg-pink-500 text-white" },
-  { role: "analyst",  label: "Analyst",  color: "bg-cyan-600 text-white" },
-];
-
-function NavContent({ onNavClick }: { onNavClick?: () => void }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout, setAdminHub, adminHub } = useAuthStore();
-  const effectiveRole = useEffectiveRole();
-
-  const visible = navItems.filter((item) =>
-    effectiveRole ? item.roles.includes(effectiveRole) : false
-  );
-
-  function handleHubSwitch(hub: UserRole) {
-    setAdminHub(hub);
-    router.push(roleHomePath(hub));
-    onNavClick?.();
-  }
-
-  return (
-    <>
-      {/* Logo + notification bell */}
-      <div className="mb-4 px-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2" onClick={onNavClick}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_v2.png" alt="Grassroots Sport" width={28} height={28} className="rounded-sm" />
-          <span className="text-base font-bold text-primary">Grassroots Sport</span>
-        </Link>
-        {user && <NotificationBell />}
-      </div>
-
-      {/* Admin hub switcher */}
-      {user?.role === "admin" && (
-        <div className="mb-4 px-2">
-          <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Preview Hub
-          </p>
-          <div className="grid grid-cols-6 gap-1">
-            {HUB_TABS.map(({ role, label, color }) => (
-              <button
-                key={role}
-                onClick={() => handleHubSwitch(role)}
-                className={cn(
-                  "rounded px-1 py-1.5 text-[10px] font-bold transition-all",
-                  adminHub === role
-                    ? color
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto">
-        {visible.map(({ href, label, icon: Icon }) => {
-          const hubRoots = ["/player", "/coach", "/admin"];
-          const active =
-            pathname === href ||
-            (!hubRoots.includes(href) && pathname.startsWith(href + "/")) ||
-            (hubRoots.includes(href) && pathname === href);
-          return (
-            <Link
-              key={`${href}-${label}`}
-              href={href}
-              onClick={onNavClick}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* User + Logout */}
-      {user && (
-        <div className="mt-4 border-t pt-4">
-          <p className="truncate px-3 text-xs text-muted-foreground">{user.email}</p>
-          <p className="px-3 text-xs font-medium capitalize text-foreground">
-            {user.role === "admin" && effectiveRole !== "admin"
-              ? `Admin · previewing ${effectiveRole}`
-              : user.role}
-          </p>
-          <Link
-            href="/settings"
-            onClick={onNavClick}
-            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <UserCircle className="h-4 w-4" />
-            Settings
-          </Link>
-          <button
-            onClick={() => { signOut(auth).catch(() => {}); logout(); router.push("/"); onNavClick?.(); }}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </button>
-          <div className="mt-3 px-1">
-            <LanguageSwitcher compact />
-          </div>
-          <div className="mt-4 px-1">
-            <AdBanner slot="sidebar-top" fallback={true} className="w-full" />
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
+import { useAuthStore } from "@/lib/auth-store";
 
 export function Sidebar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  if (!user) return null;
+
+  // 🎛️ FINALIZED LINEAR NAVIGATIONAL ARRAY
+  const playerLinks = [
+    { href: "/player/success", label: "Success Engine", icon: Zap },
+    { href: "/player/training", label: "AI Training Lab", icon: Activity },
+    { href: "/player/passport", label: "Talent Passport", icon: BookOpen },
+    { href: "/player/talent-id", label: "Scout Visibility", icon: Award },
+  ];
+
+  const coachLinks = [
+    { href: "/coach", label: "Coach Hub", icon: Target },
+    { href: "/coach/squad", label: "Squad Roster", icon: Users },
+    { href: "/coach/live-match", label: "Live Match Tracker", icon: Activity },
+    { href: "/coach/patterns", label: "Strategic Patterns", icon: TrendingUp },
+  ];
+
+  const activeLinks = user.role === "coach" ? coachLinks : playerLinks;
+
+  const handleLogoutClick = () => {
+    logout();
+    router.push("/login");
+  };
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex h-screen w-60 flex-col border-r bg-card px-3 py-6">
-        <NavContent />
-      </aside>
-
-      {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b bg-card px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo_v2.png" alt="Grassroots Sport" width={24} height={24} className="rounded-sm" />
-          <span className="text-base font-bold text-primary">Grassroots Sport</span>
+    <aside className="w-64 bg-[#1c3d22] border-r-2 border-[#f0b429] flex flex-col justify-between h-screen sticky top-0 text-white select-none">
+      
+      <div className="p-6 space-y-6">
+        <Link href={user.role === "coach" ? "/coach" : "/player"} className="flex items-center gap-2 group">
+          <div className="bg-[#f0b429] p-1.5 rounded-lg text-[#1c3d22] font-black text-xs">GRS</div>
+          <span className="font-black text-sm tracking-wider uppercase group-hover:text-[#f0b429] transition-colors">
+            The Arena Hub
+          </span>
         </Link>
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="rounded-md p-2 text-muted-foreground hover:bg-muted transition-colors"
-          aria-label="Open menu"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+
+        {/* TEACH FOR ZIMBABWE BRANDING */}
+        <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center gap-2">
+          <GraduationCap size={16} className="text-[#f0b429] shrink-0" />
+          <div className="min-w-0">
+            <span className="block text-[8px] font-black uppercase text-[#f0b429] tracking-widest leading-none">Strategic Education Partner</span>
+            <span className="text-[10px] font-bold text-gray-200 uppercase tracking-tight block truncate">Teach For Zim</span>
+          </div>
+        </div>
+
+        <nav className="space-y-1 pt-2">
+          <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2 px-2">
+            Operational Menu
+          </span>
+          {activeLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
+                  isActive
+                    ? "bg-[#f0b429] text-[#1c3d22] border-[#f0b429] shadow-xs"
+                    : "text-gray-300 border-transparent hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Icon size={14} className="shrink-0" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Mobile overlay backdrop */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-50 bg-black/50"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      <div className="p-4 border-t border-white/10 bg-[#142c18]/40 space-y-2">
+        <div className="flex items-center gap-2 px-2">
+          <div className="w-6 h-6 rounded-full bg-[#f0b429] text-[#1c3d22] font-black text-[10px] flex items-center justify-center uppercase">
+            {user.name ? user.name.slice(0, 2) : "GR"}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-black text-white truncate uppercase tracking-wide leading-none">
+              {user.name || "Active Session"}
+            </p>
+            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5">
+              Role: {user.role}
+            </span>
+          </div>
+        </div>
 
-      {/* Mobile overlay sidebar */}
-      <aside
-        className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-72 flex flex-col border-r bg-card px-3 py-6 transition-transform duration-300",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        {/* Close button */}
         <button
-          onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
-          aria-label="Close menu"
+          onClick={handleLogoutClick}
+          className="w-full flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-red-400 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-red-500/5 border border-transparent hover:border-red-500/10 transition-all cursor-pointer mt-2"
         >
-          <X className="h-5 w-5" />
+          <LogOut size={14} />
+          <span>Exit Session</span>
         </button>
-
-        <NavContent onNavClick={() => setMobileOpen(false)} />
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 }
