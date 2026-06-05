@@ -132,7 +132,7 @@ function ShootingGrid({ shots, onShot }: {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function TrainingFormatSessionPage() {
-  const { format } = useParams<{ format: string }>();
+  const { format = "" } = useParams<{ format: string }>() ?? {};
   const router = useRouter();
   const { user } = useAuthStore();
   const cfg = FORMAT_CONFIG[format as keyof typeof FORMAT_CONFIG];

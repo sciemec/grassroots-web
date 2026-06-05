@@ -33,8 +33,8 @@ function SessionRunner() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const cardIds = (params.get("cards") ?? "").split(",").filter(Boolean);
-  const sessionType = (params.get("type") ?? "full") as SessionType;
+  const cardIds = (params?.get("cards") ?? "").split(",").filter(Boolean);
+  const sessionType = (params?.get("type") ?? "full") as SessionType;
 
   const cards = findCards(cardIds);
 

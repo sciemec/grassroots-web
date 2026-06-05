@@ -37,7 +37,7 @@ const TABS: { key: StatusFilter; label: string }[] = [
 export default function ProvinceAdminClubsPage() {
   const token       = useAuthStore((s) => s.token);
   const searchParams = useSearchParams();
-  const initStatus  = (searchParams.get("status") as StatusFilter) ?? "pending";
+  const initStatus  = (searchParams?.get("status") as StatusFilter) ?? "pending";
 
   const [tab, setTab]         = useState<StatusFilter>(initStatus);
   const [clubs, setClubs]     = useState<Club[]>([]);

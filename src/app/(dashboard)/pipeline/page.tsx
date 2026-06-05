@@ -29,10 +29,10 @@ function PipelineContent() {
 
   useEffect(() => {
     try {
-      const name = searchParams.get("name") || "Trial Athlete";
-      const test = (searchParams.get("test") as any) || "20m_sprint";
-      const age = (searchParams.get("age") as any) || "U17";
-      const role = (searchParams.get("role") as any) || "player";
+      const name = searchParams?.get("name") || "Trial Athlete";
+      const test = (searchParams?.get("test") as any) || "20m_sprint";
+      const age = (searchParams?.get("age") as any) || "U17";
+      const role = (searchParams?.get("role") as any) || "player";
 
       const activeState: StagedIngestionState = {
         playerName: name,

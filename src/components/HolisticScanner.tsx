@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { 
-  Camera, Activity, Award, TrendingUp, Shield, Hand,
+  Camera, Activity, Award, TrendingUp, Shield, Hand, Upload,
   Loader2, Sparkles, Zap, Heart, Eye, Cpu, BarChart3,
   RotateCcw, CheckCircle, AlertCircle, Wifi, WifiOff
 } from "lucide-react";
@@ -34,6 +34,7 @@ export default function HolisticScanner({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const [streamActive, setStreamActive] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,11 @@ export default function HolisticScanner({
     };
   }, []);
 
+  // Cleanup poll interval on unmount
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
   // Real-time camera mode
   useEffect(() => {
     if (mode !== "realtime") return;
@@ -124,11 +130,8 @@ export default function HolisticScanner({
             delegate: "CPU"
           },
           runningMode: "VIDEO",
-          numPoses: 1,
           minPoseDetectionConfidence: 0.5,
-          minPoseTrackingConfidence: 0.5,
-          minFacePresenceConfidence: 0.5,
-          minHandPresenceConfidence: 0.5
+          minFacePresenceConfidence: 0.5
         });
         
         // Processing loop
@@ -334,6 +337,7 @@ export default function HolisticScanner({
         console.error("Poll error:", err);
       }
     }, 3000);
+    pollRef.current = pollInterval;
   };
 
   // Save session data
@@ -524,4 +528,7 @@ export default function HolisticScanner({
           </button>
         </div>
       )}
+    </div>
+  );
+}
       

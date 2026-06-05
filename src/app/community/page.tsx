@@ -4,11 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import {
-  MapPin, Calendar, Trophy, Star, ChevronRight,
-  Users, Newspaper, Heart, Bell, ArrowRight, Loader2,
+  MapPin, Calendar, Trophy, Star, ChevronRight, Filter, Search,
+  Users, Newspaper, Heart, Bell, ArrowRight, Loader2, Medal
 } from "lucide-react";
-
-// ── Types ──────────────────────────────────────────────────────────────────────
 
 interface MatchReport {
   id: string;
@@ -60,7 +58,14 @@ interface FeedResponse {
   personalised: boolean;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+interface Talent {
+  id: string;
+  name: string;
+  sport: string;
+  province: string;
+  percentile: number;
+  tier: string;
+}
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -68,71 +73,104 @@ const TRIGGER_LABELS: Record<string, string> = {
   logged_7_sessions:   "7 sessions this week",
   stage_advanced:      "Level up",
   ubuntu_debut_leader: "First ubuntu session led",
-  scout_viewed_profile:"Scout viewed their profile",
+  scout_viewed_profile:"Scout viewed profile",
   joy_score_rise:      "Joy score rising",
 };
 
-const PROVINCES = [
-  "Harare", "Bulawayo", "Manicaland", "Masvingo",
-  "Mashonaland East", "Mashonaland West", "Mashonaland Central",
-  "Matabeleland North", "Matabeleland South", "Midlands",
-  "Mutare", "Gweru", "Kwekwe", "Kadoma", "Chinhoyi",
-  "Bindura", "Masvingo City", "Zvishavane", "Hwange",
-];
-
-// ── Component ─────────────────────────────────────────────────────────────────
+const PROVINCES = ["Harare", "Bulawayo", "Manicaland", "Masvingo", "Mashonaland East", "Mashonaland West", "Mashonaland Central", "Matabeleland North", "Matabeleland South", "Midlands"];
+const SPORTS = ["All", "Football", "Athletics (Track)", "Rugby", "Netball", "Basketball", "Swimming", "Tennis", "Boxing", "Other"];
 
 export default function CommunityPage() {
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
 
+  // Consolidated core application ledger streams
   const [feed, setFeed] = useState<FeedResponse | null>(null);
   const [reports, setReports] = useState<MatchReport[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [feedLoading, setFeedLoading] = useState(true);
   const [reportsPage, setReportsPage] = useState(1);
   const [reportsLastPage, setReportsLastPage] = useState(1);
 
-  // Follow widget state
+  const [talents, setTalents] = useState<Talent[]>([]);
+  const [filteredTalents, setFilteredTalents] = useState<Talent[]>([]);
+  const [talentsLoading, setTalentsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterProvince, setFilterProvince] = useState("All");
+  const [filterSport, setFilterSport] = useState("All");
+  const [showFilters, setShowFilters] = useState(false);
+
   const [followType, setFollowType] = useState<"club" | "area">("club");
   const [followId, setFollowId] = useState("");
   const [followMsg, setFollowMsg] = useState("");
   const [followPending, setFollowPending] = useState(false);
-
-  // Area filter for match alerts
   const [selectedArea, setSelectedArea] = useState("");
-
-  // ── Fetch feed ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-    const headers: HeadersInit = token && token !== "dev-token"
-      ? { Authorization: `Bearer ${token}` }
-      : {};
+    const headers: HeadersInit = token && token !== "dev-token" ? { Authorization: `Bearer ${token}` } : {};
 
+    setFeedLoading(true);
     Promise.all([
-      fetch(`${API}/fan/feed`, { headers }).then((r) => r.json()),
-      fetch(`${API}/matches/reports?per_page=6&page=${reportsPage}`).then((r) => r.json()),
+      fetch(`${API}/fan/feed`, { headers }).then((r) => r.json()).catch(() => null),
+      fetch(`${API}/matches/reports?per_page=6&page=${reportsPage}`).then((r) => r.json()).catch(() => null),
     ])
       .then(([feedData, reportData]) => {
-        setFeed(feedData);
-        setReports(reportData.data ?? []);
-        setReportsLastPage(reportData.last_page ?? 1);
+        if (feedData) setFeed(feedData);
+        if (reportData) {
+          setReports(reportData.data ?? []);
+          setReportsLastPage(reportData.last_page ?? 1);
+        }
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => setFeedLoading(false));
   }, [reportsPage]);
 
-  // ── Follow handler ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/talent-leaderboard`);
+        if (response.ok) {
+          const data = await response.json();
+          const transformed = (data.data || []).map((item: any) => ({
+            id: item.user_id,
+            name: item.initials || "Athlete",
+            sport: item.sport || "Multi-sport",
+            province: item.province || "Zimbabwe",
+            percentile: item.percentile || 0,
+            tier: item.peak_level_label || "Developing",
+          }));
+          setTalents(transformed);
+        }
+      } catch (err) {
+        console.error("Failed to map live metrics:", err);
+      } finally {
+        setTalentsLoading(false);
+      }
+    }
+    fetchLeaderboard();
+  }, []);
 
-  const handleFollow = async () => {
-    if (!followId.trim()) return;
-    if (!hasHydrated) return;
+  useEffect(() => {
+    let result = [...talents];
+    if (searchTerm) {
+      result = result.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    if (filterProvince !== "All") {
+      result = result.filter(t => t.province === filterProvince);
+    }
+    if (filterSport !== "All") {
+      result = result.filter(t => t.sport === filterSport);
+    }
+    result.sort((a, b) => b.percentile - a.percentile);
+    setFilteredTalents(result);
+  }, [talents, searchTerm, filterProvince, filterSport]);
 
+  const handleFollowAction = async () => {
+    if (!followId.trim() || !hasHydrated) return;
     if (!user) {
       setFollowMsg("Sign in to follow teams and areas.");
       return;
     }
-
     setFollowPending(true);
     setFollowMsg("");
 
@@ -148,19 +186,23 @@ export default function CommunityPage() {
       });
 
       if (res.ok) {
-        setFollowMsg(`Now following ${followId.trim()}. You'll get match reports and alerts.`);
+        setFollowMsg(`Now following ${followId.trim()}. Metrics loaded.`);
         setFollowId("");
       } else {
-        setFollowMsg("Could not follow — please try again.");
+        setFollowMsg("Could not process choices.");
       }
     } catch {
-      setFollowMsg("Something went wrong. Try again.");
+      setFollowMsg("Synchronization gap.");
     } finally {
       setFollowPending(false);
     }
   };
 
-  // ── Derived data ────────────────────────────────────────────────────────────
+  const getTierBadgeStyle = (tier: string) => {
+    if (tier?.includes("Elite")) return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    if (tier?.includes("Competitive")) return "bg-amber-100 text-amber-800 border-amber-200";
+    return "bg-gray-100 text-gray-700 border-gray-200";
+  };
 
   const digest = feed?.moments.find((m) => m.type === "digest" && m.is_featured);
   const featuredMoments = feed?.moments.filter((m) => m.type !== "digest").slice(0, 6) ?? [];
@@ -170,427 +212,425 @@ export default function CommunityPage() {
     return a.area_label === selectedArea;
   });
 
-  // ── Skeleton ────────────────────────────────────────────────────────────────
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0d1f13]">
-        <PublicNav />
-        <div className="mx-auto max-w-5xl px-4 py-16">
-          <div className="space-y-4">
-            <div className="h-12 w-2/3 animate-pulse rounded-xl bg-white/10" />
-            <div className="h-6 w-1/2 animate-pulse rounded-xl bg-white/10" />
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-36 animate-pulse rounded-2xl bg-white/10" />
-              ))}
-            </div>
+  return (
+    <div className="min-h-screen bg-[#f4f2ee] text-gray-900 antialiased font-sans selection:bg-[#f0b429]/30">
+      
+      <nav className="bg-[#e2f0d9] border-b-2 border-[#f0b429] sticky top-0 z-50 shadow-xs">
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="bg-[#1c3d22] p-1.5 rounded-lg text-[#f0b429] font-black text-xs">GRS</div>
+            <span className="text-[#1c3d22] font-black text-sm tracking-wider uppercase group-hover:text-emerald-800 transition-colors">
+              Grassroots Sports
+            </span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/community" className="text-xs font-black uppercase tracking-wider text-[#1c3d22] border-b-2 border-[#1c3d22]">
+              Community Feed
+            </Link>
           </div>
         </div>
-      </div>
-    );
-  }
+      </nav>
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
-  return (
-    <div className="min-h-screen bg-[#0d1f13] text-white">
-      <PublicNav />
-
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-[#1a5c2a] to-[#0d1f13] px-4 py-20 text-center">
-        {/* Chevron pattern */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,rgba(240,180,41,0.4) 8px,rgba(240,180,41,0.4) 10px),repeating-linear-gradient(45deg,transparent 0,transparent 8px,rgba(240,180,41,0.4) 8px,rgba(240,180,41,0.4) 10px)",
-          }}
-        />
-        <div className="relative mx-auto max-w-3xl">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-[#f0b429]">
-            GrassRoots Sports · Zimbabwe
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#e2f0d9] via-[#f0f9e8] to-[#f4f2ee] py-16 px-4 text-center border-b border-gray-200">
+        <div className="relative max-w-3xl mx-auto space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-800">
+            The Grassroots Ledger · National Stream
           </p>
-          <h1 className="mb-4 text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            Zimbabwe&apos;s beautiful game,{" "}
-            <span className="text-[#f0b429]">live.</span>
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-gray-900 uppercase leading-none">
+            Zimbabwe&apos;s Beautiful Game, <span className="text-[#1c3d22] border-b-4 border-[#f0b429]">Live.</span>
           </h1>
-          <p className="mx-auto max-w-xl text-base text-white/70 sm:text-lg">
-            Match reports. Player spotlights. Community moments.
-            The grassroots story, told the way it deserves to be.
+          <p className="max-w-xl mx-auto text-xs sm:text-sm font-semibold text-gray-500 leading-relaxed">
+            Unifying verified digital scout monitoring lists with automated live match diaries. Follow performance records transparently directly from the provincial pipelines.
           </p>
-          {!user && (
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link
-                href="/register/who"
-                className="rounded-full bg-[#f0b429] px-6 py-2.5 text-sm font-bold text-[#1a3a1a] transition hover:bg-[#f5c542]"
-              >
-                Join the network
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-full border border-white/20 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-white/40"
-              >
-                Sign in
-              </Link>
-            </div>
-          )}
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl space-y-16 px-4 py-12">
-
-        {/* ── This Week digest ──────────────────────────────────────────────── */}
-        {digest && (
-          <section>
-            <SectionHeader icon={<Newspaper className="h-5 w-5" />} label="This Week" />
-            <div className="mt-4 rounded-2xl border border-[#f0b429]/30 bg-[#1a5c2a]/40 p-6 backdrop-blur-sm">
-              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[#f0b429]">
-                This Week in Zimbabwean Football
-              </p>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-white/85 sm:text-base">
-                {digest.ai_caption}
-              </p>
-              <p className="mt-4 text-xs text-white/40">
-                {formatDate(digest.created_at)}
-              </p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div className="lg:col-span-2 space-y-12">
+          
+          {/* DISCOVERY GRID PANEL */}
+          <section className="bg-white rounded-3xl border border-gray-200 p-5 sm:p-6 shadow-3xs space-y-4">
+            <SectionHeader icon={<Medal className="h-4 w-4" />} label="Discover Zimbabwe's Stars" />
+            
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search athletes by initials or name moniker..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-zinc-400 transition-all text-gray-900"
+                />
+              </div>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-3.5 rounded-xl border transition-all flex items-center justify-center ${
+                  showFilters ? "bg-[#1c3d22] border-[#1c3d22] text-white" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <Filter size={16} />
+              </button>
             </div>
-          </section>
-        )}
 
-        {/* ── Latest Match Reports ──────────────────────────────────────────── */}
-        <section>
-          <SectionHeader icon={<Trophy className="h-5 w-5" />} label="Latest Match Reports" />
-          {reports.length === 0 ? (
-            <EmptyState text="No match reports yet. Be the first to submit one." />
-          ) : (
-            <>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {reports.map((r) => (
-                  <MatchReportCard key={r.id} report={r} />
+            {showFilters && (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-4 animate-fade-in">
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block">Filter By Province</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["All", ...PROVINCES].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setFilterProvince(p)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all border ${
+                          filterProvince === p ? "bg-[#1c3d22] text-white border-[#1c3d22]" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block">Filter By Discipline</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SPORTS.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setFilterSport(s)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all border ${
+                          filterSport === s ? "bg-[#1c3d22] text-white border-[#1c3d22]" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {talentsLoading ? (
+              <div className="space-y-2 pt-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse" />
                 ))}
               </div>
-              {reportsLastPage > 1 && (
-                <div className="mt-6 flex justify-center gap-3">
-                  <button
-                    disabled={reportsPage === 1}
-                    onClick={() => setReportsPage((p) => p - 1)}
-                    className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white/70 disabled:opacity-40 hover:border-white/40 transition"
-                  >
-                    Previous
-                  </button>
-                  <span className="flex items-center text-sm text-white/50">
-                    {reportsPage} / {reportsLastPage}
-                  </span>
-                  <button
-                    disabled={reportsPage === reportsLastPage}
-                    onClick={() => setReportsPage((p) => p + 1)}
-                    className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white/70 disabled:opacity-40 hover:border-white/40 transition"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-
-        {/* ── Player Spotlights ─────────────────────────────────────────────── */}
-        {spotlights.length > 0 && (
-          <section>
-            <SectionHeader icon={<Star className="h-5 w-5" />} label="Player Spotlights" />
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {spotlights.map((s) => (
-                <SpotlightCard key={s.id} spotlight={s} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── Beautiful Moments ─────────────────────────────────────────────── */}
-        {featuredMoments.length > 0 && (
-          <section>
-            <SectionHeader icon={<Heart className="h-5 w-5" />} label="Beautiful Moments" />
-            <div className="mt-4 columns-1 gap-4 sm:columns-2 lg:columns-3">
-              {featuredMoments.map((m) => (
-                <MomentCard key={m.id} moment={m} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── Matches This Weekend ──────────────────────────────────────────── */}
-        <section>
-          <SectionHeader icon={<Bell className="h-5 w-5" />} label="Matches This Weekend" />
-          <div className="mt-4">
-            <select
-              value={selectedArea}
-              onChange={(e) => setSelectedArea(e.target.value)}
-              className="mb-4 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/80 outline-none focus:border-[#f0b429]/50"
-            >
-              <option value="">All areas</option>
-              {PROVINCES.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-
-            {upcomingAlerts.length === 0 ? (
-              <EmptyState text="No upcoming matches found for this area." />
+            ) : filteredTalents.length === 0 ? (
+              <div className="text-center py-8 text-xs font-semibold text-gray-400 italic bg-gray-50 rounded-2xl border border-dashed">
+                No active athlete records found.
+              </div>
             ) : (
-              <div className="space-y-3">
-                {upcomingAlerts.map((a) => (
-                  <AlertCard key={a.id} alert={a} />
+              <div className="space-y-2 pt-2">
+                {filteredTalents.map((talent, index) => (
+                  <Link href={`/player/passport`} key={talent.id} className="block group">
+                    <div className="bg-white border border-gray-200 group-hover:border-[#1c3d22] p-4 rounded-xl flex items-center justify-between gap-4 transition-all shadow-3xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#e2f0d9] border border-[#1c3d22]/10 flex items-center justify-center text-[#1c3d22] font-black text-xs">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-black text-gray-900 text-sm uppercase tracking-tight">{talent.name}</h3>
+                            <span className={`text-[9px] font-black uppercase tracking-wide px-2 py-0.5 border rounded-full ${getTierBadgeStyle(talent.tier)}`}>
+                              {talent.tier}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase mt-0.5">
+                            <span>{talent.sport}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-0.5"><MapPin size={10} /> {talent.province}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-base font-black text-[#1c3d22] leading-none">{talent.percentile}th</p>
+                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-wider block mt-0.5">Percentile</span>
+                      </div>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}
-          </div>
-        </section>
+          </section>
 
-        {/* ── Follow a team or area ─────────────────────────────────────────── */}
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-          <SectionHeader icon={<Users className="h-5 w-5" />} label="Follow a Team or Area" />
-          <p className="mt-1 text-sm text-white/60">
-            Get match reports, player spotlights, and upcoming match alerts for the teams and areas you love.
-          </p>
+          {/* 📰 AUTOMATED MATCH REPORTS */}
+          <section className="space-y-4">
+            <SectionHeader icon={<Trophy className="h-4 w-4" />} label="Latest Match Reports" />
+            
+            {feedLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="h-28 bg-white border border-gray-200 rounded-2xl animate-pulse" />
+                <div className="h-28 bg-white border border-gray-200 rounded-2xl animate-pulse" />
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="text-center py-8 text-xs font-semibold text-gray-400 italic bg-white rounded-2xl border border-dashed border-gray-200">
+                No reports logged in the system.
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {reports.map((r) => (
+                    <div key={r.id} className="bg-white border border-gray-200 p-4 rounded-2xl flex flex-col justify-between space-y-3 shadow-3xs">
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase">
+                          <span>{r.area_label ?? "Zimbabwe"}</span>
+                          <span>{formatDate(r.match_date)}</span>
+                        </div>
+                        <h3 className="text-xs font-black text-gray-900 uppercase tracking-wide leading-tight">
+                          {r.ai_headline}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2 border-t border-gray-100 pt-2 text-xs font-bold">
+                        <span className="text-gray-800">{r.home_team}</span>
+                        <span className="bg-[#e2f0d9] text-[#1c3d22] border border-[#1c3d22]/10 px-2 py-0.5 rounded-md font-black text-[10px]">
+                          {r.score}
+                        </span>
+                        <span className="text-gray-800">{r.away_team}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-          <div className="mt-5 space-y-3">
-            {/* Type toggle */}
-            <div className="flex gap-2">
-              {(["club", "area"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setFollowType(t)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                    followType === t
-                      ? "bg-[#f0b429] text-[#1a3a1a]"
-                      : "border border-white/20 text-white/60 hover:border-white/40"
-                  }`}
-                >
-                  {t === "club" ? "Club / Team" : "Area"}
-                </button>
-              ))}
-            </div>
+                {reportsLastPage > 1 && (
+                  <div className="flex justify-center items-center gap-3 pt-2">
+                    <button
+                      disabled={reportsPage === 1}
+                      onClick={() => setReportsPage((p) => p - 1)}
+                      className="px-3 py-1.5 border border-gray-200 bg-white text-[10px] font-black uppercase tracking-wider rounded-lg disabled:opacity-30"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs font-bold text-gray-400">
+                      {reportsPage} / {reportsLastPage}
+                    </span>
+                    <button
+                      disabled={reportsPage === reportsLastPage}
+                      onClick={() => setReportsPage((p) => p + 1)}
+                      className="px-3 py-1.5 border border-gray-200 bg-white text-[10px] font-black uppercase tracking-wider rounded-lg disabled:opacity-30"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
 
-            {/* Input */}
-            {followType === "area" ? (
+          {/* ⭐ PLAYER SPOTLIGHTS */}
+          {!feedLoading && spotlights.length > 0 && (
+            <section className="space-y-4">
+              <SectionHeader icon={<Star className="h-4 w-4" />} label="Biometric Player Spotlights" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {spotlights.map((s) => {
+                  const triggerLabel = TRIGGER_LABELS[s.trigger_reason] ?? s.trigger_reason.replace(/_/g, " ");
+                  return (
+                    <div key={s.id} className="bg-white border border-gray-200 p-4 rounded-2xl flex flex-col justify-between space-y-3 shadow-3xs">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-[#e2f0d9] flex items-center justify-center text-xs font-black text-[#1c3d22] border border-[#1c3d22]/10">
+                            {s.player?.initials ?? "??"}
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight leading-none">
+                              {s.player?.position ?? "Athlete Profile"}
+                            </p>
+                            {s.player?.area && (
+                              <span className="flex items-center gap-0.5 text-[9px] font-bold text-gray-400 uppercase mt-0.5">
+                                <MapPin size={8} /> {s.player.area}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs font-medium text-gray-600 leading-relaxed line-clamp-3">
+                          {s.ai_story}
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center border-t border-gray-100 pt-2 text-[9px] font-bold uppercase tracking-wide">
+                        <span className="bg-[#f0b429] text-[#1c3d22] border border-[#1c3d22]/20 px-2 py-0.5 rounded-md text-[8px] font-black tracking-widest">
+                          {triggerLabel}
+                        </span>
+                        <span className="text-gray-400">{formatDate(s.published_at)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+        </div>
+
+        {/* RIGHT COLUMN FIXED ASSETS */}
+        <div className="space-y-8">
+          
+          {/* NARRATIVE SUMMARY */}
+          {!feedLoading && digest && (
+            <section className="bg-[#e2f0d9] border-2 border-[#1c3d22]/10 rounded-3xl p-5 text-[#1c3d22] shadow-3xs space-y-3">
+              <div className="flex items-center gap-2 border-b border-[#1c3d22]/10 pb-2">
+                <Newspaper size={16} className="text-[#1c3d22]" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-900">Weekly Narrative Summary</h4>
+              </div>
+              <p className="text-xs font-semibold text-gray-700 leading-relaxed whitespace-pre-line">
+                {digest.ai_caption}
+              </p>
+              <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                Logged: {formatDate(digest.created_at)}
+              </span>
+            </section>
+          )}
+
+          {/* WEEKEND MATCH FIXTURE COMPONENT */}
+          <section className="bg-white border border-gray-200 rounded-3xl p-5 shadow-3xs space-y-4">
+            <SectionHeader icon={<Bell className="h-4 w-4" />} label="Matches This Weekend" />
+            
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase tracking-wider text-gray-400 block">Isolate Regional Stream</label>
               <select
-                value={followId}
-                onChange={(e) => setFollowId(e.target.value)}
-                className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-[#f0b429]/50"
+                value={selectedArea}
+                onChange={(e) => setSelectedArea(e.target.value)}
+                className="w-full text-xs bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:bg-white focus:border-zinc-400 font-bold transition-all text-gray-800"
               >
-                <option value="">Select province or city</option>
+                <option value="">All Regions / Provinces</option>
                 {PROVINCES.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
+            </div>
+
+            {feedLoading ? (
+              <div className="h-16 bg-gray-50 rounded-xl animate-pulse" />
+            ) : upcomingAlerts.length === 0 ? (
+              <div className="text-center py-6 text-xs text-gray-400 italic bg-gray-50 rounded-xl border border-dashed">
+                No fixtures scheduled.
+              </div>
             ) : (
-              <input
-                value={followId}
-                onChange={(e) => setFollowId(e.target.value)}
-                placeholder="e.g. Harare City FC, Highlanders, Caps United…"
-                className="w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#f0b429]/50"
-              />
+              <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                {upcomingAlerts.map((a) => {
+                  const matchDate = new Date(a.match_datetime);
+                  return (
+                    <div key={a.id} className="p-3 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-3">
+                      <div className="text-center border-r border-gray-200 pr-2 shrink-0 min-w-[45px]">
+                        <p className="text-[10px] font-black text-[#1c3d22] uppercase tracking-tighter leading-none">
+                          {matchDate.toLocaleDateString("en-ZW", { weekday: "short" })}
+                        </p>
+                        <span className="text-[9px] font-bold text-gray-400 tracking-tight block mt-0.5">
+                          {matchDate.toLocaleTimeString("en-ZW", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-black text-gray-900 uppercase tracking-tight">
+                          {a.home_team} <span className="text-gray-400 font-bold lowercase">vs</span> {a.away_team}
+                        </p>
+                        <span className="flex items-center gap-0.5 text-[9px] font-bold text-gray-400 uppercase tracking-wide truncate mt-0.5">
+                          <MapPin size={8} /> {a.location} {a.area_label && ` · ${a.area_label}`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-
-            <button
-              onClick={handleFollow}
-              disabled={!followId.trim() || followPending}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2.5 text-sm font-bold text-[#1a3a1a] transition hover:bg-[#f5c542] disabled:opacity-50"
-            >
-              {followPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ArrowRight className="h-4 w-4" />
-              )}
-              {followPending ? "Following…" : `Follow ${followType === "club" ? "this team" : "this area"}`}
-            </button>
-
-            {followMsg && (
-              <p className={`text-sm ${followMsg.includes("Now following") ? "text-green-400" : "text-white/60"}`}>
-                {followMsg}
-                {followMsg.includes("Sign in") && (
-                  <> <Link href="/login" className="underline text-[#f0b429]">Sign in here</Link>.</>
-                )}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* ── Footer CTA ────────────────────────────────────────────────────── */}
-        {!user && (
-          <section className="py-8 text-center">
-            <p className="mb-2 text-lg font-semibold text-white/80">
-              Ready to be part of the story?
-            </p>
-            <p className="mb-6 text-sm text-white/50">
-              Register as a player, coach, or scout and get your work recognised.
-            </p>
-            <Link
-              href="/register/who"
-              className="inline-flex items-center gap-2 rounded-full bg-[#f0b429] px-8 py-3 font-bold text-[#1a3a1a] transition hover:bg-[#f5c542]"
-            >
-              Join GrassRoots Sports <ChevronRight className="h-4 w-4" />
-            </Link>
           </section>
-        )}
+
+          {/* SUBSCRIPTION CAPTURE PANEL */}
+          <section className="bg-white border border-gray-200 rounded-3xl p-5 shadow-3xs space-y-4">
+            <SectionHeader icon={<Users className="h-4 w-4" />} label="Follow Pipeline Tracks" />
+            <p className="text-[11px] font-medium text-gray-400 leading-normal">
+              Subscribe to regional directories or specific club nodes to personalize upcoming match alert sequences.
+            </p>
+
+            <div className="space-y-3 pt-1">
+              <div className="flex gap-1.5">
+                {(["club", "area"] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => { setFollowType(type); setFollowId(""); }}
+                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${
+                      followType === type ? "bg-[#1c3d22] text-[#f0b429]" : "bg-white border-gray-200 text-gray-500"
+                    }`}
+                  >
+                    {type === "club" ? "Club / Node" : "Province"}
+                  </button>
+                ))}
+              </div>
+
+              {followType === "area" ? (
+                <select
+                  value={followId}
+                  onChange={(e) => setFollowId(e.target.value)}
+                  className="w-full text-xs bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:bg-white focus:border-zinc-400 font-bold text-gray-800"
+                >
+                  <option value="">Select target province...</option>
+                  {PROVINCES.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={followId}
+                  onChange={(e) => setFollowId(e.target.value)}
+                  placeholder="e.g. Highlanders FC, Caps United, Dynamos…"
+                  className="w-full text-xs bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 outline-none focus:bg-white focus:border-zinc-400 font-bold text-gray-900"
+                />
+              )}
+
+              <button
+                onClick={handleFollowAction}
+                disabled={!followId.trim() || followPending}
+                className="w-full bg-[#1c3d22] hover:bg-emerald-900 disabled:opacity-40 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-3xs"
+              >
+                {followPending ? <Loader2 size={12} className="animate-spin text-[#f0b429]" /> : <ArrowRight size={12} />}
+                <span>{followPending ? "Syncing..." : `Follow selected ${followType}`}</span>
+              </button>
+
+              {followMsg && (
+                <p className={`text-[11px] font-bold mt-1 text-center ${followMsg.includes("Now following") ? "text-emerald-700" : "text-gray-500"}`}>
+                  {followMsg}
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* COMMUNITY MOMENTS FEED */}
+          {!feedLoading && featuredMoments.length > 0 && (
+            <section className="space-y-4">
+              <SectionHeader icon={<Heart className="h-4 w-4" />} label="Community Moments" />
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                {featuredMoments.map((m) => {
+                  if (!m.ai_caption) return null;
+                  return (
+                    <div key={m.id} className="p-4 bg-white border border-gray-200 rounded-2xl space-y-3 shadow-3xs">
+                      <p className="text-xs font-semibold text-gray-700 leading-relaxed">
+                        {m.ai_caption}
+                      </p>
+                      <div className="flex items-center justify-between border-t border-gray-50 pt-2 text-[10px] font-bold text-gray-400 uppercase">
+                        <span className="flex items-center gap-0.5"><MapPin size={10} /> {m.area_label ?? "Zimbabwe"}</span>
+                        {m.likes_count > 0 && <span className="flex items-center gap-0.5 text-rose-600"><Heart size={10} className="fill-current" /> {m.likes_count}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+        </div>
       </div>
+      
     </div>
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-function PublicNav() {
-  return (
-    <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#0d1f13]/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-base font-black tracking-tight text-white">
-          Grassroots<span className="text-[#f0b429]">Sports</span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link href="/community" className="text-xs font-semibold text-[#f0b429]">
-            Community
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:border-white/40"
-          >
-            Sign in
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
+// ── HEADER HELPER INTERNAL WORKER ─────────────────────────────────────────────
 
 function SectionHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-2 border-l-4 border-[#f0b429] pl-3">
-      <span className="text-[#f0b429]">{icon}</span>
-      <h2 className="text-lg font-black uppercase tracking-wide">{label}</h2>
-    </div>
-  );
-}
-
-function MatchReportCard({ report }: { report: MatchReport }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm transition hover:border-white/20">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]">
-          {report.area_label ?? "Zimbabwe"}
-        </p>
-        <p className="text-xs text-white/40">{formatDate(report.match_date)}</p>
-      </div>
-
-      <h3 className="mb-1 text-sm font-black leading-snug text-white sm:text-base">
-        {report.ai_headline}
-      </h3>
-
-      <div className="mt-3 flex items-center gap-2 text-sm">
-        <span className="font-semibold text-white/90">{report.home_team}</span>
-        <span className="rounded bg-[#f0b429]/20 px-2 py-0.5 text-xs font-black text-[#f0b429]">
-          {report.score}
-        </span>
-        <span className="font-semibold text-white/90">{report.away_team}</span>
-      </div>
-
-      {report.player_of_match && (
-        <p className="mt-2 text-xs text-white/50">
-          ⭐ POTM: <span className="text-white/70">{report.player_of_match}</span>
-        </p>
-      )}
-    </div>
-  );
-}
-
-function SpotlightCard({ spotlight }: { spotlight: Spotlight }) {
-  const trigger = TRIGGER_LABELS[spotlight.trigger_reason] ?? spotlight.trigger_reason.replace(/_/g, " ");
-  const excerpt = spotlight.ai_story.slice(0, 160) + (spotlight.ai_story.length > 160 ? "…" : "");
-
-  return (
-    <div className="flex flex-col rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-      <div className="mb-3 flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/20 text-sm font-black text-[#f0b429]">
-          {spotlight.player?.initials ?? "??"}
-        </div>
-        <div>
-          <p className="text-xs font-bold text-white/80">
-            {spotlight.player?.position ?? "Player"}
-          </p>
-          {spotlight.player?.area && (
-            <p className="flex items-center gap-1 text-xs text-white/40">
-              <MapPin className="h-3 w-3" /> {spotlight.player.area}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <span className="mb-2 inline-block w-fit rounded-full bg-[#1a5c2a] px-2.5 py-0.5 text-xs font-bold text-[#f0b429]">
-        {trigger}
-      </span>
-
-      <p className="text-sm leading-relaxed text-white/70">{excerpt}</p>
-
-      <p className="mt-3 text-xs text-white/30">{formatDate(spotlight.published_at)}</p>
-    </div>
-  );
-}
-
-function MomentCard({ moment }: { moment: Moment }) {
-  if (!moment.ai_caption) return null;
-  return (
-    <div className="mb-4 break-inside-avoid rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-      {moment.is_featured && (
-        <p className="mb-1.5 text-xs font-bold uppercase tracking-widest text-[#f0b429]">
-          Featured
-        </p>
-      )}
-      <p className="text-sm leading-relaxed text-white/80">{moment.ai_caption}</p>
-      <div className="mt-3 flex items-center justify-between">
-        {moment.area_label && (
-          <p className="flex items-center gap-1 text-xs text-white/40">
-            <MapPin className="h-3 w-3" /> {moment.area_label}
-          </p>
-        )}
-        {moment.likes_count > 0 && (
-          <p className="flex items-center gap-1 text-xs text-white/40">
-            <Heart className="h-3 w-3 fill-current" /> {moment.likes_count}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AlertCard({ alert }: { alert: MatchAlert }) {
-  const dt = new Date(alert.match_datetime);
-  const day = dt.toLocaleDateString("en-ZW", { weekday: "short", month: "short", day: "numeric" });
-  const time = dt.toLocaleTimeString("en-ZW", { hour: "2-digit", minute: "2-digit" });
-
-  return (
-    <div className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-      <div className="shrink-0 text-center">
-        <p className="text-xs font-bold text-[#f0b429]">{day.split(" ")[0]}</p>
-        <p className="text-xs text-white/50">{time}</p>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-white">
-          {alert.home_team} <span className="text-white/40">vs</span> {alert.away_team}
-        </p>
-        <p className="flex items-center gap-1 text-xs text-white/50">
-          <MapPin className="h-3 w-3" /> {alert.location}
-          {alert.area_label && ` · ${alert.area_label}`}
-        </p>
-      </div>
-      <Calendar className="h-4 w-4 shrink-0 text-white/30" />
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="mt-4 rounded-xl border border-dashed border-white/15 py-10 text-center text-sm text-white/40">
-      {text}
+    <div className="flex items-center gap-2 border-l-4 border-[#f0b429] pl-2.5 select-none">
+      <span className="text-[#1c3d22]">{icon}</span>
+      <h2 className="text-xs font-black uppercase tracking-wider text-[#1c3d22]">{label}</h2>
     </div>
   );
 }

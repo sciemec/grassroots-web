@@ -206,9 +206,7 @@ export default function TrainingScanner({
             delegate: "CPU"
           },
           runningMode: "VIDEO",
-          numPoses: 1,
-          minPoseDetectionConfidence: 0.5,
-          minPoseTrackingConfidence: 0.5
+          minPoseDetectionConfidence: 0.5
         });
         
         const processFrame = async (timestamp: number) => {

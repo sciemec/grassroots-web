@@ -113,7 +113,7 @@ export default function SetPiecesPage() {
   useEffect(() => {
     if (!_hasHydrated) return;
     if (!user) return; 
-    if (user.role !== "coach" && user.role !== "admin" && user.role !== "ADMIN" && user.role !== "super-admin") {
+    if (user.role !== "coach" && user.role !== "admin") {
       router.push("/dashboard");
     }
   }, [_hasHydrated, user, router]);

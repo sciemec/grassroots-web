@@ -47,7 +47,7 @@ function StatField({ name, value, onChange }: {
 }
 
 export default function SportStatsPage() {
-  const { sport } = useParams<{ sport: string }>();
+  const { sport = "" } = useParams<{ sport: string }>() ?? {};
   const router = useRouter();
   const { user } = useAuthStore();
   const sportKey = sport as SportKey;

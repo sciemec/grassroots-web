@@ -82,7 +82,7 @@ const FIXTURE_STATUS_ICON: Record<string, React.ReactNode> = {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function LeagueDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = "" } = useParams<{ id: string }>() ?? {};
   const { token } = useAuthStore();
   const router = useRouter();
 

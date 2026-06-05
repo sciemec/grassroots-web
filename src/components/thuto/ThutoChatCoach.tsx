@@ -486,8 +486,8 @@ export default function ThutoChatCoach() {
   const { voiceState, toggleListening, voiceError } = useVoiceInput(handleTranscript);
 
   // Resolve current page context — exact match first, then prefix match
-  const pageCtx: PageCtx = PAGE_CONTEXT[pathname]
-    ?? Object.entries(PAGE_CONTEXT).find(([k]) => pathname.startsWith(k) && k !== "/coach")?.[1]
+  const pageCtx: PageCtx = PAGE_CONTEXT[pathname ?? '']
+    ?? Object.entries(PAGE_CONTEXT).find(([k]) => (pathname ?? '').startsWith(k) && k !== "/coach")?.[1]
     ?? PAGE_CONTEXT["/coach"];
 
   // ── Load squad for context ───────────────────────────────────────────────

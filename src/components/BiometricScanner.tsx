@@ -280,7 +280,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
       video.muted = true;
       await video.play();
 
-      function videoLoop() {
+      const videoLoop = () => {
         if (!videoRef.current || videoRef.current.ended || videoRef.current.paused) {
           URL.revokeObjectURL(objectUrl);
           setPhase("stopped");
@@ -294,7 +294,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
           } catch {}
           videoLoop();
         });
-      }
+      };
       videoLoop();
     } catch {
       setError("Could not analyse this video. Try the live camera instead.");

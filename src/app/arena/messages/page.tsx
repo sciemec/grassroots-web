@@ -173,7 +173,7 @@ function MessagesContent() {
 
   // Auto-open thread from ?with= query param
   useEffect(() => {
-    const withId = searchParams.get("with");
+    const withId = searchParams?.get("with");
     if (withId && threads.length > 0) {
       const thread = threads.find((t) => String(t.otherId) === withId);
       if (thread) {

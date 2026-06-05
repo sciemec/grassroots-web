@@ -371,7 +371,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PlayerPassportPublicPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = "" } = useParams<{ id: string }>() ?? {};
   const [data, setData] = useState<PassportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);

@@ -354,9 +354,9 @@ export default function ThutoChatAnalyst() {
 
   // Resolve current page context — exact match, then prefix match, then fallback
   const pageCtx: PageCtx =
-    PAGE_CONTEXT[pathname] ??
+    PAGE_CONTEXT[pathname ?? ''] ??
     Object.entries(PAGE_CONTEXT)
-      .filter(([k]) => k !== "/analyst" && pathname.startsWith(k))
+      .filter(([k]) => k !== "/analyst" && (pathname ?? '').startsWith(k))
       .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ??
     PAGE_CONTEXT["/analyst"];
 

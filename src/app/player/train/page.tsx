@@ -150,8 +150,7 @@ export default function PlayerTrainPage() {
             modelAssetPath: "https://storage.googleapis.com/mediapipe-models/holistic_landmarker/holistic_landmarker/float16/1/holistic_landmarker.task",
             delegate: "CPU"
           },
-          runningMode: "VIDEO",
-          numPoses: 1
+          runningMode: "VIDEO"
         });
         
         const processFrame = async (timestamp: number) => {
@@ -177,12 +176,13 @@ export default function PlayerTrainPage() {
                     [23, 25], [25, 27], [24, 26], [26, 28]
                   ];
                   
+                  const canvas = canvasRef.current;
                   ctx.beginPath();
                   connections.forEach(([a, b]) => {
                     const p1 = pose[a], p2 = pose[b];
-                    if (p1 && p2) {
-                      ctx.moveTo(p1.x * canvasRef.current.width, p1.y * canvasRef.current.height);
-                      ctx.lineTo(p2.x * canvasRef.current.width, p2.y * canvasRef.current.height);
+                    if (p1 && p2 && canvas) {
+                      ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height);
+                      ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height);
                     }
                   });
                   ctx.strokeStyle = isRecording ? "#ef4444" : "#10b981";

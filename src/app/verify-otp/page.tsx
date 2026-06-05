@@ -11,7 +11,7 @@ function VerifyOtpContent() {
   const params     = useSearchParams();
   const router     = useRouter();
   const login      = useAuthStore((s) => s.login);
-  const identifier = params.get("identifier") ?? "";
+  const identifier = params?.get("identifier") ?? "";
 
   const [otp, setOtp]       = useState(["", "", "", "", "", ""]);
   const [error, setError]   = useState("");

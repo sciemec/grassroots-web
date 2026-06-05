@@ -15,7 +15,7 @@ const SPORTS = [
 function NewPlanForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roleId = searchParams.get("role") ?? "";
+  const roleId = searchParams?.get("role") ?? "";
   const role: StaffRoleConfig | null = roleId ? getRoleConfig(roleId) : null;
 
   const token = useAuthStore((s) => s.token);

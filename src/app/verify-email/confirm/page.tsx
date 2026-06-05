@@ -15,8 +15,8 @@ function ConfirmContent() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const token = params.get("token");
-    const email = params.get("email") ?? "";
+    const token = params?.get("token");
+    const email = params?.get("email") ?? "";
 
     if (!token) {
       setStatus("error");

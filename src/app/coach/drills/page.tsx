@@ -23,7 +23,8 @@ const COACH_ROLE_DRILLS: Record<string, any[]> = {
 };
 
 export default function CoachDrillLab() {
-  const { user, _hasHydrated } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
   const router = useRouter();
   
   useEffect(() => {
@@ -33,13 +34,14 @@ export default function CoachDrillLab() {
   if (!_hasHydrated) return <div className="p-10"><Loader2 className="animate-spin" /></div>;
 
   // 🎯 LOCK DRILLS TO THE COACH'S ROLE
-  const roleDrills = COACH_ROLE_DRILLS[user?.role_focus || "defence_coach"] || COACH_ROLE_DRILLS.defence_coach;
+  const roleFocus = (user as any)?.role_focus as string | undefined;
+  const roleDrills = COACH_ROLE_DRILLS[roleFocus || "defence_coach"] || COACH_ROLE_DRILLS.defence_coach;
 
   return (
     <div className="p-8 bg-[#f4f2ee] min-h-screen">
       <h1 className="text-2xl font-black uppercase mb-6 flex items-center gap-2">
-        {user?.role_focus === 'defence_coach' ? <Shield className="text-blue-600" /> : <Flame className="text-red-600" />}
-        {getRoleConfig(user?.role_focus || "defence_coach")?.title} Nurture Lab
+        {roleFocus === 'defence_coach' ? <Shield className="text-blue-600" /> : <Flame className="text-red-600" />}
+        {getRoleConfig(roleFocus || "defence_coach")?.title} Nurture Lab
       </h1>
 
       <div className="grid gap-4">

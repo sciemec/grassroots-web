@@ -9,7 +9,7 @@ const PRESET_AMOUNTS = ["1.00", "2.00", "5.00", "10.00"];
 
 export default function MatchDayPage() {
   const params  = useParams();
-  const eventId = params.id as string;
+  const eventId = (params?.id ?? "") as string;
 
   const [showDonate, setShowDonate]       = useState(false);
   const [amount, setAmount]               = useState("2.00");

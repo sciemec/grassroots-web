@@ -24,7 +24,7 @@ import { getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
 import { safeArray } from "@/lib/safe-array";
 import { useAuthStore } from "@/lib/auth-store";
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ size?: string | number; className?: string }>> = {
   Shield,
   Users,
   Flame,

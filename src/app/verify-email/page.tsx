@@ -9,7 +9,7 @@ import { auth } from "@/firebase";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "";
+  const email = searchParams?.get("email") ?? "";
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [resendError, setResendError] = useState("");

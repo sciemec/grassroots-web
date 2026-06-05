@@ -59,7 +59,7 @@ const roleBadge: Record<string, string> = {
 };
 
 export default function UserDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = "" } = useParams<{ id: string }>() ?? {};
   const router = useRouter();
 
   const { data: user, isLoading } = useQuery<UserDetail>({

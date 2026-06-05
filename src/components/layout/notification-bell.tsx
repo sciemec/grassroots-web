@@ -52,7 +52,7 @@ export function NotificationBell() {
     if (!user) return;
     try {
       const res = await api.get("/notifications");
-      const fetched: Notification[] = res.data?.data ?? res.data ?? [];
+      const _r = res.data?.data ?? res.data; const fetched: Notification[] = Array.isArray(_r) ? _r : [];
       setNotifications(fetched);
 
       const isFirst = isFirstFetchRef.current;

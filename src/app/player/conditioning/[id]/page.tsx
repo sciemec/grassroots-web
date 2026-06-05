@@ -71,7 +71,7 @@ const INTENSITY_OPTIONS: { value: IntensityFelt; label: string; emoji: string }[
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ExerciseCardDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = "" } = useParams<{ id: string }>() ?? {};
   const router = useRouter();
 
   const [card, setCard]                   = useState<ExerciseCard | null>(null);

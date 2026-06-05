@@ -1,0 +1,75 @@
+
+"use client";
+
+import { useState } from "react";
+
+interface ManualTimeInputProps {
+  testType: "20m_sprint" | "vertical_leap" | "pro_agility";
+  ageGroup: string;
+  onSubmit: (durationSeconds: number) => void;
+}
+
+export function ManualTimeInput({ testType, ageGroup, onSubmit }: ManualTimeInputProps) {
+  const [duration, setDuration] = useState<string>("");
+  const [error, setError] = useState<string>("");
+
+  const config = {
+    "20m_sprint": { min: 2.5, max: 6.0, placeholder: "e.g., 3.2", label: "Time (seconds)" },
+    "vertical_leap": { min: 0.2, max: 0.8, placeholder: "e.g., 0.48", label: "Hang Time (seconds)" },
+    "pro_agility": { min: 4.0, max: 7.0, placeholder: "e.g., 4.8", label: "Time (seconds)" },
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = parseFloat(duration);
+    
+    if (isNaN(value)) {
+      setError("Please enter a valid number");
+      return;
+    }
+    
+    const { min, max } = config[testType];
+    if (value < min || value > max) {
+      setError(`Time should be between ${min} and ${max} seconds for ${ageGroup}`);
+      return;
+    }
+    
+    setError("");
+    onSubmit(value);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div>
+        <label className="block text-xs font-bold text-gray-700 mb-1">
+          {config[testType].label}
+        </label>
+        <input
+          type="number"
+          step="0.01"
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+          placeholder={config[testType].placeholder}
+          className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
+          required
+        />
+        <p className="text-[10px] text-gray-400 mt-1">
+          Expected range: {config[testType].min}s - {config[testType].max}s for {ageGroup}
+        </p>
+      </div>
+      
+      {error && (
+        <div className="text-xs text-red-500 bg-red-50 p-2 rounded-lg">
+          {error}
+        </div>
+      )}
+      
+      <button
+        type="submit"
+        className="w-full bg-[#1a5c2a] text-white py-2 rounded-xl font-bold text-sm"
+      >
+        Process Results
+      </button>
+    </form>
+  );
+}

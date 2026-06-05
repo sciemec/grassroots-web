@@ -11,7 +11,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const loginStore   = useAuthStore((s) => s.login);
 
-  const registered = searchParams.get('registered') === '1';
+  const registered = searchParams?.get('registered') === '1';
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword]     = useState('');

@@ -72,10 +72,10 @@ function SubscriptionContent() {
 
   // Stripe redirect back — send confirmation email once
   useEffect(() => {
-    if (searchParams.get("success") === "1" && user?.email && !emailSentRef.current) {
+    if (searchParams?.get("success") === "1" && user?.email && !emailSentRef.current) {
       emailSentRef.current = true;
       setStripeSuccess(true);
-      const plan = searchParams.get("plan") ?? "monthly";
+      const plan = searchParams?.get("plan") ?? "monthly";
       fetch("/api/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

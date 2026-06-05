@@ -19,7 +19,7 @@ import { COACHING_STAFF_ROLES, type StaffRoleConfig } from "@/config/coaching-st
 import { useAuthStore } from "@/lib/auth-store";
 import { useEffect, useState } from "react";
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ size?: string | number; className?: string }>> = {
   Shield,
   Users,
   Flame,

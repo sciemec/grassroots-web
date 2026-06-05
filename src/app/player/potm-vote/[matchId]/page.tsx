@@ -29,7 +29,7 @@ interface MatchInfo {
 type Phase = "loading" | "vote" | "already_voted" | "submitted" | "closed" | "error";
 
 export default function PotmVotePage() {
-  const { matchId } = useParams<{ matchId: string }>();
+  const { matchId = "" } = useParams<{ matchId: string }>() ?? {};
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);

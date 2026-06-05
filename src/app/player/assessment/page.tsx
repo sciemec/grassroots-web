@@ -727,7 +727,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       <Tooltip
                         contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
                         labelStyle={{ color: "#fff", fontSize: 11 }}
-                        formatter={(value: number, _: string, entry: { payload: { date: string; level: string } }) => [
+                        formatter={(value: any, _: any, entry: any) => [
                           `${value}/100 — ${entry.payload.level}`,
                           entry.payload.date,
                         ]}
@@ -760,7 +760,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                         <Tooltip
                           contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
                           labelStyle={{ color: "#fff", fontSize: 11 }}
-                          formatter={(value: number, _: string, entry: { payload: { side: string | null } }) => [
+                          formatter={(value: any, _: any, entry: any) => [
                             `${value}° difference${entry.payload.side ? ` (${entry.payload.side} side weaker)` : ""}`,
                             "Asymmetry",
                           ]}

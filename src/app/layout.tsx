@@ -81,17 +81,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content={APP_NAME} />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="antialiased">
+      <body className="bg-[#f4f2ee] text-gray-900 antialiased selection:bg-[#f0b429]/30">
         <Providers>
           <AuthProvider>
-            {children}
+            
+            {/* Global Viewport Context wrapper */}
+            <div className="min-h-screen flex flex-col">
+              {children}
+            </div>
+
+            {/* PWA & Network Injected Overlays */}
             <PwaBanner />
             <SwUpdateBanner />
             <OfflineIndicator />
             <PushPrompt />
+            
           </AuthProvider>
         </Providers>
-        {/* SW registration handled by SwUpdateBanner (workbox-window) */}
       </body>
     </html>
   );

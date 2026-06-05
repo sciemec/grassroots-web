@@ -42,7 +42,7 @@ const POSITION_FULL: Record<string, string> = {
 };
 
 export default function TournamentPlayerPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = "" } = useParams<{ id: string }>() ?? {};
   const [player, setPlayer] = useState<TournamentPlayerProfile | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [notFound, setNotFound] = useState(false);

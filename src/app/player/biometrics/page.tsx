@@ -80,12 +80,8 @@ export default function PlayerBiometricsPage() {
         </div>
 
         {/* Scanner Component */}
-        <BiometricScanner 
-          mode={activeTab}
-          userRole="player"
-          onComplete={(metrics) => {
-            console.log("Metrics saved:", metrics);
-          }}
+        <BiometricScanner
+          onScanComplete={() => {}}
         />
 
         {/* Info Panel */}

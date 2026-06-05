@@ -136,7 +136,7 @@ export default function CoachBiometricsPage() {
                       Assessing: {selectedPlayer.name} ({selectedPlayer.position})
                     </p>
                   </div>
-                  <BiometricScanner onScanComplete={(data) => console.log("Scan complete for", selectedPlayer?.name, data)} />
+                  <BiometricScanner onScanComplete={() => {}} />
                 </>
               ) : (
                 <div className="rounded-2xl border border-gray-800 bg-gray-900/30 p-12 text-center">

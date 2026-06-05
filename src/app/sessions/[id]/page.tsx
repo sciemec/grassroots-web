@@ -139,7 +139,7 @@ function DrillSetCard({ ds, index }: { ds: DrillSet; index: number }) {
 }
 
 export default function SessionDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = "" } = useParams<{ id: string }>() ?? {};
   const router = useRouter();
   const { user } = useAuthStore();
   const [session, setSession] = useState<SessionDetail | null>(null);

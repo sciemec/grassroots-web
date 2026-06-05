@@ -223,7 +223,7 @@ function XgAnalysisInner() {
 
   // Auto-load if ?match_id= is in URL
   useEffect(() => {
-    const mid = searchParams.get("match_id");
+    const mid = searchParams?.get("match_id");
     if (!mid) return;
     setLoadingMatch(true);
     getMatch(mid).then((m) => {

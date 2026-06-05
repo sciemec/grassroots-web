@@ -9,7 +9,8 @@ import PairDetail, { type PairData } from "@/components/chemistry/PairDetail";
 import api from "@/lib/api";
 
 export default function ChemistryPairPage() {
-  const params   = useParams<{ playerA: string; playerB: string }>();
+  const rawParams = useParams<{ playerA: string; playerB: string }>();
+  const params    = rawParams ?? { playerA: "", playerB: "" };
   const [pair, setPair]       = useState<PairData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);

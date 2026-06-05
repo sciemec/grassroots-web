@@ -1012,9 +1012,9 @@ export default function ThutoChat() {
 
   // Resolve page context — exact match first, then prefix match, then fallback
   const pageCtx: PageCtx =
-    PAGE_CONTEXT[pathname] ??
+    PAGE_CONTEXT[pathname ?? ''] ??
     Object.entries(PAGE_CONTEXT)
-      .filter(([k]) => k !== "/player" && pathname.startsWith(k))
+      .filter(([k]) => k !== "/player" && (pathname ?? '').startsWith(k))
       .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ??
     PAGE_CONTEXT["/player"];
 
