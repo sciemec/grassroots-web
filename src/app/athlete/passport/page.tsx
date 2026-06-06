@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Download, Share2, QrCode, Award, Target, Loader2, Copy, Check } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
+import { SimplifiedSidebar } from "@/components/layout/simplified-sidebar";
 
 interface BiometricResult {
   id: string;
@@ -72,7 +72,8 @@ export default function AthletePassportPage() {
       });
       if (bioRes.ok) {
         const bioData = await bioRes.json();
-        setBiometrics(bioData.results || []);
+        const results = bioData.results;
+        setBiometrics(Array.isArray(results) ? results : []);
       }
 
       // Generate QR code (using external library or simple data URL)
@@ -178,9 +179,9 @@ export default function AthletePassportPage() {
 
   return (
     <div className="flex min-h-screen bg-[#f4f2ee]">
-      <Sidebar />
-      
-      <main className="flex-1 lg:ml-72 p-6">
+      <SimplifiedSidebar />
+
+      <main className="flex-1 lg:ml-64 p-6">
         <div className="max-w-3xl mx-auto">
           <Link href="/athlete" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6">
             <ArrowLeft size={16} /> Back to Dashboard

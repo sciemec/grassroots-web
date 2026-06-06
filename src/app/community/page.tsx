@@ -325,7 +325,7 @@ export default function CommunityPage() {
             ) : (
               <div className="space-y-2 pt-2">
                 {filteredTalents.map((talent, index) => (
-                  <Link href={`/player/passport`} key={talent.id} className="block group">
+                  <Link href={`/passport/${talent.id}`} key={talent.id} className="block group">
                     <div className="bg-white border border-gray-200 group-hover:border-[#1c3d22] p-4 rounded-xl flex items-center justify-between gap-4 transition-all shadow-3xs">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-[#e2f0d9] border border-[#1c3d22]/10 flex items-center justify-center text-[#1c3d22] font-black text-xs">

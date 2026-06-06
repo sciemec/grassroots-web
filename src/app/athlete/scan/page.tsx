@@ -8,7 +8,7 @@ import { ArrowLeft, Activity, Loader2, CheckCircle, AlertCircle } from "lucide-r
 import { useAuthStore } from "@/lib/auth-store";
 import BiometricScanner from "@/components/BiometricScanner";
 import { SimplifiedSidebar } from "@/components/layout/simplified-sidebar";
-import { evaluateBiometrics } from "@/lib/grs-engine";
+import { evaluateBiometrics, EngineOutput } from "@/lib/grs-engine";
 
 export default function AthleteScanPage() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function AthleteScanPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<EngineOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Authenticate and protect the route
@@ -29,19 +29,19 @@ export default function AthleteScanPage() {
     }
   }, [hasHydrated, user, router]);
 
-  const handleScanComplete = async (scannerData: any) => {
+  const handleScanComplete = async (scannerData: { duration?: number }) => {
     setIsProcessing(true);
     setError(null);
 
     try {
-      // 1. Fallback prompt or duration extraction from scanner data
-      const durationSeconds = scannerData?.duration || parseFloat(prompt("Enter your time in seconds:", "3.2") || "3.2");
+      // 1. Use duration from scanner data, fall back to a sensible default
+      const durationSeconds = scannerData?.duration || 3.2;
 
       // 2. Evaluate with your real biometric algorithm engine
       const evaluation = evaluateBiometrics({
         testType: "20m_sprint",
         durationSeconds: durationSeconds,
-        ageGroup: (user?.age_group as any) || "U17",
+        ageGroup: (user?.age_group as "U8" | "U13" | "U17" | "Senior") || "U17",
       });
 
       setResult(evaluation);
@@ -65,12 +65,12 @@ export default function AthleteScanPage() {
     } catch (err) {
       console.error("Biometric processing error:", err);
       setError("Failed to analyze video. Please try again.");
-    } {
+    } finally {
       setIsProcessing(false);
     }
   };
 
-  const saveBiometricResultToDatabase = async (evaluation: any, durationSeconds: number) => {
+  const saveBiometricResultToDatabase = async (evaluation: EngineOutput, durationSeconds: number) => {
     setIsSaving(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/biometrics/submit`, {

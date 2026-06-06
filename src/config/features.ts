@@ -43,7 +43,7 @@ export const roleCanAccess = (role: string, feature: string): boolean => {
     coach: ['biometrics', 'drills', 'passport', 'coaches'],
     scout: ['passport', 'scouts'],
     fan: ['passport', 'fans'],
-    admin: Object.keys(FEATURES).filter(k => FEATURES[k as keyof typeof FEATURES] === true),
+    admin: Object.keys(FEATURES),
   };
   return roleFeatureMap[role]?.includes(feature) || false;
 };

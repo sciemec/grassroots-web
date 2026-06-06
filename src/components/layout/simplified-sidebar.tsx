@@ -10,7 +10,7 @@ import {
   LogOut, Menu, X, FileText, Star, Briefcase
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { FEATURES, roleCanAccess } from "@/config/features";
+import { FEATURES } from "@/config/features";
 import { useState } from "react";
 
 interface NavItem {
