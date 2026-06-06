@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { PwaBanner } from "@/components/pwa/install-banner";
@@ -7,8 +6,6 @@ import { SwUpdateBanner } from "@/components/pwa/sw-update-banner";
 import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { PushPrompt } from "@/components/ui/push-prompt";
 import { AuthProvider } from "@/hooks/useAuth";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const APP_URL = "https://grassrootssports.live";
 const APP_NAME = "Grassroots Sport Pro";
@@ -73,7 +70,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} dark`}>
+    <html lang="en" className="dark">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
