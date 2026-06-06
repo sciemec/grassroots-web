@@ -7637,3 +7637,188 @@ if (angle > 180.0) angle = 360.0 - angle;
 - Default: Center Back / Target Forward
 
 
+
+---
+
+## SESSION LOG — 7 June 2026
+
+### Theme — WhatsApp Two-Turn Video Routing + R2 Upload Pipeline
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `src/lib/r2.ts` — Cloudflare R2 Client Utility ✅
+
+**File:** `src/lib/r2.ts`
+**Commit:** `e15dff7`
+
+Exports:
+- `r2Client` — `S3Client` configured from env vars, no hardcoded fallbacks. Throws at module init if any of the three required vars is absent.
+- `R2_BUCKET` — bucket name from `R2_BUCKET` env var (defaults to `"grassroots-videos"`)
+
+**Required env vars:**
+```
+R2_ACCOUNT_ID        — Cloudflare account ID
+R2_ACCESS_KEY_ID     — R2 API token key ID
+R2_SECRET_ACCESS_KEY — R2 API token secret
+R2_BUCKET            — bucket name (optional, default: grassroots-videos)
+```
+
+Usage:
+```typescript
+import { r2Client, R2_BUCKET } from "@/lib/r2";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+await r2Client.send(new PutObjectCommand({ Bucket: R2_BUCKET, Key: "...", Body: buf, ContentType: "video/mp4" }));
+```
+
+Note: `r2.ts` throws on import if env vars are missing. For route handlers that should degrade gracefully, use the lazy factory pattern from `src/app/api/upload/presigned/route.ts` (`getS3Client()` returning null).
+
+---
+
+#### 2. WhatsApp Two-Turn Routing Flow — FULLY BUILT ✅
+
+**File:** `src/app/api/whatsapp/route.ts`
+**Commits:** `bb9f62c` (initial build) → `3478596` (R2 upload added)
+
+Full interactive two-turn WhatsApp video routing:
+
+**Turn 1 — video arrives:**
+1. Validates media is `video/*`
+2. Downloads video from Twilio using Basic Auth (`TWILIO_ACCOUNT_SID:TWILIO_AUTH_TOKEN`)
+3. Uploads to Cloudflare R2 under `whatsapp/{phone_digits}/{MessageSid}.{ext}`
+4. Forwards R2 URL (stable, auth-free) to Laravel as `action="prompt"`, `media_url=<R2 URL>`
+5. Laravel upserts `whatsapp_pending_videos` keyed by phone
+6. Bot replies with routing prompt
+
+**Turn 2 — user replies "1" or "2":**
+- Forwards `action="route_pending"` + `choice` to Laravel
+- Laravel dispatches `AnalyseWhatsappVideoJob` (choice=1) or inserts into `player_highlights` (choice=2)
+
+**R2 fallback:** If R2 is not configured or upload fails, Twilio URL is stored instead. Route never breaks.
+
+**Key format:** `whatsapp/263712345678/MM1234abcd.mp4`
+
+**`parseRoutingChoice()` accepts:**
+- `"1"` / `"scan"` / `"biometric"` → choice 1
+- `"2"` / `"vault"` / `"save"` / `"highlight"` → choice 2
+
+---
+
+#### 3. Laravel Backend — WhatsApp Routing ✅
+
+**Repo:** `bhora-ai` | **Commits:** `1922b34`, `620aba0`, `4dfa6fa`
+
+**Files:**
+- `database/migrations/2026_06_07_000001_create_whatsapp_pending_videos_table.php` — phone-keyed, 10-min TTL, upsert by phone, `message_sid UNIQUE`
+- `app/Http/Controllers/Api/WhatsappInboundController.php` — handles `action=prompt` (store pending) and `action=route_pending` (dispatch or vault)
+- `routes/api.php` — `POST /api/v1/whatsapp/inbound` (no auth, user resolved by E.164 phone)
+- `app/Jobs/AnalyseWhatsappVideoJob.php` — downloads from R2 (plain GET, no Twilio auth), runs YOLOv8 `/track`, sends WhatsApp reply with metrics
+- `config/services.php` — added `ai_service.url` entry
+
+**`whatsapp_pending_videos` schema:**
+```sql
+id           UUID PK (gen_random_uuid())
+phone        VARCHAR indexed          -- E.164 e.g. +263712345678
+message_sid  VARCHAR UNIQUE           -- Twilio MessageSid — idempotent key
+media_url    TEXT                     -- R2 public URL (or Twilio fallback)
+media_type   VARCHAR
+profile_name VARCHAR nullable
+created_at   TIMESTAMP (useCurrent, no updated_at)
+```
+
+**`AnalyseWhatsappVideoJob` pipeline:**
+1. `downloadMedia()` — plain `Http::get($mediaUrl)` — no Twilio auth (URL is now R2)
+2. `runTracking()` — POST video bytes to Python AI service `/track` (YOLOv8 + ByteTracker)
+3. `buildSummary()` — picks most-active player, estimates top speed, maps zone
+4. Inserts `player_highlights` row (`event_type=biometric_scan`, `speed_kmh`)
+5. Fires in-app notification to registered player
+6. Sends WhatsApp reply: top speed, distance, zone, duration, profile link
+
+**WhatsApp reply format:**
+```
+🏃 *Biometric Scan Complete!*
+
+🔥 Top Speed: *28.4 km/h*
+📏 Distance Covered: *145m*
+📍 Primary Zone: *Attacking Third*
+⏱ Clip Duration: *12s*
+
+Full analysis → grassrootssports.live/player/assessment
+```
+
+---
+
+### NEW ROUTES — 7 June 2026
+
+```
+POST /api/whatsapp               Next.js Twilio webhook — two-turn routing + R2 upload
+POST /api/v1/whatsapp/inbound    Laravel — store pending (action=prompt) or dispatch (action=route_pending)
+```
+
+---
+
+### ENVIRONMENT VARIABLES — ADDED / CONFIRMED (7 June 2026)
+
+**Vercel (Next.js) — required for R2 upload in WhatsApp route:**
+```
+TWILIO_ACCOUNT_SID   — needed for Twilio media Basic Auth download in Turn 1
+R2_ACCOUNT_ID        — [SET ✅]
+R2_ACCESS_KEY_ID     — [SET ✅]
+R2_SECRET_ACCESS_KEY — [SET ✅]
+R2_BUCKET            — grassroots-videos
+R2_PUBLIC_URL        — [SET ✅]
+```
+
+**Render (Laravel) — for AnalyseWhatsappVideoJob:**
+```
+AI_SERVICE_URL = https://ai.bhora-ai.onrender.com
+TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM  — for WhatsApp reply
+```
+
+---
+
+### WHAT STILL NEEDS DOING (7 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `whatsapp_pending_videos` migration | Auto-runs on Render deploy | Verify table exists after `1922b34` deploy |
+| `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
+| `TWILIO_ACCOUNT_SID` in Vercel | Required for Turn 1 R2 upload | Add to Vercel dashboard if not already present |
+| `/player/success-engine/` orphaned directory | NOT YET DELETED | Delete `src/app/player/success-engine/` |
+| Coach biometric scan → backend persist | Not yet built | `POST /api/v1/coach/squad/{playerId}/biometric-scan` |
+
+---
+
+### WHATSAPP VIDEO PIPELINE — FULL END-TO-END
+
+```
+Player sends video via WhatsApp
+  ↓
+Twilio webhook → POST /api/whatsapp (Next.js)
+  → Download from Twilio (Basic Auth)
+  → Upload to R2: whatsapp/{phone}/{MessageSid}.mp4
+  → Forward R2 URL to Laravel POST /api/v1/whatsapp/inbound (action=prompt)
+  → Store in whatsapp_pending_videos (10-min TTL)
+  → Reply: "Reply *1* for Biometric Scan or *2* for Video Vault"
+
+Player replies "1"
+  ↓
+Twilio webhook → POST /api/whatsapp (Next.js)
+  → Forward to Laravel (action=route_pending, choice=1)
+  → dispatch(AnalyseWhatsappVideoJob) — uses R2 URL, no Twilio auth needed
+  → Reply: "Running your Biometric Scan now…"
+
+AnalyseWhatsappVideoJob runs (queued)
+  → GET {R2 URL}  (plain download)
+  → POST {AI_SERVICE_URL}/track  (YOLOv8 + ByteTracker)
+  → Insert player_highlights (event_type=biometric_scan)
+  → Notification::send() to player
+  → Twilio POST → WhatsApp reply with metrics
+
+Player replies "2"
+  ↓
+Laravel (action=route_pending, choice=2)
+  → INSERT player_highlights (event_type=highlight, r2_url=R2 URL)
+  → Reply: "Video saved to your Vault"
+```
