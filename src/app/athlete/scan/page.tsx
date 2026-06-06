@@ -10,6 +10,19 @@ import BiometricScanner from "@/components/BiometricScanner";
 import { SimplifiedSidebar } from "@/components/layout/simplified-sidebar";
 import { evaluateBiometrics, EngineOutput } from "@/lib/grs-engine";
 
+/** Matches the ScanEntry shape emitted by BiometricScanner's onScanComplete callback. */
+interface ScanEntry {
+  mode: string;
+  score: number;       // 0–100 quality score from MediaPipe analysis
+  level: string;       // "Elite" | "Good" | "Raw"
+  asymmetry_score: number;
+  asymmetry_diff: number;
+  weak_side: string | null;
+  frames_analysed: number;
+  session_date: string;
+  mode_label: string;
+}
+
 export default function AthleteScanPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -29,13 +42,14 @@ export default function AthleteScanPage() {
     }
   }, [hasHydrated, user, router]);
 
-  const handleScanComplete = async (scannerData: { duration?: number }) => {
+  const handleScanComplete = async (scannerData: ScanEntry) => {
     setIsProcessing(true);
     setError(null);
 
     try {
-      // 1. Use duration from scanner data, fall back to a sensible default
-      const durationSeconds = scannerData?.duration || 3.2;
+      // 1. Map scanner score (0–100) to approximate 20m sprint duration.
+      //    Elite (~90) ≈ 2.8s · Good (~60) ≈ 3.8s · Raw (~20) ≈ 4.5s
+      const durationSeconds = 5 - (scannerData.score / 100) * 2.5;
 
       // 2. Evaluate with your real biometric algorithm engine
       const evaluation = evaluateBiometrics({

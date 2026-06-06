@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Upload, Video, Trash2, Loader2 } from "lucide-react";
 import { SimplifiedSidebar } from "@/components/layout/simplified-sidebar";
+import { useAuthStore } from "@/lib/auth-store";
 
 interface VideoItem {
   id: string;
@@ -18,6 +19,7 @@ export default function AthleteVaultPage() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const token = useAuthStore((s) => s.token);
 
   useEffect(() => {
     loadVideos();
@@ -26,7 +28,8 @@ export default function AthleteVaultPage() {
   const loadVideos = () => {
     const stored = localStorage.getItem("gs_athlete_videos");
     if (stored) {
-      setVideos(JSON.parse(stored));
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) setVideos(parsed);
     }
   };
 
@@ -54,7 +57,6 @@ export default function AthleteVaultPage() {
 
     try {
       // Get presigned URL from your backend
-      const token = localStorage.getItem("auth_token");
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/presigned`, {
         method: "POST",
         headers: { 
@@ -64,6 +66,7 @@ export default function AthleteVaultPage() {
         body: JSON.stringify({ filename: file.name, contentType: file.type }),
       });
 
+      if (!response.ok) throw new Error("Failed to get upload URL");
       const { uploadUrl, key } = await response.json();
 
       // Upload directly to R2
@@ -79,7 +82,8 @@ export default function AthleteVaultPage() {
 
       xhr.onload = () => {
         if (xhr.status === 200) {
-          const publicUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`;
+          const r2Base = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "";
+          const publicUrl = r2Base ? `${r2Base}/${key}` : "";
           const newVideo: VideoItem = {
             id: Date.now().toString(),
             url: publicUrl,
@@ -87,7 +91,11 @@ export default function AthleteVaultPage() {
             date: new Date().toISOString(),
             size: file.size,
           };
-          saveVideos([newVideo, ...videos]);
+          setVideos((prev) => {
+            const updated = [newVideo, ...prev];
+            localStorage.setItem("gs_athlete_videos", JSON.stringify(updated));
+            return updated;
+          });
         } else {
           alert("Upload failed. Please try again.");
         }

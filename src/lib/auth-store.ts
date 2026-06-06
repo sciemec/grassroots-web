@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type UserRole = "admin" | "coach" | "scout" | "player" | "fan" | "analyst";
+export type UserRole = "admin" | "coach" | "scout" | "player" | "athlete" | "fan" | "analyst";
 
 export function roleHomePath(role: UserRole): string {
   switch (role) {
     case "admin":   return "/admin";
+    case "athlete": return "/athlete";
     default:        return "/arena";
   }
 }
