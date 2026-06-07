@@ -3896,9 +3896,9 @@ R2_BUCKET                = grassroots-videos
 R2_PUBLIC_URL            = https://pub-xxxx.r2.dev
 RESEND_API_KEY           = re_... (transactional email)
 EMAIL_FROM               = notifications@grassrootssports.live
-TWILIO_ACCOUNT_SID       = (WhatsApp reports)
-TWILIO_AUTH_TOKEN        = (WhatsApp reports)
-TWILIO_WHATSAPP_FROM     = whatsapp:+14155238886
+TWILIO_ACCOUNT_SID       = [SET ✅]
+TWILIO_AUTH_TOKEN        = [SET ✅]
+TWILIO_WHATSAPP_FROM     = [SET ✅]
 PAYNOW_INTEGRATION_ID    = (Paynow Zimbabwe — NEW)
 PAYNOW_INTEGRATION_KEY   = (Paynow Zimbabwe — NEW)
 ```
@@ -7784,9 +7784,23 @@ TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM  — for WhatsApp re
 |---|---|---|
 | `whatsapp_pending_videos` migration | Auto-runs on Render deploy | Verify table exists after `1922b34` deploy |
 | `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
-| `TWILIO_ACCOUNT_SID` in Vercel | Required for Turn 1 R2 upload | Add to Vercel dashboard if not already present |
+| `TWILIO_ACCOUNT_SID` in Vercel | ✅ SET — all 5 tests pass | No action needed |
 | `/player/success-engine/` orphaned directory | NOT YET DELETED | Delete `src/app/player/success-engine/` |
 | Coach biometric scan → backend persist | Not yet built | `POST /api/v1/coach/squad/{playerId}/biometric-scan` |
+
+---
+
+### TWILIO ENV VARS — CONFIRMED LIVE (8 June 2026)
+
+All 3 Twilio env vars set in Vercel production via CLI. All 5 route branches tested and passing:
+
+| Test | Result |
+|---|---|
+| Turn 2: unrecognised text | ✅ HELP_MESSAGE TwiML |
+| Turn 2: choice "1" | ✅ Biometric scan confirmation TwiML |
+| Turn 2: choice "2" | ✅ Vault confirmation TwiML |
+| Turn 1: image/jpeg | ✅ Rejection TwiML |
+| Turn 1: video/mp4 | ✅ PROMPT_MESSAGE TwiML |
 
 ---
 
