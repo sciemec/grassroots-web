@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Activity } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Heart } from "lucide-react";
 
 const COUNTRIES = [
   "Zimbabwe","Afghanistan","Albania","Algeria","Angola","Argentina","Armenia","Australia",
@@ -40,7 +40,7 @@ interface FormData {
   confirmPassword: string;
 }
 
-export default function RegisterAthletePage() {
+export default function RegisterFanPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -95,7 +95,7 @@ export default function RegisterAthletePage() {
         country: form.country,
         password: form.password,
         password_confirmation: form.confirmPassword,
-        role: "athlete",
+        role: "fan",
       };
       if (form.contactType === "email") {
         body.email = form.email.trim().toLowerCase();
@@ -130,11 +130,11 @@ export default function RegisterAthletePage() {
     <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-2xl mb-3">
-            <Activity size={24} className="text-white" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-rose-600 rounded-2xl mb-3">
+            <Heart size={24} className="text-white" />
           </div>
-          <h1 className="text-2xl font-black text-gray-900">Join as an Athlete</h1>
-          <p className="text-sm text-gray-500 mt-1">Any sport. AI biometric scan. Get discovered.</p>
+          <h1 className="text-2xl font-black text-gray-900">Join as a Fan</h1>
+          <p className="text-sm text-gray-500 mt-1">Follow players. Discover local talent.</p>
         </div>
 
         <div className="flex gap-2 mb-6">
@@ -142,7 +142,7 @@ export default function RegisterAthletePage() {
             <div
               key={s}
               className={`flex-1 h-1.5 rounded-full transition-colors ${
-                s <= step ? "bg-blue-600" : "bg-gray-200"
+                s <= step ? "bg-rose-600" : "bg-gray-200"
               }`}
             />
           ))}
@@ -166,8 +166,8 @@ export default function RegisterAthletePage() {
                     type="text"
                     value={form.first_name}
                     onChange={(e) => set("first_name", e.target.value)}
-                    placeholder="Tendai"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Chido"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
                 </div>
                 <div>
@@ -176,8 +176,8 @@ export default function RegisterAthletePage() {
                     type="text"
                     value={form.surname}
                     onChange={(e) => set("surname", e.target.value)}
-                    placeholder="Moyo"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ncube"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
                 </div>
               </div>
@@ -192,8 +192,8 @@ export default function RegisterAthletePage() {
                       onClick={() => set("gender", g)}
                       className={`py-2.5 rounded-xl border text-sm font-semibold capitalize transition-colors ${
                         form.gender === g
-                          ? "bg-blue-600 border-blue-600 text-white"
-                          : "border-gray-200 text-gray-700 hover:border-blue-500"
+                          ? "bg-rose-600 border-rose-600 text-white"
+                          : "border-gray-200 text-gray-700 hover:border-rose-500"
                       }`}
                     >
                       {g === "male" ? "Male" : "Female"}
@@ -208,10 +208,10 @@ export default function RegisterAthletePage() {
                   type="number"
                   value={form.age}
                   onChange={(e) => set("age", e.target.value)}
-                  placeholder="e.g. 19"
+                  placeholder="e.g. 24"
                   min={5}
                   max={100}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                 />
               </div>
 
@@ -220,7 +220,7 @@ export default function RegisterAthletePage() {
                 <select
                   value={form.country}
                   onChange={(e) => set("country", e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
                 >
                   {COUNTRIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -231,7 +231,7 @@ export default function RegisterAthletePage() {
               <button
                 disabled={!canProceedStep1}
                 onClick={() => setStep(2)}
-                className="w-full bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                className="w-full bg-rose-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"
               >
                 Continue <ArrowRight size={16} />
               </button>
@@ -251,8 +251,8 @@ export default function RegisterAthletePage() {
                       onClick={() => set("contactType", t)}
                       className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-colors ${
                         form.contactType === t
-                          ? "bg-blue-600 border-blue-600 text-white"
-                          : "border-gray-200 text-gray-600 hover:border-blue-500"
+                          ? "bg-rose-600 border-rose-600 text-white"
+                          : "border-gray-200 text-gray-600 hover:border-rose-500"
                       }`}
                     >
                       {t === "email" ? "Email" : "Phone Number"}
@@ -266,7 +266,7 @@ export default function RegisterAthletePage() {
                     value={form.email}
                     onChange={(e) => set("email", e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
                 ) : (
                   <input
@@ -274,7 +274,7 @@ export default function RegisterAthletePage() {
                     value={form.phone}
                     onChange={(e) => set("phone", e.target.value)}
                     placeholder="+263 77 123 4567"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
                 )}
               </div>
@@ -287,7 +287,7 @@ export default function RegisterAthletePage() {
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)}
                     placeholder="Min. 8 characters"
-                    className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
                   />
                   <button
                     type="button"
@@ -306,7 +306,7 @@ export default function RegisterAthletePage() {
                   value={form.confirmPassword}
                   onChange={(e) => set("confirmPassword", e.target.value)}
                   placeholder="Repeat password"
-                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 ${
                     form.confirmPassword && form.password !== form.confirmPassword
                       ? "border-red-300 bg-red-50"
                       : "border-gray-200"
@@ -327,7 +327,7 @@ export default function RegisterAthletePage() {
                 <button
                   disabled={!canSubmit || isSubmitting}
                   onClick={handleSubmit}
-                  className="flex-1 bg-blue-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                  className="flex-1 bg-rose-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSubmitting ? (
                     <><Loader2 size={16} className="animate-spin" /> Creating account...</>
@@ -342,7 +342,7 @@ export default function RegisterAthletePage() {
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Already have an account?{" "}
-          <Link href="/login" className="text-blue-600 font-bold hover:underline">
+          <Link href="/login" className="text-rose-600 font-bold hover:underline">
             Sign in
           </Link>
         </p>
