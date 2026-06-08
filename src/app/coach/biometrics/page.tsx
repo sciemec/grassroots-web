@@ -16,10 +16,13 @@ interface Player {
 
 export default function CoachBiometricsPage() {
   const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [squad, setSquad] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanSaved, setScanSaved] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   // Load coach's squad
   useEffect(() => {
@@ -51,6 +54,39 @@ export default function CoachBiometricsPage() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  async function handleScanComplete(data: {
+    mode: string;
+    score: number;
+    level: string;
+    asymmetry_score: number;
+    asymmetry_diff: number;
+    weak_side: string | null;
+    frames_analysed: number;
+    session_date: string;
+    mode_label: string;
+  }) {
+    if (!selectedPlayer) return;
+    setScanSaved(false);
+    setScanError(null);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/coach/squad/${selectedPlayer.id}/biometric-scan`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setScanSaved(true);
+    } catch {
+      setScanError("Could not save to server — scan stored locally.");
+    }
+  }
 
   if (!user) return null;
 
@@ -108,7 +144,7 @@ export default function CoachBiometricsPage() {
                     {filteredPlayers.map((player) => (
                       <button
                         key={player.id}
-                        onClick={() => setSelectedPlayer(player)}
+                        onClick={() => { setSelectedPlayer(player); setScanSaved(false); setScanError(null); }}
                         className={`w-full rounded-xl p-3 text-left transition-all ${
                           selectedPlayer?.id === player.id
                             ? "bg-emerald-600/20 border border-emerald-500/50"
@@ -136,7 +172,20 @@ export default function CoachBiometricsPage() {
                       Assessing: {selectedPlayer.name} ({selectedPlayer.position})
                     </p>
                   </div>
-                  <BiometricScanner onScanComplete={() => {}} />
+                  {scanSaved && (
+                    <div className="mb-3 flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-2">
+                      <FileText className="h-4 w-4 text-green-600" />
+                      <p className="text-xs font-medium text-green-700">
+                        Scan saved for {selectedPlayer.name}
+                      </p>
+                    </div>
+                  )}
+                  {scanError && (
+                    <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2">
+                      <p className="text-xs font-medium text-amber-700">{scanError}</p>
+                    </div>
+                  )}
+                  <BiometricScanner onScanComplete={handleScanComplete} />
                 </>
               ) : (
                 <div className="rounded-2xl border border-gray-800 bg-gray-900/30 p-12 text-center">
