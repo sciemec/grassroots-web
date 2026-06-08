@@ -7785,8 +7785,8 @@ TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM  — for WhatsApp re
 | `whatsapp_pending_videos` migration | Auto-runs on Render deploy | Verify table exists after `1922b34` deploy |
 | `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
 | `TWILIO_ACCOUNT_SID` in Vercel | ✅ SET — all 5 tests pass | No action needed |
-| `/player/success-engine/` orphaned directory | NOT YET DELETED | Delete `src/app/player/success-engine/` |
-| Coach biometric scan → backend persist | Not yet built | `POST /api/v1/coach/squad/{playerId}/biometric-scan` |
+| `/player/success-engine/` orphaned directory | ✅ DELETED (9 June 2026) | No action needed |
+| Coach biometric scan → backend persist | ✅ DONE (9 June 2026) | No action needed |
 
 ---
 
@@ -7836,3 +7836,66 @@ Laravel (action=route_pending, choice=2)
   → INSERT player_highlights (event_type=highlight, r2_url=R2 URL)
   → Reply: "Video saved to your Vault"
 ```
+
+---
+
+## SESSION LOG — 9 June 2026
+
+### Theme — Orphaned Directory Cleanup + Coach Biometric Scan Backend
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `/player/success-engine/` Orphaned Directory — DELETED ✅
+
+**Commit:** `92329fb` — pushed to `sciemec/grassroots-web`
+
+5 files removed:
+- `src/app/player/success-engine/page.tsx`
+- `src/app/player/success-engine/checkin/page.tsx`
+- `src/app/player/success-engine/goal/page.tsx`
+- `src/app/player/success-engine/adjust/page.tsx`
+- `src/app/player/success-engine/report/page.tsx`
+
+The actual Success Engine lives at `/player/success` — these were dead routes left over from a naming change. Next.js was serving them as broken pages.
+
+---
+
+#### 2. Coach Biometric Scan — FULLY BUILT + DEPLOYED ✅
+
+**Frontend commit:** `5820f89` — `sciemec/grassroots-web`
+**Backend commit:** `fd93738` — `sciemec/bhora-ai`
+
+**The problem:** `src/app/coach/biometrics/page.tsx` had `onScanComplete={() => {}}` — scan results were never persisted when a coach scanned a player. Data was lost on every scan.
+
+**Frontend — `src/app/coach/biometrics/page.tsx`:**
+- Added `token` Zustand selector (separate from `user` — React #185 prevention)
+- Added `scanSaved` + `scanError` state
+- Added `handleScanComplete()` — POSTs to `POST /api/v1/coach/squad/{playerId}/biometric-scan`
+- Replaced empty `onScanComplete={() => {}}` with `onScanComplete={handleScanComplete}`
+- Green "Scan saved for {Player Name}" confirmation banner on success
+- Amber fallback message if API fails (scan still saved to localStorage by BiometricScanner)
+- `scanSaved` + `scanError` reset when coach selects a different player
+
+**Backend — bhora-ai:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_06_09_000001_add_coach_id_to_player_biomechanics_table.php` | Adds nullable `coach_id` UUID column to existing `player_biomechanics` table |
+| `app/Http/Controllers/Api/Coach/BiometricScanController.php` | `store()` — saves scan with `user_id=playerId` (route param) + `coach_id=coach's UUID` |
+| `app/Models/PlayerBiometric.php` | `coach_id` added to `$fillable` |
+| `routes/api.php` | `POST /coach/squad/{id}/biometric-scan` added inside `role:coach,admin` group |
+
+**Design decision:** Reused the existing `player_biomechanics` table rather than creating a new one. Coach-initiated scans are distinguished by `coach_id` being non-null. Player self-scans have `coach_id = null`.
+
+**Migration:** Auto-runs on Render deploy via `start.sh → php artisan migrate --force`. No manual action needed.
+
+---
+
+### WHAT STILL NEEDS DOING (9 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
