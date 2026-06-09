@@ -75,7 +75,7 @@ function StorageBar({ used, limit }: { used: number; limit: number }) {
   const color =
     pct > 90 ? "bg-red-500" : pct > 70 ? "bg-amber-500" : "bg-green-500";
   return (
-    <div className="rounded-xl border border-white/10 bg-card/60 p-4">
+    <div className="rounded-xl border border-[#f0b429]/15 bg-card/60 p-4">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <HardDrive className="h-4 w-4" />
@@ -201,7 +201,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-card/60 p-5">
+    <div className="rounded-xl border border-[#f0b429]/15 bg-card/60 p-5">
       <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-accent/70">
         <Upload className="h-4 w-4" /> Upload Highlight
       </h2>
@@ -215,7 +215,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         className={`mb-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed py-8 transition-colors ${
           state.dragging
             ? "border-primary bg-primary/10"
-            : "border-white/20 hover:border-primary/50 hover:bg-white/5"
+            : "border-[#f0b429]/25 hover:border-primary/50 hover:bg-[#f0b429]/5"
         }`}
       >
         <input
@@ -228,7 +228,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         {state.file ? (
           <>
             <Film className="mb-2 h-8 w-8 text-primary" />
-            <p className="text-sm font-medium text-white">{state.file.name}</p>
+            <p className="text-sm font-medium text-[#f0b429]">{state.file.name}</p>
             <p className="text-xs text-muted-foreground">
               {formatSize(state.file.size / (1024 * 1024))}
             </p>
@@ -258,13 +258,13 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
           placeholder="Video title *"
           value={state.title}
           onChange={(e) => set({ title: e.target.value })}
-          className="w-full rounded-lg border border-white/10 bg-background px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          className="w-full rounded-lg border border-[#f0b429]/15 bg-background px-3 py-2.5 text-sm text-[#f0b429] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
         />
 
         <select
           value={state.tag}
           onChange={(e) => set({ tag: e.target.value as VideoTag })}
-          className="w-full rounded-lg border border-white/10 bg-background px-3 py-2.5 text-sm text-white focus:border-primary focus:outline-none"
+          className="w-full rounded-lg border border-[#f0b429]/15 bg-background px-3 py-2.5 text-sm text-[#f0b429] focus:border-primary focus:outline-none"
         >
           {TAG_OPTIONS.map((t) => (
             <option key={t} value={t}>{t}</option>
@@ -276,7 +276,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
           value={state.description}
           onChange={(e) => set({ description: e.target.value })}
           rows={2}
-          className="w-full resize-none rounded-lg border border-white/10 bg-background px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          className="w-full resize-none rounded-lg border border-[#f0b429]/15 bg-background px-3 py-2.5 text-sm text-[#f0b429] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
         />
       </div>
 
@@ -357,7 +357,7 @@ function VideoCard({
       className={`group relative cursor-pointer overflow-hidden rounded-xl border transition-all ${
         selected
           ? "border-primary bg-primary/10 ring-1 ring-primary"
-          : "border-white/10 bg-card/60 hover:border-white/20 hover:bg-card"
+          : "border-[#f0b429]/15 bg-card/60 hover:border-[#f0b429]/25 hover:bg-card"
       }`}
     >
       {/* Thumbnail / poster */}
@@ -400,7 +400,7 @@ function VideoCard({
 
       {/* Info */}
       <div className="p-3">
-        <p className="truncate text-sm font-medium text-white">{video.title}</p>
+        <p className="truncate text-sm font-medium text-[#f0b429]">{video.title}</p>
         <div className="mt-1.5 flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -451,14 +451,14 @@ function VideoModal({ video, onClose }: { video: PlayerVideo; onClose: () => voi
         className="relative w-full max-w-3xl rounded-2xl bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[#f0b429]/15 px-5 py-4">
           <div>
-            <h3 className="font-semibold text-white">{video.title}</h3>
+            <h3 className="font-semibold text-[#f0b429]">{video.title}</h3>
             <span className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${TAG_COLORS[video.tag]}`}>
               {video.tag}
             </span>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-white">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-[#f0b429]">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -536,11 +536,11 @@ function CreateReelModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="w-full max-w-xl rounded-2xl bg-card shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h3 className="flex items-center gap-2 font-semibold text-white">
+        <div className="flex items-center justify-between border-b border-[#f0b429]/15 px-5 py-4">
+          <h3 className="flex items-center gap-2 font-semibold text-[#f0b429]">
             <Film className="h-5 w-5 text-primary" /> Create Highlight Reel
           </h3>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-white">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-[#f0b429]">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -551,7 +551,7 @@ function CreateReelModal({
             placeholder="Reel title *"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mb-4 w-full rounded-lg border border-white/10 bg-background px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            className="mb-4 w-full rounded-lg border border-[#f0b429]/15 bg-background px-3 py-2.5 text-sm text-[#f0b429] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
 
           <p className="mb-3 text-xs font-medium uppercase tracking-widest text-accent/70">
@@ -610,15 +610,15 @@ function ShareLinkPanel({ url, title, onDismiss }: { url: string; title: string;
   return (
     <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-semibold text-white">Reel created: {title}</p>
-        <button onClick={onDismiss} className="text-muted-foreground hover:text-white">
+        <p className="text-sm font-semibold text-[#f0b429]">Reel created: {title}</p>
+        <button onClick={onDismiss} className="text-muted-foreground hover:text-[#f0b429]">
           <X className="h-4 w-4" />
         </button>
       </div>
       <p className="mb-3 text-xs text-muted-foreground">
         Share this link with scouts and coaches:
       </p>
-      <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-background px-3 py-2">
+      <div className="flex items-center gap-2 rounded-lg border border-[#f0b429]/15 bg-background px-3 py-2">
         <span className="flex-1 truncate text-xs text-accent">{url}</span>
         <button
           onClick={handleCopy}
@@ -714,7 +714,7 @@ export default function PlayerVaultPage() {
           <p className="text-xs font-medium uppercase tracking-widest text-accent">
             Player Hub
           </p>
-          <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold text-white">
+          <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold text-[#f0b429]">
             <Film className="h-6 w-6 text-primary" />
             Highlight Vault
           </h1>
@@ -725,17 +725,17 @@ export default function PlayerVaultPage() {
 
         {/* My Videos — quick access to Showcase and Capture */}
         <div className="mb-5 grid grid-cols-2 gap-3">
-          <a href="/player/showcase" className="flex items-center gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3 transition-colors hover:bg-white/5">
+          <a href="/player/showcase" className="flex items-center gap-3 rounded-xl border border-[#f0b429]/15 bg-card/60 px-4 py-3 transition-colors hover:bg-[#f0b429]/5">
             <span className="text-xl">🏅</span>
             <div>
-              <p className="text-sm font-semibold text-white">Talent Showcase</p>
+              <p className="text-sm font-semibold text-[#f0b429]">Talent Showcase</p>
               <p className="text-xs text-muted-foreground">Upload skill clips for scouts</p>
             </div>
           </a>
-          <a href="/player/capture" className="flex items-center gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3 transition-colors hover:bg-white/5">
+          <a href="/player/capture" className="flex items-center gap-3 rounded-xl border border-[#f0b429]/15 bg-card/60 px-4 py-3 transition-colors hover:bg-[#f0b429]/5">
             <span className="text-xl">📷</span>
             <div>
-              <p className="text-sm font-semibold text-white">Moment Capture</p>
+              <p className="text-sm font-semibold text-[#f0b429]">Moment Capture</p>
               <p className="text-xs text-muted-foreground">Record &amp; get THUTO feedback</p>
             </div>
           </a>
@@ -796,9 +796,9 @@ export default function PlayerVaultPage() {
                 ))}
               </div>
             ) : videos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 py-16 text-center">
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#f0b429]/25 py-16 text-center">
                 <Film className="mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="font-medium text-white">No videos yet</p>
+                <p className="font-medium text-[#f0b429]">No videos yet</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Upload your first highlight to get started
                 </p>
@@ -830,7 +830,7 @@ export default function PlayerVaultPage() {
 
             {/* CTA for single-video accounts */}
             {videos.length === 1 && (
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 px-4 py-3 text-sm text-muted-foreground">
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#f0b429]/15 bg-card/60 px-4 py-3 text-sm text-muted-foreground">
                 <AlertCircle className="h-4 w-4 flex-shrink-0 text-accent" />
                 Upload at least 2 videos to create a shareable highlight reel.
                 <ChevronRight className="h-4 w-4 ml-auto" />
