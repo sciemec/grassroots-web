@@ -148,7 +148,7 @@ export default function FootballDrillsLabPage() {
             <GraduationCap size={16} className="text-[#f0b429]" />
             <div className="text-left">
               <span className="block text-[8px] font-black uppercase tracking-widest text-[#f0b429] leading-none">Strategic Education Partner</span>
-              <span className="text-[11px] font-black tracking-tight text-white uppercase">Teach For Zimbabwe</span>
+              <span className="text-[11px] font-black tracking-tight uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</span>
             </div>
           </div>
         </div>

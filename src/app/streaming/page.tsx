@@ -252,8 +252,8 @@ export default function StreamingPage() {
               GRS
             </div>
             <div>
-              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>Live Streaming</p>
+              <p className="font-black text-sm uppercase tracking-wider leading-none" style={{ color: "#f0b429" }}>GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>Live Streaming</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
@@ -261,7 +261,7 @@ export default function StreamingPage() {
             <GraduationCap size={14} style={{ color: "#f0b429" }} />
             <div>
               <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
-              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+              <p className="text-[10px] font-black uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</p>
             </div>
           </div>
         </div>
@@ -294,7 +294,7 @@ export default function StreamingPage() {
               onClick={() => setProvince(p)}
               className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-wide transition-all capitalize"
               style={province === p
-                ? { backgroundColor: "#1a5c2a", color: "#fff" }
+                ? { backgroundColor: "#1a5c2a", color: "#f0b429" }
                 : { backgroundColor: "#fff", color: "#6b7280", border: "1px solid #e5e7eb" }}
             >
               {p === "all" ? "All Provinces" : p}
@@ -419,8 +419,8 @@ export default function StreamingPage() {
                 <Radio size={16} style={{ color: "#f0b429" }} />
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-white">Stream Your Match</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>Stream Your Match</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>
                   Broadcast from your browser · record + download
                 </p>
               </div>
@@ -480,8 +480,8 @@ export default function StreamingPage() {
               </p>
               <button
                 onClick={() => setActiveStream(null)}
-                className="rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-wide text-white transition-colors"
-                style={{ backgroundColor: "#1a5c2a" }}
+                className="rounded-xl px-6 py-2.5 text-xs font-black uppercase tracking-wide transition-colors"
+                style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}
               >
                 Close
               </button>

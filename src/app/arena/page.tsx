@@ -823,8 +823,8 @@ export default function ArenaFeedPage() {
               GRS
             </div>
             <div>
-              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>The Arena</p>
+              <p className="font-black text-sm uppercase tracking-wider leading-none" style={{ color: "#f0b429" }}>GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>The Arena</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
@@ -832,7 +832,7 @@ export default function ArenaFeedPage() {
             <GraduationCap size={14} style={{ color: "#f0b429" }} />
             <div>
               <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
-              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+              <p className="text-[10px] font-black uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</p>
             </div>
           </div>
         </div>

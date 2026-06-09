@@ -332,8 +332,8 @@ export default function WorldCupPage() {
               GRS
             </div>
             <div>
-              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>
+              <p className="font-black text-sm uppercase tracking-wider leading-none" style={{ color: "#f0b429" }}>GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>
                 World Cup 2026
               </p>
             </div>
@@ -343,7 +343,7 @@ export default function WorldCupPage() {
             <GraduationCap size={14} style={{ color: "#f0b429" }} />
             <div>
               <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
-              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+              <p className="text-[10px] font-black uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</p>
             </div>
           </div>
         </div>
@@ -626,8 +626,8 @@ export default function WorldCupPage() {
                       style={{ backgroundColor: "rgba(240,180,41,0.12)", border: "1px solid rgba(240,180,41,0.25)" }}>
                       <Trophy size={36} style={{ color: "#f0b429" }} />
                     </div>
-                    <h2 className="text-2xl font-black text-white">FIFA World Cup 2026</h2>
-                    <p className="text-sm mt-1.5 font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <h2 className="text-2xl font-black" style={{ color: "#f0b429" }}>FIFA World Cup 2026</h2>
+                    <p className="text-sm mt-1.5 font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
                       48 teams · 104 matches · 16 venues
                     </p>
                     <div className="flex items-center justify-center gap-2 mt-3">
