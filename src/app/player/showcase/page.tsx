@@ -322,7 +322,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
             <p className="text-xs font-medium uppercase tracking-widest text-accent">
               Talent Showcase
             </p>
-            <h1 className="mt-1 text-2xl font-bold text-white">My Skill Clips</h1>
+            <h1 className="mt-1 text-2xl font-bold text-[#f0b429]">My Skill Clips</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
               Upload clips — AI rates your skills — scouts find you
             </p>
@@ -353,11 +353,11 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
 
         {/* Empty state */}
         {clips.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 px-8 py-20 text-center">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#f0b429]/20 px-8 py-20 text-center">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#f0b429]/10">
               <Camera className="h-10 w-10 text-[#f0b429]" />
             </div>
-            <h2 className="text-xl font-bold text-white">Upload your first skill clip</h2>
+            <h2 className="text-xl font-bold text-[#f0b429]">Upload your first skill clip</h2>
             <p className="mt-2 max-w-sm text-sm text-muted-foreground">
               Isa video yako yekutamba — AI will analyse your technique and generate a professional scouting report that scouts can find
             </p>
@@ -390,12 +390,12 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
         {/* Upload / Analysis Modal */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1a3d26] p-6 shadow-2xl">
+            <div className="w-full max-w-md rounded-2xl border border-[#f0b429]/15 bg-[#1a3d26] p-6 shadow-2xl">
 
               {/* Modal header */}
               <div className="mb-5 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white">Add Showcase Clip</h2>
-                <button onClick={resetModal} className="text-muted-foreground hover:text-white">
+                <h2 className="text-lg font-bold text-[#f0b429]">Add Showcase Clip</h2>
+                <button onClick={resetModal} className="text-muted-foreground hover:text-[#f0b429]">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -406,7 +406,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
                     <Star className="h-8 w-8 text-green-400" />
                   </div>
-                  <p className="text-lg font-bold text-white">Analysis Complete!</p>
+                  <p className="text-lg font-bold text-[#f0b429]">Analysis Complete!</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Your clip has been rated and added to your showcase — scouts can now find you.
                   </p>
@@ -427,11 +427,11 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
                         <X className="h-8 w-8 text-red-400" />
                       </div>
-                      <p className="font-medium text-white">Something went wrong</p>
+                      <p className="font-medium text-[#f0b429]">Something went wrong</p>
                       <p className="mt-2 text-sm text-red-400">{errorMsg}</p>
                       <button
                         onClick={() => setPhase("idle")}
-                        className="mt-4 text-sm text-accent hover:text-white"
+                        className="mt-4 text-sm text-accent hover:text-[#f0b429]"
                       >
                         Try again
                       </button>
@@ -439,8 +439,8 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                   ) : (
                     <>
                       <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-[#f0b429]" />
-                      <p className="font-medium text-white">{PHASE_LABEL[phase]}</p>
-                      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                      <p className="font-medium text-[#f0b429]">{PHASE_LABEL[phase]}</p>
+                      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[#f0b429]/10">
                         <div
                           className="h-2 rounded-full bg-[#f0b429] transition-all duration-500"
                           style={{ width: `${progress}%` }}
@@ -456,7 +456,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
               {phase === "idle" && (
                 <>
                   {/* Skill type */}
-                  <p className="mb-3 text-sm font-medium text-white">
+                  <p className="mb-3 text-sm font-medium text-[#f0b429]">
                     What skill are you showing? <span className="text-red-400">*</span>
                   </p>
                   <div className="mb-5 grid grid-cols-5 gap-2">
@@ -467,7 +467,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                         className={`flex flex-col items-center rounded-xl border p-2 text-center transition-all ${
                           selectedSkill === skill.id
                             ? "border-[#f0b429] bg-[#f0b429]/10"
-                            : "border-white/10 bg-white/5 hover:border-white/20"
+                            : "border-[#f0b429]/15 bg-[#f0b429]/5 hover:border-[#f0b429]/20"
                         }`}
                       >
                         <span className="text-xl">{skill.emoji}</span>
@@ -477,19 +477,19 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                   </div>
 
                   {/* File picker */}
-                  <p className="mb-3 text-sm font-medium text-white">
+                  <p className="mb-3 text-sm font-medium text-[#f0b429]">
                     Upload your clip <span className="text-red-400">*</span>
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full rounded-xl border border-dashed border-white/20 bg-white/5 py-8 text-center transition-colors hover:border-[#f0b429]/50 hover:bg-white/10"
+                    className="w-full rounded-xl border border-dashed border-[#f0b429]/20 bg-[#f0b429]/5 py-8 text-center transition-colors hover:border-[#f0b429]/50 hover:bg-[#f0b429]/10"
                   >
                     <Upload className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
                     {videoFile ? (
-                      <p className="text-sm font-medium text-white">{videoFile.name}</p>
+                      <p className="text-sm font-medium text-[#f0b429]">{videoFile.name}</p>
                     ) : (
                       <>
-                        <p className="text-sm text-white">Tap to select video</p>
+                        <p className="text-sm text-[#f0b429]">Tap to select video</p>
                         <p className="mt-1 text-xs text-muted-foreground">MP4 or MOV · Max 60 seconds</p>
                       </>
                     )}
@@ -576,7 +576,7 @@ function ClipCard({
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+    <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-4 backdrop-blur-sm">
 
       {/* Video or placeholder */}
       <div className="mb-3 flex h-36 items-center justify-center overflow-hidden rounded-xl bg-black/40">
@@ -599,12 +599,12 @@ function ClipCard({
         </span>
         <div className="flex items-center gap-1">
           <Star className="h-3.5 w-3.5 fill-[#f0b429] text-[#f0b429]" />
-          <span className="text-sm font-bold text-white">{clip.ai_rating.toFixed(1)}/10</span>
+          <span className="text-sm font-bold text-[#f0b429]">{clip.ai_rating.toFixed(1)}/10</span>
         </div>
       </div>
 
       {/* Rating bar */}
-      <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+      <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-[#f0b429]/10">
         <div
           className="h-1.5 rounded-full bg-[#f0b429]"
           style={{ width: `${(clip.ai_rating / 10) * 100}%` }}
@@ -615,7 +615,7 @@ function ClipCard({
       <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-accent">
         Top Strength
       </p>
-      <p className="mb-3 text-sm text-white">{clip.top_strength}</p>
+      <p className="mb-3 text-sm text-[#f0b429]">{clip.top_strength}</p>
 
       {/* Scout note */}
       <p className="mb-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -626,14 +626,14 @@ function ClipCard({
       {/* Position pills */}
       <div className="mb-3 flex flex-wrap gap-1">
         {clip.position_fit.map((pos) => (
-          <span key={pos} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-muted-foreground">
+          <span key={pos} className="rounded-full bg-[#f0b429]/5 px-2 py-0.5 text-xs text-muted-foreground">
             {pos}
           </span>
         ))}
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-white/10 pt-3">
+      <div className="flex items-center justify-between border-t border-[#f0b429]/15 pt-3">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Eye className="h-3.5 w-3.5" />
           {clip.view_count} views
@@ -686,7 +686,7 @@ function ClipCard({
             </p>
             <button
               onClick={handleCopy}
-              className="shrink-0 text-muted-foreground transition-colors hover:text-white"
+              className="shrink-0 text-muted-foreground transition-colors hover:text-[#f0b429]"
               title="Copy link"
             >
               {copied ? (
@@ -701,7 +701,7 @@ function ClipCard({
           <div className="flex gap-2">
             <button
               onClick={handleCopy}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#f0b429]/15 bg-[#f0b429]/5 py-2 text-xs font-medium text-[#f0b429] transition-colors hover:bg-[#f0b429]/10"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? "Copied!" : "Copy Link"}
@@ -719,7 +719,7 @@ function ClipCard({
 
           {/* Scout card preview */}
           <details className="mt-3">
-            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-white">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-[#f0b429]">
               Preview scout card message ▾
             </summary>
             <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-black/30 p-3 text-xs text-muted-foreground">
