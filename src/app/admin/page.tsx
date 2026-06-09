@@ -166,8 +166,8 @@ export default function AdminDashboardPage() {
             />
             <div className="relative flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>Admin Portal,</p>
-                <h2 className="text-2xl font-black text-white mt-0.5 leading-tight truncate">{user.name || "Admin"}</h2>
+                <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>Admin Portal,</p>
+                <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user.name || "Admin"}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
@@ -196,8 +196,8 @@ export default function AdminDashboardPage() {
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
                   style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
-                  <p className="text-base font-black text-white leading-none">{value}</p>
-                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>{label}</p>
+                  <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
                 </div>
               ))}
             </div>
@@ -264,8 +264,8 @@ export default function AdminDashboardPage() {
                 <BarChart3 size={16} style={{ color: "#f0b429" }} />
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-white">Platform Analytics</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Users · sessions · revenue</p>
+                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>Platform Analytics</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Users · sessions · revenue</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
@@ -282,8 +282,8 @@ export default function AdminDashboardPage() {
                 <Globe size={16} style={{ color: "#60a5fa" }} />
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-white">The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>View as user · monitor feed</p>
+                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>View as user · monitor feed</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
