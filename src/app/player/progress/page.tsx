@@ -70,7 +70,7 @@ export default function PlayerProgressPage() {
           
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
-            <Link href="/player" className="flex items-center gap-2 text-gray-400 hover:text-white">
+            <Link href="/player" className="flex items-center gap-2 text-gray-400 hover:text-[#f0b429]">
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Back to Hub</span>
             </Link>
@@ -82,7 +82,7 @@ export default function PlayerProgressPage() {
 
           {/* Hero */}
           <div className="mb-6 rounded-2xl bg-gradient-to-r from-emerald-900/40 to-blue-900/40 p-5 border border-emerald-800/30">
-            <h1 className="text-xl font-black text-white">My Progress</h1>
+            <h1 className="text-xl font-black" style={{ color: "#f0b429" }}>My Progress</h1>
             <p className="text-sm text-gray-400 mt-1">
               Track your improvement over time. Scouts see this graph on your profile.
             </p>
@@ -100,7 +100,7 @@ export default function PlayerProgressPage() {
               </div>
               <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
                 <p className="text-[10px] text-gray-500 uppercase">Total Sessions</p>
-                <p className="text-2xl font-black text-white">{sessions.length}</p>
+                <p className="text-2xl font-black" style={{ color: "#f0b429" }}>{sessions.length}</p>
                 <p className="text-[10px] text-gray-600">training sessions logged</p>
               </div>
               <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4">
@@ -118,7 +118,7 @@ export default function PlayerProgressPage() {
             <div className="mb-6 rounded-2xl border border-gray-800 bg-gray-900/30 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <LineChart className="h-4 w-4 text-emerald-500" />
-                <h2 className="text-sm font-bold text-white">Form Score Trend</h2>
+                <h2 className="text-sm font-bold" style={{ color: "#f0b429" }}>Form Score Trend</h2>
               </div>
               
               <div className="relative h-48">
@@ -156,7 +156,7 @@ export default function PlayerProgressPage() {
               <p className="text-xs text-gray-600 mt-1">
                 Complete 2+ training sessions to see your progress graph
               </p>
-              <Link href="/player/train" className="mt-4 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white">
+              <Link href="/player/train" className="mt-4 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-[#f0b429]">
                 Start Training →
               </Link>
             </div>
@@ -168,7 +168,7 @@ export default function PlayerProgressPage() {
               <div className="border-b border-gray-800 px-5 py-3">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-emerald-500" />
-                  <h2 className="text-sm font-bold text-white">Session History</h2>
+                  <h2 className="text-sm font-bold" style={{ color: "#f0b429" }}>Session History</h2>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -208,11 +208,11 @@ export default function PlayerProgressPage() {
           {sessions.length === 0 && (
             <div className="mt-6 rounded-xl border border-emerald-800/30 bg-emerald-600/10 p-5 text-center">
               <Award className="mx-auto mb-2 h-8 w-8 text-emerald-500" />
-              <p className="text-sm font-bold text-white">Get Your Biometric Profile</p>
+              <p className="text-sm font-bold" style={{ color: "#f0b429" }}>Get Your Biometric Profile</p>
               <p className="text-xs text-gray-400 mt-1">
                 Complete a 30-second assessment to generate your athlete profile
               </p>
-              <Link href="/player/train" className="mt-4 inline-block rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-white">
+              <Link href="/player/train" className="mt-4 inline-block rounded-lg bg-emerald-600 px-6 py-2 text-sm font-bold text-[#f0b429]">
                 Start Now →
               </Link>
             </div>
