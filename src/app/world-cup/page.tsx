@@ -136,12 +136,12 @@ function FixtureDetail({ match, onBack }: { match: UpcomingMatch; onBack: () => 
         <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-4">
           <div className="text-center">
             <span className="text-5xl leading-none block">{flag(match.homeTeam)}</span>
-            <p className="text-sm font-black text-white mt-2.5 leading-tight">{match.homeTeam}</p>
-            <p className="text-[9px] uppercase tracking-widest mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>Home</p>
+            <p className="text-sm font-black mt-2.5 leading-tight" style={{ color: "#f0b429" }}>{match.homeTeam}</p>
+            <p className="text-[9px] uppercase tracking-widest mt-1" style={{ color: "rgba(240,180,41,0.55)" }}>Home</p>
           </div>
           <div className="text-center px-3">
             <div className="text-[10px] font-black uppercase tracking-[0.3em] mb-2"
-              style={{ color: "rgba(255,255,255,0.25)" }}>VS</div>
+              style={{ color: "rgba(240,180,41,0.45)" }}>VS</div>
             {countdownLabel && (
               <div className="px-3 py-1.5 rounded-full text-[9px] font-black tracking-wider"
                 style={{ background: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.3)", color: "#f0b429" }}>
@@ -151,8 +151,8 @@ function FixtureDetail({ match, onBack }: { match: UpcomingMatch; onBack: () => 
           </div>
           <div className="text-center">
             <span className="text-5xl leading-none block">{flag(match.awayTeam)}</span>
-            <p className="text-sm font-black text-white mt-2.5 leading-tight">{match.awayTeam}</p>
-            <p className="text-[9px] uppercase tracking-widest mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>Away</p>
+            <p className="text-sm font-black mt-2.5 leading-tight" style={{ color: "#f0b429" }}>{match.awayTeam}</p>
+            <p className="text-[9px] uppercase tracking-widest mt-1" style={{ color: "rgba(240,180,41,0.55)" }}>Away</p>
           </div>
         </div>
       </div>
@@ -373,15 +373,15 @@ export default function WorldCupPage() {
             />
             <div className="relative flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>FIFA</p>
-                <h1 className="text-2xl font-black text-white mt-0.5 leading-tight">World Cup 2026</h1>
+                <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>FIFA</p>
+                <h1 className="text-2xl font-black mt-0.5 leading-tight" style={{ color: "#f0b429" }}>World Cup 2026</h1>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
                     <Globe2 size={9} /> USA · Canada · Mexico
                   </span>
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                    style={{ backgroundColor: "rgba(240,180,41,0.12)", color: "rgba(240,180,41,0.8)", border: "1px solid rgba(240,180,41,0.25)" }}>
                     <Calendar size={9} /> 11 Jun – 19 Jul 2026
                   </span>
                 </div>
@@ -402,8 +402,8 @@ export default function WorldCupPage() {
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
                   style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
-                  <p className="text-base font-black text-white leading-none">{value}</p>
-                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>{label}</p>
+                  <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
                 </div>
               ))}
             </div>
@@ -472,24 +472,24 @@ export default function WorldCupPage() {
                           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                             <div className="text-left">
                               <span className="text-xl leading-none">{flag(m.homeTeam)}</span>
-                              <p className={`text-[11px] font-bold mt-1 truncate ${isSelected ? "text-white/80" : "text-gray-700"}`}>{m.homeTeam}</p>
+                              <p className="text-[11px] font-bold mt-1 truncate" style={{ color: isSelected ? "#f0b429" : "#374151" }}>{m.homeTeam}</p>
                             </div>
                             <div className="text-center px-2">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-3xl font-black tabular-nums"
-                                  style={{ color: m.homeScore > m.awayScore ? "#f0b429" : isSelected ? "white" : "#111827" }}>
+                                  style={{ color: m.homeScore > m.awayScore ? "#f0b429" : isSelected ? "#f0b429" : "#111827" }}>
                                   {m.homeScore}
                                 </span>
                                 <span className="text-sm font-black text-gray-300">—</span>
                                 <span className="text-3xl font-black tabular-nums"
-                                  style={{ color: m.awayScore > m.homeScore ? "#f0b429" : isSelected ? "white" : "#111827" }}>
+                                  style={{ color: m.awayScore > m.homeScore ? "#f0b429" : isSelected ? "#f0b429" : "#111827" }}>
                                   {m.awayScore}
                                 </span>
                               </div>
                             </div>
                             <div className="text-right">
                               <span className="text-xl leading-none">{flag(m.awayTeam)}</span>
-                              <p className={`text-[11px] font-bold mt-1 truncate ${isSelected ? "text-white/80" : "text-gray-700"}`}>{m.awayTeam}</p>
+                              <p className="text-[11px] font-bold mt-1 truncate" style={{ color: isSelected ? "#f0b429" : "#374151" }}>{m.awayTeam}</p>
                             </div>
                           </div>
                         </div>
@@ -512,7 +512,7 @@ export default function WorldCupPage() {
                     onClick={() => setActiveGroup(g)}
                     className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
                     style={activeGroup === g
-                      ? { backgroundColor: "#1a5c2a", color: "#ffffff" }
+                      ? { backgroundColor: "#1a5c2a", color: "#f0b429" }
                       : { backgroundColor: "#ffffff", color: "#6b7280", border: "1px solid #e5e7eb" }
                     }
                   >
@@ -633,7 +633,7 @@ export default function WorldCupPage() {
                     <div className="flex items-center justify-center gap-2 mt-3">
                       {["🇺🇸 USA", "🇨🇦 Canada", "🇲🇽 Mexico"].map((h) => (
                         <span key={h} className="text-[10px] font-bold px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)" }}>
+                          style={{ backgroundColor: "rgba(240,180,41,0.12)", color: "rgba(240,180,41,0.8)" }}>
                           {h}
                         </span>
                       ))}
@@ -673,9 +673,9 @@ export default function WorldCupPage() {
                           >
                             <div className="flex items-center gap-3">
                               <span className="text-lg">{flag(m.homeTeam)}</span>
-                              <span className="text-sm font-black text-white">{m.homeScore} — {m.awayScore}</span>
+                              <span className="text-sm font-black" style={{ color: "#f0b429" }}>{m.homeScore} — {m.awayScore}</span>
                               <span className="text-lg">{flag(m.awayTeam)}</span>
-                              <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
+                              <span className="text-xs font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
                                 {m.homeTeam} vs {m.awayTeam}
                               </span>
                             </div>
