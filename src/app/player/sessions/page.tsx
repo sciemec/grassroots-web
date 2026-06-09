@@ -128,7 +128,7 @@ export default function SessionsPage() {
 
         {/* Stats + sparkline */}
         {allCompleted.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5">
+          <div className="mb-6 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5">
             <div className="mb-4 grid grid-cols-3 gap-3">
               {[
                 { icon: Target,   label: "Avg score",  value: avgScore  !== null ? `${avgScore}%`  : "—", color: "text-primary" },
