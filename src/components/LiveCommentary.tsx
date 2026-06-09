@@ -37,12 +37,42 @@ function buildFallbackCommentary(event: {
   }
 }
 
-function eventStyle(type: string): string {
+function eventEmoji(type: string): string {
   switch (type.toUpperCase()) {
-    case 'GOAL':         return 'text-green-800 bg-green-50 border-green-200';
-    case 'YELLOW_CARD':  return 'text-yellow-800 bg-yellow-50 border-yellow-200';
-    case 'RED_CARD':     return 'text-red-800 bg-red-50 border-red-200';
-    default:             return 'text-gray-700 bg-gray-50 border-gray-200';
+    case 'GOAL':         return '⚽';
+    case 'YELLOW_CARD':  return '🟨';
+    case 'RED_CARD':     return '🟥';
+    case 'SUBSTITUTION': return '🔄';
+    default:             return '📋';
+  }
+}
+
+function eventStyle(type: string): { card: string; badge: string; text: string } {
+  switch (type.toUpperCase()) {
+    case 'GOAL':
+      return {
+        card:  'bg-emerald-950/60 border-emerald-500/40',
+        badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+        text:  'text-emerald-100',
+      };
+    case 'YELLOW_CARD':
+      return {
+        card:  'bg-amber-950/50 border-amber-500/30',
+        badge: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+        text:  'text-amber-100',
+      };
+    case 'RED_CARD':
+      return {
+        card:  'bg-red-950/50 border-red-500/30',
+        badge: 'bg-red-500/20 text-red-300 border border-red-500/30',
+        text:  'text-red-100',
+      };
+    default:
+      return {
+        card:  'bg-white/5 border-white/10',
+        badge: 'bg-white/10 text-gray-300 border border-white/10',
+        text:  'text-gray-200',
+      };
   }
 }
 
@@ -67,7 +97,6 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam }: LiveCommentaryPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
-  // Auto-scroll to bottom on new entries
   useEffect(() => {
     if (feedRef.current) {
       feedRef.current.scrollTop = feedRef.current.scrollHeight;
@@ -137,37 +166,62 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam }: LiveCommentaryPr
     }
   }
 
+  const homeLeading = homeScore > awayScore;
+  const awayLeading = awayScore > homeScore;
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #0f1e30 0%, #0a1520 100%)', border: '1px solid rgba(255,255,255,0.08)' }}
+    >
       {/* Scoreboard */}
-      <div className="bg-[#1a5c2a] text-white p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="p-6" style={{ background: 'linear-gradient(135deg, #0d1f33 0%, #111d2e 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <Radio size={14} className="animate-pulse text-red-300" />
-            <span className="text-xs font-bold tracking-widest">LIVE COMMENTARY</span>
+            <Radio size={13} className="animate-pulse" style={{ color: '#ef4444' }} />
+            <span className="text-xs font-black tracking-widest uppercase" style={{ color: '#f0b429' }}>
+              Live Commentary
+            </span>
           </div>
           {minute > 0 && (
-            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-mono">
+            <span
+              className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full"
+              style={{ background: 'rgba(240,180,41,0.15)', color: '#f0b429', border: '1px solid rgba(240,180,41,0.3)' }}
+            >
               {minute}&apos;
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-3 items-center">
+        {/* Score display */}
+        <div className="grid grid-cols-3 items-center gap-2">
           <div className="text-center">
-            <p className="text-sm font-bold truncate">{homeTeam}</p>
-            <p className="text-5xl font-black mt-1">{homeScore}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 truncate mb-2">{homeTeam}</p>
+            <p
+              className="text-6xl font-black tabular-nums"
+              style={{ color: homeLeading ? '#f0b429' : 'white' }}
+            >
+              {homeScore}
+            </p>
           </div>
-          <div className="text-center text-white/30 font-black text-2xl">—</div>
           <div className="text-center">
-            <p className="text-sm font-bold truncate">{awayTeam}</p>
-            <p className="text-5xl font-black mt-1">{awayScore}</p>
+            <span className="text-2xl font-black" style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
+          </div>
+          <div className="text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 truncate mb-2">{awayTeam}</p>
+            <p
+              className="text-6xl font-black tabular-nums"
+              style={{ color: awayLeading ? '#f0b429' : 'white' }}
+            >
+              {awayScore}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Odds / Win Probability */}
-      <div className="p-4 border-b border-gray-100">
+      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <MatchOdds
           homeTeam={homeTeam}
           awayTeam={awayTeam}
@@ -182,17 +236,20 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam }: LiveCommentaryPr
       </div>
 
       {/* Controls */}
-      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-400">
+      <div
+        className="px-4 py-2.5 flex items-center justify-between"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <span className="text-[11px] font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>
           {entries.length} event{entries.length !== 1 ? 's' : ''}
         </span>
         <button
           onClick={toggleAudio}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            audioEnabled
-              ? 'bg-[#1a5c2a] text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+          style={audioEnabled
+            ? { background: 'rgba(240,180,41,0.15)', color: '#f0b429', border: '1px solid rgba(240,180,41,0.3)' }
+            : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }
+          }
         >
           {audioEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
           {audioEnabled ? 'Audio On' : 'Audio Off'}
@@ -204,36 +261,41 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam }: LiveCommentaryPr
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="animate-pulse">
-                <div className="h-2.5 bg-gray-200 rounded w-1/4 mb-2" />
-                <div className="h-10 bg-gray-100 rounded" />
+              <div key={i} className="animate-pulse rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div className="h-2 rounded mb-2.5 w-1/4" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                <div className="h-8 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
               </div>
             ))}
           </div>
         ) : entries.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">
-            <Radio size={32} className="mx-auto mb-3 opacity-20" />
-            <p className="text-sm">Waiting for match events…</p>
-            <p className="text-xs mt-1">Commentary will appear here live</p>
+          <div className="text-center py-10">
+            <Radio size={32} className="mx-auto mb-3" style={{ color: 'rgba(255,255,255,0.15)' }} />
+            <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>Waiting for match events…</p>
+            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>Commentary will appear here live</p>
           </div>
         ) : (
-          [...entries].reverse().map(entry => (
-            <div
-              key={entry.id}
-              className={`rounded-lg border p-3 ${eventStyle(entry.eventType)}`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black font-mono">{entry.minute}&apos;</span>
-                <span className="text-[10px] font-bold uppercase tracking-wide opacity-60">
-                  {entry.eventType.replace(/_/g, ' ')}
-                </span>
-                {entry.playerName && (
-                  <span className="text-[10px] opacity-50">· {entry.playerName}</span>
-                )}
+          [...entries].reverse().map(entry => {
+            const style = eventStyle(entry.eventType);
+            return (
+              <div
+                key={entry.id}
+                className={`rounded-xl border p-3 ${style.card}`}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-xs font-black font-mono" style={{ color: '#f0b429' }}>{entry.minute}&apos;</span>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${style.badge}`}>
+                    {eventEmoji(entry.eventType)} {entry.eventType.replace(/_/g, ' ')}
+                  </span>
+                  {entry.playerName && (
+                    <span className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      · {entry.playerName}
+                    </span>
+                  )}
+                </div>
+                <p className={`text-xs leading-relaxed ${style.text}`}>{entry.commentary}</p>
               </div>
-              <p className="text-xs leading-relaxed">{entry.commentary}</p>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
