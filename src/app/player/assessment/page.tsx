@@ -382,7 +382,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-[#f0b429]" />
-                      <h3 className="font-semibold text-white">Skill Radar</h3>
+                      <h3 className="font-semibold" style={{ color: "#f0b429" }}>Skill Radar</h3>
                     </div>
                     <div className="text-right">
                       <p className={`text-3xl font-black ${scoreColor(overallScore)}`}>
@@ -395,7 +395,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   </div>
                   <ResponsiveContainer width="100%" height={260}>
                     <RadarChart data={radarData}>
-                      <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                      <PolarGrid stroke="rgba(240,180,41,0.15)" />
                       <PolarAngleAxis dataKey="subject" tick={{ fill: "#c8edd0", fontSize: 11 }} />
                       <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                       <Radar
@@ -434,7 +434,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     <Brain className="h-4 w-4 text-[#a855f7]" />
                     <h3 className="font-semibold text-[#a855f7]">AI Performance Report</h3>
                   </div>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-white">
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#f0b429]/85">
                     {aiReport}
                   </div>
                 </div>
@@ -460,9 +460,9 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   </div>
                 ) : sessions.length === 0 ? (
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-                    <Activity className="mx-auto mb-3 h-10 w-10 text-white/30" />
-                    <p className="text-white/60 text-sm">No APK sessions found yet.</p>
-                    <p className="mt-1 text-xs text-white/40">
+                    <Activity className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
+                    <p className="text-[#f0b429]/70 text-sm">No APK sessions found yet.</p>
+                    <p className="mt-1 text-xs text-[#f0b429]/55">
                       Complete a training session in the GrassRoots mobile app to see your coaching reports here.
                     </p>
                   </div>
@@ -480,14 +480,14 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           }`}>
                             {session.status === "completed"
                               ? <CheckCircle2 className="h-5 w-5 text-green-400" />
-                              : <Activity className="h-5 w-5 text-white/40" />
+                              : <Activity className="h-5 w-5 text-[#f0b429]/55" />
                             }
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-white">
+                            <p className="text-sm font-medium text-[#f0b429]">
                               {session.focus_area ?? "Training Session"}
                             </p>
-                            <p className="text-xs text-white/50">
+                            <p className="text-xs text-[#f0b429]/70">
                               {new Date(session.created_at).toLocaleDateString("en-ZW", {
                                 day: "numeric", month: "short", year: "numeric"
                               })}
@@ -503,7 +503,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                               </span>
                             </div>
                           )}
-                          <ChevronRight className="h-4 w-4 text-white/30" />
+                          <ChevronRight className="h-4 w-4 text-[#f0b429]/45" />
                         </div>
                       </button>
                     ))}
@@ -515,18 +515,18 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
               <div>
                 <button
                   onClick={() => { setSelectedSession(null); setSessionReport(null); }}
-                  className="mb-4 flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+                  className="mb-4 flex items-center gap-2 text-sm text-[#f0b429]/70 hover:text-[#f0b429] transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back to sessions
                 </button>
 
                 <div className="mb-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-xs text-white/50">
+                  <p className="text-xs text-[#f0b429]/70">
                     {new Date(selectedSession.created_at).toLocaleDateString("en-ZW", {
                       weekday: "long", day: "numeric", month: "long", year: "numeric"
                     })}
                   </p>
-                  <p className="mt-1 text-lg font-bold text-white">
+                  <p className="mt-1 text-lg font-bold" style={{ color: "#f0b429" }}>
                     {selectedSession.focus_area ?? "Training Session"}
                   </p>
                   {selectedSession.overall_score !== null && selectedSession.overall_score !== undefined && (
@@ -534,7 +534,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       <span className={`text-2xl font-black ${scoreColor(selectedSession.overall_score)}`}>
                         {selectedSession.overall_score}
                       </span>
-                      <span className="text-sm text-white/40">/ 100</span>
+                      <span className="text-sm text-[#f0b429]/55">/ 100</span>
                       <span className={`text-xs font-medium ${scoreColor(selectedSession.overall_score)}`}>
                         — {scoreLabel(selectedSession.overall_score)}
                       </span>
@@ -556,7 +556,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           <Brain className="h-4 w-4 text-[#a855f7]" />
                           <h3 className="text-sm font-semibold text-[#a855f7]">THUTO Coaching Report</h3>
                         </div>
-                        <p className="text-sm text-white/80 leading-relaxed">
+                        <p className="text-sm text-[#f0b429]/85 leading-relaxed">
                           {sessionReport.coaching_report.summary}
                         </p>
                       </div>
@@ -582,7 +582,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                             </p>
                             <ul className="space-y-1">
                               {sessionReport.coaching_report!.strengths!.map((s, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-white/80">
+                                <li key={i} className="flex items-start gap-2 text-sm text-[#f0b429]/85">
                                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-green-400" />
                                   {s}
                                 </li>
@@ -597,7 +597,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                             </p>
                             <ul className="space-y-1">
                               {sessionReport.coaching_report!.improvements!.map((s, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-white/80">
+                                <li key={i} className="flex items-start gap-2 text-sm text-[#f0b429]/85">
                                   <Zap className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#f0b429]" />
                                   {s}
                                 </li>
@@ -616,7 +616,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                         </p>
                         <ul className="space-y-1">
                           {sessionReport.coaching_report!.drill_tips!.map((tip, i) => (
-                            <li key={i} className="text-sm text-white/80">• {tip}</li>
+                            <li key={i} className="text-sm text-[#f0b429]/85">• {tip}</li>
                           ))}
                         </ul>
                       </div>
@@ -625,18 +625,18 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     {/* Per-drill form scores */}
                     {(sessionReport.drill_sets?.length ?? 0) > 0 && (
                       <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/60">
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#f0b429]/70">
                           Drill Breakdown
                         </p>
                         <div className="space-y-3">
                           {sessionReport.drill_sets!.map((ds, i) => (
                             <div key={i} className="flex items-center gap-3">
                               <div className="flex-1 min-w-0">
-                                <p className="truncate text-sm text-white">
+                                <p className="truncate text-sm text-[#f0b429]">
                                   {ds.drill_name ?? `Drill ${i + 1}`}
                                 </p>
                                 {ds.rep_count !== null && ds.rep_count !== undefined && (
-                                  <p className="text-xs text-white/40">{ds.rep_count} reps</p>
+                                  <p className="text-xs text-[#f0b429]/55">{ds.rep_count} reps</p>
                                 )}
                               </div>
                               {ds.form_score !== null && ds.form_score !== undefined && (
@@ -662,11 +662,11 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     {!sessionReport.coaching_report?.summary &&
                      (sessionReport.drill_sets?.length ?? 0) === 0 && (
                       <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
-                        <Activity className="mx-auto mb-2 h-8 w-8 text-white/30" />
-                        <p className="text-sm text-white/60">
+                        <Activity className="mx-auto mb-2 h-8 w-8 text-[#f0b429]/45" />
+                        <p className="text-sm text-[#f0b429]/70">
                           Coaching report not yet available for this session.
                         </p>
-                        <p className="mt-1 text-xs text-white/40">
+                        <p className="mt-1 text-xs text-[#f0b429]/55">
                           Reports are generated after session completion.
                         </p>
                       </div>
@@ -674,7 +674,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   </div>
                 ) : (
                   <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
-                    <p className="text-sm text-white/60">Could not load report. Please try again.</p>
+                    <p className="text-sm text-[#f0b429]/70">Could not load report. Please try again.</p>
                   </div>
                 )}
               </div>
@@ -687,9 +687,9 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           <div className="mx-auto max-w-2xl">
             {bioScans.length === 0 ? (
               <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-                <Scan className="mx-auto mb-3 h-10 w-10 text-white/30" />
-                <p className="text-white/60 text-sm">No biometric scans saved yet.</p>
-                <p className="mt-1 text-xs text-white/40">
+                <Scan className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
+                <p className="text-[#f0b429]/70 text-sm">No biometric scans saved yet.</p>
+                <p className="mt-1 text-xs text-[#f0b429]/55">
                   Run a body scan from the Player Hub or Analyst Hub, then tap "Save Scan" to track your progress here.
                 </p>
               </div>
@@ -702,7 +702,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     return (
                       <div key={lvl} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
                         <p className="text-xl font-black" style={{ color: BIOMETRIC_LEVEL_COLOR[lvl] }}>{count}</p>
-                        <p className="text-xs text-white/50 mt-0.5">{lvl} scans</p>
+                        <p className="text-xs text-[#f0b429]/70 mt-0.5">{lvl} scans</p>
                       </div>
                     );
                   })}
@@ -712,7 +712,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 <div className="rounded-2xl border border-white/10 bg-card/60 p-5 mb-4 backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <TrendingUp className="h-4 w-4 text-[#f0b429]" />
-                    <h3 className="font-semibold text-white text-sm">Score Trend</h3>
+                    <h3 className="font-semibold text-sm" style={{ color: "#f0b429" }}>Score Trend</h3>
                   </div>
                   <ResponsiveContainer width="100%" height={180}>
                     <BarChart data={[...bioScans].reverse().slice(-12).map((s, i) => ({
@@ -721,12 +721,12 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       level: s.level,
                       date: s.session_date,
                     }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
-                      <YAxis domain={[0, 100]} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(240,180,41,0.1)" />
+                      <XAxis dataKey="name" tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
+                      <YAxis domain={[0, 100]} tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
-                        labelStyle={{ color: "#fff", fontSize: 11 }}
+                        contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(240,180,41,0.2)", borderRadius: 8 }}
+                        labelStyle={{ color: "#f0b429", fontSize: 11 }}
                         formatter={(value: any, _: any, entry: any) => [
                           `${value}/100 — ${entry.payload.level}`,
                           entry.payload.date,
@@ -754,12 +754,12 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                         diff: s.asymmetry_diff,
                         side: s.weak_side,
                       }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey="name" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
-                        <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(240,180,41,0.1)" />
+                        <XAxis dataKey="name" tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
+                        <YAxis tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }}
-                          labelStyle={{ color: "#fff", fontSize: 11 }}
+                          contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(240,180,41,0.2)", borderRadius: 8 }}
+                          labelStyle={{ color: "#f0b429", fontSize: 11 }}
                           formatter={(value: any, _: any, entry: any) => [
                             `${value}° difference${entry.payload.side ? ` (${entry.payload.side} side weaker)` : ""}`,
                             "Asymmetry",
@@ -780,7 +780,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
 
                 {/* Recent scans list */}
                 <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Recent Scans</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/55 mb-3">Recent Scans</p>
                   {bioScans.slice(0, 10).map((s, i) => (
                     <div key={i} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -791,8 +791,8 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           {s.score}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{s.mode_label}</p>
-                          <p className="text-[11px] text-white/40">{s.session_date} · {s.frames_analysed} frames</p>
+                          <p className="text-sm font-medium text-[#f0b429]">{s.mode_label}</p>
+                          <p className="text-[11px] text-[#f0b429]/55">{s.session_date} · {s.frames_analysed} frames</p>
                         </div>
                       </div>
                       <div className="text-right">
