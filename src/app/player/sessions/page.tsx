@@ -137,7 +137,7 @@ export default function SessionsPage() {
               ].map(({ icon: Icon, label, value, color }) => (
                 <div key={label} className="text-center">
                   <Icon className={`mx-auto mb-1 h-4 w-4 ${color}`} />
-                  <p className="text-lg font-black text-white">{value}</p>
+                  <p className="text-lg font-black" style={{ color: "#f0b429" }}>{value}</p>
                   <p className="text-xs text-muted-foreground">{label}</p>
                 </div>
               ))}
@@ -148,11 +148,11 @@ export default function SessionsPage() {
                 <p className="mb-2 text-xs font-medium text-muted-foreground">Score trend (last {trendData.length} sessions)</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <LineChart data={trendData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(240,180,41,0.1)" />
                     <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#6b7280" }} interval="preserveStartEnd" />
                     <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#6b7280" }} />
                     <Tooltip
-                      contentStyle={{ background: "#1c2a1e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 11 }}
+                      contentStyle={{ background: "#1c2a1e", border: "1px solid rgba(240,180,41,0.2)", borderRadius: 8, fontSize: 11 }}
                       formatter={(v) => [`${v}%`, "Score"]}
                     />
                     <Line
