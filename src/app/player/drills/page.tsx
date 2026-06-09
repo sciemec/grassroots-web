@@ -136,7 +136,7 @@ export default function FootballDrillsLabPage() {
       <div className="bg-[#1c3d22] border-b-4 border-[#f0b429] px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/player" className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors mr-1" style={{ color: "#f0b429" }}>
+            <Link href="/player" className="bg-[#f0b429]/10 hover:bg-[#f0b429]/20 p-2 rounded-xl transition-colors mr-1" style={{ color: "#f0b429" }}>
               <ArrowLeft size={16} />
             </Link>
             <div>
@@ -145,7 +145,7 @@ export default function FootballDrillsLabPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-1.5 rounded-xl border border-white/10 shadow-xs">
+          <div className="flex items-center gap-2 bg-[#f0b429]/10 backdrop-blur-xs px-4 py-1.5 rounded-xl border border-[#f0b429]/15 shadow-xs">
             <GraduationCap size={16} className="text-[#f0b429]" />
             <div className="text-left">
               <span className="block text-[8px] font-black uppercase tracking-widest text-[#f0b429] leading-none">Strategic Education Partner</span>
