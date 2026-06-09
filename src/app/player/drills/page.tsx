@@ -125,7 +125,8 @@ export default function FootballDrillsLabPage() {
   }
 
   const selectedData = FOOTBALL_POSITION_DRILLS[activePosition];
-  const phase = getPhaseForPosition(activePosition, user.age);
+  const numericAge = user.age_group ? (parseInt(user.age_group.replace(/\D/g, ""), 10) - 1 || 18) : 18;
+  const phase = getPhaseForPosition(activePosition, numericAge);
   const drills = getPositionDrills(activePosition, phase);
 
   return (
