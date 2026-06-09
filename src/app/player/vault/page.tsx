@@ -385,7 +385,7 @@ function VideoCard({
         {/* Select checkbox */}
         {selectable && (
           <div className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
-            selected ? "border-primary bg-primary" : "border-white/60 bg-black/40"
+            selected ? "border-primary bg-primary" : "border-[#f0b429]/60 bg-black/40"
           }`}>
             {selected && <Check className="h-3.5 w-3.5 text-white" />}
           </div>
