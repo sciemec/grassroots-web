@@ -1,886 +1,324 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  UserSearch, Send, Star, ChevronRight, Search, Loader2, Shield,
-  FileText, ClipboardList, Sparkles, TrendingUp, Video, Eye, Users, Trophy, GraduationCap,
+  Activity, UserSearch, Star, FileText, GitCompare,
+  Radio, ChevronRight, Trophy, Zap, ShieldCheck,
+  GraduationCap, Flame, TrendingUp, Video, Users, Network,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
-import { HubCard } from "@/components/ui/hub-card";
-import { useGuestGate } from "@/components/ui/register-modal";
-import api from "@/lib/api";
+import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface ScoutPlayer {
-  id: string;
-  initials: string;
-  region: string;
-  position: string;
-  age_group: string;
-  overall_score: number | null;
-  sessions_count: number;
-  scout_visible: boolean;
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 }
 
-interface ShowcaseClip {
-  id: string;
-  skill_type: string;
-  video_url: string;
-  ai_rating: number;
-  top_strength: string;
-  scout_note: string;
-  position_fit: string[];
-  open_for_scouting: boolean;
-  view_count: number;
-}
-
-type Tab = "search" | "for-you" | "showcase" | "rising" | "women" | "tournament";
-
-interface TournamentPlayer {
-  id: string;
-  regId: string;
-  clubName: string;
-  ageGroup: "U14" | "U16";
-  gender: "Boys" | "Girls";
-  name: string;
-  position: string;
-  age: string;
-  school: string;
-  openForScouting: boolean;
-  scholarshipEligible: boolean;
-  registeredAt: string;
-}
-
-const LS_TOURNAMENT_PROFILES = "munhumutapa_2026_player_profiles";
-
-function loadTournamentPlayers(): TournamentPlayer[] {
-  try { return JSON.parse(localStorage.getItem(LS_TOURNAMENT_PROFILES) ?? "[]"); }
-  catch { return []; }
-}
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const POSITIONS  = ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"];
-const PROVINCES  = [
-  "Harare", "Bulawayo", "Manicaland", "Masvingo",
-  "Mashonaland East", "Mashonaland West", "Mashonaland Central",
-  "Matabeleland North", "Matabeleland South", "Midlands",
+const WIRE = [
+  "K.M. (U17 Striker, Harare) clocked 2.84s sprint · open for scouting",
+  "3 new Rising Stars detected in Bulawayo province this week",
+  "T.N. (U13 Midfielder, Masvingo) cleared 45cm vertical leap — high potential flag",
+  "Showcase clip by S.G. (Wingback, Manicaland) now has 24 scout views",
+  "Munhumutapa 2026 — 47 players registered across U14 & U16 categories",
+  "THUTO Talent Engine updated rankings — 5 new continental-level prospects",
 ];
-const AGE_GROUPS = ["u13", "u17", "u20", "senior"];
 
-const LS_VIEWED_KEY   = "scout_viewed_players";
-const LS_SHOWCASE_KEY = "grassroots_showcase_clips";
+const FEATURES = [
+  {
+    href: "/arena/discover",
+    icon: UserSearch,
+    iconBg: "#dcfce7", iconColor: "#16a34a",
+    label: "Discover Players",
+    desc: "Search · filter · follow talent",
+  },
+  {
+    href: "/scout/shortlist",
+    icon: Star,
+    iconBg: "#fef3c7", iconColor: "#d97706",
+    label: "My Shortlist",
+    desc: "Saved players · watchlist",
+  },
+  {
+    href: "/scout/reports",
+    icon: FileText,
+    iconBg: "#f3e8ff", iconColor: "#9333ea",
+    label: "PDF Reports",
+    desc: "AI scouting reports · Claude analysis",
+  },
+  {
+    href: "/scout/compare",
+    icon: GitCompare,
+    iconBg: "#dbeafe", iconColor: "#2563eb",
+    label: "Compare Players",
+    desc: "Side-by-side stat comparison",
+  },
+  {
+    href: "/talent-leaderboard",
+    icon: TrendingUp,
+    iconBg: "#fce7f3", iconColor: "#db2777",
+    label: "Rising Stars",
+    desc: "THUTO rankings · top-rated talent",
+  },
+  {
+    href: "/arena/recruitment",
+    icon: Users,
+    iconBg: "#e0f2fe", iconColor: "#0284c7",
+    label: "Recruitment Board",
+    desc: "Talent-wanted postings · applicants",
+  },
+  {
+    href: "/fan-hub",
+    icon: Video,
+    iconBg: "#ecfdf5", iconColor: "#059669",
+    label: "Showcase Clips",
+    desc: "AI-rated skill videos · highlights",
+  },
+  {
+    href: "/arena/network",
+    icon: Network,
+    iconBg: "#ede9fe", iconColor: "#7c3aed",
+    label: "My Network",
+    desc: "Connections · followers · messages",
+  },
+  {
+    href: "/scout/profile",
+    icon: ShieldCheck,
+    iconBg: "#f0fdf4", iconColor: "#15803d",
+    label: "Scout Profile",
+    desc: "Credentials · accreditation · bio",
+  },
+];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const scoreColor = (s: number) =>
-  s >= 80 ? "text-green-400" : s >= 60 ? "text-[#f0b429]" : "text-muted-foreground";
-
-function loadViewed(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(LS_VIEWED_KEY) ?? "[]")); }
-  catch { return new Set(); }
-}
-
-function markViewed(id: string) {
-  try {
-    const viewed = loadViewed();
-    viewed.add(id);
-    localStorage.setItem(LS_VIEWED_KEY, JSON.stringify(Array.from(viewed)));
-  } catch { /* ok */ }
-}
-
-function loadLocalShowcase(): ShowcaseClip[] {
-  try { return JSON.parse(localStorage.getItem(LS_SHOWCASE_KEY) ?? "[]"); }
-  catch { return []; }
-}
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-
-function PageSkeleton() {
-  return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mb-8 h-8 w-40 animate-pulse rounded-lg bg-muted" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-44 animate-pulse rounded-xl bg-muted" />
-          ))}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-export default function ScoutPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-
-  const { requireAuth } = useGuestGate();
-
-  const [tab, setTab]             = useState<Tab>("search");
-  const [players, setPlayers]     = useState<ScoutPlayer[] | null>(null);
-  const [loading, setLoading]     = useState(false);
-  const [position, setPosition]   = useState("");
-  const [province, setProvince]   = useState("");
-  const [ageGroup, setAgeGroup]   = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
-  const [contactReason, setContactReason] = useState<Record<string, string>>({});
-  const [sent, setSent]           = useState<Record<string, boolean>>({});
-  const [sending, setSending]     = useState<Record<string, boolean>>({});
-
-  // Natural language search
-  const [nlQuery, setNlQuery]     = useState("");
-  const [parsingNl, setParsingNl] = useState(false);
-
-  // For You tab
-  const [forYouPlayers, setForYouPlayers] = useState<ScoutPlayer[]>([]);
-  const [loadingForYou, setLoadingForYou] = useState(false);
-
-  // Showcase tab
-  const [showcaseClips, setShowcaseClips] = useState<ShowcaseClip[]>([]);
-  const [loadingShowcase, setLoadingShowcase] = useState(false);
-
-  // Rising Stars tab
-  const [risingStars, setRisingStars] = useState<ScoutPlayer[]>([]);
-  const [loadingRising, setLoadingRising] = useState(false);
-
-  // Women's Spotlight tab
-  const [womenPlayers, setWomenPlayers] = useState<ScoutPlayer[]>([]);
-  const [loadingWomen, setLoadingWomen] = useState(false);
-  const [womenProvince, setWomenProvince] = useState("");
-  const [womenPosition, setWomenPosition] = useState("");
-  const [womenAgeGroup, setWomenAgeGroup] = useState("");
-
-  // Tournament tab
-  const [tournamentPlayers, setTournamentPlayers] = useState<TournamentPlayer[]>([]);
-  const [tournamentCategory, setTournamentCategory] = useState<"all" | "U14 Boys" | "U14 Girls" | "U16 Boys" | "U16 Girls">("all");
+export default function ScoutHubPage() {
+  const router   = useRouter();
+  const user     = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s._hasHydrated);
+  const [wireIndex, setWireIndex] = useState(0);
 
   useEffect(() => {
-    if (!user) return; // guests allowed — layout shows GuestBanner
-    if (user.role !== "scout" && user.role !== "admin") { router.push("/dashboard"); }
-  }, [user, router]);
-
-  // ── Tab data loaders ─────────────────────────────────────────────────────
-
-  const loadForYou = useCallback(async () => {
-    setLoadingForYou(true);
-    try {
-      const res = await api.get("/scout/players");
-      const raw = res.data?.data ?? res.data ?? [];
-      const all: ScoutPlayer[] = Array.isArray(raw) ? raw : [];
-      const viewed = loadViewed();
-      // Prioritise unviewed players, then show all
-      const unviewed = all.filter((p) => !viewed.has(p.id));
-      setForYouPlayers(unviewed.length >= 3 ? unviewed : all);
-    } catch { setForYouPlayers([]); }
-    finally { setLoadingForYou(false); }
+    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
+    return () => clearInterval(id);
   }, []);
-
-  const loadShowcase = useCallback(async () => {
-    setLoadingShowcase(true);
-    try {
-      const res = await api.get("/showcase/discover");
-      const _rc = res.data?.data ?? res.data; const clips: ShowcaseClip[] = Array.isArray(_rc) ? _rc : [];
-      setShowcaseClips(clips.length ? clips : loadLocalShowcase());
-    } catch { setShowcaseClips(loadLocalShowcase()); }
-    finally { setLoadingShowcase(false); }
-  }, []);
-
-  const loadRising = useCallback(async () => {
-    setLoadingRising(true);
-    try {
-      const res = await api.get("/scout/players");
-      const raw2 = res.data?.data ?? res.data ?? [];
-      const all: ScoutPlayer[] = Array.isArray(raw2) ? raw2 : [];
-      const sorted = [...all]
-        .filter((p) => p.overall_score !== null)
-        .sort((a, b) => (b.overall_score ?? 0) - (a.overall_score ?? 0));
-      setRisingStars(sorted);
-    } catch { setRisingStars([]); }
-    finally { setLoadingRising(false); }
-  }, []);
-
-  const loadWomen = useCallback(async () => {
-    setLoadingWomen(true);
-    try {
-      const res = await api.get("/scout/players", {
-        params: {
-          gender:    "female",
-          province:  womenProvince  || undefined,
-          position:  womenPosition  || undefined,
-          age_group: womenAgeGroup  || undefined,
-        },
-      });
-      const _r = res.data?.data ?? res.data;
-      setWomenPlayers(Array.isArray(_r) ? _r : []);
-    } catch { setWomenPlayers([]); }
-    finally { setLoadingWomen(false); }
-  }, [womenProvince, womenPosition, womenAgeGroup]);
 
   useEffect(() => {
-    if (tab === "for-you") loadForYou();
-    if (tab === "showcase") loadShowcase();
-    if (tab === "rising") loadRising();
-    if (tab === "women") loadWomen();
-    if (tab === "tournament") setTournamentPlayers(loadTournamentPlayers());
-  }, [tab, loadForYou, loadShowcase, loadRising, loadWomen]);
+    if (!hydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "scout" && user.role !== "admin") router.replace("/arena");
+  }, [hydrated, user, router]);
 
-  // ── Search ────────────────────────────────────────────────────────────────
+  if (!hydrated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
+        <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
+      </div>
+    );
+  }
 
-  const search = async () => {
-    setLoading(true);
-    setHasSearched(true);
-    try {
-      const res = await api.get("/scout/players", {
-        params: {
-          position:  position  || undefined,
-          province:  province  || undefined,
-          age_group: ageGroup  || undefined,
-        },
-      });
-      const rawResults = res.data?.data ?? res.data ?? [];
-      const results: ScoutPlayer[] = Array.isArray(rawResults) ? rawResults : [];
-      setPlayers(results);
-      // Track viewed
-      results.forEach((p) => markViewed(p.id));
-    } catch { setPlayers([]); }
-    finally { setLoading(false); }
-  };
-
-  // ── Natural language search ───────────────────────────────────────────────
-
-  const parseNlSearch = async () => {
-    if (!nlQuery.trim()) return;
-    setParsingNl(true);
-    try {
-      const res = await fetch("/api/ai-coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: `Parse this scout search query into filters. Return ONLY valid JSON, no extra text:
-Query: "${nlQuery}"
-Format: {"position": "<string or null>", "province": "<string or null>", "age_group": "<u13/u17/u20/senior or null>"}
-Use null for any field not mentioned. Position should be a short code like GK, CB, ST, CM, LW, ST etc.`,
-          system_prompt: "You are a search query parser. Return only valid JSON.",
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const raw  = data.response ?? data.reply ?? "";
-        const match = raw.match(/\{[\s\S]*\}/);
-        if (match) {
-          const parsed = JSON.parse(match[0]);
-          if (parsed.position) setPosition(parsed.position);
-          if (parsed.province) setProvince(parsed.province);
-          if (parsed.age_group) setAgeGroup(parsed.age_group);
-        }
-      }
-    } catch { /* keep existing filters */ }
-    finally { setParsingNl(false); }
-    search();
-  };
-
-  // ── Contact ───────────────────────────────────────────────────────────────
-
-  const sendContact = async (playerId: string) => {
-    if (!requireAuth("contact a player")) return;
-    if (!contactReason[playerId]?.trim()) return;
-    setSending((s) => ({ ...s, [playerId]: true }));
-    try {
-      await api.post("/scout/contact-requests", {
-        player_id: playerId,
-        reason:    contactReason[playerId],
-      });
-      setSent((s) => ({ ...s, [playerId]: true }));
-    } catch { /* keep form open */ }
-    finally { setSending((s) => ({ ...s, [playerId]: false })); }
-  };
-
-  const scoutCards = [
-    { icon: UserSearch,    title: "Find Players",   subtitle: "Tsvaga vatambi — Search talent", href: "#search",          bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
-    { icon: Star,          title: "Shortlist",      subtitle: "Vadakara vako — Your watchlist", href: "/scout/shortlist", bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
-    { icon: FileText,      title: "PDF Reports",    subtitle: "AI scouting reports — Claude",  href: "/scout/reports",   bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
-    { icon: ClipboardList, title: "Scout Requests", subtitle: "Contact approvals",             href: "/scout-requests",  bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
-  ];
-
-  const TABS: { id: Tab; label: string; icon: typeof Search }[] = [
-    { id: "search",     label: "Search",            icon: Search },
-    { id: "for-you",    label: "For You",           icon: Sparkles },
-    { id: "showcase",   label: "Showcase Clips",    icon: Video },
-    { id: "rising",     label: "Rising Stars",      icon: TrendingUp },
-    { id: "women",      label: "Women's Spotlight", icon: Users },
-    { id: "tournament", label: "Tournament",        icon: Trophy },
-  ];
+  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "SC";
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
 
-        {/* Header */}
-        <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">Mhoro — Scout Hub</p>
-          <h1 className="mt-1 text-2xl font-bold text-white">Find Players 🔍</h1>
-          <p className="mt-0.5 text-sm italic text-accent/80">Tsvaga mukurumbira — Names hidden until contact approved</p>
-        </div>
-
-        {/* Hub cards */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {scoutCards.map((c) => <HubCard key={c.href} {...c} />)}
-        </div>
-
-        {/* Tab bar */}
-        <div className="mb-6 flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all ${
-                tab === id && id === "women"
-                  ? "bg-purple-500 text-white"
-                  : tab === id && id === "tournament"
-                  ? "bg-[#b8860b] text-white"
-                  : tab === id
-                  ? "bg-[#f0b429] text-[#1a3a1a]"
-                  : "text-muted-foreground hover:text-white"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* ── SEARCH TAB ── */}
-        {tab === "search" && (
-          <>
-            {/* Natural language search */}
-            <div className="mb-5 flex gap-2">
-              <input
-                value={nlQuery}
-                onChange={(e) => setNlQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && parseNlSearch()}
-                placeholder='Try: "fast strikers under 17 in Harare" or "left back from Bulawayo"'
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-muted-foreground focus:border-[#f0b429]/50 focus:ring-1 focus:ring-[#f0b429]/30"
-              />
-              <button
-                onClick={parseNlSearch}
-                disabled={parsingNl || !nlQuery.trim()}
-                className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-3 text-sm font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40"
-              >
-                {parsingNl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              </button>
+      {/* Brand header */}
+      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
+              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+              GRS
             </div>
-
-            {/* Privacy notice */}
-            <div className="mb-5 flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3">
-              <Shield className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
-              <p className="text-sm text-blue-300">
-                Player privacy is protected. You see initials and region only. Full contact details are shared only after admin approval.
-              </p>
-            </div>
-
-            {/* Filters */}
-            <div id="search" className="mb-5 rounded-xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Filters</h2>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Position</label>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setPosition("")} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${!position ? "bg-[#f0b429] text-[#1a3a1a]" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}>Any</button>
-                    {POSITIONS.map((p) => (
-                      <button key={p} onClick={() => setPosition(position === p ? "" : p)} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${position === p ? "bg-[#f0b429] text-[#1a3a1a]" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}>{p}</button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Province</label>
-                  <select value={province} onChange={(e) => setProvince(e.target.value)} className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:ring-1 focus:ring-[#f0b429]">
-                    <option value="">Any province</option>
-                    {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Age Group</label>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setAgeGroup("")} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${!ageGroup ? "bg-[#f0b429] text-[#1a3a1a]" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}>Any</button>
-                    {AGE_GROUPS.map((ag) => (
-                      <button key={ag} onClick={() => setAgeGroup(ageGroup === ag ? "" : ag)} className={`rounded-full px-3 py-1 text-xs font-medium uppercase transition-colors ${ageGroup === ag ? "bg-[#f0b429] text-[#1a3a1a]" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}>{ag}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4">
-                <button onClick={search} disabled={loading} className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-6 py-2.5 text-sm font-semibold text-[#1a3a1a] hover:bg-[#f5c542] disabled:opacity-50 transition-colors">
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  {loading ? "Searching…" : "Search players"}
-                </button>
-              </div>
-            </div>
-
-            <PlayerGrid
-              players={players}
-              loading={loading}
-              hasSearched={hasSearched}
-              contactReason={contactReason}
-              sent={sent}
-              sending={sending}
-              onContactChange={(id, val) => setContactReason((p) => ({ ...p, [id]: val }))}
-              onSendContact={sendContact}
-            />
-          </>
-        )}
-
-        {/* ── FOR YOU TAB ── */}
-        {tab === "for-you" && (
-          <div>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Players you haven&apos;t seen yet — based on your search history. Tap a card to add a contact request.
-            </p>
-            <PlayerGrid
-              players={forYouPlayers.length ? forYouPlayers : null}
-              loading={loadingForYou}
-              hasSearched={true}
-              contactReason={contactReason}
-              sent={sent}
-              sending={sending}
-              onContactChange={(id, val) => setContactReason((p) => ({ ...p, [id]: val }))}
-              onSendContact={sendContact}
-              emptyMessage="You've seen all available players. Keep searching to discover more!"
-            />
-          </div>
-        )}
-
-        {/* ── SHOWCASE CLIPS TAB ── */}
-        {tab === "showcase" && (
-          <div>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Watch skill clips uploaded by players — AI-rated and open for scouting.
-            </p>
-            {loadingShowcase ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[...Array(6)].map((_, i) => <div key={i} className="h-52 animate-pulse rounded-xl bg-muted/40" />)}
-              </div>
-            ) : showcaseClips.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/20 p-12 text-center">
-                <Video className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-                <p className="font-medium text-white">No showcase clips yet</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Players upload clips from their showcase page — clips will appear here once submitted.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {showcaseClips.map((clip) => (
-                  <div key={clip.id} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
-                    <div className="mb-3 flex h-36 items-center justify-center overflow-hidden rounded-xl bg-black/40">
-                      {clip.video_url ? (
-                        <video src={clip.video_url} className="h-full w-full rounded-xl object-cover" controls preload="metadata" />
-                      ) : (
-                        <Video className="h-8 w-8 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="rounded-full bg-[#f0b429]/20 px-2.5 py-0.5 text-xs font-semibold capitalize text-[#f0b429]">{clip.skill_type}</span>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-[#f0b429] text-[#f0b429]" />
-                        <span className="text-sm font-bold text-white">{clip.ai_rating.toFixed(1)}/10</span>
-                      </div>
-                    </div>
-                    <p className="mb-1 text-xs font-medium text-accent">Scout Note</p>
-                    <p className="mb-2 line-clamp-2 text-xs text-muted-foreground">{clip.scout_note}</p>
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {(clip.position_fit ?? []).map((pos) => (
-                        <span key={pos} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-muted-foreground">{pos}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Eye className="h-3 w-3" /> {clip.view_count} views
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── RISING STARS TAB ── */}
-        {tab === "rising" && (
-          <div>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Players ranked by highest performance score — the most promising talent on the platform right now.
-            </p>
-            <PlayerGrid
-              players={risingStars.length ? risingStars : null}
-              loading={loadingRising}
-              hasSearched={true}
-              contactReason={contactReason}
-              sent={sent}
-              sending={sending}
-              onContactChange={(id, val) => setContactReason((p) => ({ ...p, [id]: val }))}
-              onSendContact={sendContact}
-              emptyMessage="No ranked players yet. Players need completed sessions to appear here."
-            />
-          </div>
-        )}
-
-        {/* ── WOMEN'S SPOTLIGHT TAB ── */}
-        {tab === "women" && (
-          <div>
-            {/* Banner */}
-            <div className="mb-5 rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-4">
-              <div className="flex items-start gap-3">
-                <Users className="mt-0.5 h-5 w-5 flex-shrink-0 text-purple-400" />
-                <div>
-                  <p className="font-semibold text-purple-300">Women&apos;s Talent Spotlight</p>
-                  <p className="mt-1 text-sm text-purple-200/80">
-                    Female players in Zimbabwe who are open for scouting. Many are eligible for NCAA, NAIA, and UK university scholarships — sorted by performance score.
-                  </p>
-                  <p className="mt-2 text-xs italic text-purple-300/60">
-                    Powered by AMARA — GrassRoots Sports&apos; female-aware AI coach
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Privacy notice */}
-            <div className="mb-5 flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3">
-              <Shield className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-400" />
-              <p className="text-sm text-blue-300">
-                Names hidden until contact approved. Initials and region only — full details shared after admin review.
-              </p>
-            </div>
-
-            {/* Filters */}
-            <div className="mb-5 rounded-xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Position</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      onClick={() => setWomenPosition("")}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${!womenPosition ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
-                    >
-                      Any
-                    </button>
-                    {POSITIONS.map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => setWomenPosition(womenPosition === p ? "" : p)}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${womenPosition === p ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Province</label>
-                  <select
-                    value={womenProvince}
-                    onChange={(e) => setWomenProvince(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white outline-none focus:ring-1 focus:ring-purple-500"
-                  >
-                    <option value="">Any province</option>
-                    {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Age Group</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      onClick={() => setWomenAgeGroup("")}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${!womenAgeGroup ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
-                    >
-                      Any
-                    </button>
-                    {AGE_GROUPS.map((ag) => (
-                      <button
-                        key={ag}
-                        onClick={() => setWomenAgeGroup(womenAgeGroup === ag ? "" : ag)}
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium uppercase transition-colors ${womenAgeGroup === ag ? "bg-purple-500 text-white" : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"}`}
-                      >
-                        {ag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4">
-                <button
-                  onClick={loadWomen}
-                  disabled={loadingWomen}
-                  className="flex items-center gap-2 rounded-xl bg-purple-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-400 disabled:opacity-50 transition-colors"
-                >
-                  {loadingWomen ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                  {loadingWomen ? "Loading…" : "Filter"}
-                </button>
-              </div>
-            </div>
-
-            <PlayerGrid
-              players={womenPlayers.length ? womenPlayers : (loadingWomen ? null : [])}
-              loading={loadingWomen}
-              hasSearched={true}
-              contactReason={contactReason}
-              sent={sent}
-              sending={sending}
-              onContactChange={(id, val) => setContactReason((p) => ({ ...p, [id]: val }))}
-              onSendContact={sendContact}
-              emptyMessage="No female players found with these filters. Try widening your search — or encourage players to set their gender in their profile."
-            />
-          </div>
-        )}
-
-        {/* ── TOURNAMENT TAB ── */}
-        {tab === "tournament" && (() => {
-          const filtered = tournamentPlayers.filter((p) =>
-            tournamentCategory === "all" ||
-            `${p.ageGroup} ${p.gender}` === tournamentCategory
-          );
-          const counts = {
-            all:        tournamentPlayers.length,
-            "U14 Boys": tournamentPlayers.filter((p) => p.ageGroup === "U14" && p.gender === "Boys").length,
-            "U14 Girls":tournamentPlayers.filter((p) => p.ageGroup === "U14" && p.gender === "Girls").length,
-            "U16 Boys": tournamentPlayers.filter((p) => p.ageGroup === "U16" && p.gender === "Boys").length,
-            "U16 Girls":tournamentPlayers.filter((p) => p.ageGroup === "U16" && p.gender === "Girls").length,
-          };
-
-          return (
             <div>
-              {/* Banner */}
-              <div className="mb-5 overflow-hidden rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4">
-                <div className="flex items-start gap-3">
-                  <Trophy className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#f0b429]" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white">Munhumutapa Challenge Cup 2026</p>
-                    <p className="mt-0.5 text-sm text-white/60">
-                      U14 &amp; U16 · Boys &amp; Girls · Open to Clubs &amp; Schools Across Zimbabwe
-                    </p>
-                    <p className="mt-2 text-xs text-[#f0b429]/80">
-                      {tournamentPlayers.length} registered player{tournamentPlayers.length !== 1 ? "s" : ""} — all open for scouting
-                    </p>
-                  </div>
-                  <Link
-                    href="/tournaments/munhumutapa-2026"
-                    className="flex-shrink-0 rounded-lg border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
-                  >
-                    View Tournament
-                  </Link>
-                </div>
-              </div>
-
-              {/* Category filter */}
-              <div className="mb-5 flex flex-wrap gap-2">
-                {(["all", "U14 Boys", "U14 Girls", "U16 Boys", "U16 Girls"] as const).map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setTournamentCategory(cat)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      tournamentCategory === cat
-                        ? "bg-[#f0b429] text-[#1a3a1a]"
-                        : "border border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
-                    }`}
-                  >
-                    {cat === "all" ? "All categories" : cat}
-                    <span className="ml-1.5 opacity-60">
-                      ({counts[cat]})
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {tournamentPlayers.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[#f0b429]/20 p-12 text-center">
-                  <Trophy className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/30" />
-                  <p className="font-medium text-white">No tournament players yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Players appear here once clubs &amp; schools register for Munhumutapa 2026.
-                  </p>
-                  <Link
-                    href="/tournaments/munhumutapa-2026"
-                    className="mt-4 inline-block rounded-xl bg-[#f0b429] px-5 py-2 text-sm font-semibold text-[#1a3a1a]"
-                  >
-                    Register a Team
-                  </Link>
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/20 p-10 text-center">
-                  <p className="text-muted-foreground">No players in this category yet.</p>
-                </div>
-              ) : (
-                <>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    {filtered.length} player{filtered.length !== 1 ? "s" : ""}
-                    {tournamentCategory !== "all" ? ` · ${tournamentCategory}` : ""}
-                  </p>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {filtered.map((p) => (
-                      <Link
-                        key={p.id}
-                        href={`/tournaments/munhumutapa-2026/players/${p.id}`}
-                        className="group block rounded-xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm hover:border-[#f0b429]/30 hover:bg-[#f0b429]/5 transition-all"
-                      >
-                        {/* Header */}
-                        <div className="mb-3 flex items-start justify-between gap-2">
-                          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#f0b429]/10 text-sm font-bold text-[#f0b429]">
-                            {p.name.trim().split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="flex flex-wrap gap-1 justify-end">
-                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                              p.gender === "Girls" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300"
-                            }`}>
-                              {p.ageGroup} {p.gender}
-                            </span>
-                            {p.scholarshipEligible && (
-                              <span className="flex items-center gap-0.5 rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-bold text-green-400">
-                                <GraduationCap className="h-2.5 w-2.5" /> Scholarship
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Name + position */}
-                        <p className="font-semibold text-white group-hover:text-[#f0b429] transition-colors">
-                          {p.name}
-                        </p>
-                        <p className="text-sm font-medium text-[#f0b429]">{p.position}</p>
-
-                        {/* Club/school + age */}
-                        <p className="mt-1 text-xs text-muted-foreground">{p.school || p.clubName}</p>
-                        {p.age && (
-                          <p className="text-xs text-muted-foreground">Age {p.age}</p>
-                        )}
-
-                        {/* Open for scouting badge */}
-                        <div className="mt-3 flex items-center gap-1.5">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-green-400">
-                            Open for Scouting
-                          </span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              )}
+              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>Scout Hub</p>
             </div>
-          );
-        })()}
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <GraduationCap size={14} style={{ color: "#f0b429" }} />
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
+              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Live wire ticker */}
+      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
+            style={{ backgroundColor: "#dc2626" }}>
+            <Radio size={9} className="animate-pulse" /> Live Wire
+          </span>
+          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
+            {WIRE[wireIndex]}
+          </p>
+        </div>
+      </div>
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        {/* Hero card */}
+        <div className="rounded-2xl overflow-hidden shadow-sm">
+          {/* Dark green top */}
+          <div className="relative px-5 pt-6 pb-5"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
+            {/* Chevron watermark */}
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
+            />
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>{greeting()},</p>
+                <h2 className="text-2xl font-black text-white mt-0.5 leading-tight truncate">{user.name || "Scout"}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
+                    <ShieldCheck size={9} /> Scout · Active
+                  </span>
+                  {user.province && (
+                    <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      📍 {user.province}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
+                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+                {initials}
+              </div>
+            </div>
+
+            {/* Stat tiles */}
+            <div className="grid grid-cols-3 gap-2.5 mt-5">
+              {[
+                { label: "Viewed", value: "—", Icon: UserSearch },
+                { label: "Shortlisted", value: "—", Icon: Star },
+                { label: "Reports", value: "—", Icon: Flame },
+              ].map(({ label, value, Icon }) => (
+                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
+                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
+                  <p className="text-base font-black text-white leading-none">{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick links strip */}
+          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
+            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
+            {[
+              { href: "/scout/profile",   label: "My Profile" },
+              { href: "/scout/shortlist", label: "Shortlist" },
+              { href: "/scout/reports",   label: "PDF Report" },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href}
+                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
+                style={{ color: "#6b7280" }}>
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* World Cup live banner */}
+        <LiveMatchBanner />
+
+        {/* Feature grid */}
+        <section>
+          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
+            Your Tools
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconBg }}>
+                    <Icon size={16} style={{ color: iconColor }} />
+                  </div>
+                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
+                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA row */}
+        <section className="grid sm:grid-cols-2 gap-3">
+          <Link
+            href="/talent-leaderboard"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
+                <Trophy size={16} style={{ color: "#f0b429" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">THUTO Leaderboard</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Top-ranked talent in Zimbabwe</p>
+              </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+
+          <Link
+            href="/arena"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                <Zap size={16} style={{ color: "#60a5fa" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">The Arena</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Network · Post · Get discovered</p>
+              </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </section>
+
+        {/* Identity footer */}
+        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
+              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
+              {initials}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
+                {user.province || "Zimbabwe"} · Scout
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
+            style={{ backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+            <ShieldCheck size={11} /> Sync Active
+          </div>
+        </div>
 
       </main>
     </div>
-  );
-}
-
-// ── Player grid sub-component ─────────────────────────────────────────────────
-
-function PlayerGrid({
-  players, loading, hasSearched,
-  contactReason, sent, sending,
-  onContactChange, onSendContact,
-  emptyMessage = "No players found. Try adjusting your filters.",
-}: {
-  players: ScoutPlayer[] | null;
-  loading: boolean;
-  hasSearched: boolean;
-  contactReason: Record<string, string>;
-  sent: Record<string, boolean>;
-  sending: Record<string, boolean>;
-  onContactChange: (id: string, val: string) => void;
-  onSendContact: (id: string) => void;
-  emptyMessage?: string;
-}) {
-  const scoreColor = (s: number) =>
-    s >= 80 ? "text-green-400" : s >= 60 ? "text-[#f0b429]" : "text-muted-foreground";
-
-  if (loading) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => <div key={i} className="h-44 animate-pulse rounded-xl bg-muted/40" />)}
-      </div>
-    );
-  }
-
-  if (players !== null && players.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-white/20 p-12 text-center">
-        <UserSearch className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-        <p className="font-medium text-white">No players found</p>
-        <p className="mt-1 text-sm text-muted-foreground">{emptyMessage}</p>
-      </div>
-    );
-  }
-
-  if (!hasSearched || players === null) {
-    return (
-      <div className="rounded-xl border border-white/10 bg-card/60 p-12 text-center backdrop-blur-sm">
-        <UserSearch className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-        <p className="font-medium text-white">Search for players</p>
-        <p className="mt-1 text-sm text-muted-foreground">Use the filters above to find players matching your criteria</p>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <p className="mb-4 text-sm text-muted-foreground">{players.length} player{players.length !== 1 ? "s" : ""} found</p>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {players.map((p) => (
-          <div key={p.id} className="rounded-xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f0b429]/10 text-lg font-bold text-[#f0b429]">
-                  {p.initials}
-                </div>
-                <p className="mt-2 font-semibold uppercase text-white">{p.position}</p>
-                <p className="text-sm text-muted-foreground">{p.region}</p>
-                <span className="mt-1 inline-block rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium uppercase text-muted-foreground">
-                  {p.age_group}
-                </span>
-              </div>
-              {p.overall_score !== null && (
-                <div className="text-right">
-                  <p className={`text-2xl font-black ${scoreColor(p.overall_score)}`}>{p.overall_score}</p>
-                  <p className="text-xs text-muted-foreground">avg score</p>
-                </div>
-              )}
-            </div>
-            <p className="mb-3 text-xs text-muted-foreground">
-              {p.sessions_count} session{p.sessions_count !== 1 ? "s" : ""} recorded
-            </p>
-            {sent[p.id] ? (
-              <div className="flex items-center gap-2 rounded-xl bg-green-500/10 px-3 py-2.5 text-sm font-medium text-green-400">
-                <Send className="h-3.5 w-3.5" /> Request sent — awaiting admin review
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input
-                  value={contactReason[p.id] ?? ""}
-                  onChange={(e) => onContactChange(p.id, e.target.value)}
-                  placeholder="Reason for contact…"
-                  className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
-                />
-                <button
-                  onClick={() => onSendContact(p.id)}
-                  disabled={!contactReason[p.id]?.trim() || sending[p.id]}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#f0b429] px-3 py-2 text-xs font-semibold text-[#1a3a1a] hover:bg-[#f5c542] disabled:opacity-40 transition-colors"
-                >
-                  {sending[p.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                  Contact Player
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </>
   );
 }
