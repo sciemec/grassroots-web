@@ -1,246 +1,360 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
-import { BarChart2, Target, Network, Map, TrendingUp, FileText, Lock, Layers, Activity, Brain, Camera, Scan } from "lucide-react";
+import {
+  Activity, Camera, Brain, Target, BarChart2, FileText,
+  Network, Map, TrendingUp, Layers, Scan, Radio, ChevronRight,
+  ShieldCheck, GraduationCap, Zap, Trophy,
+} from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
+import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
-// Dynamic import — MediaPipe uses browser globals, must skip SSR
-const BiometricScanner = dynamic(() => import("@/components/BiometricScanner"), { ssr: false });
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
 
-const tools = [
+const WIRE = [
+  "Match Eye: Gemini 1.5 Pro + Claude tactical narrative — live",
+  "xG data updated — Dynamos FC vs Highlanders (90 min logged)",
+  "AI Tactical Report generated for Zvishavane City FC — 94% accuracy",
+  "Touch Tracker: 847 touches logged across 3 matches today",
+  "Pass Map: S.G. (Wingback) leads with 67 forward passes this week",
+  "Season Intelligence: 5 squad xG trends flagged for review",
+];
+
+const FEATURES = [
   {
-    icon: Camera,
-    title: "Match Eye",
-    subtitle: "Upload a match video. Gemini watches it natively. Claude writes the full tactical report.",
     href: "/analyst/match-eye",
-    live: true,
-    featured: true,
+    icon: Camera,
+    iconBg: "#fef3c7", iconColor: "#d97706",
+    label: "Match Eye",
+    desc: "Upload video · Gemini watches · Claude reports",
   },
   {
-    icon: Brain,
-    title: "Match Brain",
-    subtitle: "One session. Six outputs. Touch, xG, passes, heatmaps, zones & AI report — all synced.",
     href: "/analyst/match-brain",
-    live: true,
-    featured: true,
+    icon: Brain,
+    iconBg: "#f3e8ff", iconColor: "#9333ea",
+    label: "Match Brain",
+    desc: "6 outputs from one session · xG + passes + zones",
   },
   {
-    icon: Target,
-    title: "Live Match Collector",
-    subtitle: "Log events on a real pitch — xG metrics auto-calculated from coordinates instantly.",
     href: "/analyst/live-match",
-    live: true,
+    icon: Target,
+    iconBg: "#dcfce7", iconColor: "#16a34a",
+    label: "Live Match Collector",
+    desc: "Log events · xG auto-calculated from coordinates",
   },
   {
-    icon: BarChart2,
-    title: "xG & Shot Analysis",
-    subtitle: "Post-match shot map with expected goals rolling timeline tracking logs.",
     href: "/analyst/xg-analysis",
-    live: true,
-    matchEye: true,
+    icon: BarChart2,
+    iconBg: "#dbeafe", iconColor: "#2563eb",
+    label: "xG & Shot Analysis",
+    desc: "Shot map · expected goals · rolling timeline",
   },
   {
-    icon: FileText,
-    title: "AI Tactical Report",
-    subtitle: "Claude generates a professional, complete 5-section match report from your dataset.",
     href: "/analyst/tactical-report",
-    live: true,
-    matchEye: true,
+    icon: FileText,
+    iconBg: "#fce7f3", iconColor: "#db2777",
+    label: "AI Tactical Report",
+    desc: "5-section match report · PDF export",
   },
   {
-    icon: Network,
-    title: "Pass Map Network",
-    subtitle: "Visual passing matrix diagram — who played to who and where spatial zones overlay.",
     href: "/analyst/pass-map",
-    live: true,
+    icon: Network,
+    iconBg: "#e0f2fe", iconColor: "#0284c7",
+    label: "Pass Map Network",
+    desc: "Who played to who · spatial zone overlay",
   },
   {
-    icon: Map,
-    title: "Player Heatmaps",
-    subtitle: "Where each specific squad player spent high-intensity time on the pitch.",
     href: "/analyst/heatmaps",
-    live: true,
-    matchEye: true,
+    icon: Map,
+    iconBg: "#ecfdf5", iconColor: "#059669",
+    label: "Player Heatmaps",
+    desc: "Per-player high-intensity pitch zones · PDF",
   },
   {
-    icon: TrendingUp,
-    title: "Season Intelligence",
-    subtitle: "Rolling team xG charts, form guides, and squad positional depth trends.",
     href: "/analyst/season",
-    live: true,
-    matchEye: true,
+    icon: TrendingUp,
+    iconBg: "#ede9fe", iconColor: "#7c3aed",
+    label: "Season Intelligence",
+    desc: "Rolling xG charts · form guides · depth trends",
   },
   {
-    icon: Layers,
-    title: "Match Map",
-    subtitle: "Tap pitch canvas to log shots & passes together — live or post-match workflow.",
-    href: "/analyst/match-map",
-    live: true,
-  },
-  {
-    icon: Activity,
-    title: "Smart Touch Tracker",
-    subtitle: "Tap player numbers on touches — AI infers formation changes, zones & key players.",
     href: "/analyst/touch-tracker",
-    live: true,
-  },
-  {
-    icon: Scan,
-    title: "Biometric Scan",
-    subtitle: "Open camera or upload a clip — MediaPipe draws the skeleton and scores technique live.",
-    href: "#biometric",
-    live: true,
-    featured: true,
-    biometric: true,
+    icon: Activity,
+    iconBg: "#f0fdf4", iconColor: "#15803d",
+    label: "Smart Touch Tracker",
+    desc: "Tap touches · AI infers formation · zones",
   },
 ];
 
 export default function AnalystHubPage() {
-  // FIXED: Split primitive selector completely insulates against React #185 loops
-  const user = useAuthStore((state) => state.user);
-  const [hasMatchEye, setHasMatchEye] = useState(false);
+  const router   = useRouter();
+  const user     = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s._hasHydrated);
+  const [wireIndex, setWireIndex] = useState(0);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("gs_match_eye_last");
-      setHasMatchEye(!!raw);
-    } catch {}
+    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
+    return () => clearInterval(id);
   }, []);
 
-  return (
-    // FIXED: Upgraded container to standard institutional light canvas bg layout
-    <div className="flex h-screen bg-[#f4f2ee]">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "analyst" && user.role !== "admin") router.replace("/arena");
+  }, [hydrated, user, router]);
 
-        {/* Header Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#c8962a]">
-            Analyst Hub — Professional Analytics
-          </p>
-          <h1 className="mt-1 text-2xl font-black text-gray-900">
-            {user?.name?.split(" ")[0] ?? "Analyst"} 👋
-          </h1>
-          <p className="mt-1 text-sm font-medium italic text-[#1a5c2a]">
-            Match intelligence — Data that wins trophies
+  if (!hydrated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
+        <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
+      </div>
+    );
+  }
+
+  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "AN";
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
+
+      {/* Brand header */}
+      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
+              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+              GRS
+            </div>
+            <div>
+              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>Analyst Hub</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <GraduationCap size={14} style={{ color: "#f0b429" }} />
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
+              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Live wire ticker */}
+      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
+            style={{ backgroundColor: "#dc2626" }}>
+            <Radio size={9} className="animate-pulse" /> Live Wire
+          </span>
+          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
+            {WIRE[wireIndex]}
           </p>
         </div>
+      </div>
 
-        {/* Tools Grid Area */}
-        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-500 pl-1">
-          Analytics Tools
-        </p>
-        
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tools.map((tool) => {
-            const Icon = tool.icon;
-            const card = (
-              // FIXED: Re-templated cards to match clean white backgrounds with dark green branding pop
-              <div className={`relative h-full rounded-2xl border border-gray-200 p-5 bg-white shadow-sm transition-all flex flex-col justify-between ${
-                tool.live
-                  ? "cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-[#1a5c2a]"
-                  : "opacity-50 cursor-not-allowed bg-gray-50"
-              }`}>
-                <div>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 text-white bg-[#1a5c2a]`}>
-                    <Icon size={20} />
-                  </div>
-                  <p className="text-base font-bold text-gray-900 group-hover:text-[#1a5c2a]">
-                    {tool.title}
-                  </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-                    {tool.subtitle}
-                  </p>
-                </div>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-                {/* Badge Overlay Layout Placements */}
-                <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-end min-h-[24px]">
-                  {!tool.live && (
-                    <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold text-gray-500 border border-gray-200">
-                      <Lock className="h-2.5 w-2.5" /> Coming Soon
-                    </span>
-                  )}
-                  {tool.live && !tool.featured && !('matchEye' in tool && hasMatchEye) && (
-                    <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-[#1a5c2a]">
-                      LIVE
-                    </span>
-                  )}
-                  {'matchEye' in tool && hasMatchEye && (
-                    <span className="flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
-                      <Camera className="h-2.5 w-2.5" /> Match Eye Data
-                    </span>
-                  )}
-                  {tool.featured && (
-                    <span className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-black text-[#c8962a]">
-                      NEW
+        {/* Hero card */}
+        <div className="rounded-2xl overflow-hidden shadow-sm">
+          {/* Dark green top */}
+          <div className="relative px-5 pt-6 pb-5"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
+            {/* Chevron watermark */}
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
+            />
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>{greeting()},</p>
+                <h2 className="text-2xl font-black text-white mt-0.5 leading-tight truncate">{user.name || "Analyst"}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
+                    <ShieldCheck size={9} /> Analyst · Active
+                  </span>
+                  {user.province && (
+                    <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      📍 {user.province}
                     </span>
                   )}
                 </div>
               </div>
-            );
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
+                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+                {initials}
+              </div>
+            </div>
 
-            if ('biometric' in tool) {
-              return (
-                <button
-                  key={tool.title}
-                  className="group text-left"
-                  onClick={() => document.getElementById("biometric")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                >
-                  {card}
-                </button>
-              );
-            }
+            {/* Stat tiles */}
+            <div className="grid grid-cols-3 gap-2.5 mt-5">
+              {[
+                { label: "Matches", value: "—", Icon: Activity },
+                { label: "Reports", value: "—", Icon: FileText },
+                { label: "xG Sessions", value: "—", Icon: BarChart2 },
+              ].map(({ label, value, Icon }) => (
+                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
+                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
+                  <p className="text-base font-black text-white leading-none">{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-            return tool.live
-              ? <Link key={tool.title} href={tool.href} className="group">{card}</Link>
-              : <div key={tool.title}>{card}</div>;
-          })}
+          {/* Quick links strip */}
+          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
+            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
+            {[
+              { href: "/analyst/match-eye",   label: "Match Eye" },
+              { href: "/analyst/live-match",  label: "Live Match" },
+              { href: "/analyst/tactical-report", label: "AI Report" },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href}
+                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
+                style={{ color: "#6b7280" }}>
+                {label}
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* Inline Biometric Scanner — opens camera right here, no navigation */}
-        <div className="mt-6" id="biometric">
-          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-500 pl-1">
-            Biometric Body Analysis
-          </p>
-          <BiometricScanner />
-        </div>
+        {/* World Cup live banner */}
+        <LiveMatchBanner />
 
-        {/* Pitch to Pro Banner Panel */}
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-[#c8962a] shrink-0 mt-0.5">
-              <SparklesIcon className="h-5 w-5 animate-pulse" />
+        {/* Feature grid */}
+        <section>
+          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
+            Your Tools
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconBg }}>
+                    <Icon size={16} style={{ color: iconColor }} />
+                  </div>
+                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
+                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
+                </div>
+              </Link>
+            ))}
+
+            {/* Biometric Scan — extra card linking to coach biometrics */}
+            <Link
+              href="/coach/biometrics"
+              className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "#fdf4ff" }}>
+                  <Scan size={16} style={{ color: "#a21caf" }} />
+                </div>
+                <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">Biometric Scan</h4>
+                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">MediaPipe skeleton · technique score</p>
+              </div>
+            </Link>
+
+            {/* Match Map */}
+            <Link
+              href="/analyst/match-map"
+              className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "#fff7ed" }}>
+                  <Layers size={16} style={{ color: "#ea580c" }} />
+                </div>
+                <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">Match Map</h4>
+                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">Tap canvas · shots + passes · live</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* CTA row */}
+        <section className="grid sm:grid-cols-2 gap-3">
+          <Link
+            href="/analyst/match-eye"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
+                <Camera size={16} style={{ color: "#f0b429" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">Match Eye</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Gemini video analysis · Claude report</p>
+              </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+
+          <Link
+            href="/arena"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                <Zap size={16} style={{ color: "#60a5fa" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">The Arena</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Post insights · discuss · connect</p>
+              </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </section>
+
+        {/* Identity footer */}
+        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
+              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
+              {initials}
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">
-                Professional Club Analytics — Powered by GrassRoots Sports
-              </p>
-              <p className="mt-1 text-xs text-gray-500 leading-relaxed max-w-3xl">
-                The same digital data structures utilized by top-tier elite European academies — custom built for the local Zimbabwean sports ecosystem at $99/month. Global competitors charge up to €299/month without any local NASH/NAPH or ZIFA regional context leagues integration metrics.
+              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
+                {user.province || "Zimbabwe"} · Analyst
               </p>
             </div>
           </div>
-          <Link 
-            href="/player/subscription"
-            className="bg-[#1a5c2a] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-green-800 transition-colors whitespace-nowrap"
-          >
-            Upgrade Department
-          </Link>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
+            style={{ backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+            <ShieldCheck size={11} /> Sync Active
+          </div>
         </div>
 
       </main>
     </div>
-  );
-}
-
-// Simple fallback icon for helper banner utility mapping
-function SparklesIcon(props: React.ComponentProps<"svg">) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l-.813-5.096L3 15l5.187-.813L9 9l.813 5.187L15 15l-5.187.813zM18.25 5.25L17.5 8l-.75-2.75L14 4.5l2.75-.75L17.5 1l.75 2.75L21 4.5l-2.75.75z" />
-    </svg>
   );
 }
