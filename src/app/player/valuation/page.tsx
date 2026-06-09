@@ -143,7 +143,7 @@ Base your valuation on Zimbabwe grassroots market realities (Division 1/2 transf
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Form card */}
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+          <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 backdrop-blur-sm p-6">
             <div className="mb-4 flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-[#f0b429]" />
               <h2 className="font-semibold">Your Player Profile</h2>
@@ -176,7 +176,7 @@ Base your valuation on Zimbabwe grassroots market realities (Division 1/2 transf
           </div>
 
           {/* Results card */}
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+          <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 backdrop-blur-sm p-6">
             <div className="mb-4 flex items-center gap-2">
               <Brain className="h-5 w-5 text-[#f0b429]" />
               <h2 className="font-semibold">AI Valuation Result</h2>
