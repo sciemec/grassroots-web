@@ -105,8 +105,8 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
         <Sidebar />
         <main className="flex-1 p-6 flex flex-col items-center justify-center text-center">
           <Flame className="w-12 h-12 text-[#f0b429] mb-4" />
-          <p className="text-white font-semibold mb-2">No goal set yet</p>
-          <p className="text-white/50 text-sm mb-4">Set your goal first to start daily check-ins.</p>
+          <p className="text-[#f0b429] font-semibold mb-2">No goal set yet</p>
+          <p className="text-[#f0b429]/50 text-sm mb-4">Set your goal first to start daily check-ins.</p>
           <button
             onClick={() => router.push("/player/success")}
             className="bg-[#f0b429] text-[#1a3a1a] font-semibold px-6 py-3 rounded-xl"
@@ -132,13 +132,13 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+            className="p-2 rounded-full bg-[#f0b429]/10 hover:bg-[#f0b429]/20 text-[#f0b429]"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-white">Daily Check-In</h1>
-            <p className="text-sm text-white/50">{today}</p>
+            <h1 className="text-xl font-bold text-[#f0b429]">Daily Check-In</h1>
+            <p className="text-sm text-[#f0b429]/50">{today}</p>
           </div>
         </div>
 
@@ -149,7 +149,7 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#f0b429]/20 border-2 border-[#f0b429] mb-4">
                 <span className="text-3xl font-bold text-[#f0b429]">{score}/3</span>
               </div>
-              <p className="text-white font-bold text-lg mb-1">
+              <p className="text-[#f0b429] font-bold text-lg mb-1">
                 {score === 3 ? "Perfect day!" : score === 2 ? "Great effort!" : score === 1 ? "You showed up." : "Rest day logged."}
               </p>
               {thutoMsg && (
@@ -168,14 +168,14 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
           <div className="space-y-4">
 
             {/* Goal reminder */}
-            <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-              <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Your Goal</p>
-              <p className="text-white text-sm font-medium">{goal.goalText}</p>
+            <div className="rounded-xl bg-[#f0b429]/5 border border-[#f0b429]/15 p-3">
+              <p className="text-[#f0b429]/40 text-xs uppercase tracking-wide mb-1">Your Goal</p>
+              <p className="text-[#f0b429] text-sm font-medium">{goal.goalText}</p>
             </div>
 
             {/* Actions */}
-            <div className="rounded-2xl bg-white/10 border border-white/10 p-4 space-y-4">
-              <p className="text-white font-semibold text-sm">Did you complete these today?</p>
+            <div className="rounded-2xl bg-[#f0b429]/10 border border-[#f0b429]/15 p-4 space-y-4">
+              <p className="text-[#f0b429] font-semibold text-sm">Did you complete these today?</p>
               {goal.actions.map((action, i) => {
                 const checked = [a1, a2, a3][i];
                 const toggle  = [setA1, setA2, setA3][i];
@@ -184,15 +184,15 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
                     key={i}
                     onClick={() => toggle(!checked)}
                     className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors ${
-                      checked ? "bg-[#f0b429]/10 border border-[#f0b429]/30" : "bg-white/5 border border-white/10"
+                      checked ? "bg-[#f0b429]/10 border border-[#f0b429]/30" : "bg-[#f0b429]/5 border border-[#f0b429]/15"
                     }`}
                   >
                     {checked ? (
                       <CheckCircle2 className="w-5 h-5 text-[#f0b429] flex-shrink-0 mt-0.5" />
                     ) : (
-                      <Circle className="w-5 h-5 text-white/30 flex-shrink-0 mt-0.5" />
+                      <Circle className="w-5 h-5 text-[#f0b429]/30 flex-shrink-0 mt-0.5" />
                     )}
-                    <span className={`text-sm ${checked ? "text-white" : "text-white/70"}`}>
+                    <span className={`text-sm ${checked ? "text-[#f0b429]" : "text-[#f0b429]/70"}`}>
                       {action}
                     </span>
                   </button>
@@ -201,9 +201,9 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
             </div>
 
             {/* Mood */}
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div className="rounded-2xl bg-[#f0b429]/5 border border-[#f0b429]/15 p-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-white/70 text-sm font-medium">How do you feel today?</p>
+                <p className="text-[#f0b429]/70 text-sm font-medium">How do you feel today?</p>
                 <span className="text-[#f0b429] font-bold text-sm">{mood}/10</span>
               </div>
               <input
@@ -214,7 +214,7 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
                 onChange={(e) => setMood(Number(e.target.value))}
                 className="w-full accent-[#f0b429]"
               />
-              <div className="flex justify-between text-xs text-white/30 mt-1">
+              <div className="flex justify-between text-xs text-[#f0b429]/30 mt-1">
                 <span>Tired 😞</span>
                 <span>Fired up 🔥</span>
               </div>
@@ -224,7 +224,7 @@ Write ONE short motivational line (max 15 words). End with a Shona phrase. No in
                 onChange={(e) => setMoodNote(e.target.value)}
                 placeholder="Any thoughts for THUTO? (optional)"
                 rows={2}
-                className="mt-3 w-full bg-transparent text-white/70 placeholder-white/20 text-sm resize-none focus:outline-none border-t border-white/10 pt-2"
+                className="mt-3 w-full bg-transparent text-[#f0b429]/70 placeholder-[#f0b429]/20 text-sm resize-none focus:outline-none border-t border-[#f0b429]/15 pt-2"
               />
             </div>
 
