@@ -4,333 +4,320 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Heart, Trophy, Users, Globe, Star, ChevronRight, Search, Calendar, MapPin, Radio, MessageCircle, Building2,
+  Activity, Heart, Trophy, Users, Star, Radio, ChevronRight,
+  Zap, ShieldCheck, GraduationCap, Flame, Video, Building2,
+  Globe, MessageCircle,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
-import { HubCard } from "@/components/ui/hub-card";
-import api from "@/lib/api";
+import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
-interface ScoutPlayer {
-  id: string;
-  initials: string;
-  position: string;
-  province: string;
-  age_group?: string;
-  talent_score?: number;
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 }
 
-interface Fixture {
-  id: number;
-  home: string;
-  away: string;
-  date: string;
-  venue: string;
-  competition: string;
-}
-
-interface Province {
-  name: string;
-  count: number;
-}
-
-const FALLBACK_FIXTURES: Fixture[] = [
-  { id: 1, home: "Harare City FC", away: "CAPS United", date: "2026-03-22", venue: "Rufaro Stadium", competition: "Castle Lager PSL" },
-  { id: 2, home: "Dynamos FC", away: "Highlanders FC", date: "2026-03-29", venue: "National Sports Stadium", competition: "Castle Lager PSL" },
-  { id: 3, home: "FC Platinum", away: "Chicken Inn FC", date: "2026-04-05", venue: "Mandava Stadium", competition: "Castle Lager PSL" },
+const WIRE = [
+  "Dynamos FC 2–1 Highlanders · 67' — NSS is electric tonight",
+  "FC Platinum beat Chicken Inn 3–0 at Mandava Stadium",
+  "K.M. (Harare) clocked a 2.84s 20m sprint — rising star alert",
+  "T.N. (Bulawayo) earned the Rising Star badge this week",
+  "Munhumutapa Challenge Cup 2026 — registration open for U14 & U16",
+  "Zimbabwe U20 squad announced for COSAFA Cup qualifiers",
 ];
 
-const FALLBACK_PROVINCES: Province[] = [
-  { name: "Harare", count: 2840 },
-  { name: "Bulawayo", count: 1620 },
-  { name: "Manicaland", count: 980 },
-  { name: "Midlands", count: 870 },
-  { name: "Masvingo", count: 760 },
-  { name: "Mashonaland East", count: 640 },
-  { name: "Mashonaland West", count: 590 },
-  { name: "Mashonaland Central", count: 480 },
-  { name: "Matabeleland North", count: 320 },
-  { name: "Matabeleland South", count: 290 },
+const FEATURES = [
+  {
+    href: "/fan/discover",
+    icon: Star,
+    iconBg: "#fef3c7", iconColor: "#d97706",
+    label: "Discover Talent",
+    desc: "Find players · positions · provinces",
+  },
+  {
+    href: "/fan/following",
+    icon: Heart,
+    iconBg: "#fce7f3", iconColor: "#db2777",
+    label: "Following",
+    desc: "Players you support · updates",
+  },
+  {
+    href: "/fan/leaderboard",
+    icon: Trophy,
+    iconBg: "#dcfce7", iconColor: "#16a34a",
+    label: "Leaderboard",
+    desc: "Top-rated players · THUTO scores",
+  },
+  {
+    href: "/fan-hub",
+    icon: Video,
+    iconBg: "#dbeafe", iconColor: "#2563eb",
+    label: "Fan Hub Videos",
+    desc: "Highlights · skill clips · AI reels",
+  },
+  {
+    href: "/world-cup",
+    icon: Globe,
+    iconBg: "#f0fdf4", iconColor: "#059669",
+    label: "World Cup",
+    desc: "FIFA 2026 · live scores · AI commentary",
+  },
+  {
+    href: "/streaming",
+    icon: Radio,
+    iconBg: "#ede9fe", iconColor: "#7c3aed",
+    label: "Live Matches",
+    desc: "Watch live · broadcast mode",
+  },
+  {
+    href: "/arena/clubs",
+    icon: Building2,
+    iconBg: "#fef3c7", iconColor: "#b45309",
+    label: "Schools & Clubs",
+    desc: "Find your team · follow a club",
+  },
+  {
+    href: "/arena",
+    icon: MessageCircle,
+    iconBg: "#e0f2fe", iconColor: "#0284c7",
+    label: "The Arena",
+    desc: "Posts · discuss · get involved",
+  },
+  {
+    href: "/talent-leaderboard",
+    icon: Users,
+    iconBg: "#ecfdf5", iconColor: "#15803d",
+    label: "Rising Stars",
+    desc: "National talent rankings · THUTO AI",
+  },
 ];
 
 export default function FanHubPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const [search, setSearch] = useState("");
-  const [hydrated, setHydrated] = useState(false);
+  const router   = useRouter();
+  const user     = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s._hasHydrated);
+  const [wireIndex, setWireIndex] = useState(0);
 
   useEffect(() => {
-    if (useAuthStore.persist.hasHydrated()) {
-      setHydrated(true);
-    } else {
-      const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-      return unsub;
-    }
+    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!user) return; // guests allowed — layout shows GuestBanner
-    if (user.role !== "fan" && user.role !== "admin") { router.push("/dashboard"); return; }
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "fan" && user.role !== "admin") router.replace("/arena");
   }, [hydrated, user, router]);
 
-  const { data: playersData, isLoading: playersLoading, isError: playersError } = useQuery<{ data: ScoutPlayer[] }>({
-    queryKey: ["fan-leaderboard"],
-    queryFn: async () => {
-      const res = await api.get("/scout/players", { params: { per_page: 10 } });
-      return res.data;
-    },
-    enabled: !!user,
-  });
+  if (!hydrated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
+        <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
+      </div>
+    );
+  }
 
-  const { data: fixturesData, isLoading: fixturesLoading } = useQuery<{ data: Fixture[] }>({
-    queryKey: ["fan-fixtures"],
-    queryFn: async () => {
-      const res = await api.get("/matches/upcoming", { params: { per_page: 5 } });
-      // Map API shape → Fixture interface
-      const mapped: Fixture[] = (res.data?.data ?? []).map(
-        (item: { id: number | string; home_team: string; away_team: string; match_date: string; venue: string; competition: string }) => ({
-          id: item.id,
-          home: item.home_team,
-          away: item.away_team,
-          date: item.match_date,
-          venue: item.venue,
-          competition: item.competition,
-        })
-      );
-      return { data: mapped };
-    },
-    enabled: !!user,
-  });
-
-  const { data: provincesData, isLoading: provincesLoading } = useQuery<{ data: Province[] }>({
-    queryKey: ["fan-provinces"],
-    queryFn: async () => {
-      const res = await api.get("/stats/provinces");
-      const mapped: Province[] = (res.data?.data ?? []).map(
-        (item: { province: string; player_count: number }) => ({
-          name: item.province,
-          count: item.player_count,
-        })
-      );
-      return { data: mapped };
-    },
-    enabled: !!user,
-  });
-
-  if (!hydrated) return null;
-
-  const players = playersData?.data ?? [];
-  const filtered = search.trim()
-    ? players.filter((p) =>
-        p.position?.toLowerCase().includes(search.toLowerCase()) ||
-        p.province?.toLowerCase().includes(search.toLowerCase()) ||
-        p.age_group?.toLowerCase().includes(search.toLowerCase())
-      )
-    : players;
-
-  // Use API data when available, fall back to hardcoded arrays
-  const fixtures: Fixture[] =
-    fixturesData?.data && fixturesData.data.length > 0
-      ? fixturesData.data
-      : FALLBACK_FIXTURES;
-
-  const provinces: Province[] =
-    provincesData?.data && provincesData.data.length > 0
-      ? provincesData.data
-      : FALLBACK_PROVINCES;
-
-  const maxProvinceCount = provinces.length > 0 ? provinces[0].count : 1;
-
-  const fanCards = [
-    { icon: Building2, title: "Schools & Clubs", subtitle: "Find your org — Fan Hub",   href: "/schools",         bg: "bg-[#795d08]", gradient: "bg-gradient-to-br from-[#9d7a09] to-[#795d08]" },
-    { icon: Star,   title: "Discover",     subtitle: "Tsvaga nyeredzi — Find talent", href: "/fan/discover",    bg: "bg-[#d35400]", gradient: "bg-gradient-to-br from-[#d35400] to-[#a04000]" },
-    { icon: Heart,  title: "Following",    subtitle: "Vatambi vaunotevera",           href: "/fan/following",   bg: "bg-[#c0392b]", gradient: "bg-gradient-to-br from-[#c0392b] to-[#922b21]" },
-    { icon: Trophy, title: "Leaderboard",  subtitle: "Top players — Rankings",        href: "/fan/leaderboard", bg: "bg-[#7d6608]", gradient: "bg-gradient-to-br from-[#9d8209] to-[#7d6608]" },
-    { icon: Radio,  title: "Live Matches",     subtitle: "Watch live — Tarisai",          href: "/streaming",              bg: "bg-[#1a5276]", gradient: "bg-gradient-to-br from-[#1a5276] to-[#0d2b4a]" },
-    { icon: MessageCircle, title: "Live Commentary", subtitle: "Tap events · AI writes it",  href: "/fan/live-commentary",    bg: "bg-[#6c3483]", gradient: "bg-gradient-to-br from-[#6c3483] to-[#4a235a]" },
-  ];
+  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "FN";
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">Mhoro — Fan Hub</p>
-          <h1 className="mt-1 text-2xl font-bold text-white">Welcome 🎉</h1>
-          <p className="mt-0.5 text-sm italic text-accent/80">
-            Tevera vatambi — Discover talent &amp; support grassroots sport
+    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
+
+      {/* Brand header */}
+      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
+              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+              GRS
+            </div>
+            <div>
+              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>Fan Hub</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <GraduationCap size={14} style={{ color: "#f0b429" }} />
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
+              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Live wire ticker */}
+      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
+            style={{ backgroundColor: "#dc2626" }}>
+            <Radio size={9} className="animate-pulse" /> Live Wire
+          </span>
+          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
+            {WIRE[wireIndex]}
           </p>
         </div>
+      </div>
 
-        {/* Fan hub cards */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {fanCards.map((c) => (
-            <HubCard key={c.href} {...c} />
-          ))}
-        </div>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* Quick stats */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { icon: Users,  label: "Athletes",       value: "10K+", color: "text-primary" },
-            { icon: Trophy, label: "Top-rated",       value: "250",  color: "text-accent" },
-            { icon: Globe,  label: "Provinces",       value: "10",   color: "text-blue-400" },
-            { icon: Heart,  label: "You follow",      value: "0",    color: "text-red-400" },
-          ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
-              <Icon className={`h-4 w-4 ${color} mb-2`} />
-              <p className="text-xl font-bold text-white">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Leaderboard */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide text-balance">
-              Top players this week
-            </h2>
-            <Link href="/fan/leaderboard" className="flex items-center gap-1 text-xs text-primary hover:underline">
-              Full leaderboard <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {/* Search bar */}
-          <div className="mb-3 relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filter by province, position, age group…"
-              className="w-full rounded-lg border bg-background py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-ring"
+        {/* Hero card */}
+        <div className="rounded-2xl overflow-hidden shadow-sm">
+          {/* Dark green top */}
+          <div className="relative px-5 pt-6 pb-5"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
+            {/* Chevron watermark */}
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
             />
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>{greeting()},</p>
+                <h2 className="text-2xl font-black text-white mt-0.5 leading-tight truncate">{user.name || "Fan"}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
+                    <ShieldCheck size={9} /> Fan · Active
+                  </span>
+                  {user.province && (
+                    <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      📍 {user.province}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
+                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+                {initials}
+              </div>
+            </div>
+
+            {/* Stat tiles */}
+            <div className="grid grid-cols-3 gap-2.5 mt-5">
+              {[
+                { label: "Following", value: "—", Icon: Heart },
+                { label: "Favourites", value: "—", Icon: Star },
+                { label: "Live Now", value: "—", Icon: Flame },
+              ].map(({ label, value, Icon }) => (
+                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
+                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
+                  <p className="text-base font-black text-white leading-none">{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {playersLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-14 animate-pulse rounded-xl bg-muted" />
-              ))}
-            </div>
-          ) : playersError || players.length === 0 ? (
-            <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
-              <Trophy className="mx-auto mb-2 h-8 w-8 opacity-30" />
-              <p className="text-sm">No player data available right now.</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
-              No players match your filter.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filtered.map((player, index) => {
-                const rank = index + 1;
-                return (
-                  <div
-                    key={player.id}
-                    className="flex items-center gap-4 rounded-xl border bg-card px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer"
-                  >
-                    <span className={`w-6 text-center text-sm font-bold ${
-                      rank === 1 ? "text-yellow-500" : rank === 2 ? "text-slate-400" : rank === 3 ? "text-amber-600" : "text-muted-foreground"
-                    }`}>
-                      {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank}
-                    </span>
-
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-bold text-sm">
-                      {player.initials}
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{player.initials}</p>
-                      <p className="text-xs text-muted-foreground">{player.position} · {player.province}</p>
-                    </div>
-
-                    {player.talent_score != null && (
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 text-yellow-500" />
-                        <span className="text-sm font-bold">{player.talent_score}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* Quick links strip */}
+          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
+            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
+            {[
+              { href: "/fan/discover",    label: "Discover" },
+              { href: "/fan/following",   label: "Following" },
+              { href: "/fan/leaderboard", label: "Leaderboard" },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href}
+                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
+                style={{ color: "#6b7280" }}>
+                {label}
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* Upcoming Fixtures */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide text-balance">
-            Upcoming Fixtures
-          </h2>
-          {fixturesLoading ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {fixtures.map((f) => (
-                <div key={f.id} className="rounded-xl border bg-card px-5 py-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold">
-                        {f.home} <span className="text-muted-foreground font-normal">vs</span> {f.away}
-                      </p>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {f.venue}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" /> {new Date(f.date).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-blue-500/15 px-2 py-0.5 text-xs font-medium text-blue-700">
-                      {f.competition}
-                    </span>
+        {/* World Cup live banner */}
+        <LiveMatchBanner />
+
+        {/* Feature grid */}
+        <section>
+          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
+            Your Tools
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconBg }}>
+                    <Icon size={16} style={{ color: iconColor }} />
                   </div>
+                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
                 </div>
-              ))}
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
+                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA row */}
+        <section className="grid sm:grid-cols-2 gap-3">
+          <Link
+            href="/world-cup"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
+                <Globe size={16} style={{ color: "#f0b429" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">FIFA World Cup 2026</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Live scores · AI commentary</p>
+              </div>
             </div>
-          )}
+            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+
+          <Link
+            href="/arena"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                <Zap size={16} style={{ color: "#60a5fa" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">The Arena</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Post · discuss · connect</p>
+              </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </section>
+
+        {/* Identity footer */}
+        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
+              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
+              {initials}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
+                {user.province || "Zimbabwe"} · Fan
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
+            style={{ backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+            <ShieldCheck size={11} /> Sync Active
+          </div>
         </div>
 
-        {/* Top Provinces */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide text-balance">
-            Top Provinces by Athletes
-          </h2>
-          {provincesLoading ? (
-            <div className="rounded-xl border bg-card p-5 space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-5 animate-pulse rounded-full bg-muted" />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border bg-card p-5 space-y-3">
-              {provinces.map((prov, i) => (
-                <div key={prov.name} className="flex items-center gap-3">
-                  <span className="w-5 text-xs text-muted-foreground text-right">{i + 1}</span>
-                  <span className="w-36 text-sm font-medium truncate">{prov.name}</span>
-                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${(prov.count / maxProvinceCount) * 100}%` }}
-                    />
-                  </div>
-                  <span className="w-12 text-right text-xs text-muted-foreground">{prov.count.toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </main>
     </div>
   );
