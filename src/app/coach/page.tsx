@@ -11,7 +11,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { COACHING_STAFF_ROLES, getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
 import { loadKnowledgeForRole, type SessionPoint } from "@/lib/coaching-knowledge";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "[https://bhora-ai.onrender.com](https://bhora-ai.onrender.com)";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
 const ROLE_EMOJIS: Record<string, string> = {
   head_coach: "🎽",
@@ -72,7 +72,7 @@ export default function CoachHubPage() {
     setQuery("");
     setLoadingAi(true);
     try {
-      const res = await fetch(`${API}/api/v1/ask`, {
+      const res = await fetch(`${API}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ question: userMsg.text, role: roleConfig.id, language: "en" }),
@@ -91,15 +91,15 @@ export default function CoachHubPage() {
       <main className="flex-1 p-6 space-y-6">
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link className="bg-white border p-5 rounded-3xl shadow-2xs" href="/coach/squad">
-            <Users className="text-blue-600 mb-3" size="{20}"/>
+            <Users className="text-blue-600 mb-3" size={20}/>
             <h3 className="text-xs font-black uppercase">Squad Roster</h3>
           </Link>
           <Link className="bg-white border p-5 rounded-3xl shadow-2xs" href="/coach/live-match">
-            <Activity className="text-emerald-600 mb-3" size="{20}"/>
+            <Activity className="text-emerald-600 mb-3" size={20}/>
             <h3 className="text-xs font-black uppercase">Live Match Tracker</h3>
           </Link>
           <Link className="bg-white border p-5 rounded-3xl shadow-2xs" href="/player/drills">
-            <Dumbbell className="text-purple-600 mb-3" size="{20}"/>
+            <Dumbbell className="text-purple-600 mb-3" size={20}/>
             <h3 className="text-xs font-black uppercase">Nurture Lab</h3>
           </Link>
         </section>
@@ -115,7 +115,7 @@ export default function CoachHubPage() {
           </div>
           <form onSubmit={handleAiQuery} className="flex gap-2 border-t pt-3">
             <input className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-xs" value={query} onChange={e => setQuery(e.target.value)} placeholder="Ask tactical assistant..." />
-            <button className="bg-[#1a5c2a] text-white px-4 rounded-xl" disabled={loadingAi}><Send size="{16}"/></button>
+            <button className="bg-[#1a5c2a] text-white px-4 rounded-xl" disabled={loadingAi}><Send size={16}/></button>
           </form>
         </section>
       </main>
