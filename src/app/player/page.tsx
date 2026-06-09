@@ -3,197 +3,319 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  Zap, BookOpen, Dumbbell, Target, Brain, Award, 
-  Activity, QrCode, TrendingUp, Heart, Users, MapPin, 
-  ChevronRight, Radio, ShieldCheck, GraduationCap
+import {
+  Zap, BookOpen, Dumbbell, Activity, Award,
+  Brain, Video, TrendingUp, ShieldCheck, GraduationCap,
+  Radio, ChevronRight, Trophy, Flame, Star,
 } from "lucide-react";
-
-// 🔴 REACT #185 LOOP PREVENTION: Use individual atomic selectors
 import { useAuthStore } from "@/lib/auth-store";
-import { safeArray } from "@/lib/safe-array";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
-export default function PlayerDashboardHome() {
-  const router = useRouter();
-  
-  // Zustand atomic state selectors
-  const user = useAuthStore((s) => s.user);
-  const hydrated = useAuthStore((s) => s._hasHydrated);
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
 
-  // Live Ticker State Management
+const WIRE = [
+  "K.M. (U17 Striker, Harare) just clocked a 2.84s 20m sprint benchmark",
+  "T.N. (U13 Midfielder, Bulawayo) cleared a 45cm vertical leap threshold",
+  "Coach Moyo logged a 4-3-3 tactical blueprint for Matabeleland North",
+  "Zimbiru Primary School NASH cohort synced to National Talent Database",
+  "S.G. (Senior Wingback, Manicaland) logged a 15s heart rate recovery index",
+  "Teach for Zimbabwe Mobile Lab activated for Hwange District schools",
+];
+
+const FEATURES = [
+  {
+    href: "/player/sessions/new",
+    icon: Activity,
+    iconBg: "#dcfce7", iconColor: "#16a34a",
+    label: "Train Now",
+    desc: "Log a session · biometric calibration",
+  },
+  {
+    href: "/player/drills",
+    icon: Dumbbell,
+    iconBg: "#dbeafe", iconColor: "#2563eb",
+    label: "Drills Library",
+    desc: "500+ drills for every position",
+  },
+  {
+    href: "/player/talent-id",
+    icon: Award,
+    iconBg: "#f3e8ff", iconColor: "#9333ea",
+    label: "Scout Profile",
+    desc: "Visibility · CV share · Plays Like",
+  },
+  {
+    href: "/player/success",
+    icon: Zap,
+    iconBg: "#fef3c7", iconColor: "#d97706",
+    label: "Success Engine",
+    desc: "Daily check-in · streak · goals",
+  },
+  {
+    href: "/player/vault",
+    icon: Video,
+    iconBg: "#fce7f3", iconColor: "#db2777",
+    label: "Highlight Vault",
+    desc: "Upload · reels · AI-generated clips",
+  },
+  {
+    href: "/player/passport",
+    icon: BookOpen,
+    iconBg: "#e0f2fe", iconColor: "#0284c7",
+    label: "Talent Passport",
+    desc: "Shareable profile · QR code",
+  },
+  {
+    href: "/player/training",
+    icon: Brain,
+    iconBg: "#ecfdf5", iconColor: "#059669",
+    label: "AI Training Lab",
+    desc: "Live camera scans · biomechanics",
+  },
+  {
+    href: "/player/progress",
+    icon: TrendingUp,
+    iconBg: "#f0fdf4", iconColor: "#15803d",
+    label: "My Progress",
+    desc: "Stats · milestones · form tracking",
+  },
+  {
+    href: "/player/assessment",
+    icon: Star,
+    iconBg: "#fdf4ff", iconColor: "#a21caf",
+    label: "Assessment",
+    desc: "Field tests · APK session reports",
+  },
+];
+
+export default function PlayerDashboardHome() {
+  const router   = useRouter();
+  const user     = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s._hasHydrated);
   const [wireIndex, setWireIndex] = useState(0);
 
-  const activityWire = [
-    "⚡ K.M. (U17 Striker, Harare) just clocked a 2.84s 20m sprint line benchmark!",
-    "🍀 Coach Moyo (Matabeleland North) logged a 4-3-3 tactical blueprint loop.",
-    "🔥 T.N. (U13 Midfielder, Bulawayo) cleared a 45cm vertical leap threshold classification.",
-    "🛡️ Zimbiru Primary School NASH cohort profile synced into the National Talent Database.",
-    "⚡ S.G. (Senior Tier Wingback, Manicaland) logged a 15-second manual heart rate recovery index.",
-    "🍀 Teach for Zimbabwe Mobile Lab Ingestion Engine activated for Hwange District schools."
-  ];
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setWireIndex((prev) => (prev + 1) % activityWire.length);
-    }, 4500);
-    return () => clearInterval(interval);
-  }, [activityWire.length]);
+    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
+    return () => clearInterval(id);
+  }, []);
 
-  // Auth Protection Guard Check
   useEffect(() => {
     if (!hydrated) return;
-    if (!user) {
-      router.replace("/login");
-    }
+    if (!user) router.replace("/login");
   }, [hydrated, user, router]);
 
   if (!hydrated || !user) {
     return (
-      <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center">
-        <Activity className="animate-spin text-[#1c3d22]" size={32} />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
+        <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
       </div>
     );
   }
 
+  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "GR";
+
   return (
-    <div className="min-h-screen bg-[#f4f2ee] text-gray-900 font-sans selection:bg-[#f0b429]/30 antialiased">
-      
-      {/* 🇿🇼 TOP BRAND PARTNERSHIP LOGO PANEL */}
-      <div className="bg-[#1c3d22] text-white border-b-4 border-[#f0b429] px-6 py-4 shadow-sm">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
+
+      {/* ── Brand header ── */}
+      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-[#f0b429] p-2 rounded-xl text-[#1c3d22]">
-              <Target size={20} className="stroke-[3]" />
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
+              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+              GRS
             </div>
             <div>
-              <h1 className="text-sm font-black uppercase tracking-wider text-white">GrassRoots Sports Hub</h1>
-              <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">National Talent Production Pipeline</p>
+              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>Player Hub</p>
             </div>
           </div>
-          
-          {/* TEACH FOR ZIMBABWE STRATEGIC PARTNER BRANDING LOGO */}
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-xs px-4 py-1.5 rounded-xl border border-white/10 shadow-xs">
-            <GraduationCap size={16} className="text-[#f0b429]" />
-            <div className="text-left">
-              <span className="block text-[8px] font-black uppercase tracking-widest text-[#f0b429] leading-none">Strategic Education Partner</span>
-              <span className="text-[11px] font-black tracking-tight text-white uppercase">Teach For Zimbabwe</span>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <GraduationCap size={14} style={{ color: "#f0b429" }} />
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
+              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 📡 LIVE REGIONAL ACTIVITY WIRE LOG */}
-      <div className="bg-[#fffbeb] border-b border-amber-100 py-2.5 px-4 overflow-hidden">
-        <div className="max-w-6xl mx-auto flex items-center gap-2">
-          <span className="flex items-center gap-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0 shadow-3xs">
-            <Radio size={10} className="animate-pulse" /> Live Wire
+      {/* ── Live wire ticker ── */}
+      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
+            style={{ backgroundColor: "#dc2626" }}>
+            <Radio size={9} className="animate-pulse" /> Live Wire
           </span>
-          <p className="text-xs font-bold text-amber-900 transition-all duration-500 ease-in-out truncate animate-fade-in">
-            {activityWire[wireIndex]}
+          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
+            {WIRE[wireIndex]}
           </p>
         </div>
       </div>
 
-      {/* MAIN DASHBOARD HUD CONTAINER */}
-      <main className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* 🏆 WORLD CUP LIVE BANNER */}
+        {/* ── Hero card ── */}
+        <div className="rounded-2xl overflow-hidden shadow-sm">
+          {/* Top section — dark green with greeting */}
+          <div className="relative px-5 pt-6 pb-5"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
+            {/* Chevron watermark */}
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
+            />
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>{greeting()},</p>
+                <h2 className="text-2xl font-black text-white mt-0.5 leading-tight truncate">{user.name || "Athlete"}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
+                    <ShieldCheck size={9} /> Player · Active
+                  </span>
+                  {user.province && (
+                    <span className="text-[10px] font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>
+                      📍 {user.province}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
+                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+                {initials}
+              </div>
+            </div>
+
+            {/* Stat tiles */}
+            <div className="grid grid-cols-3 gap-2.5 mt-5">
+              {[
+                { label: "Sessions", value: "—", Icon: Activity },
+                { label: "Day Streak", value: "—", Icon: Flame },
+                { label: "THUTO Score", value: "—", Icon: Star },
+              ].map(({ label, value, Icon }) => (
+                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
+                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
+                  <p className="text-base font-black text-white leading-none">{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick links strip */}
+          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
+            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
+            {[
+              { href: "/player/profile",   label: "Edit Profile" },
+              { href: "/player/progress",  label: "My Progress" },
+              { href: "/player/talent-id", label: "Scout Profile" },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href}
+                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
+                style={{ color: "#6b7280" }}>
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* ── World Cup live banner ── */}
         <LiveMatchBanner />
 
-        {/* 🎛️ ECOSYSTEM INFRASTRUCTURE QUICK-LINKS */}
-        <section className="space-y-2">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Ecosystem Infrastructure Engines</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            
-            <Link href="/player/success" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-amber-50 text-[#c8962a]"><Zap size={16} /></div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">THUTO Success Engine</h4>
-                  <p className="text-[11px] text-gray-400 font-semibold truncate">Streak monitoring & daily check-ins</p>
+        {/* ── Feature grid ── */}
+        <section>
+          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
+            Your Tools
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconBg }}>
+                    <Icon size={16} style={{ color: iconColor }} />
+                  </div>
+                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
                 </div>
-              </div>
-              <ChevronRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors" />
-            </Link>
-
-            <Link href="/player/passport" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700"><BookOpen size={16} /></div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">Scannable Talent Passport</h4>
-                  <p className="text-[11px] text-gray-400 font-semibold truncate">Verified public A4 scout portfolio</p>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
+                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
                 </div>
-              </div>
-              <ChevronRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors" />
-            </Link>
-
-            <Link href="/player/training" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700"><Activity size={16} /></div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">AI Training Lab Engine</h4>
-                  <p className="text-[11px] text-gray-400 font-semibold truncate">Live MediaPipe camera frame scans</p>
-                </div>
-              </div>
-              <ChevronRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors" />
-            </Link>
-
+              </Link>
+            ))}
           </div>
         </section>
 
-        {/* CORE WORKSPACE TRILOGY HOOKS */}
-        <section className="space-y-3">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Core Training & Management Operations</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            
-            {/* CARD 1: IDENTIFY */}
-            <Link href="/player/sessions/new" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-5 rounded-3xl flex flex-col justify-between h-40 transition-all shadow-3xs group">
-              <div className="bg-emerald-50 text-emerald-700 w-9 h-9 rounded-xl flex items-center justify-center"><Activity size={16} /></div>
-              <div>
-                <h3 className="text-xs font-black uppercase text-gray-900 tracking-wide">Train Now (Identify)</h3>
-                <p className="text-[11px] text-gray-400 font-semibold mt-0.5 leading-snug">Log biometric calibration sessions and match play metrics.</p>
+        {/* ── CTA row ── */}
+        <section className="grid sm:grid-cols-2 gap-3">
+          <Link
+            href="/talent-leaderboard"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
+                <Trophy size={16} style={{ color: "#f0b429" }} />
               </div>
-            </Link>
-
-            {/* CARD 2: NURTURE (UPDATED TO TRUE POSITION DRILLS SYSTEM) */}
-            <Link href="/player/drills" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-5 rounded-3xl flex flex-col justify-between h-40 transition-all shadow-3xs group">
-              <div className="bg-blue-50 text-blue-700 w-9 h-9 rounded-xl flex items-center justify-center"><Dumbbell size={16} /></div>
               <div>
-                <h3 className="text-xs font-black uppercase text-gray-900 tracking-wide">Drills Lab (Nurture)</h3>
-                <p className="text-[11px] text-gray-400 font-semibold mt-0.5 leading-snug">Get specific drills tailored for your position: Striker, Winger, Midfielder, Defender, or Goalkeeper.</p>
+                <p className="text-xs font-black uppercase tracking-wide text-white">THUTO Leaderboard</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>See your national ranking</p>
               </div>
-            </Link>
+            </div>
+            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
 
-            {/* CARD 3: MARKET */}
-            <Link href="/player/talent-id" className="bg-white border border-gray-200 hover:border-[#1c3d22] p-5 rounded-3xl flex flex-col justify-between h-40 transition-all shadow-3xs group">
-              <div className="bg-purple-50 text-purple-700 w-9 h-9 rounded-xl flex items-center justify-center"><Award size={16} /></div>
+          <Link
+            href="/arena"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                <Zap size={16} style={{ color: "#60a5fa" }} />
+              </div>
               <div>
-                <h3 className="text-xs font-black uppercase text-gray-900 tracking-wide">Scout Visibility (Market)</h3>
-                <p className="text-[11px] text-gray-400 font-semibold mt-0.5 leading-snug">Lorem manage your digital passport visibility for regional review loops.</p>
+                <p className="text-xs font-black uppercase tracking-wide text-white">The Arena</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Connect · Post · Get discovered</p>
               </div>
-            </Link>
-
-          </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
         </section>
 
-        {/* ATHLETE IDENTITY SUMMARY FOOTER HUD */}
-        <footer className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-3xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#1c3d22] text-[#f0b429] font-black text-xs flex items-center justify-center uppercase shadow-3xs">
-              {user.name ? user.name.slice(0,2) : "GR"}
+        {/* ── Identity footer ── */}
+        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
+              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
+              {initials}
             </div>
             <div>
-              <h5 className="text-xs font-black text-gray-900 uppercase tracking-wide">Active Ingestion Session: {user.name}</h5>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <MapPin size={10} /> Syncing Region: {user.province || "Harare, ZW"}
+              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
+                {user.province || "Zimbabwe"} · Player
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg border border-emerald-100">
-            <ShieldCheck size={12} className="text-emerald-700" /> Secure Database Sync Active
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
+            style={{ backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+            <ShieldCheck size={11} /> Sync Active
           </div>
-        </footer>
+        </div>
 
       </main>
     </div>
