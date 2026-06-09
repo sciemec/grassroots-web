@@ -133,15 +133,15 @@ export default function FootballDrillsLabPage() {
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 font-sans selection:bg-[#f0b429]/30 antialiased">
       
       {/* 🏁 TEACH FOR ZIMBABWE BRANDED HEADER BARS */}
-      <div className="bg-[#1c3d22] text-white border-b-4 border-[#f0b429] px-6 py-4 shadow-sm">
+      <div className="bg-[#1c3d22] border-b-4 border-[#f0b429] px-6 py-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/player" className="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-white transition-colors mr-1">
+            <Link href="/player" className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors mr-1" style={{ color: "#f0b429" }}>
               <ArrowLeft size={16} />
             </Link>
             <div>
-              <h1 className="text-sm font-black uppercase tracking-wider text-white">GRS Talent Nurture Lab</h1>
-              <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Locked Linear Nurture Track</p>
+              <h1 className="text-sm font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>GRS Talent Nurture Lab</h1>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>Locked Linear Nurture Track</p>
             </div>
           </div>
           
@@ -181,7 +181,7 @@ export default function FootballDrillsLabPage() {
               </div>
               <div className="space-y-1">
                 <h2 className="text-base font-black uppercase tracking-tight text-gray-900">{selectedData.title}</h2>
-                <span className="inline-block bg-[#1c3d22] text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-[#1c3d22]">
+                <span className="inline-block bg-[#1c3d22] text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-[#1c3d22]" style={{ color: "#f0b429" }}>
                   AI Pipeline Profile Locked
                 </span>
               </div>
@@ -251,7 +251,7 @@ export default function FootballDrillsLabPage() {
                     disabled={isSyncing !== null}
                     className={`w-full sm:w-auto text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl border transition-all cursor-pointer shrink-0 flex items-center justify-center gap-1.5 ${
                       isDone 
-                        ? "bg-emerald-600 text-white border-emerald-600 shadow-3xs" 
+                        ? "bg-emerald-600 text-[#f0b429] border-emerald-600 shadow-3xs"
                         : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 disabled:opacity-50"
                     }`}
                   >
