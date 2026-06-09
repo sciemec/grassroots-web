@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// World Cup Player Statistics - REAL DATA
+model WorldCupPlayerStats {
+  id          String @id @default(cuid())
+  playerId    String @unique
+  playerName  String
+  country     String
+  position    String // GK, DF, MF, FW
+  shirtNumber Int    @default(0)
+
+  // Performance Metrics (aggregated from real matches)
+  matchesPlayed   Int   @default(0)
+  minutesPlayed   Int   @default(0)
+  goals           Int   @default(0)
+  assists         Int   @default(0)
+  shots           Int   @default(0)
+  shotsOnTarget   Int   @default(0)
+  passAccuracy    Float @default(0)
+  passesCompleted Int   @default(0)
+  passesAttempted Int   @default(0)
+  tackles         Int   @default(0)
+  interceptions   Int   @default(0)
+  clearances      Int   @default(0)
+  saves           Int   @default(0)
+  cleanSheets     Int   @default(0)
+  yellowCards     Int   @default(0)
+  redCards        Int   @default(0)
+  avgRating       Float @default(0)
+
+  // Custom score
+  performanceScore Float @default(0)
+
+  lastUpdated DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Track which matches have been synced
+model WorldCupMatchSync {
+  id       String   @id @default(cuid())
+  matchId  String   @unique
+  syncedAt DateTime @default(now())
+}
+
+// World Cup matches (populate from API)
+model WorldCupMatch {
+  id        String   @id
+  matchDate DateTime
+  homeTeam  String
+  awayTeam  String
+  homeScore Int      @default(0)
+  awayScore Int      @default(0)
+  status    String   @default("scheduled")
+  stage     String // group, round_16, quarter, semi, final
+  groupName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
