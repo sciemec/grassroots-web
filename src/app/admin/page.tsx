@@ -1,147 +1,313 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
-import { 
-  Users, 
-  Shield, // ✅ FIXED: Changed ShieldCheck to Shield to prevent undefined runtime crash
-  Search, 
-  CreditCard, 
-  BarChart3, 
-  Megaphone, 
-  Globe, 
-  Download,
-  Lock
+import {
+  Activity, Users, ShieldCheck, Search, CreditCard, BarChart3,
+  Megaphone, Film, Bell, Radio, ChevronRight, Zap, Globe,
+  GraduationCap, Database, Lock,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
+import { LiveMatchBanner } from "@/components/LiveMatchBanner";
+
+const WIRE = [
+  "Platform running normally — all services operational",
+  "3 new scout verification requests pending review",
+  "12 new player registrations this week across 4 provinces",
+  "Fan Hub: 2 videos flagged for moderation review",
+  "Subscription revenue up 18% — 7 new Pro accounts",
+  "THUTO AI processed 94 biometric scans today",
+];
+
+const FEATURES = [
+  {
+    href: "/admin/users",
+    icon: Users,
+    iconBg: "#dbeafe", iconColor: "#2563eb",
+    label: "Users",
+    desc: "Manage all accounts · roles · access",
+  },
+  {
+    href: "/admin/verifications",
+    icon: ShieldCheck,
+    iconBg: "#dcfce7", iconColor: "#16a34a",
+    label: "Verifications",
+    desc: "Document review · identity queue",
+  },
+  {
+    href: "/admin/scout-requests",
+    icon: Search,
+    iconBg: "#f3e8ff", iconColor: "#9333ea",
+    label: "Scout Requests",
+    desc: "Contact approvals · accreditation",
+  },
+  {
+    href: "/admin/subscriptions",
+    icon: CreditCard,
+    iconBg: "#fef3c7", iconColor: "#d97706",
+    label: "Subscriptions",
+    desc: "Billing · plans · Stripe dashboard",
+  },
+  {
+    href: "/admin/stats",
+    icon: BarChart3,
+    iconBg: "#fce7f3", iconColor: "#db2777",
+    label: "Platform Stats",
+    desc: "Users · sessions · engagement",
+  },
+  {
+    href: "/admin/announcements",
+    icon: Megaphone,
+    iconBg: "#e0f2fe", iconColor: "#0284c7",
+    label: "Announcements",
+    desc: "Platform notices · broadcasts",
+  },
+  {
+    href: "/admin/fan-hub",
+    icon: Film,
+    iconBg: "#ede9fe", iconColor: "#7c3aed",
+    label: "Fan Hub Mod",
+    desc: "Pending videos · approve · remove",
+  },
+  {
+    href: "/notifications",
+    icon: Bell,
+    iconBg: "#fef3c7", iconColor: "#b45309",
+    label: "Push Notifications",
+    desc: "Send FCM alerts to users",
+  },
+  {
+    href: "/talent-leaderboard",
+    icon: Database,
+    iconBg: "#ecfdf5", iconColor: "#059669",
+    label: "Talent Database",
+    desc: "National rankings · THUTO scores",
+  },
+];
 
 export default function AdminDashboardPage() {
-  const user = useAuthStore((state) => state.user);
+  const router   = useRouter();
+  const user     = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s._hasHydrated);
+  const [wireIndex, setWireIndex] = useState(0);
 
-  // STRICTLY PRESERVED: Keeping your exact original features list array layout
-  const adminTools = [
-    {
-      icon: Users,
-      title: "Users",
-      subtitle: "Manage all users",
-      href: "/admin/users",
-      color: "bg-blue-500",
-    },
-    {
-      icon: Shield, // ✅ FIXED: Bound to safe icon asset definition mapping
-      title: "Verifications",
-      subtitle: "Document verifications",
-      href: "/admin/verifications",
-      color: "bg-emerald-500",
-    },
-    {
-      icon: Search,
-      title: "Scout Requests",
-      subtitle: "Contact approvals",
-      href: "/admin/scout-requests",
-      color: "bg-purple-500",
-    },
-    {
-      icon: CreditCard,
-      title: "Subscriptions",
-      subtitle: "Billing & plans",
-      href: "/admin/subscriptions",
-      color: "bg-orange-500",
-    },
-    {
-      icon: BarChart3,
-      title: "Platform Stats",
-      subtitle: "System analytics",
-      href: "/admin/stats",
-      color: "bg-red-500",
-    },
-    {
-      icon: Megaphone,
-      title: "Announcements",
-      subtitle: "Platform notices",
-      href: "/admin/announcements",
-      color: "bg-teal-500",
-    },
-    {
-      icon: Globe,
-      title: "Netball info page",
-      subtitle: "Manage localized configurations",
-      href: "/admin/netball-info",
-      color: "bg-indigo-500",
-    },
-    {
-      icon: Download,
-      title: "PWA Installs",
-      subtitle: "App install tracker",
-      href: "/admin/pwa-installs",
-      color: "bg-green-600",
-    },
-  ];
+  useEffect(() => {
+    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!user) { router.replace("/login"); return; }
+    if (user.role !== "admin") router.replace("/arena");
+  }, [hydrated, user, router]);
+
+  if (!hydrated || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
+        <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
+      </div>
+    );
+  }
+
+  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "AD";
 
   return (
-    // CANVAS BACKGROUND: Set to crisp standard light framework
-    <div className="flex h-screen bg-[#f4f2ee]">
-      <Sidebar />
+    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
 
-      <main className="flex-1 overflow-auto p-6">
-        
-        {/* TOP PANEL: Shifted to your premium high-visibility Yellow/Gold brand standard for ultimate pop */}
-        <div className="bg-[#f0b429] text-[#1c3d22] rounded-2xl p-6 mb-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-widest opacity-90">
-            Admin Portal — Control Center
-          </p>
-          <h1 className="mt-1 text-2xl font-black">
-            Ongorora — Platform management & oversight 👋
-          </h1>
-          <p className="mt-1 text-sm font-bold opacity-80 italic">
-            Root System Access — Critical Infrastructure Scope
+      {/* Brand header */}
+      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
+              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+              GRS
+            </div>
+            <div>
+              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>Admin Portal</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <GraduationCap size={14} style={{ color: "#f0b429" }} />
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
+              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Live wire ticker */}
+      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
+            style={{ backgroundColor: "#dc2626" }}>
+            <Radio size={9} className="animate-pulse" /> System
+          </span>
+          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
+            {WIRE[wireIndex]}
           </p>
         </div>
+      </div>
 
-        {/* SECTION LABEL: Explicit charcoal gray for bulletproof contrast */}
-        <p className="mb-4 text-xs font-black uppercase tracking-widest text-gray-600 pl-1">
-          Admin Tools Menu
-        </p>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* LAYOUT GRID: Preserving your exact original spatial component structural framework layout */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {adminTools.map((tool) => {
-            const IconComponent = tool.icon;
-            
-            return (
-              <Link 
-                key={tool.title} 
-                href={tool.href}
-                className="group h-full rounded-2xl border border-gray-200 p-5 bg-white shadow-sm transition-all flex items-center gap-4 hover:scale-[1.01] hover:shadow-md hover:border-gray-400"
-              >
-                {/* Brand Utility Color Icon Square Block */}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs ${tool.color}`}>
-                  <IconComponent size={22} />
+        {/* Hero card */}
+        <div className="rounded-2xl overflow-hidden shadow-sm">
+          {/* Dark green top */}
+          <div className="relative px-5 pt-6 pb-5"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
+            {/* Chevron watermark */}
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
+            />
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>Admin Portal,</p>
+                <h2 className="text-2xl font-black text-white mt-0.5 leading-tight truncate">{user.name || "Admin"}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
+                    <Lock size={9} /> Admin · Root Access
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(34,197,94,0.15)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.2)" }}>
+                    <Zap size={9} /> All Systems Live
+                  </span>
                 </div>
-                
-                <div className="min-w-0 flex-1">
-                  {/* TITLE: Hardcoded to deep charcoal black font to stop wash-outs */}
-                  <p className="text-base font-black text-gray-900 group-hover:text-gray-700 transition-colors truncate">
-                    {tool.title}
-                  </p>
-                  
-                  {/* SUBTITLE: Highly legible standard medium slate utility text color */}
-                  <p className="mt-0.5 text-xs text-gray-600 font-semibold truncate">
-                    {tool.subtitle}
-                  </p>
+              </div>
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
+                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+                {initials}
+              </div>
+            </div>
+
+            {/* Stat tiles */}
+            <div className="grid grid-cols-3 gap-2.5 mt-5">
+              {[
+                { label: "Total Users", value: "—", Icon: Users },
+                { label: "Pending", value: "—", Icon: ShieldCheck },
+                { label: "Pro Plans", value: "—", Icon: CreditCard },
+              ].map(({ label, value, Icon }) => (
+                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
+                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
+                  <p className="text-base font-black text-white leading-none">{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(255,255,255,0.38)" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick links strip */}
+          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
+            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
+            {[
+              { href: "/admin/users",         label: "Users" },
+              { href: "/admin/verifications", label: "Verify" },
+              { href: "/admin/stats",         label: "Stats" },
+            ].map(({ href, label }) => (
+              <Link key={href} href={href}
+                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
+                style={{ color: "#6b7280" }}>
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* World Cup live banner */}
+        <LiveMatchBanner />
+
+        {/* Feature grid */}
+        <section>
+          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
+            Admin Tools
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconBg }}>
+                    <Icon size={16} style={{ color: iconColor }} />
+                  </div>
+                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
+                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
                 </div>
               </Link>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        </section>
 
-        {/* FOOTER METRIC NOTE BAR */}
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex items-center gap-2.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-            All system-wide configurations are running live in master deployment parameters.
-          </p>
+        {/* CTA row */}
+        <section className="grid sm:grid-cols-2 gap-3">
+          <Link
+            href="/admin/stats"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
+                <BarChart3 size={16} style={{ color: "#f0b429" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">Platform Analytics</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Users · sessions · revenue</p>
+              </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+
+          <Link
+            href="/arena"
+            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
+            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                <Globe size={16} style={{ color: "#60a5fa" }} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white">The Arena</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>View as user · monitor feed</p>
+              </div>
+            </div>
+            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </section>
+
+        {/* Identity footer */}
+        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
+              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
+              {initials}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Admin"}</p>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
+                Root Access · Administrator
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
+            style={{ backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+            <ShieldCheck size={11} /> All Systems Live
+          </div>
         </div>
 
       </main>
