@@ -239,10 +239,10 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
 
         <div className="mb-6 flex items-center gap-3">
           <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
-            <ArrowLeft className="h-4 w-4 text-white" />
+            <ArrowLeft className="h-4 w-4" style={{ color: "#f0b429" }} />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white">Assessment</h1>
+            <h1 className="text-2xl font-bold" style={{ color: "#f0b429" }}>Assessment</h1>
             <p className="text-sm text-muted-foreground">Field tests + APK biomechanics coaching reports</p>
           </div>
         </div>
@@ -254,7 +254,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
               activeTab === "field"
                 ? "bg-[#f0b429] text-[#1a3a1a]"
-                : "text-white/60 hover:text-white"
+                : "text-[#f0b429]/70 hover:text-[#f0b429]"
             }`}
           >
             <Target className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
@@ -265,7 +265,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
               activeTab === "apk"
                 ? "bg-[#f0b429] text-[#1a3a1a]"
-                : "text-white/60 hover:text-white"
+                : "text-[#f0b429]/70 hover:text-[#f0b429]"
             }`}
           >
             <Activity className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
@@ -276,7 +276,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
               activeTab === "biometric"
                 ? "bg-[#f0b429] text-[#1a3a1a]"
-                : "text-white/60 hover:text-white"
+                : "text-[#f0b429]/70 hover:text-[#f0b429]"
             }`}
           >
             <Scan className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
@@ -290,12 +290,12 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             <div className="mx-auto max-w-lg">
               <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center backdrop-blur-sm">
                 <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]" />
-                <h2 className="mb-2 text-xl font-bold text-white">Position Assessment Hub</h2>
+                <h2 className="mb-2 text-xl font-bold" style={{ color: "#f0b429" }}>Position Assessment Hub</h2>
                 <p className="mb-6 text-sm text-muted-foreground">
                   Run field tests with a partner and enter your results. AI will generate a performance report and skill radar.
                 </p>
                 <div className="mb-6">
-                  <label className="mb-3 block text-left text-sm font-semibold text-white">Select your position group</label>
+                  <label className="mb-3 block text-left text-sm font-semibold" style={{ color: "#f0b429" }}>Select your position group</label>
                   <div className="grid grid-cols-2 gap-3">
                     {Object.entries(POSITIONS_TESTS).map(([id, { label }]) => (
                       <button
@@ -304,7 +304,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                         className={`rounded-xl border p-4 text-sm font-medium transition-all ${
                           positionGroup === id
                             ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
-                            : "border-white/10 bg-white/5 text-white hover:border-white/20"
+                            : "border-white/10 bg-white/5 text-[#f0b429]/70 hover:border-[#f0b429]/20"
                         }`}
                       >
                         {label}
@@ -324,10 +324,10 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           ) : (
             <div className="mx-auto max-w-2xl">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-bold capitalize text-white">{positionGroup} Tests</h2>
+                <h2 className="font-bold capitalize" style={{ color: "#f0b429" }}>{positionGroup} Tests</h2>
                 <button
                   onClick={() => { setStarted(false); setResults({}); setAiReport(""); }}
-                  className="text-xs text-muted-foreground hover:text-white"
+                  className="text-xs text-muted-foreground hover:text-[#f0b429]"
                 >
                   ← Change position
                 </button>
@@ -351,7 +351,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       }`}
                     >
                       <div className="mb-2 flex items-start justify-between">
-                        <h3 className="font-semibold text-white">{test.name}</h3>
+                        <h3 className="font-semibold text-[#f0b429]">{test.name}</h3>
                         <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-muted-foreground">
                           Benchmark: {test.benchmark}
                         </span>
@@ -364,7 +364,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           placeholder={`Enter result (${test.unit})`}
                           value={val}
                           onChange={(e) => setResults((r) => ({ ...r, [test.name]: e.target.value }))}
-                          className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
+                          className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-[#f0b429] outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
                         />
                         <span className="text-xs text-muted-foreground">{test.unit}</span>
                         {pct !== null && (
