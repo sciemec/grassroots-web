@@ -248,7 +248,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
         </div>
 
         {/* Tab switcher */}
-        <div className="mb-6 flex rounded-xl border border-white/10 bg-white/5 p-1">
+        <div className="mb-6 flex rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-1">
           <button
             onClick={() => setActiveTab("field")}
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
@@ -288,7 +288,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
         {activeTab === "field" && (
           !started ? (
             <div className="mx-auto max-w-lg">
-              <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center backdrop-blur-sm">
+              <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-8 text-center backdrop-blur-sm">
                 <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]" />
                 <h2 className="mb-2 text-xl font-bold" style={{ color: "#f0b429" }}>Position Assessment Hub</h2>
                 <p className="mb-6 text-sm text-muted-foreground">
@@ -304,7 +304,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                         className={`rounded-xl border p-4 text-sm font-medium transition-all ${
                           positionGroup === id
                             ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
-                            : "border-white/10 bg-white/5 text-[#f0b429]/70 hover:border-[#f0b429]/20"
+                            : "border-[#f0b429]/15 bg-[#f0b429]/5 text-[#f0b429]/70 hover:border-[#f0b429]/20"
                         }`}
                       >
                         {label}
@@ -333,7 +333,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 </button>
               </div>
 
-              <p className="mb-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-muted-foreground">
+              <p className="mb-5 rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 text-sm text-muted-foreground">
                 Run each test on the field with a partner. Enter your result — green means you met the Zimbabwe benchmark.
               </p>
 
@@ -347,12 +347,12 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       key={test.name}
                       className={`rounded-xl border p-5 transition-all ${
                         passed === true  ? "border-green-500/40 bg-green-500/5" :
-                        passed === false ? "border-red-500/30 bg-red-500/5"    : "border-white/10 bg-card/60"
+                        passed === false ? "border-red-500/30 bg-red-500/5"    : "border-[#f0b429]/15 bg-card/60"
                       }`}
                     >
                       <div className="mb-2 flex items-start justify-between">
                         <h3 className="font-semibold text-[#f0b429]">{test.name}</h3>
-                        <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-muted-foreground">
+                        <span className="rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs text-muted-foreground">
                           Benchmark: {test.benchmark}
                         </span>
                       </div>
@@ -364,7 +364,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           placeholder={`Enter result (${test.unit})`}
                           value={val}
                           onChange={(e) => setResults((r) => ({ ...r, [test.name]: e.target.value }))}
-                          className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-[#f0b429] outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
+                          className="flex-1 rounded-lg border border-[#f0b429]/15 bg-black/20 px-3 py-2 text-sm text-[#f0b429] outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
                         />
                         <span className="text-xs text-muted-foreground">{test.unit}</span>
                         {pct !== null && (
@@ -378,7 +378,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
               </div>
 
               {radarData.some((d) => d.score > 0) && (
-                <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+                <div className="mb-6 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-[#f0b429]" />
@@ -459,7 +459,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     <Loader2 className="h-7 w-7 animate-spin text-[#f0b429]" />
                   </div>
                 ) : sessions.length === 0 ? (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+                  <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
                     <Activity className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
                     <p className="text-[#f0b429]/70 text-sm">No APK sessions found yet.</p>
                     <p className="mt-1 text-xs text-[#f0b429]/55">
@@ -472,11 +472,11 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       <button
                         key={session.id}
                         onClick={() => loadReport(session)}
-                        className="w-full flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4 text-left hover:bg-white/10 transition-colors"
+                        className="w-full flex items-center justify-between rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-4 text-left hover:bg-[#f0b429]/10 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                            session.status === "completed" ? "bg-green-500/20" : "bg-white/10"
+                            session.status === "completed" ? "bg-green-500/20" : "bg-[#f0b429]/10"
                           }`}>
                             {session.status === "completed"
                               ? <CheckCircle2 className="h-5 w-5 text-green-400" />
@@ -520,7 +520,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   <ArrowLeft className="h-4 w-4" /> Back to sessions
                 </button>
 
-                <div className="mb-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="mb-4 rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3">
                   <p className="text-xs text-[#f0b429]/70">
                     {new Date(selectedSession.created_at).toLocaleDateString("en-ZW", {
                       weekday: "long", day: "numeric", month: "long", year: "numeric"
@@ -624,7 +624,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
 
                     {/* Per-drill form scores */}
                     {(sessionReport.drill_sets?.length ?? 0) > 0 && (
-                      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                      <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-4">
                         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#f0b429]/70">
                           Drill Breakdown
                         </p>
@@ -641,7 +641,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                               </div>
                               {ds.form_score !== null && ds.form_score !== undefined && (
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                  <div className="w-24 h-1.5 rounded-full bg-[#f0b429]/10 overflow-hidden">
                                     <div
                                       className="h-full rounded-full bg-[#f0b429] transition-all"
                                       style={{ width: `${ds.form_score}%` }}
@@ -661,7 +661,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     {/* Empty coaching report state */}
                     {!sessionReport.coaching_report?.summary &&
                      (sessionReport.drill_sets?.length ?? 0) === 0 && (
-                      <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+                      <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-6 text-center">
                         <Activity className="mx-auto mb-2 h-8 w-8 text-[#f0b429]/45" />
                         <p className="text-sm text-[#f0b429]/70">
                           Coaching report not yet available for this session.
@@ -673,7 +673,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+                  <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-6 text-center">
                     <p className="text-sm text-[#f0b429]/70">Could not load report. Please try again.</p>
                   </div>
                 )}
@@ -686,7 +686,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
         {activeTab === "biometric" && (
           <div className="mx-auto max-w-2xl">
             {bioScans.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+              <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
                 <Scan className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
                 <p className="text-[#f0b429]/70 text-sm">No biometric scans saved yet.</p>
                 <p className="mt-1 text-xs text-[#f0b429]/55">
@@ -700,7 +700,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   {(["Elite", "Good", "Raw"] as const).map((lvl) => {
                     const count = bioScans.filter(s => s.level === lvl).length;
                     return (
-                      <div key={lvl} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                      <div key={lvl} className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
                         <p className="text-xl font-black" style={{ color: BIOMETRIC_LEVEL_COLOR[lvl] }}>{count}</p>
                         <p className="text-xs text-[#f0b429]/70 mt-0.5">{lvl} scans</p>
                       </div>
@@ -709,7 +709,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 </div>
 
                 {/* Score trend chart */}
-                <div className="rounded-2xl border border-white/10 bg-card/60 p-5 mb-4 backdrop-blur-sm">
+                <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 mb-4 backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-4">
                     <TrendingUp className="h-4 w-4 text-[#f0b429]" />
                     <h3 className="font-semibold text-sm" style={{ color: "#f0b429" }}>Score Trend</h3>
@@ -782,7 +782,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 <div className="space-y-2">
                   <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/55 mb-3">Recent Scans</p>
                   {bioScans.slice(0, 10).map((s, i) => (
-                    <div key={i} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex items-center justify-between">
+                    <div key={i} className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white"
