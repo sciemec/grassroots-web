@@ -450,7 +450,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                   <LiveIconComponent size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">{dynamicConfig.title}</h3>
+                  <h3 className="text-base font-black text-[#f0b429]">{dynamicConfig.title}</h3>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dynamic Developmental Targets ({watchedValues.age_group ? watchedValues.age_group.toUpperCase() : "GENERAL"})</p>
                 </div>
               </div>
@@ -459,7 +459,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 {dynamicConfig.successMetrics.map((metric) => (
                   <div key={metric.label} className="border-l-4 border-[#f0b429] bg-muted/40 px-3 py-2 rounded-r-xl">
                     <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight truncate">{metric.label}</p>
-                    <p className="text-base font-black text-white mt-0.5">{metric.target}</p>
+                    <p className="text-base font-black text-[#f0b429] mt-0.5">{metric.target}</p>
                   </div>
                 ))}
               </div>
@@ -487,7 +487,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                   type="button"
                   disabled={savingGender}
                   onClick={() => saveGender("male")}
-                  className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors disabled:opacity-60"
+                  className="flex-1 py-2 rounded-lg bg-[#f0b429]/10 hover:bg-[#f0b429]/20 text-[#f0b429] text-sm font-medium transition-colors disabled:opacity-60"
                 >
                   {savingGender ? "Saving…" : "I'm male"}
                 </button>
@@ -495,7 +495,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                   type="button"
                   disabled={savingGender}
                   onClick={() => saveGender("prefer_not_to_say")}
-                  className="w-full py-2 rounded-lg border border-white/10 text-white/40 text-xs font-medium transition-colors hover:text-white/60 disabled:opacity-60"
+                  className="w-full py-2 rounded-lg border border-[#f0b429]/15 text-[#f0b429]/50 text-xs font-medium transition-colors hover:text-[#f0b429]/70 disabled:opacity-60"
                 >
                   Prefer not to say
                 </button>
@@ -530,11 +530,11 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           </div>
 
           {/* WhatsApp THUTO Link */}
-          <div className="mb-8 rounded-xl border border-white/10 bg-card/60 p-5">
+          <div className="mb-8 rounded-xl border border-[#f0b429]/15 bg-card/60 p-5">
             <div className="mb-3 flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-green-400" />
               <div>
-                <p className="font-medium text-white">THUTO on WhatsApp</p>
+                <p className="font-medium text-[#f0b429]">THUTO on WhatsApp</p>
                 <p className="text-xs text-muted-foreground">
                   Get coaching messages from THUTO directly on WhatsApp
                 </p>
@@ -551,13 +551,13 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 value={whatsappPhone}
                 onChange={(e) => setWhatsappPhone(e.target.value)}
                 placeholder="e.g. 0771 234 567"
-                className="flex-1 rounded-lg border border-white/10 bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-green-500/50 placeholder:text-muted-foreground"
+                className="flex-1 rounded-lg border border-[#f0b429]/15 bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-green-500/50 placeholder:text-muted-foreground"
               />
               <button
                 type="button"
                 onClick={saveWhatsappPhone}
                 disabled={savingWhatsapp || !whatsappPhone.trim()}
-                className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-500 disabled:opacity-50"
+                className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-green-500 disabled:opacity-50"
               >
                 {savingWhatsapp ? <Loader2 className="h-4 w-4 animate-spin" /> : whatsappSaved ? "Saved ✓" : "Link"}
               </button>
@@ -767,10 +767,10 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           )}
 
           {/* AI Profile Narrative */}
-          <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+          <div className="mb-6 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
             <div className="mb-3 flex items-center gap-2">
               <Brain className="h-4 w-4 text-[#f0b429]" />
-              <h3 className="font-semibold text-white">AI Scout Narrative</h3>
+              <h3 className="font-semibold text-[#f0b429]">AI Scout Narrative</h3>
             </div>
             {aiNarrative ? (
               <>
@@ -778,7 +778,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 <button
                   onClick={generateNarrative}
                   disabled={generatingNarrative}
-                  className="text-xs text-accent hover:text-white transition-colors"
+                  className="text-xs text-accent hover:text-[#f0b429] transition-colors"
                 >
                   {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
                 </button>
@@ -811,10 +811,10 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             const comparisons = getComparisons(profile?.position ?? "", profile?.sport ?? "football");
             if (!comparisons.length) return null;
             return (
-              <div className="mb-8 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+              <div className="mb-8 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
                 <div className="mb-3 flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#f0b429]" />
-                  <h3 className="font-semibold text-white">Plays Like…</h3>
+                  <h3 className="font-semibold text-[#f0b429]">Plays Like…</h3>
                 </div>
                 <p className="mb-3 text-xs text-muted-foreground">
                   Based on your position and sport, scouts may compare you to:
