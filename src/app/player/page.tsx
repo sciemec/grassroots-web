@@ -10,8 +10,9 @@ import {
 } from "lucide-react";
 
 // 🔴 REACT #185 LOOP PREVENTION: Use individual atomic selectors
-import { useAuthStore } from "@/lib/auth-store"; 
+import { useAuthStore } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
+import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
 export default function PlayerDashboardHome() {
   const router = useRouter();
@@ -96,7 +97,10 @@ export default function PlayerDashboardHome() {
 
       {/* MAIN DASHBOARD HUD CONTAINER */}
       <main className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
-        
+
+        {/* 🏆 WORLD CUP LIVE BANNER */}
+        <LiveMatchBanner />
+
         {/* 🎛️ ECOSYSTEM INFRASTRUCTURE QUICK-LINKS */}
         <section className="space-y-2">
           <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Ecosystem Infrastructure Engines</h4>

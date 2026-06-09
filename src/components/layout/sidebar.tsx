@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { 
   Zap, Activity, BookOpen, Award, Users, TrendingUp, LogOut, Target,
   GraduationCap, Home, Dumbbell, IdCard, Video, Camera, UserSearch, Heart,
-  Settings, Menu, X, BarChart3, Medal
+  Settings, Menu, X, BarChart3, Medal, Radio
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -50,6 +50,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/community", label: "Discover Stars", icon: Medal, roles: ["fan"] },
   { href: "/talent-leaderboard", label: "Leaderboard", icon: Award, roles: ["fan", "scout", "coach"] },
   
+  // WORLD CUP 2026
+  { href: "/world-cup", label: "World Cup Live", icon: Radio, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
+
   // SYSTEM CONFIGURATIONS
   { href: "/settings", label: "Profile Settings", icon: Settings, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
 ];
