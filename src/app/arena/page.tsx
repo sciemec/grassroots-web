@@ -169,7 +169,7 @@ function ArenaNav({ user, token }: { user: any; token: string | null }) {
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
         <Link href={homePath} className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#1a5c2a] flex items-center justify-center text-white font-black text-xl shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-[#1a5c2a] flex items-center justify-center font-black text-xl shadow-sm" style={{ color: "#f0b429" }}>
             G
           </div>
           <div className="leading-none hidden sm:block">
@@ -212,7 +212,7 @@ function ArenaNav({ user, token }: { user: any; token: string | null }) {
               onClick={() => setDropOpen((o) => !o)}
               className="flex items-center gap-2 p-1 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer"
             >
-              <div className="w-7 h-7 rounded-lg bg-[#1a5c2a] text-white font-black text-xs flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-[#1a5c2a] font-black text-xs flex items-center justify-center" style={{ color: "#f0b429" }}>
                 {initials(user?.name)}
               </div>
               <ChevronDown size={14} className="text-gray-500 mr-1" />
@@ -288,7 +288,7 @@ function PostComposer({ user, token, onPosted }: { user: any; token: string | nu
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4 shadow-sm">
       <div className="flex gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[#1a5c2a] text-white font-black text-sm flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-[#1a5c2a] font-black text-sm flex items-center justify-center shrink-0" style={{ color: "#f0b429" }}>
           {initials(user?.name)}
         </div>
         <textarea
@@ -310,7 +310,7 @@ function PostComposer({ user, token, onPosted }: { user: any; token: string | nu
                 onClick={() => setPostType(t)}
                 className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all border ${
                   postType === t
-                    ? "bg-[#1a5c2a] border-[#1a5c2a] text-white"
+                    ? "bg-[#1a5c2a] border-[#1a5c2a] text-[#f0b429]"
                     : "bg-white border-gray-200 text-gray-500 hover:text-gray-900"
                 }`}
               >
@@ -357,7 +357,7 @@ function PostComposer({ user, token, onPosted }: { user: any; token: string | nu
               <button
                 onClick={handleSubmit}
                 disabled={!body.trim() || submitting}
-                className="bg-[#1a5c2a] text-white px-5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-40 transition-all shadow-sm"
+                className="bg-[#1a5c2a] px-5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider disabled:opacity-40 transition-all shadow-sm" style={{ color: "#f0b429" }}
               >
                 {submitting ? "Posting..." : "Post Update"}
               </button>
@@ -432,7 +432,7 @@ function CommentSection({ postId, token }: { postId: string; token: string | nul
           />
           <button
             onClick={pushComment}
-            className="bg-[#1a5c2a] text-white p-1.5 rounded-xl flex items-center justify-center shadow-sm"
+            className="bg-[#1a5c2a] p-1.5 rounded-xl flex items-center justify-center shadow-sm" style={{ color: "#f0b429" }}
           >
             <Send size={14} />
           </button>
@@ -569,7 +569,7 @@ function LeftPanel({ user, token }: { user: any; token: string | null }) {
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="h-12 bg-gradient-to-r from-[#1a5c2a] to-emerald-700" />
         <div className="p-4 pt-0 -mt-6 text-center">
-          <div className="w-12 h-12 rounded-xl bg-[#1a5c2a] border-4 border-white text-white font-black text-base mx-auto flex items-center justify-center shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-[#1a5c2a] border-4 border-white font-black text-base mx-auto flex items-center justify-center shadow-sm" style={{ color: "#f0b429" }}>
             {initials(user?.name)}
           </div>
           <h2 className="text-sm font-black text-gray-900 mt-2 truncate">{user?.name}</h2>
@@ -725,7 +725,7 @@ function RightPanel({ token }: { token: string | null }) {
                   <p className="text-xs font-black text-gray-900 truncate">{s.name}</p>
                   <p className="text-[10px] font-bold text-gray-400 truncate">{s.org} · {s.province}</p>
                 </div>
-                <Link href={`/arena/profile/${s.id}`} className="text-[10px] font-black uppercase text-[#1a5c2a] bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-[#1a5c2a] hover:text-white transition-all">
+                <Link href={`/arena/profile/${s.id}`} className="text-[10px] font-black uppercase text-[#1a5c2a] bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-[#1a5c2a] hover:text-[#f0b429] transition-all">
                   View
                 </Link>
               </div>
