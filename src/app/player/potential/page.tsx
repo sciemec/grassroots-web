@@ -210,7 +210,7 @@ Keep it motivating but honest. Zimbabwe grassroots context.`;
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Left — Current Profile */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+            <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 backdrop-blur-sm p-6">
               <div className="mb-4 flex items-center gap-2">
                 <Star className="h-5 w-5 text-[#f0b429]" />
                 <h2 className="font-semibold">Current Profile — {user?.name ?? "Athlete"}</h2>
@@ -292,7 +292,7 @@ Keep it motivating but honest. Zimbabwe grassroots context.`;
             </div>
 
             {/* Right — Results */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+            <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 backdrop-blur-sm p-6">
               <div className="mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-[#f0b429]" />
                 <h2 className="font-semibold">AI Trajectory Results</h2>
@@ -345,28 +345,28 @@ Keep it motivating but honest. Zimbabwe grassroots context.`;
 
                   {/* Stats grid */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-muted/30 p-3">
+                    <div className="rounded-xl border border-[#f0b429]/15 bg-muted/30 p-3">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">Readiness Age</p>
                       </div>
                       <p className="text-sm font-semibold">Age {backendResult.readiness_age}</p>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-muted/30 p-3">
+                    <div className="rounded-xl border border-[#f0b429]/15 bg-muted/30 p-3">
                       <div className="flex items-center gap-1.5 mb-1">
                         <BarChart2 className="h-3.5 w-3.5 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">Percentile</p>
                       </div>
                       <p className="text-sm font-semibold">Top {100 - backendResult.percentile}%</p>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-muted/30 p-3">
+                    <div className="rounded-xl border border-[#f0b429]/15 bg-muted/30 p-3">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Zap className="h-3.5 w-3.5 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">Velocity</p>
                       </div>
                       <VelocityBadge velocity={backendResult.velocity} />
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-muted/30 p-3">
+                    <div className="rounded-xl border border-[#f0b429]/15 bg-muted/30 p-3">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Target className="h-3.5 w-3.5 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">Consistency</p>
@@ -376,7 +376,7 @@ Keep it motivating but honest. Zimbabwe grassroots context.`;
                   </div>
 
                   {/* Peak level */}
-                  <div className="rounded-xl border border-white/10 bg-muted/30 p-4">
+                  <div className="rounded-xl border border-[#f0b429]/15 bg-muted/30 p-4">
                     <p className="mb-1 text-xs text-muted-foreground uppercase tracking-wider">Projected Peak Level</p>
                     <p className={`text-lg font-bold ${PEAK_LEVEL_COLORS[backendResult.peak_level] ?? "text-[#f0b429]"}`}>
                       {PEAK_LEVEL_LABELS[backendResult.peak_level] ?? backendResult.peak_level}
@@ -443,14 +443,14 @@ Keep it motivating but honest. Zimbabwe grassroots context.`;
 
                   {/* Info grid */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-muted/30 p-3">
+                    <div className="rounded-xl border border-[#f0b429]/15 bg-muted/30 p-3">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">Years to Peak</p>
                       </div>
                       <p className="text-sm font-semibold">{result.yearsToPeak}</p>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-muted/30 p-3">
+                    <div className="rounded-xl border border-[#f0b429]/15 bg-muted/30 p-3">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Target className="h-3.5 w-3.5 text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">Scout Readiness</p>
