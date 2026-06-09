@@ -9,7 +9,7 @@ import {
   Bell, Search, Video, Image, Activity, Target,
   TrendingUp, Eye, Calendar, BookOpen, Shield,
   Flame, CheckCircle, Loader2, MapPin, ChevronRight,
-  Newspaper, Radio, Award
+  Newspaper, Radio, Award, GraduationCap
 } from "lucide-react";
 import { useAuthStore, roleHomePath } from "@/lib/auth-store";
 import { safeArray } from "@/lib/safe-array";
@@ -737,6 +737,17 @@ function RightPanel({ token }: { token: string | null }) {
   );
 }
 
+// ─── Wire ticker messages ───────────────────────────────────────────────────
+
+const WIRE = [
+  "Dynamos FC 2–1 Highlanders · 67' — NSS is electric tonight",
+  "K.M. (U17 Striker, Harare) clocked 2.84s sprint — open for scouting",
+  "T.N. (Bulawayo) earned the Rising Star badge this week",
+  "3 new scout verification requests pending review",
+  "Munhumutapa Challenge Cup 2026 — registration open for U14 & U16",
+  "Zimbabwe U20 squad announced for COSAFA Cup qualifiers",
+];
+
 // ─── Core Arena App Component ──────────────────────────────────────────────
 
 export default function ArenaFeedPage() {
@@ -745,6 +756,7 @@ export default function ArenaFeedPage() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const router = useRouter();
 
+  const [wireIndex, setWireIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
   const [posts, setPosts] = useState<ArenaPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -776,6 +788,11 @@ export default function ArenaFeedPage() {
   };
 
   useEffect(() => {
+    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     if (!hasHydrated) return;
     if (!user) router.replace("/login");
   }, [hasHydrated, user, router]);
@@ -796,6 +813,44 @@ export default function ArenaFeedPage() {
 
   return (
     <div className="bg-[#f4f2ee] min-h-screen text-gray-900 antialiased font-sans">
+
+      {/* Brand header */}
+      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
+              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
+              GRS
+            </div>
+            <div>
+              <p className="font-black text-white text-sm uppercase tracking-wider leading-none">GrassRoots Sports</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>The Arena</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <GraduationCap size={14} style={{ color: "#f0b429" }} />
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
+              <p className="text-[10px] font-black uppercase text-white">Teach For Zimbabwe</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Live wire ticker */}
+      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
+            style={{ backgroundColor: "#dc2626" }}>
+            <Radio size={9} className="animate-pulse" /> Live Wire
+          </span>
+          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
+            {WIRE[wireIndex]}
+          </p>
+        </div>
+      </div>
+
       <ArenaNav user={user} token={token} />
 
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-4 gap-6">
