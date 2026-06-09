@@ -136,7 +136,7 @@ export default function PlayerDashboardHome() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
-            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            style={{ backgroundColor: "rgba(240,180,41,0.1)", border: "1px solid rgba(240,180,41,0.15)" }}>
             <GraduationCap size={14} style={{ color: "#f0b429" }} />
             <div>
               <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
@@ -201,7 +201,7 @@ export default function PlayerDashboardHome() {
                 { label: "THUTO Score", value: "—", Icon: Star },
               ].map(({ label, value, Icon }) => (
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
-                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  style={{ backgroundColor: "rgba(240,180,41,0.07)", border: "1px solid rgba(240,180,41,0.15)" }}>
                   <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
                   <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
                   <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
@@ -263,7 +263,7 @@ export default function PlayerDashboardHome() {
           <Link
             href="/talent-leaderboard"
             className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(240,180,41,0.1)" }}
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -281,7 +281,7 @@ export default function PlayerDashboardHome() {
           <Link
             href="/arena"
             className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(240,180,41,0.1)" }}
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
