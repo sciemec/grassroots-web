@@ -167,13 +167,13 @@ export default function TalentIdPage() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+            className="p-2 rounded-full bg-[#f0b429]/10 hover:bg-[#f0b429]/20 text-[#f0b429]"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-white">Scout Profile</h1>
-            <p className="text-sm text-white/60">Your talent card for scouts & coaches</p>
+            <h1 className="text-xl font-bold text-[#f0b429]">Scout Profile</h1>
+            <p className="text-sm text-[#f0b429]/70">Your talent card for scouts & coaches</p>
           </div>
         </div>
 
@@ -196,7 +196,7 @@ export default function TalentIdPage() {
           <div className="space-y-4">
 
             {/* Identity Card */}
-            <div className="rounded-2xl bg-white/10 border border-white/10 p-5">
+            <div className="rounded-2xl bg-[#f0b429]/10 border border-[#f0b429]/15 p-5">
               <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div className="w-16 h-16 rounded-full bg-[#f0b429]/20 border-2 border-[#f0b429] flex items-center justify-center flex-shrink-0">
@@ -215,9 +215,9 @@ export default function TalentIdPage() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-white truncate">{displayName}</h2>
+                  <h2 className="text-lg font-bold text-[#f0b429] truncate">{displayName}</h2>
 
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-white/70">
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-[#f0b429]/80">
                     {position && (
                       <span className="flex items-center gap-1">
                         <Shirt className="w-3.5 h-3.5" /> {position}
@@ -241,23 +241,23 @@ export default function TalentIdPage() {
                   </div>
 
                   {profile?.club && (
-                    <p className="mt-1 text-xs text-white/50">{profile.club}</p>
+                    <p className="mt-1 text-xs text-[#f0b429]/60">{profile.club}</p>
                   )}
                 </div>
               </div>
 
               {profile?.bio && (
-                <p className="mt-3 text-sm text-white/70 border-t border-white/10 pt-3">
+                <p className="mt-3 text-sm text-[#f0b429]/80 border-t border-[#f0b429]/15 pt-3">
                   {profile.bio}
                 </p>
               )}
             </div>
 
             {/* Open for Scouting toggle */}
-            <div className="rounded-2xl bg-white/10 border border-white/10 p-4 flex items-center justify-between">
+            <div className="rounded-2xl bg-[#f0b429]/10 border border-[#f0b429]/15 p-4 flex items-center justify-between">
               <div>
-                <p className="text-white font-medium text-sm">Open for Scouting</p>
-                <p className="text-white/50 text-xs mt-0.5">
+                <p className="text-[#f0b429] font-medium text-sm">Open for Scouting</p>
+                <p className="text-[#f0b429]/60 text-xs mt-0.5">
                   {scouting
                     ? "Scouts can find and contact you"
                     : "Hidden from scout discovery feed"}
@@ -269,7 +269,7 @@ export default function TalentIdPage() {
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   scouting
                     ? "bg-[#f0b429] text-[#1a3a1a]"
-                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                    : "bg-[#f0b429]/10 text-[#f0b429]/70 hover:bg-[#f0b429]/20"
                 }`}
               >
                 {scouting ? (
@@ -282,15 +282,15 @@ export default function TalentIdPage() {
 
             {/* Stats row */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-white/10 border border-white/10 p-4 text-center">
+              <div className="rounded-2xl bg-[#f0b429]/10 border border-[#f0b429]/15 p-4 text-center">
                 <p className="text-3xl font-bold text-[#f0b429]">{completedSessions.length}</p>
-                <p className="text-xs text-white/60 mt-1">Sessions Logged</p>
+                <p className="text-xs text-[#f0b429]/70 mt-1">Sessions Logged</p>
               </div>
-              <div className="rounded-2xl bg-white/10 border border-white/10 p-4 text-center">
+              <div className="rounded-2xl bg-[#f0b429]/10 border border-[#f0b429]/15 p-4 text-center">
                 <p className="text-3xl font-bold text-[#f0b429]">
                   {avgScore !== null ? avgScore : "—"}
                 </p>
-                <p className="text-xs text-white/60 mt-1">Avg Score</p>
+                <p className="text-xs text-[#f0b429]/70 mt-1">Avg Score</p>
               </div>
             </div>
 
@@ -300,7 +300,7 @@ export default function TalentIdPage() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-emerald-500" />
-                    <p className="text-xs font-bold text-white">Biometric Profile</p>
+                    <p className="text-xs font-bold text-[#f0b429]">Biometric Profile</p>
                   </div>
                   <Link href="/player/training/progress" className="text-[10px] text-emerald-400 hover:text-emerald-300">
                     View Full History →
@@ -315,7 +315,7 @@ export default function TalentIdPage() {
                   </div>
                   <div>
                     <p className="text-[9px] text-gray-500">Fatigue Index</p>
-                    <p className="text-2xl font-bold text-white">—</p>
+                    <p className="text-2xl font-bold text-[#f0b429]">—</p>
                   </div>
                 </div>
               </div>
@@ -327,8 +327,8 @@ export default function TalentIdPage() {
                 <p className="text-xs text-[#f0b429] font-semibold uppercase tracking-wide mb-1">
                   Plays Like
                 </p>
-                <p className="text-white font-bold">{playsLike}</p>
-                <p className="text-white/50 text-xs mt-0.5">
+                <p className="text-[#f0b429] font-bold">{playsLike}</p>
+                <p className="text-[#f0b429]/60 text-xs mt-0.5">
                   Based on your position profile
                 </p>
               </div>
@@ -336,8 +336,8 @@ export default function TalentIdPage() {
 
             {/* No profile prompt */}
             {!position && !profile?.sport && (
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
-                <p className="text-white/60 text-sm">Complete your profile to unlock your full scout card</p>
+              <div className="rounded-2xl bg-[#f0b429]/5 border border-[#f0b429]/15 p-4 text-center">
+                <p className="text-[#f0b429]/70 text-sm">Complete your profile to unlock your full scout card</p>
                 <Link
                   href="/player/profile"
                   className="inline-block mt-2 text-[#f0b429] text-sm font-medium hover:underline"
@@ -351,30 +351,30 @@ export default function TalentIdPage() {
             <div className="space-y-2">
               <Link
                 href="/player/showcase"
-                className="flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-4 hover:bg-white/15 transition-colors"
+                className="flex items-center justify-between rounded-xl bg-[#f0b429]/10 border border-[#f0b429]/15 p-4 hover:bg-[#f0b429]/15 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <Video className="w-5 h-5 text-[#f0b429]" />
                   <div>
-                    <p className="text-white text-sm font-medium">Showcase Clips</p>
-                    <p className="text-white/50 text-xs">Upload skill videos for scouts</p>
+                    <p className="text-[#f0b429] text-sm font-medium">Showcase Clips</p>
+                    <p className="text-[#f0b429]/60 text-xs">Upload skill videos for scouts</p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-white/40" />
+                <ChevronRight className="w-4 h-4 text-[#f0b429]/50" />
               </Link>
 
               <Link
                 href="/player/potential"
-                className="flex items-center justify-between rounded-xl bg-white/10 border border-white/10 p-4 hover:bg-white/15 transition-colors"
+                className="flex items-center justify-between rounded-xl bg-[#f0b429]/10 border border-[#f0b429]/15 p-4 hover:bg-[#f0b429]/15 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-5 h-5 text-[#f0b429]" />
                   <div>
-                    <p className="text-white text-sm font-medium">My Potential</p>
-                    <p className="text-white/50 text-xs">Development trajectory & peak rating</p>
+                    <p className="text-[#f0b429] text-sm font-medium">My Potential</p>
+                    <p className="text-[#f0b429]/60 text-xs">Development trajectory & peak rating</p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-white/40" />
+                <ChevronRight className="w-4 h-4 text-[#f0b429]/50" />
               </Link>
             </div>
 
