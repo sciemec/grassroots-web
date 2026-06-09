@@ -657,7 +657,7 @@ export default function PitchModePage() {
 
   // ─── Base full-screen class ─────────────────────────────────────────────────
 
-  const BASE = "fixed inset-0 flex flex-col items-center justify-center bg-[#15803d] text-white select-none overflow-hidden";
+  const BASE = "fixed inset-0 flex flex-col items-center justify-center bg-[#15803d] text-[#f0b429] select-none overflow-hidden";
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (phase === "loading") {
@@ -676,7 +676,7 @@ export default function PitchModePage() {
         <div className="w-full max-w-sm px-6 text-center">
           <p className="text-5xl">📋</p>
           <h1 className="mt-4 text-2xl font-bold">No session today</h1>
-          <p className="mt-2 text-base text-white/70">Ask THUTO to create your 7-day schedule first.</p>
+          <p className="mt-2 text-base text-[#f0b429]/70">Ask THUTO to create your 7-day schedule first.</p>
           <button
             onClick={() => router.push("/player/training")}
             className="mt-8 w-full rounded-2xl bg-white px-8 py-4 text-lg font-bold text-[#15803d]"
@@ -685,9 +685,9 @@ export default function PitchModePage() {
           </button>
 
           {/* Conditioning alternative */}
-          <div className="mt-4 rounded-2xl border border-white/20 bg-white/10 p-4 text-left">
-            <p className="text-sm font-bold text-white">⚡ No schedule? Try Conditioning</p>
-            <p className="mt-1 text-xs text-white/60">Pick a category and THUTO guides you through.</p>
+          <div className="mt-4 rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/10 p-4 text-left">
+            <p className="text-sm font-bold text-[#f0b429]">⚡ No schedule? Try Conditioning</p>
+            <p className="mt-1 text-xs text-[#f0b429]/60">Pick a category and THUTO guides you through.</p>
             <button
               onClick={() => { setModeTab("conditioning"); setPhase("ready"); }}
               className="mt-3 w-full rounded-xl bg-[#f0b429] py-2.5 text-sm font-bold text-[#1a3a1a]"
@@ -696,7 +696,7 @@ export default function PitchModePage() {
             </button>
           </div>
 
-          <button onClick={() => router.push("/player")} className="mt-4 block text-center text-sm text-white/50 underline">
+          <button onClick={() => router.push("/player")} className="mt-4 block text-center text-sm text-[#f0b429]/50 underline">
             Back to Hub
           </button>
         </div>
@@ -711,13 +711,13 @@ export default function PitchModePage() {
         <div className="w-full max-w-sm px-6 text-center">
           <p className="text-6xl">😴</p>
           <h1 className="mt-4 text-3xl font-bold">Rest Day</h1>
-          <p className="mt-3 text-lg text-white/80">Today is recovery. Eat well. Sleep. Come back stronger.</p>
-          <p className="mt-2 text-base italic text-white/60">&quot;Zororo ndirwo ruzivo — rest is wisdom.&quot;</p>
+          <p className="mt-3 text-lg text-[#f0b429]/80">Today is recovery. Eat well. Sleep. Come back stronger.</p>
+          <p className="mt-2 text-base italic text-[#f0b429]/60">&quot;Zororo ndirwo ruzivo — rest is wisdom.&quot;</p>
 
           {/* Conditioning alternative */}
-          <div className="mt-6 rounded-2xl border border-white/20 bg-white/10 p-4 text-left">
-            <p className="text-sm font-bold text-white">🏃 Light conditioning available</p>
-            <p className="mt-1 text-xs text-white/60">FIFA 11+ warm-up or mobility work recommended on rest days.</p>
+          <div className="mt-6 rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/10 p-4 text-left">
+            <p className="text-sm font-bold text-[#f0b429]">🏃 Light conditioning available</p>
+            <p className="mt-1 text-xs text-[#f0b429]/60">FIFA 11+ warm-up or mobility work recommended on rest days.</p>
             <button
               onClick={() => {
                 selectCondCategory("fifa_warmup");
@@ -753,11 +753,11 @@ export default function PitchModePage() {
 
         <div className="w-full max-w-sm px-6">
           {/* Tab bar */}
-          <div className="mb-5 flex gap-1 rounded-2xl border border-white/20 bg-white/10 p-1">
+          <div className="mb-5 flex gap-1 rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/10 p-1">
             <button
               onClick={() => setModeTab("drills")}
               className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors ${
-                modeTab === "drills" ? "bg-white text-[#15803d]" : "text-white/60"
+                modeTab === "drills" ? "bg-white text-[#15803d]" : "text-[#f0b429]/60"
               }`}
             >
               🏋️ Training Drills
@@ -765,7 +765,7 @@ export default function PitchModePage() {
             <button
               onClick={() => setModeTab("conditioning")}
               className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors ${
-                modeTab === "conditioning" ? "bg-[#f0b429] text-[#1a3a1a]" : "text-white/60"
+                modeTab === "conditioning" ? "bg-[#f0b429] text-[#1a3a1a]" : "text-[#f0b429]/60"
               }`}
             >
               ⚡ Conditioning
@@ -777,27 +777,27 @@ export default function PitchModePage() {
             <>
               {session ? (
                 <>
-                  <p className="text-sm font-semibold uppercase tracking-widest text-white/60">
+                  <p className="text-sm font-semibold uppercase tracking-widest text-[#f0b429]/60">
                     {session.day.day} · {session.day.intensity?.toUpperCase() ?? "MEDIUM"} INTENSITY
                   </p>
                   <h1 className="mt-2 text-3xl font-bold">{session.day.focus}</h1>
-                  <p className="mt-1 text-white/70">{session.day.total_duration_minutes} min total</p>
+                  <p className="mt-1 text-[#f0b429]/70">{session.day.total_duration_minutes} min total</p>
 
                   <div className="mt-6 max-h-48 space-y-2 overflow-y-auto">
                     {session.day.drills?.map((d, i) => (
                       <button
                         key={i}
                         onClick={() => startDrillAt(i)}
-                        className="flex w-full items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-left transition-all hover:bg-white/20 active:scale-[0.98]"
+                        className="flex w-full items-center gap-3 rounded-2xl bg-[#f0b429]/10 px-4 py-3 text-left transition-all hover:bg-[#f0b429]/20 active:scale-[0.98]"
                       >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/20 text-sm font-bold">
                           {i + 1}
                         </span>
                         <div className="flex-1">
                           <p className="font-semibold">{d.name}</p>
-                          <p className="text-sm text-white/60">{d.duration_minutes} min · {d.equipment_needed}</p>
+                          <p className="text-sm text-[#f0b429]/60">{d.duration_minutes} min · {d.equipment_needed}</p>
                         </div>
-                        <span className="text-[10px] text-white/30">tap →</span>
+                        <span className="text-[10px] text-[#f0b429]/30">tap →</span>
                       </button>
                     ))}
                   </div>
@@ -810,14 +810,14 @@ export default function PitchModePage() {
                   </button>
                   <button
                     onClick={() => router.push("/player/session")}
-                    className="mt-3 w-full rounded-2xl border border-white/20 py-3 text-sm text-white/60 hover:text-white/80"
+                    className="mt-3 w-full rounded-2xl border border-[#f0b429]/20 py-3 text-sm text-[#f0b429]/60 hover:text-[#f0b429]/80"
                   >
                     🎙 Switch to Voice Mode
                   </button>
                 </>
               ) : (
                 <>
-                  <p className="text-center text-white/70">No training session scheduled for today.</p>
+                  <p className="text-center text-[#f0b429]/70">No training session scheduled for today.</p>
                   <button
                     onClick={() => router.push("/player/training")}
                     className="mt-4 w-full rounded-2xl bg-white py-4 text-base font-bold text-[#15803d]"
@@ -829,7 +829,7 @@ export default function PitchModePage() {
 
               {/* Drill formats — always visible */}
               <div className="mt-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#f0b429]/50">
                   Drill Formats
                 </p>
                 <div className="grid grid-cols-3 gap-2">
@@ -844,13 +844,13 @@ export default function PitchModePage() {
                       className={`rounded-2xl border px-2 py-3 text-center transition-all hover:opacity-80 ${color}`}
                     >
                       <span className="block text-xl">{emoji}</span>
-                      <span className="mt-1 block text-[11px] font-bold text-white">{label}</span>
+                      <span className="mt-1 block text-[11px] font-bold text-[#f0b429]">{label}</span>
                     </Link>
                   ))}
                 </div>
                 <Link
                   href="/player/drills"
-                  className="mt-2 block text-center text-xs text-white/40 underline underline-offset-2 hover:text-white/60"
+                  className="mt-2 block text-center text-xs text-[#f0b429]/40 underline underline-offset-2 hover:text-[#f0b429]/60"
                 >
                   All drills &amp; formats →
                 </Link>
@@ -869,11 +869,11 @@ export default function PitchModePage() {
                   className={`w-full rounded-2xl border p-4 text-left transition-all ${
                     condCategory === null && condCards.length > 0
                       ? "border-[#f0b429] bg-[#f0b429]/10"
-                      : "border-white/20 bg-white/5"
+                      : "border-[#f0b429]/20 bg-[#f0b429]/5"
                   }`}
                 >
-                  <p className="text-sm font-bold text-white">📅 Today's conditioning plan</p>
-                  <p className="mt-0.5 text-xs text-white/60">
+                  <p className="text-sm font-bold text-[#f0b429]">📅 Today's conditioning plan</p>
+                  <p className="mt-0.5 text-xs text-[#f0b429]/60">
                     {todayCondCards.length} exercises from your week plan
                   </p>
                 </button>
@@ -881,7 +881,7 @@ export default function PitchModePage() {
 
               {/* Category picker */}
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#f0b429]/50">
                   Or pick a category
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -892,12 +892,12 @@ export default function PitchModePage() {
                       className={`rounded-2xl border px-4 py-3 text-left transition-all ${
                         condCategory === id
                           ? color
-                          : "border-white/10 bg-white/5 text-white/70"
+                          : "border-[#f0b429]/15 bg-[#f0b429]/5 text-[#f0b429]/70"
                       }`}
                     >
                       <span className="block text-xl">{emoji}</span>
                       <span className="mt-1 block text-sm font-bold">{label}</span>
-                      <span className="text-[10px] text-white/40">
+                      <span className="text-[10px] text-[#f0b429]/40">
                         {allCondCards.filter((c) => c.category === id).length} exercises
                       </span>
                     </button>
@@ -908,18 +908,18 @@ export default function PitchModePage() {
               {/* Browse library link */}
               <Link
                 href="/player/conditioning"
-                className="block text-center text-xs text-white/40 underline underline-offset-2 hover:text-white/60"
+                className="block text-center text-xs text-[#f0b429]/40 underline underline-offset-2 hover:text-[#f0b429]/60"
               >
                 Browse full exercise library →
               </Link>
 
               {/* Selected count + Start */}
               {condCards.length > 0 && (
-                <div className="rounded-2xl border border-white/20 bg-white/10 p-4">
-                  <p className="text-sm font-semibold text-white">
+                <div className="rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/10 p-4">
+                  <p className="text-sm font-semibold text-[#f0b429]">
                     {condCards.length} exercise{condCards.length !== 1 ? "s" : ""} · ~{condEstMin} min
                   </p>
-                  <p className="mt-0.5 text-xs text-white/50">
+                  <p className="mt-0.5 text-xs text-[#f0b429]/50">
                     {condCategory
                       ? CONDITIONING_CATEGORIES.find((c) => c.id === condCategory)?.label
                       : "Today's plan"}{" "}
@@ -936,7 +936,7 @@ export default function PitchModePage() {
             </div>
           )}
 
-          <button onClick={() => router.push("/player")} className="mt-4 block w-full text-center text-sm text-white/40 underline">
+          <button onClick={() => router.push("/player")} className="mt-4 block w-full text-center text-sm text-[#f0b429]/40 underline">
             Cancel
           </button>
         </div>
@@ -948,7 +948,7 @@ export default function PitchModePage() {
   if (phase === "warmup") {
     return (
       <div className={BASE}>
-        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20 hover:text-[#f0b429]" aria-label="Exit to hub">✕</button>
         <div className="relative flex h-[200px] w-[200px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} />
           <div className="text-center">
@@ -964,20 +964,20 @@ export default function PitchModePage() {
               onClick={() => { setWarmupExerciseIdx(i); setShowFormCheck(true); }}
               className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs transition-colors ${
                 warmupExerciseIdx === i && showFormCheck
-                  ? "bg-white/25 text-white"
-                  : "bg-white/10 text-white/70 hover:bg-white/15"
+                  ? "bg-[#f0b429]/25 text-[#f0b429]"
+                  : "bg-[#f0b429]/10 text-[#f0b429]/70 hover:bg-[#f0b429]/15"
               }`}
             >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/20 text-[10px] font-bold">
                 {i + 1}
               </span>
               <span className="font-medium">{(ex as { name: string }).name}</span>
-              <span className="ml-auto text-[10px] text-white/40">tap to check form</span>
+              <span className="ml-auto text-[10px] text-[#f0b429]/40">tap to check form</span>
             </button>
           ))}
         </div>
 
-        <p className="mt-4 max-w-xs px-6 text-center text-sm italic text-white/60">
+        <p className="mt-4 max-w-xs px-6 text-center text-sm italic text-[#f0b429]/60">
           &quot;{motivationMsg}&quot;
         </p>
 
@@ -995,8 +995,8 @@ export default function PitchModePage() {
   if (phase === "drill" && currentDrill) {
     return (
       <div className={`${BASE} justify-start overflow-y-auto pt-16 pb-32`}>
-        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white z-20" aria-label="Exit to hub">✕</button>
-        <p className="absolute top-6 left-0 right-0 text-center text-sm font-semibold uppercase tracking-widest text-white/50">
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20 hover:text-[#f0b429] z-20" aria-label="Exit to hub">✕</button>
+        <p className="absolute top-6 left-0 right-0 text-center text-sm font-semibold uppercase tracking-widest text-[#f0b429]/50">
           Drill {drillNumber} of {drillsTotal}
         </p>
 
@@ -1011,14 +1011,14 @@ export default function PitchModePage() {
         {/* Drill name + equipment */}
         <h2 className="mt-4 px-6 text-center text-2xl font-bold">{currentDrill.name}</h2>
         {currentDrill.equipment_needed && currentDrill.equipment_needed !== "none" && currentDrill.equipment_needed !== "None" && (
-          <p className="mt-1 text-xs text-white/40">🎽 {currentDrill.equipment_needed}</p>
+          <p className="mt-1 text-xs text-[#f0b429]/40">🎽 {currentDrill.equipment_needed}</p>
         )}
 
         {/* Instructions */}
         <div className="mt-4 w-full max-w-sm px-5">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">How to do it</p>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-sm leading-relaxed text-white/80">{currentDrill.instructions}</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]/40">How to do it</p>
+          <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-4">
+            <p className="text-sm leading-relaxed text-[#f0b429]/80">{currentDrill.instructions}</p>
           </div>
         </div>
 
@@ -1032,19 +1032,19 @@ export default function PitchModePage() {
             <span className="flex-1 text-sm font-semibold text-[#f0b429]">
               {thutoTipLoading ? "THUTO is thinking…" : "THUTO coaching tip"}
             </span>
-            <span className="text-xs text-white/30">{showThutoPanel ? "▲" : "▼"}</span>
+            <span className="text-xs text-[#f0b429]/30">{showThutoPanel ? "▲" : "▼"}</span>
           </button>
           {showThutoPanel && (
             <div className="mt-1 rounded-2xl border border-[#f0b429]/20 bg-black/30 px-4 py-4">
               {thutoTipLoading ? (
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <div className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+                <div className="flex items-center gap-2 text-xs text-[#f0b429]/50">
+                  <div className="h-3 w-3 animate-spin rounded-full border border-[#f0b429]/30 border-t-white" />
                   Loading coaching tips…
                 </div>
               ) : thutoTip ? (
-                <p className="whitespace-pre-line text-sm leading-relaxed text-white/80">{thutoTip}</p>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-[#f0b429]/80">{thutoTip}</p>
               ) : (
-                <p className="text-xs text-white/40">Focus on your form. Quality over speed. THUTO is watching every rep.</p>
+                <p className="text-xs text-[#f0b429]/40">Focus on your form. Quality over speed. THUTO is watching every rep.</p>
               )}
             </div>
           )}
@@ -1054,11 +1054,11 @@ export default function PitchModePage() {
         <div className="mt-4 w-full max-w-sm px-5">
           <button
             onClick={() => setShowFormCheck(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 py-3 text-sm font-semibold text-white transition-all hover:bg-white/20 active:scale-95"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/10 py-3 text-sm font-semibold text-[#f0b429] transition-all hover:bg-[#f0b429]/20 active:scale-95"
           >
             📷 Check My Form with Camera
           </button>
-          <p className="mt-2 text-center text-xs italic text-white/40">&quot;{motivationMsg}&quot;</p>
+          <p className="mt-2 text-center text-xs italic text-[#f0b429]/40">&quot;{motivationMsg}&quot;</p>
         </div>
 
         {showFormCheck && (
@@ -1069,11 +1069,11 @@ export default function PitchModePage() {
         )}
 
         {/* Bottom CTA — upload for scouts */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-[#15803d]/95 px-5 py-4 backdrop-blur-sm">
-          <p className="mb-2 text-center text-[10px] text-white/40">After your session — share your performance with scouts</p>
+        <div className="absolute bottom-0 left-0 right-0 border-t border-[#f0b429]/15 bg-[#15803d]/95 px-5 py-4 backdrop-blur-sm">
+          <p className="mb-2 text-center text-[10px] text-[#f0b429]/40">After your session — share your performance with scouts</p>
           <button
             onClick={() => { exitFullscreen(); router.push("/player/showcase"); }}
-            className="w-full rounded-2xl border border-white/20 bg-white/10 py-3 text-sm font-semibold text-white transition-all hover:bg-white/20"
+            className="w-full rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/10 py-3 text-sm font-semibold text-[#f0b429] transition-all hover:bg-[#f0b429]/20"
           >
             📤 Upload Clip for Scouts
           </button>
@@ -1087,18 +1087,18 @@ export default function PitchModePage() {
     const nextDrill = session?.day.drills?.[session.drillIndex + 1];
     return (
       <div className={BASE}>
-        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20 hover:text-[#f0b429]" aria-label="Exit to hub">✕</button>
         <div className="relative flex h-[200px] w-[200px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} />
           <div className="text-center">
             <p className="text-5xl font-bold tabular-nums">{secondsLeft}</p>
-            <p className="text-sm text-white/60">REST</p>
+            <p className="text-sm text-[#f0b429]/60">REST</p>
           </div>
         </div>
-        <p className="mt-6 text-xl font-semibold text-white/80">Catch your breath</p>
+        <p className="mt-6 text-xl font-semibold text-[#f0b429]/80">Catch your breath</p>
         {nextDrill && (
-          <p className="mt-3 text-sm text-white/50">
-            Next: <span className="font-semibold text-white">{nextDrill.name}</span>
+          <p className="mt-3 text-sm text-[#f0b429]/50">
+            Next: <span className="font-semibold text-[#f0b429]">{nextDrill.name}</span>
           </p>
         )}
       </div>
@@ -1109,7 +1109,7 @@ export default function PitchModePage() {
   if (phase === "cooldown") {
     return (
       <div className={BASE}>
-        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20 hover:text-[#f0b429]" aria-label="Exit to hub">✕</button>
         <div className="relative flex h-[200px] w-[200px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} />
           <div className="text-center">
@@ -1117,7 +1117,7 @@ export default function PitchModePage() {
           </div>
         </div>
         <p className="mt-8 text-xl font-bold uppercase tracking-widest">Cool Down</p>
-        <p className="mt-3 max-w-xs px-6 text-center text-sm italic text-white/70">
+        <p className="mt-3 max-w-xs px-6 text-center text-sm italic text-[#f0b429]/70">
           {session?.day.post_session_cooldown ?? "Static stretches. Breathe slowly."}
         </p>
       </div>
@@ -1131,21 +1131,21 @@ export default function PitchModePage() {
         <div className="w-full max-w-sm px-8 text-center">
           <p className="text-6xl">🏆</p>
           <h1 className="mt-4 text-3xl font-bold">Session Complete!</h1>
-          <p className="mt-2 text-lg text-white/70">
+          <p className="mt-2 text-lg text-[#f0b429]/70">
             {drillsTotal} drill{drillsTotal !== 1 ? "s" : ""} done — {session?.day.total_duration_minutes} min
           </p>
-          <p className="mt-3 text-base italic text-white/60">&quot;Zvakanaka zvakaitwa — well done!&quot;</p>
+          <p className="mt-3 text-base italic text-[#f0b429]/60">&quot;Zvakanaka zvakaitwa — well done!&quot;</p>
 
           {/* THUTO message about saving */}
           <div className="mt-5 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-4 text-left">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]">THUTO says</p>
-            <p className="text-sm leading-relaxed text-white/80">
+            <p className="text-sm leading-relaxed text-[#f0b429]/80">
               You just completed a full session — that takes courage. Now make it count for scouts:
             </p>
-            <ul className="mt-2 space-y-1 text-xs text-white/60">
-              <li>• <strong className="text-white/80">Upload a drill clip</strong> → scouts can find you in the Showcase tab</li>
-              <li>• <strong className="text-white/80">Log your session stats</strong> → builds your performance history</li>
-              <li>• <strong className="text-white/80">Turn on &quot;Open for Scouting&quot;</strong> in your Scout Profile</li>
+            <ul className="mt-2 space-y-1 text-xs text-[#f0b429]/60">
+              <li>• <strong className="text-[#f0b429]/80">Upload a drill clip</strong> → scouts can find you in the Showcase tab</li>
+              <li>• <strong className="text-[#f0b429]/80">Log your session stats</strong> → builds your performance history</li>
+              <li>• <strong className="text-[#f0b429]/80">Turn on &quot;Open for Scouting&quot;</strong> in your Scout Profile</li>
             </ul>
           </div>
 
@@ -1159,17 +1159,17 @@ export default function PitchModePage() {
             </button>
             <button
               onClick={() => { exitFullscreen(); router.push("/player/stats/new"); }}
-              className="w-full rounded-2xl border border-white/20 bg-white/10 py-3 text-sm font-semibold text-white transition-all hover:bg-white/20"
+              className="w-full rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/10 py-3 text-sm font-semibold text-[#f0b429] transition-all hover:bg-[#f0b429]/20"
             >
               📊 Log Session Stats
             </button>
           </div>
 
-          <p className="mt-6 text-sm font-semibold uppercase tracking-widest text-white/60">How did it feel?</p>
+          <p className="mt-6 text-sm font-semibold uppercase tracking-widest text-[#f0b429]/60">How did it feel?</p>
           <div className="mt-3 flex gap-4">
             <button
               onClick={() => saveDrillSession("tough")}
-              className="flex-1 rounded-2xl border border-white/30 bg-white/15 py-4 text-base font-bold transition-transform active:scale-95"
+              className="flex-1 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/15 py-4 text-base font-bold transition-transform active:scale-95"
             >
               😤 Tough but done
             </button>
@@ -1197,16 +1197,16 @@ export default function PitchModePage() {
     return (
       <div className={`${BASE} bg-[#1a3d26]`}>
         {/* Progress bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-white/10">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#f0b429]/10">
           <div
             className="h-full bg-[#f0b429] transition-all"
             style={{ width: `${(condIndex / condCards.length) * 100}%` }}
           />
         </div>
 
-        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20 hover:text-[#f0b429]" aria-label="Exit to hub">✕</button>
 
-        <p className="absolute top-5 left-4 text-sm font-semibold uppercase tracking-widest text-white/40">
+        <p className="absolute top-5 left-4 text-sm font-semibold uppercase tracking-widest text-[#f0b429]/40">
           Exercise {progress} of {condCards.length}
         </p>
 
@@ -1218,14 +1218,14 @@ export default function PitchModePage() {
               <p className="text-5xl font-bold tabular-nums text-[#f0b429]">
                 {formatTime(secondsLeft)}
               </p>
-              <p className="text-xs text-white/50">remaining</p>
+              <p className="text-xs text-[#f0b429]/50">remaining</p>
             </div>
           </div>
         ) : (
           <div className="flex h-[200px] w-[200px] items-center justify-center">
             <div className="text-center">
               <p className="text-5xl font-bold text-[#f0b429]">{currentCard.reps}</p>
-              <p className="mt-1 text-sm text-white/50">target reps</p>
+              <p className="mt-1 text-sm text-[#f0b429]/50">target reps</p>
             </div>
           </div>
         )}
@@ -1235,11 +1235,11 @@ export default function PitchModePage() {
         {/* Instructions — all steps */}
         <div className="mt-3 w-full max-w-xs space-y-1.5 px-6">
           {currentCard.instructions.map((step, i) => (
-            <div key={i} className="flex gap-2 rounded-xl bg-white/10 px-3 py-2.5">
+            <div key={i} className="flex gap-2 rounded-xl bg-[#f0b429]/10 px-3 py-2.5">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/30 text-[10px] font-bold text-[#f0b429]">
                 {i + 1}
               </span>
-              <p className="text-xs text-white/80">{step}</p>
+              <p className="text-xs text-[#f0b429]/80">{step}</p>
             </div>
           ))}
         </div>
@@ -1254,19 +1254,19 @@ export default function PitchModePage() {
             <span className="flex-1 text-xs font-semibold text-[#f0b429]">
               {thutoTipLoading ? "THUTO thinking…" : "THUTO coaching tip"}
             </span>
-            <span className="text-[10px] text-white/30">{showThutoPanel ? "▲" : "▼"}</span>
+            <span className="text-[10px] text-[#f0b429]/30">{showThutoPanel ? "▲" : "▼"}</span>
           </button>
           {showThutoPanel && (
             <div className="mt-1 rounded-xl border border-[#f0b429]/20 bg-black/30 px-3 py-3">
               {thutoTipLoading ? (
-                <div className="flex items-center gap-2 text-xs text-white/50">
-                  <div className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+                <div className="flex items-center gap-2 text-xs text-[#f0b429]/50">
+                  <div className="h-3 w-3 animate-spin rounded-full border border-[#f0b429]/30 border-t-white" />
                   Loading…
                 </div>
               ) : thutoTip ? (
-                <p className="whitespace-pre-line text-xs leading-relaxed text-white/80">{thutoTip}</p>
+                <p className="whitespace-pre-line text-xs leading-relaxed text-[#f0b429]/80">{thutoTip}</p>
               ) : (
-                <p className="text-xs text-white/40">Focus on form. Feel every rep. Quality beats speed.</p>
+                <p className="text-xs text-[#f0b429]/40">Focus on form. Feel every rep. Quality beats speed.</p>
               )}
             </div>
           )}
@@ -1275,7 +1275,7 @@ export default function PitchModePage() {
         {/* Form check button */}
         <button
           onClick={() => setShowFormCheck(true)}
-          className="mt-3 flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/20"
+          className="mt-3 flex items-center gap-1.5 rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/10 px-4 py-2.5 text-xs font-semibold text-[#f0b429] hover:bg-[#f0b429]/20"
         >
           📷 Check My Form
         </button>
@@ -1308,19 +1308,19 @@ export default function PitchModePage() {
     return (
       <div className={`${BASE} bg-[#1a3d26]`}>
         {/* Progress bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-white/10">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#f0b429]/10">
           <div
             className="h-full bg-[#f0b429] transition-all"
             style={{ width: `${((condIndex + 1) / condCards.length) * 100}%` }}
           />
         </div>
 
-        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 hover:text-white" aria-label="Exit to hub">✕</button>
+        <button onClick={exitToHub} className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20 hover:text-[#f0b429]" aria-label="Exit to hub">✕</button>
 
         {/* Countdown ring — subtle */}
         <div className="relative flex h-[140px] w-[140px] items-center justify-center">
           <TimerRing seconds={secondsLeft} total={totalSeconds} color="rgba(240,180,41,0.5)" />
-          <p className="text-3xl font-bold tabular-nums text-white/60">{secondsLeft}</p>
+          <p className="text-3xl font-bold tabular-nums text-[#f0b429]/60">{secondsLeft}</p>
         </div>
 
         {/* THUTO question */}
@@ -1328,26 +1328,26 @@ export default function PitchModePage() {
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]">
             THUTO asks
           </p>
-          <p className="text-base italic leading-relaxed text-white">
+          <p className="text-base italic leading-relaxed text-[#f0b429]">
             {currentCard.thuto_question}
           </p>
         </div>
 
         {/* What good feels like */}
-        <p className="mt-4 max-w-xs px-6 text-center text-xs italic text-white/40">
+        <p className="mt-4 max-w-xs px-6 text-center text-xs italic text-[#f0b429]/40">
           {currentCard.success_feels_like}
         </p>
 
         {/* Next card preview */}
         {nextCard && (
-          <p className="mt-4 text-sm text-white/40">
-            Next: <span className="font-semibold text-white">{nextCard.name}</span>
+          <p className="mt-4 text-sm text-[#f0b429]/40">
+            Next: <span className="font-semibold text-[#f0b429]">{nextCard.name}</span>
           </p>
         )}
 
         <button
           onClick={() => skipCondQuestion(condCards, condIndex + 1)}
-          className="absolute bottom-8 left-6 right-6 rounded-2xl border border-white/30 bg-white/10 py-4 text-base font-bold text-white transition-transform active:scale-95"
+          className="absolute bottom-8 left-6 right-6 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 py-4 text-base font-bold text-[#f0b429] transition-transform active:scale-95"
         >
           Ready for next →
         </button>
@@ -1365,10 +1365,10 @@ export default function PitchModePage() {
         <div className="w-full max-w-sm px-6 text-center">
           <p className="text-6xl">🏆</p>
           <h1 className="mt-4 text-3xl font-bold">Conditioning Complete!</h1>
-          <p className="mt-2 text-base text-white/70">
+          <p className="mt-2 text-base text-[#f0b429]/70">
             {condCompleted.length} exercise{condCompleted.length !== 1 ? "s" : ""} · {totalMin} min
           </p>
-          <p className="mt-3 text-sm italic text-white/50">
+          <p className="mt-3 text-sm italic text-[#f0b429]/50">
             &quot;Zvakanaka zvakaitwa — well done!&quot;
           </p>
 
@@ -1378,20 +1378,20 @@ export default function PitchModePage() {
               <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#f0b429]">
                 THUTO's joy prompt
               </p>
-              <p className="text-sm italic text-white/80">{lastCard.thuto_question}</p>
+              <p className="text-sm italic text-[#f0b429]/80">{lastCard.thuto_question}</p>
               <textarea
                 value={condJoy}
                 onChange={(e) => setCondJoy(e.target.value)}
                 placeholder="Optional — how did your body feel? Any moment that surprised you?"
                 rows={3}
-                className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-[#f0b429]/50 focus:outline-none"
+                className="mt-3 w-full rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-3 py-2 text-sm text-[#f0b429] placeholder:text-[#f0b429]/30 focus:border-[#f0b429]/50 focus:outline-none"
               />
             </div>
           )}
 
           {/* Intensity rating */}
           <div className="mt-5">
-            <p className="mb-3 text-sm font-semibold text-white">How did it feel?</p>
+            <p className="mb-3 text-sm font-semibold text-[#f0b429]">How did it feel?</p>
             <div className="grid grid-cols-2 gap-2">
               {INTENSITY_OPTIONS.map(({ value, label, emoji }) => (
                 <button
@@ -1399,8 +1399,8 @@ export default function PitchModePage() {
                   onClick={() => setCondIntensity(value)}
                   className={`rounded-2xl border py-3.5 text-center transition-colors ${
                     condIntensity === value
-                      ? "border-[#f0b429] bg-[#f0b429]/10 text-white"
-                      : "border-white/10 bg-white/5 text-white/70"
+                      ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
+                      : "border-[#f0b429]/15 bg-[#f0b429]/5 text-[#f0b429]/70"
                   }`}
                 >
                   <span className="block text-2xl">{emoji}</span>
@@ -1413,7 +1413,7 @@ export default function PitchModePage() {
           {/* Scout upload CTA */}
           <div className="mt-5 rounded-2xl border border-[#f0b429]/30 bg-[#f0b429]/10 p-4 text-left">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]">THUTO says</p>
-            <p className="text-sm text-white/80">
+            <p className="text-sm text-[#f0b429]/80">
               Great conditioning work. Upload a clip of your session so scouts can see your dedication and athleticism — not just your match stats.
             </p>
             <button
