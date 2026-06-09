@@ -1,4 +1,6 @@
 // app/api/world-cup/sync/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { syncAllWorldCupMatches } from '@/lib/world-cup/stats-aggregator';
 
