@@ -9,6 +9,7 @@ import {
   CheckCircle2, AlertTriangle, Apple, Brain, Activity
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { getPhaseForPosition, getPositionDrills } from "@/config/football-drill-matrix";
 
 // 🎛️ COMPLETE PERSONALIZED FOOTBALL TRACK DATA MATRIX
 const FOOTBALL_POSITION_DRILLS = {
@@ -124,6 +125,8 @@ export default function FootballDrillsLabPage() {
   }
 
   const selectedData = FOOTBALL_POSITION_DRILLS[activePosition];
+  const phase = getPhaseForPosition(activePosition, user.age);
+  const drills = getPositionDrills(activePosition, phase);
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 font-sans selection:bg-[#f0b429]/30 antialiased">
@@ -188,7 +191,7 @@ export default function FootballDrillsLabPage() {
                 <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider block">Ecosystem Sync Stats</span>
                 <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                   <span>Completed Routines</span>
-                  <span className="text-[#1c3d22] font-black">{completedDrills.length} / {selectedData.drills.length}</span>
+                  <span className="text-[#1c3d22] font-black">{completedDrills.length} / {drills.length}</span>
                 </div>
               </div>
             </div>
@@ -218,7 +221,7 @@ export default function FootballDrillsLabPage() {
 
           {/* RIGHT GRID EXCLUSIVE TARGETED POSITION DRILLS */}
           <div className="lg:col-span-8 space-y-3">
-            {selectedData.drills.map((drill) => {
+            {drills.map((drill) => {
               const isDone = completedDrills.includes(drill.id);
               const isDrillSyncing = isSyncing === drill.id;
               return (
