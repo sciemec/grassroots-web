@@ -4,14 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "vercel-build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "postinstall": "prisma generate && patch-package",
+    "postinstall": "patch-package",
     "deploy": "git add -u && git add src public && git commit -m \"deploy: update assets and features\" && git push"
   },
   "dependencies": {
