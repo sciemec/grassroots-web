@@ -11,7 +11,7 @@ const ROWS = 10;
 const TOTAL = COLS * ROWS;
 
 function zoneColor(count: number, maxCount: number): string {
-  if (count === 0 || maxCount === 0) return "bg-white/5";
+  if (count === 0 || maxCount === 0) return "bg-[#f0b429]/5";
   const ratio = count / maxCount;
   if (ratio >= 0.8) return "bg-[#ce1126]/80";
   if (ratio >= 0.6) return "bg-orange-500/70";
@@ -332,7 +332,7 @@ export default function HeatmapsPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Controls */}
           <div className="space-y-4 lg:col-span-1">
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Squad (one per line)
               </label>
@@ -344,7 +344,7 @@ export default function HeatmapsPage() {
               />
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Selected Player
               </label>
@@ -385,7 +385,7 @@ export default function HeatmapsPage() {
             </button>
 
             {/* Legend */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Intensity Legend</p>
               <div className="space-y-1.5">
                 {[
@@ -394,7 +394,7 @@ export default function HeatmapsPage() {
                   { label: "Medium",    cls: "bg-[#f0b429]/60" },
                   { label: "Low",       cls: "bg-yellow-300/40" },
                   { label: "Rare",      cls: "bg-green-500/20" },
-                  { label: "None",      cls: "bg-white/5 border border-white/10" },
+                  { label: "None",      cls: "bg-[#f0b429]/5 border border-[#f0b429]/10" },
                 ].map(({ label, cls }) => (
                   <div key={label} className="flex items-center gap-2">
                     <div className={`h-4 w-6 rounded ${cls}`} />
@@ -407,10 +407,10 @@ export default function HeatmapsPage() {
 
           {/* Heatmap pitch */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl overflow-hidden border border-white/20"
+            <div className="rounded-2xl overflow-hidden border border-[#f0b429]/20"
               style={{ background: "#2d6a2d" }}>
               {/* Attack label */}
-              <div className="py-2 text-center text-xs font-semibold uppercase tracking-widest text-white/50">
+              <div className="py-2 text-center text-xs font-semibold uppercase tracking-widest text-[#f0b429]/50">
                 Attack ↑
               </div>
               {/* Grid */}
@@ -429,7 +429,7 @@ export default function HeatmapsPage() {
                 ))}
               </div>
               {/* Defence label */}
-              <div className="py-2 text-center text-xs font-semibold uppercase tracking-widest text-white/50">
+              <div className="py-2 text-center text-xs font-semibold uppercase tracking-widest text-[#f0b429]/50">
                 Defence ↓
               </div>
             </div>

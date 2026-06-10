@@ -39,7 +39,7 @@ function outcomeColor(o: "W" | "D" | "L" | null) {
   if (o === "W") return "bg-green-500 text-white";
   if (o === "D") return "bg-yellow-400 text-black";
   if (o === "L") return "bg-[#ce1126] text-white";
-  return "bg-white/10 text-white/50";
+  return "bg-[#f0b429]/10 text-[#f0b429]/50";
 }
 
 export default function SeasonIntelligencePage() {
@@ -165,7 +165,7 @@ export default function SeasonIntelligencePage() {
         )}
 
         {isError && (
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-8 text-center">
             <p className="text-sm text-muted-foreground">
               Season data is only available to coaches. Log matches in the Coach Hub to populate this view.
             </p>
@@ -180,9 +180,9 @@ export default function SeasonIntelligencePage() {
                 { label: "Played",       value: played.length,   color: "text-white" },
                 { label: "Points",       value: points,          color: "text-[#f0b429]" },
                 { label: "Goal Diff",    value: `${goalDiff > 0 ? "+" : ""}${goalDiff}`, color: goalDiff >= 0 ? "text-green-400" : "text-red-400" },
-                { label: "W / D / L",    value: `${wins} / ${draws} / ${losses}`, color: "text-white/80" },
+                { label: "W / D / L",    value: `${wins} / ${draws} / ${losses}`, color: "text-[#f0b429]/80" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm text-center">
+                <div key={label} className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm text-center">
                   <p className={`text-2xl font-black ${color}`}>{value}</p>
                   <p className="text-xs text-muted-foreground">{label}</p>
                 </div>
@@ -191,11 +191,11 @@ export default function SeasonIntelligencePage() {
 
             {/* Goals row */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm text-center">
+              <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm text-center">
                 <p className="text-2xl font-black text-green-400">{goalsFor}</p>
                 <p className="text-xs text-muted-foreground">Goals Scored</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm text-center">
+              <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm text-center">
                 <p className="text-2xl font-black text-red-400">{goalsAgainst}</p>
                 <p className="text-xs text-muted-foreground">Goals Conceded</p>
               </div>
@@ -203,7 +203,7 @@ export default function SeasonIntelligencePage() {
 
             {/* xG Performance (from Touch Tracker history) */}
             {xgHistory.length > 0 && (
-              <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+              <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Expected Goals (xG) vs Actual — Last {Math.min(xgHistory.length, 8)} Matches
                 </p>
@@ -237,13 +237,13 @@ export default function SeasonIntelligencePage() {
                   </BarChart>
                 </ResponsiveContainer>
                 {/* Over/under performance table */}
-                <div className="mt-3 divide-y divide-white/5 max-h-40 overflow-y-auto">
+                <div className="mt-3 divide-y divide-[#f0b429]/5 max-h-40 overflow-y-auto">
                   {[...xgHistory].reverse().slice(0, 8).map((r) => {
                     const homeDiff = r.homeGoals - r.homeXg;
                     const awayDiff = r.awayGoals - r.awayXg;
                     return (
                       <div key={r.id} className="flex items-center justify-between py-1.5 text-xs">
-                        <span className="text-white/70 truncate max-w-[120px]">{r.homeTeam} vs {r.awayTeam}</span>
+                        <span className="text-[#f0b429]/70 truncate max-w-[120px]">{r.homeTeam} vs {r.awayTeam}</span>
                         <span className={homeDiff >= 0 ? "text-green-400" : "text-red-400"}>
                           H: {homeDiff >= 0 ? "+" : ""}{homeDiff.toFixed(2)} xG
                         </span>
@@ -258,7 +258,7 @@ export default function SeasonIntelligencePage() {
             )}
 
             {/* Form guide */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Form Guide — Last 10 Results (newest first)
               </p>
@@ -279,14 +279,14 @@ export default function SeasonIntelligencePage() {
                     ))}
                   </div>
                   {/* Table */}
-                  <div className="mt-3 divide-y divide-white/5 max-h-64 overflow-y-auto">
+                  <div className="mt-3 divide-y divide-[#f0b429]/5 max-h-64 overflow-y-auto">
                     {form.map((m) => (
                       <div key={m.id} className="flex items-center gap-3 py-2 text-xs">
                         <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black ${outcomeColor(m.outcome)}`}>
                           {m.outcome ?? "?"}
                         </span>
                         <span className="flex-1 font-medium text-white">{m.opponent}</span>
-                        <span className="font-bold text-white/80">{m.our_score}–{m.their_score}</span>
+                        <span className="font-bold text-[#f0b429]/80">{m.our_score}–{m.their_score}</span>
                         <span className="text-muted-foreground capitalize">{m.venue}</span>
                         <span className="text-muted-foreground">{m.match_date.slice(0, 10)}</span>
                       </div>
@@ -297,7 +297,7 @@ export default function SeasonIntelligencePage() {
             </div>
 
             {/* AI Season Report */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   AI Season Review
@@ -322,7 +322,7 @@ export default function SeasonIntelligencePage() {
               )}
 
               {aiReport && (
-                <div className="rounded-xl bg-background/60 p-4 text-sm leading-relaxed whitespace-pre-wrap text-white/90">
+                <div className="rounded-xl bg-background/60 p-4 text-sm leading-relaxed whitespace-pre-wrap text-[#f0b429]/90">
                   {aiReport}
                 </div>
               )}

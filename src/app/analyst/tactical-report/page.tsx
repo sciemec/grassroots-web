@@ -288,7 +288,7 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
           <button
             onClick={() => setShowLoader(true)}
             disabled={loadingMatch}
-            className="flex items-center gap-2 rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-white"
+            className="flex items-center gap-2 rounded-xl border border-[#f0b429]/20 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-[#f0b429]"
           >
             {loadingMatch ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
             Load Match
@@ -297,7 +297,7 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Form */}
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Match Details</h2>
 
             <div className="space-y-4">
@@ -381,7 +381,7 @@ Keep it practical and actionable for a grassroots Zimbabwean coach.`;
           </div>
 
           {/* Report output */}
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tactical Report</h2>
               {report && (

@@ -66,7 +66,7 @@ function PitchZonePicker({
       {/* SVG pitch — viewBox 300×200, goal at top */}
       <svg
         viewBox="0 0 300 200"
-        className="w-full rounded-xl border border-white/10 touch-manipulation"
+        className="w-full rounded-xl border border-[#f0b429]/10 touch-manipulation"
         style={{ background: "#1a4a1a", maxHeight: 240 }}
       >
         {/* Pitch outline */}
@@ -142,7 +142,7 @@ function PitchZonePicker({
 
       {/* Selected zone confirmation */}
       {selected && (
-        <div className="flex items-center justify-between rounded-lg border border-white/10 bg-card/40 px-3 py-2">
+        <div className="flex items-center justify-between rounded-lg border border-[#f0b429]/10 bg-card/40 px-3 py-2">
           <span className="text-xs font-semibold text-white">{selected.label}</span>
           <span className="text-xs font-bold text-accent">xG {selected.xg}</span>
         </div>
@@ -314,7 +314,7 @@ function XgAnalysisInner() {
           <button
             onClick={() => setShowLoader(true)}
             disabled={loadingMatch}
-            className="flex items-center gap-2 rounded-xl border border-white/20 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-white"
+            className="flex items-center gap-2 rounded-xl border border-[#f0b429]/20 px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-[#f0b429]"
           >
             {loadingMatch ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
             Load Match
@@ -324,7 +324,7 @@ function XgAnalysisInner() {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Add shot panel */}
           <div className="lg:col-span-1">
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm space-y-4">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm space-y-4">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Log a Shot</h2>
 
               {/* Team toggle */}
@@ -366,14 +366,14 @@ function XgAnalysisInner() {
             </div>
 
             {/* xG legend */}
-            <div className="mt-4 rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+            <div className="mt-4 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Zone Danger Key</p>
               <div className="space-y-1.5">
                 {XG_ZONES.map((z) => (
                   <button
                     key={z.id}
                     onClick={() => setZone(z.id)}
-                    className={`flex w-full items-center gap-2 rounded-lg px-2 py-1 transition-colors text-left ${zone === z.id ? "bg-white/10" : "hover:bg-white/5"}`}
+                    className={`flex w-full items-center gap-2 rounded-lg px-2 py-1 transition-colors text-left ${zone === z.id ? "bg-[#f0b429]/10" : "hover:bg-[#f0b429]/5"}`}
                   >
                     <div className={`h-3 w-3 flex-shrink-0 rounded-sm ${xgColor(z.xg)}`} />
                     <span className="flex-1 text-xs">{z.label}</span>
@@ -394,7 +394,7 @@ function XgAnalysisInner() {
                 { label: "Home Goals", value: `${homeGoals} (${efficiency(homeGoals, homeXg)})`,       color: "text-green-400" },
                 { label: "Away Goals", value: `${awayGoals} (${efficiency(awayGoals, awayXg)})`,       color: "text-green-400" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm text-center">
+                <div key={label} className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm text-center">
                   <p className={`text-xl font-black ${color}`}>{value}</p>
                   <p className="text-xs text-muted-foreground">{label}</p>
                 </div>
@@ -402,7 +402,7 @@ function XgAnalysisInner() {
             </div>
 
             {/* Shot log */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm overflow-hidden">
               <div className="flex items-center justify-between border-b px-5 py-3">
                 <p className="text-sm font-semibold">{shots.length} shot{shots.length !== 1 ? "s" : ""} logged</p>
                 {shots.length > 0 && (
