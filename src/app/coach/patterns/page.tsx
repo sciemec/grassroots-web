@@ -316,32 +316,32 @@ function PatternCard({ pattern }: { pattern: Pattern }) {
       </div>
 
       {/* Evidence */}
-      <p className="mb-2 text-xs font-semibold text-white/60 uppercase tracking-wide">Evidence</p>
-      <p className="mb-3 text-sm text-white/80">{pattern.evidence}</p>
+      <p className="mb-2 text-xs font-semibold text-[#f0b429]/60 uppercase tracking-wide">Evidence</p>
+      <p className="mb-3 text-sm text-[#f0b429]/80">{pattern.evidence}</p>
 
       {/* THUTO insight */}
-      <p className="mb-1 text-xs font-semibold text-white/60 uppercase tracking-wide">THUTO Analysis</p>
-      <p className="mb-4 text-sm leading-relaxed text-white/90">{pattern.insight}</p>
+      <p className="mb-1 text-xs font-semibold text-[#f0b429]/60 uppercase tracking-wide">THUTO Analysis</p>
+      <p className="mb-4 text-sm leading-relaxed text-[#f0b429]/90">{pattern.insight}</p>
 
       {/* Prescribed drill */}
       <button
         onClick={() => setDrillOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-left transition-colors hover:bg-white/10"
+        className="flex w-full items-center justify-between rounded-xl border border-[#f0b429]/10 bg-[#f0b429]/5 px-4 py-2.5 text-left transition-colors hover:bg-[#f0b429]/10"
       >
         <div className="flex items-center gap-2">
           <Zap className="h-3.5 w-3.5 text-[#f0b429]" />
           <span className="text-xs font-bold text-[#f0b429]">Prescribed Drill: {pattern.drill.name}</span>
         </div>
-        {drillOpen ? <ChevronUp className="h-4 w-4 text-white/40" /> : <ChevronDown className="h-4 w-4 text-white/40" />}
+        {drillOpen ? <ChevronUp className="h-4 w-4 text-[#f0b429]/40" /> : <ChevronDown className="h-4 w-4 text-[#f0b429]/40" />}
       </button>
 
       {drillOpen && (
         <div className="mt-2 rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 p-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-bold text-[#f0b429]">{pattern.drill.name}</span>
-            <span className="text-xs text-white/40">{pattern.drill.duration}</span>
+            <span className="text-xs text-[#f0b429]/40">{pattern.drill.duration}</span>
           </div>
-          <p className="mb-2 text-xs leading-relaxed text-white/80">{pattern.drill.description}</p>
+          <p className="mb-2 text-xs leading-relaxed text-[#f0b429]/80">{pattern.drill.description}</p>
           <p className="text-xs italic text-[#f0b429]/70">💡 {pattern.drill.cue}</p>
         </div>
       )}
@@ -472,13 +472,13 @@ Keep it under 200 words. Be specific, direct, actionable.`;
                 Compounding Intelligence
               </p>
               <h1 className="mt-1 text-2xl font-bold text-white">Strategic Patterns</h1>
-              <p className="mt-0.5 text-sm text-white/60">
+              <p className="mt-0.5 text-sm text-[#f0b429]/60">
                 Your match data reveals recurring patterns. Fix them — your entire squad improves.
               </p>
             </div>
             <div className="flex-shrink-0 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-2 text-center">
               <p className="text-lg font-black text-[#f0b429]">{matches.length}</p>
-              <p className="text-[10px] text-white/50">matches</p>
+              <p className="text-[10px] text-[#f0b429]/50">matches</p>
             </div>
           </div>
         </div>
@@ -489,10 +489,10 @@ Keep it under 200 words. Be specific, direct, actionable.`;
           </div>
         ) : matches.length === 0 ? (
           /* Empty state */
-          <div className="rounded-2xl border border-dashed border-white/20 p-12 text-center">
-            <TrendingDown className="mx-auto mb-4 h-10 w-10 text-white/20" />
+          <div className="rounded-2xl border border-dashed border-[#f0b429]/20 p-12 text-center">
+            <TrendingDown className="mx-auto mb-4 h-10 w-10 text-[#f0b429]/20" />
             <h3 className="mb-2 text-base font-bold text-white">No match data yet</h3>
-            <p className="mb-4 text-sm text-white/50">
+            <p className="mb-4 text-sm text-[#f0b429]/50">
               Use the Live Match tool to log your next match. After 3 matches, THUTO will start detecting patterns.
             </p>
             <Link
@@ -514,9 +514,9 @@ Keep it under 200 words. Be specific, direct, actionable.`;
                 { label: "Warning",  value: warningCount,  color: "text-amber-400" },
                 { label: "Good",     value: goodCount,     color: "text-green-400" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="rounded-xl border border-white/10 bg-card/60 p-3 text-center">
+                <div key={label} className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-3 text-center">
                   <p className={`text-xl font-black ${color}`}>{value}</p>
-                  <p className="text-[11px] text-white/40">{label}</p>
+                  <p className="text-[11px] text-[#f0b429]/40">{label}</p>
                 </div>
               ))}
             </div>
@@ -524,7 +524,7 @@ Keep it under 200 words. Be specific, direct, actionable.`;
             {/* Compounding loop banner */}
             <div className="mb-5 rounded-2xl border border-[#f0b429]/20 bg-gradient-to-r from-[#1a3a1f] to-[#0a1a0e] px-5 py-3">
               <p className="text-xs text-[#f0b429] font-semibold">The Compounding Loop</p>
-              <p className="text-xs text-white/60 mt-0.5">
+              <p className="text-xs text-[#f0b429]/60 mt-0.5">
                 Better coaching → better players → better results → stronger talent database → scouts find your players → Zimbabwe&apos;s gold standard grows.
               </p>
             </div>
@@ -547,51 +547,51 @@ Keep it under 200 words. Be specific, direct, actionable.`;
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Radio className={`h-4 w-4 ${scoreColor}`} />
-                      <span className="text-xs font-bold uppercase tracking-wide text-white/70">Surface Area Score</span>
+                      <span className="text-xs font-bold uppercase tracking-wide text-[#f0b429]/70">Surface Area Score</span>
                     </div>
                     <div className="text-right">
                       <span className={`text-2xl font-black ${scoreColor}`}>{total}</span>
-                      <span className="text-xs text-white/30">/100</span>
+                      <span className="text-xs text-[#f0b429]/30">/100</span>
                     </div>
                   </div>
-                  <p className="mb-4 text-xs text-white/50">
+                  <p className="mb-4 text-xs text-[#f0b429]/50">
                     How many active &quot;pings&quot; your squad is sending to scouts right now. More pings = more luck.
                   </p>
                   <div className="mb-4 grid grid-cols-3 gap-3">
                     {/* Matches logged */}
-                    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                    <div className="rounded-xl border border-[#f0b429]/10 bg-black/20 p-3 text-center">
                       <p className={`text-lg font-black ${matches.length >= 5 ? "text-green-400" : "text-amber-400"}`}>
                         {matches.length}
                       </p>
-                      <p className="text-[10px] text-white/40">matches logged</p>
-                      {lastMatch && <p className="mt-0.5 text-[10px] text-white/25">last: {lastMatch}</p>}
+                      <p className="text-[10px] text-[#f0b429]/40">matches logged</p>
+                      {lastMatch && <p className="mt-0.5 text-[10px] text-[#f0b429]/25">last: {lastMatch}</p>}
                     </div>
                     {/* Squad visibility */}
-                    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                    <div className="rounded-xl border border-[#f0b429]/10 bg-black/20 p-3 text-center">
                       {squadSize > 0 ? (
                         <>
                           <p className={`text-lg font-black ${openCount === squadSize ? "text-green-400" : openCount > 0 ? "text-amber-400" : "text-red-400"}`}>
                             {openCount}/{squadSize}
                           </p>
-                          <p className="text-[10px] text-white/40">open to scouts</p>
+                          <p className="text-[10px] text-[#f0b429]/40">open to scouts</p>
                           {hiddenCount !== null && hiddenCount > 0 && (
                             <p className="mt-0.5 text-[10px] text-red-400/70">{hiddenCount} invisible</p>
                           )}
                         </>
                       ) : (
                         <>
-                          <p className="text-lg font-black text-white/20">—</p>
-                          <p className="text-[10px] text-white/30">squad loading</p>
+                          <p className="text-lg font-black text-[#f0b429]/20">—</p>
+                          <p className="text-[10px] text-[#f0b429]/30">squad loading</p>
                         </>
                       )}
                     </div>
                     {/* Event richness */}
-                    <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
-                      <p className={`text-lg font-black ${eventRecords.length > 0 ? "text-green-400" : "text-white/20"}`}>
+                    <div className="rounded-xl border border-[#f0b429]/10 bg-black/20 p-3 text-center">
+                      <p className={`text-lg font-black ${eventRecords.length > 0 ? "text-green-400" : "text-[#f0b429]/20"}`}>
                         {eventRecords.length}
                       </p>
-                      <p className="text-[10px] text-white/40">event-rich matches</p>
-                      <p className="mt-0.5 text-[10px] text-white/25">minute data</p>
+                      <p className="text-[10px] text-[#f0b429]/40">event-rich matches</p>
+                      <p className="mt-0.5 text-[10px] text-[#f0b429]/25">minute data</p>
                     </div>
                   </div>
                   {/* Actions */}
@@ -650,7 +650,7 @@ Keep it under 200 words. Be specific, direct, actionable.`;
                 <button
                   onClick={getFullAnalysis}
                   disabled={analysisLoading}
-                  className="flex items-center gap-1.5 rounded-xl border border-white/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 rounded-xl border border-[#f0b429]/20 px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#f0b429]/10 disabled:opacity-50 transition-colors"
                 >
                   {analysisLoading
                     ? <><Loader2 className="h-3 w-3 animate-spin" /> Thinking…</>
@@ -658,20 +658,20 @@ Keep it under 200 words. Be specific, direct, actionable.`;
                   }
                 </button>
               </div>
-              <p className="mb-4 text-xs text-white/50">
+              <p className="mb-4 text-xs text-[#f0b429]/50">
                 THUTO analyses all {patterns.length} patterns and designs a 4-week plan that compounds — fixing one pattern automatically improves others.
               </p>
 
               {!fullAnalysis && !analysisLoading && (
-                <div className="rounded-xl border border-dashed border-white/10 py-6 text-center">
-                  <p className="text-xs text-white/30">Click &quot;Generate Plan&quot; to get your week-by-week strategic coaching schedule.</p>
+                <div className="rounded-xl border border-dashed border-[#f0b429]/10 py-6 text-center">
+                  <p className="text-xs text-[#f0b429]/30">Click &quot;Generate Plan&quot; to get your week-by-week strategic coaching schedule.</p>
                 </div>
               )}
 
               {analysisLoading && (
                 <div className="flex items-center justify-center gap-3 py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-purple-300" />
-                  <p className="text-sm text-white/50">THUTO is mapping your compounding strategy…</p>
+                  <p className="text-sm text-[#f0b429]/50">THUTO is mapping your compounding strategy…</p>
                 </div>
               )}
 
@@ -682,11 +682,11 @@ Keep it under 200 words. Be specific, direct, actionable.`;
                     return line.trim() ? (
                       <p key={i} className={isHeading
                         ? "text-xs font-bold text-[#f0b429] uppercase tracking-wide mt-3 first:mt-0"
-                        : "text-xs leading-relaxed text-white/80"
+                        : "text-xs leading-relaxed text-[#f0b429]/80"
                       }>{line}</p>
                     ) : <div key={i} className="h-1" />;
                   })}
-                  <p className="mt-3 text-[10px] text-white/25 border-t border-white/10 pt-2">
+                  <p className="mt-3 text-[10px] text-[#f0b429]/25 border-t border-[#f0b429]/10 pt-2">
                     Generated by THUTO AI · {new Date().toLocaleDateString("en-ZW", { weekday: "long", day: "numeric", month: "long" })}
                   </p>
                 </div>
