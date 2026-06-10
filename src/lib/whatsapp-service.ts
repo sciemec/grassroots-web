@@ -58,8 +58,10 @@ export async function subscribeUser(phoneNumber: string, name: string): Promise<
   };
   
   subscribers.set(phoneNumber, subscriber);
-  
-  // Send welcome message
+
+  // Always returns true once the subscriber is stored.
+  // Welcome message failure is logged inside sendWhatsAppMessage but does not
+  // prevent subscription — the user is already in the Map.
   await sendWhatsAppMessage(
     phoneNumber,
     `🇿🇼 Welcome to GrassRoots Sports World Cup Live, ${name}!\n\n` +
@@ -97,20 +99,6 @@ export async function sendWhatsAppMessage(to: string, body: string): Promise<boo
   }
 }
 
-export async function broadcastToAll(message: string): Promise<number> {
-  let successCount = 0;
-  
-  for (const [phoneNumber, subscriber] of subscribers) {
-    const sent = await sendWhatsAppMessage(phoneNumber, message);
-    if (sent) successCount++;
-    
-    // Rate limit to avoid Twilio throttling
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  
-  return successCount;
-}
-
 export async function broadcastToSubscribers(message: string, filter?: (sub: Subscriber) => boolean): Promise<number> {
   let successCount = 0;
   
@@ -128,8 +116,6 @@ export async function broadcastToSubscribers(message: string, filter?: (sub: Sub
 
 // Generate match update message
 export function generateMatchUpdateMessage(event: MatchEvent, affiliateLink?: string): string {
-  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
   switch (event.type) {
     case 'goal':
       return `
@@ -158,7 +144,7 @@ ${generateHalftimeAnalysis(event)}
 
 ${process.env.SPONSOR_HALFTIME_MESSAGE || 'Sponsored by GrassRoots Sports'}
 
-💰 Second half specials: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL || ''}
+${(affiliateLink || process.env.BETWAY_AFFILIATE_URL) ? `💰 Second half specials: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL}` : ''}
 
 Reply "GOAL" for goal alerts only
       `.trim();
@@ -176,7 +162,7 @@ Shots: ${event.homeShots || 0} - ${event.awayShots || 0}
 ${process.env.SPONSOR_FULLTIME_MESSAGE || 'Sponsored by GrassRoots Sports'}
 
 📱 Share this match with friends!
-🔗 Next match odds: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL || ''}
+${(affiliateLink || process.env.BETWAY_AFFILIATE_URL) ? `🔗 Next match odds: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL}` : ''}
 
 Reply "SUBSCRIBE" for more match updates
       `.trim();
@@ -201,12 +187,12 @@ function generateHalftimeAnalysis(event: MatchEvent): string {
   const homeShotsMore = (event.homeShots || 0) > (event.awayShots || 0) + 2;
   
   if (homeDominant) {
-    return `Home team controlling the game with ${event.homePossession}% possession. ` +
-           `${homeShotsMore ? `${event.homeShots} shots, surely a goal is coming!` : 'Creating chances but need to be more clinical.'}`;
+    return `Home team controlling the game with ${event.homePossession ?? 50}% possession. ` +
+           `${homeShotsMore ? `${event.homeShots ?? 0} shots, surely a goal is coming!` : 'Creating chances but need to be more clinical.'}`;
   }
-  
+
   if (awayDominant) {
-    return `Away team looking dangerous on the counter. ${event.awayShots} shots despite less possession. Watch for a breakaway goal!`;
+    return `Away team looking dangerous on the counter. ${event.awayShots ?? 0} shots despite less possession. Watch for a breakaway goal!`;
   }
   
   return `Very tight contest. Both teams cancelling each other out. Next goal is crucial!`;
