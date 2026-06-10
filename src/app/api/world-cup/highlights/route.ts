@@ -1,39 +1,64 @@
 // src/app/api/world-cup/highlights/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const query = searchParams.get('q');
-  
+
   if (!query) {
     return NextResponse.json({ error: 'Missing search query' }, { status: 400 });
   }
-  
-  if (!YOUTUBE_API_KEY) {
+
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) {
     console.error('YOUTUBE_API_KEY not set');
     return NextResponse.json({ error: 'YouTube API key not configured' }, { status: 500 });
   }
-  
+
   try {
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    
+    const qs = new URLSearchParams({
+      part: 'snippet',
+      maxResults: '5',
+      q: query,
+      type: 'video',
+      key: apiKey,
+    });
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?${qs.toString()}`
+    );
+
     if (!response.ok) {
-      throw new Error(data.error?.message || 'YouTube API error');
+      let message = 'YouTube API error';
+      try {
+        const errData = await response.json();
+        message = errData.error?.message || message;
+      } catch { /* non-JSON error body — ignore */ }
+      throw new Error(message);
     }
-    
-    const videos = data.items.map((item: any) => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails.medium.url,
-      channelTitle: item.snippet.channelTitle,
-      publishedAt: item.snippet.publishedAt,
-      url: `https://www.youtube.com/watch?v=${item.id.videoId}`
-    }));
-    
+
+    const data = await response.json();
+
+    const videos = (data.items ?? [])
+      .filter((item: Record<string, unknown>) => {
+        const id = item.id as Record<string, unknown> | undefined;
+        return typeof id?.videoId === 'string';
+      })
+      .map((item: Record<string, unknown>) => {
+        const id = item.id as Record<string, string>;
+        const snippet = item.snippet as Record<string, unknown>;
+        const thumbnails = snippet.thumbnails as Record<string, Record<string, string>> | undefined;
+        return {
+          id: id.videoId,
+          title: snippet.title as string,
+          thumbnail: thumbnails?.medium?.url ?? thumbnails?.default?.url ?? '',
+          channelTitle: snippet.channelTitle as string,
+          publishedAt: snippet.publishedAt as string,
+          url: `https://www.youtube.com/watch?v=${id.videoId}`,
+        };
+      });
+
     return NextResponse.json({ videos });
   } catch (error) {
     console.error('YouTube search error:', error);
