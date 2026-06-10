@@ -24,23 +24,28 @@ export function LiveMatchTracker({
 }: LiveMatchTrackerProps) {
   const [ballPos, setBallPos] = useState({ x: 50, y: 50 });
   const [currentMinute, setCurrentMinute] = useState(initialMinute);
-  
+
+  // Sync if parent provides an updated minute (e.g. score refresh)
   useEffect(() => {
-    // Start tracking ball movement
-    const stopTracking = startBallTracking(matchId, (update) => {
+    setCurrentMinute(initialMinute);
+  }, [initialMinute]);
+
+  useEffect(() => {
+    // Start tracking from the current match minute so simulation phase is correct
+    const stopTracking = startBallTracking(matchId, (update: BallUpdate) => {
       setBallPos({ x: update.x, y: update.y });
-    }, 3000);
-    
+    }, 3000, initialMinute);
+
     // Simulate minute counter (increase every 60 seconds real time)
     const minuteInterval = setInterval(() => {
       setCurrentMinute(prev => Math.min(prev + 1, 90));
     }, 60000);
-    
+
     return () => {
       stopTracking();
       clearInterval(minuteInterval);
     };
-  }, [matchId]);
+  }, [matchId, initialMinute]);
   
   return (
     <div className="bg-gray-900 rounded-xl p-4">
