@@ -1,55 +1,67 @@
-// src/app/api/world-cup/[id]/route.ts
+// app/api/world-cup/players/[id]/route.ts
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getRealMatchEvents } from '@/lib/live-scores';
-import { generateCommentary } from '@/lib/commentary-engine';
-import { WORLD_CUP_MATCHES } from '@/lib/world-cup-data';
+import { prisma } from '@/lib/prisma';
+
+// Define the correct asynchronous context type for Next.js 15 App Router
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
-
-  // Resolve static match data for team names / score / status
-  const staticMatch = WORLD_CUP_MATCHES.find(m => m.id === id);
-
-  try {
-    const events = await getRealMatchEvents(Number(id));
-    return NextResponse.json({
-      id,
-      homeTeam: staticMatch?.homeTeam ?? 'Home',
-      awayTeam: staticMatch?.awayTeam ?? 'Away',
-      homeScore: staticMatch?.homeScore ?? 0,
-      awayScore: staticMatch?.awayScore ?? 0,
-      minute: staticMatch?.minute ?? 0,
-      status: staticMatch?.status ?? 'scheduled',
-      events,
-    });
-  } catch {
-    // Live events unavailable — return static data with empty events
-    return NextResponse.json({
-      id,
-      homeTeam: staticMatch?.homeTeam ?? 'Home',
-      awayTeam: staticMatch?.awayTeam ?? 'Away',
-      homeScore: staticMatch?.homeScore ?? 0,
-      awayScore: staticMatch?.awayScore ?? 0,
-      minute: staticMatch?.minute ?? 0,
-      status: staticMatch?.status ?? 'scheduled',
-      events: [],
-    });
-  }
-}
-
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   try {
-    const { event } = await req.json();
-    const commentary = await generateCommentary(event);
-    return NextResponse.json({ success: true, commentary });
+    // 1. Explicitly await the params Promise to unwrap the dynamic route values
+    const resolvedParams = await context.params;
+    
+    // 2. Security guard check to guarantee the id argument exists securely
+    if (!resolvedParams || !resolvedParams.id) {
+      return NextResponse.json({ error: 'Player ID required' }, { status: 400 });
+    }
+    
+    const id = resolvedParams.id;
+
+    // 3. Query records from database engine instance
+    const player = await prisma.worldCupPlayerStats.findUnique({
+      where: { playerId: id }
+    });
+    
+    if (!player) {
+      return NextResponse.json({ error: 'Player not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({
+      success: true,
+      data: {
+        playerId: player.playerId,
+        playerName: player.playerName,
+        country: player.country,
+        position: player.position,
+        shirtNumber: player.shirtNumber,
+        matchesPlayed: player.matchesPlayed,
+        minutesPlayed: player.minutesPlayed,
+        goals: player.goals,
+        assists: player.assists,
+        shots: player.shots,
+        shotsOnTarget: player.shotsOnTarget,
+        passAccuracy: player.passAccuracy,
+        tackles: player.tackles,
+        interceptions: player.interceptions,
+        saves: player.saves,
+        cleanSheets: player.cleanSheets,
+        yellowCards: player.yellowCards,
+        redCards: player.redCards,
+        avgRating: player.avgRating,
+        performanceScore: player.performanceScore
+      }
+    });
+    
   } catch (error) {
-    console.error('Commentary generation failed:', error);
-    return NextResponse.json({ error: 'Failed to generate commentary' }, { status: 500 });
+    console.error('Player fetch error:', error);
+    return NextResponse.json({ error: 'Failed to fetch player' }, { status: 500 });
   }
 }

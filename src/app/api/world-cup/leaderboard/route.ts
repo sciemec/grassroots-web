@@ -1,5 +1,6 @@
 // app/api/world-cup/leaderboard/route.ts
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
     const position = searchParams.get('position');
     const country = searchParams.get('country');
     const sortBy = searchParams.get('sortBy') || 'performanceScore';
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const limit = parseInt(searchParams.get('limit') || '50') || 50;
     
     // Build where clause
     const where: any = {};
@@ -37,18 +38,21 @@ export async function GET(req: NextRequest) {
         orderBy = { performanceScore: 'desc' };
     }
     
-    // Fetch real data from database
-    const players = await prisma.worldCupPlayerStats.findMany({
-      where,
-      orderBy,
-      take: limit
-    });
-    
-    // Get distinct countries for filter
-    const countries = await prisma.worldCupPlayerStats.findMany({
-      select: { country: true },
-      distinct: ['country']
-    });
+    // 🔥 OPTIMIZATION: Fire the data query and total matching count query in parallel
+    const [players, totalMatchingPlayers, countries] = await Promise.all([
+      prisma.worldCupPlayerStats.findMany({
+        where,
+        orderBy,
+        take: limit
+      }),
+      prisma.worldCupPlayerStats.count({
+        where // <-- Uses the exact same filter rules to count the absolute total
+      }),
+      prisma.worldCupPlayerStats.findMany({
+        select: { country: true },
+        distinct: ['country']
+      })
+    ]);
     
     // Add rank to each player
     const rankedPlayers = players.map((player, index) => ({
@@ -79,7 +83,8 @@ export async function GET(req: NextRequest) {
       success: true,
       data: rankedPlayers,
       availableCountries: countries.map(c => c.country),
-      totalPlayers: players.length,
+      totalPlayers: totalMatchingPlayers, // <-- Now returns the accurate database total!
+      processedOnPage: players.length,    // Optional: let frontend know how many are in this payload
       lastUpdated: new Date().toISOString()
     });
     
