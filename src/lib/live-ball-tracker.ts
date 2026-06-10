@@ -14,35 +14,39 @@ export async function fetchBallPosition(matchId: string, minute: number): Promis
   // const res = await fetch(`https://api.sportmonks.com/v3/football/live/${matchId}?api_key=YOUR_KEY`);
   // const data = await res.json();
   // return { x: data.ball.x, y: data.ball.y, timestamp: Date.now() };
-  
+
   // SIMULATION (for demonstration - replace with real API)
-  // Random movement but biased towards attacking team's half
   const attackDirection = Math.sin(minute / 5) > 0 ? 1 : -1;
   const baseX = 50 + (attackDirection * 20 * Math.random());
   const x = Math.min(95, Math.max(5, baseX + (Math.random() - 0.5) * 10));
   const y = Math.min(95, Math.max(5, 30 + Math.random() * 40));
-  
+
   return { x, y, timestamp: Date.now() };
 }
 
-// For live matches, you would poll every 2-3 seconds
+// For live matches, you would poll every 2-3 seconds.
+// Uses recursive setTimeout instead of setInterval to prevent overlapping
+// async calls when fetchBallPosition takes longer than intervalMs.
 export function startBallTracking(
-  matchId: string, 
+  matchId: string,
   onUpdate: (pos: BallUpdate) => void,
-  intervalMs = 3000
+  intervalMs = 3000,
+  startMinute = 0,
 ): () => void {
   let active = true;
-  let minute = 0;
-  
-  const interval = setInterval(async () => {
+  let minute = startMinute;
+
+  const tick = async () => {
     if (!active) return;
-    minute += 0.5; // simulate time passing
+    minute += 0.5;
     const pos = await fetchBallPosition(matchId, minute);
-    if (active) onUpdate(pos);
-  }, intervalMs);
-  
-  return () => {
-    active = false;
-    clearInterval(interval);
+    if (active) {
+      onUpdate(pos);
+      setTimeout(tick, intervalMs);
+    }
   };
+
+  setTimeout(tick, intervalMs);
+
+  return () => { active = false; };
 }
