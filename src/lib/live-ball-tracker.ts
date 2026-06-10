@@ -9,9 +9,10 @@ export interface BallUpdate {
 
 // This function would call a real API like Sportmonks
 // For now, it returns a simulated position based on match phase
-export async function fetchBallPosition(matchId: string, minute: number): Promise<BallUpdate> {
+// _matchId is intentionally unused until the real API is wired in
+export function fetchBallPosition(_matchId: string, minute: number): Promise<BallUpdate> {
   // In production: replace with actual API call
-  // const res = await fetch(`https://api.sportmonks.com/v3/football/live/${matchId}?api_key=YOUR_KEY`);
+  // const res = await fetch(`https://api.sportmonks.com/v3/football/live/${_matchId}?api_key=YOUR_KEY`);
   // const data = await res.json();
   // return { x: data.ball.x, y: data.ball.y, timestamp: Date.now() };
 
@@ -21,7 +22,7 @@ export async function fetchBallPosition(matchId: string, minute: number): Promis
   const x = Math.min(95, Math.max(5, baseX + (Math.random() - 0.5) * 10));
   const y = Math.min(95, Math.max(5, 30 + Math.random() * 40));
 
-  return { x, y, timestamp: Date.now() };
+  return Promise.resolve({ x, y, timestamp: Date.now() });
 }
 
 // For live matches, you would poll every 2-3 seconds.
@@ -36,14 +37,19 @@ export function startBallTracking(
   let active = true;
   let minute = startMinute;
 
-  const tick = async () => {
+  const tick = () => {
     if (!active) return;
-    minute += 0.5;
-    const pos = await fetchBallPosition(matchId, minute);
-    if (active) {
-      onUpdate(pos);
-      setTimeout(tick, intervalMs);
-    }
+    minute = Math.min(minute + 0.5, 90);
+    fetchBallPosition(matchId, minute)
+      .then((pos) => {
+        if (active) onUpdate(pos);
+      })
+      .catch((err) => {
+        console.error('fetchBallPosition error:', err);
+      })
+      .finally(() => {
+        if (active) setTimeout(tick, intervalMs);
+      });
   };
 
   setTimeout(tick, intervalMs);
