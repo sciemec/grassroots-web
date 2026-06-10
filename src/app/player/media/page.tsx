@@ -278,7 +278,7 @@ export default function PlayerMediaPage() {
                         )}
                         {/* Type badge */}
                         <div className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5 text-center">
-                          <span className="text-[9px] font-bold uppercase tracking-wide text-white/70">
+                          <span className="text-[9px] font-bold uppercase tracking-wide text-[#f0b429]/70">
                             {item.media_type}
                           </span>
                         </div>
