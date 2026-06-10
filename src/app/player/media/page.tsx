@@ -213,19 +213,19 @@ export default function PlayerMediaPage() {
           <div>
             <button
               onClick={() => router.back()}
-              className="mb-1 text-xs text-white/40 hover:text-white/70"
+              className="mb-1 text-xs text-[#f0b429]/40 hover:text-[#f0b429]/70"
             >
               ← Back
             </button>
-            <h1 className="text-xl font-extrabold text-white">My Media Gallery</h1>
-            <p className="text-xs text-white/50">
+            <h1 className="text-xl font-extrabold text-[#f0b429]">My Media Gallery</h1>
+            <p className="text-xs text-[#f0b429]/50">
               {items.length}/{MAX_ITEMS} items · Videos &amp; images for your public profile
             </p>
           </div>
           {reordering && (
-            <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5">
-              <Loader2 className="h-3 w-3 animate-spin text-white/50" />
-              <span className="text-[10px] text-white/50">Saving order…</span>
+            <div className="flex items-center gap-1.5 rounded-full bg-[#f0b429]/10 px-3 py-1.5">
+              <Loader2 className="h-3 w-3 animate-spin text-[#f0b429]/50" />
+              <span className="text-[10px] text-[#f0b429]/50">Saving order…</span>
             </div>
           )}
         </div>
@@ -242,28 +242,28 @@ export default function PlayerMediaPage() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(n => (
-              <div key={n} className="h-24 animate-pulse rounded-2xl bg-white/5" />
+              <div key={n} className="h-24 animate-pulse rounded-2xl bg-[#f0b429]/5" />
             ))}
           </div>
         ) : (
           <>
             {/* Items list */}
             {items.length === 0 ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 py-14 text-center">
-                <Film className="mx-auto mb-3 h-10 w-10 text-white/20" />
-                <p className="font-medium text-white/60">No media yet</p>
-                <p className="mt-1 text-sm text-white/30">Add videos or images to your showcase</p>
+              <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 py-14 text-center">
+                <Film className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/20" />
+                <p className="font-medium text-[#f0b429]/60">No media yet</p>
+                <p className="mt-1 text-sm text-[#f0b429]/30">Add videos or images to your showcase</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {items.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden"
+                    className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 overflow-hidden"
                   >
                     <div className="flex items-start gap-3 p-4">
                       {/* Thumbnail or icon */}
-                      <div className="relative h-16 w-16 shrink-0 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
+                      <div className="relative h-16 w-16 shrink-0 rounded-xl overflow-hidden bg-[#f0b429]/10 flex items-center justify-center">
                         {item.thumbnail_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -272,9 +272,9 @@ export default function PlayerMediaPage() {
                             className="h-full w-full object-cover"
                           />
                         ) : item.media_type === "video" ? (
-                          <Video className="h-7 w-7 text-white/30" />
+                          <Video className="h-7 w-7 text-[#f0b429]/30" />
                         ) : (
-                          <ImageIcon className="h-7 w-7 text-white/30" />
+                          <ImageIcon className="h-7 w-7 text-[#f0b429]/30" />
                         )}
                         {/* Type badge */}
                         <div className="absolute bottom-0 left-0 right-0 bg-black/50 py-0.5 text-center">
@@ -292,12 +292,12 @@ export default function PlayerMediaPage() {
                               value={editCaption}
                               onChange={e => setEditCaption(e.target.value)}
                               placeholder="Caption (optional)"
-                              className="w-full rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50"
+                              className="w-full rounded-lg bg-[#f0b429]/10 px-3 py-1.5 text-sm text-[#f0b429] placeholder-[#f0b429]/30 outline-none border border-[#f0b429]/15 focus:border-[#f0b429]/50"
                             />
                             <select
                               value={editCategory}
                               onChange={e => setEditCategory(e.target.value)}
-                              className="w-full rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white outline-none border border-white/10 focus:border-[#f0b429]/50"
+                              className="w-full rounded-lg bg-[#f0b429]/10 px-3 py-1.5 text-sm text-[#f0b429] outline-none border border-[#f0b429]/15 focus:border-[#f0b429]/50"
                             >
                               {CATEGORIES.map(c => (
                                 <option key={c} value={c} className="bg-[#1a5c2a]">{c}</option>
@@ -314,7 +314,7 @@ export default function PlayerMediaPage() {
                               </button>
                               <button
                                 onClick={() => setEditId(null)}
-                                className="flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1 text-xs text-white/60"
+                                className="flex items-center gap-1 rounded-lg bg-[#f0b429]/10 px-3 py-1 text-xs text-[#f0b429]/60"
                               >
                                 <X className="h-3 w-3" /> Cancel
                               </button>
@@ -322,11 +322,11 @@ export default function PlayerMediaPage() {
                           </div>
                         ) : (
                           <>
-                            <p className="text-sm font-medium text-white truncate">
-                              {item.caption || <span className="text-white/30 italic">No caption</span>}
+                            <p className="text-sm font-medium text-[#f0b429] truncate">
+                              {item.caption || <span className="text-[#f0b429]/30 italic">No caption</span>}
                             </p>
-                            <p className="mt-0.5 text-xs text-white/40 capitalize">{item.media_category}</p>
-                            <p className="mt-1 text-[10px] text-white/25 break-all line-clamp-1">{item.url}</p>
+                            <p className="mt-0.5 text-xs text-[#f0b429]/40 capitalize">{item.media_category}</p>
+                            <p className="mt-1 text-[10px] text-[#f0b429]/25 break-all line-clamp-1">{item.url}</p>
                           </>
                         )}
                       </div>
@@ -337,16 +337,16 @@ export default function PlayerMediaPage() {
                           <button
                             onClick={() => moveItem(idx, "up")}
                             disabled={idx === 0}
-                            className="rounded-lg p-1.5 text-white/40 hover:bg-white/10 hover:text-white/70 disabled:opacity-20"
+                            className="rounded-lg p-1.5 text-[#f0b429]/40 hover:bg-[#f0b429]/10 hover:text-[#f0b429]/70 disabled:opacity-20"
                             title="Move up"
                           >
                             <ArrowUp className="h-3.5 w-3.5" />
                           </button>
-                          <Move className="h-3 w-3 text-white/20" />
+                          <Move className="h-3 w-3 text-[#f0b429]/20" />
                           <button
                             onClick={() => moveItem(idx, "down")}
                             disabled={idx === items.length - 1}
-                            className="rounded-lg p-1.5 text-white/40 hover:bg-white/10 hover:text-white/70 disabled:opacity-20"
+                            className="rounded-lg p-1.5 text-[#f0b429]/40 hover:bg-[#f0b429]/10 hover:text-[#f0b429]/70 disabled:opacity-20"
                             title="Move down"
                           >
                             <ArrowDown className="h-3.5 w-3.5" />
@@ -357,14 +357,14 @@ export default function PlayerMediaPage() {
 
                     {/* Edit/Delete footer */}
                     {editId !== item.id && (
-                      <div className="flex border-t border-white/5">
+                      <div className="flex border-t border-[#f0b429]/10">
                         <button
                           onClick={() => startEdit(item)}
-                          className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs text-white/40 hover:bg-white/5 hover:text-white/70 transition-colors"
+                          className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs text-[#f0b429]/40 hover:bg-[#f0b429]/5 hover:text-[#f0b429]/70 transition-colors"
                         >
                           <Pencil className="h-3 w-3" /> Edit
                         </button>
-                        <div className="w-px bg-white/5" />
+                        <div className="w-px bg-[#f0b429]/5" />
                         <button
                           onClick={() => handleDelete(item.id)}
                           disabled={deletingId === item.id}
@@ -395,11 +395,11 @@ export default function PlayerMediaPage() {
                     Add Media Item ({MAX_ITEMS - items.length} slots left)
                   </button>
                 ) : (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-5">
                     <div className="mb-4 flex items-center justify-between">
-                      <h3 className="font-bold text-white">Add New Media</h3>
+                      <h3 className="font-bold text-[#f0b429]">Add New Media</h3>
                       <button onClick={() => { setShowAdd(false); setAddError(""); setForm(DEFAULT_FORM); }}
-                        className="text-xs text-white/40 hover:text-white/70">
+                        className="text-xs text-[#f0b429]/40 hover:text-[#f0b429]/70">
                         Cancel
                       </button>
                     </div>
@@ -414,7 +414,7 @@ export default function PlayerMediaPage() {
                     <form onSubmit={handleAdd} className="space-y-3">
                       {/* Media type */}
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-white/60">Type</label>
+                        <label className="mb-1 block text-xs font-medium text-[#f0b429]/60">Type</label>
                         <div className="flex gap-2">
                           {(["video", "image"] as const).map(t => (
                             <button
@@ -424,7 +424,7 @@ export default function PlayerMediaPage() {
                               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                                 form.media_type === t
                                   ? "bg-[#f0b429] text-[#1a3a1a]"
-                                  : "bg-white/10 text-white/60 hover:bg-white/20"
+                                  : "bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20"
                               }`}
                             >
                               {t === "video" ? <Video className="h-3.5 w-3.5" /> : <ImageIcon className="h-3.5 w-3.5" />}
@@ -436,7 +436,7 @@ export default function PlayerMediaPage() {
 
                       {/* URL */}
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-white/60">
+                        <label className="mb-1 block text-xs font-medium text-[#f0b429]/60">
                           Media URL <span className="text-red-400">*</span>
                         </label>
                         <input
@@ -444,28 +444,28 @@ export default function PlayerMediaPage() {
                           value={form.url}
                           onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
                           placeholder="https://..."
-                          className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50"
+                          className="w-full rounded-xl bg-[#f0b429]/10 px-4 py-2.5 text-sm text-[#f0b429] placeholder-[#f0b429]/30 outline-none border border-[#f0b429]/15 focus:border-[#f0b429]/50"
                           required
                         />
                       </div>
 
                       {/* Thumbnail URL */}
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-white/60">
-                          Thumbnail URL <span className="text-white/30">(optional)</span>
+                        <label className="mb-1 block text-xs font-medium text-[#f0b429]/60">
+                          Thumbnail URL <span className="text-[#f0b429]/30">(optional)</span>
                         </label>
                         <input
                           type="url"
                           value={form.thumbnail_url}
                           onChange={e => setForm(f => ({ ...f, thumbnail_url: e.target.value }))}
                           placeholder="https://... (JPEG thumbnail)"
-                          className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50"
+                          className="w-full rounded-xl bg-[#f0b429]/10 px-4 py-2.5 text-sm text-[#f0b429] placeholder-[#f0b429]/30 outline-none border border-[#f0b429]/15 focus:border-[#f0b429]/50"
                         />
                       </div>
 
                       {/* Category */}
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-white/60">Category</label>
+                        <label className="mb-1 block text-xs font-medium text-[#f0b429]/60">Category</label>
                         <div className="flex flex-wrap gap-2">
                           {CATEGORIES.map(c => (
                             <button
@@ -475,7 +475,7 @@ export default function PlayerMediaPage() {
                               className={`rounded-lg px-3 py-1 text-xs font-medium capitalize transition-colors ${
                                 form.media_category === c
                                   ? "bg-[#f0b429] text-[#1a3a1a]"
-                                  : "bg-white/10 text-white/50 hover:bg-white/20"
+                                  : "bg-[#f0b429]/10 text-[#f0b429]/50 hover:bg-[#f0b429]/20"
                               }`}
                             >
                               {c}
@@ -486,15 +486,15 @@ export default function PlayerMediaPage() {
 
                       {/* Caption */}
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-white/60">
-                          Caption <span className="text-white/30">(optional, max 200 chars)</span>
+                        <label className="mb-1 block text-xs font-medium text-[#f0b429]/60">
+                          Caption <span className="text-[#f0b429]/30">(optional, max 200 chars)</span>
                         </label>
                         <input
                           type="text"
                           value={form.caption}
                           onChange={e => setForm(f => ({ ...f, caption: e.target.value.slice(0, 200) }))}
                           placeholder="e.g. Training session — shooting drills"
-                          className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50"
+                          className="w-full rounded-xl bg-[#f0b429]/10 px-4 py-2.5 text-sm text-[#f0b429] placeholder-[#f0b429]/30 outline-none border border-[#f0b429]/15 focus:border-[#f0b429]/50"
                         />
                       </div>
 
@@ -515,7 +515,7 @@ export default function PlayerMediaPage() {
             )}
 
             {slotsFull && (
-              <p className="mt-4 text-center text-xs text-white/40">
+              <p className="mt-4 text-center text-xs text-[#f0b429]/40">
                 Gallery full ({MAX_ITEMS}/{MAX_ITEMS}). Delete an item to add more.
               </p>
             )}
