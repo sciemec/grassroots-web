@@ -326,7 +326,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
             )}
             {item.media_type === "video" && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-[#f0b429]/90 flex items-center justify-center">
                   <Play size={16} className="text-gray-800 ml-0.5" />
                 </div>
               </div>
@@ -347,7 +347,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
           onClick={() => setActive(null)}
         >
           <button
-            className="absolute top-4 right-4 text-white/80 hover:text-white"
+            className="absolute top-4 right-4 text-[#f0b429]/80 hover:text-[#f0b429]"
             onClick={() => setActive(null)}
           >
             <X size={28} />
@@ -359,7 +359,7 @@ function MediaGrid({ items }: { items: MediaItem[] }) {
               <img src={active.url} alt={active.caption ?? ""} className="w-full rounded-xl object-contain max-h-[70vh]" />
             )}
             {active.caption && (
-              <p className="text-white/80 text-sm text-center mt-3">{active.caption}</p>
+              <p className="text-[#f0b429]/80 text-sm text-center mt-3">{active.caption}</p>
             )}
           </div>
         </div>
@@ -749,7 +749,7 @@ export default function PlayerPassportPublicPage() {
           style={{ backgroundColor: "#1a5c2a" }}
         >
           <p className="text-white font-bold text-lg">Are you a player?</p>
-          <p className="text-white/70 text-sm">
+          <p className="text-[#f0b429]/70 text-sm">
             Build your own AI-powered passport and get discovered by scouts across Zimbabwe.
           </p>
           <Link
