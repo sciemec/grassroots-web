@@ -1,7 +1,7 @@
 // app/admin/whatsapp/page.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Users, DollarSign } from 'lucide-react';
 
 const affiliateUrl = process.env.NEXT_PUBLIC_BETWAY_AFFILIATE_URL ?? '';
@@ -12,9 +12,22 @@ export default function WhatsAppAdminPage() {
   const [target, setTarget] = useState('all');
   const [result, setResult] = useState<{ sent: number } | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/whatsapp/match-update?action=stats')
+      .then((r) => r.json())
+      .then((d) => setSubscriberCount(d.totalSubscribers ?? 0))
+      .catch(() => {});
+  }, []);
 
   const handleBroadcast = async () => {
     if (!message.trim()) return;
+
+    const confirmed = window.confirm(
+      `Send this broadcast to ${target === 'premium' ? 'premium users' : `all ${subscriberCount ?? '...'} subscribers`}?`
+    );
+    if (!confirmed) return;
 
     setIsSending(true);
     setResult(null);
@@ -37,10 +50,11 @@ export default function WhatsAppAdminPage() {
 
       const data = await response.json();
       setResult({ sent: data.sentCount || 0 });
+      setMessage('');
 
     } catch (error) {
       console.error('Broadcast failed:', error);
-      setSendError('Broadcast failed. Check console for details.');
+      setSendError(error instanceof Error ? error.message : 'Broadcast failed.');
     } finally {
       setIsSending(false);
     }
@@ -90,6 +104,12 @@ export default function WhatsAppAdminPage() {
             {message.length} characters
           </p>
         </div>
+
+        {subscriberCount !== null && (
+          <p className="text-xs text-gray-500 mb-3">
+            {subscriberCount} subscriber{subscriberCount !== 1 ? 's' : ''} on record
+          </p>
+        )}
 
         <button
           onClick={handleBroadcast}

@@ -1,6 +1,6 @@
 // lib/world-cup/stats-aggregator.ts
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/generated/prisma';
+import { Prisma } from '@prisma/client';
 import { fetchMatchPlayerStats, fetchPlayerInfo } from './data-provider';
 import type { AggregatedPlayerStats } from './types';
 
