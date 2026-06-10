@@ -74,7 +74,7 @@ export default function ChemistryPairPage() {
           {/* Back link */}
           <Link
             href="/coach/chemistry"
-            className="flex items-center gap-1.5 text-white/50 hover:text-white text-xs mb-5 transition-colors"
+            className="flex items-center gap-1.5 text-[#f0b429]/50 hover:text-white text-xs mb-5 transition-colors"
           >
             <ArrowLeft size={12} /> Squad Chemistry Matrix
           </Link>
@@ -82,7 +82,7 @@ export default function ChemistryPairPage() {
           <h1 className="text-xl font-black text-white mb-5">Pair Chemistry</h1>
 
           {loading && (
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-10 text-center text-white/40 text-sm">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-10 text-center text-[#f0b429]/40 text-sm">
               Loading pair chemistry…
             </div>
           )}
@@ -91,7 +91,7 @@ export default function ChemistryPairPage() {
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-300 text-sm space-y-2">
               <p className="font-semibold">Could not load pair data</p>
               <p>{error}</p>
-              <Link href="/coach/chemistry" className="text-xs text-white/50 hover:text-white underline block mt-3">
+              <Link href="/coach/chemistry" className="text-xs text-[#f0b429]/50 hover:text-white underline block mt-3">
                 Return to chemistry matrix
               </Link>
             </div>

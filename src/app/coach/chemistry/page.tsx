@@ -29,10 +29,10 @@ function getGroup(position: string): string {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-4">
+    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-4">
       <div className="text-2xl font-black text-[#f0b429]">{value}</div>
       <div className="text-sm font-semibold text-white mt-0.5">{label}</div>
-      <div className="text-xs text-white/40 mt-0.5">{sub}</div>
+      <div className="text-xs text-[#f0b429]/40 mt-0.5">{sub}</div>
     </div>
   );
 }
@@ -158,14 +158,14 @@ export default function CoachChemistryPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <Link href="/coach" className="flex items-center gap-1.5 text-white/50 hover:text-white text-xs mb-2 transition-colors">
+            <Link href="/coach" className="flex items-center gap-1.5 text-[#f0b429]/50 hover:text-white text-xs mb-2 transition-colors">
               <ArrowLeft size={12} /> Coach Hub
             </Link>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-black text-white">Squad Chemistry</h1>
               <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300">v1</span>
             </div>
-            <p className="text-white/50 text-sm mt-0.5">
+            <p className="text-[#f0b429]/50 text-sm mt-0.5">
               Style Compatibility · 60% style · 25% demographic · 15% geographic · Full Chemistry Rating coming soon
             </p>
           </div>
@@ -195,7 +195,7 @@ export default function CoachChemistryPage() {
               className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
                 posFilter === f
                   ? "bg-[#f0b429] text-[#1a3a1a]"
-                  : "bg-white/10 text-white/60 hover:bg-white/20"
+                  : "bg-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/20"
               }`}
             >
               {f === "all" ? "All Positions" : `${f}s`}
@@ -204,14 +204,14 @@ export default function CoachChemistryPage() {
         </div>
 
         {/* Chemistry Matrix */}
-        <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-6">
           <h2 className="text-white font-bold mb-1">Style Compatibility Matrix</h2>
-          <p className="text-white/40 text-xs mb-5">
+          <p className="text-[#f0b429]/40 text-xs mb-5">
             Each cell = style compatibility score between two players. Click any cell to see the full breakdown.
           </p>
 
           {loading && (
-            <div className="text-white/50 text-sm py-8 text-center">Loading chemistry data…</div>
+            <div className="text-[#f0b429]/50 text-sm py-8 text-center">Loading chemistry data…</div>
           )}
           {error && !loading && (
             <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-red-300 text-sm">
@@ -225,7 +225,7 @@ export default function CoachChemistryPage() {
 
         {/* Top pairs list */}
         {!loading && topPairs.length > 0 && (
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-6">
             <h2 className="text-white font-bold mb-4">Top 5 Chemistry Pairs</h2>
             <div className="space-y-4">
               {topPairs.map((pair, i) => {
@@ -237,12 +237,12 @@ export default function CoachChemistryPage() {
                     href={`/coach/chemistry/pair/${pair.player_a_id}/${pair.player_b_id}`}
                     className="flex items-center gap-3 group"
                   >
-                    <span className="text-white/30 text-sm w-5 text-right">{i + 1}</span>
+                    <span className="text-[#f0b429]/30 text-sm w-5 text-right">{i + 1}</span>
                     <div className="flex-1">
                       <div className="text-white text-sm font-semibold group-hover:text-[#f0b429] transition-colors">
                         {aName} × {bName}
                       </div>
-                      <div className="h-1.5 bg-white/10 rounded-full mt-1.5 overflow-hidden">
+                      <div className="h-1.5 bg-[#f0b429]/10 rounded-full mt-1.5 overflow-hidden">
                         <div
                           className="h-full bg-green-500 rounded-full transition-all duration-500"
                           style={{ width: `${Math.min(100, pair.chemistry_score)}%` }}
@@ -261,8 +261,8 @@ export default function CoachChemistryPage() {
 
         {/* Empty state */}
         {!loading && !error && pairs.length === 0 && (
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-10 text-center">
-            <p className="text-white/40 text-sm max-w-md mx-auto">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-10 text-center">
+            <p className="text-[#f0b429]/40 text-sm max-w-md mx-auto">
               No chemistry data yet. Players need at least 8 drills across 3 sessions in the GrassRoots
               app to generate a style fingerprint. The nightly similarity job runs at 02:00 Harare time.
             </p>
