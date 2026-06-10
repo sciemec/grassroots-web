@@ -78,10 +78,10 @@ function PhaseCard({ phase }: { phase: Phase }) {
   const emoji = PHASE_ICONS[phase.id] ?? "📋";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-4 p-5 text-left hover:bg-white/5 transition-colors"
+        className="flex w-full items-center gap-4 p-5 text-left hover:bg-[#f0b429]/5 transition-colors"
       >
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-2xl"
           style={{ backgroundColor: `${phase.color}22` }}>
@@ -100,7 +100,7 @@ function PhaseCard({ phase }: { phase: Phase }) {
       </button>
 
       {open && (
-        <div className="border-t border-white/10 p-5 space-y-5">
+        <div className="border-t border-[#f0b429]/10 p-5 space-y-5">
           <p className="text-sm text-muted-foreground leading-relaxed">{phase.description}</p>
 
           {/* Training guidelines */}
@@ -111,7 +111,7 @@ function PhaseCard({ phase }: { phase: Phase }) {
               { icon: Users, label: "Ratio", value: phase.training_guidelines.ratio.split(" ")[0] + " coach" },
               { icon: Target, label: "Ball size", value: `Size ${phase.training_guidelines.ball_size}` },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+              <div key={label} className="rounded-xl border border-[#f0b429]/10 bg-[#f0b429]/5 p-3 text-center">
                 <Icon className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">{label}</p>
                 <p className="text-sm font-bold text-white">{value}</p>
@@ -124,8 +124,8 @@ function PhaseCard({ phase }: { phase: Phase }) {
             <h4 className="mb-2 text-sm font-semibold text-white">Session Structure</h4>
             <div className="space-y-1.5">
               {phase.training_guidelines.session_structure.map((s, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-2">
-                  <span className="text-sm text-white/80">{s.component}</span>
+                <div key={i} className="flex items-center justify-between rounded-lg border border-[#f0b429]/5 bg-[#f0b429]/5 px-3 py-2">
+                  <span className="text-sm text-[#f0b429]/80">{s.component}</span>
                   <span className="text-xs font-medium text-primary">{s.duration_minutes} min</span>
                 </div>
               ))}
@@ -172,7 +172,7 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
     <div className={`rounded-2xl border bg-card/60 overflow-hidden ${colors.border}`}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 p-4 text-left hover:bg-white/5 transition-colors"
+        className="flex w-full items-center gap-3 p-4 text-left hover:bg-[#f0b429]/5 transition-colors"
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -184,7 +184,7 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
           <h3 className="mt-1 font-semibold text-sm text-white leading-snug">{prog.title}</h3>
           <div className="mt-1 flex flex-wrap gap-1">
             {prog.key_words.slice(0, 4).map((kw) => (
-              <span key={kw} className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">{kw}</span>
+              <span key={kw} className="rounded bg-[#f0b429]/5 px-1.5 py-0.5 text-[10px] text-muted-foreground">{kw}</span>
             ))}
           </div>
         </div>
@@ -192,7 +192,7 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
       </button>
 
       {open && (
-        <div className="border-t border-white/10">
+        <div className="border-t border-[#f0b429]/10">
           {/* Week selector */}
           <div className="flex gap-1 overflow-x-auto p-3 pb-0">
             {prog.weeks.map((w, i) => (
@@ -200,7 +200,7 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
                 key={i}
                 onClick={() => setActiveWeek(i)}
                 className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeWeek === i ? "bg-primary text-primary-foreground" : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                  activeWeek === i ? "bg-primary text-primary-foreground" : "bg-[#f0b429]/5 text-muted-foreground hover:bg-[#f0b429]/10"
                 }`}
               >
                 Week {w.week}
@@ -220,7 +220,7 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
                 <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Objectives</p>
                 <ul className="space-y-1">
                   {prog.weeks[activeWeek].objectives.map((o, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-white/80">
+                    <li key={i} className="flex items-start gap-2 text-xs text-[#f0b429]/80">
                       <Target className="mt-0.5 h-3 w-3 flex-shrink-0 text-primary" />
                       {o}
                     </li>
@@ -233,7 +233,7 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
                 <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Coaching Points</p>
                 <ul className="space-y-1.5">
                   {prog.weeks[activeWeek].coaching_points.map((cp, i) => (
-                    <li key={i} className="rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-xs text-white/80 leading-relaxed">
+                    <li key={i} className="rounded-lg border border-[#f0b429]/5 bg-[#f0b429]/5 px-3 py-2 text-xs text-[#f0b429]/80 leading-relaxed">
                       {cp}
                     </li>
                   ))}
@@ -246,11 +246,11 @@ function ProgrammeCard({ prog }: { prog: Programme }) {
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Activities</p>
                   <div className="space-y-3">
                     {prog.weeks[activeWeek].activities.map((act, i) => (
-                      <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <div key={i} className="rounded-xl border border-[#f0b429]/10 bg-[#f0b429]/5 p-3">
                         <p className="mb-2 text-xs font-bold text-primary">{act.name}</p>
                         <ul className="space-y-1">
                           {act.instructions.map((ins, j) => (
-                            <li key={j} className="flex gap-2 text-xs text-white/70">
+                            <li key={j} className="flex gap-2 text-xs text-[#f0b429]/70">
                               <span className="flex-shrink-0 text-muted-foreground">{j + 1}.</span>
                               {ins}
                             </li>
@@ -331,7 +331,7 @@ export default function TrainingPlansPage() {
                 className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
                   sport === s.key
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+                    : "border-[#f0b429]/10 bg-[#f0b429]/5 text-muted-foreground hover:bg-[#f0b429]/10"
                 }`}
               >
                 <span>{s.emoji}</span> {s.label}
@@ -340,7 +340,7 @@ export default function TrainingPlansPage() {
           </div>
 
           {/* Tabs */}
-          <div className="mt-3 flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1 w-fit">
+          <div className="mt-3 flex gap-1 rounded-xl border border-[#f0b429]/10 bg-[#f0b429]/5 p-1 w-fit">
             {(["phases", "programmes"] as const).map((t) => (
               <button
                 key={t}
@@ -376,7 +376,7 @@ export default function TrainingPlansPage() {
                     key={c}
                     onClick={() => setCatFilter(c)}
                     className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                      catFilter === c ? "bg-primary text-primary-foreground" : "border border-white/10 bg-card/60 text-muted-foreground hover:bg-white/10"
+                      catFilter === c ? "bg-primary text-primary-foreground" : "border border-[#f0b429]/10 bg-card/60 text-muted-foreground hover:bg-[#f0b429]/10"
                     }`}
                   >
                     {c === "all" ? `All (${programmes.length})` : `${c} (${programmes.filter((p) => p.category === c).length})`}
