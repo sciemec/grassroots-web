@@ -39,16 +39,16 @@ export async function getRealLiveMatches(): Promise<RealMatch[]> {
   const data = await response.json();
   
   // Filter ONLY real live matches (no mocks)
-  return data.matches
+  return (data.matches ?? [])
     .filter((m: any) => m.status === 'LIVE' || m.status === 'IN_PLAY')
     .map((m: any) => ({
       id: m.id,
       homeTeam: m.homeTeam.name,
       awayTeam: m.awayTeam.name,
-      homeScore: m.score.fullTime.home ?? m.score.halfTime.home ?? 0,
-      awayScore: m.score.fullTime.away ?? m.score.halfTime.away ?? 0,
+      homeScore: m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? 0,
+      awayScore: m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? 0,
       minute: m.minute ?? 0,
-      status: m.status === 'LIVE' || m.status === 'IN_PLAY' ? 'LIVE' : 'FINISHED',
+      status: 'LIVE' as const,
       matchday: m.matchday,
       utcDate: m.utcDate
     }));
@@ -75,8 +75,8 @@ export async function getRealMatchEvents(matchId: number): Promise<RealEvent[]> 
       id: e.id,
       minute: e.minute,
       eventType: e.type,
-      player: e.player.name,
-      teamId: e.team.id
+      player: e.player?.name ?? 'Unknown',
+      teamId: e.team?.id ?? 0
     }));
 }
 

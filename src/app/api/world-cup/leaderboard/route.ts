@@ -4,6 +4,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,16 +15,16 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50') || 50;
     
     // Build where clause
-    const where: any = {};
+    const where: Prisma.WorldCupPlayerStatsWhereInput = {};
     if (position && position !== 'ALL') {
       where.position = position;
     }
     if (country) {
       where.country = country;
     }
-    
+
     // Build order by
-    let orderBy: any = {};
+    let orderBy: Prisma.WorldCupPlayerStatsOrderByWithRelationInput = {};
     switch (sortBy) {
       case 'goals':
         orderBy = { goals: 'desc' };

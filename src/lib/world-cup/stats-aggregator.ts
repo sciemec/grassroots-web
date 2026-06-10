@@ -1,10 +1,11 @@
 // lib/world-cup/stats-aggregator.ts
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import { fetchMatchPlayerStats, fetchPlayerInfo } from './data-provider';
 import type { AggregatedPlayerStats } from './types';
 
 // Calculate custom performance score (real algorithm)
-export function calculatePerformanceScore(stats: any): number {
+export function calculatePerformanceScore(stats: AggregatedPlayerStats): number {
   let score = 0;
   
   // Goals: 10 points each
@@ -89,7 +90,7 @@ export async function syncMatchToDatabase(matchId: string): Promise<void> {
         const newAvgRating = newTotalRating / newMatchesPlayed;
         
         // Prepare update data
-        const updateData: any = {
+        const updateData: Prisma.WorldCupPlayerStatsUpdateInput = {
           matchesPlayed: newMatchesPlayed,
           minutesPlayed: newMinutesPlayed,
           goals: newGoals,
@@ -110,7 +111,7 @@ export async function syncMatchToDatabase(matchId: string): Promise<void> {
         
         // Calculate performance score
         updateData.performanceScore = calculatePerformanceScore({
-          ...updateData,
+          ...updateData as unknown as AggregatedPlayerStats,
           position: player.position
         });
         
@@ -140,24 +141,27 @@ export async function syncAllWorldCupMatches(): Promise<{ synced: number; failed
   const matches = await prisma.worldCupMatch.findMany({
     where: { status: 'finished' }
   });
-  
+
+  // Batch lookup: one query instead of N separate findUnique calls
+  const matchIds = matches.map((m) => m.id);
+  const alreadySynced = await prisma.worldCupMatchSync.findMany({
+    where: { matchId: { in: matchIds } },
+    select: { matchId: true }
+  });
+  const syncedSet = new Set(alreadySynced.map((s) => s.matchId));
+
   let synced = 0;
   let failed = 0;
-  
+
   for (const match of matches) {
-    const existingSync = await prisma.worldCupMatchSync.findUnique({
-      where: { matchId: match.id }
-    });
-    
-    if (!existingSync) {
-      try {
-        await syncMatchToDatabase(match.id);
-        synced++;
-      } catch (error) {
-        failed++;
-      }
+    if (syncedSet.has(match.id)) continue;
+    try {
+      await syncMatchToDatabase(match.id);
+      synced++;
+    } catch {
+      failed++;
     }
   }
-  
+
   return { synced, failed };
 }

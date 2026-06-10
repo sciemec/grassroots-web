@@ -1,58 +1,33 @@
 // src/app/api/world-cup/[id]/route.ts
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+// Make sure you are importing from your global instance wrapper, not creating a 'new PrismaClient()' here
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!params.id?.trim()) {
-    return NextResponse.json({ error: 'Player ID required' }, { status: 400 });
-  }
-
   try {
-    const player = await prisma.worldCupPlayerStats.findUnique({
-      where: { playerId: params.id }
-    });
+    const { id } = params;
 
-    if (!player) {
-      return NextResponse.json({ error: 'Player not found' }, { status: 404 });
+    if (!id) {
+      return NextResponse.json({ error: "Missing identity parameter" }, { status: 400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        playerId: player.playerId,
-        playerName: player.playerName,
-        country: player.country,
-        position: player.position,
-        shirtNumber: player.shirtNumber,
-        matchesPlayed: player.matchesPlayed,
-        minutesPlayed: player.minutesPlayed,
-        goals: player.goals,
-        assists: player.assists,
-        shots: player.shots,
-        shotsOnTarget: player.shotsOnTarget,
-        passAccuracy: player.passAccuracy,
-        passesCompleted: player.passesCompleted,
-        passesAttempted: player.passesAttempted,
-        tackles: player.tackles,
-        interceptions: player.interceptions,
-        clearances: player.clearances,
-        saves: player.saves,
-        cleanSheets: player.cleanSheets,
-        yellowCards: player.yellowCards,
-        redCards: player.redCards,
-        avgRating: player.avgRating,
-        performanceScore: player.performanceScore
-      }
+    const tournamentData = await prisma.tournament.findUnique({
+      where: { id: String(id) }
     });
 
+    if (!tournamentData) {
+      return NextResponse.json({ error: "Tournament record not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(tournamentData);
   } catch (error) {
-    console.error('Player fetch error:', error);
-    return NextResponse.json({ error: 'Failed to fetch player' }, { status: 500 });
+    console.error("Database extraction failure on dynamic route:", error);
+    return NextResponse.json({ error: "Internal operational error" }, { status: 500 });
   }
 }

@@ -1,4 +1,7 @@
 // app/api/world-cup/matches/route.ts - NO MOCKS
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
 import { getRealLiveMatches } from '@/lib/live-scores';
 
