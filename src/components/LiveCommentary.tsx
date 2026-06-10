@@ -18,6 +18,7 @@ interface LiveCommentaryProps {
   matchId: string;
   homeTeam: string;
   awayTeam: string;
+  autoStartAudio?: boolean;
 }
 
 function buildFallbackCommentary(event: {
@@ -76,7 +77,7 @@ function eventStyle(type: string): { card: string; badge: string; text: string }
   }
 }
 
-export function LiveCommentary({ matchId, homeTeam, awayTeam }: LiveCommentaryProps) {
+export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: LiveCommentaryProps) {
   const [entries, setEntries] = useState<CommentaryEntry[]>([]);
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
@@ -89,6 +90,11 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam }: LiveCommentaryPr
   const [isLoading, setIsLoading] = useState(true);
   const seenIds = useRef<Set<string>>(new Set());
   const feedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (autoStartAudio) setAudioEnabled(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartAudio]);
 
   useEffect(() => {
     poll();

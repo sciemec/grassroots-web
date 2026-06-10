@@ -271,6 +271,7 @@ export default function WorldCupPage() {
   const [isLoading, setIsLoading]               = useState(true);
   const [activeGroup, setActiveGroup]           = useState("All");
   const [wireIndex, setWireIndex]               = useState(0);
+  const [audioMode, setAudioMode]               = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
@@ -314,6 +315,16 @@ export default function WorldCupPage() {
   const handleUpcomingSelect = (m: UpcomingMatch) => {
     setSelectedUpcoming(m);
     setSelectedMatch(null);
+  };
+
+  const handleFeatureClick = (feature: "commentary" | "probability" | "audio") => {
+    if (liveMatches.length > 0) {
+      setAudioMode(feature === "audio");
+      setSelectedMatch(liveMatches[0]);
+      setSelectedUpcoming(null);
+    } else {
+      document.getElementById("fixtures")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const filtered = activeGroup === "All"
@@ -598,11 +609,12 @@ export default function WorldCupPage() {
 
             {selectedMatch ? (
               <div className="space-y-3">
-                <LiveMatchContextBar match={selectedMatch} onBack={() => setSelectedMatch(null)} />
+                <LiveMatchContextBar match={selectedMatch} onBack={() => { setSelectedMatch(null); setAudioMode(false); }} />
                 <LiveCommentary
                   matchId={selectedMatch.id.toString()}
                   homeTeam={selectedMatch.homeTeam}
                   awayTeam={selectedMatch.awayTeam}
+                  autoStartAudio={audioMode}
                 />
               </div>
 
@@ -703,16 +715,21 @@ export default function WorldCupPage() {
                 {/* Feature strip */}
                 <div className="grid grid-cols-3 border-t border-gray-100">
                   {([
-                    { Icon: Flame, label: "AI Commentary",   desc: "Real-time events" },
-                    { Icon: Zap,   label: "Win Probability", desc: "Live predictions" },
-                    { Icon: Radio, label: "Audio Mode",      desc: "Hands-free" },
-                  ] as const).map(({ Icon, label, desc }, i) => (
-                    <div key={label} className="px-3 py-4 text-center"
-                      style={{ borderRight: i < 2 ? "1px solid #f3f4f6" : undefined }}>
+                    { Icon: Flame, label: "AI Commentary",   desc: "Real-time events",  feature: "commentary"  as const },
+                    { Icon: Zap,   label: "Win Probability", desc: "Live predictions",   feature: "probability" as const },
+                    { Icon: Radio, label: "Audio Mode",      desc: "Hands-free",         feature: "audio"       as const },
+                  ]).map(({ Icon, label, desc, feature }, i) => (
+                    <button
+                      key={label}
+                      onClick={() => handleFeatureClick(feature)}
+                      className="px-3 py-4 text-center transition-colors hover:bg-gray-50 active:bg-gray-100 cursor-pointer"
+                      style={{ borderRight: i < 2 ? "1px solid #f3f4f6" : undefined }}
+                      title={liveMatches.length > 0 ? `Open ${label}` : "Select an upcoming fixture to preview"}
+                    >
                       <Icon size={16} className="mx-auto mb-1.5" style={{ color: "#f0b429" }} />
                       <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">{label}</p>
                       <p className="text-[9px] mt-0.5 text-gray-300">{desc}</p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
