@@ -2,8 +2,8 @@
 import { groqText } from "@/lib/groq";
 
 interface MatchData {
-  homeTeam: string;
-  awayTeam: string;
+  homeTeam?: string;
+  awayTeam?: string;
   homeScore?: number;
   awayScore?: number;
   homePossession?: number;
@@ -22,14 +22,27 @@ You shout. You say "WHAT A SAVE!" and "HOW DID HE MISS THAT?"
 You are emotional. You are the voice of the fans in the pub.`;
 
 export async function generateHalftimeDebate(matchData: MatchData): Promise<string> {
-  const matchContext = [{ role: "user" as const, content: JSON.stringify(matchData) }];
-
-  const analystResponse = await groqText(ANALYST_PROMPT, matchContext);
-  const punditResponse = await groqText(PUNDIT_PROMPT, matchContext);
-
   const homeTeam = matchData.homeTeam ?? "Home";
   const awayTeam = matchData.awayTeam ?? "Away";
   const affiliateUrl = process.env.BETWAY_AFFILIATE_URL ?? "";
+
+  const matchContext = [
+    {
+      role: "user" as const,
+      content:
+        `Give a punchy 2-sentence half-time verdict on this match. Match data: ${JSON.stringify(matchData)}`,
+    },
+  ];
+
+  // Run both AI calls concurrently — they are independent
+  const [analystResponse, punditResponse] = await Promise.all([
+    groqText(ANALYST_PROMPT, matchContext).catch(
+      () => "The numbers tell an interesting story — we'll have more at full time.",
+    ),
+    groqText(PUNDIT_PROMPT, matchContext).catch(
+      () => "WHAT A HALF! I can't believe what I've just seen out there!",
+    ),
+  ]);
 
   return [
     `🎙️ HALF-TIME ANALYSIS - ${homeTeam} vs ${awayTeam}`,
