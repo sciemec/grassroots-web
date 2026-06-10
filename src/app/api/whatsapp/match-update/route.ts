@@ -8,7 +8,8 @@ import {
   generateMatchUpdateMessage,
   subscribeUser,
   getSubscriberCount,
-  type MatchEvent
+  type MatchEvent,
+  type Subscriber,
 } from '@/lib/whatsapp-service';
 
 // Store active matches (in production, use database)
@@ -25,10 +26,10 @@ export async function POST(req: NextRequest) {
       const formData = await req.formData();
       
       // Extract key fields from the Twilio WhatsApp payload
-      const fromNumber = formData.get('From') as string;  // e.g., "whatsapp:+263xxxxxxxxx"
-      const toNumber = formData.get('To') as string;      // Your Sandbox number
-      const messageBody = formData.get('Body') as string;  // The actual text message sent
-      const messageSid = formData.get('MessageSid') as string;
+      const fromNumber = formData.get('From') ?? '';   // e.g., "whatsapp:+263xxxxxxxxx"
+      const toNumber   = formData.get('To')   ?? '';   // Your Sandbox number
+      const messageBody = formData.get('Body') ?? '';  // The actual text message sent
+      const messageSid  = formData.get('MessageSid') ?? '';
 
       console.log(`\n📬 [WhatsApp Incoming] New message from ${fromNumber}:`);
       console.log(`💬 Content: "${messageBody}"`);
@@ -47,11 +48,35 @@ export async function POST(req: NextRequest) {
     // ==========================================
     // ⚙️ FLOW B: INTERNAL PLATFORM ACTIONS (JSON)
     // ==========================================
-    const body = await req.json();
-    const { action, matchId, event, phoneNumber, name } = body;
-    
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    const {
+      action,
+      matchId,
+      event,
+      phoneNumber,
+      name,
+      message: customMessage,
+      filterPremium,
+    } = body as {
+      action?: string;
+      matchId?: string;
+      event?: MatchEvent;
+      phoneNumber?: string;
+      name?: string;
+      message?: string;
+      filterPremium?: boolean;
+    };
+
     // Handle subscription
     if (action === 'subscribe') {
+      if (!phoneNumber || !name) {
+        return NextResponse.json({ error: 'phoneNumber and name are required' }, { status: 400 });
+      }
       const success = await subscribeUser(phoneNumber, name);
       return NextResponse.json({ success, message: 'Subscribed to match updates' });
     }
@@ -62,7 +87,7 @@ export async function POST(req: NextRequest) {
       const message = generateMatchUpdateMessage(event, affiliateLink);
       
       // Filter subscribers who want this type of update
-      const filter = (sub: any) => {
+      const filter = (sub: Subscriber) => {
         if (event.type === 'goal' && !sub.preferences.goals) return false;
         return true;
       };
@@ -84,9 +109,13 @@ export async function POST(req: NextRequest) {
     
     // Handle manual broadcast
     if (action === 'broadcast_custom') {
-      const { message, filterPremium } = body;
-      const filter = filterPremium ? (sub: any) => sub.subscriptionTier === 'premium' : undefined;
-      const sentCount = await broadcastToSubscribers(message, filter);
+      if (!customMessage) {
+        return NextResponse.json({ error: 'message is required' }, { status: 400 });
+      }
+      const filter = filterPremium
+        ? (sub: Subscriber) => sub.subscriptionTier === 'premium'
+        : undefined;
+      const sentCount = await broadcastToSubscribers(customMessage, filter);
       
       return NextResponse.json({ success: true, sentCount });
     }

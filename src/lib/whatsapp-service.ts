@@ -80,12 +80,15 @@ export function getSubscriberCount(): number {
 
 export async function sendWhatsAppMessage(to: string, body: string): Promise<boolean> {
   try {
+    if (!fromNumber) {
+      throw new Error('TWILIO_WHATSAPP_FROM env var is not set');
+    }
     // Normalise: strip any existing whatsapp: prefix before re-adding it
     const normalised = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
     await getClient().messages.create({
-      body: body,
+      body,
       from: fromNumber,
-      to: normalised
+      to: normalised,
     });
     return true;
   } catch (error) {
@@ -155,7 +158,7 @@ ${generateHalftimeAnalysis(event)}
 
 ${process.env.SPONSOR_HALFTIME_MESSAGE || 'Sponsored by GrassRoots Sports'}
 
-💰 Second half specials: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL}
+💰 Second half specials: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL || ''}
 
 Reply "GOAL" for goal alerts only
       `.trim();
@@ -173,7 +176,7 @@ Shots: ${event.homeShots || 0} - ${event.awayShots || 0}
 ${process.env.SPONSOR_FULLTIME_MESSAGE || 'Sponsored by GrassRoots Sports'}
 
 📱 Share this match with friends!
-🔗 Next match odds: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL}
+🔗 Next match odds: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL || ''}
 
 Reply "SUBSCRIBE" for more match updates
       `.trim();
