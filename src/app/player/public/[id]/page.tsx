@@ -73,11 +73,11 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#1a5c2a" }}>
         <div className="text-center px-6">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10">
-            <User className="h-8 w-8 text-white/60" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f0b429]/10">
+            <User className="h-8 w-8 text-[#f0b429]/60" />
           </div>
           <h1 className="text-xl font-bold text-white">Profile not found</h1>
-          <p className="mt-2 text-sm text-white/60">This player profile does not exist or has been removed.</p>
+          <p className="mt-2 text-sm text-[#f0b429]/60">This player profile does not exist or has been removed.</p>
         </div>
       </div>
     );
@@ -100,11 +100,11 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
         {/* Platform logo / header */}
         <div className="mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#f0b429]/80">GrassRoots Sports</p>
-          <p className="text-[10px] text-white/40 mt-0.5">Zimbabwe&apos;s First AI-Powered Sports Platform</p>
+          <p className="text-[10px] text-[#f0b429]/40 mt-0.5">Zimbabwe&apos;s First AI-Powered Sports Platform</p>
         </div>
 
         {/* Player card */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
+        <div className="rounded-3xl border border-[#f0b429]/10 bg-[#f0b429]/5 backdrop-blur-sm overflow-hidden">
 
           {/* Green header band */}
           <div className="h-24 relative" style={{ background: "linear-gradient(135deg, #0c3d1a 0%, #1a5c2a 100%)" }}>
@@ -127,8 +127,8 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
                 className="h-28 w-28 rounded-full object-cover border-4 border-[#f0b429]/60 shadow-xl"
               />
             ) : (
-              <div className="h-28 w-28 rounded-full bg-white/10 border-4 border-[#f0b429]/30 flex items-center justify-center">
-                <User className="h-12 w-12 text-white/40" />
+              <div className="h-28 w-28 rounded-full bg-[#f0b429]/10 border-4 border-[#f0b429]/30 flex items-center justify-center">
+                <User className="h-12 w-12 text-[#f0b429]/40" />
               </div>
             )}
           </div>
@@ -140,7 +140,7 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
               {profile.sport} · {profile.position}
             </p>
             {(profile.club || profile.school) && (
-              <p className="mt-1 text-xs text-white/50">{profile.club ?? profile.school}</p>
+              <p className="mt-1 text-xs text-[#f0b429]/50">{profile.club ?? profile.school}</p>
             )}
           </div>
 
@@ -148,15 +148,15 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
           {(profile.appearances || profile.goals) && (
             <div className="mx-5 my-4 grid grid-cols-2 gap-3">
               {profile.appearances !== null && (
-                <div className="rounded-xl bg-white/5 p-3 text-center">
+                <div className="rounded-xl bg-[#f0b429]/5 p-3 text-center">
                   <p className="text-2xl font-extrabold text-white">{profile.appearances}</p>
-                  <p className="text-[10px] text-white/50 uppercase tracking-wide">Appearances</p>
+                  <p className="text-[10px] text-[#f0b429]/50 uppercase tracking-wide">Appearances</p>
                 </div>
               )}
               {profile.goals !== null && (
-                <div className="rounded-xl bg-white/5 p-3 text-center">
+                <div className="rounded-xl bg-[#f0b429]/5 p-3 text-center">
                   <p className="text-2xl font-extrabold text-[#f0b429]">{profile.goals}</p>
-                  <p className="text-[10px] text-white/50 uppercase tracking-wide">Goals</p>
+                  <p className="text-[10px] text-[#f0b429]/50 uppercase tracking-wide">Goals</p>
                 </div>
               )}
             </div>
@@ -170,10 +170,10 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
               { icon: Ruler,   label: "Height",         value: profile.height_cm ? `${profile.height_cm} cm` : null },
               { icon: User,    label: "Preferred Foot", value: profile.preferred_foot },
             ].filter(r => r.value).map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-2.5">
+              <div key={label} className="flex items-center justify-between rounded-xl bg-[#f0b429]/5 px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <Icon className="h-3.5 w-3.5 text-[#f0b429]" />
-                  <span className="text-xs text-white/50">{label}</span>
+                  <span className="text-xs text-[#f0b429]/50">{label}</span>
                 </div>
                 <span className="text-sm font-semibold capitalize text-white">{value}</span>
               </div>
@@ -182,15 +182,15 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
 
           {/* Bio */}
           {profile.bio && (
-            <div className="mx-5 mb-5 rounded-xl bg-white/5 px-4 py-3">
+            <div className="mx-5 mb-5 rounded-xl bg-[#f0b429]/5 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#f0b429]/70 mb-1.5">About</p>
-              <p className="text-sm text-white/70 leading-relaxed">{profile.bio}</p>
+              <p className="text-sm text-[#f0b429]/70 leading-relaxed">{profile.bio}</p>
             </div>
           )}
 
           {/* Footer */}
-          <div className="border-t border-white/5 px-5 py-4 text-center">
-            <p className="text-[10px] text-white/30">
+          <div className="border-t border-[#f0b429]/5 px-5 py-4 text-center">
+            <p className="text-[10px] text-[#f0b429]/30">
               This profile was verified by GrassRoots Sports · grassrootssports.live
             </p>
           </div>
@@ -230,7 +230,7 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
           >
             Join GrassRoots Sports
           </a>
-          <p className="mt-2 text-xs text-white/30">Free for all Zimbabwean athletes</p>
+          <p className="mt-2 text-xs text-[#f0b429]/30">Free for all Zimbabwean athletes</p>
         </div>
       </div>
     </div>
