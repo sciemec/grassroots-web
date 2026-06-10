@@ -7,6 +7,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  if (!params.id?.trim()) {
+    return NextResponse.json({ error: 'Match ID required' }, { status: 400 });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const { action } = body as { action?: string };
