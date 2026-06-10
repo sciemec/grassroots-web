@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Target, Play, CheckCircle2, Brain, Loader2, TrendingUp,
-  Activity, ChevronRight, Star, Zap, Scan, AlertCircle,
+  Activity, ChevronRight, Star, Zap, Scan, AlertCircle, Trophy,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -16,6 +16,7 @@ import { queryAI } from "@/lib/ai-query";
 import { calcBenchmarkScore } from "@/lib/skill-scoring";
 import api from "@/lib/api";
 import { safeArray } from "@/lib/safe-array";
+import { FIELD_META_LABELS } from "@/config/sports";
 
 // ── Test definitions ──────────────────────────────────────────────────────────
 
@@ -122,6 +123,34 @@ interface BiometricScan {
   session_date: string;
 }
 
+// ── Match stat types ──────────────────────────────────────────────────────────
+
+interface MatchStat {
+  id: string;
+  sport: string;
+  role?: string;
+  match_type?: string;
+  match_date?: string;
+  opponent?: string;
+  result?: string;
+  score?: string;
+  competition?: string;
+  stats: Record<string, number | string>;
+  created_at: string;
+}
+
+const RESULT_COLOR: Record<string, string> = {
+  W: "#22c55e",
+  D: "#f0b429",
+  L: "#ef4444",
+};
+
+const RESULT_LABEL: Record<string, string> = {
+  W: "Win",
+  D: "Draw",
+  L: "Loss",
+};
+
 const BIOMETRIC_LEVEL_COLOR: Record<string, string> = {
   Elite: "#22c55e",
   Good:  "#f0b429",
@@ -130,7 +159,7 @@ const BIOMETRIC_LEVEL_COLOR: Record<string, string> = {
 
 export default function AssessmentPage() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<"field" | "apk" | "biometric">("field");
+  const [activeTab, setActiveTab] = useState<"field" | "apk" | "biometric" | "stats">("field");
 
   // Field tests state
   const [positionGroup, setPositionGroup] = useState("");
@@ -141,6 +170,11 @@ export default function AssessmentPage() {
 
   // Biometric scan history from localStorage
   const [bioScans, setBioScans] = useState<BiometricScan[]>([]);
+
+  // Match stats state
+  const [matchStats, setMatchStats]             = useState<MatchStat[]>([]);
+  const [matchStatsLoading, setMatchStatsLoading] = useState(false);
+  const [expandedStatId, setExpandedStatId]     = useState<string | null>(null);
 
   // APK sessions state
   const [sessions, setSessions]         = useState<TrainingSession[]>([]);
@@ -161,6 +195,18 @@ export default function AssessmentPage() {
       setBioScans([]);
     }
   }, [activeTab]);
+
+  // Load match stats when tab switches to "stats"
+  useEffect(() => {
+    if (activeTab !== "stats" || matchStats.length > 0) return;
+    setMatchStatsLoading(true);
+    api.get("/player/stats")
+      .then((res) => {
+        setMatchStats(safeArray<MatchStat>(res.data));
+      })
+      .catch(() => {})
+      .finally(() => setMatchStatsLoading(false));
+  }, [activeTab, matchStats.length]);
 
   // Load APK sessions when tab switches to "apk"
   useEffect(() => {
@@ -281,6 +327,17 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           >
             <Scan className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
             Biometric
+          </button>
+          <button
+            onClick={() => setActiveTab("stats")}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+              activeTab === "stats"
+                ? "bg-[#f0b429] text-[#1a3a1a]"
+                : "text-[#f0b429]/70 hover:text-[#f0b429]"
+            }`}
+          >
+            <Trophy className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
+            Match Stats
           </button>
         </div>
 
@@ -813,6 +870,157 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   ))}
                 </div>
               </>
+            )}
+          </div>
+        )}
+
+        {/* ── MATCH STATS TAB ── */}
+        {activeTab === "stats" && (
+          <div className="mx-auto max-w-2xl">
+            {/* Summary row */}
+            {matchStats.length > 0 && (
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
+                  <p className="text-xl font-black text-[#f0b429]">{matchStats.length}</p>
+                  <p className="text-xs text-[#f0b429]/70 mt-0.5">Total Logged</p>
+                </div>
+                <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
+                  <p className="text-xl font-black text-green-400">
+                    {matchStats.filter((s) => s.result === "W").length}
+                  </p>
+                  <p className="text-xs text-[#f0b429]/70 mt-0.5">Wins</p>
+                </div>
+                <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
+                  <p className="text-xl font-black text-red-400">
+                    {matchStats.filter((s) => s.result === "L").length}
+                  </p>
+                  <p className="text-xs text-[#f0b429]/70 mt-0.5">Losses</p>
+                </div>
+              </div>
+            )}
+
+            {matchStatsLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-7 w-7 animate-spin text-[#f0b429]" />
+              </div>
+            ) : matchStats.length === 0 ? (
+              <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
+                <Trophy className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
+                <p className="text-[#f0b429]/70 text-sm">No match stats logged yet.</p>
+                <p className="mt-1 text-xs text-[#f0b429]/55 mb-4">
+                  Log your stats after a match or training session.
+                </p>
+                <Link
+                  href="/player/stats/new"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-sm font-bold text-[#1a3a1a] hover:bg-[#f5c542] transition-colors"
+                >
+                  <Trophy className="h-4 w-4" /> Log Match Stats
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/55">
+                    Recent Entries
+                  </p>
+                  <Link
+                    href="/player/stats/new"
+                    className="text-xs text-[#f0b429]/70 hover:text-[#f0b429] transition-colors"
+                  >
+                    + Log new stats
+                  </Link>
+                </div>
+
+                {matchStats.map((entry) => {
+                  const isExpanded = expandedStatId === entry.id;
+                  const statEntries = Object.entries(entry.stats ?? {}).filter(
+                    ([, v]) => v !== null && v !== undefined && v !== ""
+                  );
+                  return (
+                    <div
+                      key={entry.id}
+                      className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 overflow-hidden"
+                    >
+                      {/* Header row — always visible */}
+                      <button
+                        onClick={() => setExpandedStatId(isExpanded ? null : entry.id)}
+                        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-[#f0b429]/10 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {entry.result && RESULT_COLOR[entry.result] && (
+                            <span
+                              className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white"
+                              style={{ backgroundColor: RESULT_COLOR[entry.result] }}
+                            >
+                              {entry.result}
+                            </span>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-[#f0b429] truncate">
+                              {entry.opponent ? `vs ${entry.opponent}` : entry.match_type ?? "Match"}
+                            </p>
+                            <p className="text-[11px] text-[#f0b429]/55">
+                              {entry.sport}
+                              {entry.match_date
+                                ? ` · ${new Date(entry.match_date).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}`
+                                : ""}
+                              {entry.competition ? ` · ${entry.competition}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {entry.score && (
+                            <span className="text-xs font-bold text-[#f0b429] bg-[#f0b429]/10 px-2 py-0.5 rounded-full">
+                              {entry.score}
+                            </span>
+                          )}
+                          {entry.result && RESULT_COLOR[entry.result] && (
+                            <span
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                              style={{
+                                color: RESULT_COLOR[entry.result],
+                                backgroundColor: `${RESULT_COLOR[entry.result]}20`,
+                              }}
+                            >
+                              {RESULT_LABEL[entry.result]}
+                            </span>
+                          )}
+                          <ChevronRight
+                            className={`h-4 w-4 text-[#f0b429]/45 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                          />
+                        </div>
+                      </button>
+
+                      {/* Expanded stat breakdown */}
+                      {isExpanded && statEntries.length > 0 && (
+                        <div className="px-4 pb-4 pt-1 border-t border-[#f0b429]/10">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]/45 mb-3">
+                            Stats · {entry.role ?? "Player"}
+                          </p>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                            {statEntries.map(([key, value]) => (
+                              <div key={key} className="flex items-center justify-between">
+                                <span className="text-xs text-[#f0b429]/65 truncate">
+                                  {FIELD_META_LABELS[key] ?? key.replace(/_/g, " ")}
+                                </span>
+                                <span className="text-xs font-bold text-[#f0b429] ml-2 flex-shrink-0">
+                                  {String(value)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {isExpanded && statEntries.length === 0 && (
+                        <div className="px-4 pb-4 pt-1 border-t border-[#f0b429]/10">
+                          <p className="text-xs text-[#f0b429]/45">No individual stats recorded for this entry.</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
