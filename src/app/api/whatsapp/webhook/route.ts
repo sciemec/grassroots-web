@@ -1,31 +1,55 @@
 // app/api/whatsapp/webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import twilio from 'twilio';
 import { sendWhatsAppMessage } from '@/lib/whatsapp-service';
+
+function twimlResponse(status = 200) {
+  return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', {
+    status,
+    headers: { 'Content-Type': 'application/xml' },
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
+
+    // Validate Twilio signature — reject requests not originating from Twilio
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    if (authToken) {
+      const signature = req.headers.get('x-twilio-signature') ?? '';
+      const url = `${process.env.NEXT_PUBLIC_APP_URL}/api/whatsapp/webhook`;
+      const params = Object.fromEntries(
+        [...formData.entries()].map(([k, v]) => [k, v.toString()])
+      ) as Record<string, string>;
+      const valid = twilio.validateRequest(authToken, signature, url, params);
+      if (!valid) {
+        console.warn('Webhook: invalid Twilio signature — request rejected');
+        return twimlResponse(403);
+      }
+    }
+
     const body = formData.get('Body')?.toString();
     const from = formData.get('From')?.toString().replace('whatsapp:', '');
-    const profileName = formData.get('ProfileName')?.toString();
-    
+
     if (!body || !from) {
-      return NextResponse.json({ error: 'Invalid webhook' }, { status: 400 });
+      console.warn('Webhook: missing Body or From field');
+      return twimlResponse(200);
     }
-    
+
     const command = body.toLowerCase().trim();
-    
-    // Handle user replies
+    const affiliateUrl = process.env.BETWAY_AFFILIATE_URL ?? '';
+
     switch (command) {
       case 'stop':
       case 'unsubscribe':
         // In production, remove from database
-        await sendWhatsAppMessage(from, 
+        await sendWhatsAppMessage(from,
           `You have been unsubscribed from GrassRoots Sports updates.\n\n` +
           `Reply "START" to resubscribe.`
         );
         break;
-        
+
       case 'stats':
         await sendWhatsAppMessage(from,
           `📊 To get match stats, reply with the match ID:\n` +
@@ -35,7 +59,7 @@ export async function POST(req: NextRequest) {
           `• Brazil vs Argentina (ID: BRA_ARG)`
         );
         break;
-        
+
       case 'goal':
         await sendWhatsAppMessage(from,
           `⚽ You'll now receive ONLY goal alerts.\n` +
@@ -43,14 +67,14 @@ export async function POST(req: NextRequest) {
         );
         // Update user preference
         break;
-        
+
       case 'all':
         await sendWhatsAppMessage(from,
           `📱 You'll now receive ALL match updates.\n` +
           `Reply "GOAL" for goals only, "STATS" for match data.`
         );
         break;
-        
+
       case 'help':
         await sendWhatsAppMessage(from,
           `📱 GrassRoots Sports Help\n\n` +
@@ -59,11 +83,11 @@ export async function POST(req: NextRequest) {
           `• GOAL - Goals only mode\n` +
           `• ALL - Full updates mode\n` +
           `• STOP - Unsubscribe\n` +
-          `• HELP - Show this menu\n\n` +
-          `💰 Betting offers: ${process.env.BETWAY_AFFILIATE_URL}`
+          `• HELP - Show this menu` +
+          (affiliateUrl ? `\n\n💰 Betting offers: ${affiliateUrl}` : '')
         );
         break;
-        
+
       default:
         // Check if asking for specific match stats
         if (command.includes('stats') || command.includes('vs')) {
@@ -79,17 +103,18 @@ export async function POST(req: NextRequest) {
           );
         }
     }
-    
-    return NextResponse.json({ success: true });
-    
+
+    return twimlResponse(200);
+
   } catch (error) {
     console.error('Webhook error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    // Always return 200 to Twilio — non-200 causes retries and duplicate messages
+    return twimlResponse(200);
   }
 }
 
-// Verify webhook for Twilio (GET request)
-export async function GET(req: NextRequest) {
-  // Twilio sends a GET request to verify the webhook URL
+// Twilio does NOT use GET for webhook verification (that is a Meta/WhatsApp Business pattern).
+// This handler exists only as a health-check endpoint.
+export async function GET(_req: NextRequest) {
   return NextResponse.json({ status: 'ok' });
 }
