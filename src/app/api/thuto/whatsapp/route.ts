@@ -1,37 +1,39 @@
 // src/app/api/thuto/whatsapp/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// THUTO on WhatsApp — Claude API coaching via the existing WhatsApp bot
+// THUTO / Amara on WhatsApp — Twilio version
 //
-// This route is called by the EXISTING /api/whatsapp/route.ts when a player
-// sends a text message starting with "THUTO" or "COACH" to the GRS number.
+// Called by HandleWhatsAppCommand.php (bhora-ai) when a player sends
+// THUTO [question], AMARA [question], SCORE, DRILLS, or HELP to the GRS
+// WhatsApp number.
 //
-// The existing WhatsApp route handles:
-//   - Video uploads (Twilio → R2 → YOLOv8 analysis)
-//   - Video routing (two-turn flow)
+// Also called directly by the EXISTING src/app/api/whatsapp/route.ts
+// (the Next.js Twilio webhook) for text command routing.
 //
-// This route handles:
-//   - THUTO [question] → Claude API → short coaching reply
-//   - SCORE → fetch player AQ/rank from bhora-ai
-//   - DRILLS → list unlocked drills
-//   - HELP → command list
+// HOW TO WIRE INTO THE EXISTING NEXT.JS WHATSAPP ROUTE:
+// In src/app/api/whatsapp/route.ts, the incoming body is Twilio form-encoded.
+// After parsing it, add this block before the existing text handling:
 //
-// HOW TO WIRE INTO EXISTING WHATSAPP ROUTE:
-// In src/app/api/whatsapp/route.ts, after the video routing block, add:
+//   const msgBody = params.get('Body')?.trim() ?? '';
+//   const upper   = msgBody.toUpperCase();
+//   const from    = params.get('From')?.replace('whatsapp:', '') ?? '';
 //
-//   const body = await req.text();
-//   const params = new URLSearchParams(body);
-//   const msgBody = params.get('Body')?.trim().toUpperCase() ?? '';
-//
-//   if (msgBody.startsWith('THUTO') || msgBody.startsWith('COACH') ||
-//       msgBody === 'SCORE' || msgBody === 'DRILLS' || msgBody === 'HELP') {
-//     const res = await fetch('/api/thuto/whatsapp', {
+//   if (upper.startsWith('THUTO') || upper.startsWith('AMARA') ||
+//       upper.startsWith('COACH') || upper === 'SCORE' ||
+//       upper === 'DRILLS' || upper === 'HELP') {
+//     const r = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/thuto/whatsapp`, {
 //       method: 'POST',
 //       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ from: params.get('From'), message: params.get('Body') }),
+//       body: JSON.stringify({ from, message: msgBody }),
 //     });
-//     const { reply } = await res.json();
+//     const { reply } = await r.json();
 //     return twimlReply(reply);
 //   }
+//
+// where twimlReply() returns:
+//   new NextResponse(
+//     `<?xml version="1.0"?><Response><Message>${reply}</Message></Response>`,
+//     { headers: { 'Content-Type': 'text/xml' } }
+//   )
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -39,116 +41,125 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
-// WhatsApp messages must be short — keep under 300 chars
-const SYSTEM_PROMPT = `You are THUTO, the GrassRoots Sports AI coach. You help young football players in Zimbabwe improve.
-Keep every reply under 280 characters — this is WhatsApp. Be direct, encouraging, practical.
-Reference Zimbabwe football culture where relevant. Never give generic advice — always be specific.`;
+// WhatsApp messages must be short — keep replies under 300 characters
+const THUTO_WHATSAPP_PROMPT =
+  'You are THUTO, the GrassRoots Sports AI coach for male athletes in Zimbabwe. ' +
+  'Reply via WhatsApp so keep it under 280 characters. Be direct, specific, and encouraging. ' +
+  'Reference Zimbabwe football where relevant.';
+
+const AMARA_WHATSAPP_PROMPT =
+  'You are Amara, the GrassRoots Sports AI coach for female athletes in Zimbabwe. ' +
+  'Reply via WhatsApp so keep it under 280 characters. Be warm, technically precise, and encouraging. ' +
+  'Never compare female athletes to male benchmarks.';
+
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 export async function POST(req: NextRequest) {
   const { from, message } = await req.json();
 
-  const upperMsg = message?.trim().toUpperCase() ?? '';
+  // Normalise phone — strip country code prefix variations
+  const phone = (from ?? '').replace(/^whatsapp:/, '').replace(/^\+/, '');
+  const upper = (message ?? '').trim().toUpperCase();
+
   let reply = '';
 
   try {
 
-    // ── HELP command ─────────────────────────────────────────────────────────
-    if (upperMsg === 'HELP' || upperMsg === 'HI' || upperMsg === 'HELLO') {
+    // ── HELP ──────────────────────────────────────────────────────────────
+    if (upper === 'HELP' || upper === 'HI' || upper === 'HELLO') {
       reply = [
         'GRS Commands:',
-        'THUTO [question] — ask your AI coach',
-        'SCORE — your AQ score and rank',
+        'THUTO [question] — boys AI coach',
+        'AMARA [question] — girls AI coach',
+        'SCORE — your AQ + rank',
         'DRILLS — your unlocked drills',
-        'VIDEO — send a training video',
-        'Or visit grassrootssports.live',
+        'PASSPORT — your scout link',
+        'grassrootssports.live',
       ].join('\n');
       return NextResponse.json({ reply });
     }
 
-    // ── SCORE command ─────────────────────────────────────────────────────────
-    if (upperMsg === 'SCORE' || upperMsg === 'AQ' || upperMsg === 'STATS') {
-      const phone = from?.replace('whatsapp:+', '') ?? '';
+    // ── SCORE ─────────────────────────────────────────────────────────────
+    if (upper === 'SCORE' || upper === 'AQ' || upper === 'STATS') {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/player/score-by-phone/${phone}`,
-          { headers: { 'Accept': 'application/json' } }
-        );
+        const res = await fetch(`${API}/player/score-by-phone/${encodeURIComponent(phone)}`);
         if (res.ok) {
-          const data = await res.json();
-          reply = `${data.name} | Rank: ${data.rank} | AQ: ${data.aq_score ?? '—'} | Streak: ${data.weekly_streak ?? 0} weeks\ngrassrootssports.live/player`;
+          const p = await res.json();
+          reply = `${p.name} | Rank: ${p.rank} | AQ: ${p.aq_score ?? '—'} | Streak: ${p.weekly_streak ?? 0} weeks\ngrassrootssports.live/player`;
         } else {
-          reply = 'No account found for this number. Register at grassrootssports.live';
+          reply = 'No account found. Register at grassrootssports.live';
         }
       } catch {
-        reply = 'Could not fetch your score right now. Try again or visit grassrootssports.live';
+        reply = 'Could not fetch your score. Visit grassrootssports.live/player';
       }
       return NextResponse.json({ reply });
     }
 
-    // ── DRILLS command ────────────────────────────────────────────────────────
-    if (upperMsg === 'DRILLS' || upperMsg === 'DRILL') {
-      const phone = from?.replace('whatsapp:+', '') ?? '';
+    // ── DRILLS ────────────────────────────────────────────────────────────
+    if (upper === 'DRILLS' || upper === 'DRILL') {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/player/drills-by-phone/${phone}`,
-          { headers: { 'Accept': 'application/json' } }
-        );
+        const res = await fetch(`${API}/player/drills-by-phone/${encodeURIComponent(phone)}`);
         if (res.ok) {
           const data = await res.json();
-          const drillList = (data.drills ?? []).slice(0, 3).map((d: any) => `• ${d.name}`).join('\n');
-          reply = `Your unlocked drills (Tier ${data.current_tier}):\n${drillList}\n\nSee all: grassrootssports.live/player/drills`;
+          const list = (data.drills ?? []).slice(0, 3).map((d: any) => `• ${d.drill_name}`).join('\n');
+          reply = `Your drills (Tier ${data.current_tier}):\n${list}\n\ngrassrootssports.live/player/drills`;
         } else {
-          reply = 'Complete a test session first to unlock your drills. Visit grassrootssports.live/player/talent-id';
+          reply = 'Complete a test session first to unlock drills.\ngrassrootssports.live/player/talent-id';
         }
       } catch {
-        reply = 'Visit grassrootssports.live/player/drills to see your drills.';
+        reply = 'Visit grassrootssports.live/player/drills';
       }
       return NextResponse.json({ reply });
     }
 
-    // ── THUTO / COACH question ────────────────────────────────────────────────
-    // Strip the command keyword and get the actual question
-    let question = message?.trim() ?? '';
-    if (upperMsg.startsWith('THUTO ')) question = message.slice(6).trim();
-    if (upperMsg.startsWith('COACH ')) question = message.slice(6).trim();
+    // ── THUTO / AMARA / COACH coaching question ───────────────────────────
+    // Detect gender from command prefix — AMARA = female, THUTO/COACH = male
+    let question  = (message ?? '').trim();
+    let isAmara   = false;
+
+    for (const prefix of ['AMARA ', 'THUTO ', 'COACH ']) {
+      if (upper.startsWith(prefix)) {
+        isAmara  = prefix === 'AMARA ';
+        question = message.slice(prefix.length).trim();
+        break;
+      }
+    }
+
+    // Try to get player gender from bhora-ai to auto-select coach
+    if (!isAmara && phone) {
+      try {
+        const res = await fetch(`${API}/player/score-by-phone/${encodeURIComponent(phone)}`);
+        if (res.ok) {
+          const p = await res.json();
+          isAmara = p.gender === 'female';
+        }
+      } catch { /* default to THUTO */ }
+    }
+
     if (!question || question.length < 3) {
-      reply = 'Ask me anything about your training.\nExample: THUTO how do I improve my sprint time?';
+      const name = isAmara ? 'Amara' : 'THUTO';
+      reply = `${name} here. Ask me anything about your training.\nExample: ${isAmara ? 'AMARA' : 'THUTO'} how do I improve my sprint time?`;
       return NextResponse.json({ reply });
     }
 
-    // Fetch player context if we have their phone number
-    let playerContext = '';
-    const phone = from?.replace('whatsapp:+', '') ?? '';
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/player/score-by-phone/${phone}`,
-        { headers: { 'Accept': 'application/json' } }
-      );
-      if (res.ok) {
-        const p = await res.json();
-        playerContext = `Player: ${p.name}, age group ${p.age_group}, position ${p.position}, AQ ${p.aq_score ?? 'not tested'}. `;
-      }
-    } catch { /* no context available */ }
+    // Call Claude
+    const systemPrompt = isAmara ? AMARA_WHATSAPP_PROMPT : THUTO_WHATSAPP_PROMPT;
 
-    // Call Claude API
     const msg = await anthropic.messages.create({
-      model:      'claude-sonnet-4-6',
+      model:      'claude-sonnet-4-20250514',
       max_tokens: 150,
-      system:     SYSTEM_PROMPT,
-      messages:   [{
-        role:    'user',
-        content: `${playerContext}Question: ${question}`,
-      }],
+      system:     systemPrompt,
+      messages:   [{ role: 'user', content: question }],
     });
 
-    reply = msg.content[0].type === 'text' ? msg.content[0].text.trim() : 'Ask me your training question and I will help.';
+    reply = msg.content[0].type === 'text' ? msg.content[0].text.trim() : 'Ask me your training question.';
 
-    // Enforce WhatsApp length limit
+    // Enforce WhatsApp character limit
     if (reply.length > 300) reply = reply.slice(0, 297) + '...';
 
   } catch (err) {
     console.error('THUTO WhatsApp error:', err);
-    reply = 'THUTO is resting. Try again in a moment, or visit grassrootssports.live';
+    reply = 'Your coach is resting. Try again in a moment.';
   }
 
   return NextResponse.json({ reply });
