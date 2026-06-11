@@ -1,324 +1,889 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import {
-  Activity, Users, Dumbbell, Brain, TrendingUp, Zap,
-  ShieldCheck, Radio, ChevronRight, Trophy, Flame, Star,
-  Target, BarChart2, Layers, GraduationCap, Swords,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import * as Icons from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { LiveMatchBanner } from "@/components/LiveMatchBanner";
+import { getRoleConfig, getDepartmentForRole, type StaffRoleConfig } from "@/config/coaching-staff";
+import { loadKnowledgeForRole, type SessionPoint } from "@/lib/coaching-knowledge";
+import { getDrillsByDepartment, getDepartmentStats, type Drill } from "@/lib/department-drills";
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
+
+// Icon mapper for string icon names
+const getIconComponent = (iconName: string) => {
+  const IconComponent = (Icons as any)[iconName];
+  return IconComponent || Icons.Shield;
+};
+
+// Role emoji fallback map
+const ROLE_EMOJIS: Record<string, string> = {
+  head_coach: "🎽",
+  assistant_coach: "👥",
+  attack_coach: "🔥",
+  defence_coach: "🛡️",
+  gk_coach: "🥅",
+  midfield_coach: "⚡",
+  performance_analyst: "📊",
+  fitness_coach: "🏋️",
+  team_physio: "🩺",
+  team_manager: "💼",
+};
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
 }
 
-const WIRE = [
-  "Live Match: Dynamos FC 2–1 Highlanders · 67' — pressing hard",
-  "Coach Moyo logged a 4-3-3 tactical blueprint for Matabeleland North",
-  "Biometric scan: K.M. clocked 28.4 km/h top speed in Thursday session",
-  "Squad Chemistry update: 3 new high-compatibility pairs detected",
-  "NASH U17 fixture sheet for Harare Province published — 14 matches",
-  "AI Tactical Report generated for Zvishavane City FC — 94% accuracy",
-];
+interface SquadStats {
+  total_players: number;
+  active_injuries: number;
+  teamAvgForm?: number;
+  highFatigueCount?: number;
+}
 
-const FEATURES = [
-  {
-    href: "/coach/live-match",
-    icon: Activity,
-    iconBg: "#dcfce7", iconColor: "#16a34a",
-    label: "Live Match",
-    desc: "Real-time tracker · AI commentary · xG",
-  },
-  {
-    href: "/coach/squad",
-    icon: Users,
-    iconBg: "#dbeafe", iconColor: "#2563eb",
-    label: "Squad Roster",
-    desc: "Player cards · form scores · fatigue",
-  },
-  {
-    href: "/coach/training-plans",
-    icon: Dumbbell,
-    iconBg: "#f3e8ff", iconColor: "#9333ea",
-    label: "Training Plans",
-    desc: "FIFA sessions · multi-sport programmes",
-  },
-  {
-    href: "/coach/tactics",
-    icon: Swords,
-    iconBg: "#fef3c7", iconColor: "#d97706",
-    label: "Tactics Board",
-    desc: "Formations · positional drills",
-  },
-  {
-    href: "/coach/set-pieces",
-    icon: Target,
-    iconBg: "#fce7f3", iconColor: "#db2777",
-    label: "Set Pieces",
-    desc: "Corners · free kicks · AI analysis",
-  },
-  {
-    href: "/coach/chemistry",
-    icon: Zap,
-    iconBg: "#ede9fe", iconColor: "#7c3aed",
-    label: "Squad Chemistry",
-    desc: "Compatibility matrix · pair scores",
-  },
-  {
-    href: "/coach/patterns",
-    icon: TrendingUp,
-    iconBg: "#ecfdf5", iconColor: "#059669",
-    label: "Strategic Patterns",
-    desc: "Form trends · drill prescriptions",
-  },
-  {
-    href: "/coach/ai-insights",
-    icon: Brain,
-    iconBg: "#e0f2fe", iconColor: "#0284c7",
-    label: "AI Insights",
-    desc: "Tactical reports · opposition analysis",
-  },
-  {
-    href: "/coach/biometrics",
-    icon: BarChart2,
-    iconBg: "#f0fdf4", iconColor: "#15803d",
-    label: "Biometrics",
-    desc: "Scan players · form scores · fatigue",
-  },
-];
+interface SquadMember {
+  id: string;
+  name: string;
+  position: string;
+  formScore: number;
+  fatigue: number;
+  status: "fit" | "caution" | "injured";
+}
+
+interface UpcomingMatch {
+  id: string;
+  opponent: string;
+  date: string;
+  venue: "home" | "away";
+  competition: string;
+}
+
+// Get all football roles from config
+const getFootballRoles = (): StaffRoleConfig[] => {
+  const { COACHING_STAFF_ROLES } = require("@/config/coaching-staff");
+  return COACHING_STAFF_ROLES.football || [];
+};
 
 export default function CoachHubPage() {
-  const router   = useRouter();
-  const user     = useAuthStore((s) => s.user);
-  const hydrated = useAuthStore((s) => s._hasHydrated);
-  const [wireIndex, setWireIndex] = useState(0);
+  const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const router = useRouter();
 
-  useEffect(() => {
-    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
-    return () => clearInterval(id);
-  }, []);
+  const [activeRole, setActiveRole] = useState<string>("head_coach");
+  const [query, setQuery] = useState("");
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [loadingAi, setLoadingAi] = useState(false);
+  const [knowledge, setKnowledge] = useState<SessionPoint[]>([]);
+  const [squadStats, setSquadStats] = useState<SquadStats>({
+    total_players: 0,
+    active_injuries: 0,
+    teamAvgForm: 0,
+    highFatigueCount: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [squad, setSquad] = useState<SquadMember[]>([]);
+  const [upcomingMatches, setUpcomingMatches] = useState<UpcomingMatch[]>([]);
+  const [departmentDrills, setDepartmentDrills] = useState<Drill[]>([]);
+  const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
+  const [showDrillModal, setShowDrillModal] = useState(false);
+  const [departmentStats, setDepartmentStats] = useState(getDepartmentStats());
+  const [assignedDrills, setAssignedDrills] = useState<Record<string, string[]>>({});
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedDrillForAssign, setSelectedDrillForAssign] = useState<Drill | null>(null);
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const footballRoles = getFootballRoles();
+
+  // Auth guard
   useEffect(() => {
-    if (!hydrated) return;
-    if (!user) { router.replace("/login"); return; }
+    if (!hasHydrated) return;
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
     if (user.role !== "coach" && user.role !== "admin") router.replace("/arena");
-  }, [hydrated, user, router]);
+  }, [hasHydrated, user, router]);
 
-  if (!hydrated || !user) {
+  // Load role config and drills when role changes
+  useEffect(() => {
+    const rc = getRoleConfig(activeRole);
+    if (!rc) return;
+
+    // Load knowledge for focus categories
+    loadKnowledgeForRole(rc.focusCategories).then(setKnowledge).catch(() => setKnowledge([]));
+
+    // Load department-specific drills
+    const department = rc.department;
+    if (department && department !== "all") {
+      const drills = getDrillsByDepartment(department);
+      setDepartmentDrills(drills);
+    } else if (department === "all" || rc.id === "head_coach" || rc.id === "assistant_coach") {
+      // Head coach and assistant coach see all drills (show latest 8)
+      const allDrills = [
+        ...getDrillsByDepartment("striker"),
+        ...getDrillsByDepartment("defender"),
+        ...getDrillsByDepartment("midfielder"),
+        ...getDrillsByDepartment("goalkeeper"),
+        ...getDrillsByDepartment("fitness"),
+        ...getDrillsByDepartment("analytics"),
+        ...getDrillsByDepartment("medical"),
+        ...getDrillsByDepartment("admin"),
+      ];
+      setDepartmentDrills(allDrills.slice(0, 8));
+    } else {
+      setDepartmentDrills([]);
+    }
+  }, [activeRole]);
+
+  // Load biometric data
+  const loadBiometricData = () => {
+    try {
+      const mockSquad: SquadMember[] = [
+        { id: "1", name: "Tendai Musona", position: "Winger", formScore: 84, fatigue: 45, status: "fit" },
+        { id: "2", name: "Blessing Moyo", position: "Striker", formScore: 92, fatigue: 28, status: "fit" },
+        { id: "3", name: "Knowledge Chikwanda", position: "Midfielder", formScore: 78, fatigue: 62, status: "caution" },
+        { id: "4", name: "Takudzwa Ngwenya", position: "Defender", formScore: 81, fatigue: 35, status: "fit" },
+        { id: "5", name: "Tinashe Kamusoko", position: "Defender", formScore: 76, fatigue: 71, status: "caution" },
+        { id: "6", name: "Edmore Sibanda", position: "Goalkeeper", formScore: 88, fatigue: 22, status: "fit" },
+        { id: "7", name: "Tanaka Chikuni", position: "Midfielder", formScore: 85, fatigue: 32, status: "fit" },
+        { id: "8", name: "Takunda Moyo", position: "Striker", formScore: 79, fatigue: 48, status: "fit" },
+      ];
+      setSquad(mockSquad);
+
+      const avgForm = Math.round(mockSquad.reduce((sum, p) => sum + p.formScore, 0) / mockSquad.length);
+      const highFatigue = mockSquad.filter((p) => p.fatigue > 60).length;
+
+      setSquadStats((prev) => ({
+        ...prev,
+        teamAvgForm: avgForm,
+        highFatigueCount: highFatigue,
+      }));
+    } catch (e) {
+      console.error("Failed to load biometric data", e);
+    }
+  };
+
+  // Fetch squad + injury counts
+  useEffect(() => {
+    if (!token || !user) return;
+    setLoadingStats(true);
+    Promise.allSettled([
+      fetch(`${API}/api/v1/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
+        r.json()
+      ),
+      fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
+        r.json()
+      ),
+    ])
+      .then(([squadRes, injuryRes]) => {
+        const players = squadRes.status === "fulfilled" ? squadRes.value.data ?? squadRes.value : [];
+        const injuries =
+          injuryRes.status === "fulfilled" ? injuryRes.value.data ?? injuryRes.value : [];
+        setSquadStats((prev) => ({
+          ...prev,
+          total_players: Array.isArray(players) ? players.length : 0,
+          active_injuries: Array.isArray(injuries)
+            ? injuries.filter((i: { recovered_at: string | null }) => !i.recovered_at).length
+            : 0,
+        }));
+
+        loadBiometricData();
+
+        setUpcomingMatches([
+          { id: "1", opponent: "Dynamos FC", date: "2026-06-07", venue: "home", competition: "Premier League" },
+          { id: "2", opponent: "CAPS United", date: "2026-06-14", venue: "away", competition: "Premier League" },
+          { id: "3", opponent: "Highlanders", date: "2026-06-21", venue: "home", competition: "Chibuku Cup" },
+        ]);
+      })
+      .catch(() => {
+        // Silent fail
+      })
+      .finally(() => setLoadingStats(false));
+  }, [token, user]);
+
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatHistory]);
+
+  const getFormColor = (score: number) => {
+    if (score >= 80) return "text-emerald-500";
+    if (score >= 60) return "text-amber-500";
+    return "text-red-500";
+  };
+
+  const getFatigueDisplay = (fatigue: number) => {
+    if (fatigue > 60) return { text: "High", color: "text-red-500" };
+    if (fatigue > 30) return { text: "Moderate", color: "text-amber-500" };
+    return { text: "Low", color: "text-emerald-500" };
+  };
+
+  const handleRoleSwitch = (roleId: string) => {
+    setActiveRole(roleId);
+    setChatHistory([]);
+  };
+
+  const handleAiQuery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim() || loadingAi) return;
+
+    const userMsg: ChatMessage = { id: String(Date.now()), role: "user", text: query.trim() };
+    setChatHistory((prev) => [...prev, userMsg]);
+    setQuery("");
+    setLoadingAi(true);
+
+    try {
+      const res = await fetch(`${API}/api/v1/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ question: userMsg.text, role: activeRole, language: "en" }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const text = json.answer ?? json.reply ?? json.response ?? "No response received.";
+        setChatHistory((prev) => [...prev, { id: String(Date.now() + 1), role: "assistant", text }]);
+      } else {
+        throw new Error("request failed");
+      }
+    } catch {
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          id: String(Date.now() + 1),
+          role: "assistant",
+          text: "Maziwisa! I encountered a temporary processing gap. Let's trace that strategy drill loop again.",
+        },
+      ]);
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
+  const assignDrillToPlayers = (drill: Drill, playerIds: string[]) => {
+    const newAssignments = { ...assignedDrills };
+    playerIds.forEach((playerId) => {
+      if (!newAssignments[playerId]) newAssignments[playerId] = [];
+      if (!newAssignments[playerId].includes(drill.id)) {
+        newAssignments[playerId].push(drill.id);
+      }
+    });
+    setAssignedDrills(newAssignments);
+    localStorage.setItem("bhora_drill_assignments", JSON.stringify(newAssignments));
+    alert(`Drill "${drill.name}" assigned to ${playerIds.length} player(s)`);
+  };
+
+  if (!hasHydrated || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
-        <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
+      <div className="flex h-screen bg-[#f4f2ee] items-center justify-center">
+        <Icons.Loader2 className="animate-spin text-[#1a5c2a]" size={24} />
       </div>
     );
   }
 
-  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "CO";
+  const roleConfig = getRoleConfig(activeRole);
+  const RoleIcon = roleConfig ? getIconComponent(roleConfig.icon) : Icons.Shield;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
-
-      {/* Brand header */}
-      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
-              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
-              GRS
-            </div>
-            <div>
-              <p className="font-black text-sm uppercase tracking-wider leading-none" style={{ color: "#f0b429" }}>GrassRoots Sports</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>Coach Hub</p>
-            </div>
+    <div className="min-h-screen bg-[#f4f2ee] text-gray-900 antialiased font-sans flex flex-col lg:flex-row">
+      {/* Left Panel — Staff Role Selector */}
+      <aside className="w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-6 space-y-6 shrink-0 overflow-y-auto">
+        <div>
+          <div className="flex items-center gap-2 text-[#1a5c2a] font-black text-xs uppercase tracking-widest">
+            <Icons.Shield size={14} />
+            <span>Tactical Hub Console</span>
           </div>
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
-            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <GraduationCap size={14} style={{ color: "#f0b429" }} />
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
-              <p className="text-[10px] font-black uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</p>
+          <h1 className="text-xl font-black text-gray-900 mt-1">CoachHub Engine</h1>
+          <p className="text-xs font-bold text-gray-400 mt-0.5">Zimbabwe Grassroots Framework</p>
+        </div>
+
+        {/* Biometric Summary Cards */}
+        {squadStats.teamAvgForm !== undefined && squadStats.teamAvgForm > 0 && (
+          <div className="space-y-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Team Biometrics</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-center">
+                <p className="text-lg font-black text-[#1a5c2a]">{squadStats.teamAvgForm}</p>
+                <p className="text-[8px] text-gray-500">Avg Form</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-black text-amber-600">{squadStats.highFatigueCount || 0}</p>
+                <p className="text-[8px] text-gray-500">High Fatigue</p>
+              </div>
             </div>
+            <Link href="/coach/squad" className="text-[10px] font-bold text-[#1a5c2a] flex items-center gap-0.5">
+              View Squad <Icons.ChevronRight size={10} />
+            </Link>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Live wire ticker */}
-      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
-          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
-            style={{ backgroundColor: "#dc2626" }}>
-            <Radio size={9} className="animate-pulse" /> Live Wire
-          </span>
-          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
-            {WIRE[wireIndex]}
-          </p>
-        </div>
-      </div>
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-        {/* Hero card */}
-        <div className="rounded-2xl overflow-hidden shadow-sm">
-          {/* Dark green top */}
-          <div className="relative px-5 pt-6 pb-5"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
-            {/* Chevron watermark */}
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
-            />
-            <div className="relative flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>{greeting()},</p>
-                <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user.name || "Coach"}</h2>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <ShieldCheck size={9} /> Coach · Active
-                  </span>
-                  {user.province && (
-                    <span className="text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      📍 {user.province}
-                    </span>
-                  )}
+        <div className="space-y-1">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Select Staff Role</p>
+          {footballRoles.map((role) => {
+            const isSelected = activeRole === role.id;
+            const RoleIconItem = getIconComponent(role.icon);
+            return (
+              <button
+                key={role.id}
+                onClick={() => handleRoleSwitch(role.id)}
+                className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition-all cursor-pointer border ${
+                  isSelected
+                    ? "bg-[#1a5c2a] border-[#1a5c2a] text-white shadow-xs"
+                    : "bg-white border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
+                      isSelected ? "bg-white/20" : "bg-gray-100"
+                    }`}
+                  >
+                    {ROLE_EMOJIS[role.id] ?? <RoleIconItem size={16} />}
+                  </div>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wide leading-tight">{role.title}</p>
+                    <p
+                      className={`text-[10px] font-medium leading-none mt-0.5 truncate max-w-[160px] ${
+                        isSelected ? "text-white/70" : "text-gray-400"
+                      }`}
+                    >
+                      {role.description.substring(0, 50)}...
+                    </p>
+                  </div>
                 </div>
+                <Icons.ChevronRight size={14} className={isSelected ? "text-white" : "text-gray-400"} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Department Drill Count */}
+        {departmentDrills.length > 0 && (
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Icons.BookOpen size={12} className="text-[#1a5c2a]" />
+              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Department Drills</p>
+            </div>
+            <p className="text-2xl font-black text-gray-900">{departmentDrills.length}</p>
+            <p className="text-[10px] text-gray-500">Available training sessions</p>
+          </div>
+        )}
+
+        {/* Drill Library Stats */}
+        <div className="pt-4 border-t border-gray-200">
+          <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Academy Library</p>
+          <div className="grid grid-cols-2 gap-1 text-[10px]">
+            <div className="flex justify-between">
+              <span>Striker:</span>
+              <span className="font-bold">{departmentStats.striker}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Defender:</span>
+              <span className="font-bold">{departmentStats.defender}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Midfielder:</span>
+              <span className="font-bold">{departmentStats.midfielder}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Goalkeeper:</span>
+              <span className="font-bold">{departmentStats.goalkeeper}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Fitness:</span>
+              <span className="font-bold">{departmentStats.fitness}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Medical:</span>
+              <span className="font-bold">{departmentStats.medical}</span>
+            </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px] font-bold">
+            <span>Total Drills:</span>
+            <span className="text-[#1a5c2a]">{departmentStats.total}</span>
+          </div>
+        </div>
+
+        {/* Quick Links */}
+        <div className="pt-4 border-t border-gray-200 space-y-1">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Quick Actions</p>
+          <Link href="/coach/live-match" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Activity size={12} /> Live Match
+          </Link>
+          <Link href="/coach/training-plans" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Dumbbell size={12} /> Training Plans
+          </Link>
+          <Link href="/coach/chemistry" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Zap size={12} /> Squad Chemistry
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Panel */}
+      <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+        {/* Metric Strip */}
+        <section className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Active Roster</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-black text-gray-900">{loadingStats ? "…" : squadStats.total_players}</span>
+              <span className="text-xs font-bold text-gray-400">Players</span>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Medical Bay</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span
+                className={`text-2xl font-black ${squadStats.active_injuries > 0 ? "text-red-600" : "text-gray-900"}`}
+              >
+                {loadingStats ? "…" : squadStats.active_injuries}
+              </span>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Team Form</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-black text-[#1a5c2a]">{squadStats.teamAvgForm || "—"}</span>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+            <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Fatigue Alert</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span
+                className={`text-2xl font-black ${(squadStats.highFatigueCount || 0) > 0 ? "text-amber-600" : "text-gray-900"}`}
+              >
+                {squadStats.highFatigueCount || 0}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Department Drills Section */}
+        {departmentDrills.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex items-center gap-2">
+                <Icons.HardHat size={16} className="text-[#1a5c2a]" />
+                <h3 className="text-sm font-bold text-gray-900">{roleConfig?.title} Drill Library</h3>
+                <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">
+                  {departmentDrills.length} Sessions
+                </span>
               </div>
-              {/* Avatar */}
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
-                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
-                {initials}
-              </div>
+              <Link
+                href={`/coach/drills/${roleConfig?.department || "all"}`}
+                className="text-[10px] font-bold text-[#1a5c2a] hover:underline flex items-center gap-1"
+              >
+                View All Drills <Icons.ChevronRight size={12} />
+              </Link>
             </div>
 
-            {/* Stat tiles */}
-            <div className="grid grid-cols-3 gap-2.5 mt-5">
-              {[
-                { label: "Squad Size", value: "—", Icon: Users },
-                { label: "Matches", value: "—", Icon: Activity },
-                { label: "Win Rate", value: "—", Icon: Flame },
-              ].map(({ label, value, Icon }) => (
-                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
-                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
-                  <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
-                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
+            <div className="divide-y divide-gray-100">
+              {departmentDrills.slice(0, 4).map((drill) => (
+                <div
+                  key={drill.id}
+                  className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setSelectedDrill(drill);
+                    setShowDrillModal(true);
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-sm font-bold text-gray-900">{drill.name}</h4>
+                        <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-mono">
+                          {drill.duration}
+                        </span>
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+                            drill.difficulty === "beginner"
+                              ? "bg-green-100 text-green-700"
+                              : drill.difficulty === "advanced"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {drill.difficulty}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2">{drill.description}</p>
+
+                      <div className="flex items-center gap-3 mt-2">
+                        <div className="flex items-center gap-1">
+                          <Icons.Target size={10} className="text-gray-400" />
+                          <p className="text-[9px] text-gray-400">{drill.coachingPoints.length} coaching points</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Icons.Clock size={10} className="text-gray-400" />
+                          <p className="text-[9px] text-gray-400">Phase: {drill.phase}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      className="ml-4 text-[#1a5c2a] hover:bg-[#1a5c2a]/10 p-2 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDrill(drill);
+                        setShowDrillModal(true);
+                      }}
+                    >
+                      <Icons.Play size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
+        )}
 
-          {/* Quick links strip */}
-          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
-            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
-            {[
-              { href: "/coach/profile",   label: "My Profile" },
-              { href: "/coach/squad",     label: "My Squad" },
-              { href: "/coach/live-match", label: "Start Match" },
-            ].map(({ href, label }) => (
-              <Link key={href} href={href}
-                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
-                style={{ color: "#6b7280" }}>
-                {label}
+        {/* Squad Biometrics Table */}
+        {squad.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icons.Users size={16} className="text-[#1a5c2a]" />
+                <h3 className="text-sm font-bold text-gray-900">Squad Biometrics</h3>
+              </div>
+              <Link href="/coach/squad" className="text-[10px] font-bold text-[#1a5c2a] hover:underline">
+                View All →
               </Link>
-            ))}
-          </div>
-        </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr className="text-left">
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Player</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Position</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Form</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Fatigue</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Assigned</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {squad.slice(0, 5).map((player) => {
+                    const fatigueDisplay = getFatigueDisplay(player.fatigue);
+                    const assignedCount = assignedDrills[player.id]?.length || 0;
+                    return (
+                      <tr key={player.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
+                        <td className="px-4 py-3 text-gray-600">{player.position}</td>
+                        <td className="px-4 py-3">
+                          <span className={`font-bold ${getFormColor(player.formScore)}`}>{player.formScore}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${fatigueDisplay.color}`}>{fatigueDisplay.text}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              player.status === "fit"
+                                ? "bg-green-100 text-green-700"
+                                : player.status === "caution"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {player.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {assignedCount > 0 ? (
+                            <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">
+                              {assignedCount} drills
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+               </table>
+            </div>
+          </section>
+        )}
 
-        {/* World Cup live banner */}
-        <LiveMatchBanner />
-
-        {/* Feature grid */}
-        <section>
-          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
-            Your Tools
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: iconBg }}>
-                    <Icon size={16} style={{ color: iconColor }} />
+        {/* Upcoming Matches */}
+        {upcomingMatches.length > 0 && (
+          <section className="bg-white border border-gray-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Icons.Calendar size={16} className="text-[#1a5c2a]" />
+              <h3 className="text-sm font-bold text-gray-900">Upcoming Matches</h3>
+            </div>
+            <div className="space-y-2">
+              {upcomingMatches.map((match) => (
+                <div key={match.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">vs {match.opponent}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      {match.competition} • {match.venue === "home" ? "🏠 Home" : "✈️ Away"}
+                    </p>
                   </div>
-                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
+                  <div className="text-right">
+                    <p className="text-xs text-[#1a5c2a] font-medium">
+                      {new Date(match.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
-                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
 
-        {/* CTA row */}
-        <section className="grid sm:grid-cols-2 gap-3">
-          <Link
-            href="/talent-leaderboard"
-            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
-                <Trophy size={16} style={{ color: "#f0b429" }} />
+        {/* THUTO Intelligence Suite - Chat */}
+        <section className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Role Context */}
+          <div className="lg:col-span-2 space-y-4 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-600">
+                <Icons.Sparkles size={16} />
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>THUTO Leaderboard</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Top-ranked players in your area</p>
+                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">THUTO Expert System</span>
+                <h3 className="text-base font-black text-gray-900">{roleConfig?.title}</h3>
               </div>
             </div>
-            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
 
-          <Link
-            href="/arena"
-            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
-                <Zap size={16} style={{ color: "#60a5fa" }} />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Network · Post · Recruit players</p>
-              </div>
-            </div>
-            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </section>
+            <p className="text-xs text-gray-500 leading-relaxed">{roleConfig?.description}</p>
 
-        {/* Identity footer */}
-        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
-              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
-              {initials}
+            {/* Focus categories as pills */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Focus Areas</p>
+              <div className="flex flex-wrap gap-1.5">
+                {roleConfig?.focusCategories.map((cat) => (
+                  <span key={cat} className="bg-white border border-gray-200 text-gray-700 font-bold text-[10px] px-2.5 py-1 rounded-lg shadow-sm">
+                    🎯 {cat.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {user.province || "Zimbabwe"} · Coach
-              </p>
-            </div>
+
+            {/* AI Insight */}
+            {(squadStats.highFatigueCount || 0) > 0 && (
+              <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                <div className="flex items-center gap-2">
+                  <Icons.Brain size={14} className="text-amber-600" />
+                  <p className="text-[10px] font-bold text-amber-700 uppercase">AI Insight</p>
+                </div>
+                <p className="text-[11px] text-amber-800 mt-1">
+                  {squadStats.highFatigueCount} player(s) show high fatigue. Consider lighter training session.
+                </p>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
-            style={{ backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
-            <ShieldCheck size={11} /> Sync Active
+
+          {/* Chat Terminal */}
+          <div className="lg:col-span-3 flex flex-col h-[420px] justify-between">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4">
+              {chatHistory.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
+                  <Icons.Bot size={36} className="text-gray-300 mb-2" />
+                  <p className="text-xs font-black uppercase tracking-wider text-gray-700">Framework Terminal Online</p>
+                  <p className="text-xs font-medium max-w-xs mt-1">
+                    Ask about tactical layouts, recovery protocols, or training drills.
+                  </p>
+                </div>
+              ) : (
+                chatHistory.map((msg) => {
+                  const isUser = msg.role === "user";
+                  return (
+                    <div key={msg.id} className={`flex gap-2.5 max-w-[85%] ${isUser ? "ml-auto flex-row-reverse" : "mr-auto"}`}>
+                      <div
+                        className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center shrink-0 ${
+                          isUser ? "bg-[#1a5c2a] text-white" : "bg-amber-50 text-amber-600 border border-amber-200"
+                        }`}
+                      >
+                        {isUser ? "C" : "T"}
+                      </div>
+                      <div
+                        className={`rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-sm ${
+                          isUser
+                            ? "bg-[#1a5c2a] text-white rounded-tr-none"
+                            : "bg-gray-50 text-gray-800 border border-gray-100 rounded-tl-none"
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              {loadingAi && (
+                <div className="flex gap-2.5 max-w-[85%] mr-auto items-center">
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
+                    <Icons.Loader2 className="animate-spin" size={14} />
+                  </div>
+                  <div className="bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl rounded-tl-none px-4 py-2 text-xs font-bold uppercase tracking-widest animate-pulse">
+                    Analyzing Parameters…
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <form onSubmit={handleAiQuery} className="flex gap-2 border-t border-gray-100 pt-3 bg-white">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Ask the ${roleConfig?.title} assistant…`}
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] transition-all"
+              />
+              <button
+                type="submit"
+                disabled={!query.trim() || loadingAi}
+                className="bg-[#1a5c2a] text-white p-2.5 rounded-xl flex items-center justify-center disabled:opacity-40 transition-all shadow-sm shrink-0 cursor-pointer"
+              >
+                <Icons.Send size={16} />
+              </button>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      {/* Drill Detail Modal */}
+      {showDrillModal && selectedDrill && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDrillModal(false)}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-5 flex items-center justify-between">
+              <h2 className="text-lg font-black text-gray-900">{selectedDrill.name}</h2>
+              <button onClick={() => setShowDrillModal(false)} className="text-gray-400 hover:text-gray-600">
+                ✕
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex gap-2">
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">{selectedDrill.duration}</span>
+                <span
+                  className={`text-xs px-2 py-1 rounded font-bold ${
+                    selectedDrill.difficulty === "beginner"
+                      ? "bg-green-100 text-green-700"
+                      : selectedDrill.difficulty === "advanced"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}
+                >
+                  {selectedDrill.difficulty}
+                </span>
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
+                  {selectedDrill.phase}
+                </span>
+              </div>
+
+              <p className="text-sm text-gray-700 leading-relaxed">{selectedDrill.description}</p>
+
+              <div>
+                <h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1">
+                  <Icons.Target size={12} /> Coaching Points
+                </h4>
+                <ul className="space-y-1">
+                  {selectedDrill.coachingPoints.map((point, i) => (
+                    <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                      <Icons.CheckCircle2 size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1">
+                  <Icons.Briefcase size={12} /> Equipment Needed
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {selectedDrill.equipment.map((item, i) => (
+                    <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex gap-3">
+                <button
+                  className="flex-1 bg-[#1a5c2a] text-white py-3 rounded-xl font-bold text-sm hover:bg-[#1a5c2a]/90 transition-colors flex items-center justify-center gap-2"
+                  onClick={() => {
+                    setSelectedDrillForAssign(selectedDrill);
+                    setSelectedPlayers([]);
+                    setShowAssignModal(true);
+                    setShowDrillModal(false);
+                  }}
+                >
+                  <Icons.Play size={14} /> Assign to Players
+                </button>
+                <button
+                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  onClick={() => {
+                    // Save to training plan
+                    alert(`Drill "${selectedDrill.name}" added to training plan`);
+                  }}
+                >
+                  <Icons.Bookmark size={14} /> Save to Plan
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+      )}
 
-      </main>
+      {/* Assign Drill to Players Modal */}
+      {showAssignModal && selectedDrillForAssign && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAssignModal(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-gray-200">
+              <h2 className="text-lg font-black text-gray-900">Assign Drill to Players</h2>
+              <p className="text-xs text-gray-500 mt-1">{selectedDrillForAssign.name}</p>
+            </div>
+            <div className="p-5 space-y-3 max-h-80 overflow-y-auto">
+              {squad.map((player) => (
+                <label key={player.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedPlayers.includes(player.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedPlayers([...selectedPlayers, player.id]);
+                      } else {
+                        setSelectedPlayers(selectedPlayers.filter((id) => id !== player.id));
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-[#1a5c2a] focus:ring-[#1a5c2a]"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{player.name}</p>
+                    <p className="text-[10px] text-gray-500">{player.position}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="p-5 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => setShowAssignModal(false)}
+                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-xl font-bold text-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  assignDrillToPlayers(selectedDrillForAssign, selectedPlayers);
+                  setShowAssignModal(false);
+                }}
+                disabled={selectedPlayers.length === 0}
+                className="flex-1 bg-[#1a5c2a] text-white py-2 rounded-xl font-bold text-sm hover:bg-[#1a5c2a]/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Assign to {selectedPlayers.length} Player(s)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
