@@ -105,26 +105,26 @@ export default function NewLeaguePage() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* League Name */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
           <label className="block text-white/70 text-sm mb-2">League Name *</label>
           <input
             type="text"
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
             placeholder="e.g. Zone North U-17 League 2026"
-            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#f0b429]"
+            className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#f0b429]"
             required
           />
         </div>
 
         {/* Sport + Season */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5 grid grid-cols-2 gap-4">
           <div>
             <label className="block text-white/70 text-sm mb-2">Sport *</label>
             <select
               value={form.sport}
               onChange={(e) => set("sport", e.target.value)}
-              className="w-full bg-[#1a3d26] border border-white/20 rounded-xl px-3 py-3 text-white capitalize focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-[#1a3d26] border border-[#f0b429]/20 rounded-xl px-3 py-3 text-white capitalize focus:outline-none focus:border-[#f0b429]"
             >
               {SPORTS.map((s) => (
                 <option key={s} value={s} className="capitalize">{s}</option>
@@ -138,19 +138,19 @@ export default function NewLeaguePage() {
               value={form.season}
               onChange={(e) => set("season", e.target.value)}
               placeholder="2026"
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#f0b429]"
             />
           </div>
         </div>
 
         {/* Zone + Status */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5 grid grid-cols-2 gap-4">
           <div>
             <label className="block text-white/70 text-sm mb-2">Zone (optional)</label>
             <select
               value={form.zone_id}
               onChange={(e) => set("zone_id", e.target.value)}
-              className="w-full bg-[#1a3d26] border border-white/20 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-[#1a3d26] border border-[#f0b429]/20 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-[#f0b429]"
             >
               <option value="">Whole Province</option>
               {zones.map((z) => (
@@ -163,7 +163,7 @@ export default function NewLeaguePage() {
             <select
               value={form.status}
               onChange={(e) => set("status", e.target.value)}
-              className="w-full bg-[#1a3d26] border border-white/20 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-[#1a3d26] border border-[#f0b429]/20 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-[#f0b429]"
             >
               <option value="upcoming">Upcoming</option>
               <option value="active">Active</option>
@@ -173,14 +173,14 @@ export default function NewLeaguePage() {
         </div>
 
         {/* Dates */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 grid grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5 grid grid-cols-2 gap-4">
           <div>
             <label className="block text-white/70 text-sm mb-2">Start Date</label>
             <input
               type="date"
               value={form.start_date}
               onChange={(e) => set("start_date", e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#f0b429]"
             />
           </div>
           <div>
@@ -189,7 +189,7 @@ export default function NewLeaguePage() {
               type="date"
               value={form.end_date}
               onChange={(e) => set("end_date", e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#f0b429]"
             />
           </div>
         </div>

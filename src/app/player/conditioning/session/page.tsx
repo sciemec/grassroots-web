@@ -134,7 +134,7 @@ function SessionRunner() {
 
           <div className="mt-5 space-y-3">
             {cards.map((card, i) => (
-              <div key={card.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-card/60 px-4 py-3">
+              <div key={card.id} className="flex items-center gap-3 rounded-2xl border border-[#f0b429]/10 bg-card/60 px-4 py-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/20 text-sm font-bold text-[#f0b429]">
                   {i + 1}
                 </span>
@@ -183,7 +183,7 @@ function SessionRunner() {
                   className={`rounded-2xl border py-4 text-center transition-colors ${
                     intensity === value
                       ? "border-[#f0b429] bg-[#f0b429]/10 text-white"
-                      : "border-white/10 bg-card/60 text-white/70"
+                      : "border-[#f0b429]/10 bg-card/60 text-white/70"
                   }`}
                 >
                   <span className="block text-2xl">{emoji}</span>
@@ -201,7 +201,7 @@ function SessionRunner() {
               onChange={(e) => setJoyResponse(e.target.value)}
               placeholder="Optional — a move that felt great, something new you noticed..."
               rows={3}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#f0b429]/50 focus:outline-none"
+              className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-[#f0b429]/50 focus:outline-none"
             />
           </div>
 
@@ -281,7 +281,7 @@ function SessionRunner() {
           {/* Instructions */}
           <div className="mt-6 space-y-3">
             {currentCard.instructions.map((step, i) => (
-              <div key={i} className="flex gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3">
+              <div key={i} className="flex gap-3 rounded-xl border border-[#f0b429]/10 bg-card/60 px-4 py-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/20 text-xs font-bold text-[#f0b429]">
                   {i + 1}
                 </span>
@@ -310,7 +310,7 @@ function SessionRunner() {
           {currentIdx + 1 < cards.length && (
             <div className="mt-6">
               <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Up next</p>
-              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3">
+              <div className="flex items-center gap-3 rounded-xl border border-[#f0b429]/10 bg-card/60 px-4 py-3">
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 <p className="text-sm text-white/80">{cards[currentIdx + 1].name}</p>
               </div>
@@ -320,7 +320,7 @@ function SessionRunner() {
       </div>
 
       {/* Bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-background/95 backdrop-blur-sm p-4">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-[#f0b429]/10 bg-background/95 backdrop-blur-sm p-4">
         <div className="mx-auto max-w-lg flex gap-3">
           <button
             onClick={handleNext}

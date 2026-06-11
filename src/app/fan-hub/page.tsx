@@ -47,7 +47,7 @@ interface HighlightClip {
 // Skeleton card for loading state
 function SkeletonCard() {
   return (
-    <div className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-pulse">
+    <div className="rounded-xl overflow-hidden border border-[#f0b429]/10 bg-white/5 animate-pulse">
       <div className="aspect-video bg-white/10" />
       <div className="p-3 flex flex-col gap-2">
         <div className="h-3 bg-white/10 rounded w-3/4" />
@@ -170,7 +170,7 @@ export default function FanHubPage() {
   return (
     <div className="min-h-screen" style={{ background: "#0a1f0e" }}>
       {/* ── Header ── */}
-      <div className="border-b border-white/10 bg-[#0f2a14]">
+      <div className="border-b border-[#f0b429]/10 bg-[#0f2a14]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Fan Hub</h1>
@@ -197,7 +197,7 @@ export default function FanHubPage() {
               { icon: Play,     label: "Live now",        value: String(stats.live_count) },
               { icon: Globe,    label: "Provinces",       value: String(stats.provinces_count) },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 flex items-center gap-3">
+              <div key={label} className="rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 flex items-center gap-3">
                 <Icon className="w-5 h-5 text-amber-400 flex-shrink-0" />
                 <div>
                   <p className="text-white font-bold text-lg leading-none">{value}</p>
@@ -210,7 +210,7 @@ export default function FanHubPage() {
 
         {/* ── Featured slot ── */}
         {featured && (
-          <div className="rounded-2xl overflow-hidden border border-white/10 relative">
+          <div className="rounded-2xl overflow-hidden border border-[#f0b429]/10 relative">
             <div className="relative aspect-video sm:aspect-[21/7] bg-black">
               {featured.thumbnail_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -270,7 +270,7 @@ export default function FanHubPage() {
             <select
               value={activeProvince}
               onChange={(e) => applyFilter(activeCategory, e.target.value)}
-              className="rounded-lg bg-white/10 border border-white/10 text-green-200 px-3 py-1.5 text-sm focus:outline-none focus:border-amber-400/60"
+              className="rounded-lg bg-white/10 border border-[#f0b429]/10 text-green-200 px-3 py-1.5 text-sm focus:outline-none focus:border-amber-400/60"
             >
               {PROVINCES.map((p) => (
                 <option key={p} value={p}>{p}</option>
@@ -387,7 +387,7 @@ export default function FanHubPage() {
               {highlights.slice(0, 10).map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-3 hover:bg-white/[0.07] transition-colors"
+                  className="flex items-center gap-4 rounded-xl border border-[#f0b429]/10 bg-white/5 p-3 hover:bg-white/[0.07] transition-colors"
                 >
                   {/* Event badge */}
                   <div className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-full ${

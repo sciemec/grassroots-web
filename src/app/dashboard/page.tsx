@@ -78,7 +78,7 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {statCards.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+          <div key={label} className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
             <Icon className={`mb-2 h-4 w-4 ${color}`} />
             <p className="text-xl font-bold text-white">
               {value === undefined
@@ -103,8 +103,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent users */}
-      <div className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+      <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 overflow-hidden">
+        <div className="flex items-center justify-between border-b border-[#f0b429]/10 px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-accent/70">
             Recent Users
           </p>

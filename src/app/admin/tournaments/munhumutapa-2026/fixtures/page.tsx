@@ -187,7 +187,7 @@ export default function AdminFixturesPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin/tournaments/munhumutapa-2026"
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground hover:bg-white/10"
+              className="flex items-center gap-1.5 rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground hover:bg-white/10"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Link>
@@ -205,7 +205,7 @@ export default function AdminFixturesPage() {
             <Link
               href="/tournaments/munhumutapa-2026/fixtures"
               target="_blank"
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground hover:bg-white/10"
+              className="flex items-center gap-2 rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground hover:bg-white/10"
             >
               Public View →
             </Link>
@@ -219,7 +219,7 @@ export default function AdminFixturesPage() {
         </div>
 
         {/* Category tabs */}
-        <div className="mb-6 flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+        <div className="mb-6 flex gap-1 rounded-xl border border-[#f0b429]/10 bg-white/5 p-1">
           {CATEGORIES.map((c) => (
             <button
               key={c.value}
@@ -247,7 +247,7 @@ export default function AdminFixturesPage() {
                 <select
                   value={round}
                   onChange={(e) => setRound(e.target.value as Round)}
-                  className="w-full rounded-lg border border-white/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
+                  className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
                 >
                   {ROUNDS.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -261,7 +261,7 @@ export default function AdminFixturesPage() {
                   value={group}
                   onChange={(e) => setGroup(e.target.value)}
                   placeholder="Group A / Semi-Final 1 / Final"
-                  className="w-full rounded-lg border border-white/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white placeholder:text-white/20"
+                  className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white placeholder:text-white/20"
                 />
               </div>
 
@@ -295,7 +295,7 @@ export default function AdminFixturesPage() {
                   type="date"
                   value={matchDate}
                   onChange={(e) => setMatchDate(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
+                  className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export default function AdminFixturesPage() {
                   type="time"
                   value={matchTime}
                   onChange={(e) => setMatchTime(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
+                  className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
                 />
               </div>
 
@@ -315,7 +315,7 @@ export default function AdminFixturesPage() {
                 <select
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
+                  className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
                 >
                   {VENUES.map((v) => <option key={v}>{v}</option>)}
                 </select>
@@ -325,7 +325,7 @@ export default function AdminFixturesPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowAddForm(false)}
-                className="flex-1 rounded-lg border border-white/10 py-2.5 text-sm text-muted-foreground hover:bg-white/5"
+                className="flex-1 rounded-lg border border-[#f0b429]/10 py-2.5 text-sm text-muted-foreground hover:bg-white/5"
               >
                 Cancel
               </button>
@@ -342,7 +342,7 @@ export default function AdminFixturesPage() {
 
         {/* Fixtures list */}
         {catFixtures.length === 0 ? (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-12 text-center">
+          <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-12 text-center">
             <Trophy className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
             <p className="text-muted-foreground">No fixtures yet for this category.</p>
             <p className="mt-1 text-sm text-muted-foreground/50">Click &quot;Add Fixture&quot; to create the first one.</p>
@@ -395,7 +395,7 @@ function TeamSelect({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-white/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
+          className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white"
         >
           <option value="">{placeholder}</option>
           {options.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -406,7 +406,7 @@ function TeamSelect({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-white/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white placeholder:text-white/20"
+          className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0a1f0e] px-3 py-2 text-sm text-white placeholder:text-white/20"
         />
       )}
       {value === "__other__" && (
@@ -452,7 +452,7 @@ function AdminFixtureRow({
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
       <div className="flex flex-wrap items-center gap-3">
         {/* Status toggle */}
         <div className="flex items-center gap-1">
@@ -516,7 +516,7 @@ function AdminFixtureRow({
             className={`rounded-lg px-3 py-1.5 text-sm font-bold transition-colors ${
               f.homeScore !== null
                 ? "bg-white/10 text-white hover:bg-white/15"
-                : "border border-dashed border-white/20 text-muted-foreground hover:border-[#f0b429]/40 hover:text-[#f0b429]"
+                : "border border-dashed border-[#f0b429]/20 text-muted-foreground hover:border-[#f0b429]/40 hover:text-[#f0b429]"
             }`}
           >
             {f.homeScore !== null ? `${f.homeScore} – ${f.awayScore}` : "Enter Score"}

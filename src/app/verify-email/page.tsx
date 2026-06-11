@@ -44,7 +44,7 @@ function VerifyEmailContent() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm text-center space-y-5">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-7 backdrop-blur-sm text-center space-y-5">
 
           <div className="flex justify-center">
             <div className="rounded-full bg-green-500/20 p-4">
@@ -68,7 +68,7 @@ function VerifyEmailContent() {
             Go to Login
           </Link>
 
-          <div className="border-t border-white/10 pt-4">
+          <div className="border-t border-[#f0b429]/10 pt-4">
             <p className="text-xs text-green-400/70 mb-3">Didn&apos;t receive the email?</p>
 
             {resent ? (

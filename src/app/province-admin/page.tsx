@@ -173,7 +173,7 @@ export default function ProvinceAdminPage() {
             {STAT_TILES.map((t) => (
               <div
                 key={t.label}
-                className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm"
+                className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm"
               >
                 <t.icon className={`h-5 w-5 mb-2 ${t.color}`} />
                 <p className="text-2xl font-bold text-foreground">{t.value}</p>

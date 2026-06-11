@@ -1076,7 +1076,7 @@ export default function FootballBusinessSchool() {
                 className={`relative rounded-xl p-3 text-left transition-all border-2 ${
                   isActive
                     ? "border-[#f0b429] bg-white/15"
-                    : "border-white/10 bg-white/5 hover:bg-white/10"
+                    : "border-[#f0b429]/10 bg-white/5 hover:bg-white/10"
                 }`}
               >
                 <div className="text-2xl mb-1">{t.emoji}</div>
@@ -1114,7 +1114,7 @@ export default function FootballBusinessSchool() {
                 className={`rounded-xl border transition-all ${
                   isDone
                     ? "border-green-500/40 bg-green-900/20"
-                    : "border-white/10 bg-white/5"
+                    : "border-[#f0b429]/10 bg-white/5"
                 }`}
               >
                 {/* Lesson header */}
@@ -1140,7 +1140,7 @@ export default function FootballBusinessSchool() {
 
                 {/* Lesson body */}
                 {isOpen && (
-                  <div className="px-4 pb-5 space-y-4 border-t border-white/10 pt-4">
+                  <div className="px-4 pb-5 space-y-4 border-t border-[#f0b429]/10 pt-4">
                     {/* Intro */}
                     <p className="text-white/90 text-sm leading-relaxed">{lesson.intro}</p>
 
@@ -1196,7 +1196,7 @@ export default function FootballBusinessSchool() {
                     </div>
 
                     {/* Quiz */}
-                    <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <div className="bg-white/5 border border-[#f0b429]/10 rounded-lg p-4">
                       <h4 className="text-white text-sm font-semibold mb-3 flex items-center gap-2">
                         <Clock className="w-4 h-4 text-[#f0b429]" />
                         Quick Check
@@ -1214,11 +1214,11 @@ export default function FootballBusinessSchool() {
                             } else if (isPicked && !quizCorrect) {
                               cls += "border-red-500 bg-red-900/30 text-red-300";
                             } else {
-                              cls += "border-white/10 text-white/50";
+                              cls += "border-[#f0b429]/10 text-white/50";
                             }
                           } else {
                             cls +=
-                              "border-white/20 text-white/80 hover:border-[#f0b429]/60 hover:bg-white/5";
+                              "border-[#f0b429]/20 text-white/80 hover:border-[#f0b429]/60 hover:bg-white/5";
                           }
                           return (
                             <button

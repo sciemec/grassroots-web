@@ -288,7 +288,7 @@ function PathwayTab() {
             </button>
           ))}
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 space-y-4">
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: showShona ? "CHINANGWA" : "GOAL",      val: showShona ? stage.goalShona      : stage.goal      },
@@ -301,7 +301,7 @@ function PathwayTab() {
               </div>
             ))}
           </div>
-          <div className="border-t border-white/10 pt-3 space-y-2">
+          <div className="border-t border-[#f0b429]/10 pt-3 space-y-2">
             <p className="text-sm uppercase tracking-widest font-semibold" style={{ color: stage.color }}>
               {showShona ? "MAITIRO EMITAMBO" : "ACTIVITY CARDS"}
             </p>
@@ -317,7 +317,7 @@ function PathwayTab() {
                   {activeActivity === i ? <ChevronUp className="h-4 w-4 text-white/30" /> : <ChevronDown className="h-4 w-4 text-white/30" />}
                 </div>
                 {activeActivity === i && (
-                  <div className="px-3 pb-3 border-t border-white/10 pt-3 space-y-3">
+                  <div className="px-3 pb-3 border-t border-[#f0b429]/10 pt-3 space-y-3">
                     <p className="text-sm text-white/70 leading-relaxed">{showShona ? act.shonaDesc : act.desc}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {(showShona ? act.cuesShona : act.cues).map((cue, j) => (
@@ -371,7 +371,7 @@ function ThreeVThreeTab() {
       </div>
       {tab === "why" && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
             <p className="text-base text-white/80 leading-relaxed">3v3 gives young players the best introduction to football — more chances to learn, play, make decisions, score and stop goals. Research shows it encourages more physical activity and increases technical actions, meaning more touches on the ball and more play on the pitch.</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -380,7 +380,7 @@ function ThreeVThreeTab() {
               { n: "MORE ACTION",  sub: "physical activity per min" },
               { n: "MORE FUN",     sub: "every child plays always" },
             ].map((s, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center" style={{ borderTop: "3px solid #006400" }}>
+              <div key={i} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-3 text-center" style={{ borderTop: "3px solid #006400" }}>
                 <p className="text-sm font-bold text-[#006400] mb-1">{s.n}</p>
                 <p className="text-sm text-white/40 leading-snug">{s.sub}</p>
               </div>
@@ -396,7 +396,7 @@ function ThreeVThreeTab() {
             { icon: "👥", title: "Teams & Adults", body: "Squads of 6–12. 2 adults as Pitch Facilitators. No referee — children make their own decisions." },
             { icon: "⏱️", title: "Duration",       body: "6–10 min per game. Carousel rotation gives every player 30–40 minutes total playing time." },
           ].map((s, i) => (
-            <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
+            <div key={i} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
               <div className="text-2xl mb-2">{s.icon}</div>
               <p className="text-sm uppercase tracking-widest font-bold text-[#006400] mb-1.5">{s.title}</p>
               <p className="text-sm text-white/60 leading-relaxed">{s.body}</p>
@@ -407,7 +407,7 @@ function ThreeVThreeTab() {
       {tab === "rules" && (
         <div className="space-y-2">
           {THREE_V_THREE_RULES.map((r, i) => (
-            <div key={i} className="flex gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            <div key={i} className="flex gap-4 rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3">
               <span className="text-xs uppercase tracking-widest font-bold text-[#006400] min-w-[90px] shrink-0 pt-0.5">{r.rule}</span>
               <span className="text-sm text-white/70 leading-relaxed">{r.detail}</span>
             </div>
@@ -415,7 +415,7 @@ function ThreeVThreeTab() {
         </div>
       )}
       {tab === "coaching" && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4" style={{ borderLeft: "4px solid #006400" }}>
           <p className="text-xs uppercase tracking-widest font-bold text-[#006400] mb-3">Coaching Principles for U7 3v3</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {THREE_V_THREE_COACHING_TIPS.map((tip, i) => (
@@ -473,15 +473,15 @@ function FormatsTab({
             </button>
           ))}
           {filterFormat && (
-            <button onClick={() => setFilterFormat(null)} className="rounded-lg px-3 py-1.5 text-sm text-white/30 border border-white/10 hover:text-white/60 transition-colors">
+            <button onClick={() => setFilterFormat(null)} className="rounded-lg px-3 py-1.5 text-sm text-white/30 border border-[#f0b429]/10 hover:text-white/60 transition-colors">
               ✕ Clear
             </button>
           )}
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-white/10">
+        <div className="overflow-x-auto rounded-2xl border border-[#f0b429]/10">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-white/5">
+              <tr className="border-b border-[#f0b429]/10 bg-white/5">
                 {["Age Group","Format","Ball","Rec. Pitch (m)","Min (m)","Max (m)","Goal (ft)"].map((h) => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs uppercase tracking-widest text-[#f0b429] font-semibold whitespace-nowrap">{h}</th>
                 ))}
@@ -491,7 +491,7 @@ function FormatsTab({
               {filteredRows.map((row, i) => {
                 const color = FORMAT_COLORS[row.format];
                 return (
-                  <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors" style={{ borderLeft: `3px solid ${color}` }}>
+                  <tr key={i} className="border-b border-[#f0b429]/5 hover:bg-white/5 transition-colors" style={{ borderLeft: `3px solid ${color}` }}>
                     <td className="px-3 py-2.5 text-white/80 whitespace-nowrap">{row.age}</td>
                     <td className="px-3 py-2.5"><span className="rounded px-2 py-0.5 text-sm font-bold text-white" style={{ background: color }}>{row.format}</span></td>
                     <td className="px-3 py-2.5 text-white/60">{row.ball}</td>
@@ -575,7 +575,7 @@ function FormatsTab({
             </div>
           </div>
           {showWarmup && (
-            <div className="border-t border-white/10 px-4 pb-4 pt-3 space-y-3">
+            <div className="border-t border-[#f0b429]/10 px-4 pb-4 pt-3 space-y-3">
               <p className="text-sm text-white/70 leading-relaxed">{fmt.warmup.setup}</p>
               <div>
                 <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: fmt.color }}>COACHING CUES</p>
@@ -615,7 +615,7 @@ function FormatsTab({
               </div>
             </div>
             {openDrill === i && (
-              <div className="border-t border-white/10 px-4 pb-4 pt-3 space-y-3">
+              <div className="border-t border-[#f0b429]/10 px-4 pb-4 pt-3 space-y-3">
                 <div className="rounded-xl bg-white/5 px-3 py-2">
                   <span className="text-xs uppercase tracking-widest font-semibold" style={{ color: fmt.color }}>OBJECTIVE: </span>
                   <span className="text-sm text-white/60">{drill.objective}</span>
@@ -646,7 +646,7 @@ function FormatsTab({
         ))}
 
         {/* Session total */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 flex flex-wrap gap-4 items-center mt-2">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 flex flex-wrap gap-4 items-center mt-2">
           <span className="text-xs uppercase tracking-widest font-semibold shrink-0" style={{ color: fmt.color }}>SESSION TOTAL →</span>
           {[
             { label: "Warm-Up",       val: fmt.warmup.duration          },
@@ -654,7 +654,7 @@ function FormatsTab({
             { label: "Game Included", val: "✓ Yes"                      },
             { label: "Total",         val: fmt.sessionLength             },
           ].map((s, i) => (
-            <div key={i} className="text-center border-l border-white/10 pl-4">
+            <div key={i} className="text-center border-l border-[#f0b429]/10 pl-4">
               <p className="text-xs uppercase tracking-widest text-white/30 mb-0.5">{s.label}</p>
               <p className="text-sm font-bold text-white">{s.val}</p>
             </div>
@@ -702,7 +702,7 @@ function SavedTab({ saved, onRemove }: { saved: SavedItem[]; onRemove: (id: stri
             </div>
             <div className="space-y-2">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-[#f0b429]/10 bg-white/5 px-4 py-3">
                   <Star className="h-4 w-4 shrink-0 text-[#f0b429]" fill="currentColor" />
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-semibold text-white truncate">{item.name}</p>
@@ -774,7 +774,7 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
               { label: "Avg Rating",   value: avgRating.toFixed(1),     unit: "/ 5"           },
               { label: "Squads",       value: squadSet.size,            unit: "groups"        },
             ].map((s, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
+              <div key={i} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-3 text-center">
                 <p className="text-xs uppercase tracking-widest text-white/30 mb-0.5">{s.label}</p>
                 <p className="text-lg font-bold text-white leading-none">{s.value}</p>
                 <p className="text-xs text-white/30 mt-0.5">{s.unit}</p>
@@ -783,7 +783,7 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
           </div>
 
           {/* Format breakdown bars */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
             <p className="text-xs uppercase tracking-widest text-[#f0b429] font-semibold mb-3">Format Breakdown</p>
             <div className="space-y-2">
               {Object.entries(formatCounts)
@@ -817,7 +817,7 @@ function LogTab({ logs, onDelete, onAdd }: { logs: SessionLog[]; onDelete: (id: 
         {[...logs].reverse().map((log) => {
           const color = FORMAT_COLORS[log.formatLabel] ?? "#f0b429";
           return (
-            <div key={log.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div key={log.id} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -881,7 +881,7 @@ function LogModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-md rounded-t-3xl border border-white/10 bg-[#0f2318] p-6 sm:rounded-3xl">
+      <div className="w-full max-w-md rounded-t-3xl border border-[#f0b429]/10 bg-[#0f2318] p-6 sm:rounded-3xl">
         <div className="flex items-center justify-between mb-5">
           <div>
             <p className="text-sm uppercase tracking-widest text-[#f0b429] font-semibold">Session Log</p>
@@ -907,13 +907,13 @@ function LogModal({
           <div>
             <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Squad / Group Name</label>
             <input value={squadName} onChange={(e) => setSquadName(e.target.value)} placeholder="e.g. U12 Lions"
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
+              className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
           </div>
           {/* Date */}
           <div>
             <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Date</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white outline-none focus:border-[#f0b429]/40 transition-all" />
+              className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white outline-none focus:border-[#f0b429]/40 transition-all" />
           </div>
           {/* Rating */}
           <div>
@@ -930,11 +930,11 @@ function LogModal({
           <div>
             <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Notes (optional)</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="What went well? What needs work next session?"
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
+              className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
           </div>
         </div>
         <div className="mt-5 flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-base text-white/50 hover:text-white transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 rounded-xl border border-[#f0b429]/10 py-2.5 text-base text-white/50 hover:text-white transition-colors">Cancel</button>
           <button onClick={handleSave} disabled={!squadName.trim()}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-2.5 text-base font-bold text-[#1a3a1a] disabled:opacity-40 transition-opacity">
             <Check className="h-4 w-4" /> Save Log
@@ -985,7 +985,7 @@ function AssignModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-md rounded-t-3xl border border-white/10 bg-[#0f2318] p-6 sm:rounded-3xl">
+      <div className="w-full max-w-md rounded-t-3xl border border-[#f0b429]/10 bg-[#0f2318] p-6 sm:rounded-3xl">
         {sent ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500/20 mb-4">
@@ -1013,16 +1013,16 @@ function AssignModal({
                 <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Player Names</label>
                 <textarea value={playerNames} onChange={(e) => setPlayerNames(e.target.value)} rows={3}
                   placeholder="One per line or comma-separated&#10;e.g. Tinashe Moyo, Farai Dube"
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
+                  className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
               </div>
               <div>
                 <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Message to Players (optional)</label>
                 <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="e.g. Focus on your first touch this week"
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
+                  className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
               </div>
             </div>
             <div className="mt-5 flex gap-2">
-              <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-base text-white/50 hover:text-white transition-colors">Cancel</button>
+              <button onClick={onClose} className="flex-1 rounded-xl border border-[#f0b429]/10 py-2.5 text-base text-white/50 hover:text-white transition-colors">Cancel</button>
               <button onClick={handleSend} disabled={!playerNames.trim()}
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-2.5 text-base font-bold text-[#1a3a1a] disabled:opacity-40 transition-opacity">
                 <UserPlus className="h-4 w-4" /> Assign Drill
@@ -1184,7 +1184,7 @@ export default function FutureFitPage() {
       <main className="gs-watermark flex-1 overflow-auto">
         <ProGate feature="FutureFit Junior Development Hub" preview={false}>
         {/* ── Sticky header ─────────────────────────────────────────────── */}
-        <div className="sticky top-0 z-10 border-b border-white/10 bg-[#0b1f12]/95 backdrop-blur-md px-5 py-3">
+        <div className="sticky top-0 z-10 border-b border-[#f0b429]/10 bg-[#0b1f12]/95 backdrop-blur-md px-5 py-3">
           <div className="flex items-center gap-3 mb-3">
             <Link href="/coach" className="rounded-lg p-1.5 text-white/40 hover:text-white transition-colors">
               <ArrowLeft className="h-5 w-5" />
@@ -1235,7 +1235,7 @@ export default function FutureFitPage() {
         {/* Chat tab */}
         {activeTab === "chat" && (
           <div className="flex flex-col" style={{ height: "calc(100vh - 140px)" }}>
-            <div className="flex items-center gap-3 border-b border-white/10 px-5 py-3">
+            <div className="flex items-center gap-3 border-b border-[#f0b429]/10 px-5 py-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f0b429]/20">
                 <Sparkles className="h-4 w-4 text-[#f0b429]" />
               </div>
@@ -1255,7 +1255,7 @@ export default function FutureFitPage() {
                     "Give me a 45-minute session plan for youth attacking",
                   ].map((q) => (
                     <button key={q} onClick={() => setChatInput(q)}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left text-sm text-white/70 hover:border-[#f0b429]/30 hover:text-white transition-all">
+                      className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 p-3 text-left text-sm text-white/70 hover:border-[#f0b429]/30 hover:text-white transition-all">
                       {q}
                     </button>
                   ))}
@@ -1288,12 +1288,12 @@ export default function FutureFitPage() {
               )}
               <div ref={chatEndRef} />
             </div>
-            <div className="border-t border-white/10 px-4 py-3">
+            <div className="border-t border-[#f0b429]/10 px-4 py-3">
               <div className="flex items-center gap-2">
                 <input value={chatInput} onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }}}
                   placeholder="Ask about junior coaching…"
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all"
+                  className="flex-1 rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all"
                   disabled={chatLoading} />
                 <button onClick={sendMessage} disabled={!chatInput.trim() || chatLoading}
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f0b429] text-[#1a3a1a] disabled:opacity-40 transition-opacity">

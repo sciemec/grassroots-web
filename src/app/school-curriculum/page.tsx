@@ -129,7 +129,7 @@ export default function SchoolCurriculumPage() {
             </Link>
             <Link
               href="/school-leagues"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-7 py-4 text-base font-semibold text-white/80 transition-colors hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#f0b429]/20 px-7 py-4 text-base font-semibold text-white/80 transition-colors hover:bg-white/10"
             >
               View NASH Leagues
             </Link>
@@ -138,7 +138,7 @@ export default function SchoolCurriculumPage() {
       </div>
 
       {/* ── Credibility bar ───────────────────────────────────────────────────── */}
-      <div className="border-y border-white/10 bg-white/5 px-6 py-5">
+      <div className="border-y border-[#f0b429]/10 bg-white/5 px-6 py-5">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-6 text-center">
           {[
             { label: "FIFA Progressive Methodology", sub: "Certified Framework" },
@@ -171,7 +171,7 @@ export default function SchoolCurriculumPage() {
             {FIFA_NON_NEGOTIABLES.map(({ emoji, title, desc }) => (
               <div
                 key={title}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5"
+                className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5"
               >
                 <span className="block text-2xl">{emoji}</span>
                 <p className="mt-2 text-sm font-bold text-white">{title}</p>
@@ -197,7 +197,7 @@ export default function SchoolCurriculumPage() {
             {BRACKETS.map((b) => (
               <div
                 key={b.age}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-white/5"
+                className="overflow-hidden rounded-3xl border border-[#f0b429]/10 bg-white/5"
               >
                 {/* Header */}
                 <div className={`bg-gradient-to-r ${b.color} px-7 py-6`}>
@@ -216,7 +216,7 @@ export default function SchoolCurriculumPage() {
 
                 <div className="grid gap-0 p-0 sm:grid-cols-2">
                   {/* Focus areas */}
-                  <div className="border-b border-white/10 p-6 sm:border-b-0 sm:border-r">
+                  <div className="border-b border-[#f0b429]/10 p-6 sm:border-b-0 sm:border-r">
                     <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-white/40">
                       Training Focus
                     </p>
@@ -237,7 +237,7 @@ export default function SchoolCurriculumPage() {
                     </p>
                     <div className="space-y-2">
                       {b.sessionStructure.map((s) => (
-                        <div key={s.phase} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+                        <div key={s.phase} className="rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-white">{s.phase}</span>
                             <span className="text-[10px] text-[#f0b429]">{s.time}</span>
@@ -252,7 +252,7 @@ export default function SchoolCurriculumPage() {
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {b.drills.map((d) => (
-                        <span key={d} className="rounded-full border border-white/15 bg-white/8 px-2.5 py-1 text-[11px] text-white/70">
+                        <span key={d} className="rounded-full border border-[#f0b429]/15 bg-white/8 px-2.5 py-1 text-[11px] text-white/70">
                           {d}
                         </span>
                       ))}
@@ -261,7 +261,7 @@ export default function SchoolCurriculumPage() {
                 </div>
 
                 {/* Coaching tone */}
-                <div className="border-t border-white/10 bg-white/3 px-6 py-4">
+                <div className="border-t border-[#f0b429]/10 bg-white/3 px-6 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-widest text-white/40">Coaching Tone</p>
                   <p className="mt-1 text-xs italic text-white/60">&quot;{b.coachingTone}&quot;</p>
                 </div>
@@ -345,7 +345,7 @@ export default function SchoolCurriculumPage() {
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {SCHOOL_BENEFITS.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div key={title} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
                 <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-[#f0b429]/10">
                   <Icon className="h-4 w-4 text-[#f0b429]" />
                 </div>
@@ -402,7 +402,7 @@ export default function SchoolCurriculumPage() {
             </Link>
             <Link
               href="/school-leagues"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-8 py-4 text-base font-semibold text-white/80 transition-colors hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#f0b429]/20 px-8 py-4 text-base font-semibold text-white/80 transition-colors hover:bg-white/10"
             >
               Explore NASH Leagues
             </Link>

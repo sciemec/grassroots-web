@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-3 text-xl font-bold text-white">2. What Data We Collect</h2>
             <div className="space-y-4">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-white">Account Information</h3>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>Full name, email address, phone number</li>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
                   <li>Password (stored as a bcrypt hash — never readable)</li>
                 </ul>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-white">Player Profile Data</h3>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>Playing position, school or club, preferred foot</li>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
                   <li>Identity verification document type and AI confidence score (not the document image itself — images are deleted immediately after processing)</li>
                 </ul>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-white">Training and Performance Data</h3>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>Session logs: drill scores, duration, focus area, overall performance score</li>
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
                   <li>Pose detection data processed on-device — never uploaded to our servers</li>
                 </ul>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-white">Video Uploads (Video Studio)</h3>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>Videos uploaded for AI analysis are sent to our secure Laravel backend</li>
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
                   <li>AI analysis results (text) are stored in your account</li>
                 </ul>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-white">Usage Data</h3>
                 <ul className="ml-4 list-disc space-y-1">
                   <li>Pages visited and features used (for improving the Platform)</li>
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="mb-3 text-xl font-bold text-white">4. How We Use Your Data</h2>
-            <div className="overflow-hidden rounded-xl border border-white/10">
+            <div className="overflow-hidden rounded-xl border border-[#f0b429]/10">
               <table className="w-full text-xs">
                 <thead className="bg-white/10">
                   <tr>
@@ -182,7 +182,7 @@ export default function PrivacyPage() {
                 ["Object", "Object to processing for marketing or AI model training."],
                 ["Withdraw consent", "Withdraw consent at any time (e.g. for scout visibility)."],
               ].map(([right, desc]) => (
-                <div key={right} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <div key={right} className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-3">
                   <p className="font-semibold text-white">{right}</p>
                   <p className="mt-0.5 text-green-300">{desc}</p>
                 </div>
@@ -212,7 +212,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="mb-3 text-xl font-bold text-white">12. Contact and Data Controller</h2>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+            <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
               <p className="font-semibold text-white">Grassroots Sport Pro</p>
               <p className="mt-1">Zimbabwe 🇿🇼</p>
               <p className="mt-1">
@@ -228,7 +228,7 @@ export default function PrivacyPage() {
         </div>
 
         {/* Footer links */}
-        <div className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-8 text-sm text-green-500">
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-[#f0b429]/10 pt-8 text-sm text-green-500">
           <Link href="/terms" className="hover:text-green-300 transition-colors">← Terms of Service</Link>
           <Link href="/" className="hover:text-green-300 transition-colors">Back to home →</Link>
         </div>

@@ -36,7 +36,7 @@ export default function SettingsPage() {
   const [showCfm, setShowCfm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
 
-  const inputCls = "w-full rounded-lg border border-white/15 bg-secondary px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring";
+  const inputCls = "w-full rounded-lg border border-[#f0b429]/15 bg-secondary px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring";
   const labelCls = "mb-1 block text-xs font-medium text-muted-foreground";
 
   const flash = (msg: string) => { setSaved(msg); setTimeout(() => setSaved(""), 3000); };
@@ -169,10 +169,10 @@ export default function SettingsPage() {
           {/* ── Profile tab ── */}
           {tab === "profile" && (
             <form onSubmit={profileForm.handleSubmit((d) => saveProfile.mutate(d))}
-              className="rounded-2xl border border-white/10 bg-card/60 p-6 space-y-4 backdrop-blur-sm">
+              className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6 space-y-4 backdrop-blur-sm">
               <h2 className="text-sm font-semibold text-white">Personal Information</h2>
 
-              <div className="flex items-center gap-4 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-4 pb-4 border-b border-[#f0b429]/10">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
                   {user?.name?.charAt(0)?.toUpperCase()}
                 </div>
@@ -211,7 +211,7 @@ export default function SettingsPage() {
           {/* ── Security tab ── */}
           {tab === "security" && (
             <form onSubmit={pwForm.handleSubmit((d) => savePw.mutate(d))}
-              className="rounded-2xl border border-white/10 bg-card/60 p-6 space-y-4 backdrop-blur-sm">
+              className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6 space-y-4 backdrop-blur-sm">
               <h2 className="text-sm font-semibold text-white">Change Password</h2>
               <p className="text-xs text-muted-foreground">Choose a strong password of at least 8 characters.</p>
 
@@ -253,7 +253,7 @@ export default function SettingsPage() {
           {/* ── Notifications tab ── */}
           {tab === "notifications" && (
             <form onSubmit={notifForm.handleSubmit((d) => saveNotif.mutate(d))}
-              className="rounded-2xl border border-white/10 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
+              className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
               <h2 className="text-sm font-semibold text-white">Notification Preferences</h2>
 
               {/* Email Notifications */}
@@ -266,7 +266,7 @@ export default function SettingsPage() {
                     { name: "email_scout_requests" as const, label: "Scout contact requests",     sub: "When a scout wants to connect" },
                     { name: "email_platform_news" as const,  label: "Platform news",              sub: "Updates and new features" },
                   ].map(({ name, label, sub }) => (
-                    <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
+                    <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-[#f0b429]/10 p-3 hover:bg-white/5 transition-colors">
                       <div>
                         <p className="text-sm font-medium">{label}</p>
                         <p className="text-xs text-muted-foreground">{sub}</p>
@@ -304,7 +304,7 @@ export default function SettingsPage() {
                     { name: "push_sessions" as const,     label: "Session reminders",  sub: "Daily training reminders" },
                     { name: "push_achievements" as const, label: "Achievement alerts",  sub: "Real-time achievement pings" },
                   ].map(({ name, label, sub }) => (
-                    <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
+                    <label key={name} className="flex cursor-pointer items-center justify-between rounded-lg border border-[#f0b429]/10 p-3 hover:bg-white/5 transition-colors">
                       <div>
                         <p className="text-sm font-medium">{label}</p>
                         <p className="text-xs text-muted-foreground">{sub}</p>
@@ -328,7 +328,7 @@ export default function SettingsPage() {
 
           {/* ── Chemistry & Privacy card (shown inside notifications tab) ── */}
           {tab === "notifications" && (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
+            <div className="mt-4 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6 space-y-5 backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-[#f0b429]" />
                 <h2 className="text-sm font-semibold text-white">Chemistry Matching</h2>
@@ -340,7 +340,7 @@ export default function SettingsPage() {
               </p>
 
               <div className="space-y-3">
-                <label className="flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 hover:bg-white/5 transition-colors">
+                <label className="flex cursor-pointer items-center justify-between rounded-lg border border-[#f0b429]/10 p-3 hover:bg-white/5 transition-colors">
                   <div>
                     <p className="text-sm font-medium">Enable chemistry matching</p>
                     <p className="text-xs text-muted-foreground">Allow the platform to calculate your style similarity with other players</p>
@@ -353,7 +353,7 @@ export default function SettingsPage() {
                   />
                 </label>
 
-                <label className={`flex cursor-pointer items-center justify-between rounded-lg border border-white/10 p-3 transition-colors ${chemConsent ? "hover:bg-white/5" : "opacity-40 cursor-not-allowed"}`}>
+                <label className={`flex cursor-pointer items-center justify-between rounded-lg border border-[#f0b429]/10 p-3 transition-colors ${chemConsent ? "hover:bg-white/5" : "opacity-40 cursor-not-allowed"}`}>
                   <div>
                     <p className="text-sm font-medium">Chemistry notifications</p>
                     <p className="text-xs text-muted-foreground">Get notified when you have a high-chemistry pair (85%+) in your squad</p>

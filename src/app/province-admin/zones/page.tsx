@@ -65,7 +65,7 @@ export default function ZonesPage() {
             {error}
           </div>
         ) : zones.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-8 text-center">
             <Map className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No zones found for your province.</p>
           </div>
@@ -74,7 +74,7 @@ export default function ZonesPage() {
             {zones.map((z) => (
               <div
                 key={z.id}
-                className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm"
+                className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm"
               >
                 <div className="flex items-start gap-3 mb-4">
                   <div className="rounded-xl p-2.5 bg-teal-500/20 text-teal-300">

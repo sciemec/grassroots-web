@@ -495,7 +495,7 @@ export default function VideoStudioPage() {
 
           {/* Share to school/org page — appears after analysis is saved */}
           {stage === "done" && savedId && (
-            <div className="rounded-xl border border-white/10 bg-card p-4 flex items-center justify-between gap-4">
+            <div className="rounded-xl border border-[#f0b429]/10 bg-card p-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 {savedShared
                   ? <Globe className="h-4 w-4 text-green-400 flex-shrink-0" />
@@ -540,7 +540,7 @@ export default function VideoStudioPage() {
                   const sportEmoji = SPORTS.find((s) => s.key === a.sport)?.emoji ?? "🎬";
                   const isOpen = expandedId === a.id;
                   return (
-                    <div key={a.id} className="rounded-xl border border-white/10 overflow-hidden">
+                    <div key={a.id} className="rounded-xl border border-[#f0b429]/10 overflow-hidden">
                       <button
                         onClick={() => setExpandedId(isOpen ? null : a.id)}
                         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"

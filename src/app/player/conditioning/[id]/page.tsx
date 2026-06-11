@@ -235,7 +235,7 @@ export default function ExerciseCardDetailPage() {
         </div>
 
         {/* ── Difficulty selector ─────────────────────────────────────────────── */}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-card/60 p-4">
+        <div className="mt-6 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
           <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             Difficulty
           </p>
@@ -248,7 +248,7 @@ export default function ExerciseCardDetailPage() {
                   key={level}
                   onClick={() => setSelectedLevel(level)}
                   className={`flex-1 rounded-xl border py-2.5 text-sm font-bold transition-colors ${
-                    isActive ? meta.activeColor : "border-white/10 text-white/40 hover:text-white/60"
+                    isActive ? meta.activeColor : "border-[#f0b429]/10 text-white/40 hover:text-white/60"
                   }`}
                 >
                   {meta.label}
@@ -287,7 +287,7 @@ export default function ExerciseCardDetailPage() {
             {card.instructions.map((step, i) => (
               <div
                 key={i}
-                className="flex gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3"
+                className="flex gap-3 rounded-xl border border-[#f0b429]/10 bg-card/60 px-4 py-3"
               >
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f0b429]/20 text-xs font-bold text-[#f0b429]">
                   {i + 1}
@@ -320,7 +320,7 @@ export default function ExerciseCardDetailPage() {
               {card.muscles_targeted.map((m, i) => (
                 <span
                   key={i}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70"
+                  className="rounded-full border border-[#f0b429]/10 bg-white/5 px-3 py-1 text-xs text-white/70"
                 >
                   {m}
                 </span>
@@ -351,7 +351,7 @@ export default function ExerciseCardDetailPage() {
         </div>
 
         {/* ── What good feels like ────────────────────────────────────────────── */}
-        <div className="mt-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3">
+        <div className="mt-3 rounded-xl border border-[#f0b429]/10 bg-card/60 px-4 py-3">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             What good feels like
           </p>
@@ -375,7 +375,7 @@ export default function ExerciseCardDetailPage() {
       </div>
 
       {/* ── Fixed bottom bar ─────────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-background/95 backdrop-blur-sm p-4">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-[#f0b429]/10 bg-background/95 backdrop-blur-sm p-4">
         <div className="mx-auto max-w-lg space-y-2">
           {/* Add to session + Log row */}
           <div className="flex gap-2">
@@ -384,7 +384,7 @@ export default function ExerciseCardDetailPage() {
               className={`flex flex-1 items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition-colors ${
                 addedToSession
                   ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-300"
-                  : "border-white/20 bg-white/5 text-white hover:bg-white/10"
+                  : "border-[#f0b429]/20 bg-white/5 text-white hover:bg-white/10"
               }`}
             >
               {addedToSession ? (
@@ -397,7 +397,7 @@ export default function ExerciseCardDetailPage() {
 
             <button
               onClick={() => setShowLogModal(true)}
-              className="rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-sm font-semibold text-white/70 hover:bg-white/10 active:opacity-80"
+              className="rounded-2xl border border-[#f0b429]/20 bg-white/5 px-4 py-3 text-sm font-semibold text-white/70 hover:bg-white/10 active:opacity-80"
             >
               Log exercise
             </button>
@@ -440,7 +440,7 @@ export default function ExerciseCardDetailPage() {
                   className={`rounded-2xl border py-3.5 text-center transition-colors ${
                     intensity === value
                       ? "border-[#f0b429] bg-[#f0b429]/10 text-white"
-                      : "border-white/10 bg-white/5 text-white/70"
+                      : "border-[#f0b429]/10 bg-white/5 text-white/70"
                   }`}
                 >
                   <span className="block text-2xl">{emoji}</span>

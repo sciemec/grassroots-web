@@ -91,7 +91,7 @@ export default function ProvinceAdminClubsPage() {
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
           <Link href="/province-admin"
-            className="rounded-xl border border-white/10 bg-white/5 p-2 hover:border-white/20 transition-all">
+            className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-2 hover:border-[#f0b429]/20 transition-all">
             <ChevronLeft className="h-4 w-4 text-white" />
           </Link>
           <div>
@@ -109,7 +109,7 @@ export default function ProvinceAdminClubsPage() {
               className={`rounded-xl px-4 py-2 text-sm font-medium transition-all
                 ${tab === t.key
                   ? "bg-[#f0b429] text-[#1a3a1a]"
-                  : "border border-white/10 bg-white/5 text-white/60 hover:border-white/20"}`}>
+                  : "border border-[#f0b429]/10 bg-white/5 text-white/60 hover:border-[#f0b429]/20"}`}>
               {t.label}
             </button>
           ))}
@@ -122,7 +122,7 @@ export default function ProvinceAdminClubsPage() {
             <span className="text-sm">Loading clubs…</span>
           </div>
         ) : clubs.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-12 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-12 text-center">
             <Building2 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-medium text-foreground">No {tab} clubs found</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -133,7 +133,7 @@ export default function ProvinceAdminClubsPage() {
           <div className="space-y-3">
             {clubs.map(club => (
               <div key={club.id}
-                className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+                className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -161,7 +161,7 @@ export default function ProvinceAdminClubsPage() {
                     </div>
 
                     {club.is_verified && club.is_active && (
-                      <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                      <div className="mt-3 flex items-center gap-2 rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2">
                         <QrCode className="h-4 w-4 text-[#f0b429] shrink-0" />
                         <p className="text-xs text-muted-foreground truncate">
                           QR: grassrootssports.live/club/{club.qr_code_token}/join

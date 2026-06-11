@@ -71,7 +71,7 @@ function LeadershipBadge({ score }: { score: number }) {
   const tier =
     score >= 100 ? { label: "Ubuntu Elder",   color: "text-[#f0b429]",  border: "border-[#f0b429]/30",  bg: "bg-[#f0b429]/10" } :
     score >= 50  ? { label: "Team Builder",    color: "text-teal-300",   border: "border-teal-500/30",   bg: "bg-teal-900/20"  } :
-                   { label: "Rising Leader",   color: "text-white/60",   border: "border-white/10",      bg: "bg-white/5"       };
+                   { label: "Rising Leader",   color: "text-white/60",   border: "border-[#f0b429]/10",      bg: "bg-white/5"       };
 
   return (
     <div className={`rounded-2xl border p-4 ${tier.border} ${tier.bg}`}>
@@ -222,7 +222,7 @@ export default function UbuntuPage() {
     <div className="min-h-screen bg-background">
 
       {/* Header */}
-      <div className="border-b border-white/10 bg-[#0d1f12] px-4 py-4">
+      <div className="border-b border-[#f0b429]/10 bg-[#0d1f12] px-4 py-4">
         <div className="mx-auto max-w-lg">
           <div className="mb-2 flex items-center gap-3">
             <button
@@ -308,7 +308,7 @@ export default function UbuntuPage() {
         <section>
           <SectionLabel>My Training Partners ({partners.length})</SectionLabel>
           {partners.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
+            <div className="rounded-2xl border border-dashed border-[#f0b429]/10 p-8 text-center">
               <Users className="mx-auto mb-3 h-8 w-8 text-white/20" />
               <p className="text-sm font-medium text-white/50">No training partners yet</p>
               <p className="mt-1 text-xs text-white/30">
@@ -323,7 +323,7 @@ export default function UbuntuPage() {
                 return (
                   <div
                     key={p.connection_id}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 space-y-3"
+                    className="rounded-2xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 space-y-3"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-teal-900/50 text-sm font-bold text-teal-300">
@@ -369,7 +369,7 @@ export default function UbuntuPage() {
         {group && (
           <section>
             <SectionLabel>My Group</SectionLabel>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 space-y-3">
               {/* Group header */}
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -402,7 +402,7 @@ export default function UbuntuPage() {
               </button>
 
               {membersOpen && (
-                <div className="space-y-1.5 border-t border-white/5 pt-2">
+                <div className="space-y-1.5 border-t border-[#f0b429]/5 pt-2">
                   {group.members.map((m) => (
                     <div key={m.user_id} className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
@@ -477,7 +477,7 @@ export default function UbuntuPage() {
             {!sessionOpen ? (
               <button
                 onClick={() => setSessionOpen(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-4 text-sm font-medium text-white/50 transition-colors hover:border-teal-500/30 hover:text-teal-300"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#f0b429]/10 bg-white/5 py-4 text-sm font-medium text-white/50 transition-colors hover:border-teal-500/30 hover:text-teal-300"
               >
                 <Plus className="h-4 w-4" />
                 Log a session
@@ -489,13 +489,13 @@ export default function UbuntuPage() {
                   type="date"
                   value={sessionDate}
                   onChange={(e) => setSessionDate(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-teal-500/50"
+                  className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-teal-500/50"
                 />
                 <input
                   value={sessionFocus}
                   onChange={(e) => setSessionFocus(e.target.value)}
                   placeholder="What did you focus on? (e.g. Shooting drills)"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-teal-500/50"
+                  className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-teal-500/50"
                   maxLength={200}
                 />
                 <textarea
@@ -503,7 +503,7 @@ export default function UbuntuPage() {
                   onChange={(e) => setSessionNotes(e.target.value)}
                   placeholder="Notes (optional)"
                   rows={2}
-                  className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-teal-500/50"
+                  className="w-full resize-none rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-teal-500/50"
                   maxLength={2000}
                 />
                 <div className="flex gap-2">
@@ -516,7 +516,7 @@ export default function UbuntuPage() {
                   </button>
                   <button
                     onClick={() => setSessionOpen(false)}
-                    className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/40 hover:text-white transition-colors"
+                    className="rounded-xl border border-[#f0b429]/10 px-4 py-2.5 text-sm text-white/40 hover:text-white transition-colors"
                   >
                     Cancel
                   </button>

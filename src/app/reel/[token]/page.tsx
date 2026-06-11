@@ -81,7 +81,7 @@ function VideoThumb({
       className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
         active
           ? "border-green-500/50 bg-green-500/10 ring-1 ring-green-500/30"
-          : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+          : "border-[#f0b429]/10 bg-white/5 hover:border-[#f0b429]/20 hover:bg-white/10"
       }`}
     >
       {/* Thumbnail */}

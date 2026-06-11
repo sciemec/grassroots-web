@@ -213,7 +213,7 @@ export default function OfficialRegistrationPage() {
                 value={s1.guardianName}
                 onChange={e => setS1({ ...s1, guardianName: e.target.value })}
                 placeholder="Parent / Guardian full name"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -224,7 +224,7 @@ export default function OfficialRegistrationPage() {
                 value={s1.guardianPhone}
                 onChange={e => setS1({ ...s1, guardianPhone: e.target.value })}
                 placeholder="07X XXX XXXX"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -267,7 +267,7 @@ export default function OfficialRegistrationPage() {
                 value={s2.fullName}
                 onChange={e => setS2({ ...s2, fullName: e.target.value })}
                 placeholder="As on official document"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -278,7 +278,7 @@ export default function OfficialRegistrationPage() {
                 value={s2.dob}
                 onChange={e => setS2({ ...s2, dob: e.target.value })}
                 max={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
               {s2.dob && (
                 <p className="text-xs text-green-400/60 mt-1">
@@ -292,7 +292,7 @@ export default function OfficialRegistrationPage() {
               <select
                 value={s2.documentType}
                 onChange={e => setS2({ ...s2, documentType: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               >
                 <option value="">Select document type</option>
                 {DOCUMENT_TYPES.map(d => <option key={d} value={d}>{d}</option>)}
@@ -306,7 +306,7 @@ export default function OfficialRegistrationPage() {
                 value={s2.idNumber}
                 onChange={e => setS2({ ...s2, idNumber: e.target.value })}
                 placeholder="Document number"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function OfficialRegistrationPage() {
                 value={s3.schoolName}
                 onChange={e => setS3({ ...s3, schoolName: e.target.value })}
                 placeholder="e.g. Prince Edward School"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -333,7 +333,7 @@ export default function OfficialRegistrationPage() {
               <select
                 value={s3.grade}
                 onChange={e => setS3({ ...s3, grade: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               >
                 <option value="">Select grade</option>
                 {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
@@ -347,7 +347,7 @@ export default function OfficialRegistrationPage() {
                 value={s3.studentNumber}
                 onChange={e => setS3({ ...s3, studentNumber: e.target.value })}
                 placeholder="School student number"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
           </div>
@@ -377,7 +377,7 @@ export default function OfficialRegistrationPage() {
                   </button>
                 </div>
               ) : (
-                <label className="w-36 h-36 rounded-full border-2 border-dashed border-white/20 flex flex-col items-center justify-center cursor-pointer hover:border-[#FFD700]/50 transition-all">
+                <label className="w-36 h-36 rounded-full border-2 border-dashed border-[#f0b429]/20 flex flex-col items-center justify-center cursor-pointer hover:border-[#FFD700]/50 transition-all">
                   <span className="text-3xl mb-1">📷</span>
                   <span className="text-white/40 text-xs text-center">Tap to upload photo</span>
                   <input
@@ -391,7 +391,7 @@ export default function OfficialRegistrationPage() {
               )}
 
               {!s4.photoPreview && (
-                <label className="px-4 py-2 rounded-xl border border-white/10 text-white/60 text-sm cursor-pointer hover:border-[#FFD700]/50 hover:text-white/80 transition-all">
+                <label className="px-4 py-2 rounded-xl border border-[#f0b429]/10 text-white/60 text-sm cursor-pointer hover:border-[#FFD700]/50 hover:text-white/80 transition-all">
                   Choose from gallery
                   <input
                     type="file"
@@ -419,7 +419,7 @@ export default function OfficialRegistrationPage() {
                   onChange={e => setS5({ ...s5, height: e.target.value })}
                   placeholder="e.g. 165"
                   min="80" max="220"
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
                 />
               </div>
               <div>
@@ -430,7 +430,7 @@ export default function OfficialRegistrationPage() {
                   onChange={e => setS5({ ...s5, weight: e.target.value })}
                   placeholder="e.g. 60"
                   min="20" max="150"
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
                 />
               </div>
             </div>
@@ -446,7 +446,7 @@ export default function OfficialRegistrationPage() {
                     className={`py-2.5 rounded-xl border text-sm font-medium transition-all ${
                       s5.sex === s
                         ? 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]'
-                        : 'border-white/10 text-white/50 hover:border-white/30'
+                        : 'border-[#f0b429]/10 text-white/50 hover:border-[#f0b429]/30'
                     }`}
                   >
                     {s}
@@ -460,7 +460,7 @@ export default function OfficialRegistrationPage() {
               <select
                 value={s5.position}
                 onChange={e => setS5({ ...s5, position: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               >
                 <option value="">Select position</option>
                 {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
@@ -474,7 +474,7 @@ export default function OfficialRegistrationPage() {
                 value={s5.club}
                 onChange={e => setS5({ ...s5, club: e.target.value })}
                 placeholder="e.g. Dynamos U15"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -483,7 +483,7 @@ export default function OfficialRegistrationPage() {
               <select
                 value={s5.province}
                 onChange={e => setS5({ ...s5, province: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               >
                 <option value="">Select province</option>
                 {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -563,14 +563,14 @@ export default function OfficialRegistrationPage() {
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all"
+                className="flex-1 py-3 rounded-xl border border-[#f0b429]/10 text-white/60 text-sm font-medium hover:border-[#f0b429]/30 transition-all"
               >
                 ← Back
               </button>
             ) : (
               <Link
                 href="/register/who"
-                className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all text-center"
+                className="flex-1 py-3 rounded-xl border border-[#f0b429]/10 text-white/60 text-sm font-medium hover:border-[#f0b429]/30 transition-all text-center"
               >
                 ← Back
               </Link>

@@ -178,7 +178,7 @@ export default function MatchDayPage() {
                 onChange={(e) => { setCustomAmount(e.target.value); setAmount(""); }}
                 min="0.01"
                 step="0.01"
-                className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400"
+                className="w-full rounded-xl border border-[#f0b429]/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400"
               />
             </div>
 
@@ -188,7 +188,7 @@ export default function MatchDayPage() {
               placeholder="Your name (optional — shows in shoutouts)"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400"
+              className="w-full rounded-xl border border-[#f0b429]/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400"
             />
 
             {/* Phone number */}
@@ -199,7 +199,7 @@ export default function MatchDayPage() {
                 placeholder="EcoCash / InnBucks number (07X XXX XXXX)"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-xl border border-white/20 bg-white/10 pl-9 pr-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400"
+                className="w-full rounded-xl border border-[#f0b429]/20 bg-white/10 pl-9 pr-3 py-2 text-sm text-white placeholder-green-400/40 outline-none focus:border-amber-400"
               />
             </div>
 

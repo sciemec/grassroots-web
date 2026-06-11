@@ -165,7 +165,7 @@ export default function WelcomePage() {
         </div>
 
         {/* Progress */}
-        <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+        <div className="mb-6 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5 backdrop-blur-sm">
           <div className="mb-3 flex items-center justify-between text-sm">
             <span className="font-medium">{completed.size} of {steps.length} steps complete</span>
             <span className={`font-bold ${cfg.color}`}>{progress}%</span>
@@ -185,7 +185,7 @@ export default function WelcomePage() {
             return (
               <div
                 key={id}
-                className={`rounded-2xl border p-4 transition-all ${done ? "border-white/20 bg-white/10 opacity-70" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+                className={`rounded-2xl border p-4 transition-all ${done ? "border-[#f0b429]/20 bg-white/10 opacity-70" : "border-[#f0b429]/10 bg-white/5 hover:bg-white/10"}`}
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 flex-shrink-0">

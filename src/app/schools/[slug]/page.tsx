@@ -115,7 +115,7 @@ export default async function OrgProfilePage({
     <div className="min-h-screen bg-[#0d1f12]">
 
       {/* Top bar */}
-      <div className="border-b border-white/10 bg-[#0d1f12]/90 backdrop-blur-md">
+      <div className="border-b border-[#f0b429]/10 bg-[#0d1f12]/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-4xl items-center gap-3 px-4">
           <Link href="/schools" className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors">
             <ChevronLeft className="h-4 w-4" />
@@ -129,7 +129,7 @@ export default async function OrgProfilePage({
       <div className="mx-auto max-w-4xl px-4 py-8">
 
         {/* Header card */}
-        <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+        <div className="mb-6 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
               <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-500/15">
@@ -138,7 +138,7 @@ export default async function OrgProfilePage({
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-xl font-bold text-white">{org.name}</h1>
-                  <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${TYPE_COLORS[org.type] ?? "bg-white/10 text-white/60 border-white/20"}`}>
+                  <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${TYPE_COLORS[org.type] ?? "bg-white/10 text-white/60 border-[#f0b429]/20"}`}>
                     {org.type}
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export default async function OrgProfilePage({
 
           {/* Contact */}
           {(org.contact_email || org.contact_phone) && (
-            <div className="mt-4 flex flex-wrap gap-4 border-t border-white/10 pt-4">
+            <div className="mt-4 flex flex-wrap gap-4 border-t border-[#f0b429]/10 pt-4">
               {org.contact_email && (
                 <a
                   href={`mailto:${org.contact_email}`}
@@ -190,7 +190,7 @@ export default async function OrgProfilePage({
         </div>
 
         {/* Sports */}
-        <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="mb-6 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-amber-400">Sports</h2>
           <div className="flex flex-wrap gap-2">
             {org.sports.map((s) => (
@@ -206,7 +206,7 @@ export default async function OrgProfilePage({
 
         {/* Teams by sport */}
         {org.teams.length > 0 && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-amber-400">
               Teams ({org.teams.length})
             </h2>
@@ -218,7 +218,7 @@ export default async function OrgProfilePage({
                   {teams.map((team) => (
                     <div
                       key={team.id}
-                      className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                      className="flex items-center justify-between rounded-xl border border-[#f0b429]/8 bg-white/5 px-4 py-3"
                     >
                       <div>
                         <p className="text-sm font-medium text-white">{team.name}</p>
@@ -237,7 +237,7 @@ export default async function OrgProfilePage({
 
         {/* Recent Results */}
         {matches.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="mt-6 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
             <div className="mb-4 flex items-center gap-2">
               <Trophy className="h-4 w-4 text-amber-400" />
               <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-400">Recent Results</h2>
@@ -247,7 +247,7 @@ export default async function OrgProfilePage({
                 const outcome = m.our_score > m.their_score ? "W" : m.our_score === m.their_score ? "D" : "L";
                 const outcomeColor = outcome === "W" ? "bg-green-500/20 text-green-400" : outcome === "D" ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400";
                 return (
-                  <div key={m.id} className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3 gap-3">
+                  <div key={m.id} className="flex items-center justify-between rounded-xl border border-[#f0b429]/8 bg-white/5 px-4 py-3 gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${outcomeColor}`}>
                         {outcome}
@@ -272,7 +272,7 @@ export default async function OrgProfilePage({
 
         {/* Shared Training & Match Videos */}
         {videos.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="mt-6 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
             <div className="mb-4 flex items-center gap-2">
               <Film className="h-4 w-4 text-amber-400" />
               <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-400">
@@ -281,7 +281,7 @@ export default async function OrgProfilePage({
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {videos.map((v) => (
-                <div key={v.id} className="rounded-xl border border-white/8 bg-white/5 overflow-hidden">
+                <div key={v.id} className="rounded-xl border border-[#f0b429]/8 bg-white/5 overflow-hidden">
                   {/* Video player or placeholder */}
                   {v.video_url ? (
                     <div className="relative aspect-video bg-black/60">

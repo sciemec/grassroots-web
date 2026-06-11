@@ -135,8 +135,8 @@ export default function SimilarPlayersPage() {
 
         {/* Consent required */}
         {!loading && hasConsent === false && (
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-8 text-center space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#1a5c2a]/50 border border-white/10">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-8 text-center space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#1a5c2a]/50 border border-[#f0b429]/10">
               <Users className="text-[#f0b429]" size={24} />
             </div>
             <div>
@@ -165,7 +165,7 @@ export default function SimilarPlayersPage() {
 
         {/* Empty state — consented but no data yet */}
         {!loading && !error && hasConsent && players.length === 0 && (
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-10 text-center space-y-3">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-10 text-center space-y-3">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/5">
               <Users className="text-white/30" size={24} />
             </div>
@@ -189,13 +189,13 @@ export default function SimilarPlayersPage() {
             {players.map((p, i) => (
               <div
                 key={p.player_id}
-                className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-5"
+                className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-5"
               >
                 <div className="flex items-start gap-4">
                   {/* Rank + avatar */}
                   <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
                     <span className="text-white/30 text-xs font-mono w-5 text-center">{i + 1}</span>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1a5c2a]/60 border border-white/10 text-sm font-bold text-[#f0b429]">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1a5c2a]/60 border border-[#f0b429]/10 text-sm font-bold text-[#f0b429]">
                       {p.initials ?? p.name?.slice(0, 2).toUpperCase() ?? "??"}
                     </div>
                   </div>
@@ -272,7 +272,7 @@ export default function SimilarPlayersPage() {
 
         {/* Info banner */}
         {!loading && hasConsent && (
-          <div className="rounded-2xl border border-white/5 bg-white/3 p-4 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/5 bg-white/3 p-4 text-center">
             <p className="text-white/30 text-xs">
               <span className="text-purple-300/60 font-semibold">Style Compatibility v1</span>
               {" · "}Calculated nightly — 60% training style · 25% demographics · 15% location.

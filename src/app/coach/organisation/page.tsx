@@ -227,7 +227,7 @@ export default function OrganisationPage() {
           <div className="space-y-5">
 
             {/* Org profile card */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
@@ -275,7 +275,7 @@ export default function OrganisationPage() {
             </div>
 
             {/* Teams */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-amber-400" />
@@ -301,7 +301,7 @@ export default function OrganisationPage() {
                         value={teamForm.name}
                         onChange={(e) => setTeamForm((f) => ({ ...f, name: e.target.value }))}
                         placeholder="e.g. U15 Boys Football"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
+                        className="w-full rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -309,7 +309,7 @@ export default function OrganisationPage() {
                       <select
                         value={teamForm.sport}
                         onChange={(e) => setTeamForm((f) => ({ ...f, sport: e.target.value }))}
-                        className="w-full rounded-lg border border-white/10 bg-[#0d2b1a] px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
+                        className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0d2b1a] px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
                       >
                         <option value="">Select sport</option>
                         {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -321,7 +321,7 @@ export default function OrganisationPage() {
                         value={teamForm.age_group}
                         onChange={(e) => setTeamForm((f) => ({ ...f, age_group: e.target.value }))}
                         placeholder="e.g. U15, U17, Senior"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
+                        className="w-full rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -329,7 +329,7 @@ export default function OrganisationPage() {
                       <select
                         value={teamForm.gender}
                         onChange={(e) => setTeamForm((f) => ({ ...f, gender: e.target.value }))}
-                        className="w-full rounded-lg border border-white/10 bg-[#0d2b1a] px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
+                        className="w-full rounded-lg border border-[#f0b429]/10 bg-[#0d2b1a] px-3 py-2 text-sm text-white focus:border-amber-500/50 focus:outline-none"
                       >
                         <option value="Mixed">Mixed</option>
                         <option value="Boys">Boys</option>
@@ -348,7 +348,7 @@ export default function OrganisationPage() {
                     </button>
                     <button
                       onClick={() => setShowTeamForm(false)}
-                      className="rounded-xl border border-white/10 px-4 py-2 text-xs text-muted-foreground hover:bg-white/5 transition-colors"
+                      className="rounded-xl border border-[#f0b429]/10 px-4 py-2 text-xs text-muted-foreground hover:bg-white/5 transition-colors"
                     >
                       Cancel
                     </button>
@@ -358,14 +358,14 @@ export default function OrganisationPage() {
 
               {/* Teams list */}
               {org.teams.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/20 p-6 text-center">
+                <div className="rounded-xl border border-dashed border-[#f0b429]/20 p-6 text-center">
                   <Users className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">No teams yet — add your first team above.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {org.teams.map((team) => (
-                    <div key={team.id} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-2.5">
+                    <div key={team.id} className="flex items-center justify-between rounded-xl border border-[#f0b429]/5 bg-white/5 px-4 py-2.5">
                       <div>
                         <p className="text-sm font-medium text-white">{team.name}</p>
                         <p className="text-xs text-muted-foreground">
@@ -415,7 +415,7 @@ export default function OrganisationPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-6">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6">
 
               {/* Step 1 — Name, type, province */}
               {step === 1 && (
@@ -426,7 +426,7 @@ export default function OrganisationPage() {
                       value={form.name}
                       onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                       placeholder="e.g. Harare Primary School"
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
+                      className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
                     />
                   </div>
 
@@ -440,7 +440,7 @@ export default function OrganisationPage() {
                           className={`rounded-xl border py-2.5 text-sm font-medium transition-colors ${
                             form.type === t
                               ? "border-amber-500/50 bg-amber-500/20 text-amber-300"
-                              : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+                              : "border-[#f0b429]/10 bg-white/5 text-muted-foreground hover:bg-white/10"
                           }`}
                         >
                           {t}
@@ -454,7 +454,7 @@ export default function OrganisationPage() {
                     <select
                       value={form.province}
                       onChange={(e) => setForm((f) => ({ ...f, province: e.target.value }))}
-                      className="w-full rounded-xl border border-white/10 bg-[#0d2b1a] px-4 py-2.5 text-sm text-white focus:border-amber-500/50 focus:outline-none"
+                      className="w-full rounded-xl border border-[#f0b429]/10 bg-[#0d2b1a] px-4 py-2.5 text-sm text-white focus:border-amber-500/50 focus:outline-none"
                     >
                       <option value="">Select province</option>
                       {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -484,7 +484,7 @@ export default function OrganisationPage() {
                           className={`rounded-xl border py-2 text-sm font-medium transition-colors ${
                             form.sports.includes(s)
                               ? "border-amber-500/50 bg-amber-500/20 text-amber-300"
-                              : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+                              : "border-[#f0b429]/10 bg-white/5 text-muted-foreground hover:bg-white/10"
                           }`}
                         >
                           {s}
@@ -500,7 +500,7 @@ export default function OrganisationPage() {
                       onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                       rows={2}
                       placeholder="Brief description of your organisation..."
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none resize-none"
+                      className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none resize-none"
                     />
                   </div>
 
@@ -512,7 +512,7 @@ export default function OrganisationPage() {
                         value={form.contact_email}
                         onChange={(e) => setForm((f) => ({ ...f, contact_email: e.target.value }))}
                         placeholder="sports@school.ac.zw"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
+                        className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -521,7 +521,7 @@ export default function OrganisationPage() {
                         value={form.contact_phone}
                         onChange={(e) => setForm((f) => ({ ...f, contact_phone: e.target.value }))}
                         placeholder="0771 234 567"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
+                        className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 focus:border-amber-500/50 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -529,7 +529,7 @@ export default function OrganisationPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setStep(1)}
-                      className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm text-muted-foreground hover:bg-white/5 transition-colors"
+                      className="flex-1 rounded-xl border border-[#f0b429]/10 py-2.5 text-sm text-muted-foreground hover:bg-white/5 transition-colors"
                     >
                       ← Back
                     </button>
@@ -549,7 +549,7 @@ export default function OrganisationPage() {
                 <div className="space-y-4">
                   <p className="text-xs font-semibold uppercase tracking-widest text-amber-400">Review your details</p>
 
-                  <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-4 text-sm">
+                  <div className="space-y-2 rounded-xl border border-[#f0b429]/10 bg-white/5 p-4 text-sm">
                     {[
                       ["Organisation", form.name],
                       ["Type", form.type],
@@ -572,7 +572,7 @@ export default function OrganisationPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setStep(2)}
-                      className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm text-muted-foreground hover:bg-white/5 transition-colors"
+                      className="flex-1 rounded-xl border border-[#f0b429]/10 py-2.5 text-sm text-muted-foreground hover:bg-white/5 transition-colors"
                     >
                       ← Back
                     </button>

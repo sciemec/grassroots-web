@@ -162,7 +162,7 @@ export default function SafeguardingPage() {
                   type="text"
                   value={form.player_name}
                   onChange={(e) => set("player_name", e.target.value)}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
+                  className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
                   placeholder="Player's name"
                 />
               </div>
@@ -172,7 +172,7 @@ export default function SafeguardingPage() {
                   type="text"
                   value={form.club_name}
                   onChange={(e) => set("club_name", e.target.value)}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
+                  className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
                   placeholder="Club name"
                 />
               </div>
@@ -182,7 +182,7 @@ export default function SafeguardingPage() {
               <select
                 value={form.concern_type}
                 onChange={(e) => set("concern_type", e.target.value)}
-                className="w-full bg-[#1a3d26] border border-white/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
+                className="w-full bg-[#1a3d26] border border-[#f0b429]/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
               >
                 {CONCERN_TYPES.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -195,7 +195,7 @@ export default function SafeguardingPage() {
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
                 rows={3}
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429] resize-none"
+                className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-3 py-2 text-foreground text-sm focus:outline-none focus:border-[#f0b429] resize-none"
                 placeholder="Describe the welfare concern in detail…"
               />
             </div>
@@ -223,7 +223,7 @@ export default function SafeguardingPage() {
             {error}
           </div>
         ) : flags.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-8 text-center">
             <CheckCircle2 className="h-10 w-10 text-green-400 mx-auto mb-3" />
             <p className="text-sm font-medium text-foreground mb-1">No welfare concerns reported.</p>
             <p className="text-xs text-muted-foreground">All players are safe — report any concerns using the button above.</p>
@@ -234,7 +234,7 @@ export default function SafeguardingPage() {
               const st = STATUS_LABELS[f.status];
               const isOpen = expanded === f.id;
               return (
-                <div key={f.id} className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+                <div key={f.id} className="rounded-2xl border border-[#f0b429]/10 bg-card/60 overflow-hidden">
                   <button
                     className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
                     onClick={() => setExpanded(isOpen ? null : f.id)}
@@ -253,7 +253,7 @@ export default function SafeguardingPage() {
                   </button>
 
                   {isOpen && (
-                    <div className="px-4 pb-4 border-t border-white/5 pt-3 space-y-3">
+                    <div className="px-4 pb-4 border-t border-[#f0b429]/5 pt-3 space-y-3">
                       <p className="text-sm text-foreground">{f.description}</p>
                       <p className="text-xs text-muted-foreground">
                         Reported {new Date(f.reported_at).toLocaleDateString("en-ZW")}

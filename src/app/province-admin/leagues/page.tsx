@@ -30,7 +30,7 @@ interface League {
 const STATUS_STYLES: Record<string, string> = {
   upcoming:  "bg-amber-500/20 text-amber-300 border border-amber-500/30",
   active:    "bg-green-500/20 text-green-300 border border-green-500/30",
-  completed: "bg-white/10 text-white/50 border border-white/10",
+  completed: "bg-white/10 text-white/50 border border-[#f0b429]/10",
 };
 
 export default function LeaguesPage() {
@@ -116,7 +116,7 @@ export default function LeaguesPage() {
             <button
               key={league.id}
               onClick={() => router.push(`/province-admin/leagues/${league.id}`)}
-              className="w-full text-left rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 p-5 transition-colors"
+              className="w-full text-left rounded-2xl border border-[#f0b429]/10 bg-white/5 hover:bg-white/10 p-5 transition-colors"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">

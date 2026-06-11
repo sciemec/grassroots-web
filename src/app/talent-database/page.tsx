@@ -155,7 +155,7 @@ export default function TalentDatabasePage() {
             { icon: MapPin, label: "Provinces", value: "10", color: "text-blue-500" },
             { icon: Globe, label: "Active Scouts", value: "23", color: "text-purple-500" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-4 text-center">
+            <div key={label} className="rounded-xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-4 text-center">
               <Icon className={`mx-auto mb-1 h-5 w-5 ${color}`} />
               <p className="text-xl font-bold">{value}</p>
               <p className="text-xs text-muted-foreground">{label}</p>
@@ -201,7 +201,7 @@ export default function TalentDatabasePage() {
         )}
 
         {/* Filter bar */}
-        <div className="mb-5 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-4">
+        <div className="mb-5 rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Sport</label>
@@ -290,7 +290,7 @@ export default function TalentDatabasePage() {
             {players.map((player) => (
               <div
                 key={player.id}
-                className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-5"
+                className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-5"
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex items-center gap-3">

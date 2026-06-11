@@ -176,7 +176,7 @@ export default function MunhumutapaAdminPage() {
             { label: "Confirmed", value: stats.confirmed, icon: CheckCircle2, color: "text-green-400" },
             { label: "Total Players", value: stats.totalPlayers, icon: Users, color: "text-[#f0b429]" },
           ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
+            <div key={s.label} className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
               <s.icon className={`mb-2 h-5 w-5 ${s.color}`} />
               <p className="text-2xl font-bold text-white">{s.value}</p>
               <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -185,7 +185,7 @@ export default function MunhumutapaAdminPage() {
         </div>
 
         {/* Category Breakdown */}
-        <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="mb-6 rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Registrations by Category
           </p>
@@ -207,11 +207,11 @@ export default function MunhumutapaAdminPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search club or coach..."
-              className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              className="w-full rounded-lg border border-[#f0b429]/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2">
+          <div className="flex items-center gap-1 rounded-lg border border-[#f0b429]/10 bg-white/5 px-2">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
             <select
               value={categoryFilter}
@@ -224,7 +224,7 @@ export default function MunhumutapaAdminPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2">
+          <div className="flex items-center gap-1 rounded-lg border border-[#f0b429]/10 bg-white/5 px-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -244,7 +244,7 @@ export default function MunhumutapaAdminPage() {
 
         {/* Registrations List */}
         {filtered.length === 0 ? (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-12 text-center">
+          <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-12 text-center">
             <Trophy className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
             <p className="text-muted-foreground">
               {registrations.length === 0
@@ -261,7 +261,7 @@ export default function MunhumutapaAdminPage() {
               return (
                 <div
                   key={reg.id}
-                  className="rounded-xl border border-white/10 bg-white/5 overflow-hidden"
+                  className="rounded-xl border border-[#f0b429]/10 bg-white/5 overflow-hidden"
                 >
                   {/* Row header */}
                   <div
@@ -315,7 +315,7 @@ export default function MunhumutapaAdminPage() {
 
                   {/* Expanded detail */}
                   {isExpanded && (
-                    <div className="border-t border-white/10 px-4 pb-4 pt-3">
+                    <div className="border-t border-[#f0b429]/10 px-4 pb-4 pt-3">
                       {/* Coach contact */}
                       <div className="mb-4 grid gap-2 sm:grid-cols-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -342,7 +342,7 @@ export default function MunhumutapaAdminPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-white/10 text-xs text-muted-foreground">
+                            <tr className="border-b border-[#f0b429]/10 text-xs text-muted-foreground">
                               <th className="pb-2 text-left font-medium">#</th>
                               <th className="pb-2 text-left font-medium">Name</th>
                               <th className="pb-2 text-left font-medium">DOB</th>
@@ -352,7 +352,7 @@ export default function MunhumutapaAdminPage() {
                           </thead>
                           <tbody>
                             {reg.players.map((p, i) => (
-                              <tr key={i} className="border-b border-white/5 last:border-0">
+                              <tr key={i} className="border-b border-[#f0b429]/5 last:border-0">
                                 <td className="py-1.5 text-muted-foreground">{i + 1}</td>
                                 <td className="py-1.5 text-white font-medium">{p.name}</td>
                                 <td className="py-1.5 text-muted-foreground">{p.dob}</td>

@@ -104,7 +104,7 @@ export default function AnnouncementsPage() {
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
               placeholder="e.g. League fixtures updated for June"
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
             />
           </div>
 
@@ -115,7 +115,7 @@ export default function AnnouncementsPage() {
               onChange={(e) => set("body", e.target.value)}
               rows={4}
               placeholder="Write your message to all clubs in the province…"
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-[#f0b429] resize-none"
+              className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-[#f0b429] resize-none"
             />
           </div>
 
@@ -124,7 +124,7 @@ export default function AnnouncementsPage() {
             <select
               value={form.audience}
               onChange={(e) => set("audience", e.target.value)}
-              className="w-full bg-[#1a3d26] border border-white/20 rounded-xl px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
+              className="w-full bg-[#1a3d26] border border-[#f0b429]/20 rounded-xl px-3 py-2.5 text-foreground text-sm focus:outline-none focus:border-[#f0b429]"
             >
               <option value="all_clubs">All Clubs in Province</option>
               <option value="active_clubs">Active Clubs Only</option>
@@ -172,13 +172,13 @@ export default function AnnouncementsPage() {
               {error}
             </div>
           ) : announcements.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-6 text-center">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6 text-center">
               <p className="text-sm text-muted-foreground">No announcements sent yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {announcements.map((a) => (
-                <div key={a.id} className="rounded-2xl border border-white/10 bg-card/60 p-4">
+                <div key={a.id} className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground text-sm">{a.title}</p>

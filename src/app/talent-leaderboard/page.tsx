@@ -209,7 +209,7 @@ export default function TalentLeaderboardPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+          <div className="mb-5 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               {/* Province */}
               <div>
@@ -219,7 +219,7 @@ export default function TalentLeaderboardPage() {
                 <select
                   value={province}
                   onChange={(e) => setProvince(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
+                  className="w-full rounded-lg bg-white/10 border border-[#f0b429]/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
                 >
                   <option value="">All provinces</option>
                   {PROVINCES.map((p) => (
@@ -236,7 +236,7 @@ export default function TalentLeaderboardPage() {
                 <select
                   value={ageGroup}
                   onChange={(e) => setAgeGroup(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
+                  className="w-full rounded-lg bg-white/10 border border-[#f0b429]/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
                 >
                   <option value="">All ages</option>
                   {Object.entries(AGE_GROUPS).map(([val, label]) => (
@@ -253,7 +253,7 @@ export default function TalentLeaderboardPage() {
                 <select
                   value={sport}
                   onChange={(e) => setSport(e.target.value)}
-                  className="w-full rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
+                  className="w-full rounded-lg bg-white/10 border border-[#f0b429]/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f0b429]/50"
                 >
                   <option value="">All sports</option>
                   {SPORTS.map((s) => (
@@ -273,7 +273,7 @@ export default function TalentLeaderboardPage() {
                   onChange={(e) => setPosition(e.target.value.toUpperCase())}
                   placeholder="e.g. ST, CM, CB"
                   maxLength={5}
-                  className="w-full rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f0b429]/50"
+                  className="w-full rounded-lg bg-white/10 border border-[#f0b429]/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f0b429]/50"
                 />
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function TalentLeaderboardPage() {
         {loading && <Skeleton />}
 
         {!loading && error && (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-8 text-center">
+          <div className="rounded-2xl bg-white/5 border border-[#f0b429]/10 p-8 text-center">
             <p className="text-sm text-white/50 mb-4">Could not load leaderboard.</p>
             <button
               onClick={fetchLeaderboard}
@@ -296,7 +296,7 @@ export default function TalentLeaderboardPage() {
         )}
 
         {!loading && !error && entries.length === 0 && (
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-10 text-center">
+          <div className="rounded-2xl bg-white/5 border border-[#f0b429]/10 p-10 text-center">
             <div className="text-4xl mb-3">🔮</div>
             <h3 className="font-semibold text-white mb-1">No results yet</h3>
             <p className="text-sm text-white/50 max-w-xs mx-auto">
@@ -345,7 +345,7 @@ function LeaderboardCard({ entry }: { entry: LeaderboardEntry }) {
   const score = Number(entry.projected_score).toFixed(1);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden">
+    <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 backdrop-blur-sm overflow-hidden">
       {/* Main row */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -357,7 +357,7 @@ function LeaderboardCard({ entry }: { entry: LeaderboardEntry }) {
         </div>
 
         {/* Avatar placeholder */}
-        <div className="h-11 w-11 flex-shrink-0 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+        <div className="h-11 w-11 flex-shrink-0 rounded-full bg-white/10 border border-[#f0b429]/20 flex items-center justify-center">
           <span className="text-sm font-bold text-white/70">{entry.initials}</span>
         </div>
 
@@ -407,7 +407,7 @@ function LeaderboardCard({ entry }: { entry: LeaderboardEntry }) {
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-white/10 px-4 py-4 space-y-3">
+        <div className="border-t border-[#f0b429]/10 px-4 py-4 space-y-3">
           {/* Stars + percentile */}
           <div className="flex items-center justify-between">
             <div>

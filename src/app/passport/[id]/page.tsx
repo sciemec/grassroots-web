@@ -84,7 +84,7 @@ function Section({ icon: Icon, title, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="mb-5 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
       <div className="mb-3 flex items-center gap-2">
         <Icon className="h-4 w-4 text-[#f0b429]" />
         <h2 className="text-sm font-bold uppercase tracking-wider text-[#f0b429]">{title}</h2>
@@ -336,7 +336,7 @@ export default function PublicPassportPage() {
           )}
 
           {/* Physical stats */}
-          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4">
+          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[#f0b429]/10 pt-4">
             {[
               { label: "Height", value: profile.height_cm ? `${profile.height_cm}cm` : "—" },
               { label: "Weight", value: profile.weight_kg ? `${profile.weight_kg}kg` : "—" },
@@ -352,7 +352,7 @@ export default function PublicPassportPage() {
 
         {/* Bio */}
         {profile.bio && (
-          <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm italic text-white/70">
+          <div className="mb-5 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 text-sm italic text-white/70">
             &ldquo;{profile.bio}&rdquo;
           </div>
         )}
@@ -417,7 +417,7 @@ export default function PublicPassportPage() {
           <Section icon={Film} title="Video Highlights">
             <div className="space-y-3">
               {clips.map((clip) => (
-                <div key={clip.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <div key={clip.id} className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-3">
                   <div className="flex items-center justify-between">
                     <span className="rounded-full bg-[#f0b429]/15 px-2 py-0.5 text-xs font-semibold capitalize text-[#f0b429]">
                       {clip.skill_type}
@@ -446,7 +446,7 @@ export default function PublicPassportPage() {
             <div className="space-y-3">
               {similar.map((p) => (
                 <div key={p.matched_player_id} className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1a5c2a]/60 border border-white/10 text-xs font-bold text-[#f0b429]">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1a5c2a]/60 border border-[#f0b429]/10 text-xs font-bold text-[#f0b429]">
                     {p.initials}
                   </div>
                   <div className="flex-1 min-w-0">

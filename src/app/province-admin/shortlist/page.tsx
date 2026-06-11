@@ -149,7 +149,7 @@ export default function ProvinceAdminShortlistPage() {
         <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <Link href="/province-admin"
-              className="rounded-xl border border-white/10 bg-white/5 p-2 hover:border-white/20 transition-all">
+              className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-2 hover:border-[#f0b429]/20 transition-all">
               <ChevronLeft className="h-4 w-4 text-white" />
             </Link>
             <div>
@@ -180,7 +180,7 @@ export default function ProvinceAdminShortlistPage() {
             <span className="text-sm">Loading shortlist…</span>
           </div>
         ) : players.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-12 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-12 text-center">
             <Star className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-medium text-foreground">No players shortlisted yet</p>
             <p className="text-xs text-muted-foreground mt-1 mb-4">
@@ -195,7 +195,7 @@ export default function ProvinceAdminShortlistPage() {
           <div className="space-y-2">
             {players.map((player, idx) => (
               <div key={player.id}
-                className="flex items-center gap-4 rounded-xl border border-white/10 bg-card/60 px-4 py-3 backdrop-blur-sm">
+                className="flex items-center gap-4 rounded-xl border border-[#f0b429]/10 bg-card/60 px-4 py-3 backdrop-blur-sm">
 
                 {/* Rank */}
                 <div className="shrink-0 w-7 h-7 rounded-full bg-[#f0b429]/20 flex items-center justify-center">

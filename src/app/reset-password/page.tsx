@@ -117,7 +117,7 @@ function ResetPasswordForm() {
                     required
                     minLength={8}
                     placeholder="Minimum 8 characters"
-                    className="w-full rounded-xl border border-white/20 bg-white/10 py-3 pl-9 pr-10 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40"
+                    className="w-full rounded-xl border border-[#f0b429]/20 bg-white/10 py-3 pl-9 pr-10 text-sm text-white placeholder:text-white/40 outline-none focus:border-[#f0b429]/40"
                   />
                   <button
                     type="button"
@@ -153,7 +153,7 @@ function ResetPasswordForm() {
                     required
                     placeholder="Repeat your new password"
                     className={`w-full rounded-xl border py-3 pl-9 pr-4 text-sm text-white placeholder:text-white/40 outline-none bg-white/10 ${
-                      confirm && password !== confirm ? "border-red-400" : "border-white/20 focus:border-white/40"
+                      confirm && password !== confirm ? "border-red-400" : "border-[#f0b429]/20 focus:border-[#f0b429]/40"
                     }`}
                   />
                 </div>

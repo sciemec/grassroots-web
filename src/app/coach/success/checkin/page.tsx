@@ -207,13 +207,13 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
           <div className="space-y-4">
 
             {/* Goal reminder */}
-            <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+            <div className="rounded-xl bg-white/5 border border-[#f0b429]/10 p-3">
               <p className="text-white/40 text-xs uppercase tracking-wide mb-1">Your Coaching Goal</p>
               <p className="text-white text-sm font-medium">{goal.goalText}</p>
             </div>
 
             {/* Actions */}
-            <div className="rounded-2xl bg-white/10 border border-white/10 p-4 space-y-4">
+            <div className="rounded-2xl bg-white/10 border border-[#f0b429]/10 p-4 space-y-4">
               <p className="text-white font-semibold text-sm">Did you complete these today?</p>
               {goal.actions.map((action, i) => {
                 const checked = [a1, a2, a3][i];
@@ -223,7 +223,7 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
                     key={i}
                     onClick={() => toggle(!checked)}
                     className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors ${
-                      checked ? "bg-[#f0b429]/10 border border-[#f0b429]/30" : "bg-white/5 border border-white/10"
+                      checked ? "bg-[#f0b429]/10 border border-[#f0b429]/30" : "bg-white/5 border border-[#f0b429]/10"
                     }`}
                   >
                     {checked ? (
@@ -240,7 +240,7 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
             </div>
 
             {/* Mood */}
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div className="rounded-2xl bg-white/5 border border-[#f0b429]/10 p-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-white/70 text-sm font-medium">How is your coaching energy today?</p>
                 <span className="text-[#f0b429] font-bold text-sm">{mood}/10</span>
@@ -263,7 +263,7 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
                 onChange={(e) => setMoodNote(e.target.value)}
                 placeholder="Anything on your mind as a coach today? (optional)"
                 rows={2}
-                className="mt-3 w-full bg-transparent text-white/70 placeholder-white/20 text-sm resize-none focus:outline-none border-t border-white/10 pt-2"
+                className="mt-3 w-full bg-transparent text-white/70 placeholder-white/20 text-sm resize-none focus:outline-none border-t border-[#f0b429]/10 pt-2"
               />
             </div>
 

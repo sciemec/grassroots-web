@@ -179,7 +179,7 @@ export default function PlayerPreviewPage() {
       <main className="flex flex-1 flex-col overflow-hidden">
 
         {/* ── Top bar ── */}
-        <div className="flex items-center gap-3 border-b border-white/10 bg-card/60 px-5 py-3 shrink-0">
+        <div className="flex items-center gap-3 border-b border-[#f0b429]/10 bg-card/60 px-5 py-3 shrink-0">
           <Link href="/admin" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4 text-white" />
           </Link>
@@ -189,7 +189,7 @@ export default function PlayerPreviewPage() {
           </div>
 
           {/* Persona toggle */}
-          <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
+          <div className="flex items-center gap-1 rounded-xl border border-[#f0b429]/10 bg-black/30 p-1">
             <button
               onClick={() => handlePersonaSwitch("male")}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
@@ -222,7 +222,7 @@ export default function PlayerPreviewPage() {
         </div>
 
         {/* ── Persona info strip ── */}
-        <div className={`shrink-0 px-5 py-2.5 text-xs flex items-center gap-3 border-b border-white/5 ${
+        <div className={`shrink-0 px-5 py-2.5 text-xs flex items-center gap-3 border-b border-[#f0b429]/5 ${
           isAmara ? "bg-purple-900/20" : "bg-[#f0b429]/5"
         }`}>
           <div className={`h-2 w-2 rounded-full ${isAmara ? "bg-purple-400" : "bg-[#f0b429]"}`} />
@@ -263,7 +263,7 @@ export default function PlayerPreviewPage() {
                   <button
                     key={s}
                     onClick={() => sendMessage(s)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-left text-sm text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white transition-all"
+                    className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-left text-sm text-white/70 hover:border-[#f0b429]/20 hover:bg-white/10 hover:text-white transition-all"
                   >
                     {s}
                   </button>
@@ -328,7 +328,7 @@ export default function PlayerPreviewPage() {
         </div>
 
         {/* ── Input bar ── */}
-        <div className="shrink-0 border-t border-white/10 bg-card/60 px-4 py-3">
+        <div className="shrink-0 border-t border-[#f0b429]/10 bg-card/60 px-4 py-3">
           {/* Quick suggestions after first message */}
           {messages.length > 0 && messages.length < 4 && (
             <div className="mb-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -339,7 +339,7 @@ export default function PlayerPreviewPage() {
                   <button
                     key={s}
                     onClick={() => sendMessage(s)}
-                    className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60 hover:border-white/20 hover:text-white transition-all"
+                    className="shrink-0 rounded-full border border-[#f0b429]/10 bg-white/5 px-3 py-1 text-xs text-white/60 hover:border-[#f0b429]/20 hover:text-white transition-all"
                   >
                     {s}
                   </button>
@@ -355,7 +355,7 @@ export default function PlayerPreviewPage() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKey}
               placeholder={`Message ${agentName} as ${playerName}…`}
-              className="flex-1 rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/30 transition-all"
+              className="flex-1 rounded-xl bg-white/5 border border-[#f0b429]/10 px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f0b429]/30 transition-all"
             />
             <button
               onClick={() => sendMessage()}

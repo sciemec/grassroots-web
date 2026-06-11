@@ -601,7 +601,7 @@ export default function ThutoSessionPage() {
           {/* Toggle to silent mode */}
           <button
             onClick={() => router.push("/player/pitch")}
-            className="mt-3 w-full rounded-2xl border border-white/20 py-3 text-sm text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
+            className="mt-3 w-full rounded-2xl border border-[#f0b429]/20 py-3 text-sm text-white/60 transition-colors hover:border-[#f0b429]/40 hover:text-white/80"
           >
             Switch to Silent Mode (Pitch Mode)
           </button>
@@ -760,7 +760,7 @@ export default function ThutoSessionPage() {
           <div className="mt-4 flex gap-4">
             <button
               onClick={() => saveSession("tough")}
-              className="flex-1 rounded-2xl bg-white/15 border border-white/30 py-5 text-lg font-bold active:scale-95 transition-transform"
+              className="flex-1 rounded-2xl bg-white/15 border border-[#f0b429]/30 py-5 text-lg font-bold active:scale-95 transition-transform"
             >
               😤 Tough but done
             </button>

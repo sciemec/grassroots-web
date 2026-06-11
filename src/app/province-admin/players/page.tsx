@@ -102,7 +102,7 @@ export default function ProvinceAdminPlayersPage() {
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
           <Link href="/province-admin"
-            className="rounded-xl border border-white/10 bg-white/5 p-2 hover:border-white/20 transition-all">
+            className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-2 hover:border-[#f0b429]/20 transition-all">
             <ChevronLeft className="h-4 w-4 text-white" />
           </Link>
           <div>
@@ -127,7 +127,7 @@ export default function ProvinceAdminPlayersPage() {
               className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all
                 ${zoneFilter === "all"
                   ? "bg-[#f0b429] text-[#1a3a1a]"
-                  : "border border-white/10 bg-white/5 text-white/60 hover:border-white/20"}`}>
+                  : "border border-[#f0b429]/10 bg-white/5 text-white/60 hover:border-[#f0b429]/20"}`}>
               All Zones
             </button>
             {zones.map(z => (
@@ -136,7 +136,7 @@ export default function ProvinceAdminPlayersPage() {
                 className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all
                   ${zoneFilter === String(z.id)
                     ? "bg-[#f0b429] text-[#1a3a1a]"
-                    : "border border-white/10 bg-white/5 text-white/60 hover:border-white/20"}`}>
+                    : "border border-[#f0b429]/10 bg-white/5 text-white/60 hover:border-[#f0b429]/20"}`}>
                 {z.name}
               </button>
             ))}
@@ -150,7 +150,7 @@ export default function ProvinceAdminPlayersPage() {
             <span className="text-sm">Loading players…</span>
           </div>
         ) : players.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-12 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-12 text-center">
             <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm font-medium text-foreground">No players found</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -161,7 +161,7 @@ export default function ProvinceAdminPlayersPage() {
           <div className="space-y-2">
             {players.map(player => (
               <div key={player.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-card/60 px-4 py-3 backdrop-blur-sm">
+                className="flex items-center justify-between gap-4 rounded-xl border border-[#f0b429]/10 bg-card/60 px-4 py-3 backdrop-blur-sm">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-foreground truncate">{player.name}</p>

@@ -127,7 +127,7 @@ export default function SchoolsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search organisations…"
-              className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-4 text-sm text-white placeholder-white/30 focus:border-amber-500/40 focus:outline-none"
+              className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 py-2.5 pl-9 pr-4 text-sm text-white placeholder-white/30 focus:border-amber-500/40 focus:outline-none"
             />
           </div>
           <button
@@ -135,7 +135,7 @@ export default function SchoolsPage() {
             className={`relative flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
               showFilters || activeFilters > 0
                 ? "border-amber-500/50 bg-amber-500/15 text-amber-300"
-                : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                : "border-[#f0b429]/10 bg-white/5 text-white/60 hover:bg-white/10"
             }`}
           >
             <Filter className="h-4 w-4" />
@@ -161,7 +161,7 @@ export default function SchoolsPage() {
                 <select
                   value={value}
                   onChange={(e) => set(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-[#0d2b1a] px-3 py-2 text-sm text-white focus:border-amber-500/40 focus:outline-none"
+                  className="w-full rounded-xl border border-[#f0b429]/10 bg-[#0d2b1a] px-3 py-2 text-sm text-white focus:border-amber-500/40 focus:outline-none"
                 >
                   {options.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
@@ -183,7 +183,7 @@ export default function SchoolsPage() {
             <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
           </div>
         ) : orgs.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 py-16 text-center">
             <Building2 className="mx-auto mb-3 h-10 w-10 text-white/20" />
             <p className="text-sm text-white/50">No organisations found.</p>
             <p className="mt-1 text-xs text-white/30">Try adjusting your search or filters.</p>
@@ -194,7 +194,7 @@ export default function SchoolsPage() {
               <Link
                 key={org.id}
                 href={`/schools/${org.slug}`}
-                className="flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 hover:border-amber-500/30 hover:bg-white/8 transition-all"
+                className="flex items-start justify-between gap-4 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 hover:border-amber-500/30 hover:bg-white/8 transition-all"
               >
                 <div className="flex items-start gap-4 min-w-0">
                   {/* Sport emoji avatar — uses the primary sport, falls back to building icon */}
@@ -260,7 +260,7 @@ export default function SchoolsPage() {
                 className={`h-8 w-8 rounded-lg text-xs font-medium transition-colors ${
                   p === meta.current_page
                     ? "bg-amber-500 text-[#0d1f12]"
-                    : "border border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                    : "border border-[#f0b429]/10 bg-white/5 text-white/60 hover:bg-white/10"
                 }`}
               >
                 {p}

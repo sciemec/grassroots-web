@@ -183,7 +183,7 @@ export default function ClubRegistrationPage() {
               <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all border
                 ${done   ? 'bg-[#f0b429] border-[#f0b429] text-[#1a3a1a]' : ''}
                 ${active ? 'bg-white border-white text-[#1a5c2a]' : ''}
-                ${!active && !done ? 'bg-white/10 border-white/10 text-white/40' : ''}`}>
+                ${!active && !done ? 'bg-white/10 border-[#f0b429]/10 text-white/40' : ''}`}>
                 {done ? '✓' : num}
               </div>
               <span className={`hidden sm:block text-xs font-black uppercase tracking-wider ${active ? 'text-white' : 'text-white/40'}`}>
@@ -198,12 +198,12 @@ export default function ClubRegistrationPage() {
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl border border-[#f0b429]/10 bg-white/5 backdrop-blur-sm p-6 shadow-xl">
 
         {/* ── STEP 1: Location ── */}
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-[#f0b429]/5 pb-2">
               <MapPin className="h-5 w-5 text-[#f0b429]" /> Province &amp; Zone
             </h2>
 
@@ -224,7 +224,7 @@ export default function ClubRegistrationPage() {
                       className={`rounded-xl border px-4 py-3 text-left text-xs font-black uppercase tracking-wider transition-all cursor-pointer
                         ${selectedProvince?.id === p.id
                           ? 'border-[#f0b429] bg-[#f0b429]/20 text-[#f0b429]'
-                          : 'border-white/10 bg-white/5 text-white hover:border-white/30'}`}>
+                          : 'border-[#f0b429]/10 bg-white/5 text-white hover:border-[#f0b429]/30'}`}>
                       🇿🇼 {p.name}
                     </button>
                   ))}
@@ -254,7 +254,7 @@ export default function ClubRegistrationPage() {
                         className={`rounded-xl border p-3 text-left transition-all cursor-pointer
                           ${selectedZone?.id === z.id
                             ? 'border-[#f0b429] bg-[#f0b429]/20 text-[#f0b429]'
-                            : 'border-white/10 bg-white/5 text-white hover:border-white/30'}`}>
+                            : 'border-[#f0b429]/10 bg-white/5 text-white hover:border-[#f0b429]/30'}`}>
                         <p className="text-xs font-black uppercase tracking-wider">{z.name}</p>
                         {z.suburbs?.length > 0 && (
                           <p className="text-[10px] font-medium text-white/40 mt-0.5 truncate">
@@ -273,7 +273,7 @@ export default function ClubRegistrationPage() {
         {/* ── STEP 2: Club details ── */}
         {step === 2 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-[#f0b429]/5 pb-2">
               <Building2 className="h-5 w-5 text-[#f0b429]" /> Club Details
             </h2>
 
@@ -286,7 +286,7 @@ export default function ClubRegistrationPage() {
                 value={clubName}
                 onChange={e => setClubName(e.target.value)}
                 placeholder="e.g., Borrowdale United FC"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
+                className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
 
@@ -299,7 +299,7 @@ export default function ClubRegistrationPage() {
                 value={suburb}
                 onChange={e => setSuburb(e.target.value)}
                 placeholder="e.g., Borrowdale"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
+                className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
               {(selectedZone?.suburbs?.length ?? 0) > 0 && (
                 <p className="mt-1.5 text-[10px] font-bold text-white/40 leading-normal">
@@ -317,7 +317,7 @@ export default function ClubRegistrationPage() {
                 value={homeGround}
                 onChange={e => setHomeGround(e.target.value)}
                 placeholder="e.g., Borrowdale Primary Grounds"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
+                className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
           </div>
@@ -326,7 +326,7 @@ export default function ClubRegistrationPage() {
         {/* ── STEP 3: Contact coach ── */}
         {step === 3 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-[#f0b429]/5 pb-2">
               <User className="h-5 w-5 text-[#f0b429]" /> Lead Contact Profile
             </h2>
             <p className="text-xs font-medium text-white/50 leading-relaxed">
@@ -342,7 +342,7 @@ export default function ClubRegistrationPage() {
                 value={contactName}
                 onChange={e => setContactName(e.target.value)}
                 placeholder="e.g., Tendai Moyo"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
+                className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
 
@@ -355,7 +355,7 @@ export default function ClubRegistrationPage() {
                 value={contactEmail}
                 onChange={e => setContactEmail(e.target.value)}
                 placeholder="coach@yourdomain.com"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
+                className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
 
@@ -368,7 +368,7 @@ export default function ClubRegistrationPage() {
                 value={contactPassword}
                 onChange={e => setContactPassword(e.target.value)}
                 placeholder="Minimum 8 characters"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
+                className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
               {contactPassword.length > 0 && contactPassword.length < 8 && (
                 <p className="mt-1 text-[10px] font-bold text-red-300">⚠️ Code length must span at least 8 characters</p>
@@ -384,7 +384,7 @@ export default function ClubRegistrationPage() {
                 value={contactPhone}
                 onChange={e => setContactPhone(e.target.value)}
                 placeholder="e.g., 0771 234 567"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
+                className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 font-medium focus:border-[#f0b429] focus:outline-none focus:ring-1 focus:ring-[#f0b429]"
               />
             </div>
           </div>
@@ -393,11 +393,11 @@ export default function ClubRegistrationPage() {
         {/* ── STEP 4: Review ── */}
         {step === 4 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-white/5 pb-2">
+            <h2 className="text-lg font-black uppercase tracking-wide text-white flex items-center gap-2 border-b border-[#f0b429]/5 pb-2">
               <CheckCircle2 className="h-5 w-5 text-[#f0b429]" /> Review Parameters
             </h2>
 
-            <div className="rounded-xl border border-white/10 bg-white/5 divide-y divide-white/5 max-h-48 overflow-y-auto pr-1">
+            <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 divide-y divide-white/5 max-h-48 overflow-y-auto pr-1">
               {[
                 { label: 'Province',    value: selectedProvince?.name },
                 { label: 'Zone',        value: selectedZone?.name },
@@ -431,12 +431,12 @@ export default function ClubRegistrationPage() {
         <div className="mt-6 flex items-center justify-between gap-3">
           {step > 1 ? (
             <button type="button" onClick={back}
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:border-white/30 transition-all cursor-pointer">
+              className="flex items-center gap-1.5 rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:border-[#f0b429]/30 transition-all cursor-pointer">
               <ChevronLeft className="h-4 w-4" /> Back
             </button>
           ) : (
             <Link href="/register/who"
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:border-white/30 transition-all">
+              className="flex items-center gap-1.5 rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:border-[#f0b429]/30 transition-all">
               <ChevronLeft className="h-4 w-4" /> Back
             </Link>
           )}

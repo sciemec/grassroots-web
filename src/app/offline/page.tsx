@@ -24,14 +24,14 @@ export default function OfflinePage() {
         </button>
         <Link
           href="/"
-          className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+          className="flex items-center gap-2 rounded-xl border border-[#f0b429]/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
         >
           Go home
         </Link>
       </div>
 
       <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-xl w-full text-left">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#f0b429]">Player Hub</p>
           <ul className="space-y-1.5 text-sm text-green-200">
             <li><Link href="/player" className="hover:text-white">Player Hub home</Link></li>
@@ -47,7 +47,7 @@ export default function OfflinePage() {
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#f0b429]">Coach Hub</p>
           <ul className="space-y-1.5 text-sm text-green-200">
             <li><Link href="/coach" className="hover:text-white">Coach Hub home</Link></li>

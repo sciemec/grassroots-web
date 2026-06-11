@@ -421,7 +421,7 @@ export default function UbuntuLivePage() {
           </div>
 
           {/* Partner status */}
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="flex items-center gap-3 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
             <div className={`h-3 w-3 rounded-full flex-shrink-0 ${partnerOnline ? "bg-green-400 animate-pulse" : "bg-white/20"}`} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white">{peerName}</p>
@@ -438,7 +438,7 @@ export default function UbuntuLivePage() {
               Today&apos;s {totalDrills} Drills
             </p>
             {plan.drills.map((d, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/3 px-3 py-2">
+              <div key={i} className="flex items-center gap-3 rounded-xl border border-[#f0b429]/5 bg-white/3 px-3 py-2">
                 <span className="text-xs font-bold text-white/20">{i + 1}</span>
                 <p className="flex-1 text-xs text-white/60">{d.name}</p>
                 <span className="text-xs text-white/30">{formatTime(d.duration)}</span>
@@ -456,7 +456,7 @@ export default function UbuntuLivePage() {
                 <input
                   readOnly
                   value={joinUrl}
-                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white/50 outline-none"
+                  className="min-w-0 flex-1 rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-[11px] text-white/50 outline-none"
                 />
                 <button
                   onClick={() => navigator.clipboard.writeText(joinUrl).catch(() => {})}
@@ -522,7 +522,7 @@ export default function UbuntuLivePage() {
               <p className="mt-1 text-3xl font-black text-white">{totalPts}</p>
               <p className="text-xs text-white/30">leadership pts</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">{peerName}</p>
               <p className="mt-1 text-3xl font-black text-white/60">{partnerPoints}</p>
               <p className="text-xs text-white/30">leadership pts</p>
@@ -631,7 +631,7 @@ export default function UbuntuLivePage() {
             </div>
 
             {/* Instructions */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-white/30 mb-2">What to do</p>
               <p className="text-sm leading-relaxed text-white/80">{drill.instructions}</p>
             </div>
@@ -670,7 +670,7 @@ export default function UbuntuLivePage() {
               <div className="mt-1 text-5xl font-black text-teal-400 tabular-nums">{secondsLeft}s</div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5 space-y-3">
               {isDemo ? (
                 <>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-white/30">Listen to {peerName}</p>
@@ -705,7 +705,7 @@ export default function UbuntuLivePage() {
               <p className="text-xl font-black text-white">Rest</p>
               <div className="mt-2 text-6xl font-black text-white/40 tabular-nums">{formatTime(secondsLeft)}</div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
               <p className="text-sm text-white/50">
                 {drillIndex + 1 < totalDrills
                   ? `Next: Drill ${drillIndex + 2} — ${plan.drills[drillIndex + 1]?.name ?? ""}`
@@ -731,7 +731,7 @@ export default function UbuntuLivePage() {
         {myRole === "A" && (
           <button
             onClick={advancePhase}
-            className="mt-auto flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-xs text-white/40 transition-colors hover:bg-white/10"
+            className="mt-auto flex w-full items-center justify-center gap-2 rounded-2xl border border-[#f0b429]/10 bg-white/5 py-3 text-xs text-white/40 transition-colors hover:bg-white/10"
           >
             Skip <ChevronRight className="h-3.5 w-3.5" />
           </button>

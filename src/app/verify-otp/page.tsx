@@ -86,7 +86,7 @@ function VerifyOtpContent() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm shadow-2xl">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-8 backdrop-blur-sm shadow-2xl">
           <div className="mb-6 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/20 ring-2 ring-green-500/30">
               <span className="text-2xl">📱</span>
@@ -116,7 +116,7 @@ function VerifyOtpContent() {
                 value={digit}
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
-                className="h-12 w-10 rounded-xl border border-white/20 bg-white/10 text-center text-lg font-bold text-white outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors"
+                className="h-12 w-10 rounded-xl border border-[#f0b429]/20 bg-white/10 text-center text-lg font-bold text-white outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors"
               />
             ))}
           </div>

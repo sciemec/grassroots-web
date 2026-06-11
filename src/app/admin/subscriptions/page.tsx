@@ -108,7 +108,7 @@ export default function AdminSubscriptionsPage() {
                 { label: "Cancelled",     value: summary.cancelled,    color: "text-red-400" },
                 { label: "Revenue (USD)", value: `$${summary.total_revenue_usd.toLocaleString()}`, color: "text-amber-400" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-card/60 p-4">
+                <div key={label} className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
                 </div>

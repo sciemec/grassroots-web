@@ -126,7 +126,7 @@ interface Phase {
 function DrillCard({ drill, hex }: { drill: Drill; hex: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-white/10 bg-card/50 overflow-hidden">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-card/50 overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/5 transition-colors"
@@ -156,7 +156,7 @@ function DrillCard({ drill, hex }: { drill: Drill; hex: string }) {
       </button>
 
       {open && (
-        <div className="border-t border-white/10 px-4 py-4 space-y-3">
+        <div className="border-t border-[#f0b429]/10 px-4 py-4 space-y-3">
           {drill.setup && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Setup</p>
@@ -198,7 +198,7 @@ function DrillCard({ drill, hex }: { drill: Drill; hex: string }) {
           {drill.age_phase && drill.age_phase.length > 0 && (
             <div className="flex gap-2 flex-wrap">
               {drill.age_phase.map((ph) => (
-                <span key={ph} className="rounded-full border border-white/20 px-2.5 py-0.5 text-xs text-white/70">{ph}</span>
+                <span key={ph} className="rounded-full border border-[#f0b429]/20 px-2.5 py-0.5 text-xs text-white/70">{ph}</span>
               ))}
             </div>
           )}
@@ -215,7 +215,7 @@ function SkillCard({ skillKey, skill, hex }: { skillKey: string; skill: SkillEnt
   const title = skillKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
-    <div className="rounded-xl border border-white/10 bg-card/50 overflow-hidden">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-card/50 overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/5 transition-colors"
@@ -228,7 +228,7 @@ function SkillCard({ skillKey, skill, hex }: { skillKey: string; skill: SkillEnt
       </button>
 
       {open && (
-        <div className="border-t border-white/10 px-4 py-4 space-y-4">
+        <div className="border-t border-[#f0b429]/10 px-4 py-4 space-y-4">
           {skill.description && <p className="text-sm text-white/80">{skill.description}</p>}
 
           {skill.techniques && skill.techniques.length > 0 && (
@@ -236,7 +236,7 @@ function SkillCard({ skillKey, skill, hex }: { skillKey: string; skill: SkillEnt
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Techniques</p>
               <div className="space-y-3">
                 {skill.techniques.map((t, i) => (
-                  <div key={i} className="rounded-lg border border-white/10 px-3 py-2.5">
+                  <div key={i} className="rounded-lg border border-[#f0b429]/10 px-3 py-2.5">
                     <p className="text-sm font-semibold text-white">{t.name}</p>
                     {t.description && <p className="mt-1 text-sm text-white/70">{t.description}</p>}
                     {t.steps && t.steps.length > 0 && (
@@ -277,7 +277,7 @@ function PhaseCard({ phase, hex }: { phase: Phase; hex: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-card/50 overflow-hidden">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-card/50 overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/5 transition-colors"
@@ -293,7 +293,7 @@ function PhaseCard({ phase, hex }: { phase: Phase; hex: string }) {
       </button>
 
       {open && (
-        <div className="border-t border-white/10 px-4 py-4 space-y-4">
+        <div className="border-t border-[#f0b429]/10 px-4 py-4 space-y-4">
           {phase.focus && (
             <div className="rounded-lg px-3 py-2" style={{ backgroundColor: hex + "22" }}>
               <p className="text-xs font-semibold uppercase tracking-wide text-accent">Focus</p>
@@ -307,19 +307,19 @@ function PhaseCard({ phase, hex }: { phase: Phase; hex: string }) {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Training Guidelines</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {phase.training_guidelines.sessions_per_week && (
-                  <div className="rounded-lg border border-white/10 bg-card/40 p-2 text-center">
+                  <div className="rounded-lg border border-[#f0b429]/10 bg-card/40 p-2 text-center">
                     <p className="text-lg font-bold text-white">{phase.training_guidelines.sessions_per_week}</p>
                     <p className="text-xs text-muted-foreground">sessions/week</p>
                   </div>
                 )}
                 {phase.training_guidelines.session_duration_minutes && (
-                  <div className="rounded-lg border border-white/10 bg-card/40 p-2 text-center">
+                  <div className="rounded-lg border border-[#f0b429]/10 bg-card/40 p-2 text-center">
                     <p className="text-lg font-bold text-white">{phase.training_guidelines.session_duration_minutes}</p>
                     <p className="text-xs text-muted-foreground">min/session</p>
                   </div>
                 )}
                 {phase.training_guidelines.ball_size && (
-                  <div className="rounded-lg border border-white/10 bg-card/40 p-2 text-center">
+                  <div className="rounded-lg border border-[#f0b429]/10 bg-card/40 p-2 text-center">
                     <p className="text-lg font-bold text-white">{phase.training_guidelines.ball_size}</p>
                     <p className="text-xs text-muted-foreground">ball size</p>
                   </div>
@@ -328,7 +328,7 @@ function PhaseCard({ phase, hex }: { phase: Phase; hex: string }) {
               {phase.training_guidelines.session_structure && (
                 <div className="mt-3 space-y-1">
                   {phase.training_guidelines.session_structure.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-1.5">
+                    <div key={i} className="flex items-center justify-between rounded-lg border border-[#f0b429]/10 px-3 py-1.5">
                       <p className="text-sm text-white/80">{s.component}</p>
                       <span className="text-xs text-accent">{s.duration_minutes} min</span>
                     </div>
@@ -387,7 +387,7 @@ function NutritionPanel({ data, hex }: { data: Record<string, unknown>; hex: str
               {Object.entries(section).map(([type, content]) => (
                 <div
                   key={type}
-                  className="rounded-xl border border-white/10 px-4 py-3"
+                  className="rounded-xl border border-[#f0b429]/10 px-4 py-3"
                   style={{ backgroundColor: hex + "18" }}
                 >
                   <p className="mb-1 text-xs font-semibold capitalize text-accent">{type.replace(/_/g, " ")}</p>
@@ -412,7 +412,7 @@ function GenericPanel({ data, hex }: { data: unknown; hex: string }) {
     return (
       <div className="space-y-2">
         {(data as Record<string, unknown>[]).map((item, i) => (
-          <div key={i} className="rounded-xl border border-white/10 bg-card/50 px-4 py-3">
+          <div key={i} className="rounded-xl border border-[#f0b429]/10 bg-card/50 px-4 py-3">
             {Object.entries(item).filter(([k]) => !["id"].includes(k)).slice(0, 5).map(([k, v]) => (
               typeof v === "string" || typeof v === "number" ? (
                 <div key={k} className="mb-1">
@@ -433,7 +433,7 @@ function GenericPanel({ data, hex }: { data: unknown; hex: string }) {
         {Object.entries(data as Record<string, unknown>)
           .filter(([k]) => !["version", "source", "description"].includes(k))
           .map(([key, value]) => (
-            <div key={key} className="rounded-xl border border-white/10 bg-card/50 px-4 py-3">
+            <div key={key} className="rounded-xl border border-[#f0b429]/10 bg-card/50 px-4 py-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "#f0b429" }}>
                 {key.replace(/_/g, " ")}
               </p>
@@ -616,7 +616,7 @@ export default function KnowledgeBasePage() {
 
         {/* Content panel */}
         {active && activeCat && (
-          <div className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 overflow-hidden">
             {/* Panel header */}
             <div
               className="flex items-center justify-between px-6 py-4"
@@ -637,20 +637,20 @@ export default function KnowledgeBasePage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search…"
-                  className="h-8 w-44 rounded-lg border border-white/20 bg-white/10 pl-8 pr-3 text-xs text-white placeholder-white/40 outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20"
+                  className="h-8 w-44 rounded-lg border border-[#f0b429]/20 bg-white/10 pl-8 pr-3 text-xs text-white placeholder-white/40 outline-none focus:border-[#f0b429]/40 focus:ring-1 focus:ring-white/20"
                 />
               </div>
             </div>
 
             {/* Mobile search */}
-            <div className="px-4 py-3 border-b border-white/10 sm:hidden">
+            <div className="px-4 py-3 border-b border-[#f0b429]/10 sm:hidden">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={`Search ${activeCat.label.toLowerCase()}…`}
-                  className="h-9 w-full rounded-lg border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder-muted-foreground outline-none focus:ring-1 focus:ring-white/20"
+                  className="h-9 w-full rounded-lg border border-[#f0b429]/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder-muted-foreground outline-none focus:ring-1 focus:ring-white/20"
                 />
               </div>
             </div>
@@ -676,7 +676,7 @@ export default function KnowledgeBasePage() {
 
         {/* Empty state — no category selected */}
         {!active && (
-          <div className="rounded-2xl border border-dashed border-white/20 p-12 text-center">
+          <div className="rounded-2xl border border-dashed border-[#f0b429]/20 p-12 text-center">
             <BookOpen className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="font-semibold text-white">Select a category above</p>
             <p className="mt-1 text-sm text-muted-foreground">

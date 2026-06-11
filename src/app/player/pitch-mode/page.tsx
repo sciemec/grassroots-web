@@ -363,7 +363,7 @@ export default function PitchModePage() {
                       className={`flex items-center gap-4 rounded-2xl border p-4 text-left transition-all ${
                         selected
                           ? "border-[#f0b429] bg-[#f0b429]/10 shadow-md"
-                          : "border-white/10 bg-card hover:border-white/20 hover:bg-card/80"
+                          : "border-[#f0b429]/10 bg-card hover:border-[#f0b429]/20 hover:bg-card/80"
                       }`}
                     >
                       <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${f.color}`}>
@@ -391,7 +391,7 @@ export default function PitchModePage() {
                     className={`rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all ${
                       duration === d
                         ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
-                        : "border-white/10 bg-card text-white hover:border-white/20"
+                        : "border-[#f0b429]/10 bg-card text-white hover:border-[#f0b429]/20"
                     }`}
                   >
                     {d} min
@@ -438,7 +438,7 @@ export default function PitchModePage() {
               {session?.focus} · {session?.totalMinutes} minutes · {completedDrills} drills
             </p>
 
-            <div className="mt-6 rounded-2xl border border-white/10 bg-card p-5 text-left">
+            <div className="mt-6 rounded-2xl border border-[#f0b429]/10 bg-card p-5 text-left">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Session Summary</p>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
@@ -472,7 +472,7 @@ export default function PitchModePage() {
               </button>
               <button
                 onClick={() => { setPhase("setup"); setFocusId(""); setSession(null); setCompletedDrills(0); setLogged(false); }}
-                className="flex items-center justify-center gap-2 rounded-xl border border-white/10 py-3 text-sm text-white hover:bg-white/5"
+                className="flex items-center justify-center gap-2 rounded-xl border border-[#f0b429]/10 py-3 text-sm text-white hover:bg-white/5"
               >
                 <RotateCcw className="h-4 w-4" /> Train Again
               </button>
@@ -527,7 +527,7 @@ export default function PitchModePage() {
           </div>
 
           {/* Main drill card */}
-          <div className="rounded-3xl border border-white/10 bg-card overflow-hidden mb-4">
+          <div className="rounded-3xl border border-[#f0b429]/10 bg-card overflow-hidden mb-4">
             {/* Timer ring */}
             <div className="flex flex-col items-center bg-gradient-to-b from-[#1a3d26] to-card py-8">
               <div className="relative flex h-36 w-36 items-center justify-center">
@@ -557,7 +557,7 @@ export default function PitchModePage() {
                 </button>
                 <button
                   onClick={nextDrill}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white hover:bg-white/10 transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#f0b429]/20 text-white hover:bg-white/10 transition-colors"
                   title="Skip drill"
                 >
                   <SkipForward className="h-4 w-4" />
@@ -586,7 +586,7 @@ export default function PitchModePage() {
 
           {/* Upcoming drills */}
           {drills.slice(drillIndex + 1, drillIndex + 3).length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-card/50 px-4 py-3">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/50 px-4 py-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Up next</p>
               <div className="space-y-2">
                 {drills.slice(drillIndex + 1, drillIndex + 3).map((d, i) => (

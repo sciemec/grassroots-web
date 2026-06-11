@@ -397,7 +397,7 @@ export default function InjuryTrackerPage() {
         )}
 
         {/* ── AI Risk Assessment ── */}
-        <div className="mt-8 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-6">
+        <div className="mt-8 rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-6">
           <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1a5c2a]">
@@ -449,7 +449,7 @@ export default function InjuryTrackerPage() {
           )}
 
           {!aiReport && !aiLoading && !aiError && (
-            <div className="rounded-xl border border-dashed border-white/10 px-5 py-8 text-center">
+            <div className="rounded-xl border border-dashed border-[#f0b429]/10 px-5 py-8 text-center">
               <Brain className="mx-auto mb-2 h-7 w-7 text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">
                 Click &quot;Run AI Risk Check&quot; to get an AI-powered squad injury analysis

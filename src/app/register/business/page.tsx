@@ -175,7 +175,7 @@ export default function BusinessRegisterPage() {
                 value={biz.businessName}
                 onChange={e => setBiz({ ...biz, businessName: e.target.value })}
                 placeholder="e.g. NetOne Zimbabwe"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -190,7 +190,7 @@ export default function BusinessRegisterPage() {
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                       biz.businessType === t.value
                         ? 'border-[#FFD700] bg-[#FFD700]/10'
-                        : 'border-white/10 hover:border-white/30'
+                        : 'border-[#f0b429]/10 hover:border-[#f0b429]/30'
                     }`}
                   >
                     <span className="text-xl">{t.icon}</span>
@@ -210,7 +210,7 @@ export default function BusinessRegisterPage() {
               <select
                 value={biz.province}
                 onChange={e => setBiz({ ...biz, province: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               >
                 <option value="">Select province</option>
                 {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -226,7 +226,7 @@ export default function BusinessRegisterPage() {
                 value={biz.industry}
                 onChange={e => setBiz({ ...biz, industry: e.target.value })}
                 placeholder="e.g. Telecoms, Banking, FMCG"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -239,7 +239,7 @@ export default function BusinessRegisterPage() {
                 value={biz.website}
                 onChange={e => setBiz({ ...biz, website: e.target.value })}
                 placeholder="https://yourbusiness.co.zw"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
           </div>
@@ -258,7 +258,7 @@ export default function BusinessRegisterPage() {
                 value={admin.contactName}
                 onChange={e => setAdmin({ ...admin, contactName: e.target.value })}
                 placeholder="Full name"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -269,7 +269,7 @@ export default function BusinessRegisterPage() {
                 value={admin.email}
                 onChange={e => setAdmin({ ...admin, email: e.target.value })}
                 placeholder="you@yourbusiness.co.zw"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -280,7 +280,7 @@ export default function BusinessRegisterPage() {
                 value={admin.password}
                 onChange={e => setAdmin({ ...admin, password: e.target.value })}
                 placeholder="Min. 8 characters"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
               {admin.password && (
                 <div className="mt-1.5 space-y-1">
@@ -311,7 +311,7 @@ export default function BusinessRegisterPage() {
                 className={`w-full px-3 py-2.5 rounded-xl bg-white/5 border text-white placeholder-white/20 text-sm focus:outline-none transition-all ${
                   admin.confirmPassword && admin.password !== admin.confirmPassword
                     ? 'border-red-500/50'
-                    : 'border-white/10 focus:border-[#FFD700]/50'
+                    : 'border-[#f0b429]/10 focus:border-[#FFD700]/50'
                 }`}
               />
               {admin.confirmPassword && admin.password !== admin.confirmPassword && (
@@ -357,14 +357,14 @@ export default function BusinessRegisterPage() {
             <button
               type="button"
               onClick={() => setStep((step - 1) as Step)}
-              className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all"
+              className="flex-1 py-3 rounded-xl border border-[#f0b429]/10 text-white/60 text-sm font-medium hover:border-[#f0b429]/30 transition-all"
             >
               Back
             </button>
           ) : (
             <Link
               href="/register/who"
-              className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all text-center"
+              className="flex-1 py-3 rounded-xl border border-[#f0b429]/10 text-white/60 text-sm font-medium hover:border-[#f0b429]/30 transition-all text-center"
             >
               Back
             </Link>

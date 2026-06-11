@@ -291,7 +291,7 @@ export default function LeagueDetailPage() {
 
       {/* ── STANDINGS TAB ────────────────────────────────────────────────── */}
       {tab === "standings" && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 overflow-hidden">
           {standings.length === 0 ? (
             <div className="p-8 text-center">
               <Trophy className="w-10 h-10 text-white/20 mx-auto mb-2" />
@@ -301,7 +301,7 @@ export default function LeagueDetailPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-white/50">
+                  <tr className="border-b border-[#f0b429]/10 text-white/50">
                     <th className="text-left px-4 py-3">#</th>
                     <th className="text-left px-4 py-3">Club</th>
                     <th className="px-3 py-3">P</th>
@@ -316,7 +316,7 @@ export default function LeagueDetailPage() {
                   {standings.map((row, i) => (
                     <tr
                       key={row.club_id}
-                      className={`border-b border-white/5 ${i === 0 ? "bg-[#f0b429]/10" : ""}`}
+                      className={`border-b border-[#f0b429]/5 ${i === 0 ? "bg-[#f0b429]/10" : ""}`}
                     >
                       <td className="px-4 py-3 text-white/40">{i + 1}</td>
                       <td className="px-4 py-3 text-white font-medium">{row.club_name}</td>
@@ -343,7 +343,7 @@ export default function LeagueDetailPage() {
           {/* Schedule new fixture */}
           <button
             onClick={() => setShowSchedule((v) => !v)}
-            className="w-full flex items-center justify-between bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl px-4 py-3 text-white transition-colors"
+            className="w-full flex items-center justify-between bg-white/5 border border-[#f0b429]/10 hover:bg-white/10 rounded-xl px-4 py-3 text-white transition-colors"
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <Plus className="w-4 h-4 text-[#f0b429]" />
@@ -353,7 +353,7 @@ export default function LeagueDetailPage() {
           </button>
 
           {showSchedule && (
-            <form onSubmit={handleSchedule} className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+            <form onSubmit={handleSchedule} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-white/60 text-xs mb-1">Home Club *</label>
@@ -361,7 +361,7 @@ export default function LeagueDetailPage() {
                     value={schedForm.home_club_id}
                     onChange={(e) => setSchedForm((f) => ({ ...f, home_club_id: e.target.value }))}
                     required
-                    className="w-full bg-[#1a3d26] border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
+                    className="w-full bg-[#1a3d26] border border-[#f0b429]/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
                   >
                     <option value="">Select club</option>
                     {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -373,7 +373,7 @@ export default function LeagueDetailPage() {
                     value={schedForm.away_club_id}
                     onChange={(e) => setSchedForm((f) => ({ ...f, away_club_id: e.target.value }))}
                     required
-                    className="w-full bg-[#1a3d26] border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
+                    className="w-full bg-[#1a3d26] border border-[#f0b429]/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
                   >
                     <option value="">Select club</option>
                     {clubs.filter((c) => c.id.toString() !== schedForm.home_club_id).map((c) => (
@@ -389,7 +389,7 @@ export default function LeagueDetailPage() {
                     type="datetime-local"
                     value={schedForm.match_date}
                     onChange={(e) => setSchedForm((f) => ({ ...f, match_date: e.target.value }))}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
+                    className="w-full bg-white/10 border border-[#f0b429]/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
                   />
                 </div>
                 <div>
@@ -399,7 +399,7 @@ export default function LeagueDetailPage() {
                     value={schedForm.venue}
                     onChange={(e) => setSchedForm((f) => ({ ...f, venue: e.target.value }))}
                     placeholder="Ground name"
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm placeholder-white/30 focus:outline-none focus:border-[#f0b429]"
+                    className="w-full bg-white/10 border border-[#f0b429]/20 rounded-lg px-3 py-2 text-white text-sm placeholder-white/30 focus:outline-none focus:border-[#f0b429]"
                   />
                 </div>
               </div>
@@ -429,7 +429,7 @@ export default function LeagueDetailPage() {
           ) : (
             <div className="space-y-2">
               {fixtures.map((f) => (
-                <div key={f.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div key={f.id} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       {FIXTURE_STATUS_ICON[f.status]}
@@ -497,7 +497,7 @@ export default function LeagueDetailPage() {
           {/* Add club */}
           <button
             onClick={() => setShowAddClub((v) => !v)}
-            className="w-full flex items-center justify-between bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl px-4 py-3 text-white transition-colors"
+            className="w-full flex items-center justify-between bg-white/5 border border-[#f0b429]/10 hover:bg-white/10 rounded-xl px-4 py-3 text-white transition-colors"
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <Plus className="w-4 h-4 text-[#f0b429]" />
@@ -507,11 +507,11 @@ export default function LeagueDetailPage() {
           </button>
 
           {showAddClub && (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex gap-2">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 flex gap-2">
               <select
                 value={addClubId}
                 onChange={(e) => setAddClubId(e.target.value)}
-                className="flex-1 bg-[#1a3d26] border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
+                className="flex-1 bg-[#1a3d26] border border-[#f0b429]/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
               >
                 <option value="">Select a club to enrol</option>
                 {unenrolled.map((c) => (
@@ -538,7 +538,7 @@ export default function LeagueDetailPage() {
               {clubs.map((c) => (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3"
                 >
                   <div>
                     <p className="text-white font-medium">{c.name}</p>
@@ -560,7 +560,7 @@ export default function LeagueDetailPage() {
       {/* ── Record Result Modal ───────────────────────────────────────────── */}
       {resultFixture && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-[#1a3d26] border border-white/10 p-6">
+          <div className="w-full max-w-sm rounded-2xl bg-[#1a3d26] border border-[#f0b429]/10 p-6">
             <h3 className="text-white font-bold text-lg mb-1">Record Result</h3>
             <p className="text-white/50 text-sm mb-5">
               {resultFixture.home_club_name} vs {resultFixture.away_club_name}
@@ -575,7 +575,7 @@ export default function LeagueDetailPage() {
                   max={99}
                   value={resultScores.home}
                   onChange={(e) => setResultScores((s) => ({ ...s, home: e.target.value }))}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-2xl font-bold text-center focus:outline-none focus:border-[#f0b429]"
+                  className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-4 py-3 text-white text-2xl font-bold text-center focus:outline-none focus:border-[#f0b429]"
                 />
               </div>
               <span className="text-white/40 text-lg font-bold mt-4">–</span>
@@ -587,7 +587,7 @@ export default function LeagueDetailPage() {
                   max={99}
                   value={resultScores.away}
                   onChange={(e) => setResultScores((s) => ({ ...s, away: e.target.value }))}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-2xl font-bold text-center focus:outline-none focus:border-[#f0b429]"
+                  className="w-full bg-white/10 border border-[#f0b429]/20 rounded-xl px-4 py-3 text-white text-2xl font-bold text-center focus:outline-none focus:border-[#f0b429]"
                 />
               </div>
             </div>
@@ -595,7 +595,7 @@ export default function LeagueDetailPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setResultFixture(null)}
-                className="flex-1 py-2 rounded-xl border border-white/20 text-white/60 text-sm hover:bg-white/10 transition-colors"
+                className="flex-1 py-2 rounded-xl border border-[#f0b429]/20 text-white/60 text-sm hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>

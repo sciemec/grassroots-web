@@ -177,7 +177,7 @@ export default function OrganisationRegisterPage() {
                 value={org.orgName}
                 onChange={e => setOrg({ ...org, orgName: e.target.value })}
                 placeholder="e.g. Harare City FC Academy"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -192,7 +192,7 @@ export default function OrganisationRegisterPage() {
                     className={`py-2 px-3 rounded-xl border text-xs font-medium text-left transition-all ${
                       org.orgType === t
                         ? 'border-[#FFD700] bg-[#FFD700]/10 text-[#FFD700]'
-                        : 'border-white/10 text-white/50 hover:border-white/30'
+                        : 'border-[#f0b429]/10 text-white/50 hover:border-[#f0b429]/30'
                     }`}
                   >
                     {t}
@@ -206,7 +206,7 @@ export default function OrganisationRegisterPage() {
               <select
                 value={org.sport}
                 onChange={e => setOrg({ ...org, sport: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               >
                 <option value="">Select sport</option>
                 {SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -218,7 +218,7 @@ export default function OrganisationRegisterPage() {
               <select
                 value={org.province}
                 onChange={e => setOrg({ ...org, province: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-white/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0a1a0e] border border-[#f0b429]/10 text-white text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               >
                 <option value="">Select province</option>
                 {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -234,7 +234,7 @@ export default function OrganisationRegisterPage() {
                 value={org.website}
                 onChange={e => setOrg({ ...org, website: e.target.value })}
                 placeholder="https://yourclub.co.zw"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
           </div>
@@ -253,7 +253,7 @@ export default function OrganisationRegisterPage() {
                 value={admin.contactName}
                 onChange={e => setAdmin({ ...admin, contactName: e.target.value })}
                 placeholder="Full name of club administrator"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -264,7 +264,7 @@ export default function OrganisationRegisterPage() {
                 value={admin.email}
                 onChange={e => setAdmin({ ...admin, email: e.target.value })}
                 placeholder="admin@yourclub.co.zw"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
             </div>
 
@@ -275,7 +275,7 @@ export default function OrganisationRegisterPage() {
                 value={admin.password}
                 onChange={e => setAdmin({ ...admin, password: e.target.value })}
                 placeholder="Min. 8 characters"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-[#f0b429]/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
               {admin.password && (
                 <div className="mt-1.5 space-y-1">
@@ -306,7 +306,7 @@ export default function OrganisationRegisterPage() {
                 className={`w-full px-3 py-2.5 rounded-xl bg-white/5 border text-white placeholder-white/20 text-sm focus:outline-none transition-all ${
                   admin.confirmPassword && admin.password !== admin.confirmPassword
                     ? 'border-red-500/50'
-                    : 'border-white/10 focus:border-[#FFD700]/50'
+                    : 'border-[#f0b429]/10 focus:border-[#FFD700]/50'
                 }`}
               />
               {admin.confirmPassword && admin.password !== admin.confirmPassword && (
@@ -353,14 +353,14 @@ export default function OrganisationRegisterPage() {
             <button
               type="button"
               onClick={() => setStep((step - 1) as Step)}
-              className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all"
+              className="flex-1 py-3 rounded-xl border border-[#f0b429]/10 text-white/60 text-sm font-medium hover:border-[#f0b429]/30 transition-all"
             >
               Back
             </button>
           ) : (
             <Link
               href="/register/who"
-              className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-sm font-medium hover:border-white/30 transition-all text-center"
+              className="flex-1 py-3 rounded-xl border border-[#f0b429]/10 text-white/60 text-sm font-medium hover:border-[#f0b429]/30 transition-all text-center"
             >
               Back
             </Link>

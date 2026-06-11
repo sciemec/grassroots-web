@@ -178,7 +178,7 @@ export default function ReportsPage() {
         ) : (
           <>
             {/* Summary preview */}
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-5 mb-6">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 mb-6">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
                 {stats.province_name} — Report Preview
               </p>
@@ -203,8 +203,8 @@ export default function ReportsPage() {
 
             {/* Leagues preview */}
             {leagues.length > 0 && (
-              <div className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden mb-6">
-                <div className="px-5 py-4 border-b border-white/10">
+              <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 overflow-hidden mb-6">
+                <div className="px-5 py-4 border-b border-[#f0b429]/10">
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     Leagues Included ({leagues.length})
                   </p>

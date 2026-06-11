@@ -66,7 +66,7 @@ function SessionCard({ session }: { session: CoachingSession }) {
   }, [session.content]);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/80 overflow-hidden">
+    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/80 overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
@@ -99,7 +99,7 @@ function SessionCard({ session }: { session: CoachingSession }) {
       </button>
 
       {expanded && (
-        <div className="border-t border-white/10 px-5 py-4 space-y-4">
+        <div className="border-t border-[#f0b429]/10 px-5 py-4 space-y-4">
           {/* Session overview */}
           {overview && (
             <div>
@@ -210,7 +210,7 @@ export default function SessionLibraryPage() {
               placeholder="Search sessions, drills, tactics…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-white/20 bg-white/5 pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+              className="w-full rounded-xl border border-[#f0b429]/20 bg-white/5 pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-accent focus:ring-1 focus:ring-accent"
             />
           </div>
 
@@ -218,7 +218,7 @@ export default function SessionLibraryPage() {
           <div className="mb-5 flex flex-wrap gap-2">
             <button
               onClick={() => setActiveCategory("all")}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${activeCategory === "all" ? "bg-white text-black" : "border border-white/20 text-white/60 hover:bg-white/10"}`}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${activeCategory === "all" ? "bg-white text-black" : "border border-[#f0b429]/20 text-white/60 hover:bg-white/10"}`}
             >
               All <span className="opacity-60">({counts.all})</span>
             </button>
@@ -229,7 +229,7 @@ export default function SessionLibraryPage() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${activeCategory === cat ? `border ${meta.bg} ${meta.color}` : "border border-white/20 text-white/60 hover:bg-white/10"}`}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${activeCategory === cat ? `border ${meta.bg} ${meta.color}` : "border border-[#f0b429]/20 text-white/60 hover:bg-white/10"}`}
                 >
                   <Icon className="h-3 w-3" />
                   {meta.label} <span className="opacity-60">({counts[cat] ?? 0})</span>
@@ -240,7 +240,7 @@ export default function SessionLibraryPage() {
 
           {/* Session cards */}
           {filtered.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/20 p-12 text-center">
+            <div className="rounded-xl border border-dashed border-[#f0b429]/20 p-12 text-center">
               <BookOpen className="mx-auto mb-3 h-8 w-8 text-white/20" />
               <p className="text-sm text-white/40">No sessions match your search</p>
             </div>

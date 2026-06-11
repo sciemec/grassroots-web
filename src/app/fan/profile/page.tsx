@@ -71,7 +71,7 @@ export default function FanProfilePage() {
         </div>
 
         {/* Avatar + name card */}
-        <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-6 backdrop-blur-sm">
+        <div className="mb-6 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6 backdrop-blur-sm">
           <div className="flex items-center gap-5">
             <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-primary/20 text-3xl font-black text-primary">
               {initials}
@@ -91,7 +91,7 @@ export default function FanProfilePage() {
         </div>
 
         {/* Edit display name */}
-        <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+        <div className="mb-6 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             <User className="h-4 w-4" /> Display Name
           </h2>
@@ -123,12 +123,12 @@ export default function FanProfilePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm text-center">
             <Heart className="mx-auto mb-2 h-5 w-5 text-red-400" />
             <p className="text-2xl font-black text-white">{followingData?.data?.length ?? 0}</p>
             <p className="text-xs text-muted-foreground">Athletes followed</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm text-center">
             <span className="mb-2 block text-xl">🇿🇼</span>
             <p className="text-2xl font-black text-white">Fan</p>
             <p className="text-xs text-muted-foreground">Account type</p>

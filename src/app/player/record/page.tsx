@@ -254,7 +254,7 @@ export default function RecordDrillPage() {
             <div className="flex gap-3">
               <button
                 onClick={handleDiscard}
-                className="rounded-lg border border-white/20 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                className="rounded-lg border border-[#f0b429]/20 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
               >
                 Record another
               </button>
@@ -308,13 +308,13 @@ export default function RecordDrillPage() {
                 placeholder="Title *  e.g. Free-kick drill — Tuesday"
                 value={title}
                 onChange={(e) => { setTitle(e.target.value); setUploadErr(""); }}
-                className="w-full rounded-lg border border-white/10 bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-[#f0b429]/10 bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               />
 
               <select
                 value={tag}
                 onChange={(e) => setTag(e.target.value as VideoTag)}
-                className="w-full rounded-lg border border-white/10 bg-card px-3 py-2.5 text-sm text-white focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-[#f0b429]/10 bg-card px-3 py-2.5 text-sm text-white focus:border-primary focus:outline-none"
               >
                 {TAG_OPTIONS.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -326,7 +326,7 @@ export default function RecordDrillPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                className="w-full resize-none rounded-lg border border-white/10 bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                className="w-full resize-none rounded-lg border border-[#f0b429]/10 bg-card px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               />
             </div>
 
@@ -341,7 +341,7 @@ export default function RecordDrillPage() {
               <button
                 onClick={handleDiscard}
                 disabled={state === "uploading"}
-                className="flex items-center gap-2 rounded-lg border border-white/20 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40"
+                className="flex items-center gap-2 rounded-lg border border-[#f0b429]/20 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-40"
               >
                 <RotateCcw className="h-4 w-4" /> Discard
               </button>
@@ -477,7 +477,7 @@ export default function RecordDrillPage() {
               className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
                 tag === t
                   ? TAG_COLORS[t]
-                  : "border-white/10 text-muted-foreground hover:border-white/30"
+                  : "border-[#f0b429]/10 text-muted-foreground hover:border-[#f0b429]/30"
               }`}
             >
               {t}
@@ -493,7 +493,7 @@ export default function RecordDrillPage() {
               { emoji: "💡", text: "Good lighting = clear video" },
               { emoji: "🎯", text: "Tag before recording" },
             ].map(({ emoji, text }) => (
-              <div key={text} className="rounded-xl border border-white/10 bg-card/50 p-3">
+              <div key={text} className="rounded-xl border border-[#f0b429]/10 bg-card/50 p-3">
                 <p className="text-xl">{emoji}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">{text}</p>
               </div>
@@ -505,7 +505,7 @@ export default function RecordDrillPage() {
         <div className="mt-3 flex-shrink-0">
           <button
             onClick={() => router.push("/player/vault")}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#f0b429]/10 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-white"
           >
             <Play className="h-4 w-4" /> View Highlight Vault
           </button>

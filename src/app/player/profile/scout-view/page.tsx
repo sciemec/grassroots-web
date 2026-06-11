@@ -111,7 +111,7 @@ export default function ScoutViewPage() {
             </div>
             <button
               onClick={copyLink}
-              className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+              className="flex items-center gap-2 rounded-xl border border-[#f0b429]/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
             >
               {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
               {copied ? "Copied!" : "Copy link"}
@@ -129,7 +129,7 @@ export default function ScoutViewPage() {
           </div>
 
           {/* Player card — scout view */}
-          <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 p-6 backdrop-blur-sm">
+          <div className="mb-6 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-6 backdrop-blur-sm">
 
             {/* Top row: photo + identity */}
             <div className="mb-5 flex items-start gap-5">
@@ -190,12 +190,12 @@ export default function ScoutViewPage() {
             {(profile?.club || profile?.school) && (
               <div className="mb-5 flex flex-wrap gap-2">
                 {profile.club && (
-                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted-foreground">
+                  <span className="rounded-full border border-[#f0b429]/10 bg-white/5 px-3 py-1 text-xs text-muted-foreground">
                     🏟️ {profile.club}
                   </span>
                 )}
                 {profile.school && (
-                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted-foreground">
+                  <span className="rounded-full border border-[#f0b429]/10 bg-white/5 px-3 py-1 text-xs text-muted-foreground">
                     🏫 {profile.school}
                   </span>
                 )}
@@ -214,7 +214,7 @@ export default function ScoutViewPage() {
 
             {/* Beautiful Game Score */}
             {(profile?.joy_score ?? 0) > 0 && (
-              <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="mb-5 rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -272,7 +272,7 @@ export default function ScoutViewPage() {
                 {visibleClips.slice(0, 4).map((clip) => (
                   <div
                     key={clip.id}
-                    className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm"
+                    className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm"
                   >
                     <div className="mb-3 flex h-28 items-center justify-center overflow-hidden rounded-xl bg-black/40">
                       {clip.video_url ? (
@@ -306,7 +306,7 @@ export default function ScoutViewPage() {
           )}
 
           {/* CTA for scouts */}
-          <div className="rounded-2xl border border-white/10 bg-[#1a3d26]/80 p-6 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-[#1a3d26]/80 p-6 text-center">
             <p className="mb-1 text-sm font-medium text-white">This is your shareable scout profile</p>
             <p className="mb-4 text-xs text-muted-foreground">
               Send the link above to coaches, scouts or clubs to share your full profile

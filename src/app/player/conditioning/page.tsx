@@ -170,7 +170,7 @@ export default function ConditioningLibraryPage() {
     <main className="min-h-screen bg-background pb-20">
 
       {/* ── Sticky header ─────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 border-b border-white/10 bg-background/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 border-b border-[#f0b429]/10 bg-background/95 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-4 py-4">
           <Link href="/player" className="text-xs text-muted-foreground hover:text-white">
             ← Hub
@@ -189,7 +189,7 @@ export default function ConditioningLibraryPage() {
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                   category === id
                     ? "border-[#f0b429] bg-[#f0b429] text-[#1a3a1a]"
-                    : "border-white/20 bg-white/5 text-white/70 hover:bg-white/10"
+                    : "border-[#f0b429]/20 bg-white/5 text-white/70 hover:bg-white/10"
                 }`}
               >
                 {label}
@@ -205,8 +205,8 @@ export default function ConditioningLibraryPage() {
                 onClick={() => setEquipment(id)}
                 className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
                   equipment === id
-                    ? "border-white/40 bg-white/20 text-white"
-                    : "border-white/10 text-white/50 hover:text-white/70"
+                    ? "border-[#f0b429]/40 bg-white/20 text-white"
+                    : "border-[#f0b429]/10 text-white/50 hover:text-white/70"
                 }`}
               >
                 {label}
@@ -313,7 +313,7 @@ export default function ConditioningLibraryPage() {
           )}
 
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-card/60 px-6 py-12 text-center">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 px-6 py-12 text-center">
               <p className="text-sm text-white/60">No exercises match this filter.</p>
               <button
                 onClick={() => { setCategory("all"); setEquipment("any"); }}
@@ -348,7 +348,7 @@ function CardTile({
   const eq  = EQUIPMENT_CONFIG[card.equipment_tier];
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card/60">
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-[#f0b429]/10 bg-card/60">
       <Link href={`/player/conditioning/${card.id}`} className="flex-1 p-3">
         {/* Category badge */}
         <span
@@ -396,7 +396,7 @@ function CardTile({
       {/* Start button */}
       <button
         onClick={() => onStart(card)}
-        className="flex items-center justify-center gap-1.5 border-t border-white/10 py-2.5 text-xs font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/5 active:bg-[#f0b429]/10"
+        className="flex items-center justify-center gap-1.5 border-t border-[#f0b429]/10 py-2.5 text-xs font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/5 active:bg-[#f0b429]/10"
       >
         <Play className="h-3 w-3" />
         Start this exercise

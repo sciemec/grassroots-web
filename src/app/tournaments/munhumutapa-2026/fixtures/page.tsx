@@ -193,7 +193,7 @@ export default function FixturesPage() {
       </div>
 
       {/* ── Category tabs ───────────────────────────────────────────────────── */}
-      <div className="flex border-b border-white/10">
+      <div className="flex border-b border-[#f0b429]/10">
         {CATEGORIES.map((c) => (
           <button
             key={c.value}
@@ -213,7 +213,7 @@ export default function FixturesPage() {
 
         {!hasAnyFixtures ? (
           /* ── Empty state ──────────────────────────────────────────────────── */
-          <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-[#f0b429]/10 p-10 text-center">
             <Calendar className="mx-auto mb-3 h-10 w-10 text-white/20" />
             <p className="font-semibold text-white/40">Fixtures not yet published</p>
             <p className="mt-1 text-xs text-white/20">The draw and fixtures will be posted after the 21 April meeting</p>
@@ -226,14 +226,14 @@ export default function FixturesPage() {
                 {Object.entries(standings)
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([group, rows]) => (
-                    <div key={group} className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+                    <div key={group} className="rounded-2xl border border-[#f0b429]/10 bg-white/5 overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-2 border-b border-[#f0b429]/10">
                         <p className="text-xs font-bold uppercase tracking-wider text-[#f0b429]">{group}</p>
                         <p className="text-[10px] text-white/30">Standings</p>
                       </div>
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="border-b border-white/5 text-white/30">
+                          <tr className="border-b border-[#f0b429]/5 text-white/30">
                             <th className="py-2 pl-4 text-left font-medium w-8">#</th>
                             <th className="py-2 text-left font-medium">Team</th>
                             <th className="py-2 text-center font-medium w-8">P</th>
@@ -248,7 +248,7 @@ export default function FixturesPage() {
                           {rows.map((s, idx) => (
                             <tr
                               key={s.team}
-                              className={`border-b border-white/5 last:border-0 ${idx === 0 ? "bg-[#f0b429]/5" : ""}`}
+                              className={`border-b border-[#f0b429]/5 last:border-0 ${idx === 0 ? "bg-[#f0b429]/5" : ""}`}
                             >
                               <td className="py-2.5 pl-4 text-white/40">{idx + 1}</td>
                               <td className="py-2.5 font-semibold text-white">{s.team}</td>
@@ -307,7 +307,7 @@ export default function FixturesPage() {
         )}
 
         {/* ── Admin link ──────────────────────────────────────────────────────── */}
-        <div className="border-t border-white/5 pt-4 text-center">
+        <div className="border-t border-[#f0b429]/5 pt-4 text-center">
           <Link
             href="/admin/tournaments/munhumutapa-2026/fixtures"
             className="text-xs text-white/20 hover:text-white/40"
@@ -335,8 +335,8 @@ function FixtureCard({ fixture: f }: { fixture: Fixture }) {
       isLive
         ? "border-red-500/30 bg-red-900/10"
         : isCompleted
-        ? "border-white/10 bg-white/5"
-        : "border-white/10 bg-white/5"
+        ? "border-[#f0b429]/10 bg-white/5"
+        : "border-[#f0b429]/10 bg-white/5"
     }`}>
       {/* Group + time row */}
       <div className="mb-3 flex items-center justify-between text-[10px] text-white/30">
@@ -382,7 +382,7 @@ function FixtureCard({ fixture: f }: { fixture: Fixture }) {
               </span>
             </>
           ) : (
-            <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1">
+            <div className="flex items-center gap-1 rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-1">
               <span className="text-xs font-bold text-white/30">VS</span>
             </div>
           )}

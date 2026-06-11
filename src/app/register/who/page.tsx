@@ -102,7 +102,7 @@ export default function WhoAreYouPage() {
               onClick={() => router.push(role.href)}
               className={`relative flex items-start gap-4 p-4 rounded-2xl border bg-gradient-to-br ${role.color} ${role.border} text-left transition-all duration-200 hover:scale-[1.02] active:scale-[0.99] group cursor-pointer`}
             >
-              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-2xl shrink-0 group-hover:bg-white/10 transition-all shadow-2xs border border-white/5">
+              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-2xl shrink-0 group-hover:bg-white/10 transition-all shadow-2xs border border-[#f0b429]/5">
                 {role.icon}
               </div>
               <div className="min-w-0 pr-4">

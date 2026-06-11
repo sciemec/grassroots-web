@@ -159,7 +159,7 @@ export default function TournamentPlayerPage() {
       <div className="px-5 pb-16 pt-6 space-y-5">
 
         {/* ── Info card ─────────────────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Player Details</p>
 
           {[
@@ -178,7 +178,7 @@ export default function TournamentPlayerPage() {
         </div>
 
         {/* ── Stats card ────────────────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
           <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/40">
             Tournament Statistics
           </p>
@@ -212,7 +212,7 @@ export default function TournamentPlayerPage() {
               )}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-white/10 p-8 text-center">
+            <div className="rounded-xl border border-dashed border-[#f0b429]/10 p-8 text-center">
               <p className="text-sm text-white/30">Statistics will appear here after the tournament begins</p>
             </div>
           )}
@@ -254,7 +254,7 @@ export default function TournamentPlayerPage() {
         </div>
 
         {/* ── Platform CTA ──────────────────────────────────────────────────── */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center space-y-2">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5 text-center space-y-2">
           <p className="text-xs text-white/40">
             Player — claim this profile and take control of your career
           </p>

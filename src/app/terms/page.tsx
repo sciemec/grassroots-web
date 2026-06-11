@@ -57,19 +57,19 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 text-xl font-bold text-white">4. User Roles and Permissions</h2>
             <div className="space-y-4">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-green-300">🏃 Players</h3>
                 <p>May track training sessions, access AI coaching, and maintain a profile visible to approved scouts. Player profiles under 18 are protected — scouts must submit a contact request approved by platform admins before accessing full details.</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-blue-300">📋 Coaches</h3>
                 <p>May manage a squad of up to 25 registered players, access tactical tools, and receive AI insights. Coaches are responsible for ensuring players they add to their squad have consented to being tracked.</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-purple-300">🔍 Scouts</h3>
                 <p>Scout accounts are reviewed and approved within 24 hours of registration. Approved scouts may view anonymised player profiles (initials + region) and submit contact requests. Scouts may not share player data with third parties without written consent from the Platform and the player (or guardian if under 18).</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
                 <h3 className="mb-2 font-semibold text-amber-300">🎉 Fans</h3>
                 <p>May view leaderboards, public profiles, and live match streams. Fans may not contact players directly through the Platform.</p>
               </div>
@@ -184,7 +184,7 @@ export default function TermsPage() {
         </div>
 
         {/* Footer links */}
-        <div className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-8 text-sm text-green-500">
+        <div className="mt-16 flex flex-wrap items-center justify-between gap-4 border-t border-[#f0b429]/10 pt-8 text-sm text-green-500">
           <Link href="/" className="hover:text-green-300 transition-colors">← Back to home</Link>
           <Link href="/privacy" className="hover:text-green-300 transition-colors">Privacy Policy →</Link>
         </div>

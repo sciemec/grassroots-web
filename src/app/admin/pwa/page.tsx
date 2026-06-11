@@ -83,7 +83,7 @@ export default function PwaStatsPage() {
         {/* Top stat cards */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {topCards.map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-4">
+            <div key={label} className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-4">
               <Icon className={`mb-2 h-4 w-4 ${color}`} />
               <p className="text-2xl font-bold text-white">
                 {isLoading ? "—" : (value ?? 0).toLocaleString()}
@@ -96,7 +96,7 @@ export default function PwaStatsPage() {
         <div className="grid gap-5 lg:grid-cols-3">
 
           {/* By Platform */}
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-5">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-5">
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-accent/70">By Platform</p>
             {isLoading ? (
               <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-8 animate-pulse rounded-lg bg-muted" />)}</div>
@@ -125,7 +125,7 @@ export default function PwaStatsPage() {
           </div>
 
           {/* By Browser */}
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-5">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-5">
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-accent/70">By Browser</p>
             {isLoading ? (
               <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-8 animate-pulse rounded-lg bg-muted" />)}</div>
@@ -152,7 +152,7 @@ export default function PwaStatsPage() {
           </div>
 
           {/* By Device Type */}
-          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-5">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-5">
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-accent/70">By Device</p>
             {isLoading ? (
               <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-8 animate-pulse rounded-lg bg-muted" />)}</div>
@@ -183,7 +183,7 @@ export default function PwaStatsPage() {
         </div>
 
         {/* Recent Installs */}
-        <div className="mt-5 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-5">
+        <div className="mt-5 rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-5">
           <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-accent/70">Recent Installs</p>
           {isLoading ? (
             <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}</div>
@@ -191,7 +191,7 @@ export default function PwaStatsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-[#f0b429]/10 text-left text-xs text-muted-foreground">
                     <th className="pb-2 pr-4 font-medium">User</th>
                     <th className="pb-2 pr-4 font-medium">Platform</th>
                     <th className="pb-2 pr-4 font-medium">Browser</th>

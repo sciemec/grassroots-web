@@ -65,7 +65,7 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#f0b429]"
+      className="w-full rounded-lg bg-white/10 border border-[#f0b429]/20 px-3 py-2 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#f0b429]"
     />
   );
 }
@@ -81,7 +81,7 @@ function TextArea({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#f0b429] resize-none"
+      className="w-full rounded-lg bg-white/10 border border-[#f0b429]/20 px-3 py-2 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#f0b429] resize-none"
     />
   );
 }
@@ -97,7 +97,7 @@ function SelectInput({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
+      className="w-full rounded-lg bg-white/10 border border-[#f0b429]/20 px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
     >
       <option value="" className="bg-[#1a3d26]">— select —</option>
       {options.map((o) => (
@@ -121,7 +121,7 @@ function Toggle({
       className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
         checked
           ? "bg-[#f0b429] text-[#1a3d26] border-[#f0b429]"
-          : "bg-white/10 text-white/70 border-white/20"
+          : "bg-white/10 text-white/70 border-[#f0b429]/20"
       }`}
     >
       <span>{checked ? "✓" : "○"}</span>
@@ -144,7 +144,7 @@ function NumberInput({
       max={max}
       step={step}
       onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-      className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
+      className="w-full rounded-lg bg-white/10 border border-[#f0b429]/20 px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0b429]"
     />
   );
 }
@@ -660,7 +660,7 @@ export default function DnaPage() {
       </div>
 
       {/* Footer */}
-      <div className="px-4 pb-8 pt-4 border-t border-white/10">
+      <div className="px-4 pb-8 pt-4 border-t border-[#f0b429]/10">
         <button
           onClick={handleNext}
           disabled={saving}

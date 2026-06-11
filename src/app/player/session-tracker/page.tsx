@@ -269,7 +269,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
 
         {/* Header */}
         <div className="mb-4 flex items-center gap-3">
-          <Link href="/player" className="rounded-lg border border-white/10 p-1.5 hover:bg-white/5">
+          <Link href="/player" className="rounded-lg border border-[#f0b429]/10 p-1.5 hover:bg-white/5">
             <ArrowLeft className="h-4 w-4 text-white/60" />
           </Link>
           <div>
@@ -277,7 +277,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
             <p className="text-[10px] text-white/40">Friend operates · builds your training profile</p>
           </div>
           {phase !== "setup" && (
-            <button onClick={resetAll} className="ml-auto rounded-lg border border-white/10 p-1.5 hover:bg-white/5">
+            <button onClick={resetAll} className="ml-auto rounded-lg border border-[#f0b429]/10 p-1.5 hover:bg-white/5">
               <RotateCcw className="h-3.5 w-3.5 text-white/40" />
             </button>
           )}
@@ -285,14 +285,14 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
 
         {/* Setup */}
         {phase === "setup" && (
-          <div className="space-y-4 rounded-2xl border border-white/10 bg-card/60 p-4">
+          <div className="space-y-4 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
             <div>
               <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/40">Player Name</p>
               <input
                 value={playerName}
                 onChange={e => setPlayerName(e.target.value)}
                 placeholder={user?.name ?? "Enter player name"}
-                className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                className="w-full rounded-lg border border-[#f0b429]/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent"
               />
             </div>
 
@@ -303,7 +303,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
                   <button
                     key={s}
                     onClick={() => setSessionType(s)}
-                    className={`rounded-xl border py-3 text-xs font-bold transition-colors ${sessionType === s ? "border-accent bg-accent/10 text-accent" : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"}`}
+                    className={`rounded-xl border py-3 text-xs font-bold transition-colors ${sessionType === s ? "border-accent bg-accent/10 text-accent" : "border-[#f0b429]/10 bg-white/5 text-white/60 hover:border-[#f0b429]/20"}`}
                   >
                     {SESSION_LABELS[s]}
                   </button>
@@ -311,7 +311,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/5 bg-white/3 p-3">
+            <div className="rounded-xl border border-[#f0b429]/5 bg-white/3 p-3">
               <p className="text-[10px] font-semibold text-white/40 mb-1">How to use</p>
               <p className="text-[10px] text-white/30 leading-relaxed">
                 Give your phone to a friend. Every time you perform an action during the session, they tap the matching button. The AI analyses your movement pattern and builds your training profile.
@@ -329,7 +329,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
 
         {/* Timer bar */}
         {phase !== "setup" && (
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-card/60 p-3">
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-3">
             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-black ${phase === "live" ? "bg-green-600 animate-pulse" : phase === "paused" ? "bg-amber-600" : "bg-muted"}`}>
               {phase === "live" ? "▶" : phase === "paused" ? "⏸" : "■"}
             </div>
@@ -339,7 +339,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
             </div>
             <div className="flex gap-1.5">
               {phase !== "ended" && (
-                <button onClick={togglePause} className="rounded-lg border border-white/20 px-2 py-1.5 text-xs font-bold text-white hover:bg-white/10">
+                <button onClick={togglePause} className="rounded-lg border border-[#f0b429]/20 px-2 py-1.5 text-xs font-bold text-white hover:bg-white/10">
                   {phase === "live" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </button>
               )}
@@ -373,7 +373,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
                   onPointerDown={() => logEvent(type)}
                   disabled={phase !== "live"}
                   className={`relative flex flex-col items-center rounded-2xl border py-4 transition-transform active:scale-95 select-none
-                    ${phase === "live" ? cfg.bg : "border-white/5 bg-white/3 opacity-40 cursor-default"}`}
+                    ${phase === "live" ? cfg.bg : "border-[#f0b429]/5 bg-white/3 opacity-40 cursor-default"}`}
                 >
                   <span className="text-2xl mb-1">{cfg.emoji}</span>
                   <span className={`text-[10px] font-black ${cfg.color}`}>{cfg.label}</span>
@@ -391,17 +391,17 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
         {/* Live mini-stats */}
         {phase === "live" && totalEvents >= 3 && (
           <div className="mb-4 grid grid-cols-3 gap-2">
-            <div className="rounded-xl border border-white/10 bg-card/40 p-2.5 text-center">
+            <div className="rounded-xl border border-[#f0b429]/10 bg-card/40 p-2.5 text-center">
               <p className="text-lg font-black text-white">{actionsPerMin.toFixed(1)}</p>
               <p className="text-[9px] text-white/40">per min</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-card/40 p-2.5 text-center">
+            <div className="rounded-xl border border-[#f0b429]/10 bg-card/40 p-2.5 text-center">
               <p className={`text-lg font-black ${passRatio >= 2 ? "text-green-400" : passRatio >= 1 ? "text-amber-400" : "text-red-400"}`}>
                 {passRatio.toFixed(1)}
               </p>
               <p className="text-[9px] text-white/40">pass ratio</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-card/40 p-2.5 text-center">
+            <div className="rounded-xl border border-[#f0b429]/10 bg-card/40 p-2.5 text-center">
               <p className="text-lg font-black text-white">{counts.tackle + counts.header}</p>
               <p className="text-[9px] text-white/40">def. actions</p>
             </div>
@@ -415,11 +415,11 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
             <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4">
               <p className="mb-3 text-xs font-black text-accent uppercase tracking-widest">Session Complete</p>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-2.5 text-center">
+                <div className="rounded-xl border border-[#f0b429]/10 bg-black/20 p-2.5 text-center">
                   <p className="text-xl font-black text-white">{totalEvents}</p>
                   <p className="text-[9px] text-white/40">total actions</p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-2.5 text-center">
+                <div className="rounded-xl border border-[#f0b429]/10 bg-black/20 p-2.5 text-center">
                   <p className="text-xl font-black text-white">{actionsPerMin.toFixed(1)}</p>
                   <p className="text-[9px] text-white/40">actions / min</p>
                 </div>
@@ -478,7 +478,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
               </Link>
             )}
 
-            <button onClick={resetAll} className="w-full rounded-xl border border-white/10 py-2 text-xs font-bold text-white/40 hover:text-white/70">
+            <button onClick={resetAll} className="w-full rounded-xl border border-[#f0b429]/10 py-2 text-xs font-bold text-white/40 hover:text-white/70">
               Start New Session
             </button>
           </div>
@@ -490,7 +490,7 @@ Keep it direct, specific to the numbers, and encouraging. Max 5 sentences total.
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">Recent Sessions</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {history.map(rec => (
-                <div key={rec.id} className="rounded-xl border border-white/10 bg-card/40 p-3">
+                <div key={rec.id} className="rounded-xl border border-[#f0b429]/10 bg-card/40 p-3">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-xs font-bold text-white">{SESSION_LABELS[rec.sessionType]}</p>

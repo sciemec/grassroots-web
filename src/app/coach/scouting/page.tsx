@@ -76,7 +76,7 @@ function PlayerCard({ player, onClick }: { player: Player; onClick: () => void }
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-2xl border border-white/10 bg-card/60 p-4 text-left transition-all hover:border-primary/40 hover:bg-white/5 active:scale-[0.99]"
+      className="w-full rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 text-left transition-all hover:border-primary/40 hover:bg-white/5 active:scale-[0.99]"
     >
       <div className="flex items-center gap-3">
         {/* Avatar */}
@@ -150,7 +150,7 @@ function PlayerDrawer({ player, onClose }: { player: Player; onClose: () => void
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 lg:items-center" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-card p-6 space-y-5"
+        className="w-full max-w-md rounded-2xl border border-[#f0b429]/10 bg-card p-6 space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -179,7 +179,7 @@ function PlayerDrawer({ player, onClose }: { player: Player; onClose: () => void
             { icon: TrendingUp, label: "Avg score", value: score > 0 ? `${score}%` : "—" },
             { icon: Zap, label: "Top skill", value: player.top_skill ?? "—" },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+            <div key={label} className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-3 text-center">
               <Icon className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
               <p className="text-[10px] text-muted-foreground">{label}</p>
               <p className="text-sm font-bold text-white capitalize">{value}</p>
@@ -212,7 +212,7 @@ function PlayerDrawer({ player, onClose }: { player: Player; onClose: () => void
 
         <button
           onClick={onClose}
-          className="w-full rounded-xl border border-white/10 py-2.5 text-sm font-medium text-muted-foreground hover:bg-white/5 transition-colors"
+          className="w-full rounded-xl border border-[#f0b429]/10 py-2.5 text-sm font-medium text-muted-foreground hover:bg-white/5 transition-colors"
         >
           Close
         </button>
@@ -319,7 +319,7 @@ export default function ScoutingDashboardPage() {
               <Loader2 className="h-6 w-6 animate-spin mr-2" /> Loading squad data…
             </div>
           ) : players.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-card/60 p-10 text-center">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-10 text-center">
               <UserSearch className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-semibold text-white">No squad members yet</p>
               <p className="mt-1 text-sm text-muted-foreground">Add players to your squad from the My Squad page first.</p>
@@ -335,7 +335,7 @@ export default function ScoutingDashboardPage() {
                     placeholder="Search players…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-card/60 py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                    className="w-full rounded-lg border border-[#f0b429]/10 bg-card/60 py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
                   />
                 </div>
                 <div className="relative">
@@ -343,7 +343,7 @@ export default function ScoutingDashboardPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                    className="rounded-lg border border-white/10 bg-card/60 py-2.5 pl-7 pr-3 text-sm outline-none focus:ring-1 focus:ring-ring text-muted-foreground"
+                    className="rounded-lg border border-[#f0b429]/10 bg-card/60 py-2.5 pl-7 pr-3 text-sm outline-none focus:ring-1 focus:ring-ring text-muted-foreground"
                   >
                     <option value="score">Sort: Score</option>
                     <option value="sessions">Sort: Sessions</option>
@@ -368,7 +368,7 @@ export default function ScoutingDashboardPage() {
                       className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                         gradeFilter === g
                           ? "bg-primary text-primary-foreground"
-                          : "border border-white/10 bg-card/60 text-muted-foreground hover:bg-white/10"
+                          : "border border-[#f0b429]/10 bg-card/60 text-muted-foreground hover:bg-white/10"
                       }`}
                       style={gradeFilter === g && gradeConf ? { backgroundColor: gradeConf.color, color: "#000" } : undefined}
                     >

@@ -122,7 +122,7 @@ function LoginForm() {
                 onChange={e => { setIdentifier(e.target.value); setError(null); }}
                 placeholder="email@example.com or 07X XXX XXXX"
                 required
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[#f0b429]/10
                            text-white placeholder-white/20 text-sm
                            focus:outline-none focus:border-[#FFD700]/50 transition-all"
               />
@@ -139,7 +139,7 @@ function LoginForm() {
                   onChange={e => { setPassword(e.target.value); setError(null); }}
                   placeholder="••••••••"
                   required
-                  className="w-full px-4 pr-10 py-3 rounded-xl bg-white/5 border border-white/10
+                  className="w-full px-4 pr-10 py-3 rounded-xl bg-white/5 border border-[#f0b429]/10
                              text-white placeholder-white/20 text-sm
                              focus:outline-none focus:border-[#FFD700]/50 transition-all"
                 />

@@ -100,7 +100,7 @@ export default function AllFixturesPage() {
             {error}
           </div>
         ) : visible.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-center">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-8 text-center">
             <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No fixtures found.</p>
           </div>
@@ -112,7 +112,7 @@ export default function AllFixturesPage() {
               return (
                 <div
                   key={fx.id}
-                  className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm"
+                  className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">

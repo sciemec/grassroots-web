@@ -261,7 +261,7 @@ export default function MatchReportPage() {
                   submitted_moments: "", player_of_match: "", area_label: "",
                 });
               }}
-              className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white/70 transition hover:border-white/40"
+              className="rounded-xl border border-[#f0b429]/20 px-5 py-2.5 text-sm font-semibold text-white/70 transition hover:border-[#f0b429]/40"
             >
               Submit another report
             </button>
@@ -410,7 +410,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#0d1f13] text-white">
       {/* Top bar */}
-      <div className="border-b border-white/10 bg-[#0d1f13]/90 px-4 py-3 backdrop-blur-md">
+      <div className="border-b border-[#f0b429]/10 bg-[#0d1f13]/90 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -456,6 +456,6 @@ function inputCls(error?: string): string {
     "placeholder:text-white/30 outline-none transition",
     error
       ? "border-red-500/50 focus:border-red-400"
-      : "border-white/15 focus:border-[#f0b429]/50",
+      : "border-[#f0b429]/15 focus:border-[#f0b429]/50",
   ].join(" ");
 }

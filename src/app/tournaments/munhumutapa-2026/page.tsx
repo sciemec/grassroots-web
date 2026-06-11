@@ -184,7 +184,7 @@ export default function MunhumutapaPage() {
           <div className="rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]">Zimbabwe · Open National</p>
           </div>
-          <div className="rounded-xl border border-white/20 bg-white/5 px-3 py-1.5">
+          <div className="rounded-xl border border-[#f0b429]/20 bg-white/5 px-3 py-1.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Grassroots Sports</p>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function MunhumutapaPage() {
             </button>
             <button
               onClick={shareViaWhatsApp}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-white"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#f0b429]/10 bg-white/5 py-3 text-sm font-semibold text-white"
             >
               <Share2 className="h-4 w-4 text-green-400" />
               Share Registration Link via WhatsApp
@@ -244,7 +244,7 @@ export default function MunhumutapaPage() {
 
         {/* ── Registration Form ─────────────────────────────────────────────── */}
         {showForm && step !== "done" && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
 
             {/* Step indicator */}
             <div className="mb-5 flex items-center gap-2">
@@ -271,7 +271,7 @@ export default function MunhumutapaPage() {
                     value={clubName}
                     onChange={e => setClubName(e.target.value)}
                     placeholder="e.g. Harare City FC, Churchill High School"
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
+                    className="w-full rounded-xl border border-[#f0b429]/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
                   />
                 </div>
 
@@ -292,7 +292,7 @@ export default function MunhumutapaPage() {
                           className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-colors ${
                             active
                               ? "bg-[#f0b429] text-[#0a1f0e]"
-                              : "border border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                              : "border border-[#f0b429]/10 bg-white/5 text-white/60 hover:bg-white/10"
                           }`}
                         >
                           <span>{emoji}</span>
@@ -309,7 +309,7 @@ export default function MunhumutapaPage() {
                     value={coachName}
                     onChange={e => setCoachName(e.target.value)}
                     placeholder="Full name"
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
+                    className="w-full rounded-xl border border-[#f0b429]/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
                   />
                 </div>
 
@@ -320,7 +320,7 @@ export default function MunhumutapaPage() {
                     onChange={e => setCoachPhone(e.target.value)}
                     placeholder="07X XXX XXXX"
                     type="tel"
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
+                    className="w-full rounded-xl border border-[#f0b429]/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
                   />
                 </div>
 
@@ -331,7 +331,7 @@ export default function MunhumutapaPage() {
                     onChange={e => setCoachWA(e.target.value)}
                     placeholder="Leave blank if same as phone"
                     type="tel"
-                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
+                    className="w-full rounded-xl border border-[#f0b429]/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-1 focus:ring-[#f0b429]"
                   />
                 </div>
 
@@ -372,7 +372,7 @@ export default function MunhumutapaPage() {
                       value={p.name}
                       onChange={e => updatePlayer(i, "name", e.target.value)}
                       placeholder={`Player ${i + 1}`}
-                      className="col-span-4 rounded-lg border border-white/10 bg-black/20 px-2 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-[#f0b429]"
+                      className="col-span-4 rounded-lg border border-[#f0b429]/10 bg-black/20 px-2 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-[#f0b429]"
                     />
                     <input
                       value={p.age}
@@ -380,12 +380,12 @@ export default function MunhumutapaPage() {
                       placeholder="Age"
                       type="number"
                       min="10" max="17"
-                      className="col-span-2 rounded-lg border border-white/10 bg-black/20 px-2 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-[#f0b429]"
+                      className="col-span-2 rounded-lg border border-[#f0b429]/10 bg-black/20 px-2 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-[#f0b429]"
                     />
                     <select
                       value={p.position}
                       onChange={e => updatePlayer(i, "position", e.target.value)}
-                      className="col-span-3 rounded-lg border border-white/10 bg-black/20 px-1 py-2 text-xs text-white outline-none focus:ring-1 focus:ring-[#f0b429]"
+                      className="col-span-3 rounded-lg border border-[#f0b429]/10 bg-black/20 px-1 py-2 text-xs text-white outline-none focus:ring-1 focus:ring-[#f0b429]"
                     >
                       <option value="">Pos</option>
                       {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
@@ -394,7 +394,7 @@ export default function MunhumutapaPage() {
                       value={p.school}
                       onChange={e => updatePlayer(i, "school", e.target.value)}
                       placeholder="School"
-                      className="col-span-2 rounded-lg border border-white/10 bg-black/20 px-2 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-[#f0b429]"
+                      className="col-span-2 rounded-lg border border-[#f0b429]/10 bg-black/20 px-2 py-2 text-xs text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-[#f0b429]"
                     />
                     <button
                       onClick={() => removeRow(i)}
@@ -415,7 +415,7 @@ export default function MunhumutapaPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setStep("details")}
-                    className="flex-1 rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/60"
+                    className="flex-1 rounded-xl border border-[#f0b429]/10 py-3 text-sm font-semibold text-white/60"
                   >
                     Back
                   </button>
@@ -435,7 +435,7 @@ export default function MunhumutapaPage() {
               <div className="space-y-4">
                 <h2 className="font-bold text-white">Confirm Registration</h2>
 
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-2 text-sm">
+                <div className="rounded-xl border border-[#f0b429]/10 bg-black/20 p-4 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-white/50">Club</span>
                     <span className="font-semibold text-white">{clubName}</span>
@@ -471,7 +471,7 @@ export default function MunhumutapaPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setStep("players")}
-                    className="flex-1 rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/60"
+                    className="flex-1 rounded-xl border border-[#f0b429]/10 py-3 text-sm font-semibold text-white/60"
                   >
                     Back
                   </button>
@@ -537,7 +537,7 @@ export default function MunhumutapaPage() {
 
         {/* ── What clubs get ───────────────────────────────────────────────── */}
         {step !== "done" && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
             <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#f0b429]">What Your Club Gets — Free</p>
             <div className="space-y-3">
               {[
@@ -566,7 +566,7 @@ export default function MunhumutapaPage() {
             </p>
             <div className="space-y-2">
               {allRegs.map(r => (
-                <div key={r.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div key={r.id} className="flex items-center justify-between rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3">
                   <div>
                     <p className="text-sm font-semibold text-white">{r.club_name}</p>
                     <p className="text-xs text-white/40">{r.age_group} {r.gender} · {r.players.length} players</p>
