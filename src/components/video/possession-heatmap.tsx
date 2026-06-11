@@ -186,7 +186,7 @@ export function PossessionHeatmap({ videoFile }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-4 space-y-4">
+    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export function PossessionHeatmap({ videoFile }: Props) {
         {status === "done" && (
           <button
             onClick={reset}
-            className="flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-xs text-muted-foreground hover:text-white transition-colors"
+            className="flex items-center gap-1 rounded-lg border border-[#f0b429]/10 px-2 py-1 text-xs text-muted-foreground hover:text-white transition-colors"
           >
             <RefreshCw className="h-3 w-3" /> Re-analyse
           </button>
@@ -301,7 +301,7 @@ function PitchHeatmap({ grid }: { grid: HeatGrid }) {
   const cellH = H / GRID_ROWS;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10">
+    <div className="overflow-hidden rounded-xl border border-[#f0b429]/10">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"

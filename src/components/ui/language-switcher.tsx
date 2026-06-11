@@ -42,7 +42,7 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/40 transition-colors"
+        className="flex items-center gap-1.5 rounded-lg border border-[#f0b429]/10 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/40 transition-colors"
         title="Change language"
       >
         <Globe className="h-3.5 w-3.5" />

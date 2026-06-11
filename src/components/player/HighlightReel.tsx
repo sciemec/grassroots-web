@@ -102,7 +102,7 @@ export function HighlightReel({
 
   if (loading) {
     return (
-      <div className="mb-8 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+      <div className="mb-8 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
         <div className="mb-4 flex items-center gap-2">
           <Film className="h-4 w-4 text-[#f0b429]" />
           <h3 className="font-semibold text-white">Highlight Reel</h3>
@@ -118,7 +118,7 @@ export function HighlightReel({
 
   if (!totalClips) {
     return (
-      <div className="mb-8 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+      <div className="mb-8 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
         <div className="mb-3 flex items-center gap-2">
           <Film className="h-4 w-4 text-[#f0b429]" />
           <h3 className="font-semibold text-white">Highlight Reel</h3>
@@ -139,7 +139,7 @@ export function HighlightReel({
 
   return (
     <>
-      <div className="mb-8 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+      <div className="mb-8 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5 backdrop-blur-sm">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Film className="h-4 w-4 text-[#f0b429]" />
@@ -165,7 +165,7 @@ export function HighlightReel({
               <button
                 key={clip.id}
                 onClick={() => setActiveVideo({ kind: "showcase", clip })}
-                className="group w-44 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5 text-left transition-colors hover:border-[#f0b429]/40"
+                className="group w-44 flex-shrink-0 overflow-hidden rounded-xl border border-[#f0b429]/10 bg-white/5 text-left transition-colors hover:border-[#f0b429]/40"
               >
                 <div className="relative h-28 bg-black/40">
                   {clip.thumbnail_url ? (
@@ -224,7 +224,7 @@ export function HighlightReel({
                   <button
                     key={hl.id}
                     onClick={() => setActiveVideo({ kind: "auto", clip: hl })}
-                    className="group w-44 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5 text-left transition-colors hover:border-purple-400/40"
+                    className="group w-44 flex-shrink-0 overflow-hidden rounded-xl border border-[#f0b429]/10 bg-white/5 text-left transition-colors hover:border-purple-400/40"
                   >
                     <div className="relative flex h-28 items-center justify-center bg-gradient-to-br from-purple-900/40 to-black/60">
                       {/* Play overlay */}

@@ -62,7 +62,7 @@ export default function PairDetail({ pair, playerAName, playerBName }: PairDetai
   return (
     <div className="space-y-5">
       {/* Overall score hero */}
-      <div className={`rounded-2xl border border-white/10 bg-white/5 p-6 text-center ring-1 ${ringColor}`}>
+      <div className={`rounded-2xl border border-[#f0b429]/10 bg-white/5 p-6 text-center ring-1 ${ringColor}`}>
         <div className={`text-8xl font-black leading-none ${overallColor}`}>
           {score}
           <span className="text-3xl text-white/30">%</span>
@@ -75,7 +75,7 @@ export default function PairDetail({ pair, playerAName, playerBName }: PairDetai
       </div>
 
       {/* Score breakdown */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4">
+      <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4 space-y-4">
         <h3 className="text-sm font-bold text-white/80">Score Breakdown</h3>
         <ScoreBar label="Style Similarity"   weight="60%" value={pair.style_score}       color="bg-blue-500" />
         <ScoreBar label="Demographic Match"  weight="25%" value={pair.demographic_score} color="bg-purple-500" />
@@ -123,12 +123,12 @@ export default function PairDetail({ pair, playerAName, playerBName }: PairDetai
 
       {/* AI explanation */}
       {pair.explanation_en ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
           <h3 className="text-sm font-bold text-white/80 mb-2">THUTO Analysis</h3>
           <p className="text-white/70 text-sm leading-relaxed">{pair.explanation_en}</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-4">
           <h3 className="text-sm font-bold text-white/50 mb-1">THUTO Analysis</h3>
           <p className="text-white/30 text-xs">
             AI explanation not yet generated. It will appear after the nightly batch job runs (02:00 Harare).

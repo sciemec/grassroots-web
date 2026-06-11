@@ -624,7 +624,7 @@ function FormationDiagram({ formation }: { formation: string }) {
   if (!data) return null;
   return (
     <div className="mt-2 rounded-xl overflow-hidden border border-teal-500/20 bg-[#1a3d20]">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/10">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#f0b429]/10">
         <span className="text-xs font-bold text-white/70">Formation</span>
         <span className="text-xs font-bold text-teal-400">{formation}</span>
       </div>
@@ -1389,14 +1389,14 @@ export default function ThutoChat() {
       {/* ── Chat Panel — only after hydration confirms onboarded ─────────── */}
       {hydrated && onboarded && open && (
         <div
-          className="fixed bottom-20 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40"
+          className="fixed bottom-20 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-[#f0b429]/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40"
           style={{ width: "min(400px, calc(100vw - 2rem))", height: "min(500px, calc(100vh - 7rem))" }}
           role="dialog"
           aria-label="THUTO AI Chat"
         >
           {/* Header */}
           <div className="flex-shrink-0">
-            <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-3">
+            <div className="flex items-center gap-2.5 border-b border-[#f0b429]/10 px-4 py-3">
               <ThutoAvatar size="lg" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-white">{isAmaraMode ? "AMARA" : "THUTO"}</p>
@@ -1439,7 +1439,7 @@ export default function ThutoChat() {
 
             {/* DNA completeness bar — visible when 0 < completeness < 100 */}
             {dnaCompleteness > 0 && dnaCompleteness < 100 && (
-              <div className="border-b border-white/5 px-4 pt-2 pb-2">
+              <div className="border-b border-[#f0b429]/5 px-4 pt-2 pb-2">
                 <div className="mb-1 flex items-center justify-between">
                   <p className="text-[10px] text-white/40">THUTO is getting to know you</p>
                   <p className="text-[10px] font-medium text-teal-400">{dnaCompleteness}% complete</p>
@@ -1517,8 +1517,8 @@ export default function ThutoChat() {
           )}
 
           {/* Input */}
-          <div className="flex-shrink-0 border-t border-white/10 px-3 py-2.5">
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/50 transition-colors">
+          <div className="flex-shrink-0 border-t border-[#f0b429]/10 px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/50 transition-colors">
               <input
                 ref={inputRef}
                 value={input}
@@ -1574,7 +1574,7 @@ export default function ThutoChat() {
               ? "border-amber-400/70 bg-amber-700/80 shadow-amber-500/40"
               : voiceState === "processing"
               ? "border-teal-400/50 bg-teal-700/80 shadow-teal-500/30"
-              : "border-white/20 bg-black/40 shadow-black/20 hover:border-teal-400/40 hover:bg-teal-900/60"
+              : "border-[#f0b429]/20 bg-black/40 shadow-black/20 hover:border-teal-400/40 hover:bg-teal-900/60"
           }`}
         >
           {voiceState === "listening" ? (

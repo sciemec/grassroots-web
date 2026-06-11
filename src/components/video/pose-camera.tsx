@@ -356,9 +356,9 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
     : "#ef4444";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/60 overflow-hidden">
+    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0b429]/10">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-accent" />
           <span className="text-sm font-semibold text-white">Pose Analysis</span>
@@ -452,7 +452,7 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
                 <p className="text-sm text-red-300">{errorMsg}</p>
                 <button
                   onClick={startCamera}
-                  className="rounded-xl border border-white/20 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
+                  className="rounded-xl border border-[#f0b429]/20 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
                 >
                   Try again
                 </button>
@@ -475,7 +475,7 @@ export function PoseCamera({ onScore, focusArea }: PoseCameraProps) {
 
       {/* Score breakdown — shown when running */}
       {poseState === "running" && displayScore && (
-        <div className="border-t border-white/10 px-5 py-4 space-y-2.5">
+        <div className="border-t border-[#f0b429]/10 px-5 py-4 space-y-2.5">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent/70">
             Movement Breakdown
           </p>

@@ -70,8 +70,8 @@ function eventStyle(type: string): { card: string; badge: string; text: string }
       };
     default:
       return {
-        card:  'bg-white/5 border-white/10',
-        badge: 'bg-white/10 text-gray-300 border border-white/10',
+        card:  'bg-white/5 border-[#f0b429]/10',
+        badge: 'bg-white/10 text-gray-300 border border-[#f0b429]/10',
         text:  'text-gray-200',
       };
   }

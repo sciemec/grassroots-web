@@ -27,7 +27,7 @@ export function ScoutViewBadge({ playerId }: ScoutViewBadgeProps) {
 
   if (count === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2.5">
+      <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-[#f0b429]/10 px-4 py-2.5">
         <Eye className="h-4 w-4 text-white/30 flex-shrink-0" />
         <p className="text-xs text-white/50">
           No scout views yet.{" "}
@@ -59,7 +59,7 @@ export function ScoutViewBadge({ playerId }: ScoutViewBadgeProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2.5">
+    <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-[#f0b429]/10 px-4 py-2.5">
       <Eye className="h-4 w-4 text-[#f0b429] flex-shrink-0" />
       <p className="text-xs text-[#f0b429] font-medium">
         {count} scout{count !== 1 ? "s" : ""} viewed your profile this week.

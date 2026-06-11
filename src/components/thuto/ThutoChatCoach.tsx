@@ -626,13 +626,13 @@ export default function ThutoChatCoach() {
       {/* ── Chat Panel ── */}
       {open && (
         <div
-          className="fixed bottom-20 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40"
+          className="fixed bottom-20 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border border-[#f0b429]/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40"
           style={{ width: "min(400px, calc(100vw - 2rem))", height: "min(500px, calc(100vh - 7rem))" }}
           role="dialog"
           aria-label="THUTO Coaching Assistant"
         >
           {/* Header */}
-          <div className="flex items-center gap-2.5 flex-shrink-0 border-b border-white/10 px-4 py-3">
+          <div className="flex items-center gap-2.5 flex-shrink-0 border-b border-[#f0b429]/10 px-4 py-3">
             <ThutoAvatar size="lg" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-white">THUTO</p>
@@ -710,8 +710,8 @@ export default function ThutoChatCoach() {
           )}
 
           {/* Input */}
-          <div className="flex-shrink-0 border-t border-white/10 px-3 py-2.5">
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/50 transition-colors">
+          <div className="flex-shrink-0 border-t border-[#f0b429]/10 px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/50 transition-colors">
               <input
                 ref={inputRef}
                 value={input}

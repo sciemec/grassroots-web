@@ -71,7 +71,7 @@ export function GuestGateProvider({ children }: { children: React.ReactNode }) {
               </Link>
               <Link
                 href="/login"
-                className="block w-full py-3 rounded-xl border border-white/10 text-white/70 font-medium text-sm hover:border-white/30 hover:text-white transition-colors"
+                className="block w-full py-3 rounded-xl border border-[#f0b429]/10 text-white/70 font-medium text-sm hover:border-[#f0b429]/30 hover:text-white transition-colors"
                 onClick={() => setOpen(false)}
               >
                 Sign In

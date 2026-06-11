@@ -25,7 +25,7 @@ export function PublicNavbar() {
 
   return (
     <header
-      className="fixed top-0 z-50 w-full border-b border-white/10 backdrop-blur-md"
+      className="fixed top-0 z-50 w-full border-b border-[#f0b429]/10 backdrop-blur-md"
       style={{
         background: "rgba(27,94,32,0.92)",
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cpolygon points='40,8 52,32 40,56 28,32' fill='none' stroke='%23E6A817' stroke-width='0.6' opacity='0.15'/%3E%3Cpolygon points='0,8 12,32 0,56' fill='none' stroke='%23E6A817' stroke-width='0.6' opacity='0.15'/%3E%3Cpolygon points='80,8 80,56 68,32' fill='none' stroke='%23E6A817' stroke-width='0.6' opacity='0.15'/%3E%3C/svg%3E")`,
@@ -99,7 +99,7 @@ export function PublicNavbar() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-white/10 bg-green-950 px-4 py-4 md:hidden">
+        <div className="border-t border-[#f0b429]/10 bg-green-950 px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-3">
             {links.map((l) => (
               <Link
@@ -111,7 +111,7 @@ export function PublicNavbar() {
                 {l.label}
               </Link>
             ))}
-            <hr className="border-white/10" />
+            <hr className="border-[#f0b429]/10" />
             {user ? (
               <Link href={roleHomePath(user.role)} className="text-sm font-semibold text-green-400">
                 Go to Hub →

@@ -30,10 +30,10 @@ export function MatchLoader({ onSelect, onClose, title = "Load from Saved Match"
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-card shadow-2xl">
+      <div className="w-full max-w-lg rounded-2xl border border-[#f0b429]/10 bg-card shadow-2xl">
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[#f0b429]/10 px-5 py-4">
           <h3 className="flex items-center gap-2 font-semibold text-white">
             <Database className="h-4 w-4 text-primary" />
             {title}
@@ -73,7 +73,7 @@ export function MatchLoader({ onSelect, onClose, title = "Load from Saved Match"
                 <button
                   key={m.id}
                   onClick={() => onSelect(m)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-card/60 px-4 py-3 text-left transition-colors hover:bg-card hover:border-primary/40"
+                  className="flex w-full items-center gap-3 rounded-xl border border-[#f0b429]/10 bg-card/60 px-4 py-3 text-left transition-colors hover:bg-card hover:border-primary/40"
                 >
                   <div className="flex-1">
                     <p className="font-semibold text-white text-sm">

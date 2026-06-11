@@ -342,10 +342,10 @@ export default function ThutoOnboarding({ onComplete }: Props) {
       aria-modal="true"
       aria-label="THUTO AI Player Agent Onboarding"
     >
-      <div className="relative flex h-full max-h-[700px] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40">
+      <div className="relative flex h-full max-h-[700px] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-[#f0b429]/10 bg-[#0d1f12] shadow-2xl shadow-teal-900/40">
 
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+        <div className="flex items-center gap-3 border-b border-[#f0b429]/10 px-5 py-4">
           <ThutoAvatar />
           <div className="min-w-0 flex-1">
             <p className="font-bold text-white">THUTO</p>
@@ -454,8 +454,8 @@ export default function ThutoOnboarding({ onComplete }: Props) {
 
         {/* Input area */}
         {isAwaiting && (
-          <div className="border-t border-white/10 px-4 py-3">
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/60 transition-colors">
+          <div className="border-t border-[#f0b429]/10 px-4 py-3">
+            <div className="flex items-center gap-2 rounded-xl border border-[#f0b429]/10 bg-white/5 px-3 py-2 focus-within:border-teal-500/60 transition-colors">
               <input
                 ref={inputRef}
                 value={input}

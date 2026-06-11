@@ -68,7 +68,7 @@ export default function VideoCard({ video, size = "normal", onPlay }: VideoCardP
   return (
     <button
       onClick={() => onPlay(video)}
-      className={`group flex flex-col text-left rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 ${size === "large" ? "w-full" : ""}`}
+      className={`group flex flex-col text-left rounded-xl overflow-hidden border border-[#f0b429]/10 bg-white/5 hover:bg-white/10 hover:border-[#f0b429]/20 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 ${size === "large" ? "w-full" : ""}`}
     >
       {/* Thumbnail */}
       <div className="relative w-full aspect-video bg-black/40 overflow-hidden">

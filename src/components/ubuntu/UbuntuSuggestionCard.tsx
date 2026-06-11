@@ -71,7 +71,7 @@ export default function UbuntuSuggestionCard({
   // ── Declined ──────────────────────────────────────────────────────────────
   if (declined) {
     return (
-      <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3">
+      <div className="rounded-2xl border border-[#f0b429]/5 bg-white/[0.02] px-4 py-3">
         <p className="text-xs text-white/25 italic">
           Suggestion passed — THUTO will find another match tomorrow.
         </p>
@@ -92,7 +92,7 @@ export default function UbuntuSuggestionCard({
       </div>
 
       {/* Match player card */}
-      <div className="ml-12 rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
+      <div className="ml-12 rounded-xl border border-[#f0b429]/10 bg-white/5 p-3 space-y-2">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-teal-800/60 text-sm font-bold text-teal-300">
             {matchName.charAt(0).toUpperCase()}
@@ -141,7 +141,7 @@ export default function UbuntuSuggestionCard({
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-teal-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
         >
           {responding ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#f0b429]/30 border-t-white" />
           ) : (
             <CheckCircle2 className="h-4 w-4" />
           )}
@@ -150,7 +150,7 @@ export default function UbuntuSuggestionCard({
         <button
           onClick={() => respond("declined")}
           disabled={responding}
-          className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/40 transition-colors hover:border-white/20 hover:text-white/70 disabled:opacity-50"
+          className="rounded-xl border border-[#f0b429]/10 px-4 py-2.5 text-sm text-white/40 transition-colors hover:border-[#f0b429]/20 hover:text-white/70 disabled:opacity-50"
         >
           Not now
         </button>

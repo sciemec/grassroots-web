@@ -51,7 +51,7 @@ export default function VideoPlayer({ video, onClose }: VideoPlayerProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full max-w-4xl rounded-2xl overflow-hidden bg-[#0f2a14] border border-white/10 shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-4xl rounded-2xl overflow-hidden bg-[#0f2a14] border border-[#f0b429]/10 shadow-2xl flex flex-col">
         {/* Close */}
         <button
           onClick={onClose}

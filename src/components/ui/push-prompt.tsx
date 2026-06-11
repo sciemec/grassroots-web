@@ -47,7 +47,7 @@ export function PushPrompt() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-20 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-white/10 bg-card shadow-2xl p-4">
+    <div className="fixed bottom-20 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-[#f0b429]/10 bg-card shadow-2xl p-4">
       <button
         onClick={dismiss}
         className="absolute right-3 top-3 rounded-md p-1 text-muted-foreground hover:bg-white/10 transition-colors"
@@ -75,7 +75,7 @@ export function PushPrompt() {
             </button>
             <button
               onClick={dismiss}
-              className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-muted-foreground hover:bg-white/5 transition-colors"
+              className="rounded-lg border border-[#f0b429]/10 px-3 py-1.5 text-xs text-muted-foreground hover:bg-white/5 transition-colors"
             >
               Not now
             </button>

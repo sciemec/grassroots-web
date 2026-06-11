@@ -60,7 +60,7 @@ export function ApkDownloadButton({ className = "", size = "lg" }: Props) {
   // Desktop — show QR hint
   return (
     <div className={`text-center ${className}`}>
-      <div className="inline-flex items-center gap-2 rounded-xl border border-white/20 px-6 py-3 text-sm text-white/60">
+      <div className="inline-flex items-center gap-2 rounded-xl border border-[#f0b429]/20 px-6 py-3 text-sm text-white/60">
         <Monitor className="h-4 w-4" />
         Open this page on your Android phone to download
       </div>

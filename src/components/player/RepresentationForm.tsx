@@ -62,7 +62,7 @@ export function RepresentationForm({ playerId, playerName }: Props) {
   // Success state
   if (status === "success") {
     return (
-      <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+      <div className="mt-6 rounded-2xl border border-[#f0b429]/10 bg-white/5 p-6 text-center">
         <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-[#f0b429]" />
         <h3 className="font-bold text-white">Enquiry Received</h3>
         <p className="mt-1.5 text-sm text-white/60">
@@ -91,7 +91,7 @@ export function RepresentationForm({ playerId, playerName }: Props) {
           </div>
         </button>
       ) : (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-5">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-white">Representation Enquiry</h3>
             <button
@@ -136,7 +136,7 @@ export function RepresentationForm({ playerId, playerName }: Props) {
                 value={form.scout_name}
                 onChange={e => setForm(f => ({ ...f, scout_name: e.target.value }))}
                 placeholder="e.g. James Mutasa"
-                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50"
+                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-[#f0b429]/10 focus:border-[#f0b429]/50"
                 required
               />
             </div>
@@ -151,7 +151,7 @@ export function RepresentationForm({ playerId, playerName }: Props) {
                 value={form.scout_email}
                 onChange={e => setForm(f => ({ ...f, scout_email: e.target.value }))}
                 placeholder="you@club.com"
-                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50"
+                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-[#f0b429]/10 focus:border-[#f0b429]/50"
                 required
               />
             </div>
@@ -166,7 +166,7 @@ export function RepresentationForm({ playerId, playerName }: Props) {
                 value={form.organisation}
                 onChange={e => setForm(f => ({ ...f, organisation: e.target.value }))}
                 placeholder="e.g. Dynamos FC"
-                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50"
+                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-[#f0b429]/10 focus:border-[#f0b429]/50"
               />
             </div>
 
@@ -204,7 +204,7 @@ export function RepresentationForm({ playerId, playerName }: Props) {
                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                 rows={5}
                 placeholder={`Introduce yourself and explain why you are interested in ${playerName}...`}
-                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-white/10 focus:border-[#f0b429]/50 resize-none"
+                className="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none border border-[#f0b429]/10 focus:border-[#f0b429]/50 resize-none"
                 required
               />
               <div className="mt-1 flex justify-between">

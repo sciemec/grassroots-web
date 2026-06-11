@@ -94,7 +94,7 @@ export function CameraPermissionHelp({ onRetry }: CameraPermissionHelpProps) {
       </div>
 
       {info && (
-        <div className="w-full rounded-xl border border-white/10 bg-white/5 p-4 text-left">
+        <div className="w-full rounded-xl border border-[#f0b429]/10 bg-white/5 p-4 text-left">
           <div className="mb-3 flex items-center gap-2">
             <info.Icon className="h-4 w-4 text-amber-400" />
             <span className="text-xs font-semibold text-amber-400">{info.device}</span>

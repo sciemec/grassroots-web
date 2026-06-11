@@ -67,18 +67,18 @@ export default function TacticalSimulationBoard({
   };
 
   return (
-    <div className="w-full bg-[#1a3a23] rounded-2xl border border-white/20 p-4 shadow-inner relative overflow-hidden">
+    <div className="w-full bg-[#1a3a23] rounded-2xl border border-[#f0b429]/20 p-4 shadow-inner relative overflow-hidden">
       {/* 2D Pitch Representation Canvas Frame */}
       <div 
         ref={pitchRef}
-        className="w-full aspect-[4/3] border-2 border-white/40 rounded-xl relative bg-[#1a5c2a]"
+        className="w-full aspect-[4/3] border-2 border-[#f0b429]/40 rounded-xl relative bg-[#1a5c2a]"
         style={{
           backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px)",
           backgroundSize: "10% 100%"
         }}
       >
         {/* Pitch Markings (Center Circle Line) */}
-        <div className="absolute top-1/2 left-1/2 w-1/4 h-1/3 border border-white/30 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-1/4 h-1/3 border border-[#f0b429]/30 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
         <div className="absolute top-0 left-1/2 h-full w-[1px] bg-white/30 pointer-events-none" />
 
         {/* Render Player Elements */}
@@ -113,7 +113,7 @@ export default function TacticalSimulationBoard({
         </button>
         <button
           onClick={resetBoard}
-          className="border border-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold shadow hover:bg-white/10"
+          className="border border-[#f0b429]/20 text-white px-4 py-2 rounded-xl text-xs font-bold shadow hover:bg-white/10"
         >
           {t("tactics.reset")}
         </button>

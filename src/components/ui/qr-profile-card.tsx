@@ -53,7 +53,7 @@ export function QRProfileCard({ playerId, playerName, ageGroup, province, selfie
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/60 p-5">
+    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-5">
       <div className="mb-4 flex items-center gap-2">
         <QrCode className="h-4 w-4 text-primary" />
         <h3 className="font-semibold text-white">Player QR Card</h3>
@@ -91,7 +91,7 @@ export function QRProfileCard({ playerId, playerName, ageGroup, province, selfie
             <button
               onClick={download}
               disabled={!ready}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white hover:bg-white/10 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-xs font-medium text-white hover:bg-white/10 disabled:opacity-40 transition-colors"
             >
               <Download className="h-3.5 w-3.5" /> Save
             </button>

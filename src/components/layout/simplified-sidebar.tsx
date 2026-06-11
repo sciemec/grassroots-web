@@ -98,7 +98,7 @@ export function SimplifiedSidebar() {
         `}
       >
         {/* Logo */}
-        <div className="p-5 border-b border-white/10">
+        <div className="p-5 border-b border-[#f0b429]/10">
           <h1 className="text-lg font-black tracking-tight">
             GrassRoots<span className="text-[#f0b429]">Sports</span>
           </h1>
@@ -130,7 +130,7 @@ export function SimplifiedSidebar() {
         </nav>
 
         {/* User info + logout */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-[#f0b429]/10">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-[#f0b429]/20 flex items-center justify-center">
               <span className="text-xs font-bold text-[#f0b429]">

@@ -20,7 +20,7 @@ export function AdBanner({ slot, className = "", fallback = false }: AdBannerPro
 
     return (
       <div
-        className={`flex items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 text-center ${className}`}
+        className={`flex items-center justify-center rounded-xl border border-dashed border-[#f0b429]/20 bg-white/5 text-center ${className}`}
         style={{ minHeight: 60 }}
       >
         <div>

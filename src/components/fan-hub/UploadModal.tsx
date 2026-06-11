@@ -161,9 +161,9 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full max-w-lg rounded-2xl bg-[#0f2a14] border border-white/10 shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg rounded-2xl bg-[#0f2a14] border border-[#f0b429]/10 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#f0b429]/10">
           <h2 className="text-white font-bold text-lg flex items-center gap-2">
             <Upload className="w-5 h-5 text-amber-400" />
             Upload a Clip
@@ -183,7 +183,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
               onDragLeave={() => setDragOver(false)}
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
-                dragOver ? "border-amber-400 bg-amber-400/5" : "border-white/20 hover:border-white/40 hover:bg-white/5"
+                dragOver ? "border-amber-400 bg-amber-400/5" : "border-[#f0b429]/20 hover:border-[#f0b429]/40 hover:bg-white/5"
               }`}
             >
               <Film className="w-12 h-12 text-amber-400/60 mx-auto mb-3" />
@@ -232,7 +232,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={120}
                   placeholder="e.g. Dynamos FC vs Caps United — Goals"
-                  className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
+                  className="w-full rounded-lg bg-white/5 border border-[#f0b429]/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
                 />
               </div>
 
@@ -243,7 +243,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
                 <select
                   value={clipType}
                   onChange={(e) => setClipType(e.target.value)}
-                  className="w-full rounded-lg bg-[#0a1f0e] border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
+                  className="w-full rounded-lg bg-[#0a1f0e] border border-[#f0b429]/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
                 >
                   {CLIP_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -258,7 +258,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
                 <select
                   value={province}
                   onChange={(e) => setProvince(e.target.value)}
-                  className="w-full rounded-lg bg-[#0a1f0e] border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
+                  className="w-full rounded-lg bg-[#0a1f0e] border border-[#f0b429]/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
                 >
                   <option value="">Select province...</option>
                   {PROVINCES.map((p) => (
@@ -276,7 +276,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
                   value={uploaderName}
                   onChange={(e) => setUploaderName(e.target.value)}
                   placeholder="Anonymous if left blank"
-                  className="w-full rounded-lg bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
+                  className="w-full rounded-lg bg-white/5 border border-[#f0b429]/10 text-white px-3 py-2 text-sm focus:outline-none focus:border-amber-400/60"
                 />
               </div>
 

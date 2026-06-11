@@ -188,7 +188,7 @@ export default function BeautifulMoment() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0d1f13] to-[#0d1a0d]">
+    <div className="mb-6 overflow-hidden rounded-2xl border border-[#f0b429]/10 bg-gradient-to-br from-[#0d1f13] to-[#0d1a0d]">
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4">
@@ -232,7 +232,7 @@ export default function BeautifulMoment() {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-white/10 px-4">
+      <div className="flex border-b border-[#f0b429]/10 px-4">
         {(["add", "archive"] as const).map((tab) => (
           <button
             key={tab}
@@ -293,7 +293,7 @@ export default function BeautifulMoment() {
               rows={4}
               maxLength={2000}
               placeholder="Write your beautiful moment here… a skill you pulled off, a laugh, a feeling — anything that made this game feel alive."
-              className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#f0b429]/40 focus:ring-1 focus:ring-[#f0b429]/20 transition-colors"
+              className="w-full resize-none rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-[#f0b429]/40 focus:ring-1 focus:ring-[#f0b429]/20 transition-colors"
             />
             {caption.length > 1800 && (
               <p className="text-right text-[10px] text-white/30">{caption.length}/2000</p>
@@ -310,7 +310,7 @@ export default function BeautifulMoment() {
               />
               <button
                 onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex items-center gap-2 rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <Camera className="h-3.5 w-3.5" />
                 {photo ? "Change photo" : "Add photo"}
@@ -321,7 +321,7 @@ export default function BeautifulMoment() {
             </div>
 
             {/* Privacy toggle */}
-            <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-3">
               <div className="flex items-center gap-2.5">
                 {isPublic ? (
                   <Globe className="h-4 w-4 text-[#f0b429]" />
@@ -407,7 +407,7 @@ export default function BeautifulMoment() {
                 {moments.map((m) => (
                   <div
                     key={m.id}
-                    className="overflow-hidden rounded-xl border border-white/10 bg-white/5"
+                    className="overflow-hidden rounded-xl border border-[#f0b429]/10 bg-white/5"
                   >
                     {/* Moment header row */}
                     <div className="flex items-start justify-between gap-3 px-4 py-3">
@@ -449,7 +449,7 @@ export default function BeautifulMoment() {
 
                     {/* Expanded detail */}
                     {expanded === m.id && (
-                      <div className="border-t border-white/10 px-4 py-3 space-y-3">
+                      <div className="border-t border-[#f0b429]/10 px-4 py-3 space-y-3">
                         {/* Photo */}
                         {m.media_url && (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -476,7 +476,7 @@ export default function BeautifulMoment() {
                         <button
                           onClick={() => toggleVisibility(m)}
                           disabled={togglingId === m.id}
-                          className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+                          className="flex items-center gap-2 rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-2 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
                         >
                           {togglingId === m.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />

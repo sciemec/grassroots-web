@@ -104,7 +104,7 @@ function PitchView({
   return (
     <svg
       viewBox={`0 0 ${VW} ${VH}`}
-      className="w-full rounded-xl border border-white/10"
+      className="w-full rounded-xl border border-[#f0b429]/10"
       style={{ background: "#1a5c2a" }}
     >
       {/* Pitch markings */}
@@ -218,7 +218,7 @@ function HeatmapCanvas({ heatmap }: { heatmap: number[][] }) {
       ref={canvasRef}
       width={200}
       height={130}
-      className="rounded border border-white/10"
+      className="rounded border border-[#f0b429]/10"
       style={{ imageRendering: "pixelated" }}
     />
   );
@@ -239,7 +239,7 @@ function PossessionBar({
     : null;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-widest text-white/60">Ball Possession</p>
         {ballPct !== null && (
@@ -279,7 +279,7 @@ function SpeedLeaderboard({
   const maxSpeed = sorted[0]?.top_speed_kmh ?? 1;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/60">
         Top Speed — km/h (Fastest 10)
       </p>
@@ -331,7 +331,7 @@ function DistanceLeaderboard({
   const maxDist = sorted[0]?.distance_m ?? 1;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/60">
         Distance Covered (Top 10)
       </p>
@@ -390,7 +390,7 @@ function NamePlayersPanel({
     });
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
       <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/60">
         Name Players
       </p>
@@ -407,7 +407,7 @@ function NamePlayersPanel({
           return (
             <div
               key={p.id}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+              className="flex items-center gap-2 rounded-lg border border-[#f0b429]/10 bg-white/5 px-3 py-2"
             >
               <span
                 className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-[10px] font-black"
@@ -480,7 +480,7 @@ function HeatmapGrid({
           const teamLabel = p.team === "home" ? homeTeam : awayTeam;
           const label = displayName(p, names);
           return (
-            <div key={p.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+            <div key={p.id} className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-3">
               <div className="mb-2 flex items-center gap-2">
                 <span
                   className="rounded px-1.5 py-0.5 text-[10px] font-bold truncate max-w-[80px]"
@@ -540,7 +540,7 @@ function StatsSummary({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
       {statCards.map((s) => (
-        <div key={s.label} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+        <div key={s.label} className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-3 text-center">
           <p className="text-base font-black leading-tight" style={{ color: s.color ?? "#fff" }}>
             {s.value}
           </p>
@@ -609,7 +609,7 @@ export default function TrackingDashboard({ data, homeTeam, awayTeam }: Props) {
       />
 
       {/* Pitch radar with ball */}
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/60">
           Average Position Radar
         </p>
@@ -648,7 +648,7 @@ export default function TrackingDashboard({ data, homeTeam, awayTeam }: Props) {
       />
 
       {/* Player heatmaps */}
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="rounded-xl border border-[#f0b429]/10 bg-white/5 p-4">
         <HeatmapGrid
           players={players}
           homeTeam={homeTeam}
