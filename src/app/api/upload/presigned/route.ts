@@ -1,60 +1,34 @@
 /**
  * POST /api/upload/presigned
- * Returns a presigned PUT URL for direct client-to-R2/S3 upload.
- * The client uploads the file directly — no passing through Next.js server.
- *
- * Required env vars (Vercel + .env.local):
- *   R2_ACCOUNT_ID          — Cloudflare account ID
- *   R2_ACCESS_KEY_ID       — R2 access key
- *   R2_SECRET_ACCESS_KEY   — R2 secret key
- *   R2_BUCKET              — bucket name (e.g. grassroots-videos)
- *   R2_PUBLIC_URL          — public bucket URL (e.g. https://pub-xxx.r2.dev)
- *
- * Body: { filename, content_type, folder? }
- * Response: { upload_url, public_url, key }
+ * Returns a presigned PUT URL for direct client-to-R2 upload.
+ * Uses lightweight lib/r2.ts (zero AWS SDK dependencies)
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { generatePresignedPutUrl, getPublicUrl } from "@/lib/r2";
 
 const ALLOWED_TYPES = [
   "video/mp4", "video/quicktime", "video/avi", "video/x-matroska", "video/webm",
   "image/jpeg", "image/png", "image/webp",
 ];
 
-function getS3Client() {
-  const accountId  = process.env.R2_ACCOUNT_ID;
-  const accessKey  = process.env.R2_ACCESS_KEY_ID;
-  const secretKey  = process.env.R2_SECRET_ACCESS_KEY;
-
-  if (!accountId || !accessKey || !secretKey) return null;
-
-  return new S3Client({
-    region: "auto",
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-  });
-}
-
-interface PresignBody {
-  filename?: string;
-  content_type?: string;
-  folder?: string;
-}
-
 export async function POST(req: NextRequest) {
-  const client = getS3Client();
-  if (!client) {
+  // Check required env vars
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const accessKey = process.env.R2_ACCESS_KEY_ID;
+  const secretKey = process.env.R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_BUCKET_NAME;
+
+  if (!accountId || !accessKey || !secretKey || !bucket) {
     return NextResponse.json(
-      { error: "R2 storage not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET in Vercel." },
+      { error: "R2 storage not configured. Set CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME in Vercel." },
       { status: 503 }
     );
   }
 
-  let body: PresignBody;
+  let body;
   try {
-    body = (await req.json()) as PresignBody;
+    body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
@@ -69,24 +43,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `File type not allowed: ${content_type}` }, { status: 400 });
   }
 
-  const bucket = process.env.R2_BUCKET ?? "grassroots-videos";
-  const publicUrl = process.env.R2_PUBLIC_URL ?? "";
   const timestamp = Date.now();
   const safe = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
   const key = `${folder}/${timestamp}-${safe}`;
 
   try {
-    const command = new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      ContentType: content_type,
+    const upload_url = await generatePresignedPutUrl({
+      key,
+      contentType: content_type,
+      expiresInSec: 3600
     });
 
-    const upload_url = await getSignedUrl(client, command, { expiresIn: 3600 });
+    const public_url = getPublicUrl(key);
 
     return NextResponse.json({
       upload_url,
-      public_url: publicUrl ? `${publicUrl}/${key}` : null,
+      public_url,
       key,
     });
   } catch (e: unknown) {
