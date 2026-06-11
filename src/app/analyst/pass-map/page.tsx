@@ -443,7 +443,7 @@ export default function PassMapPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Controls */}
             <div className="space-y-4 lg:col-span-1">
-              <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+              <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 1 — Place Players</p>
                 <p className="mb-3 text-xs text-muted-foreground">Click anywhere on the pitch to place the next player. Up to 11 players.</p>
                 <div className="flex items-center justify-between rounded-lg border bg-background px-3 py-2">
@@ -454,7 +454,7 @@ export default function PassMapPage() {
               </div>
 
               {players.length >= 2 && (
-                <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+                <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Step 2 — Add Pass Connection</p>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
@@ -488,7 +488,7 @@ export default function PassMapPage() {
               )}
 
               {links.length > 0 && (
-                <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+                <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Connections</p>
                   <div className="max-h-40 space-y-1.5 overflow-y-auto">
                     {links.map(l => (
@@ -518,7 +518,7 @@ export default function PassMapPage() {
             {/* Pitch */}
             <div className="lg:col-span-2">
               <div ref={pitchRef} onClick={handlePitchClick}
-                className="relative w-full cursor-crosshair overflow-hidden rounded-2xl border-2 border-white/20"
+                className="relative w-full cursor-crosshair overflow-hidden rounded-2xl border-2 border-[#f0b429]/20"
                 style={{ aspectRatio: "68/105", background: "#2d6a2d" }}>
                 <svg className="absolute inset-0 h-full w-full" viewBox="0 0 68 105">
                   <PitchMarkings />
@@ -558,7 +558,7 @@ export default function PassMapPage() {
         {mapMode === "movement" && (
           <div>
             {!mbSession ? (
-              <div className="rounded-2xl border border-dashed border-white/20 p-12 text-center">
+              <div className="rounded-2xl border border-dashed border-[#f0b429]/20 p-12 text-center">
                 <p className="text-lg font-bold text-white/60">No match session found</p>
                 <p className="mt-2 text-sm text-white/30">Load data from Match Eye (button above) or complete a match in Match Brain.</p>
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
@@ -577,7 +577,7 @@ export default function PassMapPage() {
                 {/* Left panel: controls + legend */}
                 <div className="space-y-4 lg:col-span-1">
                   {/* Session info */}
-                  <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
+                  <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session</p>
                     <p className="mt-1 font-bold text-white">{mbSession.homeTeam} vs {mbSession.awayTeam}</p>
                     <p className="text-xs text-muted-foreground">{mbSession.sport} · {mbSession.formation}</p>
@@ -586,11 +586,11 @@ export default function PassMapPage() {
                   </div>
 
                   {/* Timeline controls */}
-                  <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
+                  <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
                     <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Timeline</p>
                     <div className="mb-3 flex items-center gap-2">
                       <button onClick={() => { setCurrentMinute(0); setIsPlaying(false); }}
-                        className="rounded-lg border border-white/10 p-1.5 hover:bg-white/10 transition-colors">
+                        className="rounded-lg border border-[#f0b429]/10 p-1.5 hover:bg-white/10 transition-colors">
                         <SkipBack className="h-3.5 w-3.5 text-white/60" />
                       </button>
                       <button onClick={() => setIsPlaying(p => !p)}
@@ -613,7 +613,7 @@ export default function PassMapPage() {
                   </div>
 
                   {/* Legend */}
-                  <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
+                  <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
                     <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Legend</p>
                     <div className="space-y-2">
                       {[
@@ -641,7 +641,7 @@ export default function PassMapPage() {
                   </div>
 
                   {/* Team key */}
-                  <div className="rounded-2xl border border-white/10 bg-card/60 p-4">
+                  <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Teams</p>
                     <div className="flex gap-3">
                       <span className="flex items-center gap-1.5 text-xs"><span className="h-3 w-3 rounded-full bg-blue-500 inline-block" />{mbSession.homeTeam} (home)</span>
@@ -655,7 +655,7 @@ export default function PassMapPage() {
 
                 {/* Pitch + Match Eye overlays */}
                 <div className="space-y-4 lg:col-span-2">
-                  <div className="relative w-full overflow-hidden rounded-2xl border-2 border-white/20"
+                  <div className="relative w-full overflow-hidden rounded-2xl border-2 border-[#f0b429]/20"
                     style={{ aspectRatio: "68/105", background: "#2d6a2d" }}>
                     <svg className="absolute inset-0 h-full w-full" viewBox="0 0 68 105">
                       {/* Arrowhead markers */}
@@ -710,7 +710,7 @@ export default function PassMapPage() {
 
                   {/* Match Eye: Possession bar */}
                   {meSource && mePossession && (
-                    <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+                    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
                       <div className="mb-2 flex items-center justify-between text-xs font-semibold">
                         <span className="text-[#f0b429]">{mbSession!.homeTeam} {mePossession.home}%</span>
                         <span className="text-white/40 uppercase tracking-widest text-[9px]">Possession</span>
@@ -733,7 +733,7 @@ export default function PassMapPage() {
 
                   {/* Match Eye: Tactical patterns */}
                   {meSource && meTacticalPatterns.length > 0 && (
-                    <div className="rounded-2xl border border-white/10 bg-card/60 p-4 backdrop-blur-sm">
+                    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 backdrop-blur-sm">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tactical Patterns Detected</p>
                       <div className="flex flex-wrap gap-2">
                         {meTacticalPatterns.map((pat, i) => (

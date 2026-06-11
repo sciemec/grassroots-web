@@ -423,7 +423,7 @@ export default function HeatmapsPage() {
                     title={`Zone ${i + 1}: ${currentMap[i] ?? 0} marks`}
                   >
                     {(currentMap[i] ?? 0) > 0 && (
-                      <span className="text-[10px] font-bold text-white/80">{currentMap[i]}</span>
+                      <span className="text-[10px] font-bold text-[#f0b429]/80">{currentMap[i]}</span>
                     )}
                   </button>
                 ))}
