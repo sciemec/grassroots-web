@@ -28,15 +28,17 @@ import {
 import type { GRSResult } from '@/lib/grs-engine';
 
 // Test screens
-import SetupScreen     from '@/components/session/SetupScreen';
-import JumpScreen      from '@/components/session/JumpScreen';
-import SprintScreen    from '@/components/session/SprintScreen';
-import BalanceScreen   from '@/components/session/BalanceScreen';
-import ReactionScreen  from '@/components/session/ReactionScreen';
-import ChitimaScreen   from '@/components/session/ChitimaScreen';
-import BallScreen      from '@/components/session/BallScreen';
-import ResultsScreen   from '@/components/session/ResultsScreen';
-import SessionHeader   from '@/components/session/SessionHeader';
+import {
+  SetupScreen,
+  JumpScreen,
+  SprintScreen,
+  BalanceScreen,
+  ReactionScreen,
+  ChitimaScreen,
+  BallScreen,
+  ResultsScreen,
+} from '@/components/session/screens';
+import { SessionHeader } from '@/components/session/shared';
 
 export default function SessionPage() {
   const [state, setState] = useState<SessionState>(createInitialState);

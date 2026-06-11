@@ -37,6 +37,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'playerId required' }, { status: 400 });
   }
 
+  // aqScore passed from the client after a session so the "AQ needed" message
+  // is accurate. Falls back to 0 (worst case — shows full requirement).
+  const aqScore = parseInt(req.nextUrl.searchParams.get('aqScore') ?? '0', 10);
+
   try {
     // Get gamification state — tells us current tier
     const gamification = await prisma.playerGamification.findUnique({
@@ -55,7 +59,7 @@ export async function GET(req: NextRequest) {
     const nextTierNum  = Math.min(5, currentTier + 1);
     const nextTierRule = TIER_RULES[nextTierNum];
     const sessionsLeft = Math.max(0, nextTierRule.sessionsRequired - (gamification?.totalSessions ?? 0));
-    const aqNeeded     = Math.max(0, nextTierRule.aqRequired - (gamification?.xpTotal ?? 0));
+    const aqNeeded     = Math.max(0, nextTierRule.aqRequired - aqScore);
 
     return NextResponse.json({
       currentTier,

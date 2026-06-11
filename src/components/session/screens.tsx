@@ -554,11 +554,11 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
     const interval = setInterval(() => {
       setElapsed(e => { const n = e + 1; return n; });
     }, 1000);
-    (window as any).__chitTimer = interval;
+    (window as any).__enduranceTimer = interval;
   };
 
   const stopTimer = () => {
-    clearInterval((window as any).__chitTimer);
+    clearInterval((window as any).__enduranceTimer);
     setRunning(false);
     setTotalSec(elapsed);
   };
@@ -573,7 +573,7 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 
         <InstructionCard
           testNum="Test 5 of 6"
-          testName="Chitima Circuit — endurance and technique under fatigue"
+          testName="Endurance Circuit — technique under fatigue"
           icon="🔥"
           equipment="Two markers 10m apart. Phone recording from the side."
           timeEstimate="~8 mins"
@@ -649,9 +649,9 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
       <NavBar
         onBack={onBack}
         onNext={() => onAdvance({
-          chitimaTotalSec: totalSec as number,
-          chitimaRound1Quality: round1Q,
-          chitimaRound3Quality: round3Q,
+          enduranceTotalSec: totalSec as number,
+          enduranceRound1Quality: round1Q,
+          enduranceRound3Quality: round3Q,
         })}
         onSkip={onSkip}
         canGoNext={canNext}
