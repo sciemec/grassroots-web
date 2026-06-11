@@ -723,7 +723,7 @@ export default function TouchTrackerPage() {
 
         {/* Setup */}
         {phase === "setup" && (
-          <div className="mb-4 rounded-2xl border border-white/10 bg-card/60 p-4 space-y-3">
+          <div className="mb-4 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-4 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-accent/70">Match Setup</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -731,7 +731,7 @@ export default function TouchTrackerPage() {
                 <input
                   value={homeTeam}
                   onChange={(e) => setHomeTeam(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                  className="w-full rounded-lg border border-[#f0b429]/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent"
                   placeholder="Home team name"
                 />
               </div>
@@ -740,7 +740,7 @@ export default function TouchTrackerPage() {
                 <input
                   value={awayTeam}
                   onChange={(e) => setAwayTeam(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent"
+                  className="w-full rounded-lg border border-[#f0b429]/10 bg-black/30 px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent"
                   placeholder="Away team name"
                 />
               </div>
@@ -756,7 +756,7 @@ export default function TouchTrackerPage() {
                   <button
                     key={f}
                     onClick={() => { setHomeRoles(FORMATION_PRESETS[f]); setAwayRoles(FORMATION_PRESETS[f]); }}
-                    className="rounded-lg border border-white/20 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/60 hover:text-white hover:border-white/40 transition-colors"
+                    className="rounded-lg border border-[#f0b429]/20 bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/60 hover:text-white hover:border-[#f0b429]/40 transition-colors"
                   >
                     {f}
                   </button>
@@ -778,7 +778,7 @@ export default function TouchTrackerPage() {
                           <button
                             key={n}
                             onClick={() => setRoles((prev) => ({ ...prev, [n]: cycleRole(prev[n] ?? "DEF") }))}
-                            className="flex flex-col items-center rounded-lg border border-white/10 bg-black/30 py-1.5 hover:border-white/20 transition-colors"
+                            className="flex flex-col items-center rounded-lg border border-[#f0b429]/10 bg-black/30 py-1.5 hover:border-[#f0b429]/20 transition-colors"
                           >
                             <span className="text-[11px] font-black text-white">#{n}</span>
                             <span className={`mt-0.5 rounded px-1 text-[8px] font-black ${ROLE_COLORS[roles[n] ?? "DEF"]}`}>
@@ -804,7 +804,7 @@ export default function TouchTrackerPage() {
 
         {/* Timer bar */}
         {phase !== "setup" && (
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-card/60 p-3">
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-[#f0b429]/10 bg-card/60 p-3">
             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-black ${phase === "live" ? "bg-green-600 animate-pulse" : phase === "halftime" ? "bg-purple-600" : phase === "paused" ? "bg-amber-600" : "bg-muted"}`}>
               {phase === "live" ? "▶" : phase === "halftime" ? "½" : phase === "paused" ? "⏸" : "■"}
             </div>
@@ -833,7 +833,7 @@ export default function TouchTrackerPage() {
                 </button>
               )}
               {phase !== "ended" && phase !== "halftime" && (
-                <button onClick={togglePause} className="rounded-lg border border-white/20 px-2 py-1.5 text-xs font-bold text-white hover:bg-white/10">
+                <button onClick={togglePause} className="rounded-lg border border-[#f0b429]/20 px-2 py-1.5 text-xs font-bold text-white hover:bg-white/10">
                   {phase === "live" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </button>
               )}
@@ -842,7 +842,7 @@ export default function TouchTrackerPage() {
                   <Square className="h-4 w-4" />
                 </button>
               )}
-              <button onClick={resetAll} className="rounded-lg border border-white/10 px-2 py-1.5 text-[10px] font-bold text-white/40 hover:text-white/70">
+              <button onClick={resetAll} className="rounded-lg border border-[#f0b429]/10 px-2 py-1.5 text-[10px] font-bold text-white/40 hover:text-white/70">
                 ↺
               </button>
             </div>
@@ -851,7 +851,7 @@ export default function TouchTrackerPage() {
 
         {/* Momentum bar */}
         {(phase === "live" || phase === "paused") && recentWindow.length >= 3 && (
-          <div className="mb-3 rounded-xl border border-white/10 bg-card/40 px-3 py-2.5">
+          <div className="mb-3 rounded-xl border border-[#f0b429]/10 bg-card/40 px-3 py-2.5">
             <div className="flex items-center justify-between mb-1.5">
               <p className="text-[9px] font-semibold uppercase tracking-widest text-white/40">Momentum — last 5 min</p>
               <p className="text-[9px] text-white/40">{recentWindow.length} touches</p>
@@ -1001,7 +1001,7 @@ export default function TouchTrackerPage() {
             </div>
 
             {/* xG Shot Table */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 flex flex-col">
+            <div className="rounded-2xl border border-[#f0b429]/10 bg-white/5 p-3 flex flex-col">
               <p className="mb-2 text-center text-xs font-bold text-white/60 uppercase tracking-widest">xG Log</p>
 
               {/* Summary row */}
@@ -1068,13 +1068,13 @@ export default function TouchTrackerPage() {
         {/* xG Zone Picker Modal */}
         {shotModal && (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-t-2xl border border-white/10 bg-[#0d2010] p-5 pb-8">
+            <div className="w-full max-w-md rounded-t-2xl border border-[#f0b429]/10 bg-[#0d2010] p-5 pb-8">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-white">Log Shot — {shotModal.team === "home" ? homeTeam : awayTeam}</p>
                   <p className="text-[10px] text-white/40">Select the zone the shot came from</p>
                 </div>
-                <button onClick={() => setShotModal(null)} className="rounded-full border border-white/10 px-3 py-1 text-[10px] text-white/50 hover:text-white">Cancel</button>
+                <button onClick={() => setShotModal(null)} className="rounded-full border border-[#f0b429]/10 px-3 py-1 text-[10px] text-white/50 hover:text-white">Cancel</button>
               </div>
               {/* Player picker */}
               <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-white/40">Which player?</p>
@@ -1082,7 +1082,7 @@ export default function TouchTrackerPage() {
                 {HOME_STARTERS.map(n => (
                   <button key={n}
                     onClick={() => setShotModal(prev => prev ? { ...prev, playerNum: n } : null)}
-                    className={`rounded-lg px-2 py-1 text-[10px] font-black transition-colors ${shotModal.playerNum === n ? "bg-accent text-black" : "border border-white/10 text-white/60 hover:border-white/30"}`}
+                    className={`rounded-lg px-2 py-1 text-[10px] font-black transition-colors ${shotModal.playerNum === n ? "bg-accent text-black" : "border border-[#f0b429]/10 text-white/60 hover:border-[#f0b429]/30"}`}
                   >#{n}</button>
                 ))}
               </div>
@@ -1092,7 +1092,7 @@ export default function TouchTrackerPage() {
                 {XG_ZONES.map(zone => (
                   <button key={zone.id}
                     onClick={() => logShot(zone.id, false)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-2 py-2.5 text-left hover:border-accent/50 hover:bg-accent/10 transition-colors"
+                    className="rounded-xl border border-[#f0b429]/10 bg-white/5 px-2 py-2.5 text-left hover:border-accent/50 hover:bg-accent/10 transition-colors"
                   >
                     <p className="text-[9px] font-black text-white leading-tight">{zone.label}</p>
                     <p className="text-[10px] font-black text-accent mt-0.5">{zone.xg} xG</p>
@@ -1137,7 +1137,7 @@ export default function TouchTrackerPage() {
               </button>
               <button
                 onClick={copyReport}
-                className="rounded-xl border border-white/20 bg-white/5 py-2.5 text-xs font-bold text-white/70 hover:bg-white/10 flex items-center justify-center gap-1.5 transition-colors"
+                className="rounded-xl border border-[#f0b429]/20 bg-white/5 py-2.5 text-xs font-bold text-white/70 hover:bg-white/10 flex items-center justify-center gap-1.5 transition-colors"
               >
                 {copied ? "✓ Copied!" : "📋 Copy Report"}
               </button>
@@ -1167,7 +1167,7 @@ export default function TouchTrackerPage() {
 
         {touches.length > 0 && (
           <>
-            <div className="mb-3 flex gap-1 rounded-xl border border-white/10 bg-card/40 p-1">
+            <div className="mb-3 flex gap-1 rounded-xl border border-[#f0b429]/10 bg-card/40 p-1">
               {(["log", "stats", "ai", "history"] as const).map((t) => (
                 <button
                   key={t}
@@ -1211,7 +1211,7 @@ export default function TouchTrackerPage() {
             {activeTab === "stats" && (
               <div className="space-y-3">
                 {/* Zone events */}
-                <div className="rounded-xl border border-white/10 bg-card/40 p-3">
+                <div className="rounded-xl border border-[#f0b429]/10 bg-card/40 p-3">
                   <p className="mb-2 text-xs font-bold text-white">Dominant Zone: <span className="text-accent">{stats.dominantZone.replace(/_/g, " ").toUpperCase()}</span></p>
                   <div className="space-y-1 max-h-32 overflow-y-auto">
                     {stats.zoneEvents.slice(-8).reverse().map((z, i) => (
@@ -1262,7 +1262,7 @@ export default function TouchTrackerPage() {
                 </div>
 
                 {/* Quick pass count */}
-                <div className="rounded-xl border border-white/10 bg-card/40 p-3 flex items-center justify-between">
+                <div className="rounded-xl border border-[#f0b429]/10 bg-card/40 p-3 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-white">Quick Passes (&lt;6s)</p>
                     <p className="text-[10px] text-white/50">Players likely in close proximity</p>
@@ -1304,7 +1304,7 @@ export default function TouchTrackerPage() {
 
                 {/* Pass sequences */}
                 {sequences.length > 0 && (
-                  <div className="rounded-xl border border-white/10 bg-card/40 p-3">
+                  <div className="rounded-xl border border-[#f0b429]/10 bg-card/40 p-3">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-bold text-white">Key Sequences</p>
                       <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[9px] font-black text-accent">{sequences.length} detected</span>
@@ -1317,7 +1317,7 @@ export default function TouchTrackerPage() {
                         const roles = seq.team === "home" ? homeRoles : awayRoles;
                         const roleChain = seq.players.map(n => n <= 11 ? (roles[n] ?? "") : "SUB").filter(Boolean).join("-");
                         return (
-                          <div key={seq.id} className={`rounded-lg border p-2 ${isLatest ? "border-accent/40 bg-accent/5" : "border-white/5 bg-white/2"}`}>
+                          <div key={seq.id} className={`rounded-lg border p-2 ${isLatest ? "border-accent/40 bg-accent/5" : "border-[#f0b429]/5 bg-white/2"}`}>
                             <div className="flex items-center justify-between mb-0.5">
                               <span className={`text-[9px] font-black uppercase ${seq.team === "home" ? "text-blue-400" : "text-orange-400"}`}>
                                 {seq.team === "home" ? homeTeam : awayTeam}
@@ -1366,7 +1366,7 @@ export default function TouchTrackerPage() {
                   <p className="py-6 text-center text-xs text-white/30">No match history yet — complete a match to save it here.</p>
                 )}
                 {history.map((rec) => (
-                  <div key={rec.id} className="rounded-xl border border-white/10 bg-card/40 overflow-hidden">
+                  <div key={rec.id} className="rounded-xl border border-[#f0b429]/10 bg-card/40 overflow-hidden">
                     <button
                       onClick={() => setExpandedHistory(expandedHistory === rec.id ? null : rec.id)}
                       className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-white/5"
@@ -1378,7 +1378,7 @@ export default function TouchTrackerPage() {
                       <ChevronRight className={`h-3.5 w-3.5 text-white/30 transition-transform ${expandedHistory === rec.id ? "rotate-90" : ""}`} />
                     </button>
                     {expandedHistory === rec.id && (
-                      <div className="border-t border-white/10 px-3 py-3 space-y-2">
+                      <div className="border-t border-[#f0b429]/10 px-3 py-3 space-y-2">
                         <div className="grid grid-cols-2 gap-2 text-[10px]">
                           <div className="rounded-lg bg-blue-500/10 p-2">
                             <p className="font-bold text-blue-400">{rec.homeTeam}</p>
@@ -1431,7 +1431,7 @@ export default function TouchTrackerPage() {
                 { label: "Player Heatmaps", href: "/analyst/heatmaps", icon: BarChart2 },
                 { label: "AI Tactical Report", href: "/analyst/tactical-report", icon: Zap },
               ].map((l) => (
-                <Link key={l.href} href={l.href} className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/40 px-3 py-2.5 text-xs font-semibold text-white/70 hover:text-white hover:border-white/20 transition-colors">
+                <Link key={l.href} href={l.href} className="flex items-center gap-2 rounded-xl border border-[#f0b429]/10 bg-card/40 px-3 py-2.5 text-xs font-semibold text-white/70 hover:text-white hover:border-[#f0b429]/20 transition-colors">
                   <l.icon className="h-3.5 w-3.5 text-accent shrink-0" />
                   {l.label}
                   <ChevronRight className="ml-auto h-3 w-3" />
@@ -1439,7 +1439,7 @@ export default function TouchTrackerPage() {
               ))}
               <button
                 onClick={openInMatchMap}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/40 px-3 py-2.5 text-xs font-semibold text-white/70 hover:text-white hover:border-white/20 transition-colors"
+                className="flex items-center gap-2 rounded-xl border border-[#f0b429]/10 bg-card/40 px-3 py-2.5 text-xs font-semibold text-white/70 hover:text-white hover:border-[#f0b429]/20 transition-colors"
               >
                 <Activity className="h-3.5 w-3.5 text-accent shrink-0" />
                 Match Map
@@ -1479,7 +1479,7 @@ export default function TouchTrackerPage() {
               </button>
               <button
                 onClick={copyReport}
-                className="rounded-lg border border-white/20 bg-white/5 py-2 text-xs font-bold text-white/70 hover:bg-white/10 flex items-center justify-center gap-1.5 transition-colors"
+                className="rounded-lg border border-[#f0b429]/20 bg-white/5 py-2 text-xs font-bold text-white/70 hover:bg-white/10 flex items-center justify-center gap-1.5 transition-colors"
               >
                 {copied ? "✓ Copied!" : "📋 Copy"}
               </button>
