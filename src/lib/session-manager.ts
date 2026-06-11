@@ -24,7 +24,7 @@ export type TestId =
   | 't2_sprint'
   | 't3_balance'
   | 't4_reaction'
-  | 't5_chitima'
+  | 't5_endurance'
   | 't6_ball'
   | 'results';
 
@@ -34,7 +34,7 @@ export const TEST_ORDER: TestId[] = [
   't2_sprint',
   't3_balance',
   't4_reaction',
-  't5_chitima',
+  't5_endurance',
   't6_ball',
   'results',
 ];
@@ -72,10 +72,10 @@ export interface SessionPartials {
   reactionTimeMsec?:   number;
 
   // T5
-  chitimaTotalSec?:    number;
-  chitimaDegScore?:    number;
-  chitimaRound1Quality?: number; // 1–5 coach rating
-  chitimaRound3Quality?: number; // 1–5 coach rating
+  enduranceTotalSec?:    number;
+  enduranceDegScore?:    number;
+  enduranceRound1Quality?: number; // 1–5 coach rating
+  enduranceRound3Quality?: number; // 1–5 coach rating
 
   // T6
   jugglingSequence?:   number;
@@ -141,16 +141,16 @@ export function getTestProgress(
 // ── Build RawTestInputs from completed session ────────────────────────────────
 export function buildInputs(config: SessionConfig, partials: SessionPartials): RawTestInputs {
   // Calculate technique degradation from coach quality ratings
-  let chitimaDegScore: number | undefined;
+  let enduranceDegScore: number | undefined;
   if (
-    partials.chitimaRound1Quality !== undefined &&
-    partials.chitimaRound3Quality !== undefined
+    partials.enduranceRound1Quality !== undefined &&
+    partials.enduranceRound3Quality !== undefined
   ) {
     // Degradation = how much quality dropped from round 1 to round 3
     // Quality scale 1–5. If round1=5 and round3=3, degradation = (2/4)*100 = 50
-    const drop = partials.chitimaRound1Quality - partials.chitimaRound3Quality;
-    const maxPossibleDrop = partials.chitimaRound1Quality - 1;
-    chitimaDegScore = maxPossibleDrop <= 0
+    const drop = partials.enduranceRound1Quality - partials.enduranceRound3Quality;
+    const maxPossibleDrop = partials.enduranceRound1Quality - 1;
+    enduranceDegScore = maxPossibleDrop <= 0
       ? 0
       : Math.round((Math.max(0, drop) / maxPossibleDrop) * 100);
   }
@@ -171,8 +171,8 @@ export function buildInputs(config: SessionConfig, partials: SessionPartials): R
     balanceLeftClosed:  partials.balanceLeftClosed,
     reactionCatchRate:  partials.reactionCatchRate,
     reactionTimeMsec:   partials.reactionTimeMsec,
-    chitimaTotalSec:    partials.chitimaTotalSec,
-    chitimaDegScore,
+    chitimaTotalSec:    partials.enduranceTotalSec,
+    chitimaDegScore:    enduranceDegScore,
     jugglingSequence:   partials.jugglingSequence,
     turnQualityScore:   partials.turnQualityScore,
   };

@@ -29,7 +29,7 @@ export function SessionHeader({ state }: { state: SessionState }) {
     t2_sprint:   'T2 Sprint',
     t3_balance:  'T3 Balance',
     t4_reaction: 'T4 Reaction',
-    t5_chitima:  'T5 Endurance',
+    t5_endurance: 'T5 Endurance',
     t6_ball:     'T6 Ball',
   };
 

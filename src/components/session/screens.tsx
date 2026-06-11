@@ -24,7 +24,7 @@ const GRS_GOLD  = '#c8962a';
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETUP SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
-export function SetupScreen({ onAdvance }: TestScreenProps) {
+export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
   const [playerName, setPlayerName]   = useState('');
   const [age,        setAge]          = useState<number>(14);
   const [position,   setPosition]     = useState<Position>('midfielder');
@@ -38,12 +38,12 @@ export function SetupScreen({ onAdvance }: TestScreenProps) {
     { key: 'goalkeeper', label: 'Goalkeeper' },
   ];
 
-  const ALL_TESTS = ['t1_jump','t2_sprint','t3_balance','t4_reaction','t5_chitima','t6_ball'] as const;
+  const ALL_TESTS = ['t1_jump','t2_sprint','t3_balance','t4_reaction','t5_endurance','t6_ball'] as const;
   const [selectedTests, setSelectedTests] = useState<string[]>([...ALL_TESTS]);
 
   const TEST_NAMES: Record<string, string> = {
     t1_jump: 'T1 Jump', t2_sprint: 'T2 Sprint', t3_balance: 'T3 Balance',
-    t4_reaction: 'T4 Reaction', t5_chitima: 'T5 Endurance', t6_ball: 'T6 Ball',
+    t4_reaction: 'T4 Reaction', t5_endurance: 'T5 Endurance', t6_ball: 'T6 Ball',
   };
 
   const toggleTest = (t: string) =>
@@ -63,8 +63,8 @@ export function SetupScreen({ onAdvance }: TestScreenProps) {
       coachVerified: true,
       activeTests:   [...selectedTests, 'results'] as any,
     };
-    onAdvance({ /* partials empty */ });
-    // Pass config through onUpdate — handled in page.tsx
+    onUpdate({ config, startedAt: new Date().toISOString() });
+    onAdvance({});
   };
 
   return (
@@ -190,7 +190,7 @@ export function JumpScreen({ state, onAdvance, onBack, onSkip }: TestScreenProps
 
         <InstructionCard
           testNum="Test 1 of 6"
-          testName="Muhondo Jump — explosive power"
+          testName="Jump — explosive power"
           icon="⬆"
           equipment="A low wall or step (knee height, 40–60cm). Phone on a tripod or propped to the side at hip height."
           timeEstimate="~5 mins"
@@ -275,7 +275,7 @@ export function SprintScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 
         <InstructionCard
           testNum="Test 2 of 6"
-          testName="Nzira Sprint — linear speed"
+          testName="Sprint — linear speed"
           icon="⚡"
           equipment="Two markers 20m apart (cones, shoes, water bottles — anything). Phone perpendicular to the lane."
           timeEstimate="~6 mins"
@@ -459,7 +459,7 @@ export function ReactionScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 
         <InstructionCard
           testNum="Test 4 of 6"
-          testName="Kurumidza Reaction — cognitive speed"
+          testName="Reaction — cognitive speed"
           icon="⚡"
           equipment="One football. 2 metres of open space."
           timeEstimate="~5 mins"
