@@ -5,16 +5,84 @@ import { groqText } from "@/lib/groq";
 /**
  * POST /api/ai-coach
  *
- * TWO-ENGINE RULE:
+ * TWO-ENGINE RULE (unchanged from original):
  *   1. DeepSeek first  — fast, cheap, handles simple questions
- *   2. Anthropic second — complex/analytical questions, or when DeepSeek fails
+ *   2. Groq second     — complex/analytical questions, or when DeepSeek fails
+ *   3. DeepSeek again  — last resort if Groq also fails
  *
- * Body: { message, system_prompt?, history?, stream?, userContext? }
+ * PERSONA SELECTION (new):
+ *   gender === 'female' → Amara (coaching persona for female athletes)
+ *   gender === 'male' or missing → THUTO (coaching persona for male athletes)
+ *   system_prompt in body → overrides persona entirely (admin/coach use cases)
+ *
+ * Body: { message, gender?, system_prompt?, history?, stream?, userContext? }
  */
 
+// ─────────────────────────────────────────────────────────────────────────────
+// THUTO — AI coaching persona for male athletes
+// ─────────────────────────────────────────────────────────────────────────────
+const THUTO_BASE_PROMPT =
+  "You are THUTO, the GrassRoots Sports AI coaching assistant for male athletes in Zimbabwe. " +
+  "You are an expert Zimbabwean sports mentor — you help players and coaches at grassroots, " +
+  "school and Division 1/2 level with tactics, training, player development and match analysis. " +
+  "\n\nYour personality:" +
+  "\n- Direct and competitive — you speak like a coach who expects results" +
+  "\n- You reference real Zimbabwe football — Warriors, ZIFA, Dynamos, Highlanders, Castle Lager Premier League" +
+  "\n- At Student rank you are encouraging like a school teacher. At Lion rank you speak like a senior club coach." +
+  "\n- You acknowledge effort and consistency — not just raw talent" +
+  "\n- You know a player in Hurungwe has the same potential as one in Harare" +
+  "\n- Use local flair like 'bhora pasi' or 'kujatisa' where it fits naturally" +
+  "\n- If a player lacks equipment, suggest grassroots alternatives (stones instead of cones, etc.)" +
+  "\n\nYour knowledge:" +
+  "\n- The 6 GRS tests: jump, sprint, balance, reaction, endurance, ball mastery" +
+  "\n- AQ (Athletic Quotient), DQ (development rate per week), PQ (position match score)" +
+  "\n- 6 ranks: Student, Player, Skilled, Attacker, Star, Lion" +
+  "\n- DQ matters more to scouts than raw AQ — a player improving 3% per week is more interesting than one who is static at a higher score" +
+  "\n- The drill curriculum unlocks through 5 tiers as the player improves" +
+  "\n\nRules:" +
+  "\n- 3–5 sentences for most questions. Never generic — always specific." +
+  "\n- Reference the player's test results directly when shared" +
+  "\n- Never discourage — redirect negative framing toward actionable improvement" +
+  "\n- Do not mention other AI systems or that you are built on Claude" +
+  "\nEnd with: 'Train anywhere in Zimbabwe. Use AI to get recognized.'";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AMARA — AI coaching persona for female athletes
+// ─────────────────────────────────────────────────────────────────────────────
+const AMARA_BASE_PROMPT =
+  "You are Amara, the GrassRoots Sports AI coaching assistant for female athletes in Zimbabwe. " +
+  "You are an expert mentor — you help female players at grassroots, school and national level " +
+  "with tactics, training, player development and match analysis." +
+  "\n\nYour personality:" +
+  "\n- Warm and technically precise — you combine encouragement with specific coaching detail" +
+  "\n- You speak to female athletes as serious athletes, never patronising or overly gentle" +
+  "\n- You reference women's football in Africa — Mighty Warriors (Zimbabwe), Super Falcons (Nigeria), Banyana Banyana (South Africa), COSAFA Women's Championship" +
+  "\n- You celebrate female athletic achievement — you know how rare it is for a girl in Zimbabwe to have this kind of coaching access" +
+  "\n- You build confidence while being honest about what needs work" +
+  "\n- You understand many girls train without family support — never assume resources or backing" +
+  "\n- If a player lacks equipment, suggest grassroots alternatives (stones instead of cones, etc.)" +
+  "\n\nYour knowledge:" +
+  "\n- The 6 GRS tests and that female athletes are scored against female-specific norms — never male benchmarks" +
+  "\n- Female sprint norms are different, jump norms are different — a girl at 75th percentile is genuinely exceptional within her cohort" +
+  "\n- AQ (Athletic Quotient), DQ (development rate per week), PQ (position match score)" +
+  "\n- 6 ranks: Student, Player, Skilled, Attacker, Star, Lion" +
+  "\n- DQ matters more to scouts than raw AQ" +
+  "\n- Women's football in Zimbabwe is underserved — GRS exists specifically to change that" +
+  "\n\nRules:" +
+  "\n- 3–5 sentences for most questions. Never generic — always specific." +
+  "\n- Compare female results only against female norms — never against male benchmarks" +
+  "\n- Acknowledge barriers girls face (family pressure, lack of facilities, no role models) without assuming them" +
+  "\n- Celebrate consistency and improvement as much as raw scores" +
+  "\n- Never discourage — redirect negative framing toward actionable improvement" +
+  "\n- Do not mention other AI systems or that you are built on Claude" +
+  "\nEnd with: 'Train anywhere in Zimbabwe. Use AI to get recognized.'";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Engine config (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
 const AI_CONFIG = {
   deepseek:  { max_tokens: 1024, temperature: 0.7 },
-  anthropic: { max_tokens: 1500, model: "claude-sonnet-4-6" },
+  groq:      { max_tokens: 1500 },
 } as const;
 
 const COMPLEX_KEYWORDS = [
@@ -80,12 +148,16 @@ async function callGroq(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
-  return groqText(systemPrompt, messages, { max_tokens: AI_CONFIG.anthropic.max_tokens });
+  return groqText(systemPrompt, messages, { max_tokens: AI_CONFIG.groq.max_tokens });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Main handler
+// ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   let body: {
     message?: string;
+    gender?: "male" | "female";
     system_prompt?: string;
     history?: { role: string; content: string }[];
     stream?: boolean;
@@ -103,11 +175,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { message, system_prompt, history = [], userContext } = body;
+  const { message, gender, system_prompt, history = [], userContext } = body;
+
   if (!message) {
     return NextResponse.json({ error: "message is required." }, { status: 400 });
   }
 
+  // ── Select persona ─────────────────────────────────────────────────────────
+  // system_prompt in body overrides everything (admin/coach custom prompts)
+  // Otherwise: female → Amara, male/missing → THUTO
+  const coachName   = gender === "female" ? "Amara" : "THUTO";
+  const basePersona = system_prompt
+    ?? (gender === "female" ? AMARA_BASE_PROMPT : THUTO_BASE_PROMPT);
+
+  // ── Player context (unchanged from original) ───────────────────────────────
+  const playerContext = userContext
+    ? `\nYou are speaking with ${userContext.name || "a player"}, ` +
+      `a ${userContext.age || "young"}-year-old ${userContext.position || "athlete"}. ` +
+      (userContext.recentStats ? `Recent performance: ${userContext.recentStats}. ` : "")
+    : "";
+
+  // ── Knowledge retrieval (unchanged from original) ─────────────────────────
   const relevantSessions = findRelevantSessions(message, 3);
   const knowledgeContext = relevantSessions.length > 0
     ? "\n\n---\nRELEVANT COACHING SESSIONS (FIFA/FA certified):\n" +
@@ -118,23 +206,10 @@ export async function POST(req: NextRequest) {
       "\n---\n"
     : "";
 
-  const playerContext = userContext
-    ? `\nYou are speaking with ${userContext.name || "a player"}, ` +
-      `a ${userContext.age || "young"}-year-old ${userContext.position || "athlete"}. ` +
-      (userContext.recentStats ? `Recent performance: ${userContext.recentStats}. ` : "")
-    : "";
+  // ── Full system prompt: persona + player context + knowledge ───────────────
+  const fullSystem = basePersona + playerContext + knowledgeContext;
 
-  const baseSystem = system_prompt ??
-    "You are an expert Zimbabwean sports mentor on Grassroots Sport — Zimbabwe's AI sports platform. " +
-    "You help players and coaches at grassroots, school and Division 1/2 level with tactics, training, " +
-    "player development and match analysis. Relate advice to the Zimbabwean football context (ZIFA, NASH schools). " +
-    "Speak like a coach on a pitch in Harare or Bulawayo — practical, direct, encouraging. " +
-    "Use local flair like 'bhora pasi' or 'kujatisa' where it fits naturally. " +
-    "If a player lacks equipment, suggest grassroots alternatives (stones instead of cones, etc.). " +
-    "End with: 'Train anywhere in Zimbabwe. Use AI to get recognized.'";
-
-  const fullSystem = baseSystem + playerContext + knowledgeContext;
-
+  // ── Conversation history (last 6 turns) ───────────────────────────────────
   const messages: { role: "user" | "assistant"; content: string }[] = [
     ...history
       .filter((m) => m.role === "user" || m.role === "assistant")
@@ -145,36 +220,37 @@ export async function POST(req: NextRequest) {
 
   const complex = isComplex(message);
 
-  // Simple messages: DeepSeek first (fast, cheap)
+  // ── Engine routing (unchanged from original) ──────────────────────────────
+  // Simple → DeepSeek first
   if (!complex) {
     try {
       const reply = await callDeepSeek(fullSystem, messages);
-      return NextResponse.json({ response: reply, engine: "deepseek" });
+      return NextResponse.json({ response: reply, engine: "deepseek", coach: coachName });
     } catch (err) {
       console.error("DeepSeek failed, escalating to Groq:", err);
     }
   }
 
-  // Complex messages (or DeepSeek failure): Groq
+  // Complex (or DeepSeek failure) → Groq
   try {
     const result = await callGroq(fullSystem, messages);
-    return NextResponse.json({ response: result, engine: "groq" });
+    return NextResponse.json({ response: result, engine: "groq", coach: coachName });
   } catch (groqErr) {
     console.error("Groq failed, trying DeepSeek as last resort:", groqErr);
   }
 
-  // Last resort: DeepSeek for complex messages when Groq fails
+  // Last resort → DeepSeek for complex when Groq fails
   if (complex) {
     try {
       const result = await callDeepSeek(fullSystem, messages);
-      return NextResponse.json({ response: result, engine: "deepseek" });
+      return NextResponse.json({ response: result, engine: "deepseek", coach: coachName });
     } catch (err) {
       console.error("DeepSeek last-resort also failed:", err);
     }
   }
 
   return NextResponse.json(
-    { error: "Coach is temporarily offline. Check your connection." },
+    { error: "Coach is temporarily offline. Check your connection.", coach: coachName },
     { status: 500 },
   );
 }

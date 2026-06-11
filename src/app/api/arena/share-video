@@ -1,0 +1,36 @@
+port const shareVideoToArena = async (params: {
+  videoId:      string;
+  videoUrl:     string;
+  caption:      string;
+  aqAtPost?:    number;
+  rankAtPost?:  string;
+  testTier?:    string;
+  durationSec?: number;
+  videoSource?: string;
+  authToken:    string;
+}) => {
+  const API = process.env.NEXT_PUBLIC_API_URL;
+ 
+  const res = await fetch(`${API}/arena/posts/share-video`, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${params.authToken}`,
+    },
+    body: JSON.stringify({
+      video_url:    params.videoUrl,
+      body:         params.caption,
+      aq_at_post:   params.aqAtPost,
+      rank_at_post: params.rankAtPost,
+      test_tier:    params.testTier,
+      duration_sec: params.durationSec,
+      video_source: params.videoSource ?? 'player_upload',
+      visibility:   'public',
+    }),
+  });
+ 
+  if (!res.ok) throw new Error('Failed to share video to Arena');
+  return res.json();
+};
+ 
+ 

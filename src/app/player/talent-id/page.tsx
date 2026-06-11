@@ -69,7 +69,7 @@ function getPlaysLike(position: string | undefined): string | null {
 
 export default function TalentIdPage() {
   const router   = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const [profile,  setProfile]  = useState<Profile | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
