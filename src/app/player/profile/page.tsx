@@ -22,6 +22,7 @@ import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
 import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
 import PotentialCard from "@/components/player/PotentialCard";
+import { normalizePhone } from "@/lib/phone-normalize";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -247,8 +248,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     if (!whatsappPhone.trim()) return;
     setSavingWhatsapp(true);
     try {
-      let phone = whatsappPhone.replace(/\s+/g, "");
-      if (phone.startsWith("07")) phone = "263" + phone.slice(1);
+      const phone = normalizePhone(whatsappPhone.replace(/\s+/g, ""));
       await api.patch("/profile", { whatsapp_phone: phone });
       setWhatsappPhone(phone);
       setWhatsappSaved(true);

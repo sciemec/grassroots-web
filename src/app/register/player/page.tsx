@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell } from "lucide-react";
+import { normalizePhone } from "@/lib/phone-normalize";
 
 const COUNTRIES = [
   "Zimbabwe","Afghanistan","Albania","Algeria","Angola","Argentina","Armenia","Australia",
@@ -107,7 +108,7 @@ export default function RegisterPlayerPage() {
       if (form.contactType === "email") {
         body.email = form.email.trim().toLowerCase();
       } else {
-        body.phone = form.phone.trim();
+        body.phone = normalizePhone(form.phone.trim());
       }
 
       const controller = new AbortController();
