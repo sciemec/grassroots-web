@@ -88,20 +88,9 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
   const [minute,          setMinute]          = useState(0);
   const [audioEnabled,    setAudioEnabled]    = useState(false);
   const [isLoading,       setIsLoading]       = useState(true);
-  // Web Speech API — spoken commentary
-  const [isSpeaking,      setIsSpeaking]      = useState(false);
-  const [currentCommentary, setCurrentCommentary] = useState('');
 
   const seenIds  = useRef<Set<string>>(new Set());
   const feedRef  = useRef<HTMLDivElement>(null);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
-
-  // Initialise Web Speech API on client only
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      synthRef.current = window.speechSynthesis;
-    }
-  }, []);
 
   useEffect(() => {
     if (autoStartAudio) setAudioEnabled(true);
@@ -121,18 +110,6 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
       feedRef.current.scrollTop = feedRef.current.scrollHeight;
     }
   }, [entries]);
-
-  // Speak commentary text via Web Speech API
-  function speak(text: string) {
-    if (!synthRef.current) return;
-    const utterance     = new SpeechSynthesisUtterance(text);
-    utterance.rate      = 0.95;
-    utterance.pitch     = 1.0;
-    utterance.onstart   = () => setIsSpeaking(true);
-    utterance.onend     = () => setIsSpeaking(false);
-    utterance.onerror   = () => setIsSpeaking(false);
-    synthRef.current.speak(utterance);
-  }
 
   async function poll() {
     try {
@@ -182,12 +159,8 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
         setCurrentCommentary(latest.commentary);
 
         if (audioEnabled) {
-          // Queue in the audio commentary system (existing)
           const audio = getAudioCommentary();
           incoming.forEach(e => audio.queueCommentary(e.commentary));
-
-          // Also speak via Web Speech API for instant browser TTS
-          incoming.forEach(e => speak(e.commentary));
         }
       }
     } catch {
@@ -201,11 +174,9 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
     const audio = getAudioCommentary();
     if (audioEnabled) {
       audio.stop();
-      // Cancel any in-progress speech
-      synthRef.current?.cancel();
-      setIsSpeaking(false);
       setAudioEnabled(false);
     } else {
+      audio.unlock(); // unlock iOS audio inside this user-gesture handler
       setAudioEnabled(true);
     }
   }
@@ -232,11 +203,6 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {isSpeaking && (
-              <span className="text-[10px] font-bold" style={{ color: '#4ade80' }}>
-                🔴 Speaking…
-              </span>
-            )}
             {minute > 0 && (
               <span
                 className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full"
