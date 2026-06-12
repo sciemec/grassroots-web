@@ -532,3 +532,5 @@ export function quickAQ(inputs: Partial<RawTestInputs> & { age: number; gender: 
   const r = resolveJumpHeight(inputs as RawTestInputs);
   return calculateAQ(calculateDomains(r, resolveAgeGroup(r.age), inputs.gender));
 }
+// Alias for backwards compatibility
+export { evaluate as evaluateBiometrics };

@@ -1,74 +1,88 @@
 // src/app/api/thuto/whatsapp/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// THUTO / Amara on WhatsApp — Twilio version
+// THUTO / Amara on WhatsApp — Twilio webhook handler
 //
-// Called by HandleWhatsAppCommand.php (bhora-ai) when a player sends
-// THUTO [question], AMARA [question], SCORE, DRILLS, or HELP to the GRS
-// WhatsApp number.
-//
-// Also called directly by the EXISTING src/app/api/whatsapp/route.ts
-// (the Next.js Twilio webhook) for text command routing.
-//
-// HOW TO WIRE INTO THE EXISTING NEXT.JS WHATSAPP ROUTE:
-// In src/app/api/whatsapp/route.ts, the incoming body is Twilio form-encoded.
-// After parsing it, add this block before the existing text handling:
-//
-//   const msgBody = params.get('Body')?.trim() ?? '';
-//   const upper   = msgBody.toUpperCase();
-//   const from    = params.get('From')?.replace('whatsapp:', '') ?? '';
-//
-//   if (upper.startsWith('THUTO') || upper.startsWith('AMARA') ||
-//       upper.startsWith('COACH') || upper === 'SCORE' ||
-//       upper === 'DRILLS' || upper === 'HELP') {
-//     const r = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/thuto/whatsapp`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ from, message: msgBody }),
-//     });
-//     const { reply } = await r.json();
-//     return twimlReply(reply);
-//   }
-//
-// where twimlReply() returns:
-//   new NextResponse(
-//     `<?xml version="1.0"?><Response><Message>${reply}</Message></Response>`,
-//     { headers: { 'Content-Type': 'text/xml' } }
-//   )
+// Supports commands: THUTO [question], AMARA [question], SCORE, DRILLS, HELP
+// Uses Groq (lightweight) for AI responses when a question is asked
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import twilio from 'twilio';
+import Groq from 'groq-sdk';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
-// WhatsApp messages must be short — keep replies under 300 characters
-const THUTO_WHATSAPP_PROMPT =
-  'You are THUTO, the GrassRoots Sports AI coach for male athletes in Zimbabwe. ' +
-  'Reply via WhatsApp so keep it under 280 characters. Be direct, specific, and encouraging. ' +
-  'Reference Zimbabwe football where relevant.';
-
-const AMARA_WHATSAPP_PROMPT =
-  'You are Amara, the GrassRoots Sports AI coach for female athletes in Zimbabwe. ' +
-  'Reply via WhatsApp so keep it under 280 characters. Be warm, technically precise, and encouraging. ' +
-  'Never compare female athletes to male benchmarks.';
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
+// WhatsApp message limits
+const MAX_REPLY_LENGTH = 300;
+
+// System prompts for AI coach
+const THUTO_PROMPT = `You are THUTO, the GrassRoots Sports AI coach for male athletes in Zimbabwe.
+Reply via WhatsApp so keep it under 280 characters. Be direct, specific, and encouraging.
+Reference Zimbabwe football where relevant. Never use markdown or emojis.`;
+
+const AMARA_PROMPT = `You are Amara, the GrassRoots Sports AI coach for female athletes in Zimbabwe.
+Reply via WhatsApp so keep it under 280 characters. Be warm, technically precise, and encouraging.
+Never compare female athletes to male benchmarks. Never use markdown or emojis.`;
+
+// Helper to send WhatsApp message
+async function sendWhatsAppMessage(to: string, body: string) {
+  await twilioClient.messages.create({
+    body: body,
+    from: process.env.TWILIO_WHATSAPP_FROM,
+    to: `whatsapp:${to}`,
+  });
+}
+
+// Helper to create XML response for Twilio
+function twimlReply(message: string): NextResponse {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>${escapeXml(message)}</Message>
+</Response>`;
+  return new NextResponse(xml, {
+    headers: { 'Content-Type': 'text/xml' },
+  });
+}
+
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
 export async function POST(req: NextRequest) {
-  const { from, message } = await req.json();
-
-  // Normalise phone — strip country code prefix variations
-  const phone = (from ?? '').replace(/^whatsapp:/, '').replace(/^\+/, '');
-  const upper = (message ?? '').trim().toUpperCase();
-
-  let reply = '';
-
   try {
+    // Parse Twilio webhook (form data from WhatsApp)
+    const formData = await req.formData();
+    const messageBody = formData.get('Body')?.toString().trim() ?? '';
+    const fromNumber = formData.get('From')?.toString().replace('whatsapp:', '') ?? '';
+    const profileName = formData.get('ProfileName')?.toString() ?? '';
 
-    // ── HELP ──────────────────────────────────────────────────────────────
+    if (!messageBody || !fromNumber) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    const upper = messageBody.toUpperCase();
+    let reply = '';
+
+    // ── HELP / HI / HELLO ─────────────────────────────────────────────────
     if (upper === 'HELP' || upper === 'HI' || upper === 'HELLO') {
       reply = [
-        'GRS Commands:',
+        '🏆 GRS Commands:',
         'THUTO [question] — boys AI coach',
         'AMARA [question] — girls AI coach',
         'SCORE — your AQ + rank',
@@ -76,59 +90,70 @@ export async function POST(req: NextRequest) {
         'PASSPORT — your scout link',
         'grassrootssports.live',
       ].join('\n');
-      return NextResponse.json({ reply });
+      await sendWhatsAppMessage(fromNumber, reply);
+      return twimlReply(reply);
     }
 
-    // ── SCORE ─────────────────────────────────────────────────────────────
+    // ── SCORE / AQ / STATS ────────────────────────────────────────────────
     if (upper === 'SCORE' || upper === 'AQ' || upper === 'STATS') {
       try {
-        const res = await fetch(`${API}/player/score-by-phone/${encodeURIComponent(phone)}`);
+        const res = await fetch(`${API}/player/score-by-phone/${encodeURIComponent(fromNumber)}`);
         if (res.ok) {
           const p = await res.json();
-          reply = `${p.name} | Rank: ${p.rank} | AQ: ${p.aq_score ?? '—'} | Streak: ${p.weekly_streak ?? 0} weeks\ngrassrootssports.live/player`;
+          reply = `${p.name || 'Athlete'} | Rank: ${p.rank || '—'} | AQ: ${p.aq_score ?? '—'} | Streak: ${p.weekly_streak ?? 0} weeks\n👉 grassrootssports.live/player`;
         } else {
-          reply = 'No account found. Register at grassrootssports.live';
+          reply = 'No account found. Register at grassrootssports.live/player';
         }
       } catch {
         reply = 'Could not fetch your score. Visit grassrootssports.live/player';
       }
-      return NextResponse.json({ reply });
+      await sendWhatsAppMessage(fromNumber, reply);
+      return twimlReply(reply);
     }
 
-    // ── DRILLS ────────────────────────────────────────────────────────────
+    // ── DRILLS / DRILL ────────────────────────────────────────────────────
     if (upper === 'DRILLS' || upper === 'DRILL') {
       try {
-        const res = await fetch(`${API}/player/drills-by-phone/${encodeURIComponent(phone)}`);
+        const res = await fetch(`${API}/player/drills-by-phone/${encodeURIComponent(fromNumber)}`);
         if (res.ok) {
           const data = await res.json();
           const list = (data.drills ?? []).slice(0, 3).map((d: any) => `• ${d.drill_name}`).join('\n');
-          reply = `Your drills (Tier ${data.current_tier}):\n${list}\n\ngrassrootssports.live/player/drills`;
+          reply = `Your drills (Tier ${data.current_tier || '—'}):\n${list || 'No drills yet'}\n\n👉 grassrootssports.live/player/drills`;
         } else {
-          reply = 'Complete a test session first to unlock drills.\ngrassrootssports.live/player/talent-id';
+          reply = 'Complete a test session first to unlock drills.\n👉 grassrootssports.live/player/talent-id';
         }
       } catch {
-        reply = 'Visit grassrootssports.live/player/drills';
+        reply = 'Visit grassrootssports.live/player/drills to see your drills.';
       }
-      return NextResponse.json({ reply });
+      await sendWhatsAppMessage(fromNumber, reply);
+      return twimlReply(reply);
+    }
+
+    // ── PASSPORT / CV / SHARE ──────────────────────────────────────────────
+    if (upper === 'PASSPORT' || upper === 'CV' || upper === 'SHARE') {
+      reply = `Your Talent Passport: grassrootssports.live/passport/${fromNumber}\nShare this link with scouts!`;
+      await sendWhatsAppMessage(fromNumber, reply);
+      return twimlReply(reply);
     }
 
     // ── THUTO / AMARA / COACH coaching question ───────────────────────────
-    // Detect gender from command prefix — AMARA = female, THUTO/COACH = male
-    let question  = (message ?? '').trim();
-    let isAmara   = false;
+    let question = messageBody;
+    let isAmara = false;
 
-    for (const prefix of ['AMARA ', 'THUTO ', 'COACH ']) {
-      if (upper.startsWith(prefix)) {
-        isAmara  = prefix === 'AMARA ';
-        question = message.slice(prefix.length).trim();
-        break;
-      }
-    }
-
-    // Try to get player gender from bhora-ai to auto-select coach
-    if (!isAmara && phone) {
+    // Check for command prefixes
+    if (upper.startsWith('THUTO ')) {
+      isAmara = false;
+      question = messageBody.slice(6).trim();
+    } else if (upper.startsWith('AMARA ')) {
+      isAmara = true;
+      question = messageBody.slice(6).trim();
+    } else if (upper.startsWith('COACH ')) {
+      isAmara = false;
+      question = messageBody.slice(6).trim();
+    } else {
+      // No prefix - try to detect gender from backend
       try {
-        const res = await fetch(`${API}/player/score-by-phone/${encodeURIComponent(phone)}`);
+        const res = await fetch(`${API}/player/score-by-phone/${encodeURIComponent(fromNumber)}`);
         if (res.ok) {
           const p = await res.json();
           isAmara = p.gender === 'female';
@@ -136,31 +161,53 @@ export async function POST(req: NextRequest) {
       } catch { /* default to THUTO */ }
     }
 
-    if (!question || question.length < 3) {
-      const name = isAmara ? 'Amara' : 'THUTO';
-      reply = `${name} here. Ask me anything about your training.\nExample: ${isAmara ? 'AMARA' : 'THUTO'} how do I improve my sprint time?`;
-      return NextResponse.json({ reply });
+    // If no question, show help
+    if (!question || question.length < 2) {
+      const coachName = isAmara ? 'Amara' : 'THUTO';
+      reply = `${coachName} here. Ask me about your training.\nExample: ${isAmara ? 'AMARA' : 'THUTO'} how do I improve my sprint time?`;
+      await sendWhatsAppMessage(fromNumber, reply);
+      return twimlReply(reply);
     }
 
-    // Call Claude
-    const systemPrompt = isAmara ? AMARA_WHATSAPP_PROMPT : THUTO_WHATSAPP_PROMPT;
+    // Call Groq AI for response
+    try {
+      const systemPrompt = isAmara ? AMARA_PROMPT : THUTO_PROMPT;
 
-    const msg = await anthropic.messages.create({
-      model:      'claude-sonnet-4-20250514',
-      max_tokens: 150,
-      system:     systemPrompt,
-      messages:   [{ role: 'user', content: question }],
-    });
+      const completion = await groq.chat.completions.create({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: question }
+        ],
+        max_tokens: 200,
+        temperature: 0.7,
+      });
 
-    reply = msg.content[0].type === 'text' ? msg.content[0].text.trim() : 'Ask me your training question.';
+      reply = completion.choices[0]?.message?.content || "I couldn't process that. Ask me again!";
 
-    // Enforce WhatsApp character limit
-    if (reply.length > 300) reply = reply.slice(0, 297) + '...';
+      // Enforce WhatsApp character limit
+      if (reply.length > MAX_REPLY_LENGTH) {
+        reply = reply.slice(0, MAX_REPLY_LENGTH - 3) + '...';
+      }
 
-  } catch (err) {
-    console.error('THUTO WhatsApp error:', err);
-    reply = 'Your coach is resting. Try again in a moment.';
+      await sendWhatsAppMessage(fromNumber, reply);
+      return twimlReply(reply);
+
+    } catch (aiError) {
+      console.error('AI error:', aiError);
+      reply = 'Your coach is resting. Try again in a moment.';
+      await sendWhatsAppMessage(fromNumber, reply);
+      return twimlReply(reply);
+    }
+
+  } catch (error) {
+    console.error('WhatsApp webhook error:', error);
+    const errorReply = 'Something went wrong. Try again later.';
+    return twimlReply(errorReply);
   }
+}
 
-  return NextResponse.json({ reply });
+// For Twilio webhook verification (GET request)
+export async function GET() {
+  return new NextResponse('OK', { status: 200 });
 }
