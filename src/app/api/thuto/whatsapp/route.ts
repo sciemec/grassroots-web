@@ -10,14 +10,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 import Groq from 'groq-sdk';
 
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 const API = process.env.NEXT_PUBLIC_API_URL;
+
+// Lazy singletons — instantiated on first request, not at module load
+// This prevents "c(...) is not a constructor" during Next.js static analysis
+let _twilioClient: ReturnType<typeof twilio> | null = null;
+let _groq: Groq | null = null;
+
+function getTwilioClient() {
+  if (!_twilioClient) {
+    _twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+  }
+  return _twilioClient;
+}
+
+function getGroq() {
+  if (!_groq) {
+    _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  }
+  return _groq;
+}
 
 // WhatsApp message limits
 const MAX_REPLY_LENGTH = 300;
@@ -33,7 +48,7 @@ Never compare female athletes to male benchmarks. Never use markdown or emojis.`
 
 // Helper to send WhatsApp message
 async function sendWhatsAppMessage(to: string, body: string) {
-  await twilioClient.messages.create({
+  await getTwilioClient().messages.create({
     body: body,
     from: process.env.TWILIO_WHATSAPP_FROM,
     to: `whatsapp:${to}`,
@@ -173,7 +188,7 @@ export async function POST(req: NextRequest) {
     try {
       const systemPrompt = isAmara ? AMARA_PROMPT : THUTO_PROMPT;
 
-      const completion = await groq.chat.completions.create({
+      const completion = await getGroq().chat.completions.create({
         model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: systemPrompt },
