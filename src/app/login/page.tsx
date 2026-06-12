@@ -182,7 +182,7 @@ function LoginForm() {
         <div className="mt-4 space-y-2 text-center">
           <p className="text-white/40 text-sm">
             New here?{' '}
-            <Link href="/register/who" className="text-[#FFD700] hover:text-[#FFE44D] font-medium transition-colors">
+            <Link href="/register" className="text-[#FFD700] hover:text-[#FFE44D] font-medium transition-colors">
               Create account
             </Link>
           </p>

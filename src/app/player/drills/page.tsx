@@ -299,7 +299,7 @@ export default function FootballDrillsLabPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-xl border border-white/10">
+            <div className="flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-xl border border-[#f0b429]/10">
               <GraduationCap size={16} className="text-[#f0b429]" />
               <div className="text-left">
                 <span className="block text-[8px] font-black uppercase tracking-widest text-[#f0b429] leading-none">Strategic Partner</span>

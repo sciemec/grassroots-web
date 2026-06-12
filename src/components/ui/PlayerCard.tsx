@@ -153,7 +153,7 @@ export default function PlayerCard({ data, compact = false }: {
       </div>
 
       {/* AQ + DQ row */}
-      <div className="flex items-end gap-4 px-4 pb-3 border-b border-white/10">
+      <div className="flex items-end gap-4 px-4 pb-3 border-b border-[#f0b429]/10">
         <div>
           <div className="text-5xl font-black text-white leading-none">{data.aqScore}</div>
           <div className="text-white/50 text-xs mt-0.5">Athletic Quotient</div>
@@ -209,7 +209,7 @@ export default function PlayerCard({ data, compact = false }: {
       <div className="flex gap-2 px-4 pb-4">
         <button
           onClick={handleShare}
-          className="flex-1 py-2 rounded-xl text-xs font-medium border border-white/20 text-white hover:bg-white/10 transition-colors"
+          className="flex-1 py-2 rounded-xl text-xs font-medium border border-[#f0b429]/20 text-white hover:bg-white/10 transition-colors"
         >
           Share on WhatsApp
         </button>

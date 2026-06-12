@@ -1,743 +1,464 @@
-"use client";
+// src/app/world-cup/page.tsx
+// GrassRoots Sports branded World Cup page – matches the main site design
+'use client';
 
-import { useState, useEffect } from "react";
-import {
-  Trophy, Radio, Calendar, MapPin, Clock,
-  ChevronRight, Flame, Globe2, Zap, ArrowLeft, GraduationCap,
-} from "lucide-react";
-import { LiveCommentary } from "@/components/LiveCommentary";
-import { getUpcomingMatches } from "@/lib/world-cup-data";
+import { useState, useEffect, useRef } from 'react';
+import { MapPin, Calendar, Radio, Mic, MicOff, Volume2, VolumeX, Tv, Wifi, WifiOff, ChevronRight, RefreshCw, TrendingUp, Target, Activity } from 'lucide-react';
 
-interface LiveMatch {
-  id: number;
+// ============================================
+// TYPES
+// ============================================
+interface Match {
+  id: string;
   homeTeam: string;
   awayTeam: string;
   homeScore: number;
   awayScore: number;
-  minute: number;
-  status: string;
+  status: 'scheduled' | 'live' | 'finished';
+  minute: string;
+  date: string;
+  time: string;
+  stadium: string;
+  city: string;
 }
 
-interface UpcomingMatch {
-  id: string | number;
-  homeTeam: string;
-  awayTeam: string;
-  utcDate?: string;
-  date?: string;
-  time?: string;
-  stadium?: string;
-  group?: string;
-  status?: string;
+// ============================================
+// REAL DATA FETCHING (ESPN API + worldcup.json)
+// ============================================
+async function fetchLiveMatches(): Promise<Match[]> {
+  try {
+    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa-world-cup/scoreboard', { next: { revalidate: 5 } });
+    if (!res.ok) throw new Error(`ESPN error: ${res.status}`);
+    const data = await res.json();
+    if (!data.events || data.events.length === 0) return fetchScheduledMatches();
+    return data.events.map((event: any) => {
+      const home = event.competitions[0].competitors.find((c: any) => c.homeAway === 'home');
+      const away = event.competitions[0].competitors.find((c: any) => c.homeAway === 'away');
+      return {
+        id: event.id,
+        homeTeam: home?.team.displayName || '?',
+        awayTeam: away?.team.displayName || '?',
+        homeScore: parseInt(home?.score || '0'),
+        awayScore: parseInt(away?.score || '0'),
+        status: event.status.type.state === 'in' ? 'live' : event.status.type.state === 'post' ? 'finished' : 'scheduled',
+        minute: event.competitions[0].status.type.shortDetail || '0\'',
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        stadium: event.competitions[0].venue?.fullName || 'TBD',
+        city: event.competitions[0].venue?.city || 'TBD',
+      };
+    });
+  } catch (error) {
+    console.error('ESPN error:', error);
+    return [];
+  }
 }
 
-const TEAM_FLAGS: Record<string, string> = {
-  USA: "🇺🇸", Canada: "🇨🇦", Mexico: "🇲🇽",
-  Brazil: "🇧🇷", Argentina: "🇦🇷", Uruguay: "🇺🇾", Colombia: "🇨🇴",
-  Ecuador: "🇪🇨", Chile: "🇨🇱", Paraguay: "🇵🇾", Venezuela: "🇻🇪",
-  Peru: "🇵🇪", Bolivia: "🇧🇴",
-  Germany: "🇩🇪", Scotland: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", Hungary: "🇭🇺", Switzerland: "🇨🇭",
-  Spain: "🇪🇸", Croatia: "🇭🇷", Italy: "🇮🇹", Albania: "🇦🇱",
-  Poland: "🇵🇱", Netherlands: "🇳🇱", Slovenia: "🇸🇮", Denmark: "🇩🇰",
-  Serbia: "🇷🇸", England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", Belgium: "🇧🇪", Slovakia: "🇸🇰",
-  Romania: "🇷🇴", Ukraine: "🇺🇦", Austria: "🇦🇹", France: "🇫🇷",
-  Turkey: "🇹🇷", Georgia: "🇬🇪", Portugal: "🇵🇹", "Czech Republic": "🇨🇿",
-  Wales: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
-  Morocco: "🇲🇦", Senegal: "🇸🇳", Nigeria: "🇳🇬", Ghana: "🇬🇭",
-  Cameroon: "🇨🇲", "South Africa": "🇿🇦", Egypt: "🇪🇬",
-  Japan: "🇯🇵", "South Korea": "🇰🇷", Iran: "🇮🇷", Australia: "🇦🇺",
-  "Saudi Arabia": "🇸🇦", Qatar: "🇶🇦",
-};
-
-const WIRE = [
-  "FIFA World Cup 2026 — 11 June to 19 July · USA · Canada · Mexico",
-  "48 teams · 104 matches · 16 venues across North America",
-  "Group Stage draws complete — see all fixtures below",
-  "Zimbabwe Scout Watch: 5 African nations qualified for 2026",
-  "Argentina defending champions — 4th World Cup for Messi",
-  "AI commentary goes live the moment each match kicks off",
-];
-
-const GROUPS = ["All", "Group A", "Group B", "Group C", "Group D", "Group E", "Group F"];
-
-function flag(team: string) { return TEAM_FLAGS[team] ?? "🏳️"; }
-
-function fmtDate(m: UpcomingMatch) {
-  const raw = m.utcDate ?? (m.date ? m.date + "T00:00:00" : null);
-  if (!raw) return "";
-  return new Date(raw).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+async function fetchScheduledMatches(): Promise<Match[]> {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+    if (!res.ok) throw new Error('worldcup.json error');
+    const data = await res.json();
+    if (!data.matches) return [];
+    const today = new Date().toISOString().split('T')[0];
+    return data.matches
+      .filter((m: any) => m.date >= today)
+      .slice(0, 12)
+      .map((m: any) => ({
+        id: `${m.team1}-${m.team2}-${m.date}`,
+        homeTeam: m.team1,
+        awayTeam: m.team2,
+        homeScore: 0,
+        awayScore: 0,
+        status: 'scheduled',
+        minute: '0\'',
+        date: m.date,
+        time: m.time || 'TBD',
+        stadium: m.ground || 'TBD',
+        city: m.ground?.split(',')[1]?.trim() || 'TBD',
+      }));
+  } catch (error) {
+    console.error('worldcup.json error:', error);
+    return [];
+  }
 }
 
-function fmtTime(m: UpcomingMatch) {
-  if (m.utcDate) return new Date(m.utcDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  return m.time ?? "";
-}
-
-function daysUntil(m: UpcomingMatch): number | null {
-  const raw = m.utcDate ?? (m.date ? m.date + "T00:00:00" : null);
-  if (!raw) return null;
-  const diff = new Date(raw).getTime() - Date.now();
-  return Math.max(0, Math.ceil(diff / 86_400_000));
-}
-
-function teamForm(team: string): ("W" | "D" | "L")[] {
-  const seed = [...team].reduce((a, c) => a + c.charCodeAt(0), 0);
-  const pool: ("W" | "D" | "L")[] = ["W", "W", "W", "D", "L"];
-  return Array.from({ length: 5 }, (_, i) => pool[(seed + i * 3) % 5]);
-}
-
-const FORM_BG: Record<string, string> = {
-  W: "#16a34a", D: "#d97706", L: "#dc2626",
-};
-
-// ─── Fixture Detail Panel ─────────────────────────────────────────────────────
-function FixtureDetail({ match, onBack }: { match: UpcomingMatch; onBack: () => void }) {
-  const days  = daysUntil(match);
-  const hForm = teamForm(match.homeTeam);
-  const aForm = teamForm(match.awayTeam);
-
-  const countdownLabel =
-    days === null ? null
-    : days === 0  ? "TODAY"
-    : days === 1  ? "TOMORROW"
-    : `IN ${days} DAYS`;
-
-  return (
-    <div className="rounded-2xl overflow-hidden bg-white border border-gray-200 shadow-sm">
-
-      {/* Top context bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100" style={{ backgroundColor: "#f0fdf4" }}>
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 transition-opacity hover:opacity-70"
-          style={{ color: "#6b7280" }}
-        >
-          <ArrowLeft size={13} />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Fixtures</span>
-        </button>
-        <span className="text-[9px] font-black uppercase tracking-[0.25em]" style={{ color: "#1a5c2a" }}>
-          FIFA World Cup 2026
-        </span>
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
-          style={{ backgroundColor: "#fef3c7", color: "#d97706" }}>
-          Upcoming
-        </span>
-      </div>
-
-      {/* Hero VS — keeps dark green for impact */}
-      <div className="relative px-6 pt-8 pb-7"
-        style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-          style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
-        />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(240,180,41,0.08) 0%, transparent 70%)" }}
-        />
-
-        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          <div className="text-center">
-            <span className="text-5xl leading-none block">{flag(match.homeTeam)}</span>
-            <p className="text-sm font-black mt-2.5 leading-tight" style={{ color: "#f0b429" }}>{match.homeTeam}</p>
-            <p className="text-[9px] uppercase tracking-widest mt-1" style={{ color: "rgba(240,180,41,0.55)" }}>Home</p>
-          </div>
-          <div className="text-center px-3">
-            <div className="text-[10px] font-black uppercase tracking-[0.3em] mb-2"
-              style={{ color: "rgba(240,180,41,0.45)" }}>VS</div>
-            {countdownLabel && (
-              <div className="px-3 py-1.5 rounded-full text-[9px] font-black tracking-wider"
-                style={{ background: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.3)", color: "#f0b429" }}>
-                {countdownLabel}
-              </div>
-            )}
-          </div>
-          <div className="text-center">
-            <span className="text-5xl leading-none block">{flag(match.awayTeam)}</span>
-            <p className="text-sm font-black mt-2.5 leading-tight" style={{ color: "#f0b429" }}>{match.awayTeam}</p>
-            <p className="text-[9px] uppercase tracking-widest mt-1" style={{ color: "rgba(240,180,41,0.55)" }}>Away</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Meta strip */}
-      <div className="grid grid-cols-3 text-center border-b border-gray-100">
-        {[
-          { Icon: Calendar, label: "Date",     value: fmtDate(match) || "—" },
-          { Icon: Clock,    label: "Kick-off",  value: fmtTime(match) || "TBD" },
-          { Icon: Trophy,   label: "Stage",     value: match.group || "Group Stage" },
-        ].map(({ Icon, label, value }, i) => (
-          <div key={label} className="py-3.5 px-2" style={{ borderRight: i < 2 ? "1px solid #f3f4f6" : undefined }}>
-            <Icon size={11} className="mx-auto mb-1" style={{ color: "#f0b429" }} />
-            <p className="text-[8px] uppercase tracking-widest mb-0.5 text-gray-400">{label}</p>
-            <p className="text-[11px] font-black text-gray-900">{value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Stadium */}
-      {match.stadium && (
-        <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100">
-          <MapPin size={11} className="shrink-0" style={{ color: "#f0b429" }} />
-          <span className="text-[11px] font-semibold text-gray-500">{match.stadium}</span>
-        </div>
-      )}
-
-      {/* Form guides */}
-      <div className="px-5 py-4 border-b border-gray-100">
-        <p className="text-[8px] font-black uppercase tracking-widest mb-3 text-gray-400">
-          Recent Form (last 5)
-        </p>
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <p className="text-[9px] font-bold mb-2 truncate text-gray-500">{match.homeTeam}</p>
-            <div className="flex gap-1.5">
-              {hForm.map((r, i) => (
-                <div key={i} className="w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-black text-white"
-                  style={{ backgroundColor: FORM_BG[r] }}>{r}</div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="text-[9px] font-bold mb-2 text-right truncate text-gray-500">{match.awayTeam}</p>
-            <div className="flex gap-1.5 justify-end">
-              {[...aForm].reverse().map((r, i) => (
-                <div key={i} className="w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-black text-white"
-                  style={{ backgroundColor: FORM_BG[r] }}>{r}</div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Matchday features preview */}
-      <div className="p-5">
-        <div className="rounded-xl p-4" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-          <p className="text-[8px] font-black uppercase tracking-widest mb-3" style={{ color: "#15803d" }}>
-            Live on matchday
-          </p>
-          <div className="space-y-2.5">
-            {[
-              { Icon: Radio, label: "AI Commentary",    desc: "Real-time event narration, updated live" },
-              { Icon: Zap,   label: "Win Probability",  desc: "Live predictions recalculated every minute" },
-              { Icon: Flame, label: "Momentum Tracker", desc: "Shot map, possession and key moments" },
-            ].map(({ Icon, label, desc }) => (
-              <div key={label} className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ backgroundColor: "rgba(240,180,41,0.12)", border: "1px solid rgba(240,180,41,0.25)" }}>
-                  <Icon size={12} style={{ color: "#f0b429" }} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-900 leading-none">{label}</p>
-                  <p className="text-[9px] mt-0.5 text-gray-400">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Live Match Context Bar ───────────────────────────────────────────────────
-function LiveMatchContextBar({ match, onBack }: { match: LiveMatch; onBack: () => void }) {
-  return (
-    <div className="rounded-2xl flex items-center justify-between px-4 py-2.5 bg-white border border-gray-200 shadow-sm">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1.5 transition-opacity hover:opacity-70"
-        style={{ color: "#6b7280" }}
-      >
-        <ArrowLeft size={13} />
-        <span className="text-[10px] font-bold uppercase tracking-wider">Matches</span>
-      </button>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold text-gray-600 hidden sm:block">
-          {match.homeTeam} {match.homeScore} — {match.awayScore} {match.awayTeam}
-        </span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-[10px] font-black text-red-500">{match.minute}&apos;</span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-export default function WorldCupPage() {
-  const [liveMatches, setLiveMatches]           = useState<LiveMatch[]>([]);
-  const [upcomingMatches, setUpcomingMatches]   = useState<UpcomingMatch[]>([]);
-  const [selectedMatch, setSelectedMatch]       = useState<LiveMatch | null>(null);
-  const [selectedUpcoming, setSelectedUpcoming] = useState<UpcomingMatch | null>(null);
-  const [isLoading, setIsLoading]               = useState(true);
-  const [activeGroup, setActiveGroup]           = useState("All");
-  const [wireIndex, setWireIndex]               = useState(0);
-  const [audioMode, setAudioMode]               = useState(false);
+// ============================================
+// ENHANCED 2D PITCH with GrassRoots branding
+// ============================================
+function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: number; y: number }; shots?: Array<{ x: number; y: number; isGoal: boolean }> }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const width = 900;
+  const height = 600;
 
   useEffect(() => {
-    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
-    return () => clearInterval(id);
-  }, []);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  useEffect(() => {
-    setUpcomingMatches(
-      getUpcomingMatches().map((m) => ({
-        id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam,
-        date: m.date, time: m.time, stadium: m.stadium, group: m.group,
-      }))
-    );
-  }, []);
+    // 1. Grass gradient (using GrassRoots green)
+    const grad = ctx.createLinearGradient(0, 0, 0, height);
+    grad.addColorStop(0, '#1a5c2a');
+    grad.addColorStop(0.5, '#0e4a1e');
+    grad.addColorStop(1, '#0a3d16');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
 
-  useEffect(() => {
-    fetchMatches();
-    const interval = setInterval(fetchMatches, 30_000);
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // 2. Grass stripes
+    ctx.fillStyle = '#0a3d16';
+    for (let i = 0; i < width; i += 40) ctx.fillRect(i, 0, 20, height);
+    ctx.fillStyle = '#1a5c2a';
+    for (let i = 20; i < width; i += 40) ctx.fillRect(i, 0, 20, height);
 
-  const fetchMatches = async () => {
-    try {
-      const res  = await fetch("/api/world-cup/matches");
-      const data = await res.json();
-      if (res.ok) {
-        setLiveMatches(data.live || []);
-        if (data.upcoming?.length) setUpcomingMatches(data.upcoming);
-        if (data.live?.length && !selectedMatch) setSelectedMatch(data.live[0]);
+    // 3. Pitch lines
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(40, 40, width - 80, height - 80);
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 40);
+    ctx.lineTo(width / 2, height - 40);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, 45, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.strokeRect(40, height / 2 - 90, 90, 180);
+    ctx.strokeRect(width - 130, height / 2 - 90, 90, 180);
+
+    // 4. Goals with 3D effect
+    ctx.fillStyle = '#ddd';
+    ctx.fillRect(25, height / 2 - 40, 15, 80);
+    ctx.fillStyle = '#aaa';
+    ctx.fillRect(22, height / 2 - 42, 3, 84);
+    ctx.fillRect(width - 40, height / 2 - 40, 15, 80);
+    ctx.fillRect(width - 25, height / 2 - 42, 3, 84);
+
+    // 5. Centre circle shadow
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, 45, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 6. Heat map (shots)
+    for (const shot of shots) {
+      const x = 40 + (shot.x / 100) * (width - 80);
+      const y = 40 + (shot.y / 100) * (height - 80);
+      const radGrad = ctx.createRadialGradient(x, y, 5, x, y, 28);
+      if (shot.isGoal) {
+        radGrad.addColorStop(0, 'rgba(240, 180, 41, 0.9)');  // Gold for goals
+        radGrad.addColorStop(0.6, 'rgba(240, 180, 41, 0.3)');
+        radGrad.addColorStop(1, 'rgba(240, 180, 41, 0)');
+      } else {
+        radGrad.addColorStop(0, 'rgba(239, 68, 68, 0.7)');
+        radGrad.addColorStop(0.6, 'rgba(239, 68, 68, 0.2)');
+        radGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
       }
-    } catch { /* static data covers the fallback */ }
-    finally { setIsLoading(false); }
-  };
+      ctx.fillStyle = radGrad;
+      ctx.beginPath();
+      ctx.arc(x, y, 30, 0, 2 * Math.PI);
+      ctx.fill();
+    }
 
-  const handleLiveSelect = (m: LiveMatch) => {
-    setSelectedMatch(m);
-    setSelectedUpcoming(null);
-  };
+    // 7. Ball
+    if (ballPosition) {
+      const x = 40 + (ballPosition.x / 100) * (width - 80);
+      const y = 40 + (ballPosition.y / 100) * (height - 80);
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(x + 4, y + 6, 9, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(x - 3, y, 4, 7, 0, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ccc';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + 3, y, 4, 7, 0, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
 
-  const handleUpcomingSelect = (m: UpcomingMatch) => {
-    setSelectedUpcoming(m);
-    setSelectedMatch(null);
-  };
+    // 8. GRASSROOTS SPORTS brand banner with URL
+    ctx.font = 'bold 24px "Inter", system-ui';
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.textAlign = 'center';
+    ctx.fillText("GRASSROOTS SPORTS", width / 2, height / 2 + 40);
+    ctx.font = '16px monospace';
+    ctx.fillStyle = 'rgba(240, 180, 41, 0.4)';
+    ctx.fillText("grassrootssports.live", width / 2, height / 2 + 85);
+    
+    // 9. Corner marks
+    ctx.font = 'bold 12px monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText("GRS", 20, 35);
+    ctx.fillText("LIVE", width - 70, 35);
+  }, [ballPosition, shots]);
 
-  const handleFeatureClick = (feature: "commentary" | "probability" | "audio") => {
-    if (liveMatches.length > 0) {
-      setAudioMode(feature === "audio");
-      setSelectedMatch(liveMatches[0]);
-      setSelectedUpcoming(null);
-    } else {
-      document.getElementById("fixtures")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  return <canvas ref={canvasRef} width={width} height={height} className="w-full rounded-xl shadow-2xl border border-[#f0b429]/20" />;
+}
+
+// ============================================
+// AI COMMENTARY COMPONENT (branded)
+// ============================================
+function AICommentary({ events }: { events: any[] }) {
+  const [isSpeaking, setIsSpeaking] = useState(true);
+  const [currentCommentary, setCurrentCommentary] = useState('Select a live match to start AI commentary');
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') synthRef.current = window.speechSynthesis;
+  }, []);
+
+  useEffect(() => {
+    if (!events.length) return;
+    const latest = events[events.length - 1];
+    const text = latest.commentary || `${latest.type} - ${latest.description}`;
+    setCurrentCommentary(text);
+    if (isSpeaking && synthRef.current) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      synthRef.current.speak(utterance);
+    }
+  }, [events]);
+
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">AI Live Commentary</h3>
+        </div>
+        <button onClick={() => setIsSpeaking(!isSpeaking)} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-xs text-gray-700 hover:bg-gray-200 transition">
+          {isSpeaking ? <Volume2 size={12} /> : <MicOff size={12} />}
+          {isSpeaking ? "ON" : "OFF"}
+        </button>
+      </div>
+      <div className="bg-gray-50 rounded-xl p-4 h-28 overflow-y-auto border border-gray-100">
+        <p className="text-sm text-gray-700 italic leading-relaxed">"{currentCommentary}"</p>
+      </div>
+      <div className="flex justify-end mt-2">
+        <span className="text-[9px] text-gray-400 uppercase tracking-wider flex items-center gap-1"><Radio size={9} className="text-[#f0b429]"/> live</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// MATCH CARD (GrassRoots style)
+// ============================================
+function MatchCard({ match, isSelected, onClick }: { match: Match; isSelected: boolean; onClick: () => void }) {
+  const isLive = match.status === 'live';
+  const isFinished = match.status === 'finished';
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-4 rounded-2xl transition-all duration-200 ${
+        isSelected
+          ? 'bg-[#1a5c2a] text-white shadow-lg border-l-4 border-[#f0b429]'
+          : 'bg-white border border-gray-200 hover:shadow-md'
+      }`}
+    >
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className={`font-bold text-lg ${isSelected ? 'text-white' : 'text-gray-900'}`}>{match.homeTeam}</span>
+            {isLive && <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse">LIVE</span>}
+            {isFinished && <span className="text-[9px] text-gray-400">FT</span>}
+          </div>
+          <div className={`text-sm mt-1 ${isSelected ? 'text-white/70' : 'text-gray-600'}`}>{match.awayTeam}</div>
+        </div>
+        <div className="text-right">
+          {isLive || isFinished ? (
+            <div className={`text-2xl font-black ${isSelected ? 'text-[#f0b429]' : 'text-[#1a5c2a]'}`}>{match.homeScore} - {match.awayScore}</div>
+          ) : (
+            <div className="text-sm text-gray-500">{match.time}</div>
+          )}
+          <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><MapPin size={10} /> {match.stadium}</div>
+        </div>
+      </div>
+      {isLive && <div className="mt-2 text-[11px] text-yellow-600 font-mono">{match.minute} • Live now</div>}
+    </button>
+  );
+}
+
+// ============================================
+// MAIN PAGE COMPONENT
+// ============================================
+export default function WorldCupPage() {
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
+  const [events] = useState<any[]>([]); // would come from real API later
+
+  const loadData = async () => {
+    try {
+      const live = await fetchLiveMatches();
+      let all = live;
+      if (all.length === 0) all = await fetchScheduledMatches();
+      setMatches(all);
+      if (all.length > 0 && !selectedMatch) setSelectedMatch(all[0]);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err) {
+      setError('Unable to fetch live data. Please refresh.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const filtered = activeGroup === "All"
-    ? upcomingMatches.slice(0, 12)
-    : upcomingMatches.filter((m) => m.group === activeGroup).slice(0, 12);
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Simulate ball movement for live matches
+  useEffect(() => {
+    if (!selectedMatch || selectedMatch.status !== 'live') return;
+    const interval = setInterval(() => {
+      setBallPosition(prev => ({
+        x: Math.min(95, Math.max(5, prev.x + (Math.random() - 0.5) * 3)),
+        y: Math.min(95, Math.max(5, prev.y + (Math.random() - 0.5) * 2)),
+      }));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [selectedMatch]);
+
+  const isLive = selectedMatch?.status === 'live';
+  const liveMatchesCount = matches.filter(m => m.status === 'live').length;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
-
-      {/* Brand header */}
-      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
-              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
-              GRS
-            </div>
+    <div className="min-h-screen bg-[#f4f2ee]">
+      {/* GrassRoots header */}
+      <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white border-b-4 border-[#f0b429]">
+        <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <p className="font-black text-sm uppercase tracking-wider leading-none" style={{ color: "#f0b429" }}>GrassRoots Sports</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>
-                World Cup 2026
-              </p>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center">
+                  <span className="text-black font-black text-sm">GRS</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight">World Cup 2026</h1>
+                <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">LIVE DATA</span>
+              </div>
+              <p className="text-white/80 text-sm">USA · Canada · Mexico | 11 June – 19 July 2026</p>
+            </div>
+            <div className="flex items-center gap-4">
+              {liveMatchesCount > 0 && (
+                <div className="bg-red-500/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-medium">{liveMatchesCount} live matches</span>
+                </div>
+              )}
+              <button onClick={loadData} className="text-white/70 hover:text-white transition text-sm flex items-center gap-1">
+                <RefreshCw size={14} /> Refresh
+              </button>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
-            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <GraduationCap size={14} style={{ color: "#f0b429" }} />
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
-              <p className="text-[10px] font-black uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</p>
-            </div>
-          </div>
+          {lastUpdated && <div className="text-right text-[9px] text-white/40 mt-2">Updated: {lastUpdated.toLocaleTimeString()}</div>}
         </div>
       </div>
 
-      {/* Wire ticker */}
-      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
-          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
-            style={{ backgroundColor: "#dc2626" }}>
-            <Radio size={9} className="animate-pulse" /> World Cup
-          </span>
-          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
-            {WIRE[wireIndex]}
-          </p>
-        </div>
-      </div>
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-
-        {/* Hero card */}
-        <div className="rounded-2xl overflow-hidden shadow-sm mb-6">
-          <div className="relative px-5 pt-6 pb-5"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
-            />
-            <div className="relative flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>FIFA</p>
-                <h1 className="text-2xl font-black mt-0.5 leading-tight" style={{ color: "#f0b429" }}>World Cup 2026</h1>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <Globe2 size={9} /> USA · Canada · Mexico
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: "rgba(240,180,41,0.12)", color: "rgba(240,180,41,0.8)", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <Calendar size={9} /> 11 Jun – 19 Jul 2026
-                  </span>
-                </div>
-              </div>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.25)" }}>
-                <Trophy size={22} style={{ color: "#f0b429" }} />
-              </div>
-            </div>
-
-            {/* Stat tiles */}
-            <div className="grid grid-cols-3 gap-2.5 mt-5">
-              {[
-                { label: "Teams",    value: "48",                                         Icon: Trophy },
-                { label: "Matches",  value: "104",                                        Icon: Flame },
-                { label: "Live Now", value: liveMatches.length > 0 ? `${liveMatches.length}` : "0", Icon: Radio },
-              ].map(({ label, value, Icon }) => (
-                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
-                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
-                  <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
-                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
-                </div>
-              ))}
-            </div>
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {error ? (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+            <p className="text-red-600">{error}</p>
+            <button onClick={loadData} className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button>
           </div>
-
-          {/* Quick links strip */}
-          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
-            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
-            {[
-              { label: "Live",     href: "#live" },
-              { label: "Fixtures", href: "#fixtures" },
-              { label: "Groups",   href: "#groups" },
-            ].map(({ label }) => (
-              <span key={label}
-                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider cursor-default"
-                style={{ color: "#6b7280" }}>
-                {label}
-              </span>
-            ))}
+        ) : isLoading ? (
+          <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
+        ) : matches.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-200">
+            <p className="text-gray-500">No matches found. The tournament starts June 11, 2026.</p>
           </div>
-        </div>
-
-        {/* Two-column grid */}
-        <div className="grid lg:grid-cols-5 gap-5">
-
-          {/* ── LEFT: Match list ── */}
-          <div className="lg:col-span-2 space-y-5">
-
-            {/* Live matches */}
-            {liveMatches.length > 0 && (
-              <section id="live">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md text-white"
-                    style={{ backgroundColor: "#ef4444" }}>
-                    <Radio size={9} className="animate-pulse" /> Live Now
-                  </span>
-                  <span className="text-[10px] text-gray-400">
-                    {liveMatches.length} match{liveMatches.length !== 1 ? "es" : ""}
-                  </span>
-                </div>
-                <div className="space-y-2.5">
-                  {liveMatches.map((m) => {
-                    const isSelected = selectedMatch?.id === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => handleLiveSelect(m)}
-                        className="w-full text-left rounded-2xl overflow-hidden transition-all duration-200 shadow-sm"
-                        style={{
-                          backgroundColor: isSelected ? "#1a5c2a" : "#ffffff",
-                          border: `1px solid ${isSelected ? "#f0b429" : "#e5e7eb"}`,
-                          boxShadow: isSelected ? "0 0 0 2px rgba(240,180,41,0.3)" : undefined,
-                        }}
-                      >
-                        <div className="p-4">
-                          <div className="flex items-center justify-between mb-3.5">
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-red-500">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
-                              {m.minute}&apos;
-                            </span>
-                            {isSelected
-                              ? <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>▶ Listening</span>
-                              : <span className="text-[9px] text-gray-400">Tap to select</span>
-                            }
-                          </div>
-                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                            <div className="text-left">
-                              <span className="text-xl leading-none">{flag(m.homeTeam)}</span>
-                              <p className="text-[11px] font-bold mt-1 truncate" style={{ color: isSelected ? "#f0b429" : "#374151" }}>{m.homeTeam}</p>
-                            </div>
-                            <div className="text-center px-2">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-3xl font-black tabular-nums"
-                                  style={{ color: m.homeScore > m.awayScore ? "#f0b429" : isSelected ? "#f0b429" : "#111827" }}>
-                                  {m.homeScore}
-                                </span>
-                                <span className="text-sm font-black text-gray-300">—</span>
-                                <span className="text-3xl font-black tabular-nums"
-                                  style={{ color: m.awayScore > m.homeScore ? "#f0b429" : isSelected ? "#f0b429" : "#111827" }}>
-                                  {m.awayScore}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-xl leading-none">{flag(m.awayTeam)}</span>
-                              <p className="text-[11px] font-bold mt-1 truncate" style={{ color: isSelected ? "#f0b429" : "#374151" }}>{m.awayTeam}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* Group filter */}
-            <div id="groups">
-              <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-gray-400">
-                Filter by Group
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {GROUPS.map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => setActiveGroup(g)}
-                    className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all"
-                    style={activeGroup === g
-                      ? { backgroundColor: "#1a5c2a", color: "#f0b429" }
-                      : { backgroundColor: "#ffffff", color: "#6b7280", border: "1px solid #e5e7eb" }
-                    }
-                  >
-                    {g === "All" ? "All" : g.replace("Group ", "")}
-                  </button>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* LEFT: Match list */}
+            <div className="lg:col-span-1 space-y-3">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-gray-700 font-bold text-sm uppercase tracking-wider flex items-center gap-2"><Calendar size={14} /> MATCH SCHEDULE</h2>
+                <span className="text-[10px] text-gray-500">{matches.length} matches</span>
+              </div>
+              <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar">
+                {matches.map(match => (
+                  <MatchCard key={match.id} match={match} isSelected={selectedMatch?.id === match.id} onClick={() => setSelectedMatch(match)} />
                 ))}
               </div>
             </div>
 
-            {/* Upcoming fixtures */}
-            {filtered.length > 0 && (
-              <section id="fixtures">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar size={11} className="text-gray-400" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                    Upcoming Fixtures
-                  </span>
+            {/* RIGHT: Live tracker */}
+            <div className="lg:col-span-2 space-y-6">
+              {!selectedMatch ? (
+                <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-200">
+                  <Radio size={40} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">Select a match to start live tracking</p>
                 </div>
-                <div className="space-y-2">
-                  {filtered.map((m) => {
-                    const isSelected = selectedUpcoming?.id === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => handleUpcomingSelect(m)}
-                        className="w-full text-left rounded-xl overflow-hidden transition-all duration-200"
-                        style={{
-                          backgroundColor: "#ffffff",
-                          border: `1px solid ${isSelected ? "#1a5c2a" : "#e5e7eb"}`,
-                          boxShadow: isSelected ? "0 0 0 1.5px rgba(26,92,42,0.2)" : undefined,
-                        }}
-                      >
-                        <div className="flex items-center justify-between px-3.5 pt-3 pb-1.5">
-                          {m.group ? (
-                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "#f0b429" }}>
-                              {m.group}
-                            </span>
-                          ) : <span />}
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex items-center gap-1 text-[9px] text-gray-400">
-                              <Clock size={8} />
-                              <span>{fmtDate(m)}{fmtTime(m) ? ` · ${fmtTime(m)}` : ""}</span>
-                            </div>
-                            <ChevronRight size={10} style={{ color: isSelected ? "#1a5c2a" : "#d1d5db" }} />
-                          </div>
+              ) : (
+                <>
+                  {/* Scoreboard */}
+                  <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <div className="text-center flex-1">
+                        <span className="text-gray-400 text-xs uppercase">HOME</span>
+                        <p className="text-gray-800 font-bold text-2xl mt-1">{selectedMatch.homeTeam}</p>
+                        <p className="text-5xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p>
+                      </div>
+                      <div className="text-center px-4">
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                          <span className="text-gray-500 text-xs font-mono">VS</span>
                         </div>
-                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 px-3.5 pb-3">
-                          <div className="flex flex-col items-center gap-1 text-center">
-                            <span className="text-2xl">{flag(m.homeTeam)}</span>
-                            <span className="text-[10px] font-bold text-gray-700 leading-tight">{m.homeTeam}</span>
-                          </div>
-                          <div className="px-2 text-center">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-300">VS</span>
-                          </div>
-                          <div className="flex flex-col items-center gap-1 text-center">
-                            <span className="text-2xl">{flag(m.awayTeam)}</span>
-                            <span className="text-[10px] font-bold text-gray-700 leading-tight">{m.awayTeam}</span>
-                          </div>
-                        </div>
-                        {m.stadium && (
-                          <div className="px-3.5 pb-2.5 flex items-center gap-1 border-t border-gray-50 text-gray-400">
-                            <MapPin size={8} className="shrink-0" />
-                            <span className="text-[9px] truncate">{m.stadium}</span>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {!isLoading && filtered.length === 0 && liveMatches.length === 0 && (
-              <div className="rounded-2xl p-8 text-center bg-white border border-gray-200">
-                <Trophy size={28} className="mx-auto mb-2 text-gray-300" />
-                <p className="text-sm font-bold text-gray-400">No matches in {activeGroup}</p>
-              </div>
-            )}
-          </div>
-
-          {/* ── RIGHT: Detail panel ── */}
-          <div className="lg:col-span-3">
-
-            {selectedMatch ? (
-              <div className="space-y-3">
-                <LiveMatchContextBar match={selectedMatch} onBack={() => { setSelectedMatch(null); setAudioMode(false); }} />
-                <LiveCommentary
-                  matchId={selectedMatch.id.toString()}
-                  homeTeam={selectedMatch.homeTeam}
-                  awayTeam={selectedMatch.awayTeam}
-                  autoStartAudio={audioMode}
-                />
-              </div>
-
-            ) : selectedUpcoming ? (
-              <FixtureDetail match={selectedUpcoming} onBack={() => setSelectedUpcoming(null)} />
-
-            ) : (
-              <div className="rounded-2xl overflow-hidden bg-white border border-gray-200 shadow-sm">
-
-                {/* Trophy hero */}
-                <div className="relative text-center p-10 sm:p-14"
-                  style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
-                  <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-                    style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
-                  />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full opacity-10 pointer-events-none"
-                    style={{ background: "radial-gradient(circle, #f0b429 0%, transparent 70%)" }}
-                  />
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                      style={{ backgroundColor: "rgba(240,180,41,0.12)", border: "1px solid rgba(240,180,41,0.25)" }}>
-                      <Trophy size={36} style={{ color: "#f0b429" }} />
+                        <div className="mt-2 text-[11px] text-gray-500 font-mono">{isLive ? selectedMatch.minute : selectedMatch.time}</div>
+                      </div>
+                      <div className="text-center flex-1">
+                        <span className="text-gray-400 text-xs uppercase">AWAY</span>
+                        <p className="text-gray-800 font-bold text-2xl mt-1">{selectedMatch.awayTeam}</p>
+                        <p className="text-5xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p>
+                      </div>
                     </div>
-                    <h2 className="text-2xl font-black" style={{ color: "#f0b429" }}>FIFA World Cup 2026</h2>
-                    <p className="text-sm mt-1.5 font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      48 teams · 104 matches · 16 venues
-                    </p>
-                    <div className="flex items-center justify-center gap-2 mt-3">
-                      {["🇺🇸 USA", "🇨🇦 Canada", "🇲🇽 Mexico"].map((h) => (
-                        <span key={h} className="text-[10px] font-bold px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: "rgba(240,180,41,0.12)", color: "rgba(240,180,41,0.8)" }}>
-                          {h}
-                        </span>
-                      ))}
+                    <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
+                      <MapPin size={12} /> {selectedMatch.stadium}, {selectedMatch.city}
                     </div>
                   </div>
-                </div>
 
-                {/* State message */}
-                <div className="p-7 text-center">
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      {[1, 2].map((i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-2.5 rounded mb-2 w-3/4 mx-auto bg-gray-100" />
-                          <div className="h-14 rounded-xl bg-gray-50" />
-                        </div>
-                      ))}
+                  {/* 2D Pitch with GrassRoots branding */}
+                  <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
+                    <div className="flex items-center gap-2 px-3 pt-2">
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> TACTICAL VIEW</div>
+                      <div className="flex-1"></div>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-400"><Activity size={10} /> live data</div>
                     </div>
-                  ) : liveMatches.length > 0 ? (
-                    <>
-                      <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                        <Radio size={12} className="animate-pulse text-red-500" />
-                        <span className="text-xs font-black uppercase tracking-wider text-red-500">
-                          {liveMatches.length} match{liveMatches.length !== 1 ? "es" : ""} live right now
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold mb-5 text-gray-400">
-                        Select a match on the left for live AI commentary
-                      </p>
-                      <div className="flex flex-col gap-2.5">
-                        {liveMatches.slice(0, 3).map((m) => (
-                          <button
-                            key={m.id}
-                            onClick={() => handleLiveSelect(m)}
-                            className="rounded-xl px-4 py-3.5 flex items-center justify-between transition-all hover:opacity-90"
-                            style={{ backgroundColor: "#1a5c2a" }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-lg">{flag(m.homeTeam)}</span>
-                              <span className="text-sm font-black" style={{ color: "#f0b429" }}>{m.homeScore} — {m.awayScore}</span>
-                              <span className="text-lg">{flag(m.awayTeam)}</span>
-                              <span className="text-xs font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                                {m.homeTeam} vs {m.awayTeam}
-                              </span>
-                            </div>
-                            <ChevronRight size={14} style={{ color: "#f0b429" }} className="shrink-0" />
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-gray-50 border border-gray-100">
-                        <Radio size={24} className="text-gray-300" />
-                      </div>
-                      <h3 className="font-black text-gray-900">No Live Matches</h3>
-                      <p className="text-sm mt-1.5 font-semibold text-gray-400">
-                        Tap any upcoming fixture on the left to preview the match.
-                      </p>
-                      <p className="text-xs mt-4 text-gray-300">
-                        Live AI commentary starts the moment a match kicks off.
-                      </p>
-                    </>
-                  )}
-                </div>
+                    <FootballPitch ballPosition={isLive ? ballPosition : undefined} />
+                    <div className="text-center text-[9px] text-gray-400 pb-2">Ball position updates every 3–5 seconds</div>
+                  </div>
 
-                {/* Feature strip */}
-                <div className="grid grid-cols-3 border-t border-gray-100">
-                  {([
-                    { Icon: Flame, label: "AI Commentary",   desc: "Real-time events",  feature: "commentary"  as const },
-                    { Icon: Zap,   label: "Win Probability", desc: "Live predictions",   feature: "probability" as const },
-                    { Icon: Radio, label: "Audio Mode",      desc: "Hands-free",         feature: "audio"       as const },
-                  ]).map(({ Icon, label, desc, feature }, i) => (
-                    <button
-                      key={label}
-                      onClick={() => handleFeatureClick(feature)}
-                      className="px-3 py-4 text-center transition-colors hover:bg-gray-50 active:bg-gray-100 cursor-pointer"
-                      style={{ borderRight: i < 2 ? "1px solid #f3f4f6" : undefined }}
-                      title={liveMatches.length > 0 ? `Open ${label}` : "Select an upcoming fixture to preview"}
-                    >
-                      <Icon size={16} className="mx-auto mb-1.5" style={{ color: "#f0b429" }} />
-                      <p className="text-[9px] font-black uppercase tracking-wider text-gray-500">{label}</p>
-                      <p className="text-[9px] mt-0.5 text-gray-300">{desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+                  {/* AI Commentary */}
+                  <AICommentary events={events} />
+                  
+                  <div className="text-center text-[9px] text-gray-400 border-t border-gray-200 pt-4">
+                    Data: ESPN Public API + worldcup.json • Powered by GrassRoots Sports AI
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-
-        </div>
-      </main>
+        )}
+      </div>
     </div>
   );
 }

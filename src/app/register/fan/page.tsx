@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Heart } from "lucide-react";
+import { normalizePhone } from "@/lib/phone-normalize";
 
 const COUNTRIES = [
   "Zimbabwe","Afghanistan","Albania","Algeria","Angola","Argentina","Armenia","Australia",
@@ -100,14 +101,27 @@ export default function RegisterFanPage() {
       if (form.contactType === "email") {
         body.email = form.email.trim().toLowerCase();
       } else {
-        body.phone = form.phone.trim();
+        body.phone = normalizePhone(form.phone.trim());
       }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90_000);
+      let res: Response;
+      try {
+        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+      } catch (fetchErr) {
+        if ((fetchErr as { name?: string }).name === "AbortError") {
+          throw new Error("Server is waking up — please try again in 30 seconds.");
+        }
+        throw new Error("Cannot reach server. Check your connection and try again.");
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

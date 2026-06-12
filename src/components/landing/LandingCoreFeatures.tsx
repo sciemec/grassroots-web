@@ -93,7 +93,7 @@ function CoreGoals() {
           ].map((g) => (
             <div
               key={g.title}
-              className="rounded-2xl p-6 border border-white/10"
+              className="rounded-2xl p-6 border border-[#f0b429]/10"
               style={{ background: "rgba(255,255,255,0.05)" }}
             >
               <div className="text-4xl font-black mb-3 opacity-30 text-white">
