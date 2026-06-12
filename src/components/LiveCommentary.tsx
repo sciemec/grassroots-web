@@ -7,26 +7,26 @@ import { MatchOdds } from './MatchOdds';
 import { getAudioCommentary } from '@/lib/audio-commentary';
 
 interface CommentaryEntry {
-  id: string;
-  minute: number;
-  eventType: string;
+  id:          string;
+  minute:      number;
+  eventType:   string;
   playerName?: string;
-  commentary: string;
+  commentary:  string;
 }
 
 interface LiveCommentaryProps {
-  matchId: string;
-  homeTeam: string;
-  awayTeam: string;
+  matchId:         string;
+  homeTeam:        string;
+  awayTeam:        string;
   autoStartAudio?: boolean;
 }
 
 function buildFallbackCommentary(event: {
   eventType?: string;
-  type?: string;
-  player?: string;
+  type?:      string;
+  player?:    string;
   playerName?: string;
-  minute: number;
+  minute:     number;
 }): string {
   const player = event.player ?? event.playerName ?? 'A player';
   switch ((event.eventType ?? event.type ?? '').toUpperCase()) {
@@ -78,22 +78,34 @@ function eventStyle(type: string): { card: string; badge: string; text: string }
 }
 
 export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: LiveCommentaryProps) {
-  const [entries, setEntries] = useState<CommentaryEntry[]>([]);
-  const [homeScore, setHomeScore] = useState(0);
-  const [awayScore, setAwayScore] = useState(0);
-  const [homePossession, setHomePossession] = useState(50);
-  const [awayPossession, setAwayPossession] = useState(50);
-  const [homeShots, setHomeShots] = useState(0);
-  const [awayShots, setAwayShots] = useState(0);
-  const [minute, setMinute] = useState(0);
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const seenIds = useRef<Set<string>>(new Set());
-  const feedRef = useRef<HTMLDivElement>(null);
+  const [entries,         setEntries]         = useState<CommentaryEntry[]>([]);
+  const [homeScore,       setHomeScore]       = useState(0);
+  const [awayScore,       setAwayScore]       = useState(0);
+  const [homePossession,  setHomePossession]  = useState(50);
+  const [awayPossession,  setAwayPossession]  = useState(50);
+  const [homeShots,       setHomeShots]       = useState(0);
+  const [awayShots,       setAwayShots]       = useState(0);
+  const [minute,          setMinute]          = useState(0);
+  const [audioEnabled,    setAudioEnabled]    = useState(false);
+  const [isLoading,       setIsLoading]       = useState(true);
+  // Web Speech API — spoken commentary
+  const [isSpeaking,      setIsSpeaking]      = useState(false);
+  const [currentCommentary, setCurrentCommentary] = useState('');
+
+  const seenIds  = useRef<Set<string>>(new Set());
+  const feedRef  = useRef<HTMLDivElement>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+
+  // Initialise Web Speech API on client only
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      synthRef.current = window.speechSynthesis;
+    }
+  }, []);
 
   useEffect(() => {
     if (autoStartAudio) setAudioEnabled(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStartAudio]);
 
   useEffect(() => {
@@ -103,11 +115,24 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
+  // Auto-scroll commentary feed to latest entry
   useEffect(() => {
     if (feedRef.current) {
       feedRef.current.scrollTop = feedRef.current.scrollHeight;
     }
   }, [entries]);
+
+  // Speak commentary text via Web Speech API
+  function speak(text: string) {
+    if (!synthRef.current) return;
+    const utterance     = new SpeechSynthesisUtterance(text);
+    utterance.rate      = 0.95;
+    utterance.pitch     = 1.0;
+    utterance.onstart   = () => setIsSpeaking(true);
+    utterance.onend     = () => setIsSpeaking(false);
+    utterance.onerror   = () => setIsSpeaking(false);
+    synthRef.current.speak(utterance);
+  }
 
   async function poll() {
     try {
@@ -118,6 +143,7 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
       setHomeScore(data.homeScore ?? 0);
       setAwayScore(data.awayScore ?? 0);
       setMinute(data.minute ?? 0);
+
       if (data.stats?.possession) {
         setHomePossession(data.stats.possession.home ?? 50);
         setAwayPossession(data.stats.possession.away ?? 50);
@@ -130,29 +156,38 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
       const incoming: CommentaryEntry[] = (data.events ?? [])
         .filter((e: { id: number | string }) => !seenIds.current.has(String(e.id)))
         .map((e: {
-          id: number | string;
-          minute: number;
-          eventType?: string;
-          type?: string;
-          player?: string;
-          playerName?: string;
-          commentary?: string;
+          id:           number | string;
+          minute:       number;
+          eventType?:   string;
+          type?:        string;
+          player?:      string;
+          playerName?:  string;
+          commentary?:  string;
         }) => {
           seenIds.current.add(String(e.id));
           return {
-            id: String(e.id),
-            minute: e.minute,
-            eventType: e.eventType ?? e.type ?? 'EVENT',
-            playerName: e.player ?? e.playerName,
-            commentary: e.commentary ?? buildFallbackCommentary(e),
+            id:          String(e.id),
+            minute:      e.minute,
+            eventType:   e.eventType ?? e.type ?? 'EVENT',
+            playerName:  e.player ?? e.playerName,
+            commentary:  e.commentary ?? buildFallbackCommentary(e),
           };
         });
 
       if (incoming.length > 0) {
         setEntries(prev => [...prev, ...incoming]);
+
+        // Update the latest commentary text (shown below the feed)
+        const latest = incoming[incoming.length - 1];
+        setCurrentCommentary(latest.commentary);
+
         if (audioEnabled) {
+          // Queue in the audio commentary system (existing)
           const audio = getAudioCommentary();
           incoming.forEach(e => audio.queueCommentary(e.commentary));
+
+          // Also speak via Web Speech API for instant browser TTS
+          incoming.forEach(e => speak(e.commentary));
         }
       }
     } catch {
@@ -166,6 +201,9 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
     const audio = getAudioCommentary();
     if (audioEnabled) {
       audio.stop();
+      // Cancel any in-progress speech
+      synthRef.current?.cancel();
+      setIsSpeaking(false);
       setAudioEnabled(false);
     } else {
       setAudioEnabled(true);
@@ -180,8 +218,11 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
       className="rounded-2xl overflow-hidden"
       style={{ background: 'linear-gradient(180deg, #0f1e30 0%, #0a1520 100%)', border: '1px solid rgba(255,255,255,0.08)' }}
     >
-      {/* Scoreboard */}
-      <div className="p-6" style={{ background: 'linear-gradient(135deg, #0d1f33 0%, #111d2e 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* ── Scoreboard ─────────────────────────────────────────────── */}
+      <div
+        className="p-6"
+        style={{ background: 'linear-gradient(135deg, #0d1f33 0%, #111d2e 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+      >
         {/* Header row */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -190,24 +231,28 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
               Live Commentary
             </span>
           </div>
-          {minute > 0 && (
-            <span
-              className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full"
-              style={{ background: 'rgba(240,180,41,0.15)', color: '#f0b429', border: '1px solid rgba(240,180,41,0.3)' }}
-            >
-              {minute}&apos;
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {isSpeaking && (
+              <span className="text-[10px] font-bold" style={{ color: '#4ade80' }}>
+                🔴 Speaking…
+              </span>
+            )}
+            {minute > 0 && (
+              <span
+                className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full"
+                style={{ background: 'rgba(240,180,41,0.15)', color: '#f0b429', border: '1px solid rgba(240,180,41,0.3)' }}
+              >
+                {minute}&apos;
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Score display */}
         <div className="grid grid-cols-3 items-center gap-2">
           <div className="text-center">
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400 truncate mb-2">{homeTeam}</p>
-            <p
-              className="text-6xl font-black tabular-nums"
-              style={{ color: homeLeading ? '#f0b429' : 'white' }}
-            >
+            <p className="text-6xl font-black tabular-nums" style={{ color: homeLeading ? '#f0b429' : 'white' }}>
               {homeScore}
             </p>
           </div>
@@ -216,17 +261,14 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
           </div>
           <div className="text-center">
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400 truncate mb-2">{awayTeam}</p>
-            <p
-              className="text-6xl font-black tabular-nums"
-              style={{ color: awayLeading ? '#f0b429' : 'white' }}
-            >
+            <p className="text-6xl font-black tabular-nums" style={{ color: awayLeading ? '#f0b429' : 'white' }}>
               {awayScore}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Odds / Win Probability */}
+      {/* ── Odds / Win Probability ─────────────────────────────────── */}
       <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <MatchOdds
           homeTeam={homeTeam}
@@ -241,7 +283,7 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
         />
       </div>
 
-      {/* Controls */}
+      {/* ── Controls ───────────────────────────────────────────────── */}
       <div
         className="px-4 py-2.5 flex items-center justify-between"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
@@ -262,7 +304,7 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
         </button>
       </div>
 
-      {/* Commentary Feed */}
+      {/* ── Commentary Feed ────────────────────────────────────────── */}
       <div ref={feedRef} className="h-80 overflow-y-auto p-4 space-y-2.5">
         {isLoading ? (
           <div className="space-y-3">
@@ -283,10 +325,7 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
           [...entries].reverse().map(entry => {
             const style = eventStyle(entry.eventType);
             return (
-              <div
-                key={entry.id}
-                className={`rounded-xl border p-3 ${style.card}`}
-              >
+              <div key={entry.id} className={`rounded-xl border p-3 ${style.card}`}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs font-black font-mono" style={{ color: '#f0b429' }}>{entry.minute}&apos;</span>
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${style.badge}`}>
@@ -304,6 +343,21 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
           })
         )}
       </div>
+
+      {/* ── Current commentary text — spoken line shown below feed ── */}
+      {currentCommentary && (
+        <div
+          className="px-4 py-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)' }}
+        >
+          <p className="text-[11px] italic text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            &ldquo;{currentCommentary}&rdquo;
+          </p>
+          <p className="text-[10px] text-center mt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            AI-powered commentary · updates every 30 seconds
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,12 @@
 // src/lib/isports/client.ts
-// REAL iSports API - no mock data
+// iSports API client — lazy API key check (no module-level throw)
 
 const API_BASE = 'http://api.isportsapi.com/sport/football';
-const API_KEY = process.env.ISPORTS_API_KEY;
 
-if (!API_KEY) {
-  throw new Error('ISPORTS_API_KEY is required. Get it from iSports dashboard.');
+function getKey(): string {
+  const key = process.env.ISPORTS_API_KEY;
+  if (!key) throw new Error('ISPORTS_API_KEY is required. Get it from iSports dashboard.');
+  return key;
 }
 
 interface ISportsResponse<T> {
@@ -14,71 +15,28 @@ interface ISportsResponse<T> {
   data: T;
 }
 
-export async function fetchLiveMatch(matchId: string) {
-  const url = `${API_BASE}/livescores?api_key=${API_KEY}&match_id=${matchId}`;
-  const res = await fetch(url, { next: { revalidate: 5 } });
-  
-  if (!res.ok) {
-    throw new Error(`iSports API error: ${res.status}`);
-  }
-  
-  const json: ISportsResponse<any> = await res.json();
-  
-  if (json.code !== 0) {
-    throw new Error(`iSports API error: ${json.message}`);
-  }
-  
+async function isportsGet<T>(path: string, revalidate: number): Promise<T> {
+  const url = `${API_BASE}${path}&api_key=${getKey()}`;
+  const res = await fetch(url, { next: { revalidate } });
+  if (!res.ok) throw new Error(`iSports API error: ${res.status}`);
+  const json: ISportsResponse<T> = await res.json();
+  if (json.code !== 0) throw new Error(`iSports API error: ${json.message}`);
   return json.data;
+}
+
+export async function fetchLiveMatch(matchId: string) {
+  return isportsGet(`/livescores?match_id=${matchId}`, 5);
 }
 
 export async function fetchMatchEvents(matchId: string, lastEventId?: string) {
-  // Use cmd=new to get only NEW events (no duplicates)
-  const url = `${API_BASE}/events?api_key=${API_KEY}&match_id=${matchId}&cmd=${lastEventId ? 'new' : 'all'}`;
-  const res = await fetch(url, { next: { revalidate: 3 } });
-  
-  if (!res.ok) {
-    throw new Error(`iSports API error: ${res.status}`);
-  }
-  
-  const json: ISportsResponse<any> = await res.json();
-  
-  if (json.code !== 0) {
-    throw new Error(`iSports API error: ${json.message}`);
-  }
-  
-  return json.data;
+  const cmd = lastEventId ? 'new' : 'all';
+  return isportsGet(`/events?match_id=${matchId}&cmd=${cmd}`, 3);
 }
 
 export async function fetchMatchLineups(matchId: string) {
-  const url = `${API_BASE}/lineups?api_key=${API_KEY}&match_id=${matchId}`;
-  const res = await fetch(url, { next: { revalidate: 60 } });
-  
-  if (!res.ok) {
-    throw new Error(`iSports API error: ${res.status}`);
-  }
-  
-  const json: ISportsResponse<any> = await res.json();
-  
-  if (json.code !== 0) {
-    throw new Error(`iSports API error: ${json.message}`);
-  }
-  
-  return json.data;
+  return isportsGet(`/lineups?match_id=${matchId}`, 60);
 }
 
 export async function fetchMatchStatistics(matchId: string) {
-  const url = `${API_BASE}/statistics/match?api_key=${API_KEY}&match_id=${matchId}`;
-  const res = await fetch(url, { next: { revalidate: 10 } });
-  
-  if (!res.ok) {
-    throw new Error(`iSports API error: ${res.status}`);
-  }
-  
-  const json: ISportsResponse<any> = await res.json();
-  
-  if (json.code !== 0) {
-    throw new Error(`iSports API error: ${json.message}`);
-  }
-  
-  return json.data;
+  return isportsGet(`/statistics/match?match_id=${matchId}`, 10);
 }

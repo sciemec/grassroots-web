@@ -63,6 +63,16 @@ export interface ISportsLineup {
   }>;
 }
 
+export interface ShotData {
+  event_id: string;
+  coordinate_x: number;  // 0-100 pitch coordinate
+  coordinate_y: number;  // 0-100 pitch coordinate
+  is_goal: boolean;
+  team_id: number;
+  player_name?: string;
+  event_minute: number;
+}
+
 export interface ISportsStatistics {
   match_id: string;
   home: {

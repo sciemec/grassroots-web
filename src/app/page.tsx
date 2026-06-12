@@ -279,14 +279,14 @@ function VideoUpload() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WorldCupBanner — links to /fan
+// WorldCupBanner — links to /world-cup
 // ─────────────────────────────────────────────────────────────────────────────
 function WorldCupBanner() {
   return (
     <section className="py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <Link
-          href="/fan"
+          href="/world-cup"
           className="block rounded-2xl overflow-hidden p-6 text-center transition-opacity hover:opacity-90"
           style={{
             background: "linear-gradient(135deg, #1c3d22 0%, #185fa5 100%)",
@@ -299,10 +299,10 @@ function WorldCupBanner() {
             World Cup 2026
           </div>
           <div className="text-xl font-black text-white">
-            Follow the World Cup in the Fan Hub →
+            Live Scores · AI Commentary · All Fixtures →
           </div>
           <div className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.6)" }}>
-            Live scores · Player leaderboard · African nations tracker
+            48 teams · 104 matches · USA · Canada · Mexico
           </div>
         </Link>
       </div>
