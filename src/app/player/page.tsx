@@ -50,7 +50,7 @@ const FEATURES = [
     desc: "Visibility · CV share · Plays Like",
   },
   {
-    href: "/player/success",
+    href: "/player/goal",
     icon: Zap,
     iconBg: "#fef3c7", iconColor: "#d97706",
     label: "Success Engine",
