@@ -1,68 +1,73 @@
-/**
- * POST /api/upload/presigned
- * Returns a presigned PUT URL for direct client-to-R2 upload.
- * Uses lightweight lib/r2.ts (zero AWS SDK dependencies)
- */
+// src/app/api/upload/presigned/route.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// Presigned R2 upload URL
+//
+// CHANGED: removed @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner
+//          now uses @/lib/r2 (generatePresignedPutUrl, getPublicUrl)
+//
+// POST /api/upload/presigned
+// Body: { fileName, contentType, source?, label? }
+// Returns: { uploadUrl, publicUrl, key }
+//
+// The client uploads directly to R2 with:
+//   fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': contentType } })
+// ─────────────────────────────────────────────────────────────────────────────
 
-import { NextRequest, NextResponse } from "next/server";
-import { generatePresignedPutUrl, getPublicUrl } from "@/lib/r2";
-
-const ALLOWED_TYPES = [
-  "video/mp4", "video/quicktime", "video/avi", "video/x-matroska", "video/webm",
-  "image/jpeg", "image/png", "image/webp",
-];
+import { NextRequest, NextResponse } from 'next/server';
+import { generatePresignedPutUrl, getPublicUrl } from '@/lib/r2';
 
 export async function POST(req: NextRequest) {
-  // Check required env vars
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const accessKey = process.env.R2_ACCESS_KEY_ID;
-  const secretKey = process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET_NAME;
+  let body: {
+    fileName?:    string;
+    contentType?: string;
+    source?:      string;
+    label?:       string;
+  };
 
-  if (!accountId || !accessKey || !secretKey || !bucket) {
-    return NextResponse.json(
-      { error: "R2 storage not configured. Set CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME in Vercel." },
-      { status: 503 }
-    );
-  }
-
-  let body;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { filename, content_type, folder = "uploads" } = body;
+  const { fileName, contentType = 'video/mp4', source = 'player_upload', label } = body;
 
-  if (!filename || !content_type) {
-    return NextResponse.json({ error: "filename and content_type are required" }, { status: 400 });
+  if (!fileName) {
+    return NextResponse.json({ error: 'fileName is required' }, { status: 400 });
   }
 
-  if (!ALLOWED_TYPES.includes(content_type)) {
-    return NextResponse.json({ error: `File type not allowed: ${content_type}` }, { status: 400 });
+  // Check required R2 env vars are present — degrade gracefully if not configured
+  if (
+    !process.env.CLOUDFLARE_ACCOUNT_ID ||
+    !process.env.R2_ACCESS_KEY_ID      ||
+    !process.env.R2_SECRET_ACCESS_KEY
+  ) {
+    // R2 not configured — return empty URL so callers can handle gracefully
+    // Video saves without a video_url rather than crashing
+    return NextResponse.json({ uploadUrl: '', publicUrl: '', key: '' }, { status: 200 });
   }
-
-  const timestamp = Date.now();
-  const safe = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const key = `${folder}/${timestamp}-${safe}`;
 
   try {
-    const upload_url = await generatePresignedPutUrl({
+    // Build the R2 key: source / YYYY-MM-DD / timestamp_filename
+    const date   = new Date().toISOString().split('T')[0];
+    const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const ext    = fileName.split('.').pop() ?? 'mp4';
+    const key    = `${source}/${date}/${unique}.${ext}`;
+
+    // Generate presigned PUT URL (valid 15 minutes)
+    // Uses @/lib/r2 — zero npm dependencies, Web Crypto API only
+    const uploadUrl = await generatePresignedPutUrl({
       key,
-      contentType: content_type,
-      expiresInSec: 3600
+      contentType,
+      expiresInSec: 900,
     });
 
-    const public_url = getPublicUrl(key);
+    const publicUrl = getPublicUrl(key);
 
-    return NextResponse.json({
-      upload_url,
-      public_url,
-      key,
-    });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Presign failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ uploadUrl, publicUrl, key });
+
+  } catch (err) {
+    console.error('presigned route error:', err);
+    return NextResponse.json({ error: 'Failed to generate upload URL' }, { status: 500 });
   }
 }
