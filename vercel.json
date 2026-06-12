@@ -1,6 +1,7 @@
 {
   "framework": "nextjs",
-  "buildCommand": "rm -rf .next tsconfig.tsbuildinfo && npm run build",
+  "buildCommand": "npm run build -- --no-cache",
+  "installCommand": "npm install --no-package-lock",
   "outputDirectory": ".next",
   "build": {
     "env": {
