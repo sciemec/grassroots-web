@@ -1,49 +1,45 @@
 "use client";
 
-import { useEffect, createContext } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
-import GuestBanner from "@/components/ui/guest-banner";
-import { GuestGateProvider } from "@/components/ui/register-modal";
-import ThutoChatCoach from "@/components/thuto/ThutoChatCoach";
+import { Sidebar } from "@/components/layout/sidebar";
 
-// 1. THIS IS THE CRITICAL EXPORT THAT CLEARS THE ERROR:
-export const CoachSessionContext = createContext<any>(null);
-
-export default function CoachLayout({ children }: { children: React.ReactNode }) {
-  const router      = useRouter();
-  const user        = useAuthStore((s) => s.user);
+export default function CoachLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (user && user.role !== "coach" && user.role !== "admin") {
-      router.push(`/${user.role}`);
+
+    if (!user) {
+      router.push("/login"); return;
+    } else if (user.role !== "coach" && user.role !== "admin") {
+      router.push(`/${user.role}`); return;
     }
+    setIsLoading(false);
   }, [hasHydrated, user, router]);
 
-  if (!hasHydrated) {
+  if (!hasHydrated || isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex h-screen bg-[#f4f2ee] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#1a5c2a] border-t-transparent" />
       </div>
     );
   }
 
-  // Block render entirely for non-coach users — redirect fires in useEffect above.
-  // This prevents the coach hub flashing for one frame before the redirect lands.
-  if (!user || (user.role !== "coach" && user.role !== "admin")) {
-    return null;
-  }
-
-  // 2. WRAP CHILDREN IN THE VALID PROVIDER VALUE:
   return (
-    <CoachSessionContext.Provider value={{ coach: user }}>
-      <GuestGateProvider>
-        <GuestBanner />
+    <div className="flex min-h-screen bg-[#f4f2ee]">
+      <Sidebar />
+      <main className="flex-1 lg:ml-72">
         {children}
-        <ThutoChatCoach />
-      </GuestGateProvider>
-    </CoachSessionContext.Provider>
+      </main>
+    </div>
   );
 }
