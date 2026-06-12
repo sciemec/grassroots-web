@@ -501,6 +501,23 @@ export default function ArenaPage() {
     } catch {}
   };
 
+  const handleFollow = async (playerId: string) => {
+    if (!token) return;
+    await fetch(`${API}/arena/follow/${playerId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {});
+  };
+
+  const handleAddToPipeline = async (playerId: string) => {
+    if (!token) return;
+    await fetch(`${API}/arena/connections`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ user_id: playerId }),
+    }).catch(() => {});
+  };
+
   if (!hasHydrated || !user) return null;
 
   const userName = user.name ?? "You";
@@ -604,6 +621,8 @@ export default function ArenaPage() {
                         sport:         post.sport,
                       }}
                       currentUserRole={user.role as "player" | "scout" | "coach" | "fan"}
+                      onFollow={handleFollow}
+                      onAddToPipeline={handleAddToPipeline}
                     />
                   ) : (
                     <PostCard key={post.id} post={post} token={token ?? ""} />
