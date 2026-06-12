@@ -11,6 +11,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { safeArray } from "@/lib/safe-array";
+import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -389,6 +390,13 @@ export default function TalentIdPage() {
                 <><Share2 className="w-4 h-4" /> Share Public CV</>
               )}
             </button>
+
+            {/* Weekly challenges */}
+            <WeeklyChallenges
+              playerAqScore={avgScore ?? 0}
+              playerSessionCount={completedSessions.length}
+              className="mt-2"
+            />
 
           </div>
         )}

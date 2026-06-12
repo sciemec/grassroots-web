@@ -13,5 +13,11 @@
       "source": "/_next/static/(.*).js",
       "headers": [{ "key": "Content-Type", "value": "application/javascript" }]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/streak-reminder",
+      "schedule": "0 14 * * 5"
+    }
   ]
 }

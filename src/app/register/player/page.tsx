@@ -27,36 +27,43 @@ const COUNTRIES = [
   "Venezuela","Vietnam","Yemen","Zambia","Other",
 ];
 
+// Coach name per gender — shown under each button so the player
+// knows which AI coach they will be assigned
+const GENDER_COACH: Record<"male" | "female", { label: string; coach: string }> = {
+  male:   { label: "Male",   coach: "THUTO" },
+  female: { label: "Female", coach: "Amara" },
+};
+
 interface FormData {
-  first_name: string;
-  surname: string;
-  gender: "male" | "female" | "";
-  age: string;
-  country: string;
-  contactType: "email" | "phone";
-  email: string;
-  phone: string;
-  password: string;
+  first_name:      string;
+  surname:         string;
+  gender:          "male" | "female" | "";
+  age:             string;
+  country:         string;
+  contactType:     "email" | "phone";
+  email:           string;
+  phone:           string;
+  password:        string;
   confirmPassword: string;
 }
 
 export default function RegisterPlayerPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [step,         setStep]         = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error,        setError]        = useState<string | null>(null);
 
   const [form, setForm] = useState<FormData>({
-    first_name: "",
-    surname: "",
-    gender: "",
-    age: "",
-    country: "Zimbabwe",
-    contactType: "email",
-    email: "",
-    phone: "",
-    password: "",
+    first_name:      "",
+    surname:         "",
+    gender:          "",
+    age:             "",
+    country:         "Zimbabwe",
+    contactType:     "email",
+    email:           "",
+    phone:           "",
+    password:        "",
     confirmPassword: "",
   });
 
@@ -87,15 +94,15 @@ export default function RegisterPlayerPage() {
     setError(null);
     try {
       const body: Record<string, unknown> = {
-        first_name: form.first_name.trim(),
-        surname: form.surname.trim(),
-        name: `${form.first_name.trim()} ${form.surname.trim()}`,
-        gender: form.gender,
-        age: parseInt(form.age),
-        country: form.country,
-        password: form.password,
+        first_name:            form.first_name.trim(),
+        surname:               form.surname.trim(),
+        name:                  `${form.first_name.trim()} ${form.surname.trim()}`,
+        gender:                form.gender || "male",
+        age:                   parseInt(form.age),
+        country:               form.country,
+        password:              form.password,
         password_confirmation: form.confirmPassword,
-        role: "player",
+        role:                  "player",
       };
       if (form.contactType === "email") {
         body.email = form.email.trim().toLowerCase();
@@ -104,9 +111,9 @@ export default function RegisterPlayerPage() {
       }
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body:    JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -116,6 +123,24 @@ export default function RegisterPlayerPage() {
           (data.errors ? Object.values(data.errors).flat().join(" ") : null) ||
           "Registration failed. Please try again.";
         throw new Error(msg);
+      }
+
+      const data = await res.json();
+
+      // Save gender to localStorage — read by ThutoChat.tsx, DrillsPage.tsx,
+      // talent-id-page.tsx, and thuto-whatsapp-route.ts to auto-select
+      // THUTO (male) or Amara (female) coaching persona
+      localStorage.setItem("player_gender", form.gender || "male");
+
+      // Save token and user if returned — avoids a separate /auth/me call
+      if (data.token) {
+        localStorage.setItem("auth_token", data.token);
+      }
+      if (data.user?.id) {
+        localStorage.setItem("player_id", data.user.id);
+      }
+      if (data.user?.passport_token) {
+        localStorage.setItem("passport_token", data.user.passport_token);
       }
 
       router.push("/login?registered=1");
@@ -129,6 +154,7 @@ export default function RegisterPlayerPage() {
   return (
     <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-[#1a5c2a] rounded-2xl mb-3">
@@ -157,7 +183,7 @@ export default function RegisterPlayerPage() {
             </div>
           )}
 
-          {/* Step 1 — Personal Info */}
+          {/* ── Step 1 — Personal Info ─────────────────────────────── */}
           {step === 1 && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-900">Personal details</h2>
@@ -185,24 +211,40 @@ export default function RegisterPlayerPage() {
                 </div>
               </div>
 
+              {/* Gender — shows coach name under each option */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-2">Gender</label>
+                <label className="block text-xs font-bold text-gray-600 mb-2">
+                  Gender <span className="text-red-400">*</span>
+                </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {(["male", "female"] as const).map((g) => (
+                  {(Object.entries(GENDER_COACH) as [
+                    "male" | "female",
+                    { label: string; coach: string },
+                  ][]).map(([g, cfg]) => (
                     <button
                       key={g}
                       type="button"
                       onClick={() => set("gender", g)}
-                      className={`py-2.5 rounded-xl border text-sm font-semibold capitalize transition-colors ${
+                      className={`py-3 px-3 rounded-xl border text-left transition-colors ${
                         form.gender === g
                           ? "bg-[#1a5c2a] border-[#1a5c2a] text-white"
                           : "border-gray-200 text-gray-700 hover:border-[#1a5c2a]"
                       }`}
                     >
-                      {g === "male" ? "Male" : "Female"}
+                      <div className="text-sm font-bold">{cfg.label}</div>
+                      <div
+                        className={`text-xs mt-0.5 ${
+                          form.gender === g ? "text-green-200" : "text-gray-400"
+                        }`}
+                      >
+                        Coach: {cfg.coach}
+                      </div>
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Your coach uses gender-specific performance norms to score your tests accurately.
+                </p>
               </div>
 
               <div>
@@ -241,7 +283,7 @@ export default function RegisterPlayerPage() {
             </div>
           )}
 
-          {/* Step 2 — Account */}
+          {/* ── Step 2 — Account ──────────────────────────────────── */}
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-900">Create your account</h2>
