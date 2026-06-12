@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell } from "lucide-react";
@@ -50,6 +50,15 @@ interface FormData {
 export default function RegisterPlayerPage() {
   const router = useRouter();
   const [step,         setStep]         = useState(1);
+
+  // Pre-fill phone number from ?phone= query param (sent by WhatsApp REGISTER command)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const phoneParam = params.get("phone");
+    if (phoneParam) {
+      setForm((prev) => ({ ...prev, contactType: "phone", phone: phoneParam }));
+    }
+  }, []);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error,        setError]        = useState<string | null>(null);
@@ -302,7 +311,7 @@ export default function RegisterPlayerPage() {
                           : "border-gray-200 text-gray-600 hover:border-[#1a5c2a]"
                       }`}
                     >
-                      {t === "email" ? "Email" : "Phone Number"}
+                      {t === "email" ? "Email" : "📱 WhatsApp"}
                     </button>
                   ))}
                 </div>
@@ -316,13 +325,27 @@ export default function RegisterPlayerPage() {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
                   />
                 ) : (
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => set("phone", e.target.value)}
-                    placeholder="+263 77 123 4567"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
-                  />
+                  <div>
+                    <div className="flex gap-2 items-center">
+                      <span className="px-3 py-2.5 bg-[#25D366] text-white text-sm font-bold rounded-xl flex-shrink-0">
+                        +263
+                      </span>
+                      <input
+                        type="tel"
+                        value={form.phone.replace(/^\+?263/, "").replace(/^0/, "")}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          set("phone", "+263" + digits);
+                        }}
+                        placeholder="77 123 4567"
+                        className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
+                      />
+                    </div>
+                    <p className="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+                      <span className="text-[#25D366]">✓</span>
+                      Use your WhatsApp number — GRS will message you here after registration
+                    </p>
+                  </div>
                 )}
               </div>
 
