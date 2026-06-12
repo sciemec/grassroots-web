@@ -2,12 +2,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // THUTO / Amara on WhatsApp — Twilio webhook handler
 //
-// When someone messages the GrassRoots Sports WhatsApp number:
-// 1. Their phone number is looked up against registered accounts (phone OR whatsapp_phone)
-// 2. If registered  → greet by name, use their sport/position context in AI responses
-// 3. If unregistered → let them try coaching free, prompt them to register to save progress
+// SUPPORTED INPUT TYPES:
+//   Video message → download → R2 → Laravel async analysis → Arena post
+//   Text message  → command routing or AI coaching
 //
-// Supported commands:
+// TEXT COMMANDS:
 //   HELP / HI / HELLO   — welcome + command list
 //   SCORE               — their AQ score + rank
 //   DRILLS              — their unlocked drills
@@ -20,13 +19,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import twilio from 'twilio';
 import Groq from 'groq-sdk';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
-const MAX_REPLY_LENGTH = 1500; // WhatsApp supports up to ~4096 chars; we keep it readable
+const MAX_REPLY_LENGTH = 1500;
 
-// Lazy singletons — prevent "c(...) is not a constructor" at module load
+// Lazy singletons
 let _twilioClient: ReturnType<typeof twilio> | null = null;
 let _groq: Groq | null = null;
+let _r2: S3Client | null = null;
 
 function getTwilio() {
   if (!_twilioClient) {
@@ -40,17 +41,32 @@ function getGroq() {
   return _groq;
 }
 
+function getR2(): S3Client | null {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const keyId     = process.env.R2_ACCESS_KEY_ID;
+  const secret    = process.env.R2_SECRET_ACCESS_KEY;
+  if (!accountId || !keyId || !secret) return null;
+  if (!_r2) {
+    _r2 = new S3Client({
+      region:   'auto',
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId: keyId, secretAccessKey: secret },
+    });
+  }
+  return _r2;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface GrsUser {
-  id:            string;
-  name:          string;
-  gender:        'male' | 'female' | string;
-  role:          string;
-  sport?:        string;
-  position?:     string;
-  rank?:         number | string;
-  aq_score?:     number;
+  id:             string;
+  name:           string;
+  gender:         'male' | 'female' | string;
+  role:           string;
+  sport?:         string;
+  position?:      string;
+  rank?:          number | string;
+  aq_score?:      number;
   weekly_streak?: number;
 }
 
@@ -60,7 +76,7 @@ async function sendWhatsApp(to: string, body: string) {
   await getTwilio().messages.create({
     body,
     from: process.env.TWILIO_WHATSAPP_FROM,
-    to: `whatsapp:${to}`,
+    to:   `whatsapp:${to}`,
   });
 }
 
@@ -79,8 +95,6 @@ function twimlEmpty(): NextResponse {
   );
 }
 
-// Look up a registered user by their WhatsApp phone number.
-// The backend checks both `phone` and `whatsapp_phone` columns.
 async function lookupUser(phone: string): Promise<GrsUser | null> {
   try {
     const res = await fetch(
@@ -89,18 +103,13 @@ async function lookupUser(phone: string): Promise<GrsUser | null> {
     );
     if (!res.ok) return null;
     const data = await res.json();
-    // Backend may wrap in { data: ... }
     return (data.data ?? data) as GrsUser;
   } catch {
     return null;
   }
 }
 
-// Build a personalized system prompt for the AI coach
 function buildSystemPrompt(user: GrsUser | null, isAmara: boolean): string {
-  const coachName = isAmara ? 'Amara' : 'THUTO';
-  const gender    = isAmara ? 'female' : 'male';
-
   const base = isAmara
     ? `You are Amara, the GrassRoots Sports AI coach for female athletes in Zimbabwe. Be warm, technically precise, and encouraging. Never compare female athletes to male benchmarks.`
     : `You are THUTO, the GrassRoots Sports AI coach for male athletes in Zimbabwe. Be direct, specific, and encouraging. Reference Zimbabwe football where relevant.`;
@@ -118,22 +127,128 @@ function buildSystemPrompt(user: GrsUser | null, isAmara: boolean): string {
   return `${base} ${rules} You are speaking with ${user.name}. ${sport} ${position} ${streak} Address them by name when appropriate. Tailor advice to their sport and position.`.trim();
 }
 
+// ── Video pipeline ────────────────────────────────────────────────────────────
+
+async function uploadToR2(buffer: Buffer, key: string, contentType: string): Promise<string | null> {
+  const r2        = getR2();
+  const bucket    = process.env.R2_BUCKET ?? 'grassroots-videos';
+  const publicUrl = process.env.R2_PUBLIC_URL;
+  if (!r2 || !publicUrl) return null;
+  try {
+    await r2.send(new PutObjectCommand({
+      Bucket:      bucket,
+      Key:         key,
+      Body:        buffer,
+      ContentType: contentType,
+    }));
+    return `${publicUrl}/${key}`;
+  } catch {
+    return null;
+  }
+}
+
+async function handleVideoMessage(
+  fromPhone:   string,
+  mediaUrl:    string,
+  contentType: string,
+  profileName: string,
+  user:        GrsUser | null,
+): Promise<NextResponse> {
+
+  // 1. Download video from Twilio (Basic Auth required)
+  let videoBuffer: Buffer | null = null;
+  try {
+    const auth = Buffer.from(
+      `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
+    ).toString('base64');
+    const dlRes = await fetch(mediaUrl, {
+      headers: { Authorization: `Basic ${auth}` },
+      signal:  AbortSignal.timeout(25000),
+    });
+    if (dlRes.ok) videoBuffer = Buffer.from(await dlRes.arrayBuffer());
+  } catch { /* fall through — R2 url will be null */ }
+
+  // 2. Upload to R2 so Laravel job can download without Twilio auth
+  let videoStorageUrl: string | null = null;
+  if (videoBuffer) {
+    const digits = fromPhone.replace(/\D/g, '');
+    const ext    = contentType.split('/')[1]?.split(';')[0] ?? 'mp4';
+    const r2Key  = `whatsapp/${digits}/${Date.now()}.${ext}`;
+    videoStorageUrl = await uploadToR2(videoBuffer, r2Key, contentType);
+  }
+
+  // Fall back to original Twilio URL if R2 upload failed
+  const analysisUrl = videoStorageUrl ?? mediaUrl;
+
+  // 3. Fire-and-forget to Laravel — triggers async YOLOv8 analysis + Arena post
+  try {
+    await fetch(`${API}/arena/auto-video-post`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        phone:    fromPhone,
+        video_url: analysisUrl,
+        user_id:  user?.id ?? null,
+        sport:    user?.sport ?? null,
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+  } catch { /* fire-and-forget — job queued on Laravel */ }
+
+  // 4. Immediate reply — Twilio requires response within 15s
+  let reply: string;
+  if (user) {
+    reply = [
+      `Got your video ${user.name}!`,
+      '',
+      'The GRS engine is analysing it now.',
+      'Your Arena post + performance report will be live at:',
+      'grassrootssports.live/arena',
+      '',
+      "You'll get a WhatsApp message when it's posted.",
+    ].join('\n');
+  } else {
+    const name = profileName || 'there';
+    reply = [
+      `Got your video ${name}!`,
+      '',
+      'Register free to post this to The Arena:',
+      'grassrootssports.live/register',
+      '',
+      'Already registered? Link your WhatsApp number in Profile Settings to auto-post your clips.',
+    ].join('\n');
+  }
+
+  await sendWhatsApp(fromPhone, reply);
+  return twimlReply(reply);
+}
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
-    const formData   = await req.formData();
-    const rawFrom    = formData.get('From')?.toString() ?? '';
+    const formData    = await req.formData();
+    const rawFrom     = formData.get('From')?.toString() ?? '';
     const messageBody = formData.get('Body')?.toString().trim() ?? '';
     const profileName = formData.get('ProfileName')?.toString() ?? '';
+    const numMedia    = parseInt(formData.get('NumMedia')?.toString() ?? '0');
+    const mediaUrl    = formData.get('MediaUrl0')?.toString() ?? '';
+    const mediaType   = formData.get('MediaContentType0')?.toString() ?? '';
 
-    // Normalize number: "whatsapp:+263712345678" → "+263712345678"
+    // Normalize: "whatsapp:+263712345678" → "+263712345678"
     const fromPhone = rawFrom.replace('whatsapp:', '');
+    if (!fromPhone) return twimlEmpty();
 
-    if (!messageBody || !fromPhone) return twimlEmpty();
-
-    // ── ONE user lookup, used for all branches below ───────────────────────
+    // ONE user lookup — used for all branches below
     const user = await lookupUser(fromPhone);
+
+    // ── VIDEO — intercept before any text processing ───────────────────────
+    if (numMedia > 0 && mediaUrl && mediaType.startsWith('video/')) {
+      return handleVideoMessage(fromPhone, mediaUrl, mediaType, profileName, user);
+    }
+
+    if (!messageBody) return twimlEmpty();
+
     const upper = messageBody.toUpperCase();
 
     // ── HELP / HI / HELLO / HEY ───────────────────────────────────────────
@@ -149,6 +264,7 @@ export async function POST(req: NextRequest) {
           'SCORE — your AQ score + rank',
           'DRILLS — your training drills',
           'PASSPORT — your scout profile link',
+          'Send a video — post to your Arena feed',
         ].join('\n');
       } else {
         const name = profileName || 'there';
@@ -159,6 +275,7 @@ export async function POST(req: NextRequest) {
           'grassrootssports.live/register',
           '',
           'Or ask me anything — THUTO how do I improve my sprint?',
+          'Or send a video — we\'ll analyse it!',
         ].join('\n');
       }
 
@@ -245,7 +362,7 @@ export async function POST(req: NextRequest) {
     if (!question || question.length < 2) {
       const coachName = isAmara ? 'Amara' : 'THUTO';
       const prefix    = isAmara ? 'AMARA' : 'THUTO';
-      const reply = `${coachName} here. Ask me anything about your training.\nExample: ${prefix} how do I improve my sprint?`;
+      const reply = `${coachName} here. Ask me anything about your training.\nExample: ${prefix} how do I improve my sprint?\nOr send a video to post to your Arena feed!`;
       await sendWhatsApp(fromPhone, reply);
       return twimlReply(reply);
     }
@@ -254,8 +371,8 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildSystemPrompt(user, isAmara);
 
     const completion = await getGroq().chat.completions.create({
-      model:      'llama-3.1-8b-instant',
-      messages:   [
+      model:       'llama-3.1-8b-instant',
+      messages:    [
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: question },
       ],
@@ -265,7 +382,6 @@ export async function POST(req: NextRequest) {
 
     let reply = completion.choices[0]?.message?.content?.trim() ?? "I couldn't process that. Ask me again!";
 
-    // If unregistered, append a registration nudge (only once, at the end)
     if (!user && reply.length < MAX_REPLY_LENGTH - 80) {
       reply += '\n\nSave your progress: grassrootssports.live/register';
     }
