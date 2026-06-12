@@ -205,7 +205,7 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
     ctx.fillText("LIVE", width - 70, 35);
   }, [ballPosition, shots]);
 
-  return <canvas ref={canvasRef} width={width} height={height} className="w-full rounded-xl shadow-2xl border border-white/20" />;
+  return <canvas ref={canvasRef} width={width} height={height} className="w-full rounded-xl shadow-2xl border border-[#f0b429]/20" />;
 }
 
 // ============================================
