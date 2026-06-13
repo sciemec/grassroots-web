@@ -46,7 +46,7 @@ function CoreGoals() {
           </h2>
           <p className="text-white/60 text-sm mt-3 max-w-xl mx-auto">
             Every feature on the platform serves one of these three goals.
-            Geography should not determine a player's destiny.
+            Geography should not determine a player&apos;s destiny.
           </p>
         </div>
 
@@ -127,9 +127,8 @@ function CoreGoals() {
                   </li>
                 ))}
               </ul>
-              
-              {/* Special handling for MARKET section with two buttons */}
-              {g.links ? (
+
+              {"links" in g && g.links ? (
                 <div className="flex gap-3">
                   {g.links.map((link) => (
                     <Link
@@ -146,11 +145,11 @@ function CoreGoals() {
                 </div>
               ) : (
                 <Link
-                  href={g.link}
+                  href={"link" in g ? g.link : "#"}
                   className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full transition-all hover:opacity-80"
                   style={{ background: g.color, color: "#fff" }}
                 >
-                  {g.cta}
+                  {"cta" in g ? g.cta : ""}
                   <ChevronRight size={12} />
                 </Link>
               )}
@@ -345,7 +344,6 @@ export default function GrassrootsSportsLanding() {
   const [topTalents,   setTopTalents]   = useState<LeaderboardAthlete[]>([]);
   const [talentsLoading, setTalentsLoading] = useState(true);
 
-  // Fetch live ticker and leaderboard on mount
   useEffect(() => {
     async function fetchLandingMetrics() {
       try {
@@ -361,7 +359,7 @@ export default function GrassrootsSportsLanding() {
 
         if (leaderboardRes.ok) {
           const leaderboardData = await leaderboardRes.json();
-          const transformed = (leaderboardData.data || []).map((item: any) => ({
+          const transformed = (leaderboardData.data || []).map((item: { user_id: string; initials?: string; sport?: string; province?: string; percentile?: number }) => ({
             id:       item.user_id,
             name:     item.initials || "Athlete",
             sport:    item.sport    || "Multi-sport",
@@ -379,7 +377,6 @@ export default function GrassrootsSportsLanding() {
     fetchLandingMetrics();
   }, []);
 
-  // Rotate live wire ticker
   useEffect(() => {
     if (activityWire.length === 0) return;
     const interval = setInterval(() => {
@@ -391,7 +388,7 @@ export default function GrassrootsSportsLanding() {
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c3d22] selection:bg-[#f0b429]/30 antialiased font-sans">
 
-      {/* ── Navigation ─────────────────────────────────────────────────────── */}
+      {/* ── Navigation ── */}
       <nav className="bg-[#e2f0d9] border-b-2 border-[#f0b429] px-4 sm:px-6 py-4 shadow-xs sticky top-0 z-40">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2 group">
@@ -417,14 +414,14 @@ export default function GrassrootsSportsLanding() {
 
           <Link
             href="/login"
-            className="bg-white text-[#1c3d22] border-2 border-[#1c3d22] hover:bg-[#f0f9e8] px-4 py-1.75 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-3xs"
+            className="bg-white text-[#1c3d22] border-2 border-[#1c3d22] hover:bg-[#f0f9e8] px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-3xs"
           >
             Sign In
           </Link>
         </div>
       </nav>
 
-      {/* ── Live activity wire ─────────────────────────────────────────────── */}
+      {/* ── Live activity wire ── */}
       {activityWire.length > 0 && (
         <div className="bg-[#fffbeb] border-b border-amber-200 py-2.5 px-4 overflow-hidden">
           <div className="max-w-6xl mx-auto flex items-center gap-2">
@@ -438,13 +435,13 @@ export default function GrassrootsSportsLanding() {
         </div>
       )}
 
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
+      {/* ── Hero ── */}
       <header className="relative overflow-hidden bg-gradient-to-br from-[#e2f0d9] via-[#f0f9e8] to-[#f4f2ee] border-b border-[#1c3d22]/10 py-16 lg:py-20 px-6 text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 bg-white/80 border border-[#1c3d22]/10 rounded-full px-4 py-1.5 mb-2 shadow-3xs">
             <Zap size={14} className="text-[#1c3d22]" />
             <span className="text-xs font-black uppercase tracking-wider text-emerald-900">
-              Zimbabwe's #1 Talent Discovery Platform
+              Zimbabwe&apos;s #1 Talent Discovery Platform
             </span>
           </div>
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-gray-900 leading-none">
@@ -473,15 +470,15 @@ export default function GrassrootsSportsLanding() {
         </div>
       </header>
 
-      {/* ── Core goals: Identify · Nurture · Market ────────────────────────── */}
+      {/* ── Core goals ── */}
       <CoreGoals />
 
-      {/* ── Video upload ───────────────────────────────────────────────────── */}
+      {/* ── Video upload ── */}
       <VideoUpload />
 
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-12">
 
-        {/* ── Ecosystem quick-links ─────────────────────────────────────────── */}
+        {/* ── Platform quick-links ── */}
         <section className="space-y-2">
           <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
             Platform quick-links
@@ -560,7 +557,7 @@ export default function GrassrootsSportsLanding() {
           </div>
         </section>
 
-        {/* ── Sport grid ────────────────────────────────────────────────────── */}
+        {/* ── Sport grid ── */}
         <section className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 space-y-6 shadow-3xs">
           <div className="text-center max-w-md mx-auto space-y-1">
             <Globe size={28} className="mx-auto text-[#1c3d22]" />
@@ -585,7 +582,7 @@ export default function GrassrootsSportsLanding() {
           </div>
         </section>
 
-        {/* ── Leaderboard ───────────────────────────────────────────────────── */}
+        {/* ── Leaderboard ── */}
         <section className="space-y-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <div>
@@ -653,17 +650,17 @@ export default function GrassrootsSportsLanding() {
 
       </div>
 
-      {/* ── World Cup banner ──────────────────────────────────────────────── */}
+      {/* ── World Cup banner ── */}
       <WorldCupBanner />
 
-      {/* ── Footer ────────────────────────────────────────────────────────── */}
+      {/* ── Footer ── */}
       <footer className="border-t border-gray-200 bg-white py-8 text-center px-4">
         <Award size={32} className="mx-auto text-[#1c3d22] mb-2" />
         <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest">
           Grassroots Sports Development Network © 2026 · Identify, Nurture, and Market Talent
         </p>
         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1">
-          Zimbabwe's First AI-Powered Multi-Sport Talent Discovery Platform
+          Zimbabwe&apos;s First AI-Powered Multi-Sport Talent Discovery Platform
         </p>
       </footer>
     </div>
