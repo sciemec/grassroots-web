@@ -1,8 +1,11 @@
-// GrassRoots Sports branded World Cup page – matches the main site design
+// src/app/world-cup/page.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Calendar, Radio, Mic, MicOff, Volume2, VolumeX, Tv, Wifi, WifiOff, ChevronRight, RefreshCw, TrendingUp, Target, Activity, Languages, Zap } from 'lucide-react';
+import { 
+  MapPin, Calendar, Radio, MicOff, Volume2, RefreshCw, 
+  Tv, Activity, Languages, Zap 
+} from 'lucide-react';
 
 // ============================================
 // TYPES
@@ -19,17 +22,121 @@ interface Match {
   time: string;
   stadium: string;
   city: string;
+  
+  // Monetization fields embedded directly into match objects
+  pitchSponsorName?: string | null;
+  pitchLogoLeftUrl?: string | null;
+  pitchLogoRightUrl?: string | null;
+  sponsorTargetUrl?: string | null;
 }
 
 // ============================================
-// REAL DATA FETCHING (ESPN API + worldcup.json)
+// STATIC AD BANNER SUB-COMPONENT
+// ============================================
+interface AdBannerProps {
+  tier: 'GOLD' | 'SILVER' | 'BRONZE';
+  targetUrl?: string | null;
+  sponsorName?: string | null;
+  imageUrl?: string | null;
+}
+
+function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
+  const destination = targetUrl || 'https://grassrootssports.live';
+  const displaySponsor = sponsorName || 'Official Partner';
+
+  if (tier === 'GOLD') {
+    const goldAdImage = imageUrl || "/assets/sponsors/default-gold-banner.png";
+    return (
+      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm text-center">
+        <span className="text-[10px] font-bold text-amber-600 block mb-2 uppercase tracking-wide">
+          Gold Tournament Partner
+        </span>
+        <a 
+          href={destination} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="block h-[250px] relative border border-gray-200 rounded overflow-hidden transition-all duration-200 hover:border-amber-500 hover:shadow-md"
+        >
+          <img 
+            src={goldAdImage} 
+            alt={`${displaySponsor} Advertisement`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const parent = e.currentTarget.parentElement;
+              if (parent) {
+                const fallbackDiv = document.createElement('div');
+                fallbackDiv.className = "w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 text-gray-500 font-medium p-4 text-center";
+                fallbackDiv.innerHTML = `<span class="text-sm font-bold text-gray-700">${displaySponsor}</span><span class="text-[11px] text-gray-400 mt-1">Tap to visit partner website</span>`;
+                parent.appendChild(fallbackDiv);
+              }
+            }}
+          />
+        </a>
+      </div>
+    );
+  }
+
+  if (tier === 'SILVER') {
+    return (
+      <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-center">
+        <span className="text-[9px] text-gray-400 block mb-1 uppercase tracking-wider">
+          Silver Metrics Sponsor
+        </span>
+        <a 
+          href={destination}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block p-3 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded border border-emerald-200 hover:bg-emerald-100 transition duration-150"
+        >
+          Match telemetry & analytics powered by <br />
+          <span className="underline font-bold text-sm text-emerald-900 block mt-1">
+            {displaySponsor}
+          </span>
+        </a>
+      </div>
+    );
+  }
+
+  const bronzeAdImage = imageUrl || null;
+  return (
+    <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-center">
+      <span className="text-[9px] text-gray-400 block mb-2 uppercase tracking-wider">
+        Bronze Grassroots Sponsor
+      </span>
+      <a 
+        href={destination}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block h-[120px] relative border border-dashed border-gray-300 rounded overflow-hidden hover:border-gray-400 transition bg-gray-50"
+      >
+        {bronzeAdImage ? (
+          <img 
+            src={bronzeAdImage} 
+            alt={`${displaySponsor} Classified`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center text-gray-500">
+            <span className="font-semibold text-xs text-gray-700">{displaySponsor}</span>
+            <span className="text-[10px] text-gray-400 mt-1">Local Academy Space</span>
+          </div>
+        )}
+      </a>
+    </div>
+  );
+}
+
+// ============================================
+// DATA FETCHING (ESPN API + worldcup.json)
 // ============================================
 async function fetchLiveMatches(): Promise<Match[]> {
   try {
-    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa-world-cup/scoreboard', { next: { revalidate: 5 } });
+    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa-world-cup/scoreboard', { cache: 'no-store' });
     if (!res.ok) throw new Error(`ESPN error: ${res.status}`);
     const data = await res.json();
     if (!data.events || data.events.length === 0) return fetchScheduledMatches();
+    
     return data.events.map((event: any) => {
       const home = event.competitions[0].competitors.find((c: any) => c.homeAway === 'home');
       const away = event.competitions[0].competitors.find((c: any) => c.homeAway === 'away');
@@ -45,11 +152,16 @@ async function fetchLiveMatches(): Promise<Match[]> {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         stadium: event.competitions[0].venue?.fullName || 'TBD',
         city: event.competitions[0].venue?.city || 'TBD',
+        
+        // Dynamic Sponsor Fallbacks (Replace with database lookups if available)
+        pitchSponsorName: "Grassroots Partner",
+        pitchLogoLeftUrl: null,
+        pitchLogoRightUrl: null,
+        sponsorTargetUrl: "https://grassrootssports.live"
       };
     });
-  } catch (error) {
-    console.error('ESPN error:', error);
-    return [];
+  } catch {
+    return fetchScheduledMatches();
   }
 }
 
@@ -59,10 +171,12 @@ async function fetchScheduledMatches(): Promise<Match[]> {
     if (!res.ok) throw new Error('worldcup.json error');
     const data = await res.json();
     if (!data.matches) return [];
+    
+    // Isolate fixtures scheduled strictly for the current day
     const today = new Date().toISOString().split('T')[0];
+    
     return data.matches
-      .filter((m: any) => m.date >= today)
-      .slice(0, 12)
+      .filter((m: any) => m.date === today)
       .map((m: any) => ({
         id: `${m.team1}-${m.team2}-${m.date}`,
         homeTeam: m.team1,
@@ -75,17 +189,28 @@ async function fetchScheduledMatches(): Promise<Match[]> {
         time: m.time || 'TBD',
         stadium: m.ground || 'TBD',
         city: m.ground?.split(',')[1]?.trim() || 'TBD',
+        pitchSponsorName: "Grassroots Partner",
+        pitchLogoLeftUrl: null,
+        pitchLogoRightUrl: null,
+        sponsorTargetUrl: "https://grassrootssports.live"
       }));
-  } catch (error) {
-    console.error('worldcup.json error:', error);
+  } catch {
     return [];
   }
 }
 
 // ============================================
-// ENHANCED 2D PITCH with GrassRoots branding
+// PLATINUM 2D PITCH WITH INTEGRATED SPONSORS
 // ============================================
-function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: number; y: number }; shots?: Array<{ x: number; y: number; isGoal: boolean }> }) {
+interface FootballPitchProps {
+  ballPosition?: { x: number; y: number };
+  shots?: Array<{ x: number; y: number; isGoal: boolean }>;
+  pitchLogoLeftUrl?: string | null;
+  pitchLogoRightUrl?: string | null;
+  pitchSponsorName?: string | null;
+}
+
+function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRightUrl, pitchSponsorName }: FootballPitchProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const width = 900;
   const height = 600;
@@ -96,7 +221,7 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 1. Grass gradient (using GrassRoots green)
+    // 1. Grass Base Gradient
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, '#1a5c2a');
     grad.addColorStop(0.5, '#0e4a1e');
@@ -104,13 +229,13 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Grass stripes
+    // 2. Mowed Grass Strips
     ctx.fillStyle = '#0a3d16';
     for (let i = 0; i < width; i += 40) ctx.fillRect(i, 0, 20, height);
     ctx.fillStyle = '#1a5c2a';
     for (let i = 20; i < width; i += 40) ctx.fillRect(i, 0, 20, height);
 
-    // 3. Pitch lines
+    // 3. Technical Markings
     ctx.shadowBlur = 0;
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';
     ctx.lineWidth = 3;
@@ -125,7 +250,7 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
     ctx.strokeRect(40, height / 2 - 90, 90, 180);
     ctx.strokeRect(width - 130, height / 2 - 90, 90, 180);
 
-    // 4. Goals with 3D effect
+    // 4. Goals
     ctx.fillStyle = '#ddd';
     ctx.fillRect(25, height / 2 - 40, 15, 80);
     ctx.fillStyle = '#aaa';
@@ -133,7 +258,7 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
     ctx.fillRect(width - 40, height / 2 - 40, 15, 80);
     ctx.fillRect(width - 25, height / 2 - 42, 3, 84);
 
-    // 5. Centre circle shadow
+    // 5. Center Shadow Accent
     ctx.shadowBlur = 8;
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.beginPath();
@@ -142,13 +267,30 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // 6. Heat map (shots)
+    // 6. Dynamic Watermarks (Flanking Center Circle)
+    const drawWatermarkImage = (url: string, isLeft: boolean) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+        ctx.globalCompositeOperation = 'overlay';
+        const targetX = isLeft ? (width * 0.25) - 35 : (width * 0.75) - 35;
+        ctx.drawImage(img, targetX, (height / 2) - 35, 70, 70);
+        ctx.restore();
+      };
+    };
+
+    if (pitchLogoLeftUrl) drawWatermarkImage(pitchLogoLeftUrl, true);
+    if (pitchLogoRightUrl) drawWatermarkImage(pitchLogoRightUrl, false);
+
+    // 7. Shot Heatmap Rendering
     for (const shot of shots) {
       const x = 40 + (shot.x / 100) * (width - 80);
       const y = 40 + (shot.y / 100) * (height - 80);
       const radGrad = ctx.createRadialGradient(x, y, 5, x, y, 28);
       if (shot.isGoal) {
-        radGrad.addColorStop(0, 'rgba(240, 180, 41, 0.9)');  // Gold for goals
+        radGrad.addColorStop(0, 'rgba(240, 180, 41, 0.9)');
         radGrad.addColorStop(0.6, 'rgba(240, 180, 41, 0.3)');
         radGrad.addColorStop(1, 'rgba(240, 180, 41, 0)');
       } else {
@@ -162,7 +304,7 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
       ctx.fill();
     }
 
-    // 7. Ball
+    // 8. Ball Object
     if (ballPosition) {
       const x = 40 + (ballPosition.x / 100) * (width - 80);
       const y = 40 + (ballPosition.y / 100) * (height - 80);
@@ -178,42 +320,29 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.beginPath();
-      ctx.ellipse(x - 3, y, 4, 7, 0, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ccc';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(x + 3, y, 4, 7, 0, 0, 2 * Math.PI);
-      ctx.fill();
       ctx.shadowBlur = 0;
     }
 
-    // 8. GRASSROOTS SPORTS brand banner with URL
+    // 9. Core Branding Layer
     ctx.font = 'bold 24px "Inter", system-ui';
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.textAlign = 'center';
-    ctx.fillText("GRASSROOTS SPORTS", width / 2, height / 2 + 40);
+    ctx.fillText(pitchSponsorName ? pitchSponsorName.toUpperCase() : "GRASSROOTS SPORTS", width / 2, height / 2 + 40);
     ctx.font = '16px monospace';
     ctx.fillStyle = 'rgba(240, 180, 41, 0.4)';
     ctx.fillText("grassrootssports.live", width / 2, height / 2 + 85);
-    
-    // 9. Corner marks
-    ctx.font = 'bold 12px monospace';
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fillText("GRS", 20, 35);
-    ctx.fillText("LIVE", width - 70, 35);
-  }, [ballPosition, shots]);
+  }, [ballPosition, shots, pitchLogoLeftUrl, pitchLogoRightUrl, pitchSponsorName]);
 
   return <canvas ref={canvasRef} width={width} height={height} className="w-full rounded-xl shadow-2xl border border-[#f0b429]/20" />;
 }
 
 // ============================================
-// AI COMMENTARY COMPONENT (DeepSeek Voice Engine)
+// AI COMMENTARY PIPELINE
 // ============================================
-function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch: Match | null }) {
+function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
   const [isSpeaking, setIsSpeaking] = useState(true);
   const [selectedLang, setSelectedLang] = useState<'en' | 'shona' | 'ndebele' | 'zulu' | 'tswana'>('en');
-  const [currentCommentary, setCurrentCommentary] = useState('Select a match, then use the simulator options below to trigger deep slang highlights.');
+  const [currentCommentary, setCurrentCommentary] = useState('Select a match, then trigger simulator options for local slang telemetry analytics.');
   const [isTranslating, setIsTranslating] = useState(false);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -225,14 +354,10 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
     { code: 'tswana', label: 'Setswana', flag: '🇿🇦' }
   ];
 
-  // Pipeline calling DeepSeek + ElevenLabs audio chunk outputs
   const processAndPlayLiveSlang = async (eventType: string, player: string) => {
     if (!selectedMatch) return;
-    
     setIsTranslating(true);
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-    }
+    if (currentAudioRef.current) currentAudioRef.current.pause();
 
     try {
       const response = await fetch('/api/commentary/generate', {
@@ -249,7 +374,6 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
 
       const data = await response.json();
       if (data.success) {
-        // Strip out bracket emotion tags like [screaming] before printing to screen
         const cleanedText = data.script.replace(/\[.*?\]/g, "").trim();
         setCurrentCommentary(cleanedText);
 
@@ -260,26 +384,18 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
         }
       }
     } catch (err) {
-      console.error("DeepSeek telemetry pipe exception:", err);
+      console.error("DeepSeek telemetry pipe failure:", err);
       setCurrentCommentary("Eish, network issues blocking the DeepSeek commentary box right now!");
     } finally {
       setIsTranslating(false);
     }
   };
 
-  // Automated trigger whenever active selection properties swap
   useEffect(() => {
     if (selectedMatch) {
-      setCurrentCommentary(`Match tracker synchronized for ${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}. Tap an event trigger to hear DeepSeek scream in local slang!`);
+      setCurrentCommentary(`Match tracker synchronized for ${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}. Tap a trigger to stream commentary.`);
     }
   }, [selectedMatch, selectedLang]);
-
-  const toggleSpeechState = () => {
-    if (isSpeaking && currentAudioRef.current) {
-      currentAudioRef.current.pause();
-    }
-    setIsSpeaking(!isSpeaking);
-  };
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200 space-y-4">
@@ -289,7 +405,6 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
           <h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">AI Live Commentary</h3>
         </div>
         
-        {/* Localization selection tray controls */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
             <Languages size={12} className="text-[#1a5c2a]" /> Dialect:
@@ -300,11 +415,8 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
                 key={d.code}
                 onClick={() => setSelectedLang(d.code as any)}
                 className={`px-2 py-1 text-[10px] font-extrabold rounded-lg transition-all flex items-center gap-1 ${
-                  selectedLang === d.code
-                    ? 'bg-[#1a5c2a] text-white shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900'
+                  selectedLang === d.code ? 'bg-[#1a5c2a] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'
                 }`}
-                title={d.label}
               >
                 <span>{d.flag}</span>
                 <span className="hidden md:inline">{d.label}</span>
@@ -313,9 +425,9 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
           </div>
 
           <button 
-            onClick={toggleSpeechState} 
+            onClick={() => setIsSpeaking(!isSpeaking)} 
             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition font-bold ${
-              isSpeaking ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              isSpeaking ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-700'
             }`}
           >
             {isSpeaking ? <Volume2 size={12} className="animate-bounce" /> : <MicOff size={12} />}
@@ -324,7 +436,6 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
         </div>
       </div>
 
-      {/* Interactive Trigger Dashboard Tray (Swapped over to process high energy mock handlers) */}
       <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2">
         <div className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
           <Zap size={10} className="text-[#f0b429]" /> Trigger Sound & Slang Simulation Board:
@@ -333,15 +444,13 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
           <button onClick={() => processAndPlayLiveSlang("GOAL", "The Striker")} disabled={isTranslating} className="bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">⚽ SCREAM GOAL!</button>
           <button onClick={() => processAndPlayLiveSlang("DRIBBLE", "The Captain")} disabled={isTranslating} className="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">🕺 Hype Dribble Skill</button>
           <button onClick={() => processAndPlayLiveSlang("TACKLE", "The Defender")} disabled={isTranslating} className="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">💥 Heavy Tackle</button>
-          <button onClick={() => processAndPlayLiveSlang("OFFSIDE", "The Winger")} disabled={isTranslating} className="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">🚩 Offside Banter</button>
-          <button onClick={() => processAndPlayLiveSlang("FREEKICK", "The Playmaker")} disabled={isTranslating} className="bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">🎯 Dangerous Free Kick</button>
         </div>
       </div>
 
       <div className="bg-gray-900 text-green-400 rounded-xl p-4 h-28 overflow-y-auto border border-gray-800 flex items-center font-mono relative">
         {isTranslating ? (
           <div className="flex items-center gap-2 text-xs text-yellow-400 font-semibold italic mx-auto">
-            <RefreshCw size={14} className="animate-spin" /> DeepSeek V3 compiling custom audio matrix...
+            <RefreshCw size={14} className="animate-spin" /> DeepSeek V3 compiling audio matrix...
           </div>
         ) : (
           <p className="text-sm italic leading-relaxed text-gray-100 w-full pl-2 border-l-2 border-[#f0b429]">
@@ -349,18 +458,12 @@ function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch:
           </p>
         )}
       </div>
-
-      <div className="flex justify-end mt-2">
-        <span className="text-[9px] text-gray-400 uppercase tracking-wider flex items-center gap-1">
-          <Radio size={9} className="text-[#f0b429]"/> Powered by Grassroots Sports DeepSeek Commentary Engine
-        </span>
-      </div>
     </div>
   );
 }
 
 // ============================================
-// MATCH CARD (GrassRoots style)
+// NATIVE LIST CARD COMPONENT
 // ============================================
 function MatchCard({ match, isSelected, onClick }: { match: Match; isSelected: boolean; onClick: () => void }) {
   const isLive = match.status === 'live';
@@ -390,16 +493,16 @@ function MatchCard({ match, isSelected, onClick }: { match: Match; isSelected: b
           ) : (
             <div className="text-sm text-gray-500">{match.time}</div>
           )}
-          <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><MapPin size={10} /> {match.stadium}</div>
+          <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><MapPin size={10} /> {match.city}</div>
         </div>
       </div>
-      {isLive && <div className="mt-2 text-[11px] text-yellow-600 font-mono">{match.minute} • Live now</div>}
+      {isLive && <div className="mt-2 text-[11px] text-yellow-500 font-mono">{match.minute} • Live now</div>}
     </button>
   );
 }
 
 // ============================================
-// MAIN PAGE COMPONENT
+// ROOT MASTER INTERFACE COLLAPSING BOTH BLOCKS
 // ============================================
 export default function WorldCupPage() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -408,19 +511,18 @@ export default function WorldCupPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
-  const [events] = useState<any[]>([]); 
 
   const loadData = async () => {
     try {
       const live = await fetchLiveMatches();
-      let all = live;
-      if (all.length === 0) all = await fetchScheduledMatches();
-      setMatches(all);
-      if (all.length > 0 && !selectedMatch) setSelectedMatch(all[0]);
+      setMatches(live);
+      if (live.length > 0 && !selectedMatch) {
+        setSelectedMatch(live[0]);
+      }
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {
-      setError('Unable to fetch live data. Please refresh.');
+      setError('Unable to fetch live data streams. Please trigger direct sync.');
     } finally {
       setIsLoading(false);
     }
@@ -432,7 +534,6 @@ export default function WorldCupPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Simulate ball movement for live matches
   useEffect(() => {
     if (!selectedMatch || selectedMatch.status !== 'live') return;
     const interval = setInterval(() => {
@@ -444,14 +545,14 @@ export default function WorldCupPage() {
     return () => clearInterval(interval);
   }, [selectedMatch]);
 
-  const isLive = selectedMatch?.status === 'live';
   const liveMatchesCount = matches.filter(m => m.status === 'live').length;
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
-      {/* GrassRoots header */}
+      
+      {/* HEADER BAR */}
       <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white border-b-4 border-[#f0b429]">
-        <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+        <div className="max-w-[1400px] mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -459,7 +560,7 @@ export default function WorldCupPage() {
                   <span className="text-black font-black text-sm">GRS</span>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tight">World Cup 2026</h1>
-                <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">LIVE DATA</span>
+                <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">REALTIME TELEMETRY</span>
               </div>
               <p className="text-white/80 text-sm">USA · Canada · Mexico | 11 June – 19 July 2026</p>
             </div>
@@ -475,12 +576,12 @@ export default function WorldCupPage() {
               </button>
             </div>
           </div>
-          {lastUpdated && <div className="text-right text-[9px] text-white/40 mt-2">Updated: {lastUpdated.toLocaleTimeString()}</div>}
+          {lastUpdated && <div className="text-right text-[9px] text-white/40 mt-2">Server Sync: {lastUpdated.toLocaleTimeString()}</div>}
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* CORE 3-COLUMN LAYERS GRID */}
+      <div className="max-w-[1400px] mx-auto px-4 py-6">
         {error ? (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
             <p className="text-red-600">{error}</p>
@@ -488,79 +589,107 @@ export default function WorldCupPage() {
           </div>
         ) : isLoading ? (
           <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
-        ) : matches.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-200">
-            <p className="text-gray-500">No matches found. The tournament starts June 11, 2026.</p>
-          </div>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* LEFT: Match list */}
-            <div className="lg:col-span-1 space-y-3">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-gray-700 font-bold text-sm uppercase tracking-wider flex items-center gap-2"><Calendar size={14} /> MATCH SCHEDULE</h2>
-                <span className="text-[10px] text-gray-500">{matches.length} matches</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* === LEFT COLUMN: SCHEDULE & BRONZE DISPLAY (3/12 Space) === */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
+                  <Calendar size={14} /> Today's Schedule
+                </h2>
+                
+                {matches.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic py-4 text-center">
+                    No world cup fixtures scheduled for today.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                    {matches.map(match => (
+                      <MatchCard 
+                        key={match.id} 
+                        match={match} 
+                        isSelected={selectedMatch?.id === match.id} 
+                        onClick={() => setSelectedMatch(match)} 
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar">
-                {matches.map(match => (
-                  <MatchCard key={match.id} match={match} isSelected={selectedMatch?.id === match.id} onClick={() => setSelectedMatch(match)} />
-                ))}
-              </div>
+
+              <AdBanner tier="BRONZE" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
             </div>
 
-            {/* RIGHT: Live tracker */}
-            <div className="lg:col-span-2 space-y-6">
-              {!selectedMatch ? (
-                <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-200">
-                  <Radio size={40} className="mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500">Select a match to start live tracking</p>
-                </div>
-              ) : (
+            {/* === CENTER COLUMN: APPLICATION ENGINE METRICS (6/12 Space) === */}
+            <div className="lg:col-span-6 space-y-6">
+              {selectedMatch ? (
                 <>
-                  {/* Scoreboard */}
+                  {/* SCOREBOARD SUMMARY PANEL */}
                   <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
                     <div className="flex justify-between items-center">
                       <div className="text-center flex-1">
                         <span className="text-gray-400 text-xs uppercase">HOME</span>
-                        <p className="text-gray-800 font-bold text-2xl mt-1">{selectedMatch.homeTeam}</p>
-                        <p className="text-5xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p>
+                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.homeTeam}</p>
+                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p>
                       </div>
                       <div className="text-center px-4">
-                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                           <span className="text-gray-500 text-xs font-mono">VS</span>
                         </div>
-                        <div className="mt-2 text-[11px] text-gray-500 font-mono">{isLive ? selectedMatch.minute : selectedMatch.time}</div>
+                        <div className="mt-2 text-[11px] text-gray-500 font-mono">
+                          {selectedMatch.status === 'live' ? selectedMatch.minute : selectedMatch.time}
+                        </div>
                       </div>
                       <div className="text-center flex-1">
                         <span className="text-gray-400 text-xs uppercase">AWAY</span>
-                        <p className="text-gray-800 font-bold text-2xl mt-1">{selectedMatch.awayTeam}</p>
-                        <p className="text-5xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p>
+                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.awayTeam}</p>
+                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p>
                       </div>
                     </div>
                     <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
-                      <MapPin size={12} /> {selectedMatch.stadium}, {selectedMatch.city}
+                      <MapPin size={12} /> {selectedMatch.stadium}
                     </div>
                   </div>
 
-                  {/* 2D Pitch with GrassRoots branding */}
+                  {/* PLATINUM MATCHDAY FIELD ADVERTISING */}
                   <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
-                    <div className="flex items-center gap-2 px-3 pt-2">
-                      <div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> TACTICAL VIEW</div>
+                    <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> LIVE TRACKER VIEW</div>
                       <div className="flex-1"></div>
-                      <div className="flex items-center gap-1 text-[10px] text-gray-400"><Activity size={10} /> live data</div>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-400"><Activity size={10} /> tracking engine telemetry</div>
                     </div>
-                    <FootballPitch ballPosition={isLive ? ballPosition : undefined} />
-                    <div className="text-center text-[9px] text-gray-400 pb-2">Ball position updates every 3–5 seconds</div>
+                    <FootballPitch 
+                      ballPosition={selectedMatch.status === 'live' ? ballPosition : undefined}
+                      pitchLogoLeftUrl={selectedMatch.pitchLogoLeftUrl}
+                      pitchLogoRightUrl={selectedMatch.pitchLogoRightUrl}
+                      pitchSponsorName={selectedMatch.pitchSponsorName}
+                    />
                   </div>
 
-                  {/* AI Commentary */}
-                  <AICommentary events={events} selectedMatch={selectedMatch} />
-                  
-                  <div className="text-center text-[9px] text-gray-400 border-t border-gray-200 pt-4">
-                    Data: ESPN Public API + worldcup.json • Powered by GrassRoots Sports AI
-                  </div>
+                  {/* COMMENTARY PIPELINE */}
+                  <AICommentary selectedMatch={selectedMatch} />
                 </>
+              ) : (
+                <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">
+                  Select a live match from the calendar panel to spin tracker assets.
+                </div>
               )}
             </div>
+
+            {/* === RIGHT COLUMN: GOLD & SILVER MONETIZATION SLOTS (3/12 Space) === */}
+            <div className="lg:col-span-3 space-y-4">
+              <AdBanner 
+                tier="GOLD" 
+                targetUrl={selectedMatch?.sponsorTargetUrl} 
+                sponsorName={selectedMatch?.pitchSponsorName} 
+              />
+              <AdBanner 
+                tier="SILVER" 
+                targetUrl={selectedMatch?.sponsorTargetUrl} 
+                sponsorName={selectedMatch?.pitchSponsorName} 
+              />
+            </div>
+
           </div>
         )}
       </div>
