@@ -13,6 +13,8 @@ import { evaluate, resolveAgeGroup, getNormsForAge } from '@/lib/grs-engine';
 import type { GRSResult, Position } from '@/lib/grs-engine';
 import PlayerCard from '@/components/ui/PlayerCard';
 import type { PlayerCardData } from '@/components/ui/PlayerCard';
+import { useSessionSubmit } from '@/hooks/useSessionSubmit';
+import { useAuthStore } from '@/lib/auth-store';
 
 const POSITIONS: { key: Position; label: string }[] = [
   { key: 'striker',    label: 'Striker'    },
@@ -29,12 +31,13 @@ function resolveRankFromResult(result: GRSResult): import('@/components/ui/Playe
 
 export default function TalentIdPage() {
   const router = useRouter();
+  const user   = useAuthStore((s) => s.user);
+  const { submit, loading: saving, complete: submitResult } = useSessionSubmit();
   const [step, setStep]     = useState<'setup' | 'tests' | 'results'>('setup');
   const [age,  setAge]      = useState(14);
   const [pos,  setPos]      = useState<Position>('midfielder');
   const [name, setName]     = useState('');
   const [result, setResult] = useState<GRSResult | null>(null);
-  const [saving, setSaving] = useState(false);
 
   // Test inputs
   const [jumpCm,      setJumpCm]      = useState<number | ''>('');
@@ -86,54 +89,17 @@ export default function TalentIdPage() {
     setResult(res);
     setStep('results');
 
-    // Save session via API (non-blocking)
-    saveSession(res);
-  };
-
-  const saveSession = async (res: GRSResult) => {
-    setSaving(true);
-    try {
-      await fetch('/api/sessions', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          aqScore:          res.aq,
-          tier:             res.tier,
-          position:         res.position,
-          ageGroup:         res.ageGroup,
-          sessionDate:      res.sessionDate,
-          sprintTime:       res.domains.linearSpeed.tested   ? res.domains.linearSpeed.raw   : null,
-          jumpHeight:       res.domains.explosivePower.tested ? res.domains.explosivePower.raw : null,
-          chitimaTotalSec:  res.domains.endurance.tested     ? res.domains.endurance.raw     : null,
-          reactionCatch:    res.domains.cognitiveSpeed.tested ? res.domains.cognitiveSpeed.raw : null,
-          jugglingSeq:      res.domains.ballMastery.tested   ? res.domains.ballMastery.raw   : null,
-          sprintPercentile:    res.domains.linearSpeed.percentile,
-          jumpPercentile:      res.domains.explosivePower.percentile,
-          balancePercentile:   res.domains.balance.percentile,
-          reactionPercentile:  res.domains.cognitiveSpeed.percentile,
-          chitimaPercentile:   res.domains.endurance.percentile,
-          ballPercentile:      res.domains.ballMastery.percentile,
-          scoutNarrative:      res.scoutNarrative,
-          coachVerified:       res.coachVerified,
-          verifiedBy:          res.verifiedBy,
-          injuryRisk:          res.injuryRiskFlag,
-          balanceAsymmetry:    res.balanceAsymmetry,
-          pqStriker:           res.pq.striker,
-          pqWinger:            res.pq.winger,
-          pqMidfielder:        res.pq.midfielder,
-          pqDefender:          res.pq.defender,
-          pqGoalkeeper:        res.pq.goalkeeper,
-        }),
-      });
-    } catch (e) {
-      // Save to localStorage as fallback (offline)
-      const key = 'grs_sessions';
-      const existing = JSON.parse(localStorage.getItem(key) ?? '[]');
-      existing.unshift({ ...res, savedAt: new Date().toISOString() });
-      localStorage.setItem(key, JSON.stringify(existing.slice(0, 50)));
-    } finally {
-      setSaving(false);
-    }
+    // Fire useSessionSubmit — saves session + gamification + drill unlock in one chain
+    const playerId = user?.id ?? 'guest';
+    const prevAQ   = (() => {
+      try {
+        const sessions = JSON.parse(localStorage.getItem('grs_sessions') ?? '[]');
+        return sessions[0]?.aq ?? undefined;
+      } catch { return undefined; }
+    })();
+    submit({ playerId, result: res, previousAQ: prevAQ }).catch(() => {
+      // Offline fallback already handled inside useSessionSubmit
+    });
   };
 
   const cardData: PlayerCardData | null = result ? {
@@ -299,6 +265,40 @@ export default function TalentIdPage() {
 
             {/* Player card */}
             <PlayerCard data={cardData} />
+
+            {/* Rank-up banner */}
+            {submitResult?.rankedUp && (
+              <div className="rounded-2xl p-4 text-center" style={{ background: '#1a5c2a', color: '#f5c542' }}>
+                <div className="text-2xl mb-1">🏆</div>
+                <div className="font-bold text-lg">Rank Up!</div>
+                <div className="text-sm opacity-90">
+                  {submitResult.previousRank} → {submitResult.rank}
+                </div>
+              </div>
+            )}
+
+            {/* XP + streak */}
+            {submitResult && (
+              <div className="flex gap-3">
+                <div className="flex-1 bg-white rounded-xl p-3 border border-gray-100 text-center">
+                  <div className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">XP Earned</div>
+                  <div className="text-xl font-bold" style={{ color: '#1a5c2a' }}>+{submitResult.xpEarned}</div>
+                </div>
+                <div className="flex-1 bg-white rounded-xl p-3 border border-gray-100 text-center">
+                  <div className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Streak</div>
+                  <div className="text-xl font-bold" style={{ color: '#c8962a' }}>{submitResult.streak} 🔥</div>
+                </div>
+              </div>
+            )}
+
+            {/* New drill unlocked */}
+            {submitResult?.newDrill && (
+              <div className="bg-white rounded-2xl p-4 border-2" style={{ borderColor: '#c8962a' }}>
+                <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#c8962a' }}>New drill unlocked</div>
+                <div className="font-semibold text-gray-800">{submitResult.newDrill.name}</div>
+                <div className="text-sm text-gray-500 mt-0.5">{submitResult.newDrill.duration} — {submitResult.newDrill.reason}</div>
+              </div>
+            )}
 
             {/* Domain scores */}
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
