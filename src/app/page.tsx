@@ -62,7 +62,7 @@ function CoreGoals() {
                 "AQ score vs age-group norms",
                 "Position match scores for all 5 positions",
               ],
-              link: "/athlete/scan",
+              link: "/player/talent-id",
               icon: <Camera size={20} />,
               cta:  "Take your test →",
             },
@@ -485,7 +485,7 @@ export default function GrassrootsSportsLanding() {
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link
-              href="/athlete/scan"
+              href="/player/talent-id"
               className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
             >
               <div className="flex items-center gap-3 min-w-0">
