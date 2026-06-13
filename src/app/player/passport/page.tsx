@@ -33,6 +33,11 @@ interface Profile {
   club: string | null;
   school: string | null;
   ai_narrative: string | null;
+  school_name?: string | null;
+  grade_level?: string | null;
+  academic_average?: string | null;
+  academic_year?: string | null;
+  coach_endorsements?: Endorsement[] | null;
 }
 
 interface ShowcaseClip {
@@ -77,7 +82,7 @@ function RatingBar({ value, max = 10 }: { value: number; max?: number }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function PassportPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [clips, setClips]     = useState<ShowcaseClip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,8 +377,8 @@ Output exactly 3 sentences. No bullet points. No headers.`,
       const fname = `${profile?.first_name ?? "player"}-${profile?.surname ?? "passport"}`
         .toLowerCase().replace(/\s+/g, "-");
       doc.save(`${fname}-talent-passport.pdf`);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // silent fail — PDF export
     } finally {
       setExporting(false);
     }
