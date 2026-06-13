@@ -2,26 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { 
-  User, 
-  Eye, 
-  EyeOff, 
-  ArrowLeft, 
-  CheckCircle2, 
-  Camera, 
-  Loader2, 
-  ExternalLink, 
-  Brain, 
-  Sparkles, 
-  MessageCircle,
-  Award
+import {
+  User,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  CheckCircle2,
+  Camera,
+  Loader2,
+  ExternalLink,
+  Brain,
+  Sparkles,
+  Copy,
+  Award,
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
 import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
 import PotentialCard from "@/components/player/PotentialCard";
-import { normalizePhone } from "@/lib/phone-normalize";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +31,6 @@ import { SPORT_MAP, SportKey } from "@/config/sports";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 
-// 🔄 INTEGRATION COUPLING: Import your newly upgraded position engine models
 import { getPositionConfig, POSITION_ICON_REGISTRY } from "@/config/positions";
 import TacticalPitch from "@/components/TacticalPitch";
 
@@ -83,6 +81,7 @@ const schema = z.object({
   position:       z.string().min(1, "Position required"),
   province:       z.string().min(1, "Province required"),
   age_group:      z.string().min(1, "Age group required"),
+  gender:         z.string().optional(),
   preferred_foot: z.string().optional(),
   height_cm:      z.string().optional(),
   weight_kg:      z.string().optional(),
@@ -124,11 +123,7 @@ export default function PlayerProfilePage() {
   const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [aiNarrative, setAiNarrative]           = useState("");
   const [generatingNarrative, setGeneratingNarrative] = useState(false);
-  const [gender, setGender]               = useState<string>("");
-  const [savingGender, setSavingGender]   = useState(false);
-  const [whatsappPhone, setWhatsappPhone] = useState<string>("");
-  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
-  const [whatsappSaved, setWhatsappSaved]   = useState(false);
+  const [copied, setCopied]               = useState(false);
   const [selectedSport, setSelectedSport] = useState<SportKey>("football");
   const [photoUrl, setPhotoUrl]         = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -146,14 +141,13 @@ export default function PlayerProfilePage() {
       .then((res) => {
         setProfile(res.data);
         setPhotoUrl(res.data.photo_url ?? null);
-        setGender(res.data.gender ?? "");
-        setWhatsappPhone(res.data.whatsapp_phone ?? "");
         if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
         reset({
           sport:          res.data.sport          ?? "football",
           position:       res.data.position       ?? "",
           province:       res.data.province       ?? "",
           age_group:      res.data.age_group      ?? "",
+          gender:         res.data.gender         ?? "",
           preferred_foot: res.data.preferred_foot ?? "",
           height_cm:      res.data.height_cm      ?? "",
           weight_kg:      res.data.weight_kg      ?? "",
@@ -231,32 +225,11 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     }
   };
 
-  const saveGender = async (value: string) => {
-    setSavingGender(true);
-    try {
-      await api.patch("/profile", { gender: value });
-      setGender(value);
-    } catch {
-      setError("Failed to save gender. Please try again.");
-    } finally {
-      setSavingGender(false);
-    }
-  };
-
-  const saveWhatsappPhone = async () => {
-    if (!whatsappPhone.trim()) return;
-    setSavingWhatsapp(true);
-    try {
-      const phone = normalizePhone(whatsappPhone.replace(/\s+/g, ""));
-      await api.patch("/profile", { whatsapp_phone: phone });
-      setWhatsappPhone(phone);
-      setWhatsappSaved(true);
-      setTimeout(() => setWhatsappSaved(false), 3000);
-    } catch {
-      setError("Failed to save WhatsApp number. Please try again.");
-    } finally {
-      setSavingWhatsapp(false);
-    }
+  const copyProfileLink = () => {
+    if (!profile?.id) return;
+    navigator.clipboard.writeText(`https://grassrootssports.live/player/public/${profile.id}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -317,11 +290,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
   const { count, total, pct } = calcCompletion(watchedValues);
 
-  // 📐 HYDRATION COMPONENT EXTENSION: Dynamically read configuration settings based on active input changes
-  // We use watchedValues.position or fallback to checking the user profile state maps cleanly
   const activePositionKey = (watchedValues.position || "").toLowerCase();
-  
-  // Normalize string matching to hook seamlessly into: striker, midfielder, defender, goalkeeper
   let lookupKey = "fallback";
   if (activePositionKey.includes("striker") || activePositionKey.includes("forward") || activePositionKey.includes("winger")) {
     lookupKey = "striker";
@@ -465,43 +434,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
           )}
 
-          {/* Gender banner — shown once when gender is unset */}
-          {!loading && profile && !gender && (
-            <div className="mb-6 rounded-xl border border-purple-500/40 bg-purple-500/10 p-4">
-              <p className="text-sm font-semibold text-purple-300 mb-1">Help scouts find you</p>
-              <p className="text-xs text-purple-200/70 mb-3">
-                Female players now have a dedicated Women&apos;s Spotlight tab in the Scout Hub.
-                Set your gender so scouts can discover you.
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  type="button"
-                  disabled={savingGender}
-                  onClick={() => saveGender("female")}
-                  className="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors disabled:opacity-60"
-                >
-                  {savingGender ? "Saving…" : "I'm female"}
-                </button>
-                <button
-                  type="button"
-                  disabled={savingGender}
-                  onClick={() => saveGender("male")}
-                  className="flex-1 py-2 rounded-lg bg-[#f0b429]/10 hover:bg-[#f0b429]/20 text-[#f0b429] text-sm font-medium transition-colors disabled:opacity-60"
-                >
-                  {savingGender ? "Saving…" : "I'm male"}
-                </button>
-                <button
-                  type="button"
-                  disabled={savingGender}
-                  onClick={() => saveGender("prefer_not_to_say")}
-                  className="w-full py-2 rounded-lg border border-[#f0b429]/15 text-[#f0b429]/50 text-xs font-medium transition-colors hover:text-[#f0b429]/70 disabled:opacity-60"
-                >
-                  Prefer not to say
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Scout visibility toggle */}
           <div className="mb-8 flex items-center justify-between rounded-xl border p-5">
             <div className="flex items-center gap-3">
@@ -526,44 +458,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             >
               <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${profile?.scout_visible ? "translate-x-6" : "translate-x-1"}`} />
             </button>
-          </div>
-
-          {/* WhatsApp THUTO Link */}
-          <div className="mb-8 rounded-xl border border-[#f0b429]/15 bg-card/60 p-5">
-            <div className="mb-3 flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-green-400" />
-              <div>
-                <p className="font-medium text-[#f0b429]">THUTO on WhatsApp</p>
-                <p className="text-xs text-muted-foreground">
-                  Get coaching messages from THUTO directly on WhatsApp
-                </p>
-              </div>
-              {whatsappPhone && (
-                <span className="ml-auto rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-medium text-green-400">
-                  Linked ✓
-                </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="tel"
-                value={whatsappPhone}
-                onChange={(e) => setWhatsappPhone(e.target.value)}
-                placeholder="e.g. 0771 234 567"
-                className="flex-1 rounded-lg border border-[#f0b429]/15 bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-green-500/50 placeholder:text-muted-foreground"
-              />
-              <button
-                type="button"
-                onClick={saveWhatsappPhone}
-                disabled={savingWhatsapp || !whatsappPhone.trim()}
-                className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-green-500 disabled:opacity-50"
-              >
-                {savingWhatsapp ? <Loader2 className="h-4 w-4 animate-spin" /> : whatsappSaved ? "Saved ✓" : "Link"}
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Enter your Econet or NetOne number. After linking, message the THUTO WhatsApp number to start chatting.
-            </p>
           </div>
 
           {/* Form */}
@@ -626,8 +520,8 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               </p>
             </div>
 
-            {/* Age Group + Preferred Foot + Height + Weight */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {/* Age Group + Gender + Preferred Foot + Height + Weight */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Age Group</label>
                 <select
@@ -636,6 +530,18 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 >
                   <option value="">Select…</option>
                   {AGE_GROUPS.map((ag) => <option key={ag} value={ag}>{ag.toUpperCase()}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Gender</label>
+                <select
+                  {...register("gender")}
+                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">Select…</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
                 </select>
               </div>
               <div>
@@ -746,14 +652,26 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
           )}
 
-          {/* View as Scout button */}
-          <Link
-            href="/player/profile/scout-view"
-            className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 py-3 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/10"
-          >
-            <Eye className="h-4 w-4" /> View as Scout
-            <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-          </Link>
+          {/* View as Scout + Share profile link */}
+          <div className="mb-6 flex gap-3">
+            <Link
+              href="/player/profile/scout-view"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 py-3 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/10"
+            >
+              <Eye className="h-4 w-4" /> View as Scout
+              <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+            </Link>
+            {profile?.id && (
+              <button
+                type="button"
+                onClick={copyProfileLink}
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-white hover:bg-white/10"
+              >
+                <Copy className="h-4 w-4" />
+                {copied ? "Copied!" : "Share"}
+              </button>
+            )}
+          </div>
 
           {/* Talent Prediction Card */}
           {user && (
@@ -846,7 +764,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 </span>
               )}
             </div>
-            <TacticalPitch />
+            <TacticalPitch position={profile?.position} />
           </div>
 
           {/* Highlight Reel */}
