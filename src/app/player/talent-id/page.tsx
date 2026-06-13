@@ -5,9 +5,12 @@
 // Wires grs-engine v3 into the existing talent-id UI.
 // Players run the 6 tests, get AQ/DQ/PQ scores, see their Player Card,
 // and upload videos directly from this page.
+//
+// T1 Jump  — usePoseDetector: camera detects flight time → auto-fills height cm
+// T2 Sprint — SprintTestPage: in-app timer opens as overlay → auto-fills sprint sec
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { evaluate, resolveAgeGroup, getNormsForAge } from '@/lib/grs-engine';
 import type { GRSResult, Position } from '@/lib/grs-engine';
@@ -15,6 +18,8 @@ import PlayerCard from '@/components/ui/PlayerCard';
 import type { PlayerCardData } from '@/components/ui/PlayerCard';
 import { useSessionSubmit } from '@/hooks/useSessionSubmit';
 import { useAuthStore } from '@/lib/auth-store';
+import { usePoseDetector } from '@/hooks/usePoseDetector';
+import SprintTestPage from '@/components/tests/SprintTestPage';
 
 const POSITIONS: { key: Position; label: string }[] = [
   { key: 'striker',    label: 'Striker'    },
@@ -24,7 +29,6 @@ const POSITIONS: { key: Position; label: string }[] = [
   { key: 'goalkeeper', label: 'Goalkeeper' },
 ];
 
-// Map grs-engine Tier to PlayerCard rank using session count from localStorage
 function resolveRankFromResult(result: GRSResult): import('@/components/ui/PlayerCard').PlayerRank {
   return result.rank as import('@/components/ui/PlayerCard').PlayerRank;
 }
@@ -33,13 +37,15 @@ export default function TalentIdPage() {
   const router = useRouter();
   const user   = useAuthStore((s) => s.user);
   const { submit, loading: saving, complete: submitResult } = useSessionSubmit();
+
+  // ── Page step ─────────────────────────────────────────────────────────────
   const [step, setStep]     = useState<'setup' | 'tests' | 'results'>('setup');
   const [age,  setAge]      = useState(14);
   const [pos,  setPos]      = useState<Position>('midfielder');
   const [name, setName]     = useState('');
   const [result, setResult] = useState<GRSResult | null>(null);
 
-  // Test inputs
+  // ── Test inputs ───────────────────────────────────────────────────────────
   const [jumpCm,      setJumpCm]      = useState<number | ''>('');
   const [sprintSec,   setSprintSec]   = useState<number | ''>('');
   const [balRO,       setBalRO]       = useState(0);
@@ -53,10 +59,34 @@ export default function TalentIdPage() {
   const [juggling,    setJuggling]    = useState<number | ''>('');
   const [turnQuality, setTurnQuality] = useState(0);
 
+  // ── T2 Sprint — overlay state ─────────────────────────────────────────────
+  const [sprintMode, setSprintMode] = useState<'input' | 'test'>('input');
+
+  // ── T1 Jump — camera detection ────────────────────────────────────────────
+  const [jumpCamOpen, setJumpCamOpen] = useState(false);
+  const jumpVideoRef = useRef<HTMLVideoElement>(null);
+  const { state: poseState, start: startPose, stop: stopPose, resetJump } = usePoseDetector('jump');
+
+  // Stop camera when panel closes
+  useEffect(() => {
+    if (!jumpCamOpen) stopPose();
+  }, [jumpCamOpen, stopPose]);
+
+  // Auto-accept first detected jump result (player can retry if not happy)
+  // — we do NOT auto-fill; the player confirms manually via "Use X cm" button
+
+  const openJumpCamera = () => {
+    setJumpCamOpen(true);
+    // Defer start until the video element has rendered
+    setTimeout(() => {
+      if (jumpVideoRef.current) startPose(jumpVideoRef.current);
+    }, 80);
+  };
+
   const norms = getNormsForAge(age);
 
+  // ── Calculate scores ──────────────────────────────────────────────────────
   const handleRun = () => {
-    // Calculate degradation score from coach quality ratings
     const degScore = chitimaR1 > 0 && chitimaR3 > 0
       ? Math.round(Math.max(0, (chitimaR1 - chitimaR3) / Math.max(1, chitimaR1 - 1)) * 100)
       : undefined;
@@ -90,7 +120,6 @@ export default function TalentIdPage() {
     setResult(res);
     setStep('results');
 
-    // Fire useSessionSubmit — saves session + gamification + drill unlock in one chain
     const playerId = user?.id ?? 'guest';
     const prevAQ   = (() => {
       try {
@@ -98,9 +127,7 @@ export default function TalentIdPage() {
         return sessions[0]?.aq ?? undefined;
       } catch { return undefined; }
     })();
-    submit({ playerId, result: res, previousAQ: prevAQ }).catch(() => {
-      // Offline fallback already handled inside useSessionSubmit
-    });
+    submit({ playerId, result: res, previousAQ: prevAQ }).catch(() => {});
   };
 
   const cardData: PlayerCardData | null = result ? {
@@ -120,7 +147,7 @@ export default function TalentIdPage() {
       ball:      result.domains.ballMastery.percentile,
       balance:   result.domains.balance.percentile,
     },
-    dq:           result.dq,
+    dq:            result.dq,
     coachVerified: result.coachVerified,
   } : null;
 
@@ -139,7 +166,7 @@ export default function TalentIdPage() {
           </p>
         </div>
 
-        {/* ── SETUP STEP ── */}
+        {/* ── SETUP ─────────────────────────────────────────────────────────── */}
         {step === 'setup' && (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 space-y-5">
             <div>
@@ -179,63 +206,213 @@ export default function TalentIdPage() {
           </div>
         )}
 
-        {/* ── TESTS STEP ── */}
+        {/* ── TESTS ─────────────────────────────────────────────────────────── */}
         {step === 'tests' && (
           <div className="space-y-4">
-            {/* T1 Jump */}
-            <TestCard title="T1 — Jump test" what="Explosive power — how high you can jump" how="Step off a knee-height wall. Land and immediately jump up as high as possible. 3 attempts, best counts." equipment="Low wall or step · Phone to the side at hip height">
-              <NumInput label="Best jump height" unit="cm" value={jumpCm} onChange={setJumpCm} min={5} max={90} hint={`Average for ${norms.ageGroup}: ${norms.jump.p50}cm`} />
+
+            {/* T1 Jump ─────────────────────────────────────────────────────── */}
+            <TestCard
+              title="T1 — Jump test"
+              what="Explosive power — how high you can jump"
+              how="Step off a knee-height wall. Land and immediately jump up as high as possible. 3 attempts, best counts."
+              equipment="Low wall or step · Phone to the side at hip height"
+            >
+              <NumInput
+                label="Best jump height"
+                unit="cm"
+                value={jumpCm}
+                onChange={setJumpCm}
+                min={5}
+                max={90}
+                hint={`Average for ${norms.ageGroup}: ${norms.jump.p50}cm`}
+              />
+
+              {/* Camera detection panel */}
+              {!jumpCamOpen && !poseState.jumpResult && (
+                <button
+                  onClick={openJumpCamera}
+                  className="mt-2 w-full py-2 rounded-xl text-sm font-medium border border-dashed border-gray-300 text-gray-500 flex items-center justify-center gap-2 hover:border-green-400 hover:text-green-700 transition-colors"
+                >
+                  <span>📷</span> Detect height with camera
+                </button>
+              )}
+
+              {poseState.error && (
+                <p className="text-xs text-red-500 mt-2">{poseState.error}</p>
+              )}
+
+              {jumpCamOpen && (
+                <div className="mt-3 rounded-xl overflow-hidden border border-gray-200" style={{ background: '#111' }}>
+                  {/* Live camera feed */}
+                  <video
+                    ref={jumpVideoRef}
+                    playsInline
+                    muted
+                    className="w-full"
+                    style={{ maxHeight: 220, objectFit: 'cover', display: 'block' }}
+                  />
+
+                  <div className="p-3">
+                    {/* Calibrating */}
+                    {poseState.ready && !poseState.jumpResult && (
+                      <div
+                        className="text-xs text-center font-medium py-1"
+                        style={{ color: poseState.inFlight ? '#f0b429' : '#86efac' }}
+                      >
+                        {poseState.inFlight ? '⬆ Airborne — detecting peak...' : 'Calibrating — stand still for 2 seconds, then jump'}
+                      </div>
+                    )}
+
+                    {!poseState.ready && !poseState.error && (
+                      <div className="text-xs text-center text-gray-400">Loading camera...</div>
+                    )}
+
+                    {/* Jump result */}
+                    {poseState.jumpResult && (
+                      <div className="text-center">
+                        <div className="text-3xl font-black mb-0.5" style={{ color: '#f0b429' }}>
+                          {poseState.jumpResult.heightCm} cm
+                        </div>
+                        <div className="text-xs text-gray-400 mb-3">
+                          Flight time: {poseState.jumpResult.flightTimeSec.toFixed(3)}s
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setJumpCm(poseState.jumpResult!.heightCm);
+                              setJumpCamOpen(false);
+                            }}
+                            className="flex-1 py-2 rounded-xl text-sm font-bold text-white"
+                            style={{ background: '#1c3d22' }}
+                          >
+                            Use {poseState.jumpResult.heightCm} cm
+                          </button>
+                          <button
+                            onClick={resetJump}
+                            className="py-2 px-4 rounded-xl text-sm border border-gray-600 text-gray-300"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => setJumpCamOpen(false)}
+                      className="mt-2 w-full py-1.5 rounded-lg text-xs text-gray-500 border border-gray-700"
+                    >
+                      Close camera — enter manually above
+                    </button>
+                  </div>
+                </div>
+              )}
             </TestCard>
 
-            {/* T2 Sprint */}
-            <TestCard title="T2 — Sprint test" what="Linear speed — 20m time" how="Sprint between two markers 20m apart. Coach stands to the side. 2 runs, best time counts." equipment="2 markers 20m apart · Phone to the side">
-              <NumInput label="Best sprint time" unit="sec" value={sprintSec} onChange={setSprintSec} min={2.5} max={8} step={0.01} hint={`Average for ${norms.ageGroup}: ${norms.sprint.p50}s`} />
+            {/* T2 Sprint ──────────────────────────────────────────────────── */}
+            <TestCard
+              title="T2 — Sprint test"
+              what={`Linear speed — ${age >= 10 && age <= 12 ? '15m' : '20m'} time`}
+              how={`Sprint between two markers ${age >= 10 && age <= 12 ? '15m' : '20m'} apart. Coach stands to the side. 2 runs, best time counts.`}
+              equipment={`2 markers ${age >= 10 && age <= 12 ? '15m' : '20m'} apart · Helper holds phone`}
+            >
+              {sprintSec !== '' ? (
+                /* Confirmed time */
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 rounded-xl border-2 py-3 px-4 flex items-baseline gap-1"
+                    style={{ borderColor: '#1c3d22' }}>
+                    <span className="text-2xl font-black" style={{ color: '#1c3d22' }}>{sprintSec}</span>
+                    <span className="text-sm text-gray-400">sec</span>
+                  </div>
+                  <button
+                    onClick={() => { setSprintSec(''); }}
+                    className="text-xs text-gray-400 underline flex-shrink-0"
+                  >
+                    Retake
+                  </button>
+                </div>
+              ) : (
+                /* Not yet timed */
+                <button
+                  onClick={() => setSprintMode('test')}
+                  className="w-full py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2"
+                  style={{ background: '#1c3d22' }}
+                >
+                  <span>⏱</span> Open sprint timer →
+                </button>
+              )}
+              <div className="text-xs text-gray-400 mt-1">
+                Average for {norms.ageGroup}: {norms.sprint.p50}s
+              </div>
             </TestCard>
 
-            {/* T3 Balance */}
-            <TestCard title="T3 — Balance test" what="Proprioception and injury risk — how well your body controls itself" how="Stand on one foot for 30 seconds. Count every time you touch the ground to stop falling. Eyes open, then closed. Both legs." equipment="Flat floor · Phone timer">
+            {/* T3 Balance ─────────────────────────────────────────────────── */}
+            <TestCard
+              title="T3 — Balance test"
+              what="Proprioception and injury risk — how well your body controls itself"
+              how="Stand on one foot for 30 seconds. Count every time you touch the ground to stop falling. Eyes open, then closed. Both legs."
+              equipment="Flat floor · Phone timer"
+            >
               <div className="grid grid-cols-2 gap-3">
-                <CounterInput label="Right leg eyes open" value={balRO} onChange={setBalRO} />
-                <CounterInput label="Left leg eyes open"  value={balLO} onChange={setBalLO} />
+                <CounterInput label="Right leg eyes open"   value={balRO} onChange={setBalRO} />
+                <CounterInput label="Left leg eyes open"    value={balLO} onChange={setBalLO} />
                 <CounterInput label="Right leg eyes closed" value={balRC} onChange={setBalRC} />
                 <CounterInput label="Left leg eyes closed"  value={balLC} onChange={setBalLC} />
               </div>
             </TestCard>
 
-            {/* T4 Reaction */}
-            <TestCard title="T4 — Reaction test" what="Cognitive speed — how fast your brain reacts and your body responds" how="Coach drops a football from shoulder height without warning. Catch it before it bounces twice. 5 attempts." equipment="1 football · 2m of space">
+            {/* T4 Reaction ────────────────────────────────────────────────── */}
+            <TestCard
+              title="T4 — Reaction test"
+              what="Cognitive speed — how fast your brain reacts and your body responds"
+              how="Coach drops a football from shoulder height without warning. Catch it before it bounces twice. 5 attempts."
+              equipment="1 football · 2m of space"
+            >
               <NumInput label="Catches out of 5" unit="/5" value={catchRate} onChange={setCatchRate} min={0} max={5} step={1} />
             </TestCard>
 
-            {/* T5 Chitima */}
-            <TestCard title="T5 — Endurance circuit" what="Fitness and technique under fatigue — does your form hold when tired?" how="3 rounds: 5 burpees → sprint 10m → 5 squat jumps → sprint back. No rest. Rate your technique in round 1 and round 3." equipment="2 markers 10m apart · Phone timer">
+            {/* T5 Endurance ───────────────────────────────────────────────── */}
+            <TestCard
+              title="T5 — Endurance circuit"
+              what="Fitness and technique under fatigue — does your form hold when tired?"
+              how="3 rounds: 5 burpees → sprint 10m → 5 squat jumps → sprint back. No rest. Rate your technique in round 1 and round 3."
+              equipment="2 markers 10m apart · Phone timer"
+            >
               <NumInput label="Total time" unit="sec" value={chitimaSec} onChange={setChitimaSec} min={30} max={300} step={1} />
               <div className="grid grid-cols-2 gap-3 mt-3">
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Round 1 quality (1–5)</div>
-                  <div className="flex gap-1">{[1,2,3,4,5].map(n => (
-                    <button key={n} onClick={() => setChitimaR1(n)}
-                      className="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
-                      style={chitimaR1 === n ? { background: '#1c3d22', color: '#fff' } : { background: '#f1f1f1', color: '#888' }}>
-                      {n}
-                    </button>
-                  ))}</div>
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} onClick={() => setChitimaR1(n)}
+                        className="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                        style={chitimaR1 === n ? { background: '#1c3d22', color: '#fff' } : { background: '#f1f1f1', color: '#888' }}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Round 3 quality (1–5)</div>
-                  <div className="flex gap-1">{[1,2,3,4,5].map(n => (
-                    <button key={n} onClick={() => setChitimaR3(n)}
-                      className="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
-                      style={chitimaR3 === n ? { background: '#1c3d22', color: '#fff' } : { background: '#f1f1f1', color: '#888' }}>
-                      {n}
-                    </button>
-                  ))}</div>
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} onClick={() => setChitimaR3(n)}
+                        className="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                        style={chitimaR3 === n ? { background: '#1c3d22', color: '#fff' } : { background: '#f1f1f1', color: '#888' }}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </TestCard>
 
-            {/* T6 Ball mastery */}
-            <TestCard title="T6 — Ball mastery" what="Football naturalness — how comfortably you relate to the ball" how="Part A: juggle for 30 seconds, record your longest unbroken run. Part B: 5 inside-cut turns around a cone, rate each 1–3." equipment="1 football · 1 cone">
+            {/* T6 Ball mastery ────────────────────────────────────────────── */}
+            <TestCard
+              title="T6 — Ball mastery"
+              what="Football naturalness — how comfortably you relate to the ball"
+              how="Part A: juggle for 30 seconds, record your longest unbroken run. Part B: 5 inside-cut turns around a cone, rate each 1–3."
+              equipment="1 football · 1 cone"
+            >
               <NumInput label="Longest juggling sequence" unit="touches" value={juggling} onChange={setJuggling} min={0} max={500} step={1} />
               <div className="mt-3">
                 <div className="text-xs text-gray-500 mb-2">Turn quality — total (5 turns, max 15)</div>
@@ -260,14 +437,12 @@ export default function TalentIdPage() {
           </div>
         )}
 
-        {/* ── RESULTS STEP ── */}
+        {/* ── RESULTS ───────────────────────────────────────────────────────── */}
         {step === 'results' && result && cardData && (
           <div className="space-y-4">
 
-            {/* Player card */}
             <PlayerCard data={cardData} />
 
-            {/* Rank-up banner */}
             {submitResult?.rankedUp && (
               <div className="rounded-2xl p-4 text-center" style={{ background: '#1a5c2a', color: '#f5c542' }}>
                 <div className="text-2xl mb-1">🏆</div>
@@ -278,7 +453,6 @@ export default function TalentIdPage() {
               </div>
             )}
 
-            {/* XP + streak */}
             {submitResult && (
               <div className="flex gap-3">
                 <div className="flex-1 bg-white rounded-xl p-3 border border-gray-100 text-center">
@@ -292,7 +466,6 @@ export default function TalentIdPage() {
               </div>
             )}
 
-            {/* New drill unlocked */}
             {submitResult?.newDrill && (
               <div className="bg-white rounded-2xl p-4 border-2" style={{ borderColor: '#c8962a' }}>
                 <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: '#c8962a' }}>New drill unlocked</div>
@@ -301,7 +474,6 @@ export default function TalentIdPage() {
               </div>
             )}
 
-            {/* Domain scores */}
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Athletic profile</div>
               {[
@@ -332,7 +504,6 @@ export default function TalentIdPage() {
               ))}
             </div>
 
-            {/* Position fit */}
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Best position matches</div>
               <div className="grid grid-cols-5 gap-1.5">
@@ -342,18 +513,17 @@ export default function TalentIdPage() {
                   ['Midfielder', result.pq.midfielder],
                   ['Defender',   result.pq.defender],
                   ['GK',         result.pq.goalkeeper],
-                ].map(([pos, score]) => (
-                  <div key={pos as string}
+                ].map(([p, score]) => (
+                  <div key={p as string}
                     className="text-center p-2 rounded-xl"
-                    style={{ background: pos === result.pq.bestFit.charAt(0).toUpperCase() + result.pq.bestFit.slice(1) ? '#eaf3de' : '#f5f5f5' }}>
+                    style={{ background: (p as string).toLowerCase() === result.pq.bestFit ? '#eaf3de' : '#f5f5f5' }}>
                     <div className="text-base font-black" style={{ color: '#1c3d22' }}>{score}</div>
-                    <div style={{ fontSize: 9 }} className="text-gray-500 mt-0.5">{pos}</div>
+                    <div style={{ fontSize: 9 }} className="text-gray-500 mt-0.5">{p}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 6 suggested drills — one per test domain */}
             {result.suggestedDrills.length > 0 && (
               <div className="bg-white rounded-2xl p-4 border border-gray-100">
                 <div className="flex items-center justify-between mb-3">
@@ -369,7 +539,6 @@ export default function TalentIdPage() {
                   One drill for each test domain. Each one directly trains the physical quality the GRS engine just measured.
                 </p>
 
-                {/* Domain labels matching the 6 tests */}
                 {[
                   { label: 'T1 — Jump',      icon: '🦘', color: '#c8962a' },
                   { label: 'T2 — Sprint',    icon: '⚡', color: '#185fa5' },
@@ -381,28 +550,17 @@ export default function TalentIdPage() {
                   const drill = result.suggestedDrills[i];
                   if (!drill) return null;
                   return (
-                    <div key={drill.id}
-                      className="mb-3 rounded-xl border border-gray-100 overflow-hidden">
-                      {/* Domain header */}
-                      <div className="flex items-center gap-2 px-3 py-2"
-                        style={{ background: '#f8faf7' }}>
+                    <div key={drill.id} className="mb-3 rounded-xl border border-gray-100 overflow-hidden">
+                      <div className="flex items-center gap-2 px-3 py-2" style={{ background: '#f8faf7' }}>
                         <span>{domain.icon}</span>
-                        <span className="text-[10px] font-black uppercase tracking-wide"
-                          style={{ color: domain.color }}>
+                        <span className="text-[10px] font-black uppercase tracking-wide" style={{ color: domain.color }}>
                           {domain.label}
                         </span>
-                        <span className="ml-auto text-[10px] text-gray-400 font-medium">
-                          {drill.duration}
-                        </span>
+                        <span className="ml-auto text-[10px] text-gray-400 font-medium">{drill.duration}</span>
                       </div>
-                      {/* Drill name and instruction */}
                       <div className="px-3 py-2.5">
-                        <div className="text-sm font-bold text-gray-900 mb-1">
-                          {drill.name}
-                        </div>
-                        <div className="text-xs text-gray-500 leading-relaxed">
-                          {drill.reason}
-                        </div>
+                        <div className="text-sm font-bold text-gray-900 mb-1">{drill.name}</div>
+                        <div className="text-xs text-gray-500 leading-relaxed">{drill.reason}</div>
                       </div>
                     </div>
                   );
@@ -416,13 +574,11 @@ export default function TalentIdPage() {
               </div>
             )}
 
-            {/* Scout narrative */}
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Scout report</div>
               <p className="text-sm text-gray-600 leading-relaxed">{result.scoutNarrative}</p>
             </div>
 
-            {/* Injury flag */}
             {result.injuryRiskFlag && (
               <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
                 <div className="text-sm font-bold text-red-700 mb-1">Balance asymmetry flag</div>
@@ -443,16 +599,36 @@ export default function TalentIdPage() {
                 Go to drills →
               </button>
             </div>
-
           </div>
         )}
 
       </div>
+
+      {/* ── T2 Sprint timer overlay ──────────────────────────────────────────
+          Full-screen dark overlay — SprintTestPage handles its own UI.
+          Confirmed time is written back to sprintSec and overlay closes.   */}
+      {sprintMode === 'test' && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            overflowY: 'auto',
+          }}
+        >
+          <SprintTestPage
+            age={age}
+            onConfirm={(secs) => {
+              setSprintSec(secs);
+              setSprintMode('input');
+            }}
+            onSkip={() => setSprintMode('input')}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Small shared sub-components ─────────────────────────────────────────────
+// ── Shared sub-components ────────────────────────────────────────────────────
 
 function TestCard({ title, what, how, equipment, children }: {
   title: string; what: string; how: string; equipment: string; children: React.ReactNode;
