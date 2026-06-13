@@ -1,5 +1,5 @@
 // src/app/coach/page.tsx
-// GrassRoots Coach Hub - Complete merged version with all features
+// GrassRoots Coach Hub - Complete with Drills API & Gamification Integration
 
 "use client";
 
@@ -64,6 +64,120 @@ interface UpcomingMatch {
   competition: string;
 }
 
+interface DrillProgress {
+  id: string;
+  drillId: string;
+  unlocked: boolean;
+  completed: boolean;
+  attempts: number;
+  unlockedAt: string;
+  completedAt: string | null;
+}
+
+interface GamificationState {
+  rank: string;
+  xpTotal: number;
+  weeklyStreak: number;
+  longestStreak: number;
+  totalSessions: number;
+  drillTierUnlocked: number;
+  badgesEarned: string[];
+  lastTestAt: string;
+}
+
+// Player Drills Modal Component
+function PlayerDrillsModal({ player, drills, gamification, onClose }: { 
+  player: SquadMember; 
+  drills: DrillProgress[]; 
+  gamification: GamificationState | null;
+  onClose: () => void;
+}) {
+  const completedCount = drills.filter(d => d.completed).length;
+  const unlockedCount = drills.filter(d => d.unlocked).length;
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] p-5 text-white flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-black">{player.name}</h2>
+            <p className="text-white/70 text-sm">{player.position} • Form: {player.formScore}</p>
+          </div>
+          <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
+        </div>
+        
+        <div className="p-5 space-y-6">
+          {/* Gamification Stats */}
+          {gamification && (
+            <div className="grid grid-cols-4 gap-3">
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <p className="text-xl font-black text-[#1a5c2a]">{gamification.rank}</p>
+                <p className="text-[9px] text-gray-500">Rank</p>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <p className="text-xl font-black text-[#1a5c2a]">{gamification.xpTotal}</p>
+                <p className="text-[9px] text-gray-500">XP</p>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <p className="text-xl font-black text-[#1a5c2a]">{gamification.weeklyStreak}</p>
+                <p className="text-[9px] text-gray-500">Streak</p>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-xl">
+                <p className="text-xl font-black text-[#1a5c2a]">{unlockedCount}</p>
+                <p className="text-[9px] text-gray-500">Unlocked</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Badges */}
+          {gamification?.badgesEarned && gamification.badgesEarned.length > 0 && (
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">🏅 Badges Earned</h3>
+              <div className="flex flex-wrap gap-2">
+                {gamification.badgesEarned.map((badge) => (
+                  <span key={badge} className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                    {badge.replace('_', ' ').toUpperCase()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Drills Progress */}
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <Icons.Dumbbell size={14} className="text-[#1a5c2a]" />
+              Drills Progress ({completedCount}/{unlockedCount} completed)
+            </h3>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+              <div className="h-full bg-[#1a5c2a] rounded-full" style={{ width: `${unlockedCount > 0 ? (completedCount / unlockedCount) * 100 : 0}%` }} />
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {drills.map((drill) => (
+                <div key={drill.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{drill.drillId.replace(/_/g, ' ')}</p>
+                    <p className="text-[10px] text-gray-400">Attempts: {drill.attempts}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {drill.completed ? (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Completed ✓</span>
+                    ) : drill.unlocked ? (
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">In Progress</span>
+                    ) : (
+                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Locked 🔒</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Get all football roles from config
 const getFootballRoles = (): StaffRoleConfig[] => {
   const { COACHING_STAFF_ROLES } = require("@/config/coaching-staff");
@@ -98,6 +212,14 @@ export default function CoachHubPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedDrillForAssign, setSelectedDrillForAssign] = useState<Drill | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
+  
+  // State for drills and gamification
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [selectedPlayerData, setSelectedPlayerData] = useState<SquadMember | null>(null);
+  const [playerDrills, setPlayerDrills] = useState<DrillProgress[]>([]);
+  const [playerGamification, setPlayerGamification] = useState<GamificationState | null>(null);
+  const [loadingPlayerData, setLoadingPlayerData] = useState(false);
+  const [showPlayerDrillsModal, setShowPlayerDrillsModal] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const footballRoles = getFootballRoles();
@@ -117,10 +239,8 @@ export default function CoachHubPage() {
     const rc = getRoleConfig(activeRole);
     if (!rc) return;
 
-    // Load knowledge for focus categories
     loadKnowledgeForRole(rc.focusCategories).then(setKnowledge).catch(() => setKnowledge([]));
 
-    // Load department-specific drills
     const department = rc.department;
     if (department && department !== "all") {
       const drills = getDrillsByDepartment(department);
@@ -141,6 +261,40 @@ export default function CoachHubPage() {
       setDepartmentDrills([]);
     }
   }, [activeRole]);
+
+  // Load player drills and gamification when a player is selected
+  useEffect(() => {
+    if (!selectedPlayerId) return;
+    
+    const loadPlayerData = async () => {
+      setLoadingPlayerData(true);
+      try {
+        // Fetch player's unlocked drills
+        const drillsRes = await fetch(`/api/drills?playerId=${selectedPlayerId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (drillsRes.ok) {
+          const drillsData = await drillsRes.json();
+          setPlayerDrills(drillsData.drills || []);
+        }
+        
+        // Fetch player's gamification state
+        const gamificationRes = await fetch(`/api/gamification?playerId=${selectedPlayerId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (gamificationRes.ok) {
+          const gamificationData = await gamificationRes.json();
+          setPlayerGamification(gamificationData);
+        }
+      } catch (error) {
+        console.error("Failed to load player data:", error);
+      } finally {
+        setLoadingPlayerData(false);
+      }
+    };
+    
+    loadPlayerData();
+  }, [selectedPlayerId, token]);
 
   // Load biometric data (mock for now - replace with real API)
   const loadBiometricData = () => {
@@ -483,7 +637,7 @@ export default function CoachHubPage() {
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Form</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Fatigue</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Assigned</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Drills</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -491,7 +645,15 @@ export default function CoachHubPage() {
                     const fatigueDisplay = getFatigueDisplay(player.fatigue);
                     const assignedCount = assignedDrills[player.id]?.length || 0;
                     return (
-                      <tr key={player.id} className="hover:bg-gray-50">
+                      <tr 
+                        key={player.id} 
+                        className="hover:bg-gray-50 cursor-pointer" 
+                        onClick={() => { 
+                          setSelectedPlayerId(player.id); 
+                          setSelectedPlayerData(player);
+                          setShowPlayerDrillsModal(true); 
+                        }}
+                      >
                         <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
                         <td className="px-4 py-3 text-gray-600">{player.position}</td>
                         <td className="px-4 py-3"><span className={`font-bold ${getFormColor(player.formScore)}`}>{player.formScore}</span></td>
@@ -561,7 +723,12 @@ export default function CoachHubPage() {
                   );
                 })
               )}
-              {loadingAi && (<div className="flex gap-2.5 max-w-[85%] mr-auto items-center"><div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0"><Icons.Loader2 className="animate-spin" size={14} /></div><div className="bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl rounded-tl-none px-4 py-2 text-xs font-bold uppercase tracking-widest animate-pulse">Analyzing Parameters…</div></div>)}
+              {loadingAi && (
+                <div className="flex gap-2.5 max-w-[85%] mr-auto items-center">
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0"><Icons.Loader2 className="animate-spin" size={14} /></div>
+                  <div className="bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl rounded-tl-none px-4 py-2 text-xs font-bold uppercase tracking-widest animate-pulse">Analyzing Parameters…</div>
+                </div>
+              )}
               <div ref={chatEndRef} />
             </div>
 
@@ -577,9 +744,16 @@ export default function CoachHubPage() {
       {showDrillModal && selectedDrill && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDrillModal(false)}>
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-5 flex items-center justify-between"><h2 className="text-lg font-black text-gray-900">{selectedDrill.name}</h2><button onClick={() => setShowDrillModal(false)} className="text-gray-400 hover:text-gray-600">✕</button></div>
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-5 flex items-center justify-between">
+              <h2 className="text-lg font-black text-gray-900">{selectedDrill.name}</h2>
+              <button onClick={() => setShowDrillModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
             <div className="p-5 space-y-4">
-              <div className="flex gap-2"><span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">{selectedDrill.duration}</span><span className={`text-xs px-2 py-1 rounded font-bold ${selectedDrill.difficulty === "beginner" ? "bg-green-100 text-green-700" : selectedDrill.difficulty === "advanced" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{selectedDrill.difficulty}</span><span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">{selectedDrill.phase}</span></div>
+              <div className="flex gap-2">
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">{selectedDrill.duration}</span>
+                <span className={`text-xs px-2 py-1 rounded font-bold ${selectedDrill.difficulty === "beginner" ? "bg-green-100 text-green-700" : selectedDrill.difficulty === "advanced" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{selectedDrill.difficulty}</span>
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">{selectedDrill.phase}</span>
+              </div>
               <p className="text-sm text-gray-700 leading-relaxed">{selectedDrill.description}</p>
               <div><h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1"><Icons.Target size={12} /> Coaching Points</h4><ul className="space-y-1">{selectedDrill.coachingPoints.map((point, i) => (<li key={i} className="text-sm text-gray-600 flex items-start gap-2"><Icons.CheckCircle2 size={14} className="text-emerald-500 mt-0.5 shrink-0" />{point}</li>))}</ul></div>
               <div><h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1"><Icons.Briefcase size={12} /> Equipment Needed</h4><div className="flex flex-wrap gap-1">{selectedDrill.equipment.map((item, i) => (<span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">{item}</span>))}</div></div>
@@ -597,13 +771,34 @@ export default function CoachHubPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAssignModal(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-gray-200"><h2 className="text-lg font-black text-gray-900">Assign Drill to Players</h2><p className="text-xs text-gray-500 mt-1">{selectedDrillForAssign.name}</p></div>
-            <div className="p-5 space-y-3 max-h-80 overflow-y-auto">{squad.map((player) => (<label key={player.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"><input type="checkbox" checked={selectedPlayers.includes(player.id)} onChange={(e) => { if (e.target.checked) { setSelectedPlayers([...selectedPlayers, player.id]); } else { setSelectedPlayers(selectedPlayers.filter((id) => id !== player.id)); } }} className="w-4 h-4 rounded border-gray-300 text-[#1a5c2a] focus:ring-[#1a5c2a]" /><div><p className="text-sm font-medium text-gray-900">{player.name}</p><p className="text-[10px] text-gray-500">{player.position}</p></div></label>))}</div>
+            <div className="p-5 space-y-3 max-h-80 overflow-y-auto">
+              {squad.map((player) => (
+                <label key={player.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                  <input type="checkbox" checked={selectedPlayers.includes(player.id)} onChange={(e) => { if (e.target.checked) { setSelectedPlayers([...selectedPlayers, player.id]); } else { setSelectedPlayers(selectedPlayers.filter((id) => id !== player.id)); } }} className="w-4 h-4 rounded border-gray-300 text-[#1a5c2a] focus:ring-[#1a5c2a]" />
+                  <div><p className="text-sm font-medium text-gray-900">{player.name}</p><p className="text-[10px] text-gray-500">{player.position}</p></div>
+                </label>
+              ))}
+            </div>
             <div className="p-5 border-t border-gray-200 flex gap-3">
               <button onClick={() => setShowAssignModal(false)} className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-xl font-bold text-sm hover:bg-gray-50">Cancel</button>
               <button onClick={() => { assignDrillToPlayers(selectedDrillForAssign, selectedPlayers); setShowAssignModal(false); }} disabled={selectedPlayers.length === 0} className="flex-1 bg-[#1a5c2a] text-white py-2 rounded-xl font-bold text-sm hover:bg-[#1a5c2a]/90 disabled:opacity-50 disabled:cursor-not-allowed">Assign to {selectedPlayers.length} Player(s)</button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Player Drills Modal */}
+      {showPlayerDrillsModal && selectedPlayerData && (
+        <PlayerDrillsModal 
+          player={selectedPlayerData}
+          drills={playerDrills}
+          gamification={playerGamification}
+          onClose={() => {
+            setShowPlayerDrillsModal(false);
+            setSelectedPlayerId(null);
+            setSelectedPlayerData(null);
+          }}
+        />
       )}
     </div>
   );
