@@ -145,7 +145,7 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
           </div>
 
           {/* Stats row */}
-          {(profile.appearances || profile.goals) && (
+          {(profile.appearances !== null || profile.goals !== null) && (
             <div className="mx-5 my-4 grid grid-cols-2 gap-3">
               {profile.appearances !== null && (
                 <div className="rounded-xl bg-[#f0b429]/5 p-3 text-center">

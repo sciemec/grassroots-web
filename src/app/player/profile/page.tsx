@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   User, 
@@ -104,7 +103,7 @@ interface Profile extends FormData {
   whatsapp_phone?:     string;
 }
 
-function calcCompletion(profile: Profile | null, data: Partial<FormData>): { count: number; total: number; pct: number } {
+function calcCompletion(data: Partial<FormData>): { count: number; total: number; pct: number } {
   const fields = [
     data.sport, data.position, data.province, data.age_group,
     data.preferred_foot, data.height_cm, data.weight_kg,
@@ -116,8 +115,7 @@ function calcCompletion(profile: Profile | null, data: Partial<FormData>): { cou
 }
 
 export default function PlayerProfilePage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [profile, setProfile]           = useState<Profile | null>(null);
   const [loading, setLoading]           = useState(true);
   const [saved, setSaved]               = useState(false);
@@ -316,7 +314,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     );
   }
 
-  const { count, total, pct } = calcCompletion(profile, watchedValues);
+  const { count, total, pct } = calcCompletion(watchedValues);
 
   // 📐 HYDRATION COMPONENT EXTENSION: Dynamically read configuration settings based on active input changes
   // We use watchedValues.position or fallback to checking the user profile state maps cleanly
