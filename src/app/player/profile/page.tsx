@@ -15,6 +15,7 @@ import {
   Sparkles,
   Copy,
   Award,
+  Target,
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
@@ -387,7 +388,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           </div>
 
           {/* Profile completion progress bar */}
-          <div className="mb-8 rounded-xl border bg-card p-4">
+          <div className="mb-8 rounded-xl border border-white/15 bg-card p-4 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-medium">Profile completion</p>
               <p className="text-sm font-bold text-primary">{count}/{total} fields · {pct}%</p>
@@ -412,7 +413,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
           {/* DYNAMIC METRIC DISCOVERY CARDS: Renders live derived metrics from config on active position select */}
           {watchedValues.position && (
-            <div className="mb-8 rounded-2xl border bg-card p-5 shadow-xs border-primary/20">
+            <div className="mb-8 rounded-2xl border bg-card p-5 shadow-sm border-primary/20">
               <div className="flex items-center gap-3 mb-4">
                 <div className={`p-2.5 rounded-xl border ${dynamicConfig.badgeColor}`}>
                   <LiveIconComponent size={20} />
@@ -435,7 +436,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           )}
 
           {/* Scout visibility toggle */}
-          <div className="mb-8 flex items-center justify-between rounded-xl border p-5">
+          <div className="mb-8 flex items-center justify-between rounded-xl border border-white/15 bg-card p-5 shadow-sm">
             <div className="flex items-center gap-3">
               {profile?.scout_visible ? (
                 <Eye className="h-5 w-5 text-green-500" />
@@ -477,6 +478,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
 
             {/* Position + Province */}
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Playing Details</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Position</label>
@@ -521,6 +523,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
 
             {/* Age Group + Gender + Preferred Foot + Height + Weight */}
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Physical Details</p>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Age Group</label>
@@ -575,6 +578,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
 
             {/* Club + School */}
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Club & School</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">
@@ -754,17 +758,25 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           })()}
 
           {/* Tactical Pitch */}
-          <div className="mb-8 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+          <div className="mb-8 rounded-2xl border border-[#f0b429]/20 bg-card p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
-              <span className="text-[#f0b429]">⚽</span>
+              <Target className="h-4 w-4 text-[#f0b429]" />
               <h3 className="font-semibold text-[#f0b429]">My Position on the Pitch</h3>
-              {profile?.position && (
-                <span className="ml-auto rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs font-medium text-[#f0b429] border border-[#f0b429]/20">
-                  {profile.position}
+              {(watchedValues.position || profile?.position) && (
+                <span className="ml-auto rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs font-medium text-[#f0b429] border border-[#f0b429]/20 capitalize">
+                  {watchedValues.position || profile?.position}
                 </span>
               )}
             </div>
-            <TacticalPitch position={profile?.position} />
+            {(watchedValues.height_cm || profile?.height_cm || watchedValues.weight_kg || profile?.weight_kg) && (
+              <p className="mb-3 text-xs text-muted-foreground">
+                {[
+                  (watchedValues.height_cm || profile?.height_cm) && `${watchedValues.height_cm || profile?.height_cm} cm`,
+                  (watchedValues.weight_kg || profile?.weight_kg) && `${watchedValues.weight_kg || profile?.weight_kg} kg`,
+                ].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            <TacticalPitch position={watchedValues.position || profile?.position} />
           </div>
 
           {/* Highlight Reel */}
