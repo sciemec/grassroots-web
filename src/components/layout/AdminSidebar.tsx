@@ -1,15 +1,10 @@
-# Create the directory
-mkdir src\components\layout -Force
-
-# Create the file
-@"
 // src/components/layout/AdminSidebar.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, UserCircle, Dumbbell, Target, Activity, Zap, Calendar, Settings, LogOut, Menu, X, Shield, Trophy, BarChart3, UserCheck, ClipboardList, Award, Globe, Radio, Heart, Briefcase, Video, Camera, Database, Bell, Flag, Star, Tv, BookOpen } from 'lucide-react';
+import { Home, Users, UserCircle, Target, Globe, Trophy, LogOut, Menu, X } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 
 export function AdminSidebar() {
@@ -81,4 +76,3 @@ export function AdminSidebar() {
     </>
   );
 }
-"@ | Out-File -FilePath src\components\layout\AdminSidebar.tsx -Encoding utf8
