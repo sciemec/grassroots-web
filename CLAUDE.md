@@ -7381,7 +7381,7 @@ text
 /admin, /admin/fan-hub, /admin/users, /admin/verifications
 Public
 text
-/talent-leaderboard, /passport/[id], /business-hub, /video-studio
+/talent-leaderboard, /passport/[id], /business-hub, /video-studio, /world-cup
 🔧 ENVIRONMENT VARIABLES
 Required in Vercel:
 bash

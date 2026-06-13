@@ -383,8 +383,7 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
           audio.play();
         }
       }
-    } catch (err) {
-      console.error("DeepSeek telemetry pipe failure:", err);
+    } catch {
       setCurrentCommentary("Eish, network issues blocking the DeepSeek commentary box right now!");
     } finally {
       setIsTranslating(false);
@@ -413,9 +412,9 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
             {dialects.map((d) => (
               <button
                 key={d.code}
-                onClick={() => setSelectedLang(d.code as any)}
+                onClick={() => setSelectedLang(d.code as 'en' | 'shona' | 'ndebele' | 'zulu' | 'tswana')}
                 className={`px-2 py-1 text-[10px] font-extrabold rounded-lg transition-all flex items-center gap-1 ${
-                  selectedLang === d.code ? 'bg-[#1a5c2a] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'
+                  selectedLang === d.code ? 'bg-[#1a5c2a] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <span>{d.flag}</span>
@@ -511,13 +510,15 @@ export default function WorldCupPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
+  const hasSetInitial = useRef(false);
 
   const loadData = async () => {
     try {
       const live = await fetchLiveMatches();
       setMatches(live);
-      if (live.length > 0 && !selectedMatch) {
+      if (live.length > 0 && !hasSetInitial.current) {
         setSelectedMatch(live[0]);
+        hasSetInitial.current = true;
       }
       setLastUpdated(new Date());
       setError(null);
