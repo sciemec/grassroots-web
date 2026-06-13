@@ -88,6 +88,7 @@ export function LiveCommentary({ matchId, homeTeam, awayTeam, autoStartAudio }: 
   const [minute,          setMinute]          = useState(0);
   const [audioEnabled,    setAudioEnabled]    = useState(false);
   const [isLoading,       setIsLoading]       = useState(true);
+  const [currentCommentary, setCurrentCommentary] = useState<string>('');
 
   const seenIds  = useRef<Set<string>>(new Set());
   const feedRef  = useRef<HTMLDivElement>(null);
