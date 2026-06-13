@@ -1,21 +1,25 @@
+// src/app/arena/page.tsx
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Users, Briefcase, MessageSquare, Home, Plus, Send, Image } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Home, Users, Heart, MessageCircle, Share2, Image,
+  Video, MapPin, Globe, LogIn, Plus, Send,
+  Play, Eye, UserPlus, Filter,
+} from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import ArenaVideoCard from "@/components/arena/ArenaVideoCard";
 import { recordArenaView } from "@/lib/arena-video-connection";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API       = process.env.NEXT_PUBLIC_API_URL;
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
 const BG        = "#f4f2ee";
 
-const REACTION_EMOJI: Record<string, string> = {
-  heart: "❤️", fire: "🔥", strong: "💪", trophy: "🏆", clap: "👏",
-};
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 function safeArray<T>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
@@ -23,15 +27,16 @@ function safeArray<T>(v: unknown): T[] {
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return "Just now";
+  if (m < 1) return "Just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
 interface Post {
   id: string;
   user_id: string;
@@ -63,610 +68,577 @@ interface Comment {
   user?: { id: string; name: string; role: string };
 }
 
-// ── ArenaNav ──────────────────────────────────────────────────────────────
-
-function ArenaNav({ userName }: { userName: string }) {
-  const pathname = usePathname();
-  const initials = userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-
-  const links = [
-    { href: "/arena",             label: "Feed",         icon: Home },
-    { href: "/arena/network",     label: "Network",      icon: Users },
-    { href: "/arena/clubs",       label: "Clubs",        icon: Users },
-    { href: "/arena/recruitment", label: "Talent Board", icon: Briefcase },
-    { href: "/arena/messages",    label: "Messages",     icon: MessageSquare },
-  ];
-
-  return (
-    <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href="/arena" className="font-bold text-lg flex-shrink-0" style={{ color: GRS_GREEN }}>
-          The Arena
-        </Link>
-        <nav className="hidden md:flex items-center gap-1">
-          {links.map(({ href, label }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  active ? "text-white" : "text-gray-600 hover:bg-gray-100"
-                }`}
-                style={active ? { background: GRS_GREEN } : {}}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={{ background: GRS_GREEN }}
-        >
-          {initials}
-        </div>
-      </div>
-      {/* Mobile nav */}
-      <div className="md:hidden flex overflow-x-auto border-t border-gray-100 px-2">
-        {links.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 text-xs flex-shrink-0 ${
-                active ? "font-semibold" : "text-gray-500"
-              }`}
-              style={active ? { color: GRS_GREEN } : {}}
-            >
-              <Icon size={16} />
-              {label}
-            </Link>
-          );
-        })}
-      </div>
-    </header>
-  );
+// From Document 14 — video discovery feed
+interface ArenaVideo {
+  id:            string;
+  player_id:     string;
+  player_name:   string;
+  player_rank:   string;
+  position:      string;
+  province:      string;
+  aq_score:      number | null;
+  video_url:     string;
+  label:         string;
+  source:        string;
+  view_count:    number;
+  like_count:    number;
+  comment_count: number;
+  created_at:    string;
+  passport_token: string | null;
 }
 
-// ── FeedSkeleton ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants for video filter dropdowns (from Document 14)
+// ─────────────────────────────────────────────────────────────────────────────
+const POSITIONS = ["All", "Striker", "Winger", "Midfielder", "Defender", "Goalkeeper"];
+const PROVINCES = [
+  "All provinces", "Harare", "Bulawayo", "Manicaland", "Masvingo",
+  "Midlands", "Mashonaland East", "Mashonaland West", "Mashonaland Central",
+  "Matabeleland North", "Matabeleland South",
+];
 
-function FeedSkeleton() {
-  return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 space-y-3 animate-pulse">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-200" />
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3 bg-gray-200 rounded w-32" />
-              <div className="h-2 bg-gray-100 rounded w-24" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="h-3 bg-gray-100 rounded w-full" />
-            <div className="h-3 bg-gray-100 rounded w-3/4" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── PostComposer ──────────────────────────────────────────────────────────
-
-function PostComposer({
-  userName,
-  onPost,
-}: {
-  userName: string;
-  onPost: (body: string, type: string, label: string) => Promise<void>;
-}) {
-  const [text, setText]     = useState("");
-  const [type, setType]     = useState("standard");
-  const [label, setLabel]   = useState("");
-  const [posting, setPosting] = useState(false);
-  const initials = userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-
-  const submit = async () => {
-    if (!text.trim() || posting) return;
-    setPosting(true);
-    await onPost(text.trim(), type, label.trim());
-    setText("");
-    setLabel("");
-    setType("standard");
-    setPosting(false);
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex gap-3">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5"
-          style={{ background: GRS_GREEN }}
-        >
-          {initials}
-        </div>
-        <div className="flex-1">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value.slice(0, 280))}
-            placeholder="Share a result, milestone, or training update..."
-            rows={3}
-            className="w-full text-sm text-gray-800 placeholder-gray-400 resize-none outline-none leading-relaxed"
-          />
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-2">
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 outline-none"
-              >
-                <option value="standard">Post</option>
-                <option value="milestone">Milestone</option>
-                <option value="achievement">Achievement</option>
-              </select>
-              {type !== "standard" && (
-                <input
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value.slice(0, 60))}
-                  placeholder="e.g. First goal of the season"
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 outline-none w-44"
-                />
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs ${text.length > 250 ? "text-red-400" : "text-gray-400"}`}>
-                {text.length}/280
-              </span>
-              <button
-                onClick={submit}
-                disabled={!text.trim() || posting}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full text-white disabled:opacity-40 transition-opacity"
-                style={{ background: GRS_GREEN }}
-              >
-                <Send size={12} />
-                {posting ? "Posting..." : "Post"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── PostCard ──────────────────────────────────────────────────────────────
-
-function PostCard({ post, token }: { post: Post; token: string }) {
-  const [liked, setLiked]       = useState(!!post.my_reaction);
-  const [reaction, setReaction] = useState<string | null>(post.my_reaction ?? null);
-  const [likes, setLikes]       = useState(post.like_count);
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [commentText, setCommentText]   = useState("");
-  const [commentsLoaded, setCommentsLoaded] = useState(false);
-
-  const user     = post.user;
-  const initials = user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ?? "?";
-
-  const cardBg =
-    post.post_type === "milestone" || post.post_type === "achievement"
-      ? { background: "#f0fdf4", border: "1px solid #bbf7d0" }
-      : post.post_type === "prediction_upgrade"
-      ? { background: "#fffbeb", border: "1px solid #fde68a" }
-      : { background: "#fff", border: "1px solid #e5e5e5" };
-
-  const doLike = async (r: string) => {
-    const wasLiked = liked && reaction === r;
-    setLiked(!wasLiked);
-    setReaction(wasLiked ? null : r);
-    setLikes((l) => (wasLiked ? l - 1 : reaction ? l : l + 1));
-    try {
-      await fetch(`${API}/arena/posts/${post.id}/like`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ reaction: r }),
-      });
-    } catch {}
-  };
-
-  const loadComments = async () => {
-    if (commentsLoaded) return;
-    try {
-      const res = await fetch(`${API}/arena/posts/${post.id}/comments`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) setComments(safeArray(await res.json()));
-    } catch {}
-    setCommentsLoaded(true);
-  };
-
-  const toggleComments = () => {
-    setShowComments((s) => !s);
-    if (!commentsLoaded) loadComments();
-  };
-
-  const submitComment = async () => {
-    if (!commentText.trim()) return;
-    try {
-      const res = await fetch(`${API}/arena/posts/${post.id}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ body: commentText.trim() }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        setComments((c) => [...c, json.comment]);
-        setCommentText("");
-      }
-    } catch {}
-  };
-
-  return (
-    <div className="rounded-xl overflow-hidden" style={cardBg}>
-      {/* Header */}
-      <div className="flex items-start gap-3 p-4 pb-2">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={{ background: GRS_GREEN }}
-        >
-          {initials}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm text-gray-900">{user?.name ?? "Unknown"}</span>
-            {user?.role && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">
-                {user.role}
-              </span>
-            )}
-            {post.milestone_label && (
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium text-white"
-                style={{ background: GRS_GOLD }}
-              >
-                {post.milestone_label}
-              </span>
-            )}
-          </div>
-          <div className="text-xs text-gray-400 mt-0.5">
-            {[user?.sport, user?.province].filter(Boolean).join(" · ")}
-            {" · "}{timeAgo(post.created_at)}
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      {post.body && (
-        <p className="px-4 pb-3 text-sm text-gray-800 leading-relaxed">{post.body}</p>
-      )}
-
-      {/* Image */}
-      {post.image_url && (
-        <div className="px-4 pb-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.image_url} alt="" className="rounded-lg w-full max-h-72 object-cover" />
-        </div>
-      )}
-
-      {/* Sport / province tags */}
-      {(post.sport || post.province) && (
-        <div className="px-4 pb-2 flex gap-1.5">
-          {post.sport && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">{post.sport}</span>
-          )}
-          {post.province && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{post.province}</span>
-          )}
-        </div>
-      )}
-
-      {/* Reactions */}
-      <div className="px-4 py-2.5 border-t border-black/5 flex items-center gap-1 flex-wrap">
-        {Object.entries(REACTION_EMOJI).map(([key, emoji]) => (
-          <button
-            key={key}
-            onClick={() => doLike(key)}
-            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
-              reaction === key ? "bg-green-50 font-semibold" : "hover:bg-gray-50 text-gray-500"
-            }`}
-            style={reaction === key ? { color: GRS_GREEN } : {}}
-          >
-            <span>{emoji}</span>
-            {reaction === key && <span>{likes}</span>}
-          </button>
-        ))}
-        {likes > 0 && !reaction && <span className="text-xs text-gray-400 ml-1">{likes}</span>}
-        <button
-          onClick={toggleComments}
-          className="ml-auto text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-        >
-          💬 {post.comment_count}
-        </button>
-      </div>
-
-      {/* Comments */}
-      {showComments && (
-        <div className="border-t border-black/5 px-4 py-3 space-y-2">
-          {comments.map((c) => (
-            <div key={c.id} className="flex gap-2">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ background: GRS_GREEN }}
-              >
-                {c.user?.name?.slice(0, 1) ?? "?"}
-              </div>
-              <div className="flex-1 bg-gray-50 rounded-xl px-3 py-1.5">
-                <span className="text-xs font-semibold text-gray-700">{c.user?.name} </span>
-                <span className="text-xs text-gray-600">{c.body}</span>
-              </div>
-            </div>
-          ))}
-          <div className="flex gap-2 pt-1">
-            <input
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value.slice(0, 280))}
-              onKeyDown={(e) => e.key === "Enter" && submitComment()}
-              placeholder="Write a comment..."
-              className="flex-1 text-xs border border-gray-200 rounded-full px-3 py-1.5 outline-none"
-            />
-            <button
-              onClick={submitComment}
-              disabled={!commentText.trim()}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full text-white disabled:opacity-40"
-              style={{ background: GRS_GREEN }}
-            >
-              Post
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Main Page ─────────────────────────────────────────────────────────────
-
-const TABS = [
-  { key: "foryou",      label: "For You" },
-  { key: "following",   label: "Following" },
-  { key: "connections", label: "Connections" },
-  { key: "school",      label: "School" },
-  { key: "videos",      label: "Videos" },
-] as const;
-
-type TabKey = typeof TABS[number]["key"];
-
-const TAB_ENDPOINT: Record<TabKey, string> = {
-  foryou:      "/arena/feed",
-  following:   "/arena/feed/following",
-  connections: "/arena/feed/connections",
-  school:      "/arena/feed/school",
-  videos:      "/arena/videos",
-};
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
 export default function ArenaPage() {
-  const router      = useRouter();
-  const user        = useAuthStore((s) => s.user);
-  const token       = useAuthStore((s) => s.token);
-  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const { user, token } = useAuthStore();
 
-  const [tab, setTab]       = useState<TabKey>("foryou");
-  const [posts, setPosts]   = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  // ── Social feed state (from Document 15) ──────────────────────────────────
+  const [posts,             setPosts]             = useState<Post[]>([]);
+  const [loadingPosts,      setLoadingPosts]       = useState(true);
+  const [newPostBody,       setNewPostBody]        = useState("");
+  const [submitting,        setSubmitting]         = useState(false);
+  const [expandedComments,  setExpandedComments]   = useState<Record<string, Comment[]>>({});
+  const [loadingComments,   setLoadingComments]    = useState<Record<string, boolean>>({});
+  const [newComment,        setNewComment]         = useState<Record<string, string>>({});
+  const [submittingComment, setSubmittingComment]  = useState<Record<string, boolean>>({});
+  const [showLoginPrompt,   setShowLoginPrompt]    = useState(false);
 
-  const fetchFeed = useCallback(async (t: TabKey) => {
-    if (!token) return;
-    setLoading(true);
+  // ── Tab state — four tabs: For You / Following / Connections / Videos ──────
+  const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos">("for-you");
+
+  // ── Video feed state (from Document 14) ───────────────────────────────────
+  const [videos,       setVideos]       = useState<ArenaVideo[]>([]);
+  const [loadingVideos,setLoadingVideos]= useState(false);
+  const [position,     setPosition]     = useState("All");
+  const [province,     setProvince]     = useState("All provinces");
+  const [activeVideo,  setActiveVideo]  = useState<string | null>(null);
+  const [following,    setFollowing]    = useState<Set<string>>(new Set());
+  const [pipedPlayers, setPipedPlayers] = useState<Set<string>>(new Set());
+  const [showFilters,  setShowFilters]  = useState(false);
+
+  const authToken = token ?? (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
+
+  // ── Fetch social feed (Document 15) ───────────────────────────────────────
+  const fetchPosts = useCallback(async () => {
+    if (activeTab === "videos") return;
+    setLoadingPosts(true);
     try {
-      const res = await fetch(`${API}${TAB_ENDPOINT[t]}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const json = await res.json();
-        setPosts(safeArray(json.data ?? json));
-      } else {
-        setPosts([]);
-      }
-    } catch {
-      setPosts([]);
-    }
-    setLoading(false);
-  }, [token]);
+      const urlMap: Record<string, string> = {
+        "for-you":     `${API}/api/v1/arena/feed`,
+        "following":   `${API}/api/v1/arena/feed/following`,
+        "connections": `${API}/api/v1/arena/feed/connections`,
+      };
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const res = await fetch(urlMap[activeTab], { headers });
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      setPosts(safeArray<Post>(json.data ?? json));
+    } catch {}
+    setLoadingPosts(false);
+  }, [activeTab, authToken]);
 
-  useEffect(() => {
-    if (hasHydrated && !user) router.push("/login");
-  }, [hasHydrated, user, router]);
-
-  useEffect(() => {
-    fetchFeed(tab);
-  }, [tab, fetchFeed]);
-
-  const handlePost = async (body: string, postType: string, milestoneLabel: string) => {
-    if (!token) return;
+  // ── Fetch video feed (Document 14) ────────────────────────────────────────
+  const fetchVideos = useCallback(async () => {
+    if (activeTab !== "videos") return;
+    setLoadingVideos(true);
     try {
-      const res = await fetch(`${API}/arena/posts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ body, post_type: postType, milestone_label: milestoneLabel || undefined }),
-      });
+      const params = new URLSearchParams();
+      if (position !== "All") params.set("position", position.toLowerCase());
+      if (province !== "All provinces") params.set("province", province);
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const res = await fetch(`${API}/api/v1/arena/videos?${params}`, { headers });
       if (res.ok) {
-        const json = await res.json();
-        if (tab === "foryou" || tab === "connections") {
-          setPosts((p) => [json.post, ...p]);
-        }
+        const d = await res.json();
+        setVideos(safeArray<ArenaVideo>(Array.isArray(d) ? d : (d.data ?? [])));
       }
     } catch {}
+    setLoadingVideos(false);
+  }, [activeTab, position, province, authToken]);
+
+  useEffect(() => {
+    fetchPosts();
+    recordArenaView();
+  }, [fetchPosts]);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
+
+  // ── Social actions (Document 15) ─────────────────────────────────────────
+
+  const loadComments = async (postId: string) => {
+    if (expandedComments[postId]) {
+      setExpandedComments(prev => { const s = { ...prev }; delete s[postId]; return s; });
+      return;
+    }
+    setLoadingComments(prev => ({ ...prev, [postId]: true }));
+    try {
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const res = await fetch(`${API}/api/v1/arena/posts/${postId}/comments`, { headers });
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(json.data ?? json) }));
+    } catch {}
+    setLoadingComments(prev => ({ ...prev, [postId]: false }));
   };
+
+  const addComment = async (postId: string) => {
+    const body = newComment[postId]?.trim();
+    if (!body) return;
+    if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
+    setSubmittingComment(prev => ({ ...prev, [postId]: true }));
+    try {
+      await fetch(`${API}/api/v1/arena/posts/${postId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ body }),
+      });
+      await loadComments(postId);
+      setNewComment(prev => ({ ...prev, [postId]: "" }));
+      fetchPosts();
+    } catch {}
+    setSubmittingComment(prev => ({ ...prev, [postId]: false }));
+  };
+
+  const handleLike = async (postId: string) => {
+    if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
+    setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, liked: p.liked === 1 ? 0 : 1, like_count: p.liked === 1 ? p.like_count - 1 : p.like_count + 1 }));
+    try {
+      await fetch(`${API}/api/v1/arena/posts/${postId}/like`, {
+        method: "POST", headers: { Authorization: `Bearer ${authToken}` },
+      });
+    } catch { fetchPosts(); }
+  };
+
+  const handleCreatePost = async () => {
+    if (!newPostBody.trim()) return;
+    if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API}/api/v1/arena/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ body: newPostBody, post_type: "standard" }),
+      });
+      if (!res.ok) throw new Error();
+      setNewPostBody("");
+      fetchPosts();
+    } catch { alert("Could not create post"); }
+    setSubmitting(false);
+  };
+
+  const handleShare = async (postId: string) => {
+    if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
+    navigator.clipboard.writeText(`${window.location.origin}/arena/post/${postId}`);
+    alert("Link copied to clipboard!");
+  };
+
+  // ── Video actions (Document 14) ───────────────────────────────────────────
 
   const handleFollow = async (playerId: string) => {
-    if (!token) return;
-    await fetch(`${API}/arena/follow/${playerId}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {});
+    if (!authToken) { window.location.href = "/login"; return; }
+    try {
+      await fetch(`${API}/api/v1/arena/follow/${playerId}`, {
+        method: "POST", headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setFollowing(prev => new Set([...prev, playerId]));
+    } catch {}
   };
 
-  const handleAddToPipeline = async (playerId: string) => {
-    if (!token) return;
-    await fetch(`${API}/arena/connections`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ user_id: playerId }),
-    }).catch(() => {});
+  const handlePipeline = (playerId: string, playerName: string) => {
+    if (!authToken) { window.location.href = "/login"; return; }
+    sessionStorage.setItem("pipeline_add", JSON.stringify({ id: playerId, name: playerName }));
+    window.location.href = "/scout/pipeline";
   };
 
-  if (!hasHydrated || !user) return null;
+  const recordView = async (videoId: string) => {
+    if (!authToken) return;
+    try {
+      await fetch(`${API}/api/v1/arena/posts/${videoId}/view`, {
+        method: "POST", headers: { Authorization: `Bearer ${authToken}` },
+      });
+    } catch {}
+  };
 
-  const userName = user.name ?? "You";
-
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: BG }}>
-      <ArenaNav userName={userName} />
+    <div className="min-h-screen" style={{ backgroundColor: BG }}>
 
-      <div className="max-w-6xl mx-auto px-4 py-5">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-
-          {/* Left panel — identity */}
-          <aside className="hidden lg:block lg:col-span-1">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="h-16 w-full" style={{ background: GRS_GREEN }} />
-              <div className="px-4 pb-4 -mt-6">
-                <div
-                  className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center text-white font-bold"
-                  style={{ background: GRS_GOLD }}
-                >
-                  {userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
-                <p className="mt-2 font-semibold text-gray-900 text-sm">{userName}</p>
-                <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-              </div>
-              <div className="border-t border-gray-100 py-2">
-                {[
-                  { href: "/player",    label: "Player Hub" },
-                  { href: "/player/showcase", label: "My Showcase" },
-                  { href: "/player/vault",    label: "Highlight Vault" },
-                ].map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <Plus size={14} /> {label}
-                  </Link>
-                ))}
-              </div>
+      {/* Hero banner */}
+      <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="flex items-center gap-3">
+            <Globe size={28} className="text-[#f0b429]" />
+            <div>
+              <h1 className="text-2xl font-black">The Arena</h1>
+              <p className="text-white/70 text-sm">
+                Where talent gets discovered.{" "}
+                {!user && "Sign in to post, like, and comment."}
+              </p>
             </div>
-          </aside>
+          </div>
+        </div>
+      </div>
 
-          {/* Centre — feed */}
-          <main className="lg:col-span-2 space-y-4">
-            {/* Tabs */}
-            <div className="flex overflow-x-auto gap-1 pb-1">
-              {TABS.map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setTab(key)}
-                  className={`flex-shrink-0 text-sm px-4 py-1.5 rounded-full font-medium transition-colors ${
-                    tab === key ? "text-white" : "text-gray-600 bg-white border border-gray-200 hover:bg-gray-50"
-                  }`}
-                  style={tab === key ? { background: GRS_GREEN } : {}}
-                >
-                  {label}
-                </button>
-              ))}
+      {/* Login prompt banner */}
+      {!user && (
+        <div className="bg-amber-50 border-b border-amber-200 py-3 px-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2 text-amber-800">
+              <LogIn size={16} />
+              <span className="text-sm">Sign in to like, comment, and share your own content!</span>
+            </div>
+            <Link href="/login" className="px-4 py-1.5 bg-[#1a5c2a] text-white rounded-lg text-sm font-bold hover:bg-[#2a6e3a] transition">
+              Sign In
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Login toast */}
+      {showLoginPrompt && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+          Please sign in to interact with posts
+        </div>
+      )}
+
+      <div className="max-w-4xl mx-auto px-4 py-6">
+
+        {/* ── Tab navigation — four tabs ─────────────────────────────────── */}
+        <div className="flex gap-2 mb-6 border-b border-gray-200 pb-2 overflow-x-auto">
+          {([
+            { key: "for-you",     label: "For You" },
+            { key: "following",   label: "Following" },
+            { key: "connections", label: "Connections" },
+            { key: "videos",      label: "🎥 Videos" },   // ← from Document 14
+          ] as const).map(t => (
+            <button key={t.key} onClick={() => setActiveTab(t.key)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap ${
+                activeTab === t.key
+                  ? "bg-[#1a5c2a] text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── VIDEO TAB (from Document 14) ───────────────────────────────── */}
+        {activeTab === "videos" && (
+          <div>
+            {/* Filter bar */}
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Training videos</h2>
+              <button onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                <Filter size={14} /> Filter
+              </button>
             </div>
 
-            {/* Composer (not shown on Videos tab) */}
-            {tab !== "videos" && (
-              <PostComposer userName={userName} onPost={handlePost} />
+            {showFilters && (
+              <div className="flex gap-3 mb-4 flex-wrap">
+                <select value={position} onChange={e => setPosition(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]">
+                  {POSITIONS.map(p => <option key={p}>{p}</option>)}
+                </select>
+                <select value={province} onChange={e => setProvince(e.target.value)}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]">
+                  {PROVINCES.map(p => <option key={p}>{p}</option>)}
+                </select>
+              </div>
             )}
 
-            {/* Feed */}
-            {loading ? (
-              <FeedSkeleton />
-            ) : posts.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-                <p className="text-gray-500 text-sm">Nothing here yet.</p>
-                {tab === "foryou" && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Start by posting an update or following other players.
-                  </p>
-                )}
+            {loadingVideos ? (
+              <div className="flex justify-center py-12">
+                <div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : videos.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+                <Video size={48} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500 mb-4">
+                  {position !== "All" || province !== "All provinces"
+                    ? "No videos match your filters."
+                    : "No training videos posted yet."
+                  }
+                </p>
+                <Link href="/player/drills"
+                  className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white"
+                  style={{ background: GRS_GREEN }}>
+                  Upload a drill video →
+                </Link>
               </div>
             ) : (
-              <div className="space-y-3">
-                {posts.map((post) =>
-                  post.video_url ? (
-                    <ArenaVideoCard
-                      key={post.id}
-                      post={{
-                        id:            post.id,
-                        player_id:     post.user_id,
-                        player_name:   post.user?.name ?? "Player",
-                        province:      post.province,
-                        body:          post.body,
-                        video_url:     post.video_url,
-                        duration_sec:  post.duration_sec,
-                        aq_at_post:    post.aq_at_post,
-                        rank_at_post:  post.rank_at_post,
-                        test_tier:     post.test_tier,
-                        video_source:  post.video_source,
-                        like_count:    post.like_count,
-                        comment_count: post.comment_count,
-                        view_count:    post.view_count ?? 0,
-                        created_at:    post.created_at,
-                        sport:         post.sport,
-                      }}
-                      currentUserRole={user.role as "player" | "scout" | "coach" | "fan"}
-                      onFollow={handleFollow}
-                      onAddToPipeline={handleAddToPipeline}
-                    />
-                  ) : (
-                    <PostCard key={post.id} post={post} token={token ?? ""} />
-                  )
-                )}
+              <div className="space-y-4">
+                {videos.map(video => (
+                  <div key={video.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+
+                    {/* Player row */}
+                    <div className="p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1a5c2a] to-[#2a6e3a] flex items-center justify-center text-white font-bold text-sm">
+                        {video.player_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-gray-900 text-sm">{video.player_name}</div>
+                        <div className="text-xs text-gray-400">
+                          {video.position} · {video.province}
+                          {video.aq_score != null && ` · AQ ${video.aq_score}`}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+                        {video.player_rank}
+                      </span>
+                    </div>
+
+                    {/* Inline video */}
+                    <div
+                      className="relative bg-black"
+                      style={{ aspectRatio: "16/9", cursor: "pointer" }}
+                      onClick={() => { setActiveVideo(video.id); recordView(video.id); }}>
+                      {activeVideo === video.id ? (
+                        <video src={video.video_url} controls autoPlay
+                          className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                          <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                            <Play size={24} className="text-white ml-1" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Label + stats */}
+                    <div className="px-4 pt-3 pb-1">
+                      <p className="text-sm font-semibold text-gray-800">{video.label}</p>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                        <span className="flex items-center gap-1"><Eye size={11}/>{video.view_count}</span>
+                        <span className="flex items-center gap-1"><Heart size={11}/>{video.like_count}</span>
+                        <span className="flex items-center gap-1"><MessageCircle size={11}/>{video.comment_count}</span>
+                        <span className="ml-auto">{timeAgo(video.created_at)}</span>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="px-4 pb-4 pt-2 flex items-center gap-2 flex-wrap">
+                      {/* Talent passport link */}
+                      {video.passport_token && (
+                        <Link href={`/passport/${video.passport_token}`}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:border-[#1a5c2a] hover:text-[#1a5c2a] transition">
+                          View Passport
+                        </Link>
+                      )}
+                      {/* Follow */}
+                      <button onClick={() => handleFollow(video.player_id)}
+                        disabled={following.has(video.player_id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                          following.has(video.player_id)
+                            ? "bg-gray-100 text-gray-400 cursor-default"
+                            : "bg-[#1a5c2a] text-white hover:bg-[#2a6e3a]"
+                        }`}>
+                        <UserPlus size={12} />
+                        {following.has(video.player_id) ? "Following" : "Follow"}
+                      </button>
+                      {/* Pipeline — scouts only */}
+                      <button onClick={() => handlePipeline(video.player_id, video.player_name)}
+                        disabled={pipedPlayers.has(video.player_id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition"
+                        style={{
+                          borderColor: GRS_GOLD,
+                          color: pipedPlayers.has(video.player_id) ? "#aaa" : GRS_GOLD,
+                          background: pipedPlayers.has(video.player_id) ? "#faeeda" : "transparent",
+                        }}>
+                        <Users size={12} />
+                        {pipedPlayers.has(video.player_id) ? "In pipeline" : "+ Pipeline"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-          </main>
+          </div>
+        )}
 
-          {/* Right panel — nav */}
-          <aside className="hidden lg:block lg:col-span-1">
-            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Arena</p>
-              {[
-                { href: "/arena/network",     label: "My Network",   icon: Users },
-                { href: "/arena/clubs",        label: "Clubs",        icon: Users },
-                { href: "/arena/recruitment",  label: "Talent Board", icon: Briefcase },
-                { href: "/arena/messages",     label: "Messages",     icon: MessageSquare },
-              ].map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center gap-2.5 py-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <Icon size={15} className="text-gray-400" />
-                  {label}
-                </Link>
-              ))}
-            </div>
-            <div className="mt-3 bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-xs font-semibold text-gray-500 mb-2">Did you know?</p>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Scouts browse the Videos tab daily. Upload a showcase clip to get noticed.
-              </p>
-              <Link
-                href="/player/showcase"
-                className="mt-3 block text-center text-xs font-semibold py-1.5 rounded-full text-white"
-                style={{ background: GRS_GOLD }}
-              >
-                Upload a clip
-              </Link>
-            </div>
-          </aside>
-        </div>
+        {/* ── SOCIAL FEED TABS (from Document 15) ───────────────────────── */}
+        {activeTab !== "videos" && (
+          <>
+            {/* Create post — logged-in users only */}
+            {user && (
+              <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm border border-gray-200">
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#1a5c2a] flex items-center justify-center text-white font-bold">
+                    {user.name?.charAt(0) || "U"}
+                  </div>
+                  <div className="flex-1">
+                    <textarea
+                      value={newPostBody}
+                      onChange={e => setNewPostBody(e.target.value)}
+                      placeholder="Share your progress, highlight, or achievement..."
+                      className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] resize-none"
+                      rows={2}
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="flex gap-2">
+                        <button className="p-2 text-gray-400 hover:text-[#1a5c2a] transition"><Image size={18} /></button>
+                        <button className="p-2 text-gray-400 hover:text-[#1a5c2a] transition"><Video size={18} /></button>
+                        <button className="p-2 text-gray-400 hover:text-[#1a5c2a] transition"><MapPin size={18} /></button>
+                      </div>
+                      <button onClick={handleCreatePost} disabled={submitting || !newPostBody.trim()}
+                        className="px-4 py-2 bg-[#1a5c2a] text-white rounded-lg text-sm font-bold hover:bg-[#2a6e3a] transition disabled:opacity-50">
+                        {submitting ? "Posting..." : "Post"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Posts feed */}
+            {loadingPosts ? (
+              <div className="flex justify-center py-12">
+                <div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+                <Globe size={48} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500">
+                  {activeTab === "following"
+                    ? "No posts from people you follow yet."
+                    : activeTab === "connections"
+                    ? "No posts from your connections yet."
+                    : "No posts yet. Be the first to share!"
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {posts.map(post => (
+                  <div key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+
+                    {/* Post header */}
+                    <div className="p-4 flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1a5c2a] to-[#2a6e3a] flex items-center justify-center text-white font-bold">
+                        {post.user?.name?.charAt(0) || "U"}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-gray-900">{post.user?.name || "Unknown"}</span>
+                          <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+                            {post.user?.role || "Player"}
+                          </span>
+                          {post.sport && (
+                            <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{post.sport}</span>
+                          )}
+                          {post.province && (
+                            <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">📍 {post.province}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">{timeAgo(post.created_at)}</p>
+                        <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">{post.body}</p>
+                        {post.aq_at_post && (
+                          <div className="mt-2 inline-flex items-center gap-1 bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded-full">
+                            🏆 AQ: {post.aq_at_post}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Media */}
+                    {post.video_url && (
+                      <div className="relative aspect-video bg-black">
+                        <video src={post.video_url} className="w-full h-full object-cover" controls />
+                      </div>
+                    )}
+                    {post.image_url && !post.video_url && (
+                      <img src={post.image_url} alt="Post" className="w-full" />
+                    )}
+
+                    {/* Stats */}
+                    <div className="px-4 pt-2 text-xs text-gray-400 flex gap-3">
+                      <span>{post.like_count} likes</span>
+                      <span>{post.comment_count} comments</span>
+                      {post.view_count !== undefined && <span>{post.view_count} views</span>}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-6">
+                      <button onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-2 text-sm transition ${post.liked === 1 ? "text-red-500" : "text-gray-500 hover:text-red-500"}`}>
+                        <Heart size={16} fill={post.liked === 1 ? "currentColor" : "none"} />
+                        Like
+                      </button>
+                      <button onClick={() => loadComments(post.id)}
+                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#1a5c2a] transition">
+                        <MessageCircle size={16} /> Comment
+                      </button>
+                      <button onClick={() => handleShare(post.id)}
+                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-500 transition">
+                        <Share2 size={16} /> Share
+                      </button>
+                    </div>
+
+                    {/* Comments */}
+                    {expandedComments[post.id] && (
+                      <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-3">
+                        {loadingComments[post.id] ? (
+                          <div className="text-center py-2">
+                            <div className="inline-block w-4 h-4 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        ) : expandedComments[post.id].length === 0 ? (
+                          <p className="text-xs text-gray-400 text-center">No comments yet</p>
+                        ) : (
+                          expandedComments[post.id].map(comment => (
+                            <div key={comment.id} className="flex gap-2">
+                              <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-[10px] font-bold">
+                                {comment.user?.name?.charAt(0) || "?"}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold">{comment.user?.name || "Unknown"}</span>
+                                  <span className="text-[9px] text-gray-400">{timeAgo(comment.created_at)}</span>
+                                </div>
+                                <p className="text-xs text-gray-700 mt-0.5">{comment.body}</p>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                        {user && (
+                          <div className="flex gap-2 mt-2">
+                            <input type="text" value={newComment[post.id] || ""}
+                              onChange={e => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
+                              placeholder="Write a comment..."
+                              className="flex-1 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a5c2a]"
+                            />
+                            <button onClick={() => addComment(post.id)}
+                              disabled={submittingComment[post.id] || !newComment[post.id]?.trim()}
+                              className="px-3 py-2 bg-[#1a5c2a] text-white rounded-lg text-xs font-bold disabled:opacity-50">
+                              {submittingComment[post.id] ? "..." : "Post"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
       </div>
     </div>
   );

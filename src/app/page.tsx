@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   Award, Zap, Lock, BookOpen, Activity,
   GraduationCap, MapPin, Users, Globe, ChevronRight,
-  Radio, ArrowRight,
+  Radio, ArrowRight, Camera, Dumbbell, IdCard,
+  Video, Share2, Globe2, TrendingUp
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,7 +28,7 @@ const GRS_GREEN = "#1c3d22";
 const GRS_GOLD  = "#c8962a";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CoreGoals — Identify · Nurture · Market
+// CoreGoals — Identify · Nurture · Market (with WORKING links)
 // ─────────────────────────────────────────────────────────────────────────────
 function CoreGoals() {
   return (
@@ -61,7 +62,8 @@ function CoreGoals() {
                 "AQ score vs age-group norms",
                 "Position match scores for all 5 positions",
               ],
-              link: "/player/talent-id",
+              link: "/athlete/scan",
+              icon: <Camera size={20} />,
               cta:  "Take your test →",
             },
             {
@@ -75,36 +77,45 @@ function CoreGoals() {
                 "Technique degradation score under fatigue",
               ],
               link: "/player/drills",
+              icon: <Dumbbell size={20} />,
               cta:  "See your drills →",
             },
             {
               number:  "03",
               title:   "Market",
               color:   "#60a5fa",
-              desc:    "The Talent Passport is a verified, shareable record scouts actually act on. Video vault. QR code. DQ trajectory. The document that opens doors.",
+              desc:    "Two ways to get discovered: Your personal Talent Passport and the Arena social network. Share videos, connect with scouts, and build your brand.",
               bullets: [
-                "Verified test results + video evidence",
-                "Scout-facing Talent Passport with QR",
-                "Development trajectory scouts can see",
+                "🎫 Talent Passport — Verified profile with QR code",
+                "📹 Arena — Post videos, get noticed by scouts",
+                "🤝 Connect directly with clubs and academies",
               ],
-              link: "/player/talent-id",
-              cta:  "Build your passport →",
+              links: [
+                { href: "/player/talent-id", label: "Talent Passport", icon: <IdCard size={14} />, color: "#60a5fa" },
+                { href: "/arena", label: "Arena Network", icon: <Globe2 size={14} />, color: "#a78bfa" },
+              ],
+              icon: <Share2 size={20} />,
             },
           ].map((g) => (
             <div
               key={g.title}
-              className="rounded-2xl p-6 border border-[#f0b429]/10"
+              className="rounded-2xl p-6 border border-[#f0b429]/10 hover:border-[#f0b429]/30 transition-all duration-300"
               style={{ background: "rgba(255,255,255,0.05)" }}
             >
               <div className="text-4xl font-black mb-3 opacity-30 text-white">
                 {g.number}
               </div>
-              <h3
-                className="text-xl font-black text-white mb-2"
-                style={{ color: g.color }}
-              >
-                {g.title}
-              </h3>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-xl bg-white/10">
+                  {g.icon}
+                </div>
+                <h3
+                  className="text-xl font-black text-white"
+                  style={{ color: g.color }}
+                >
+                  {g.title}
+                </h3>
+              </div>
               <p className="text-sm text-white/60 leading-relaxed mb-4">
                 {g.desc}
               </p>
@@ -116,13 +127,33 @@ function CoreGoals() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href={g.link}
-                className="inline-block text-xs font-bold px-4 py-2 rounded-full transition-opacity hover:opacity-80"
-                style={{ background: g.color, color: "#fff" }}
-              >
-                {g.cta}
-              </Link>
+              
+              {/* Special handling for MARKET section with two buttons */}
+              {g.links ? (
+                <div className="flex gap-3">
+                  {g.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="flex-1 inline-flex items-center justify-center gap-2 text-xs font-bold px-3 py-2 rounded-full transition-all hover:opacity-80"
+                      style={{ background: link.color, color: "#fff" }}
+                    >
+                      {link.icon}
+                      {link.label}
+                      <ChevronRight size={10} />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Link
+                  href={g.link}
+                  className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full transition-all hover:opacity-80"
+                  style={{ background: g.color, color: "#fff" }}
+                >
+                  {g.cta}
+                  <ChevronRight size={12} />
+                </Link>
+              )}
             </div>
           ))}
         </div>
@@ -133,7 +164,6 @@ function CoreGoals() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VideoUpload — direct R2 upload, no auth required
-// Replaces the old fake biometric form
 // ─────────────────────────────────────────────────────────────────────────────
 function VideoUpload() {
   const [file,   setFile]   = useState<File | null>(null);
@@ -146,7 +176,6 @@ function VideoUpload() {
     setStatus("uploading");
 
     try {
-      // Step 1 — get pre-signed PUT URL from our API
       const res = await fetch("/api/upload/presigned", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -161,7 +190,6 @@ function VideoUpload() {
       if (!res.ok) throw new Error("Could not get upload URL");
       const { uploadUrl } = await res.json();
 
-      // Step 2 — upload directly to Cloudflare R2 (never passes through our server)
       const uploadRes = await fetch(uploadUrl, {
         method:  "PUT",
         body:    file,
@@ -190,7 +218,6 @@ function VideoUpload() {
           vault and can be shared with scouts via your Talent Passport.
         </p>
 
-        {/* Drop zone */}
         <div
           className="rounded-2xl border-2 border-dashed p-8 mb-4 cursor-pointer hover:border-green-400 transition-colors"
           style={{ borderColor: file ? GRS_GREEN : "#d1d5db" }}
@@ -223,7 +250,6 @@ function VideoUpload() {
           />
         </div>
 
-        {/* Label + upload button */}
         {file && status === "idle" && (
           <div className="space-y-3">
             <input
@@ -462,39 +488,19 @@ export default function GrassrootsSportsLanding() {
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link
-              href="/player/talent-id"
+              href="/athlete/scan"
               className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2.5 rounded-xl bg-amber-50 text-[#c8962a]">
-                  <Zap size={16} />
+                  <Camera size={16} />
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">
-                    Talent Testing
+                    Biometric Testing
                   </h4>
                   <p className="text-[11px] text-gray-400 font-semibold truncate">
                     6 tests · AQ score · position profile
-                  </p>
-                </div>
-              </div>
-              <ArrowRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors shrink-0" />
-            </Link>
-
-            <Link
-              href="/player/passport"
-              className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700">
-                  <BookOpen size={16} />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">
-                    Talent Passport
-                  </h4>
-                  <p className="text-[11px] text-gray-400 font-semibold truncate">
-                    Verified public scout portfolio
                   </p>
                 </div>
               </div>
@@ -506,8 +512,8 @@ export default function GrassrootsSportsLanding() {
               className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-[#f0f9e8] text-emerald-800">
-                  <Activity size={16} />
+                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700">
+                  <Dumbbell size={16} />
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">
@@ -520,6 +526,37 @@ export default function GrassrootsSportsLanding() {
               </div>
               <ArrowRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors shrink-0" />
             </Link>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/player/talent-id"
+                className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2 rounded-xl bg-green-50 text-green-700">
+                    <IdCard size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-[10px] font-black text-gray-900 uppercase">Passport</h4>
+                  </div>
+                </div>
+                <ArrowRight size={12} className="text-gray-300 group-hover:text-[#1c3d22]" />
+              </Link>
+              <Link
+                href="/arena"
+                className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
+                    <Globe2 size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-[10px] font-black text-gray-900 uppercase">Arena</h4>
+                  </div>
+                </div>
+                <ArrowRight size={12} className="text-gray-300 group-hover:text-[#1c3d22]" />
+              </Link>
+            </div>
           </div>
         </section>
 

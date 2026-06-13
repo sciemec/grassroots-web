@@ -1,3 +1,6 @@
+// src/app/coach/page.tsx
+// GrassRoots Coach Hub - Complete merged version with all features
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -5,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { getRoleConfig, getDepartmentForRole, type StaffRoleConfig } from "@/config/coaching-staff";
+import { getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
 import { loadKnowledgeForRole, type SessionPoint } from "@/lib/coaching-knowledge";
 import { getDrillsByDepartment, getDepartmentStats, type Drill } from "@/lib/department-drills";
 
@@ -123,7 +126,6 @@ export default function CoachHubPage() {
       const drills = getDrillsByDepartment(department);
       setDepartmentDrills(drills);
     } else if (department === "all" || rc.id === "head_coach" || rc.id === "assistant_coach") {
-      // Head coach and assistant coach see all drills (show latest 8)
       const allDrills = [
         ...getDrillsByDepartment("striker"),
         ...getDrillsByDepartment("defender"),
@@ -140,7 +142,7 @@ export default function CoachHubPage() {
     }
   }, [activeRole]);
 
-  // Load biometric data
+  // Load biometric data (mock for now - replace with real API)
   const loadBiometricData = () => {
     try {
       const mockSquad: SquadMember[] = [
@@ -168,30 +170,22 @@ export default function CoachHubPage() {
     }
   };
 
-  // Fetch squad + injury counts
+  // Fetch squad + injury counts from real API
   useEffect(() => {
     if (!token || !user) return;
     setLoadingStats(true);
     Promise.allSettled([
-      fetch(`${API}/api/v1/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
-        r.json()
-      ),
-      fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
-        r.json()
-      ),
+      fetch(`${API}/api/v1/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
     ])
       .then(([squadRes, injuryRes]) => {
         const players = squadRes.status === "fulfilled" ? squadRes.value.data ?? squadRes.value : [];
-        const injuries =
-          injuryRes.status === "fulfilled" ? injuryRes.value.data ?? injuryRes.value : [];
+        const injuries = injuryRes.status === "fulfilled" ? injuryRes.value.data ?? injuryRes.value : [];
         setSquadStats((prev) => ({
           ...prev,
           total_players: Array.isArray(players) ? players.length : 0,
-          active_injuries: Array.isArray(injuries)
-            ? injuries.filter((i: { recovered_at: string | null }) => !i.recovered_at).length
-            : 0,
+          active_injuries: Array.isArray(injuries) ? injuries.filter((i: { recovered_at: string | null }) => !i.recovered_at).length : 0,
         }));
-
         loadBiometricData();
 
         setUpcomingMatches([
@@ -200,9 +194,7 @@ export default function CoachHubPage() {
           { id: "3", opponent: "Highlanders", date: "2026-06-21", venue: "home", competition: "Chibuku Cup" },
         ]);
       })
-      .catch(() => {
-        // Silent fail
-      })
+      .catch(() => {})
       .finally(() => setLoadingStats(false));
   }, [token, user]);
 
@@ -338,20 +330,12 @@ export default function CoachHubPage() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
-                      isSelected ? "bg-white/20" : "bg-gray-100"
-                    }`}
-                  >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${isSelected ? "bg-white/20" : "bg-gray-100"}`}>
                     {ROLE_EMOJIS[role.id] ?? <RoleIconItem size={16} />}
                   </div>
                   <div>
                     <p className="text-xs font-black uppercase tracking-wide leading-tight">{role.title}</p>
-                    <p
-                      className={`text-[10px] font-medium leading-none mt-0.5 truncate max-w-[160px] ${
-                        isSelected ? "text-white/70" : "text-gray-400"
-                      }`}
-                    >
+                    <p className={`text-[10px] font-medium leading-none mt-0.5 truncate max-w-[160px] ${isSelected ? "text-white/70" : "text-gray-400"}`}>
                       {role.description.substring(0, 50)}...
                     </p>
                   </div>
@@ -378,30 +362,12 @@ export default function CoachHubPage() {
         <div className="pt-4 border-t border-gray-200">
           <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Academy Library</p>
           <div className="grid grid-cols-2 gap-1 text-[10px]">
-            <div className="flex justify-between">
-              <span>Striker:</span>
-              <span className="font-bold">{departmentStats.striker}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Defender:</span>
-              <span className="font-bold">{departmentStats.defender}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Midfielder:</span>
-              <span className="font-bold">{departmentStats.midfielder}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Goalkeeper:</span>
-              <span className="font-bold">{departmentStats.goalkeeper}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Fitness:</span>
-              <span className="font-bold">{departmentStats.fitness}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Medical:</span>
-              <span className="font-bold">{departmentStats.medical}</span>
-            </div>
+            <div className="flex justify-between"><span>Striker:</span><span className="font-bold">{departmentStats.striker}</span></div>
+            <div className="flex justify-between"><span>Defender:</span><span className="font-bold">{departmentStats.defender}</span></div>
+            <div className="flex justify-between"><span>Midfielder:</span><span className="font-bold">{departmentStats.midfielder}</span></div>
+            <div className="flex justify-between"><span>Goalkeeper:</span><span className="font-bold">{departmentStats.goalkeeper}</span></div>
+            <div className="flex justify-between"><span>Fitness:</span><span className="font-bold">{departmentStats.fitness}</span></div>
+            <div className="flex justify-between"><span>Medical:</span><span className="font-bold">{departmentStats.medical}</span></div>
           </div>
           <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px] font-bold">
             <span>Total Drills:</span>
@@ -438,9 +404,7 @@ export default function CoachHubPage() {
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
             <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Medical Bay</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span
-                className={`text-2xl font-black ${squadStats.active_injuries > 0 ? "text-red-600" : "text-gray-900"}`}
-              >
+              <span className={`text-2xl font-black ${squadStats.active_injuries > 0 ? "text-red-600" : "text-gray-900"}`}>
                 {loadingStats ? "…" : squadStats.active_injuries}
               </span>
             </div>
@@ -454,9 +418,7 @@ export default function CoachHubPage() {
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
             <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">Fatigue Alert</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span
-                className={`text-2xl font-black ${(squadStats.highFatigueCount || 0) > 0 ? "text-amber-600" : "text-gray-900"}`}
-              >
+              <span className={`text-2xl font-black ${(squadStats.highFatigueCount || 0) > 0 ? "text-amber-600" : "text-gray-900"}`}>
                 {squadStats.highFatigueCount || 0}
               </span>
             </div>
@@ -470,68 +432,32 @@ export default function CoachHubPage() {
               <div className="flex items-center gap-2">
                 <Icons.HardHat size={16} className="text-[#1a5c2a]" />
                 <h3 className="text-sm font-bold text-gray-900">{roleConfig?.title} Drill Library</h3>
-                <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">
-                  {departmentDrills.length} Sessions
-                </span>
+                <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">{departmentDrills.length} Sessions</span>
               </div>
-              <Link
-                href={`/coach/drills/${roleConfig?.department || "all"}`}
-                className="text-[10px] font-bold text-[#1a5c2a] hover:underline flex items-center gap-1"
-              >
+              <Link href={`/coach/drills/${roleConfig?.department || "all"}`} className="text-[10px] font-bold text-[#1a5c2a] hover:underline flex items-center gap-1">
                 View All Drills <Icons.ChevronRight size={12} />
               </Link>
             </div>
-
             <div className="divide-y divide-gray-100">
               {departmentDrills.slice(0, 4).map((drill) => (
-                <div
-                  key={drill.id}
-                  className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    setSelectedDrill(drill);
-                    setShowDrillModal(true);
-                  }}
-                >
+                <div key={drill.id} className="p-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => { setSelectedDrill(drill); setShowDrillModal(true); }}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="text-sm font-bold text-gray-900">{drill.name}</h4>
-                        <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-mono">
-                          {drill.duration}
-                        </span>
-                        <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                            drill.difficulty === "beginner"
-                              ? "bg-green-100 text-green-700"
-                              : drill.difficulty === "advanced"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-700"
-                          }`}
-                        >
-                          {drill.difficulty}
-                        </span>
+                        <span className="text-[9px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-mono">{drill.duration}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+                          drill.difficulty === "beginner" ? "bg-green-100 text-green-700" :
+                          drill.difficulty === "advanced" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                        }`}>{drill.difficulty}</span>
                       </div>
                       <p className="text-xs text-gray-500 line-clamp-2">{drill.description}</p>
-
                       <div className="flex items-center gap-3 mt-2">
-                        <div className="flex items-center gap-1">
-                          <Icons.Target size={10} className="text-gray-400" />
-                          <p className="text-[9px] text-gray-400">{drill.coachingPoints.length} coaching points</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Icons.Clock size={10} className="text-gray-400" />
-                          <p className="text-[9px] text-gray-400">Phase: {drill.phase}</p>
-                        </div>
+                        <div className="flex items-center gap-1"><Icons.Target size={10} className="text-gray-400" /><p className="text-[9px] text-gray-400">{drill.coachingPoints.length} coaching points</p></div>
+                        <div className="flex items-center gap-1"><Icons.Clock size={10} className="text-gray-400" /><p className="text-[9px] text-gray-400">Phase: {drill.phase}</p></div>
                       </div>
                     </div>
-                    <button
-                      className="ml-4 text-[#1a5c2a] hover:bg-[#1a5c2a]/10 p-2 rounded-lg transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedDrill(drill);
-                        setShowDrillModal(true);
-                      }}
-                    >
+                    <button className="ml-4 text-[#1a5c2a] hover:bg-[#1a5c2a]/10 p-2 rounded-lg transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedDrill(drill); setShowDrillModal(true); }}>
                       <Icons.Play size={16} />
                     </button>
                   </div>
@@ -545,13 +471,8 @@ export default function CoachHubPage() {
         {squad.length > 0 && (
           <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Icons.Users size={16} className="text-[#1a5c2a]" />
-                <h3 className="text-sm font-bold text-gray-900">Squad Biometrics</h3>
-              </div>
-              <Link href="/coach/squad" className="text-[10px] font-bold text-[#1a5c2a] hover:underline">
-                View All →
-              </Link>
+              <div className="flex items-center gap-2"><Icons.Users size={16} className="text-[#1a5c2a]" /><h3 className="text-sm font-bold text-gray-900">Squad Biometrics</h3></div>
+              <Link href="/coach/squad" className="text-[10px] font-bold text-[#1a5c2a] hover:underline">View All →</Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -573,39 +494,15 @@ export default function CoachHubPage() {
                       <tr key={player.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
                         <td className="px-4 py-3 text-gray-600">{player.position}</td>
-                        <td className="px-4 py-3">
-                          <span className={`font-bold ${getFormColor(player.formScore)}`}>{player.formScore}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs ${fatigueDisplay.color}`}>{fatigueDisplay.text}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full ${
-                              player.status === "fit"
-                                ? "bg-green-100 text-green-700"
-                                : player.status === "caution"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {player.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {assignedCount > 0 ? (
-                            <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">
-                              {assignedCount} drills
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-gray-400">—</span>
-                          )}
-                        </td>
+                        <td className="px-4 py-3"><span className={`font-bold ${getFormColor(player.formScore)}`}>{player.formScore}</span></td>
+                        <td className="px-4 py-3"><span className={`text-xs ${fatigueDisplay.color}`}>{fatigueDisplay.text}</span></td>
+                        <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${player.status === "fit" ? "bg-green-100 text-green-700" : player.status === "caution" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{player.status}</span></td>
+                        <td className="px-4 py-3">{assignedCount > 0 ? <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">{assignedCount} drills</span> : <span className="text-[10px] text-gray-400">—</span>}</td>
                       </tr>
                     );
                   })}
                 </tbody>
-               </table>
+              </table>
             </div>
           </section>
         )}
@@ -613,24 +510,12 @@ export default function CoachHubPage() {
         {/* Upcoming Matches */}
         {upcomingMatches.length > 0 && (
           <section className="bg-white border border-gray-200 rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Icons.Calendar size={16} className="text-[#1a5c2a]" />
-              <h3 className="text-sm font-bold text-gray-900">Upcoming Matches</h3>
-            </div>
+            <div className="flex items-center gap-2 mb-4"><Icons.Calendar size={16} className="text-[#1a5c2a]" /><h3 className="text-sm font-bold text-gray-900">Upcoming Matches</h3></div>
             <div className="space-y-2">
               {upcomingMatches.map((match) => (
                 <div key={match.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">vs {match.opponent}</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">
-                      {match.competition} • {match.venue === "home" ? "🏠 Home" : "✈️ Away"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-[#1a5c2a] font-medium">
-                      {new Date(match.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                    </p>
-                  </div>
+                  <div><p className="text-sm font-medium text-gray-900">vs {match.opponent}</p><p className="text-[10px] text-gray-500 mt-0.5">{match.competition} • {match.venue === "home" ? "🏠 Home" : "✈️ Away"}</p></div>
+                  <div className="text-right"><p className="text-xs text-[#1a5c2a] font-medium">{new Date(match.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p></div>
                 </div>
               ))}
             </div>
@@ -639,110 +524,50 @@ export default function CoachHubPage() {
 
         {/* THUTO Intelligence Suite - Chat */}
         <section className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Role Context */}
           <div className="lg:col-span-2 space-y-4 border-b lg:border-b-0 lg:border-r border-gray-100 pb-4 lg:pb-0 lg:pr-6">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-600">
-                <Icons.Sparkles size={16} />
-              </div>
-              <div>
-                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">THUTO Expert System</span>
-                <h3 className="text-base font-black text-gray-900">{roleConfig?.title}</h3>
-              </div>
+              <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-600"><Icons.Sparkles size={16} /></div>
+              <div><span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block">THUTO Expert System</span><h3 className="text-base font-black text-gray-900">{roleConfig?.title}</h3></div>
             </div>
-
             <p className="text-xs text-gray-500 leading-relaxed">{roleConfig?.description}</p>
-
-            {/* Focus categories as pills */}
             <div className="space-y-2">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Focus Areas</p>
-              <div className="flex flex-wrap gap-1.5">
-                {roleConfig?.focusCategories.map((cat) => (
-                  <span key={cat} className="bg-white border border-gray-200 text-gray-700 font-bold text-[10px] px-2.5 py-1 rounded-lg shadow-sm">
-                    🎯 {cat.replace(/_/g, " ")}
-                  </span>
-                ))}
-              </div>
+              <div className="flex flex-wrap gap-1.5">{roleConfig?.focusCategories.map((cat) => (<span key={cat} className="bg-white border border-gray-200 text-gray-700 font-bold text-[10px] px-2.5 py-1 rounded-lg shadow-sm">🎯 {cat.replace(/_/g, " ")}</span>))}</div>
             </div>
-
-            {/* AI Insight */}
             {(squadStats.highFatigueCount || 0) > 0 && (
               <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                <div className="flex items-center gap-2">
-                  <Icons.Brain size={14} className="text-amber-600" />
-                  <p className="text-[10px] font-bold text-amber-700 uppercase">AI Insight</p>
-                </div>
-                <p className="text-[11px] text-amber-800 mt-1">
-                  {squadStats.highFatigueCount} player(s) show high fatigue. Consider lighter training session.
-                </p>
+                <div className="flex items-center gap-2"><Icons.Brain size={14} className="text-amber-600" /><p className="text-[10px] font-bold text-amber-700 uppercase">AI Insight</p></div>
+                <p className="text-[11px] text-amber-800 mt-1">{squadStats.highFatigueCount} player(s) show high fatigue. Consider lighter training session.</p>
               </div>
             )}
           </div>
 
-          {/* Chat Terminal */}
           <div className="lg:col-span-3 flex flex-col h-[420px] justify-between">
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4">
               {chatHistory.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
                   <Icons.Bot size={36} className="text-gray-300 mb-2" />
                   <p className="text-xs font-black uppercase tracking-wider text-gray-700">Framework Terminal Online</p>
-                  <p className="text-xs font-medium max-w-xs mt-1">
-                    Ask about tactical layouts, recovery protocols, or training drills.
-                  </p>
+                  <p className="text-xs font-medium max-w-xs mt-1">Ask about tactical layouts, recovery protocols, or training drills.</p>
                 </div>
               ) : (
                 chatHistory.map((msg) => {
                   const isUser = msg.role === "user";
                   return (
                     <div key={msg.id} className={`flex gap-2.5 max-w-[85%] ${isUser ? "ml-auto flex-row-reverse" : "mr-auto"}`}>
-                      <div
-                        className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center shrink-0 ${
-                          isUser ? "bg-[#1a5c2a] text-white" : "bg-amber-50 text-amber-600 border border-amber-200"
-                        }`}
-                      >
-                        {isUser ? "C" : "T"}
-                      </div>
-                      <div
-                        className={`rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-sm ${
-                          isUser
-                            ? "bg-[#1a5c2a] text-white rounded-tr-none"
-                            : "bg-gray-50 text-gray-800 border border-gray-100 rounded-tl-none"
-                        }`}
-                      >
-                        {msg.text}
-                      </div>
+                      <div className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center shrink-0 ${isUser ? "bg-[#1a5c2a] text-white" : "bg-amber-50 text-amber-600 border border-amber-200"}`}>{isUser ? "C" : "T"}</div>
+                      <div className={`rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed shadow-sm ${isUser ? "bg-[#1a5c2a] text-white rounded-tr-none" : "bg-gray-50 text-gray-800 border border-gray-100 rounded-tl-none"}`}>{msg.text}</div>
                     </div>
                   );
                 })
               )}
-              {loadingAi && (
-                <div className="flex gap-2.5 max-w-[85%] mr-auto items-center">
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
-                    <Icons.Loader2 className="animate-spin" size={14} />
-                  </div>
-                  <div className="bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl rounded-tl-none px-4 py-2 text-xs font-bold uppercase tracking-widest animate-pulse">
-                    Analyzing Parameters…
-                  </div>
-                </div>
-              )}
+              {loadingAi && (<div className="flex gap-2.5 max-w-[85%] mr-auto items-center"><div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0"><Icons.Loader2 className="animate-spin" size={14} /></div><div className="bg-gray-50 text-gray-400 border border-gray-100 rounded-2xl rounded-tl-none px-4 py-2 text-xs font-bold uppercase tracking-widest animate-pulse">Analyzing Parameters…</div></div>)}
               <div ref={chatEndRef} />
             </div>
 
             <form onSubmit={handleAiQuery} className="flex gap-2 border-t border-gray-100 pt-3 bg-white">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={`Ask the ${roleConfig?.title} assistant…`}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] transition-all"
-              />
-              <button
-                type="submit"
-                disabled={!query.trim() || loadingAi}
-                className="bg-[#1a5c2a] text-white p-2.5 rounded-xl flex items-center justify-center disabled:opacity-40 transition-all shadow-sm shrink-0 cursor-pointer"
-              >
-                <Icons.Send size={16} />
-              </button>
+              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Ask the ${roleConfig?.title} assistant…`} className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] transition-all" />
+              <button type="submit" disabled={!query.trim() || loadingAi} className="bg-[#1a5c2a] text-white p-2.5 rounded-xl flex items-center justify-center disabled:opacity-40 transition-all shadow-sm shrink-0 cursor-pointer"><Icons.Send size={16} /></button>
             </form>
           </div>
         </section>
@@ -752,81 +577,15 @@ export default function CoachHubPage() {
       {showDrillModal && selectedDrill && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDrillModal(false)}>
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-5 flex items-center justify-between">
-              <h2 className="text-lg font-black text-gray-900">{selectedDrill.name}</h2>
-              <button onClick={() => setShowDrillModal(false)} className="text-gray-400 hover:text-gray-600">
-                ✕
-              </button>
-            </div>
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-5 flex items-center justify-between"><h2 className="text-lg font-black text-gray-900">{selectedDrill.name}</h2><button onClick={() => setShowDrillModal(false)} className="text-gray-400 hover:text-gray-600">✕</button></div>
             <div className="p-5 space-y-4">
-              <div className="flex gap-2">
-                <span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">{selectedDrill.duration}</span>
-                <span
-                  className={`text-xs px-2 py-1 rounded font-bold ${
-                    selectedDrill.difficulty === "beginner"
-                      ? "bg-green-100 text-green-700"
-                      : selectedDrill.difficulty === "advanced"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {selectedDrill.difficulty}
-                </span>
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
-                  {selectedDrill.phase}
-                </span>
-              </div>
-
+              <div className="flex gap-2"><span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">{selectedDrill.duration}</span><span className={`text-xs px-2 py-1 rounded font-bold ${selectedDrill.difficulty === "beginner" ? "bg-green-100 text-green-700" : selectedDrill.difficulty === "advanced" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{selectedDrill.difficulty}</span><span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">{selectedDrill.phase}</span></div>
               <p className="text-sm text-gray-700 leading-relaxed">{selectedDrill.description}</p>
-
-              <div>
-                <h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1">
-                  <Icons.Target size={12} /> Coaching Points
-                </h4>
-                <ul className="space-y-1">
-                  {selectedDrill.coachingPoints.map((point, i) => (
-                    <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                      <Icons.CheckCircle2 size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1">
-                  <Icons.Briefcase size={12} /> Equipment Needed
-                </h4>
-                <div className="flex flex-wrap gap-1">
-                  {selectedDrill.equipment.map((item, i) => (
-                    <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
+              <div><h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1"><Icons.Target size={12} /> Coaching Points</h4><ul className="space-y-1">{selectedDrill.coachingPoints.map((point, i) => (<li key={i} className="text-sm text-gray-600 flex items-start gap-2"><Icons.CheckCircle2 size={14} className="text-emerald-500 mt-0.5 shrink-0" />{point}</li>))}</ul></div>
+              <div><h4 className="text-xs font-black uppercase text-gray-500 mb-2 flex items-center gap-1"><Icons.Briefcase size={12} /> Equipment Needed</h4><div className="flex flex-wrap gap-1">{selectedDrill.equipment.map((item, i) => (<span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded">{item}</span>))}</div></div>
               <div className="pt-4 border-t border-gray-100 flex gap-3">
-                <button
-                  className="flex-1 bg-[#1a5c2a] text-white py-3 rounded-xl font-bold text-sm hover:bg-[#1a5c2a]/90 transition-colors flex items-center justify-center gap-2"
-                  onClick={() => {
-                    setSelectedDrillForAssign(selectedDrill);
-                    setSelectedPlayers([]);
-                    setShowAssignModal(true);
-                    setShowDrillModal(false);
-                  }}
-                >
-                  <Icons.Play size={14} /> Assign to Players
-                </button>
-                <button
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-                  onClick={() => {
-                    // Save to training plan
-                    alert(`Drill "${selectedDrill.name}" added to training plan`);
-                  }}
-                >
-                  <Icons.Bookmark size={14} /> Save to Plan
-                </button>
+                <button className="flex-1 bg-[#1a5c2a] text-white py-3 rounded-xl font-bold text-sm hover:bg-[#1a5c2a]/90 transition-colors flex items-center justify-center gap-2" onClick={() => { setSelectedDrillForAssign(selectedDrill); setSelectedPlayers([]); setShowAssignModal(true); setShowDrillModal(false); }}><Icons.Play size={14} /> Assign to Players</button>
+                <button className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2" onClick={() => { alert(`Drill "${selectedDrill.name}" added to training plan`); }}><Icons.Bookmark size={14} /> Save to Plan</button>
               </div>
             </div>
           </div>
@@ -837,49 +596,11 @@ export default function CoachHubPage() {
       {showAssignModal && selectedDrillForAssign && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAssignModal(false)}>
           <div className="bg-white rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-gray-200">
-              <h2 className="text-lg font-black text-gray-900">Assign Drill to Players</h2>
-              <p className="text-xs text-gray-500 mt-1">{selectedDrillForAssign.name}</p>
-            </div>
-            <div className="p-5 space-y-3 max-h-80 overflow-y-auto">
-              {squad.map((player) => (
-                <label key={player.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedPlayers.includes(player.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedPlayers([...selectedPlayers, player.id]);
-                      } else {
-                        setSelectedPlayers(selectedPlayers.filter((id) => id !== player.id));
-                      }
-                    }}
-                    className="w-4 h-4 rounded border-gray-300 text-[#1a5c2a] focus:ring-[#1a5c2a]"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{player.name}</p>
-                    <p className="text-[10px] text-gray-500">{player.position}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
+            <div className="p-5 border-b border-gray-200"><h2 className="text-lg font-black text-gray-900">Assign Drill to Players</h2><p className="text-xs text-gray-500 mt-1">{selectedDrillForAssign.name}</p></div>
+            <div className="p-5 space-y-3 max-h-80 overflow-y-auto">{squad.map((player) => (<label key={player.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"><input type="checkbox" checked={selectedPlayers.includes(player.id)} onChange={(e) => { if (e.target.checked) { setSelectedPlayers([...selectedPlayers, player.id]); } else { setSelectedPlayers(selectedPlayers.filter((id) => id !== player.id)); } }} className="w-4 h-4 rounded border-gray-300 text-[#1a5c2a] focus:ring-[#1a5c2a]" /><div><p className="text-sm font-medium text-gray-900">{player.name}</p><p className="text-[10px] text-gray-500">{player.position}</p></div></label>))}</div>
             <div className="p-5 border-t border-gray-200 flex gap-3">
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-xl font-bold text-sm hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  assignDrillToPlayers(selectedDrillForAssign, selectedPlayers);
-                  setShowAssignModal(false);
-                }}
-                disabled={selectedPlayers.length === 0}
-                className="flex-1 bg-[#1a5c2a] text-white py-2 rounded-xl font-bold text-sm hover:bg-[#1a5c2a]/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Assign to {selectedPlayers.length} Player(s)
-              </button>
+              <button onClick={() => setShowAssignModal(false)} className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-xl font-bold text-sm hover:bg-gray-50">Cancel</button>
+              <button onClick={() => { assignDrillToPlayers(selectedDrillForAssign, selectedPlayers); setShowAssignModal(false); }} disabled={selectedPlayers.length === 0} className="flex-1 bg-[#1a5c2a] text-white py-2 rounded-xl font-bold text-sm hover:bg-[#1a5c2a]/90 disabled:opacity-50 disabled:cursor-not-allowed">Assign to {selectedPlayers.length} Player(s)</button>
             </div>
           </div>
         </div>

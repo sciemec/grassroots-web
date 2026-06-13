@@ -1,192 +1,241 @@
+// src/components/layout/sidebar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
-  Zap, Activity, BookOpen, Award, Users, TrendingUp, LogOut, Target,
-  GraduationCap, Home, Dumbbell, IdCard, Video, Camera, UserSearch, Heart,
-  Settings, Menu, X, BarChart3, Medal, Radio
+  Home, Target, Dumbbell, TrendingUp, IdCard, 
+  Users, BookOpen, UserSearch, Heart, Settings,
+  Activity, Video, Camera, Award, LogOut, Menu, X,
+  BarChart3, Medal, Globe, Trophy, Calendar, Zap,
+  MessageCircle, Bell, Star, UserCheck, Shield
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+
+// FEATURE FLAGS - Set to false to hide features temporarily
+const FEATURES = {
+  // CORE - Always on
+  biometrics: true,
+  drills: true,
+  passport: true,
+  
+  // Extended features (disabled for now)
+  arena: true,        // Arena social network - ENABLED
+  worldCup: true,     // World Cup feature - ENABLED
+  
+  // Player extras (disabled for focus)
+  successEngine: false,
+  nutrition: false,
+  trainingPlan: false,
+};
 
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ComponentType<{ size?: string | number; className?: string }>;
+  icon: React.ReactNode;
   roles: string[];
+  feature?: keyof typeof FEATURES;
 }
 
-// 📡 OPERATIONAL BASE PATH MATRIX (NO MOCK RECORDS)
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Arena Dashboard", icon: Home, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
+  // CORE - Everyone
+  { href: "/", label: "Home", icon: <Home size={18} />, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
   
-  // PLAYER CORE tracks
-  { href: "/player/success", label: "Success Engine", icon: Zap, roles: ["player"] },
-  { href: "/player/training", label: "AI Training Lab", icon: Activity, roles: ["player"] },
-  { href: "/player/drills", label: "Nurture Lab", icon: Dumbbell, roles: ["player"] },
-  { href: "/player/passport", label: "Talent Passport", icon: BookOpen, roles: ["player"] },
-  { href: "/player/talent-id", label: "Scout Visibility", icon: Award, roles: ["player"] },
-  { href: "/player/vault", label: "Highlight Vault", icon: Video, roles: ["player"] },
+  // PLAYER CORE
+  { href: "/player/training", label: "AI Training Lab", icon: <Target size={18} />, roles: ["player"], feature: "biometrics" },
+  { href: "/player/drills", label: "My Drills", icon: <Dumbbell size={18} />, roles: ["player"], feature: "drills" },
+  { href: "/player/progress", label: "My Progress", icon: <TrendingUp size={18} />, roles: ["player"], feature: "biometrics" },
+  { href: "/player/talent-id", label: "Talent Passport", icon: <IdCard size={18} />, roles: ["player"], feature: "passport" },
+  { href: "/player/vault", label: "Highlight Vault", icon: <Video size={18} />, roles: ["player"], feature: "passport" },
+  { href: "/player/media", label: "Media Gallery", icon: <Camera size={18} />, roles: ["player"], feature: "passport" },
   
-  // MULTI-SPORT ATHLETE PATHWAYS
-  { href: "/athlete/scan", label: "Biometric Scan", icon: Activity, roles: ["athlete"] },
-  { href: "/athlete/passport", label: "Talent Passport", icon: IdCard, roles: ["athlete"] },
-  { href: "/athlete/vault", label: "Video Vault", icon: Video, roles: ["athlete"] },
+  // ATHLETE CORE (Multi-sport)
+  { href: "/athlete/scan", label: "Biometric Scan", icon: <Activity size={18} />, roles: ["athlete"], feature: "biometrics" },
+  { href: "/athlete/vault", label: "Video Vault", icon: <Video size={18} />, roles: ["athlete"], feature: "passport" },
+  { href: "/athlete/passport", label: "Talent Passport", icon: <IdCard size={18} />, roles: ["athlete"], feature: "passport" },
   
-  // COACH CORE TRACKS
-  { href: "/coach", label: "Coach Hub", icon: Target, roles: ["coach"] },
-  { href: "/coach/squad", label: "Squad Roster", icon: Users, roles: ["coach"] },
-  { href: "/coach/live-match", label: "Live Match Tracker", icon: Activity, roles: ["coach"] },
-  { href: "/coach/patterns", label: "Strategic Patterns", icon: TrendingUp, roles: ["coach"] },
-  { href: "/coach/hub", label: "Drill Library", icon: BookOpen, roles: ["coach"] },
+  // COACH CORE
+  { href: "/coach/squad", label: "My Squad", icon: <Users size={18} />, roles: ["coach"], feature: "drills" },
+  { href: "/coach/hub", label: "Coach Hub", icon: <BookOpen size={18} />, roles: ["coach"], feature: "drills" },
+  { href: "/coach/talent-id", label: "Talent ID", icon: <Target size={18} />, roles: ["coach"], feature: "biometrics" },
   
-  // SCOUT CHANNELS
-  { href: "/scout/discover", label: "Discover Talent", icon: UserSearch, roles: ["scout"] },
-  { href: "/scout/reports", label: "Scouting Reports", icon: BarChart3, roles: ["scout"] },
-  { href: "/scout/shortlist", label: "My Shortlist", icon: Heart, roles: ["scout"] },
+  // SCOUT CORE
+  { href: "/scout/discover", label: "Discover Talent", icon: <UserSearch size={18} />, roles: ["scout"], feature: "passport" },
+  { href: "/scout/reports", label: "Scouting Reports", icon: <BarChart3 size={18} />, roles: ["scout"], feature: "passport" },
+  { href: "/scout/shortlist", label: "My Shortlist", icon: <Heart size={18} />, roles: ["scout"], feature: "passport" },
   
-  // FAN TRACKS
-  { href: "/community", label: "Discover Stars", icon: Medal, roles: ["fan"] },
-  { href: "/talent-leaderboard", label: "Leaderboard", icon: Award, roles: ["fan", "scout", "coach"] },
+  // FAN CORE
+  { href: "/community", label: "Discover Stars", icon: <Medal size={18} />, roles: ["fan"], feature: "passport" },
+  { href: "/talent-leaderboard", label: "Leaderboard", icon: <Award size={18} />, roles: ["fan", "scout", "coach"], feature: "passport" },
   
-  // WORLD CUP 2026
-  { href: "/world-cup", label: "World Cup Live", icon: Radio, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
-
-  // SYSTEM CONFIGURATIONS
-  { href: "/settings", label: "Profile Settings", icon: Settings, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
+  // ARENA SOCIAL NETWORK
+  { href: "/arena", label: "The Arena", icon: <Globe size={18} />, roles: ["player", "athlete", "coach", "scout", "fan"], feature: "arena" },
+  
+  // WORLD CUP
+  { href: "/world-cup", label: "World Cup", icon: <Trophy size={18} />, roles: ["player", "athlete", "coach", "scout", "fan"], feature: "worldCup" },
+  
+  // DISABLED FEATURES (hidden when FEATURES flag is false)
+  { href: "/fan-hub", label: "Fan Hub", icon: <Heart size={18} />, roles: ["fan"], feature: "fanHub" },
+  { href: "/business-hub", label: "Business Hub", icon: <Briefcase size={18} />, roles: ["player", "coach"], feature: "businessHub" },
+  
+  // UTILITIES
+  { href: "/settings", label: "Settings", icon: <Settings size={18} />, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
 ];
+
+// Helper to check if a feature is enabled
+const isFeatureEnabled = (feature?: keyof typeof FEATURES): boolean => {
+  if (!feature) return true;
+  return FEATURES[feature] === true;
+};
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const logout = useAuthStore((s) => s.logout);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // Close mobile sidebar on route change
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
 
-  if (!hasHydrated || !user) return null;
+  if (!hasHydrated) {
+    return null;
+  }
 
-  const userRole = user.role || "fan";
+  const userRole = user?.role || "fan";
   
-  // Clean filtering checking strictly database user authentication claims
-  const visibleItems = NAV_ITEMS.filter(item => item.roles.includes(userRole));
+  const visibleItems = NAV_ITEMS.filter(item => {
+    // Check if user role is allowed
+    if (!item.roles.includes(userRole)) return false;
+    // Check if feature is enabled
+    if (!isFeatureEnabled(item.feature)) return false;
+    return true;
+  });
 
-  const isLinkActive = (href: string) => {
+  const isActive = (href: string) => {
     if (href === "/") return pathname === href;
-    return (pathname ?? '').startsWith(href);
+    return pathname.startsWith(href);
   };
 
-  const handleLogoutClick = () => {
+  const handleLogout = () => {
     logout();
     router.push("/login");
   };
 
   return (
     <>
-      {/* 📱 MOBILE NAVIGATION TRIGGER FLOATER */}
+      {/* Mobile toggle button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-[#e2f0d9] border-2 border-[#1c3d22] text-[#1c3d22] rounded-xl shadow-md cursor-pointer"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-[#1a5c2a] text-white rounded-xl shadow-lg"
       >
-        {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
+        {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* 🌲 HIGH VISIBILITY LIGHT GREENISH-YELLOW SIDEBAR BODY */}
+      {/* Sidebar */}
       <aside
         className={`
           fixed lg:sticky top-0 left-0 z-40
-          w-64 h-screen bg-[#e2f0d9] border-r-2 border-[#f0b429]
-          flex flex-col justify-between text-[#1c3d22] select-none
-          transition-transform duration-300 ease-in-out shadow-xs
+          w-72 h-screen bg-[#1a5c2a] text-white
+          flex flex-col transition-transform duration-300 ease-in-out
+          shadow-xl
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
-        <div className="p-6 space-y-6 flex flex-col min-h-0">
-          
-          {/* LOGO UNIT */}
-          <Link 
-            href={userRole === "coach" ? "/coach" : "/player"} 
-            className="flex items-center gap-2 group shrink-0"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <div className="bg-[#1c3d22] p-1.5 rounded-lg text-[#f0b429] font-black text-xs">GRS</div>
-            <span className="font-black text-sm tracking-wider uppercase text-[#1c3d22] group-hover:text-emerald-800 transition-colors">
-              The Arena Hub
-            </span>
+        {/* Logo / Brand */}
+        <div className="p-5 border-b border-white/10">
+          <Link href="/" className="block" onClick={() => setIsMobileOpen(false)}>
+            <h1 className="text-xl font-black tracking-tight">
+              Grass<span className="text-[#f0b429]">Roots</span> Sports
+            </h1>
+            <p className="text-[9px] text-white/40 mt-0.5 tracking-wider">
+              Identify · Nurture · Market
+            </p>
           </Link>
-
-          {/* TEACH FOR ZIMBABWE BRAND ASSURANCE PANEL */}
-          <div className="bg-white border border-[#1c3d22]/10 p-3 rounded-xl flex items-center gap-2 shrink-0 shadow-3xs">
-            <GraduationCap size={16} className="text-[#1c3d22] shrink-0" />
-            <div className="min-w-0">
-              <span className="block text-[8px] font-black uppercase text-emerald-800 tracking-widest leading-none">Strategic Education Partner</span>
-              <span className="text-[10px] font-bold text-zinc-700 uppercase tracking-tight block truncate mt-0.5">Teach For Zim</span>
-            </div>
-          </div>
-
-          {/* SCROLLABLE ROUTING MATRIX */}
-          <nav className="flex-1 overflow-y-auto space-y-1 pt-2 pr-1 custom-scrollbar">
-            <span className="block text-[9px] font-black uppercase tracking-widest text-emerald-900/50 mb-2 px-2">
-              Operational Menu
-            </span>
-            {visibleItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = isLinkActive(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
-                    isActive
-                      ? "bg-[#f0b429] text-[#1c3d22] border-[#1c3d22] shadow-xs"
-                      : "text-zinc-700 border-transparent hover:bg-white/40 hover:text-[#1c3d22]"
-                  }`}
-                >
-                  <Icon size={14} className="shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
         </div>
 
-        {/* SECURE IDENTITY ACCOUNT CONTAINER */}
-        <div className="p-4 border-t border-[#1c3d22]/10 bg-white/30 space-y-2 shrink-0">
-          <div className="flex items-center gap-2 px-2">
-            <div className="w-6 h-6 rounded-full bg-[#1c3d22] text-[#f0b429] font-black text-[10px] flex items-center justify-center uppercase shrink-0">
-              {user.name ? user.name.slice(0, 2) : "GR"}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-black text-zinc-900 truncate uppercase tracking-wide leading-none">
-                {user.name || "Active Session"}
-              </p>
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mt-0.5 truncate">
-                Role: {userRole}
-              </span>
+        {/* User Info (mobile only) */}
+        {user && (
+          <div className="lg:hidden p-4 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#f0b429]/20 flex items-center justify-center">
+                <span className="text-sm font-bold text-[#f0b429]">
+                  {user.name?.charAt(0) || "U"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate">{user.name}</p>
+                <p className="text-[10px] text-white/50 capitalize">{user.role}</p>
+              </div>
             </div>
           </div>
+        )}
 
-          <button
-            onClick={handleLogoutClick}
-            className="w-full flex items-center gap-3 px-3 py-2 text-zinc-600 hover:text-red-700 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-red-50 border border-transparent hover:border-red-200 transition-all cursor-pointer mt-2"
-          >
-            <LogOut size={14} className="shrink-0" />
-            <span>Exit Session</span>
-          </button>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4">
+          <div className="space-y-1 px-3">
+            {visibleItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMobileOpen(false)}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                  transition-all duration-200
+                  ${isActive(item.href) 
+                    ? "bg-[#f0b429] text-[#1a5c2a]" 
+                    : "text-white/80 hover:bg-white/10 hover:text-white"
+                  }
+                `}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10 space-y-3">
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          )}
+          
+          {/* Feature indicators */}
+          <div className="flex justify-center gap-3 pt-2">
+            {FEATURES.arena && (
+              <span className="text-[6px] text-white/30 uppercase tracking-wider">Arena Active</span>
+            )}
+            {FEATURES.worldCup && (
+              <span className="text-[6px] text-white/30 uppercase tracking-wider">World Cup</span>
+            )}
+          </div>
+          
+          <div className="text-center">
+            <p className="text-[8px] text-white/30">
+              © 2026 GrassRoots Sports
+            </p>
+            <p className="text-[8px] text-white/20 mt-0.5">
+              Identify · Nurture · Market
+            </p>
+          </div>
         </div>
       </aside>
 
-      {/* BACKGROUND MASK FOR SMARTPHONE LAYOUT CLAMPS */}
+      {/* Overlay for mobile */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/30 backdrop-blur-xs z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}

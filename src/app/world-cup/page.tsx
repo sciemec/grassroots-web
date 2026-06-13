@@ -1,9 +1,8 @@
-// src/app/world-cup/page.tsx
 // GrassRoots Sports branded World Cup page – matches the main site design
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Calendar, Radio, Mic, MicOff, Volume2, VolumeX, Tv, Wifi, WifiOff, ChevronRight, RefreshCw, TrendingUp, Target, Activity } from 'lucide-react';
+import { MapPin, Calendar, Radio, Mic, MicOff, Volume2, VolumeX, Tv, Wifi, WifiOff, ChevronRight, RefreshCw, TrendingUp, Target, Activity, Languages, Zap } from 'lucide-react';
 
 // ============================================
 // TYPES
@@ -209,46 +208,152 @@ function FootballPitch({ ballPosition, shots = [] }: { ballPosition?: { x: numbe
 }
 
 // ============================================
-// AI COMMENTARY COMPONENT (branded)
+// AI COMMENTARY COMPONENT (DeepSeek Voice Engine)
 // ============================================
-function AICommentary({ events }: { events: any[] }) {
+function AICommentary({ events, selectedMatch }: { events: any[]; selectedMatch: Match | null }) {
   const [isSpeaking, setIsSpeaking] = useState(true);
-  const [currentCommentary, setCurrentCommentary] = useState('Select a live match to start AI commentary');
-  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const [selectedLang, setSelectedLang] = useState<'en' | 'shona' | 'ndebele' | 'zulu' | 'tswana'>('en');
+  const [currentCommentary, setCurrentCommentary] = useState('Select a match, then use the simulator options below to trigger deep slang highlights.');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') synthRef.current = window.speechSynthesis;
-  }, []);
+  const dialects = [
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'shona', label: 'ChiShona', flag: '🇿🇼' },
+    { code: 'ndebele', label: 'isiNdebele', flag: '🇿🇼' },
+    { code: 'zulu', label: 'isiZulu', flag: '🇿🇦' },
+    { code: 'tswana', label: 'Setswana', flag: '🇿🇦' }
+  ];
 
-  useEffect(() => {
-    if (!events.length) return;
-    const latest = events[events.length - 1];
-    const text = latest.commentary || `${latest.type} - ${latest.description}`;
-    setCurrentCommentary(text);
-    if (isSpeaking && synthRef.current) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95;
-      synthRef.current.speak(utterance);
+  // Pipeline calling DeepSeek + ElevenLabs audio chunk outputs
+  const processAndPlayLiveSlang = async (eventType: string, player: string) => {
+    if (!selectedMatch) return;
+    
+    setIsTranslating(true);
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
     }
-  }, [events]);
+
+    try {
+      const response = await fetch('/api/commentary/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          minute: selectedMatch.minute || "12\'",
+          playerName: player,
+          teamName: selectedMatch.homeTeam,
+          eventType: eventType,
+          language: selectedLang
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Strip out bracket emotion tags like [screaming] before printing to screen
+        const cleanedText = data.script.replace(/\[.*?\]/g, "").trim();
+        setCurrentCommentary(cleanedText);
+
+        if (isSpeaking && data.audio) {
+          const audio = new Audio(data.audio);
+          currentAudioRef.current = audio;
+          audio.play();
+        }
+      }
+    } catch (err) {
+      console.error("DeepSeek telemetry pipe exception:", err);
+      setCurrentCommentary("Eish, network issues blocking the DeepSeek commentary box right now!");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Automated trigger whenever active selection properties swap
+  useEffect(() => {
+    if (selectedMatch) {
+      setCurrentCommentary(`Match tracker synchronized for ${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}. Tap an event trigger to hear DeepSeek scream in local slang!`);
+    }
+  }, [selectedMatch, selectedLang]);
+
+  const toggleSpeechState = () => {
+    if (isSpeaking && currentAudioRef.current) {
+      currentAudioRef.current.pause();
+    }
+    setIsSpeaking(!isSpeaking);
+  };
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200 space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           <h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">AI Live Commentary</h3>
         </div>
-        <button onClick={() => setIsSpeaking(!isSpeaking)} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-xs text-gray-700 hover:bg-gray-200 transition">
-          {isSpeaking ? <Volume2 size={12} /> : <MicOff size={12} />}
-          {isSpeaking ? "ON" : "OFF"}
-        </button>
+        
+        {/* Localization selection tray controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+            <Languages size={12} className="text-[#1a5c2a]" /> Dialect:
+          </div>
+          <div className="flex gap-1 bg-gray-100 p-0.5 rounded-xl border border-gray-200">
+            {dialects.map((d) => (
+              <button
+                key={d.code}
+                onClick={() => setSelectedLang(d.code as any)}
+                className={`px-2 py-1 text-[10px] font-extrabold rounded-lg transition-all flex items-center gap-1 ${
+                  selectedLang === d.code
+                    ? 'bg-[#1a5c2a] text-white shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title={d.label}
+              >
+                <span>{d.flag}</span>
+                <span className="hidden md:inline">{d.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={toggleSpeechState} 
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition font-bold ${
+              isSpeaking ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {isSpeaking ? <Volume2 size={12} className="animate-bounce" /> : <MicOff size={12} />}
+            {isSpeaking ? "AUDIO ON" : "MUTED"}
+          </button>
+        </div>
       </div>
-      <div className="bg-gray-50 rounded-xl p-4 h-28 overflow-y-auto border border-gray-100">
-        <p className="text-sm text-gray-700 italic leading-relaxed">"{currentCommentary}"</p>
+
+      {/* Interactive Trigger Dashboard Tray (Swapped over to process high energy mock handlers) */}
+      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2">
+        <div className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
+          <Zap size={10} className="text-[#f0b429]" /> Trigger Sound & Slang Simulation Board:
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button onClick={() => processAndPlayLiveSlang("GOAL", "The Striker")} disabled={isTranslating} className="bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">⚽ SCREAM GOAL!</button>
+          <button onClick={() => processAndPlayLiveSlang("DRIBBLE", "The Captain")} disabled={isTranslating} className="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">🕺 Hype Dribble Skill</button>
+          <button onClick={() => processAndPlayLiveSlang("TACKLE", "The Defender")} disabled={isTranslating} className="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">💥 Heavy Tackle</button>
+          <button onClick={() => processAndPlayLiveSlang("OFFSIDE", "The Winger")} disabled={isTranslating} className="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">🚩 Offside Banter</button>
+          <button onClick={() => processAndPlayLiveSlang("FREEKICK", "The Playmaker")} disabled={isTranslating} className="bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">🎯 Dangerous Free Kick</button>
+        </div>
       </div>
+
+      <div className="bg-gray-900 text-green-400 rounded-xl p-4 h-28 overflow-y-auto border border-gray-800 flex items-center font-mono relative">
+        {isTranslating ? (
+          <div className="flex items-center gap-2 text-xs text-yellow-400 font-semibold italic mx-auto">
+            <RefreshCw size={14} className="animate-spin" /> DeepSeek V3 compiling custom audio matrix...
+          </div>
+        ) : (
+          <p className="text-sm italic leading-relaxed text-gray-100 w-full pl-2 border-l-2 border-[#f0b429]">
+            "{currentCommentary}"
+          </p>
+        )}
+      </div>
+
       <div className="flex justify-end mt-2">
-        <span className="text-[9px] text-gray-400 uppercase tracking-wider flex items-center gap-1"><Radio size={9} className="text-[#f0b429]"/> live</span>
+        <span className="text-[9px] text-gray-400 uppercase tracking-wider flex items-center gap-1">
+          <Radio size={9} className="text-[#f0b429]"/> Powered by Grassroots Sports DeepSeek Commentary Engine
+        </span>
       </div>
     </div>
   );
@@ -303,7 +408,7 @@ export default function WorldCupPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
-  const [events] = useState<any[]>([]); // would come from real API later
+  const [events] = useState<any[]>([]); 
 
   const loadData = async () => {
     try {
@@ -448,7 +553,7 @@ export default function WorldCupPage() {
                   </div>
 
                   {/* AI Commentary */}
-                  <AICommentary events={events} />
+                  <AICommentary events={events} selectedMatch={selectedMatch} />
                   
                   <div className="text-center text-[9px] text-gray-400 border-t border-gray-200 pt-4">
                     Data: ESPN Public API + worldcup.json • Powered by GrassRoots Sports AI

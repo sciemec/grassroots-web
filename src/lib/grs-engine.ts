@@ -439,15 +439,101 @@ function resolveDrillTier(rank: PlayerRank, aq: number): 1|2|3|4|5 {
   if (rank === 'Skilled') return 3; if (rank === 'Player') return 2; return 1;
 }
 
+// ── selectDrills — returns exactly 6 drills, one per test domain ──────────────
+// Each drill trains the physical quality measured by one GRS test:
+//   T1 explosivePower  → plyometric / jump drill
+//   T2 linearSpeed     → sprint / acceleration drill
+//   T3 balance         → single-leg stability drill
+//   T4 cognitiveSpeed  → reaction / decision drill
+//   T5 endurance       → circuit / aerobic drill
+//   T6 ballMastery     → ball technique drill
+//
+// Drills are selected by tier (Foundation/Developmental → Competitive → Elite)
+// and refined by position where meaningful.
 function selectDrills(position: Position, tier: Tier): DrillSuggestion[] {
-  const key = tier === 'Elite' ? 'elite' : tier === 'Competitive' ? 'competitive' : 'foundation';
-  const reason = { Elite: 'Elite tier — advanced technical content', Competitive: 'Competitive tier — build on your ability', Developmental: 'Build your foundation', Foundation: 'Start with the basics and grow' }[tier];
-  const pools: Record<string, { id: string; name: string; duration: string }[]> = {
-    foundation: [{ id: 'grs_01', name: 'Ball familiarisation', duration: '10 mins' }, { id: 'grs_02', name: 'Cone dribble circuit', duration: '10 mins' }],
-    competitive: [{ id: 'eng_01', name: "Lions' Den Central Turning", duration: '15 mins' }, { id: 'eng_02', name: 'Around the Clock Passing', duration: '12 mins' }],
-    elite: [{ id: 'el_01', name: 'Spain U23 positional rondo', duration: '25 mins' }, { id: 'el_02', name: 'England elite pressing', duration: '25 mins' }],
+  const isElite       = tier === 'Elite';
+  const isCompetitive = tier === 'Competitive';
+  const isAdvanced    = isElite || isCompetitive;
+
+  // ── T1 — Explosive Power (Jump) ─────────────────────────────────────────
+  const t1: DrillSuggestion = isElite ? {
+    id: 'pow_e', name: 'Depth drop reactive jump', duration: '12 mins',
+    reason: 'T1 Jump · Elite — step off a 40cm box, land and immediately explode upward. 4 sets of 6.',
+  } : isCompetitive ? {
+    id: 'pow_c', name: 'Squat jump to sprint', duration: '10 mins',
+    reason: 'T1 Jump · Competitive — 3 squat jumps then sprint 10m. 5 reps. Trains elastic power.',
+  } : {
+    id: 'pow_f', name: 'Knee-height wall jump', duration: '8 mins',
+    reason: 'T1 Jump · Foundation — step off a low wall, land both feet, immediately jump as high as possible. 10 reps.',
   };
-  return (pools[key] ?? pools.foundation).slice(0, 2).map(d => ({ ...d, reason: reason ?? '' }));
+
+  // ── T2 — Linear Speed (Sprint) ───────────────────────────────────────────
+  const t2: DrillSuggestion = isElite ? {
+    id: 'spd_e', name: 'Resistance band sprint release', duration: '15 mins',
+    reason: 'T2 Sprint · Elite — partner holds resistance band, sprint 20m on release. 6 reps each side.',
+  } : isCompetitive ? {
+    id: 'spd_c', name: '10-20-10 acceleration ladder', duration: '12 mins',
+    reason: 'T2 Sprint · Competitive — sprint 10m, jog back, sprint 20m, jog back, sprint 10m. 4 sets.',
+  } : {
+    id: 'spd_f', name: '20m flat sprint with standing start', duration: '8 mins',
+    reason: 'T2 Sprint · Foundation — mark 20m with two objects. Sprint full effort 6 times, 60s rest between.',
+  };
+
+  // ── T3 — Balance (Proprioception) ────────────────────────────────────────
+  const t3: DrillSuggestion = isAdvanced ? {
+    id: 'bal_a', name: 'Single-leg ball juggle', duration: '10 mins',
+    reason: 'T3 Balance · Advanced — stand on one leg and juggle for 30s. Switch legs. Trains balance under distraction.',
+  } : {
+    id: 'bal_f', name: 'Single-leg 30-second hold', duration: '8 mins',
+    reason: 'T3 Balance · Foundation — stand on one foot, arms out. Count corrections. 4 sets each leg, eyes open and closed.',
+  };
+
+  // ── T4 — Cognitive Speed (Reaction) ──────────────────────────────────────
+  // Position-specific: goalkeepers get a diving variation
+  const t4: DrillSuggestion = position === 'goalkeeper' ? {
+    id: 'rea_gk', name: 'Ball drop reflex dive', duration: '10 mins',
+    reason: 'T4 Reaction · GK — partner drops ball from shoulder height at varying angles. Dive to catch before second bounce.',
+  } : isAdvanced ? {
+    id: 'rea_a', name: 'Two-cone colour call sprint', duration: '12 mins',
+    reason: 'T4 Reaction · Advanced — stand between two cones 5m apart. Coach calls left/right, sprint to that cone. 10 reps.',
+  } : {
+    id: 'rea_f', name: 'Ball drop catch', duration: '8 mins',
+    reason: 'T4 Reaction · Foundation — partner holds ball at shoulder height and drops without warning. Catch before second bounce. 5 attempts.',
+  };
+
+  // ── T5 — Endurance (Chitima circuit) ─────────────────────────────────────
+  // Position-specific: strikers and wingers get a sprint-biased version
+  const t5: DrillSuggestion = (position === 'striker' || position === 'winger') ? {
+    id: 'end_sw', name: 'Sprint-recovery interval', duration: '15 mins',
+    reason: 'T5 Endurance · Attacker — sprint 20m, walk 20m, sprint 20m. 8 reps. Mimics match sprint pattern.',
+  } : isAdvanced ? {
+    id: 'end_a', name: 'Full Chitima circuit — 4 rounds', duration: '18 mins',
+    reason: 'T5 Endurance · Advanced — 5 burpees → sprint 10m → 5 squat jumps → sprint back. 4 rounds. Rate technique each round.',
+  } : {
+    id: 'end_f', name: 'Chitima circuit — 3 rounds', duration: '12 mins',
+    reason: 'T5 Endurance · Foundation — 5 burpees → sprint 10m → 5 squat jumps → sprint back. 3 rounds. No rest between.',
+  };
+
+  // ── T6 — Ball Mastery ────────────────────────────────────────────────────
+  // Position-specific: defenders get a clearance variation, GKs get distribution
+  const t6: DrillSuggestion = position === 'goalkeeper' ? {
+    id: 'bal_gk', name: 'GK distribution juggle and throw', duration: '12 mins',
+    reason: 'T6 Ball · GK — juggle 10 touches then throw accurately to a target 15m away. 8 sets.',
+  } : position === 'defender' ? {
+    id: 'bal_df', name: 'First-touch control + inside cut', duration: '12 mins',
+    reason: 'T6 Ball · Defender — receive a pass, control with inside foot, inside-cut turn around cone. 10 reps each foot.',
+  } : isElite ? {
+    id: 'bal_e', name: 'Juggle sequence + Cruyff turn', duration: '15 mins',
+    reason: 'T6 Ball · Elite — juggle 20 touches, receive pass, execute Cruyff turn around cone. No ball touches the ground.',
+  } : isCompetitive ? {
+    id: 'bal_c', name: 'Juggling record attempt + inside cuts', duration: '12 mins',
+    reason: 'T6 Ball · Competitive — juggle for 30s (longest run), then 5 inside-cut turns around a cone.',
+  } : {
+    id: 'bal_f2', name: 'Juggling ladder', duration: '10 mins',
+    reason: 'T6 Ball · Foundation — juggle the ball and count your longest sequence without it hitting the ground. 5 attempts, record best.',
+  };
+
+  return [t1, t2, t3, t4, t5, t6];
 }
 
 export function validateInputs(inputs: RawTestInputs): ValidationResult {
@@ -532,5 +618,3 @@ export function quickAQ(inputs: Partial<RawTestInputs> & { age: number; gender: 
   const r = resolveJumpHeight(inputs as RawTestInputs);
   return calculateAQ(calculateDomains(r, resolveAgeGroup(r.age), inputs.gender));
 }
-// Alias for backwards compatibility
-export { evaluate as evaluateBiometrics };
