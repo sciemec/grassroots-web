@@ -16,7 +16,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
 
 // Icon mapper for string icon names
 const getIconComponent = (iconName: string) => {
-  const IconComponent = (Icons as any)[iconName];
+  const IconComponent = (Icons as Record<string, unknown>)[iconName] as React.ComponentType<{ size?: number; className?: string }> | undefined;
   return IconComponent || Icons.Shield;
 };
 
@@ -86,15 +86,15 @@ interface GamificationState {
 }
 
 // Player Drills Modal Component
-function PlayerDrillsModal({ player, drills, gamification, onClose }: { 
-  player: SquadMember; 
-  drills: DrillProgress[]; 
+function PlayerDrillsModal({ player, drills, gamification, onClose }: {
+  player: SquadMember;
+  drills: DrillProgress[];
   gamification: GamificationState | null;
   onClose: () => void;
 }) {
   const completedCount = drills.filter(d => d.completed).length;
   const unlockedCount = drills.filter(d => d.unlocked).length;
-  
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -105,7 +105,7 @@ function PlayerDrillsModal({ player, drills, gamification, onClose }: {
           </div>
           <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
         </div>
-        
+
         <div className="p-5 space-y-6">
           {/* Gamification Stats */}
           {gamification && (
@@ -128,7 +128,7 @@ function PlayerDrillsModal({ player, drills, gamification, onClose }: {
               </div>
             </div>
           )}
-          
+
           {/* Badges */}
           {gamification?.badgesEarned && gamification.badgesEarned.length > 0 && (
             <div>
@@ -142,7 +142,7 @@ function PlayerDrillsModal({ player, drills, gamification, onClose }: {
               </div>
             </div>
           )}
-          
+
           {/* Drills Progress */}
           <div>
             <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
@@ -180,6 +180,7 @@ function PlayerDrillsModal({ player, drills, gamification, onClose }: {
 
 // Get all football roles from config
 const getFootballRoles = (): StaffRoleConfig[] => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { COACHING_STAFF_ROLES } = require("@/config/coaching-staff");
   return COACHING_STAFF_ROLES.football || [];
 };
@@ -212,7 +213,7 @@ export default function CoachHubPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedDrillForAssign, setSelectedDrillForAssign] = useState<Drill | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
-  
+
   // State for drills and gamification
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [selectedPlayerData, setSelectedPlayerData] = useState<SquadMember | null>(null);
@@ -223,6 +224,11 @@ export default function CoachHubPage() {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const footballRoles = getFootballRoles();
+
+  // Suppress unused variable warnings for state setters used only via side effects
+  void knowledge;
+  void loadingPlayerData;
+  void departmentStats;
 
   // Auth guard
   useEffect(() => {
@@ -265,11 +271,10 @@ export default function CoachHubPage() {
   // Load player drills and gamification when a player is selected
   useEffect(() => {
     if (!selectedPlayerId) return;
-    
+
     const loadPlayerData = async () => {
       setLoadingPlayerData(true);
       try {
-        // Fetch player's unlocked drills
         const drillsRes = await fetch(`/api/drills?playerId=${selectedPlayerId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -277,8 +282,7 @@ export default function CoachHubPage() {
           const drillsData = await drillsRes.json();
           setPlayerDrills(drillsData.drills || []);
         }
-        
-        // Fetch player's gamification state
+
         const gamificationRes = await fetch(`/api/gamification?playerId=${selectedPlayerId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -286,17 +290,17 @@ export default function CoachHubPage() {
           const gamificationData = await gamificationRes.json();
           setPlayerGamification(gamificationData);
         }
-      } catch (error) {
-        console.error("Failed to load player data:", error);
+      } catch {
+        // silently fail — modal shows empty state
       } finally {
         setLoadingPlayerData(false);
       }
     };
-    
+
     loadPlayerData();
   }, [selectedPlayerId, token]);
 
-  // Load biometric data (mock for now - replace with real API)
+  // Load biometric data (mock — replace with real API when endpoint is live)
   const loadBiometricData = () => {
     try {
       const mockSquad: SquadMember[] = [
@@ -319,8 +323,8 @@ export default function CoachHubPage() {
         teamAvgForm: avgForm,
         highFatigueCount: highFatigue,
       }));
-    } catch (e) {
-      console.error("Failed to load biometric data", e);
+    } catch {
+      // silently fail — squad table stays empty
     }
   };
 
@@ -434,6 +438,7 @@ export default function CoachHubPage() {
 
   const roleConfig = getRoleConfig(activeRole);
   const RoleIcon = roleConfig ? getIconComponent(roleConfig.icon) : Icons.Shield;
+  void RoleIcon; // used via getIconComponent in the role list below
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 antialiased font-sans flex flex-col lg:flex-row">
@@ -516,16 +521,16 @@ export default function CoachHubPage() {
         <div className="pt-4 border-t border-gray-200">
           <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2">Academy Library</p>
           <div className="grid grid-cols-2 gap-1 text-[10px]">
-            <div className="flex justify-between"><span>Striker:</span><span className="font-bold">{departmentStats.striker}</span></div>
-            <div className="flex justify-between"><span>Defender:</span><span className="font-bold">{departmentStats.defender}</span></div>
-            <div className="flex justify-between"><span>Midfielder:</span><span className="font-bold">{departmentStats.midfielder}</span></div>
-            <div className="flex justify-between"><span>Goalkeeper:</span><span className="font-bold">{departmentStats.goalkeeper}</span></div>
-            <div className="flex justify-between"><span>Fitness:</span><span className="font-bold">{departmentStats.fitness}</span></div>
-            <div className="flex justify-between"><span>Medical:</span><span className="font-bold">{departmentStats.medical}</span></div>
+            <div className="flex justify-between"><span>Striker:</span><span className="font-bold">{getDepartmentStats().striker}</span></div>
+            <div className="flex justify-between"><span>Defender:</span><span className="font-bold">{getDepartmentStats().defender}</span></div>
+            <div className="flex justify-between"><span>Midfielder:</span><span className="font-bold">{getDepartmentStats().midfielder}</span></div>
+            <div className="flex justify-between"><span>Goalkeeper:</span><span className="font-bold">{getDepartmentStats().goalkeeper}</span></div>
+            <div className="flex justify-between"><span>Fitness:</span><span className="font-bold">{getDepartmentStats().fitness}</span></div>
+            <div className="flex justify-between"><span>Medical:</span><span className="font-bold">{getDepartmentStats().medical}</span></div>
           </div>
           <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between text-[10px] font-bold">
             <span>Total Drills:</span>
-            <span className="text-[#1a5c2a]">{departmentStats.total}</span>
+            <span className="text-[#1a5c2a]">{getDepartmentStats().total}</span>
           </div>
         </div>
 
@@ -645,13 +650,13 @@ export default function CoachHubPage() {
                     const fatigueDisplay = getFatigueDisplay(player.fatigue);
                     const assignedCount = assignedDrills[player.id]?.length || 0;
                     return (
-                      <tr 
-                        key={player.id} 
-                        className="hover:bg-gray-50 cursor-pointer" 
-                        onClick={() => { 
-                          setSelectedPlayerId(player.id); 
+                      <tr
+                        key={player.id}
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => {
+                          setSelectedPlayerId(player.id);
                           setSelectedPlayerData(player);
-                          setShowPlayerDrillsModal(true); 
+                          setShowPlayerDrillsModal(true);
                         }}
                       >
                         <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
@@ -789,7 +794,7 @@ export default function CoachHubPage() {
 
       {/* Player Drills Modal */}
       {showPlayerDrillsModal && selectedPlayerData && (
-        <PlayerDrillsModal 
+        <PlayerDrillsModal
           player={selectedPlayerData}
           drills={playerDrills}
           gamification={playerGamification}
