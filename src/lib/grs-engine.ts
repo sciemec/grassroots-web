@@ -1,21 +1,39 @@
-// lib/grs-engine.ts — Gender update
+// lib/grs-engine.ts — v5: MediaPipe Holistic Integration
 // ─────────────────────────────────────────────────────────────────────────────
-// WHAT CHANGED: Added gender parameter throughout.
-// Male and female athletes now have separate normative benchmarks.
-// The 6 tests are IDENTICAL — only the percentile calculations differ.
+// WHAT'S NEW in v5 (Holistic):
+//   - HolisticLandmark / HolisticResults / AthleteMetrics types added
+//   - holisticMetrics?: AthleteMetrics added to RawTestInputs
+//   - holisticClassification? added to GRSResult
+//   - Domain blending: holistic data supplements physical test scores when
+//     a test was not performed or camera data is available:
+//       explosivePower: holistic.explosivePower as 20% tertiary fallback
+//       balance: holistic.symmetryScore blended at 25% weight
+//       endurance: holistic.fatigueIndex as chitimaDegScore proxy when missing
+//       cognitiveSpeed: holistic.focusScore blended at 20% weight
+//   - calculateBalanceAsymmetry() incorporates symmetryScore
+//   - processHolisticData() / classifyFromHolistic() exported for use in
+//     talent-id page and usePoseDetector hook
+//   - holisticToInputs() bridge converts camera metrics to RawTestInputs partial
+//   - Fixed operator precedence bug in headGazeX calculation (was || not ??)
 //
-// Female norms sourced from:
-//   - Published African youth female athletics data
-//   - FIFA Women's Development research
-//   - South African female youth football baseline data (closest available)
-//   - England FA Girls' talent identification programme benchmarks
+// v4 CHANGES (Gender):
+//   - gender threaded through RawTestInputs → all norm lookups
+//   - pctLower() tail fix, chitimaDegScore modifier corrected
+//   - DQ time-normalises by actual days, caps ±15%/wk, last 4 sessions
+//   - PQ re-normalises weights for untested domains
+//   - Balance uses weighted average (eyes-closed 1.5×)
+//   - Reaction: catch rate primary, timer 30% blend
+//   - Ball mastery: juggling capped 50, turns capped 15
+//   - selectDrills() returns exactly 6 drills, one per domain
+//
+// Female norms: African youth female athletics data, FIFA Women's Development
+// research, South African female youth football baseline, England FA Girls'.
 //
 // WHY SEPARATE NORMS MATTER:
 //   A 15-year-old girl running 4.2s over 20m is exceptional for her cohort.
 //   The same time for a 15-year-old boy is below average.
 //   Using male norms for female athletes produces unfairly low scores
 //   that actively discourage girls from engaging with the platform.
-//   GRS must never make this mistake.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type AgeGroup   = '6-9' | '10-12' | '13-15' | '16-18' | '18+';
@@ -26,6 +44,38 @@ export type PlayerRank = 'Student' | 'Player' | 'Skilled' | 'Attacker' | 'Star' 
 
 export interface DrillSuggestion {
   id: string; name: string; duration: string; reason: string;
+}
+
+// ── MediaPipe Holistic types ───────────────────────────────────────────────
+export interface HolisticLandmark { x: number; y: number; z: number; visibility?: number; }
+
+export interface HolisticResults {
+  poseLandmarks?:      HolisticLandmark[];
+  faceLandmarks?:      HolisticLandmark[];
+  leftHandLandmarks?:  HolisticLandmark[];
+  rightHandLandmarks?: HolisticLandmark[];
+}
+
+export interface AthleteMetrics {
+  // Biomechanics (from 33-point Pose)
+  kneeAngle:            number;  // degrees — good jump = 80–100° at takeoff
+  hipAngle:             number;  // hip extension angle
+  torsoLean:            number;  // degrees from vertical (0 = upright)
+  strideLength:         number;  // normalised 0–1 relative to frame height
+  armSwingEfficiency:   number;  // 0–1
+  // Cognitive / Fatigue (from 468-point Face Mesh)
+  expressionFatigue:    number;  // 0–1 (higher = more fatigued eyebrow/jaw tension)
+  focusScore:           number;  // 0–1 (head stability → attention proxy)
+  headGazeX:            number;  // −1 (left) to +1 (right)
+  headGazeY:            number;  // −1 (up) to +1 (down)
+  // Hands (from 21 landmarks per hand, 42 total)
+  gripStrength:         number;  // 0–1 (thumb-index pinch distance, inverted)
+  gestureType:          string;  // 'open' | 'fist' | 'point' | 'unknown'
+  // Composite derived scores (0–100)
+  overallForm:          number;
+  fatigueIndex:         number;  // 0–100 (higher = more fatigued)
+  symmetryScore:        number;  // 0–100 (higher = more bilateral symmetry)
+  explosivePower:       number;  // 0–100 derived from knee angle + jump kinematics
 }
 
 export interface RawTestInputs {
@@ -49,6 +99,8 @@ export interface RawTestInputs {
   chitimaDegScore?:    number;
   jugglingSequence?:   number;
   turnQualityScore?:   number;
+  // Optional: camera-derived biomechanics (from usePoseDetector / Holistic)
+  holisticMetrics?:    AthleteMetrics;
 }
 
 export interface TestPercentile {
@@ -83,6 +135,8 @@ export interface GRSResult {
   testsCompleted: number; warnings: string[]; errors: string[];
   // Which AI coach persona to use
   aiCoach: 'THUTO' | 'Amara';
+  // Camera-derived position classification (when holisticMetrics present)
+  holisticClassification?: { position: string; confidence: number };
 }
 
 export interface PastSession { sessionDate: string; aq: number; }
@@ -253,6 +307,11 @@ export function evaluate(inputs: RawTestInputs, pastSessions: PastSession[] = []
   // Select AI coach persona based on gender
   const aiCoach: 'THUTO' | 'Amara' = gender === 'female' ? 'Amara' : 'THUTO';
 
+  // Holistic camera classification (cross-check against PQ bestFit)
+  const holisticClassification = resolved.holisticMetrics
+    ? classifyFromHolistic(resolved.holisticMetrics)
+    : undefined;
+
   return {
     playerName: resolved.playerName,
     age: resolved.age, ageGroup, gender, position: resolved.position,
@@ -265,26 +324,43 @@ export function evaluate(inputs: RawTestInputs, pastSessions: PastSession[] = []
     verifiedBy: resolved.verifiedBy, coachVerified: resolved.coachVerified,
     testsCompleted: countTestsCompleted(resolved),
     warnings: validation.warnings, errors: validation.errors,
-    aiCoach,
+    aiCoach, holisticClassification,
   };
 }
 
-// ── Domain calculators (now gender-aware) ─────────────────────────────────
+// ── Domain calculators (gender-aware + holistic blending) ──────────────────
 function calculateDomains(inputs: RawTestInputs, ageGroup: AgeGroup, gender: Gender): DomainScores {
+  const h = inputs.holisticMetrics;
   return {
-    explosivePower: calculateJump(inputs.jumpHeightCm, ageGroup, gender),
+    explosivePower: calculateJump(inputs.jumpHeightCm, ageGroup, gender, h),
     linearSpeed:    calculateSprint(inputs.sprint20mSec, ageGroup, gender),
     balance:        calculateBalance(inputs, ageGroup, gender),
-    cognitiveSpeed: calculateReaction(inputs, ageGroup, gender),
-    endurance:      calculateEndurance(inputs, ageGroup, gender),
+    cognitiveSpeed: calculateReaction(inputs, ageGroup, gender, h),
+    endurance:      calculateEndurance(inputs, ageGroup, gender, h),
     ballMastery:    calculateBallMastery(inputs, ageGroup, gender),
   };
 }
 
-function calculateJump(heightCm: number | undefined, ag: AgeGroup, gender: Gender): TestPercentile {
-  if (heightCm === undefined) return untested();
-  const pct = percentileHigherBetter(heightCm, JUMP_NORMS[gender][ag]);
-  return { raw: heightCm, rawScore: `${heightCm}cm`, percentile: round(pct), label: pctLabel(pct), tested: true };
+function calculateJump(
+  heightCm: number | undefined,
+  ag: AgeGroup,
+  gender: Gender,
+  h?: AthleteMetrics,
+): TestPercentile {
+  if (heightCm !== undefined) {
+    let pct = percentileHigherBetter(heightCm, JUMP_NORMS[gender][ag]);
+    // Holistic blend: explosivePower supplements at 20% when camera data present
+    if (h && h.explosivePower > 0) {
+      pct = pct * 0.80 + h.explosivePower * 0.20;
+    }
+    return { raw: heightCm, rawScore: `${heightCm}cm`, percentile: round(pct), label: pctLabel(pct), tested: true };
+  }
+  // Tertiary fallback: holistic explosivePower alone when no physical jump done
+  if (h && h.explosivePower > 0) {
+    const pct = h.explosivePower;
+    return { raw: round(pct), rawScore: `${round(pct)}% holistic power`, percentile: round(pct), label: pctLabel(pct), tested: true };
+  }
+  return untested();
 }
 
 function calculateSprint(timeSec: number | undefined, ag: AgeGroup, gender: Gender): TestPercentile {
@@ -296,13 +372,30 @@ function calculateSprint(timeSec: number | undefined, ag: AgeGroup, gender: Gend
 function calculateBalance(inputs: RawTestInputs, ag: AgeGroup, gender: Gender): TestPercentile {
   const vals = [inputs.balanceRightOpen, inputs.balanceLeftOpen, inputs.balanceRightClosed, inputs.balanceLeftClosed]
     .filter((v): v is number => v !== undefined);
-  if (vals.length === 0) return untested();
+  const h = inputs.holisticMetrics;
+  if (vals.length === 0) {
+    // Holistic symmetryScore as standalone balance proxy when no physical test
+    if (h && h.symmetryScore > 0) {
+      const pct = h.symmetryScore;
+      return { raw: round(pct), rawScore: `${round(pct)}% symmetry`, percentile: round(pct), label: pctLabel(pct), tested: true };
+    }
+    return untested();
+  }
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-  const pct = percentileLowerBetter(avg, BALANCE_NORMS[gender][ag]);
+  let pct = percentileLowerBetter(avg, BALANCE_NORMS[gender][ag]);
+  // Blend holistic symmetry at 25% when available alongside physical test
+  if (h && h.symmetryScore > 0) {
+    pct = pct * 0.75 + h.symmetryScore * 0.25;
+  }
   return { raw: round(avg), rawScore: `${round(avg)} avg corrections`, percentile: round(pct), label: pctLabel(pct), tested: true };
 }
 
-function calculateReaction(inputs: RawTestInputs, ag: AgeGroup, gender: Gender): TestPercentile {
+function calculateReaction(
+  inputs: RawTestInputs,
+  ag: AgeGroup,
+  gender: Gender,
+  h?: AthleteMetrics,
+): TestPercentile {
   if (inputs.reactionCatchRate === undefined) return untested();
   const catchPct = percentileHigherBetter(inputs.reactionCatchRate, REACTION_NORMS[gender][ag]);
   let blended = catchPct;
@@ -310,15 +403,26 @@ function calculateReaction(inputs: RawTestInputs, ag: AgeGroup, gender: Gender):
     const speedPct = Math.max(5, Math.min(100, 100 - ((inputs.reactionTimeMsec - 100) / 700) * 95));
     blended = catchPct * 0.70 + speedPct * 0.30;
   }
+  // Holistic focusScore blended at 20% — head stability as cognitive proxy
+  if (h && h.focusScore > 0) {
+    blended = blended * 0.80 + (h.focusScore * 100) * 0.20;
+  }
   return { raw: inputs.reactionCatchRate, rawScore: `${inputs.reactionCatchRate}/5 catches`, percentile: round(blended), label: pctLabel(blended), tested: true };
 }
 
-function calculateEndurance(inputs: RawTestInputs, ag: AgeGroup, gender: Gender): TestPercentile {
+function calculateEndurance(
+  inputs: RawTestInputs,
+  ag: AgeGroup,
+  gender: Gender,
+  h?: AthleteMetrics,
+): TestPercentile {
   if (inputs.chitimaTotalSec === undefined) return untested();
   const timePct = percentileLowerBetter(inputs.chitimaTotalSec, CHITIMA_NORMS[gender][ag]);
   let finalPct = timePct;
-  if (inputs.chitimaDegScore !== undefined) {
-    const mod = ((50 - inputs.chitimaDegScore) / 50) * 12.5;
+  // Use explicit chitimaDegScore if provided; otherwise use holistic fatigueIndex as proxy
+  const degScore = inputs.chitimaDegScore ?? (h ? h.fatigueIndex : undefined);
+  if (degScore !== undefined) {
+    const mod = ((50 - degScore) / 50) * 12.5;
     finalPct = Math.min(100, Math.max(5, timePct + mod));
   }
   const m = Math.floor(inputs.chitimaTotalSec / 60);
@@ -411,12 +515,27 @@ function calculatePQ(domains: DomainScores): PositionProfile {
 export function calculateBalanceAsymmetry(inputs: RawTestInputs) {
   const rt = (inputs.balanceRightOpen ?? 0) + (inputs.balanceRightClosed ?? 0);
   const lt = (inputs.balanceLeftOpen  ?? 0) + (inputs.balanceLeftClosed  ?? 0);
-  if (!( inputs.balanceRightOpen !== undefined || inputs.balanceRightClosed !== undefined) ||
-      !( inputs.balanceLeftOpen  !== undefined || inputs.balanceLeftClosed  !== undefined)) return { asymmetry: null, injuryRisk: false };
+  const hasRight = inputs.balanceRightOpen !== undefined || inputs.balanceRightClosed !== undefined;
+  const hasLeft  = inputs.balanceLeftOpen  !== undefined || inputs.balanceLeftClosed  !== undefined;
+
+  // If holistic symmetryScore available but no physical balance test, derive asymmetry from it
+  if ((!hasRight || !hasLeft) && inputs.holisticMetrics?.symmetryScore !== undefined) {
+    const asymmetry = round(100 - inputs.holisticMetrics.symmetryScore);
+    return { asymmetry, injuryRisk: asymmetry > 25 };
+  }
+
+  if (!hasRight || !hasLeft) return { asymmetry: null, injuryRisk: false };
   const total = rt + lt;
   if (total === 0) return { asymmetry: 0, injuryRisk: false };
   const worse = Math.max(rt, lt); const better = Math.min(rt, lt);
-  const asymmetry = better === 0 ? 100 : round(((worse - better) / worse) * 100);
+  let asymmetry = better === 0 ? 100 : round(((worse - better) / worse) * 100);
+
+  // If holistic symmetryScore also available, blend it at 25% for extra precision
+  if (inputs.holisticMetrics?.symmetryScore !== undefined) {
+    const holisticAsym = 100 - inputs.holisticMetrics.symmetryScore;
+    asymmetry = round(asymmetry * 0.75 + holisticAsym * 0.25);
+  }
+
   return { asymmetry, injuryRisk: asymmetry > 25 };
 }
 
@@ -617,4 +736,202 @@ export function isPlausible(field: keyof typeof VALID_RANGES, value: number): bo
 export function quickAQ(inputs: Partial<RawTestInputs> & { age: number; gender: Gender }): number {
   const r = resolveJumpHeight(inputs as RawTestInputs);
   return calculateAQ(calculateDomains(r, resolveAgeGroup(r.age), inputs.gender));
+}
+
+// ── MediaPipe Holistic helper functions ────────────────────────────────────
+
+/** Angle at vertex B formed by points A–B–C (degrees). */
+export function calculateAngle(
+  a: HolisticLandmark,
+  b: HolisticLandmark,
+  c: HolisticLandmark,
+): number {
+  const ab = { x: a.x - b.x, y: a.y - b.y };
+  const cb = { x: c.x - b.x, y: c.y - b.y };
+  const dot = ab.x * cb.x + ab.y * cb.y;
+  const mag = Math.sqrt(ab.x ** 2 + ab.y ** 2) * Math.sqrt(cb.x ** 2 + cb.y ** 2);
+  if (mag === 0) return 0;
+  return (Math.acos(Math.min(1, Math.max(-1, dot / mag))) * 180) / Math.PI;
+}
+
+/** Euclidean distance between two landmarks. */
+export function calculateDistance(a: HolisticLandmark, b: HolisticLandmark): number {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
+}
+
+/**
+ * Processes a raw MediaPipe Holistic frame into structured AthleteMetrics.
+ * Covers Pose (33 pts) + Face Mesh (468 pts) + Hands (42 pts).
+ *
+ * Returns null if landmarks are missing or insufficient.
+ */
+export function processHolisticData(results: HolisticResults): AthleteMetrics | null {
+  const pose = results.poseLandmarks;
+  const face = results.faceLandmarks;
+  const lHand = results.leftHandLandmarks;
+  const rHand = results.rightHandLandmarks;
+
+  if (!pose || pose.length < 33) return null;
+
+  // ── Biomechanics from Pose ────────────────────────────────────────────────
+  // MediaPipe Pose landmark indices:
+  //  11=leftShoulder  12=rightShoulder
+  //  23=leftHip       24=rightHip
+  //  25=leftKnee      26=rightKnee
+  //  27=leftAnkle     28=rightAnkle
+  const lKneeAngle = calculateAngle(pose[23], pose[25], pose[27]);
+  const rKneeAngle = calculateAngle(pose[24], pose[26], pose[28]);
+  const kneeAngle  = (lKneeAngle + rKneeAngle) / 2;
+
+  const lHipAngle = calculateAngle(pose[11], pose[23], pose[25]);
+  const rHipAngle = calculateAngle(pose[12], pose[24], pose[26]);
+  const hipAngle  = (lHipAngle + rHipAngle) / 2;
+
+  // Torso lean: angle of shoulder-midpoint to hip-midpoint from vertical
+  const shoulderMid = { x: (pose[11].x + pose[12].x) / 2, y: (pose[11].y + pose[12].y) / 2, z: 0 };
+  const hipMid      = { x: (pose[23].x + pose[24].x) / 2, y: (pose[23].y + pose[24].y) / 2, z: 0 };
+  const torsoLean = Math.abs(Math.atan2(shoulderMid.x - hipMid.x, hipMid.y - shoulderMid.y) * (180 / Math.PI));
+
+  // Stride length: horizontal distance left-ankle to right-ankle, normalised by frame height
+  const ankleSpread = Math.abs(pose[27].x - pose[28].x);
+  const frameHeight = Math.abs(pose[0].y - ((pose[27].y + pose[28].y) / 2));
+  const strideLength = frameHeight > 0 ? Math.min(1, ankleSpread / frameHeight) : 0;
+
+  // Arm swing: shoulder-to-wrist angle asymmetry (smaller = more efficient)
+  const lWrist = pose[15]; const rWrist = pose[16];
+  const lArmAngle = lWrist ? calculateAngle(pose[11], pose[13], lWrist) : 90;
+  const rArmAngle = rWrist ? calculateAngle(pose[12], pose[14], rWrist) : 90;
+  const armAsymmetry = Math.abs(lArmAngle - rArmAngle);
+  const armSwingEfficiency = Math.max(0, Math.min(1, 1 - armAsymmetry / 90));
+
+  // ── Cognitive / Fatigue from Face Mesh ───────────────────────────────────
+  let expressionFatigue = 0.5;
+  let focusScore        = 0.5;
+  let headGazeX         = 0;
+  let headGazeY         = 0;
+
+  if (face && face.length >= 468) {
+    // Brow tension: distance between inner brows (indices 70 + 300)
+    // Smaller distance = furrowed brows = fatigue/concentration
+    const lBrow = face[70]; const rBrow = face[300];
+    const browDist = calculateDistance(lBrow, rBrow);
+    expressionFatigue = Math.max(0, Math.min(1, 1 - browDist * 4));
+
+    // Head stability: nose tip y-variance proxy — using nose tip (1) vs chin (152)
+    const noseTip = face[1]; const chin = face[152];
+    const headHeight = Math.abs(noseTip.y - chin.y);
+    focusScore = Math.max(0, Math.min(1, headHeight * 5)); // taller head = upright = focused
+
+    // Gaze: left eye (33) vs right eye (263) — fixed operator precedence bug
+    const leftEye  = face[33];
+    const rightEye = face[263];
+    headGazeX = ((leftEye?.x ?? 0) + (rightEye?.x ?? 0)) / 2 - 0.5; // −0.5→+0.5 centred
+    headGazeY = ((leftEye?.y ?? 0) + (rightEye?.y ?? 0)) / 2 - 0.5;
+  }
+
+  // ── Hands ─────────────────────────────────────────────────────────────────
+  let gripStrength = 0.5;
+  let gestureType  = 'unknown';
+
+  const hand = rHand ?? lHand;
+  if (hand && hand.length >= 21) {
+    // Grip: thumb tip (4) to index finger tip (8) — smaller = tighter grip
+    const thumbTip = hand[4]; const indexTip = hand[8];
+    const pinchDist = calculateDistance(thumbTip, indexTip);
+    gripStrength = Math.max(0, Math.min(1, 1 - pinchDist * 5));
+
+    // Simple gesture: if all fingertips below MCP joints → fist
+    const tips = [hand[4], hand[8], hand[12], hand[16], hand[20]];
+    const mcps = [hand[2], hand[5], hand[9],  hand[13], hand[17]];
+    const closedFingers = tips.filter((t, i) => t.y > mcps[i].y).length;
+    if (closedFingers >= 4)     gestureType = 'fist';
+    else if (closedFingers <= 1) gestureType = 'open';
+    else if (hand[8].y < hand[6].y && closedFingers === 3) gestureType = 'point';
+  }
+
+  // ── Composite scores ──────────────────────────────────────────────────────
+
+  // Symmetry: compares left vs right sides of body (shoulders, hips, ankles)
+  const shoulderAsym = Math.abs(pose[11].y - pose[12].y);
+  const hipAsym      = Math.abs(pose[23].y - pose[24].y);
+  const ankleAsym    = Math.abs(pose[27].y - pose[28].y);
+  const rawAsym      = (shoulderAsym + hipAsym + ankleAsym) / 3;
+  const symmetryScore = Math.round(Math.max(0, Math.min(100, (1 - rawAsym * 20) * 100)));
+
+  // Fatigue index: 0=fresh, 100=exhausted. From expressionFatigue + arm efficiency drop + torso lean
+  const fatigueIndex = Math.round(Math.min(100, expressionFatigue * 50 + (1 - armSwingEfficiency) * 30 + Math.min(20, torsoLean)));
+
+  // Explosive power: derived from knee angle at ~90° (optimal for jump takeoff)
+  const kneeOptimal = Math.max(0, 1 - Math.abs(kneeAngle - 90) / 90);
+  const explosivePower = Math.round(Math.min(100, kneeOptimal * 60 + armSwingEfficiency * 25 + (1 - torsoLean / 45) * 15));
+
+  // Overall form: weighted composite
+  const overallForm = Math.round(symmetryScore * 0.30 + (100 - fatigueIndex) * 0.25 + explosivePower * 0.25 + armSwingEfficiency * 100 * 0.20);
+
+  return {
+    kneeAngle: round(kneeAngle),
+    hipAngle:  round(hipAngle),
+    torsoLean: round(torsoLean),
+    strideLength: round(strideLength, 3),
+    armSwingEfficiency: round(armSwingEfficiency, 3),
+    expressionFatigue:  round(expressionFatigue, 3),
+    focusScore:         round(focusScore, 3),
+    headGazeX:          round(headGazeX, 3),
+    headGazeY:          round(headGazeY, 3),
+    gripStrength:        round(gripStrength, 3),
+    gestureType,
+    overallForm,
+    fatigueIndex,
+    symmetryScore,
+    explosivePower,
+  };
+}
+
+/**
+ * Maps AthleteMetrics to a position classification.
+ * Used as a cross-check against the PQ bestFit from physical tests.
+ */
+export function classifyFromHolistic(m: AthleteMetrics): { position: string; confidence: number } {
+  const scores: Record<string, number> = {
+    goalkeeper:  m.gripStrength * 35 + m.focusScore * 35 + (m.symmetryScore / 100) * 30,
+    striker:     (m.explosivePower / 100) * 40 + (m.strideLength) * 35 + m.armSwingEfficiency * 25,
+    winger:      (m.strideLength) * 45 + (m.explosivePower / 100) * 30 + m.armSwingEfficiency * 25,
+    midfielder:  m.focusScore * 40 + (m.symmetryScore / 100) * 35 + m.armSwingEfficiency * 25,
+    defender:    (m.symmetryScore / 100) * 40 + m.focusScore * 30 + m.gripStrength * 30,
+  };
+  let best = 'midfielder'; let bestScore = 0;
+  for (const [pos, score] of Object.entries(scores)) {
+    if (score > bestScore) { bestScore = score; best = pos; }
+  }
+  // Confidence = how far ahead of second-best (0–1)
+  const sorted = Object.values(scores).sort((a, b) => b - a);
+  const confidence = sorted[1] > 0 ? round(Math.min(1, (sorted[0] - sorted[1]) / sorted[0]), 2) : 1;
+  return { position: best, confidence };
+}
+
+/**
+ * Bridge: converts AthleteMetrics from camera into partial RawTestInputs.
+ * The talent-id page calls this to pre-populate fields before a session starts.
+ *
+ * Only sets fields the camera can reliably derive; physical test fields
+ * (sprint20mSec, jugglingSequence, etc.) are still entered manually.
+ */
+export function holisticToInputs(
+  metrics: AthleteMetrics,
+  partial: Partial<RawTestInputs> = {},
+): Partial<RawTestInputs> {
+  const updates: Partial<RawTestInputs> = { ...partial, holisticMetrics: metrics };
+
+  // Derive jumpHeightCm if not yet measured: explosivePower → rough height estimate
+  // (20cm = minimum plausible; 60cm = maximum from camera proxy)
+  if (!partial.jumpHeightCm && metrics.explosivePower > 20) {
+    updates.jumpHeightCm = Math.round(20 + (metrics.explosivePower / 100) * 40);
+  }
+
+  // Derive chitimaDegScore from fatigueIndex when no Chitima test yet taken
+  if (!partial.chitimaDegScore) {
+    updates.chitimaDegScore = metrics.fatigueIndex;
+  }
+
+  return updates;
 }
