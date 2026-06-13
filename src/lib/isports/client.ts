@@ -1,6 +1,8 @@
 // src/lib/isports/client.ts
 // iSports API client — lazy API key check (no module-level throw)
 
+import type { ISportsMatch, ISportsEvent, ISportsLineup, ISportsStatistics } from './types';
+
 const API_BASE = 'http://api.isportsapi.com/sport/football';
 
 function getKey(): string {
@@ -24,19 +26,19 @@ async function isportsGet<T>(path: string, revalidate: number): Promise<T> {
   return json.data;
 }
 
-export async function fetchLiveMatch(matchId: string) {
-  return isportsGet(`/livescores?match_id=${matchId}`, 5);
+export async function fetchLiveMatch(matchId: string): Promise<ISportsMatch> {
+  return isportsGet<ISportsMatch>(`/livescores?match_id=${matchId}`, 5);
 }
 
-export async function fetchMatchEvents(matchId: string, lastEventId?: string) {
+export async function fetchMatchEvents(matchId: string, lastEventId?: string): Promise<ISportsEvent[]> {
   const cmd = lastEventId ? 'new' : 'all';
-  return isportsGet(`/events?match_id=${matchId}&cmd=${cmd}`, 3);
+  return isportsGet<ISportsEvent[]>(`/events?match_id=${matchId}&cmd=${cmd}`, 3);
 }
 
-export async function fetchMatchLineups(matchId: string) {
-  return isportsGet(`/lineups?match_id=${matchId}`, 60);
+export async function fetchMatchLineups(matchId: string): Promise<ISportsLineup> {
+  return isportsGet<ISportsLineup>(`/lineups?match_id=${matchId}`, 60);
 }
 
-export async function fetchMatchStatistics(matchId: string) {
-  return isportsGet(`/statistics/match?match_id=${matchId}`, 10);
+export async function fetchMatchStatistics(matchId: string): Promise<ISportsStatistics> {
+  return isportsGet<ISportsStatistics>(`/statistics/match?match_id=${matchId}`, 10);
 }

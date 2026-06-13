@@ -167,7 +167,7 @@ export default function SessionPage() {
       {state.currentTest === 't2_sprint'  && <SprintScreen   {...screenProps} />}
       {state.currentTest === 't3_balance' && <BalanceScreen  {...screenProps} />}
       {state.currentTest === 't4_reaction'&& <ReactionScreen {...screenProps} />}
-      {state.currentTest === 't5_chitima' && <ChitimaScreen  {...screenProps} />}
+      {state.currentTest === 't5_endurance' && <ChitimaScreen  {...screenProps} />}
       {state.currentTest === 't6_ball'    && <BallScreen     {...screenProps} />}
       {state.currentTest === 'results'    && <ResultsScreen  {...screenProps} />}
     </div>
