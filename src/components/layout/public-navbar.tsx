@@ -11,16 +11,11 @@ export function PublicNavbar() {
   const { user } = useAuthStore();
 
   const links = [
-    { href: "/#sports", label: "Sports" },
-    { href: "/#features", label: "Features" },
-    { href: "/#ai", label: "AI Coach" },
     { href: "/schools", label: "Schools & Clubs" },
-    { href: "/school-curriculum", label: "FIFA Curriculum" },
-    { href: "/business-hub", label: "Business Hub" },
-    { href: "/fan-hub", label: "Fan Hub" },
-    { href: "/business-directory", label: "Org Directory" },
-    { href: "/#pricing", label: "Pricing" },
-    { href: "/#download", label: "📱 Download App" },
+    { href: "/player", label: "Player Hub" },
+    { href: "/coach", label: "Coach Hub" },
+    { href: "/scout", label: "Scout Hub" },
+    { href: "/arena", label: "The Arena" },
   ];
 
   return (
