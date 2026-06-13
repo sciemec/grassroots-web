@@ -835,7 +835,7 @@ export function ResultsScreen({ state }: TestScreenProps) {
           <div className="grid grid-cols-5 gap-1.5">
             {(['striker','winger','midfielder','defender','goalkeeper'] as const).map(pos => (
               <div key={pos} className={`rounded-xl p-2 text-center ${pos === result.pq.bestFit ? 'ring-2' : ''}`}
-                style={pos === result.pq.bestFit ? { ringColor: GRS_GREEN, background: '#eaf3de' } : { background: '#f5f5f5' }}>
+                style={pos === result.pq.bestFit ? { outline: `2px solid ${GRS_GREEN}`, background: '#eaf3de' } : { background: '#f5f5f5' }}>
                 <div className="text-sm font-black" style={{ color: pos === result.pq.bestFit ? GRS_GREEN : '#888' }}>
                   {result.pq[pos]}
                 </div>

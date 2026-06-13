@@ -12,7 +12,8 @@ import type { ShotData } from '@/lib/isports/types';
 
 export default function LiveMatchPage() {
   const params = useParams();
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const { match, events, statistics, isLoading, error, lastUpdated } = useLiveMatch(id as string);
 
   // Derive shot data from events (goals and shots have coordinates)

@@ -92,7 +92,7 @@ export function LandingSidebar() {
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === href;
-    return pathname.startsWith(href);
+    return pathname?.startsWith(href) ?? false;
   };
 
   // Get badge color based on badge text

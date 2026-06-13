@@ -20,7 +20,7 @@ export function AdminSidebar() {
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === href;
-    return pathname.startsWith(href);
+    return pathname?.startsWith(href) ?? false;
   };
 
   const handleLogout = () => {

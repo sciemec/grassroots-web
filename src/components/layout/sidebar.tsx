@@ -4,8 +4,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  Home, Target, Dumbbell, TrendingUp, IdCard, 
+import {
+  Home, Target, Dumbbell, TrendingUp, IdCard,
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Award, LogOut, Menu, X,
   BarChart3, Medal, Globe, Trophy, Calendar, Zap, Briefcase,
@@ -19,15 +19,17 @@ const FEATURES = {
   biometrics: true,
   drills: true,
   passport: true,
-  
+
   // Extended features (disabled for now)
   arena: true,        // Arena social network - ENABLED
   worldCup: true,     // World Cup feature - ENABLED
-  
+
   // Player extras (disabled for focus)
   successEngine: false,
   nutrition: false,
   trainingPlan: false,
+  fanHub: false,
+  businessHub: false,
 };
 
 interface NavItem {
@@ -118,7 +120,7 @@ export function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === href;
-    return pathname.startsWith(href);
+    return pathname?.startsWith(href) ?? false;
   };
 
   const handleLogout = () => {

@@ -60,7 +60,7 @@ export default function ScoutClassifier() {
 
         {/* CLASSIFICATION RESULT OUTPUT HUD */}
         <div style={styles.resultCard}>
-          <h3 style={styles.cardHeader} style={{color: '#3b82f6'}}>🎯 Structural Allocation Assessment</h3>
+          <h3 style={{...styles.cardHeader, color: '#3b82f6'}}>🎯 Structural Allocation Assessment</h3>
           {allocation ? (
             <div>
               <div style={styles.resultBadge}>Dominant Trait: <strong>{allocation.primaryAttribute}</strong></div>

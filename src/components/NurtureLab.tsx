@@ -83,7 +83,7 @@ export function NurtureLab() {
                     </div>
                     
                     <div className="space-y-1 mt-2">
-                      {drill.coachingPoints.slice(0, 2).map((point, i) => (
+                      {drill.coachingPoints.slice(0, 2).map((point: string, i: number) => (
                         <p key={i} className="text-xs text-zinc-400 flex items-center gap-1">
                           <CheckCircle className="h-3 w-3 text-emerald-500" />
                           {point}
