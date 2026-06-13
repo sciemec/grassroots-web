@@ -159,8 +159,8 @@ export default function CoachHubPage() {
         teamAvgForm: avgForm,
         highFatigueCount: highFatigue,
       }));
-    } catch (e) {
-      console.error("Failed to load biometric data", e);
+    } catch {
+      // silent fail — biometric data loads from mock
     }
   };
 
@@ -169,10 +169,10 @@ export default function CoachHubPage() {
     if (!token || !user) return;
     setLoadingStats(true);
     Promise.allSettled([
-      fetch(`${API}/api/v1/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
+      fetch(`${API}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
         r.json()
       ),
-      fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
+      fetch(`${API}/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then((r) =>
         r.json()
       ),
     ])
@@ -234,7 +234,7 @@ export default function CoachHubPage() {
     setLoadingAi(true);
 
     try {
-      const res = await fetch(`${API}/api/v1/ask`, {
+      const res = await fetch(`${API}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ question: userMsg.text, role: activeRole, language: "en" }),
@@ -329,7 +329,7 @@ export default function CoachHubPage() {
                 onClick={() => handleRoleSwitch(role.id)}
                 className={`w-full text-left p-3 rounded-xl flex items-center justify-between transition-all cursor-pointer border ${
                   isSelected
-                    ? "bg-[#1a5c2a] border-[#1a5c2a] text-white shadow-xs"
+                    ? "bg-[#1a5c2a] border-[#1a5c2a] text-white shadow-sm"
                     : "bg-white border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
