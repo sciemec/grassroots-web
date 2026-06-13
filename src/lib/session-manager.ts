@@ -14,6 +14,7 @@ import {
   type RawTestInputs,
   type GRSResult,
   type Position,
+  type Gender,
   type PastSession,
 } from './grs-engine';
 
@@ -43,6 +44,7 @@ export const TEST_ORDER: TestId[] = [
 export interface SessionConfig {
   playerName:    string;
   age:           number;
+  gender?:       Gender;
   position:      Position;
   sessionDate:   string;
   verifiedBy:    string;
@@ -134,7 +136,7 @@ export function getTestProgress(
   activeTests: TestId[],
 ): { current: number; total: number } {
   const tests = activeTests.filter(t => t !== 'setup' && t !== 'results');
-  const idx   = tests.indexOf(current);
+  const idx   = tests.indexOf(current as typeof tests[number]);
   return { current: idx + 1, total: tests.length };
 }
 
@@ -158,6 +160,7 @@ export function buildInputs(config: SessionConfig, partials: SessionPartials): R
   return {
     playerName:    config.playerName,
     age:           config.age,
+    gender:        config.gender ?? 'male',
     position:      config.position,
     sessionDate:   config.sessionDate,
     verifiedBy:    config.verifiedBy,

@@ -1,9 +1,10 @@
-import { ShieldCheck, MapPin, Ruler, Trophy, User } from "lucide-react";
+import { ShieldCheck, MapPin, Ruler, Trophy, User, Scale, Footprints } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { LogProfileView } from "@/components/player/LogProfileView";
 import { AdBanner } from "@/components/ui/AdBanner";
 import PotentialCard from "@/components/player/PotentialCard";
 import { RepresentationForm } from "@/components/player/RepresentationForm";
+import TacticalPitch from "@/components/TacticalPitch";
 
 interface ShowcaseClip {
   id: string;
@@ -165,10 +166,11 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
           {/* Details */}
           <div className="mx-5 mb-5 space-y-2.5">
             {[
-              { icon: MapPin,  label: "Province",       value: profile.province },
-              { icon: Trophy,  label: "Age Group",      value: profile.age_group?.toUpperCase() },
-              { icon: Ruler,   label: "Height",         value: profile.height_cm ? `${profile.height_cm} cm` : null },
-              { icon: User,    label: "Preferred Foot", value: profile.preferred_foot },
+              { icon: MapPin,      label: "Province",       value: profile.province },
+              { icon: Trophy,      label: "Age Group",      value: profile.age_group?.toUpperCase() },
+              { icon: Ruler,       label: "Height",         value: profile.height_cm ? `${profile.height_cm} cm` : null },
+              { icon: Scale,       label: "Weight",         value: profile.weight_kg ? `${profile.weight_kg} kg` : null },
+              { icon: Footprints,  label: "Preferred Foot", value: profile.preferred_foot },
             ].filter(r => r.value).map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center justify-between rounded-xl bg-[#f0b429]/5 px-4 py-2.5">
                 <div className="flex items-center gap-2">
@@ -178,6 +180,11 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
                 <span className="text-sm font-semibold capitalize text-white">{value}</span>
               </div>
             ))}
+          </div>
+
+          {/* Tactical position */}
+          <div className="mx-5 mb-5">
+            <TacticalPitch position={profile.position} />
           </div>
 
           {/* Bio */}
