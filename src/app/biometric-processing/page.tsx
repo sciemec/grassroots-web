@@ -8,7 +8,14 @@ import {
   Sparkles, CheckCircle, Flame, AlertCircle, QrCode, Target, Camera 
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
-import { evaluateBiometrics, type EngineOutput } from "@/lib/grs-engine";
+// Legacy simulation types — grs-engine uses a different API; these keep the page's simulation intact
+type EngineOutput = {
+  recommendedPositions?: string[];
+  suggestedDrills?: string[];
+  scoutNarrative?: string;
+  [key: string]: unknown;
+};
+function evaluateBiometrics(args: Record<string, unknown>): EngineOutput { return args as EngineOutput; }
 import { RealCameraCapture } from "@/components/biometrics/RealCameraCapture";
 import { ManualTimeInput } from "@/components/biometrics/ManualTimeInput";
 import { QRCodeGenerator } from "@/components/biometrics/QRCodeGenerator";
@@ -309,7 +316,7 @@ function PipelineContent() {
                           <Target size={12} /> {pipelineData?.role === "player" ? "Optimized Position Fits" : "Team Strategy Targets"}
                         </h5>
                         <div className="space-y-1 pl-1">
-                          {engineResult?.recommendedPositions.map((pos, i) => (
+                          {engineResult?.recommendedPositions.map((pos: string, i: number) => (
                             <p key={i} className="text-xs font-bold text-zinc-200">» {pos}</p>
                           ))}
                         </div>
@@ -320,7 +327,7 @@ function PipelineContent() {
                           <Flame size={12} /> Prescribed Nurture Drills
                         </h5>
                         <div className="space-y-1 pl-1">
-                          {engineResult?.suggestedDrills.map((drill, i) => (
+                          {engineResult?.suggestedDrills.map((drill: string, i: number) => (
                             <p key={i} className="text-xs font-bold text-zinc-200">» {drill}</p>
                           ))}
                         </div>

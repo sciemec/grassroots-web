@@ -242,7 +242,7 @@ export default function FootballDrillsLabPage() {
     if (coachTip || tipLoading) return;
     setTipLoading(true);
     try {
-      const gender   = localStorage.getItem("player_gender") ?? user?.gender ?? "male";
+      const gender   = localStorage.getItem("player_gender") ?? "male";
       const res = await fetch("/api/ai-coach", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -277,7 +277,7 @@ export default function FootballDrillsLabPage() {
   const completedCount    = completedDrills.filter(id => selectedData.drills.some(d => d.id === id)).length;
   const completionPct     = (completedCount / selectedData.drills.length) * 100;
   const tierCfg           = TIER_CONFIG[tierProgress?.currentTier ?? 1];
-  const gender            = localStorage.getItem("player_gender") ?? user?.gender ?? "male";
+  const gender            = localStorage.getItem("player_gender") ?? "male";
   const coachName         = gender === "female" ? "Amara" : "THUTO";
 
   return (

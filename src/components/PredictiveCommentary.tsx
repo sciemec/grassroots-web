@@ -110,7 +110,7 @@ export function PredictiveCommentary({
       const excitementVolume = excitementLevel === 'explosive' ? 1.2 : 
                                excitementLevel === 'high' ? 1.1 : 0.95;
       
-      audio.speak(commentary, 0.95, excitementVolume);
+      audio.queueCommentary(commentary);
       
       // Set intense mode for explosive predictions
       setIsIntense(excitementLevel === 'explosive');

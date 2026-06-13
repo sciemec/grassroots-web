@@ -58,7 +58,7 @@ function StarRating({ rating, onChange }: { rating: number; onChange?: (r: numbe
 }
 
 export default function ClubDetailPage() {
-  const { id }      = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>() ?? {};
   const user        = useAuthStore((s) => s.user);
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);

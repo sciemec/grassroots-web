@@ -118,7 +118,7 @@ export default function NetworkPage() {
         }
         if (sugRes.status === "fulfilled" && sugRes.value.ok) {
           const json = await sugRes.value.json();
-          setSuggested(safeArray(json.data ?? json).slice(0, 12));
+          setSuggested(safeArray<SuggestedUser>(json.data ?? json).slice(0, 12));
         }
       } catch {}
       setLoading(false);
