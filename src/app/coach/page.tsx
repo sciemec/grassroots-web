@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { getRoleConfig, getDepartmentForRole, type StaffRoleConfig } from "@/config/coaching-staff";
-import { loadKnowledgeForRole, type SessionPoint } from "@/lib/coaching-knowledge";
+import { getRoleConfig, COACHING_STAFF_ROLES, type StaffRoleConfig } from "@/config/coaching-staff";
+import { loadKnowledgeForRole } from "@/lib/coaching-knowledge";
 import { getDrillsByDepartment, getDepartmentStats, type Drill } from "@/lib/department-drills";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
@@ -62,10 +62,7 @@ interface UpcomingMatch {
 }
 
 // Get all football roles from config
-const getFootballRoles = (): StaffRoleConfig[] => {
-  const { COACHING_STAFF_ROLES } = require("@/config/coaching-staff");
-  return COACHING_STAFF_ROLES.football || [];
-};
+const getFootballRoles = (): StaffRoleConfig[] => COACHING_STAFF_ROLES.football || [];
 
 export default function CoachHubPage() {
   const user = useAuthStore((s) => s.user);
@@ -77,7 +74,6 @@ export default function CoachHubPage() {
   const [query, setQuery] = useState("");
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [loadingAi, setLoadingAi] = useState(false);
-  const [knowledge, setKnowledge] = useState<SessionPoint[]>([]);
   const [squadStats, setSquadStats] = useState<SquadStats>({
     total_players: 0,
     active_injuries: 0,
@@ -114,8 +110,8 @@ export default function CoachHubPage() {
     const rc = getRoleConfig(activeRole);
     if (!rc) return;
 
-    // Load knowledge for focus categories
-    loadKnowledgeForRole(rc.focusCategories).then(setKnowledge).catch(() => setKnowledge([]));
+    // Load knowledge for focus categories (side-effect only)
+    loadKnowledgeForRole(rc.focusCategories).catch(() => {});
 
     // Load department-specific drills
     const department = rc.department;
