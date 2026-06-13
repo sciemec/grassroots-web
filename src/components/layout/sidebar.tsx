@@ -8,7 +8,7 @@ import {
   Home, Target, Dumbbell, TrendingUp, IdCard, 
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Award, LogOut, Menu, X,
-  BarChart3, Medal, Globe, Trophy, Calendar, Zap,
+  BarChart3, Medal, Globe, Trophy, Calendar, Zap, Briefcase,
   MessageCircle, Bell, Star, UserCheck, Shield
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
