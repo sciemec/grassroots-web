@@ -2,13 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  Award, Zap, Lock, BookOpen, Activity,
-  GraduationCap, MapPin, Users, Globe, ChevronRight,
+  Award, Zap, MapPin, Users, Globe, ChevronRight,
   Radio, ArrowRight, Camera, Dumbbell, IdCard,
-  Video, Share2, Globe2, TrendingUp
+  Share2, Globe2,
 } from "lucide-react";
+import { PublicNavbar } from "@/components/layout/public-navbar";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -389,37 +388,7 @@ export default function GrassrootsSportsLanding() {
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c3d22] selection:bg-[#f0b429]/30 antialiased font-sans">
 
       {/* ── Navigation ── */}
-      <nav className="bg-[#e2f0d9] border-b-2 border-[#f0b429] px-4 sm:px-6 py-4 shadow-xs sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-[#1c3d22] p-1.5 rounded-lg text-[#f0b429] font-black text-xs">
-              GRS
-            </div>
-            <span className="text-[#1c3d22] font-black text-sm tracking-wider uppercase group-hover:text-emerald-700 transition-colors">
-              Grassroots Sports
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-2 bg-[#f0f9e8] px-4 py-1.5 rounded-xl border border-[#1c3d22]/10 shadow-3xs">
-            <GraduationCap size={16} className="text-[#1c3d22]" />
-            <div className="text-left">
-              <span className="block text-[8px] font-black uppercase tracking-widest text-emerald-800 leading-none">
-                Strategic Education Partner
-              </span>
-              <span className="text-[11px] font-black tracking-tight text-[#1c3d22] uppercase">
-                Teach For Zimbabwe
-              </span>
-            </div>
-          </div>
-
-          <Link
-            href="/login"
-            className="bg-white text-[#1c3d22] border-2 border-[#1c3d22] hover:bg-[#f0f9e8] px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-3xs"
-          >
-            Sign In
-          </Link>
-        </div>
-      </nav>
+      <PublicNavbar />
 
       {/* ── Live activity wire ── */}
       {activityWire.length > 0 && (
