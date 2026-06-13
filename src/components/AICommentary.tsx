@@ -120,7 +120,7 @@ export function AICommentary({ events, isLive }: AICommentaryProps) {
         </div>
         <div className="flex items-center gap-2">
           <VoiceSelector onVoiceChange={setSelectedVoice} currentVoice={selectedVoice} />
-          <BackgroundAudio isLive={isLive} onVolumeBoost={(boost) => console.log('Volume boosted:', boost)} />
+          <BackgroundAudio isLive={isLive} />
           <button
             onClick={() => setIsSpeaking(!isSpeaking)}
             className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-xs text-gray-700 hover:bg-gray-200 transition"
