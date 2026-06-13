@@ -10,7 +10,6 @@ import {
   Play, Eye, UserPlus, Filter,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { recordArenaView } from "@/lib/arena-video-connection";
 
 const API       = process.env.NEXT_PUBLIC_API_URL;
 const GRS_GREEN = "#1a5c2a";
@@ -170,7 +169,6 @@ export default function ArenaPage() {
 
   useEffect(() => {
     fetchPosts();
-    recordArenaView();
   }, [fetchPosts]);
 
   useEffect(() => {

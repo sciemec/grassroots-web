@@ -155,7 +155,7 @@ export default function PlayerPassportPage() {
               </button>
 
               {/* View as scout */}
-              <Link href={`/passport/${status.passport_token}`} target="_blank"
+              <Link href={`/passport/${status?.passport_token}`} target="_blank"
                 style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px 0', borderRadius:10, background:GRS_GREEN, color:'#fff', fontWeight:700, fontSize:13, textDecoration:'none' }}>
                 <ExternalLink size={14}/> View passport
               </Link>

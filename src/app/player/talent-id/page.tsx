@@ -61,6 +61,7 @@ export default function TalentIdPage() {
     const res = evaluate({
       playerName:    name || 'Player',
       age,
+      gender:        'male' as const,
       position:      pos,
       sessionDate:   new Date().toISOString().split('T')[0],
       verifiedBy:    'Self',

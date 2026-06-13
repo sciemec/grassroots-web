@@ -9,7 +9,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import BiometricScanner from "@/components/BiometricScanner";
 import { SimplifiedSidebar } from "@/components/layout/simplified-sidebar";
 // Legacy simulation types — grs-engine uses a different API; these keep the scan page intact
-type EngineOutput = { rawScore?: number; percentile?: number; tier?: string; [key: string]: unknown };
+type EngineOutput = { rawScore?: number; percentile?: number; tier?: string; scoutNarrative?: string; recommendedPositions?: string[]; suggestedDrills?: string[] };
 function evaluateBiometrics(args: Record<string, unknown>): EngineOutput { return args as EngineOutput; }
 
 /** Matches the ScanEntry shape emitted by BiometricScanner's onScanComplete callback. */
