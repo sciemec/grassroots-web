@@ -7,12 +7,12 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import {
-  User, Lock, Bell, Trash2, CheckCircle2, Eye, EyeOff, Loader2, AlertTriangle, Zap,
+  User, Lock, Bell, Trash2, CheckCircle2, Eye, EyeOff, Loader2, AlertTriangle, Zap, MessageCircle,
 } from "lucide-react";
 
 type Tab = "profile" | "security" | "notifications" | "danger";
 
-interface ProfileForm { name: string; phone: string }
+interface ProfileForm { name: string; phone: string; whatsapp_phone: string }
 interface PasswordForm { current_password: string; password: string; password_confirmation: string }
 interface NotifForm {
   email_sessions: boolean; email_achievements: boolean;
@@ -42,7 +42,7 @@ export default function SettingsPage() {
   const flash = (msg: string) => { setSaved(msg); setTimeout(() => setSaved(""), 3000); };
 
   /* ── Profile ── */
-  const profileForm = useForm<ProfileForm>({ defaultValues: { name: user?.name ?? "", phone: "" } });
+  const profileForm = useForm<ProfileForm>({ defaultValues: { name: user?.name ?? "", phone: "", whatsapp_phone: "" } });
   const saveProfile = useMutation({
     mutationFn: (d: ProfileForm) => api.patch("/profile", d),
     onSuccess: () => flash("Profile updated"),
@@ -192,6 +192,16 @@ export default function SettingsPage() {
               <div>
                 <label className={labelCls}>Phone number</label>
                 <input {...profileForm.register("phone")} className={inputCls} placeholder="+263 7…" />
+              </div>
+              <div>
+                <label className={labelCls}>
+                  <span className="flex items-center gap-1.5">
+                    <MessageCircle className="h-3.5 w-3.5 text-green-400" />
+                    WhatsApp number (for THUTO coaching messages)
+                  </span>
+                </label>
+                <input {...profileForm.register("whatsapp_phone")} className={inputCls} placeholder="e.g. 0771 234 567" type="tel" />
+                <p className="mt-1 text-xs text-muted-foreground">Enter your Econet or NetOne number to receive THUTO coaching messages on WhatsApp.</p>
               </div>
               <div>
                 <label className={labelCls}>Email address</label>
