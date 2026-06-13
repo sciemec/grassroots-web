@@ -34,6 +34,7 @@ import { queryAI } from "@/lib/ai-query";
 
 // 🔄 INTEGRATION COUPLING: Import your newly upgraded position engine models
 import { getPositionConfig, POSITION_ICON_REGISTRY } from "@/config/positions";
+import TacticalPitch from "@/components/TacticalPitch";
 
 // ── Player similarity lookup ──────────────────────────────────────────────────
 const PLAYER_SIMILARITIES: Record<string, Record<string, string[]>> = {
@@ -833,6 +834,20 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               </div>
             );
           })()}
+
+          {/* Tactical Pitch */}
+          <div className="mb-8 rounded-2xl border border-white/10 bg-card/60 p-5 backdrop-blur-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-[#f0b429]">⚽</span>
+              <h3 className="font-semibold text-[#f0b429]">My Position on the Pitch</h3>
+              {profile?.position && (
+                <span className="ml-auto rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs font-medium text-[#f0b429] border border-[#f0b429]/20">
+                  {profile.position}
+                </span>
+              )}
+            </div>
+            <TacticalPitch />
+          </div>
 
           {/* Highlight Reel */}
           <HighlightReel mode="self" playerId={user?.id ? String(user.id) : undefined} />
