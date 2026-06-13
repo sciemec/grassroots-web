@@ -7899,3 +7899,76 @@ The actual Success Engine lives at `/player/success` — these were dead routes 
 |---|---|---|
 | `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 13 June 2026
+
+### Theme — Gap 3 Audit: passport_token + gender (frontend complete, backend documented)
+
+---
+
+### AUDIT FINDINGS — DO NOT REBUILD FRONTEND
+
+Both gaps were already closed on the Next.js side:
+
+**Gender field:**
+All 5 registration pages already have the gender radio (THUTO / Amara):
+- `/register/player/page.tsx` — lines 41, 70, 110, 156, 250 ✅
+- `/register/athlete/page.tsx` ✅
+- `/register/coach/page.tsx` ✅
+- `/register/scout/page.tsx` ✅
+- `/register/fan/page.tsx` ✅
+Gender is sent to the backend as `gender: form.gender || "male"` and saved to `localStorage` as `player_gender`.
+
+**passport_token:**
+- `/register/player/page.tsx` lines 165-167 — saves `data.user.passport_token` to localStorage if returned ✅
+- `/passport/page.tsx` — reads `passport_token` + `gender` from `GET /auth/me`, keeps localStorage in sync ✅
+- `/passport/[id]/page.tsx` — fetches `GET /player/public/{token}?by=passport_token` and `GET /player/vault/{token}?by=passport_token&visibility=public` ✅
+- `/scout/pipeline/page.tsx` line 127 — builds `passportUrl` from `data.passport_token` ✅
+
+---
+
+### WHAT IS MISSING — BACKEND ONLY (bhora-ai)
+
+Full copy-paste ready Laravel code is in: **`passport-token-backend.md`** (grassroots-web root)
+
+| Item | File in bhora-ai | What to do |
+|---|---|---|
+| Migration | `database/migrations/2026_06_13_000001_add_passport_token_to_users_table.php` | Adds `passport_token VARCHAR(48) UNIQUE` + `gender VARCHAR(10)` to `users` table. Back-fills `passport_token` for all existing players. |
+| `User::$fillable` | `app/Models/User.php` | Add `'passport_token'`, `'gender'` |
+| `register()` | `app/Http/Controllers/Api/AuthController.php` | After user create: generate `Str::random(40)` passport_token for role=player. Return `passport_token` + `gender` in response. |
+| `me()` / `auth/me` | Same controller | Add `passport_token` + `gender` to the returned user object |
+| Public profile lookup | `PlayerPublicController::show()` | When `?by=passport_token` in query, lookup by `users.passport_token` instead of `users.id` |
+| Vault public lookup | Vault controller | When `?by=passport_token`, resolve UUID from `users.passport_token`, then filter by `visibility=public` |
+
+### TEST COMMANDS (run after deploying)
+
+```bash
+# 1. Register a player — response must contain passport_token
+curl -X POST https://bhora-ai.onrender.com/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"first_name":"Test","surname":"Player","name":"Test Player","gender":"female","age":18,"country":"Zimbabwe","email":"testpassport@test.com","password":"Test1234!","password_confirmation":"Test1234!","role":"player"}'
+# Expected: response.user.passport_token = 40-char string, response.user.gender = "female"
+
+# 2. Public passport fetch (replace TOKEN with value from step 1)
+curl "https://bhora-ai.onrender.com/api/v1/player/public/TOKEN?by=passport_token"
+# Expected: 200, player profile JSON
+
+# 3. Vault fetch (empty array is fine)
+curl "https://bhora-ai.onrender.com/api/v1/player/vault/TOKEN?by=passport_token&visibility=public"
+# Expected: 200, [] or array
+```
+
+---
+
+### WHAT STILL NEEDS DOING (13 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `passport_token` migration | WRITTEN — NOT YET ON RENDER | Copy `2026_06_13_000001_add_passport_token_to_users_table.php` from `passport-token-backend.md` to bhora-ai → push → auto-migrates |
+| `AuthController` changes | DOCUMENTED — NOT IN bhora-ai | Add passport_token generation in `register()` + add both fields to `register()` + `me()` responses |
+| `PlayerPublicController` | DOCUMENTED — NOT IN bhora-ai | Add `?by=passport_token` lookup branch |
+| Vault controller | DOCUMENTED — NOT IN bhora-ai | Add `?by=passport_token` + `visibility` filter for public vault access |
+| `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
