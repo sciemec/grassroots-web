@@ -8,6 +8,7 @@ import {
   Share2, Globe2,
 } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -161,20 +162,25 @@ function CoreGoals() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VideoUpload — direct R2 upload, no auth required
+// VideoUpload — R2 upload wired to player vault when logged in
 // ─────────────────────────────────────────────────────────────────────────────
 function VideoUpload() {
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const [file,   setFile]   = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [label,  setLabel]  = useState("");
+  const [savedToVault, setSavedToVault] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async () => {
     if (!file) return;
     setStatus("uploading");
+    setSavedToVault(false);
 
     try {
-      const res = await fetch("/api/upload/presigned", {
+      // Step 1 — get presigned R2 URL
+      const presignRes = await fetch("/api/upload/presigned", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -185,16 +191,38 @@ function VideoUpload() {
         }),
       });
 
-      if (!res.ok) throw new Error("Could not get upload URL");
-      const { uploadUrl } = await res.json();
+      if (!presignRes.ok) throw new Error("Could not get upload URL");
+      const { uploadUrl, publicUrl, key } = await presignRes.json();
 
-      const uploadRes = await fetch(uploadUrl, {
-        method:  "PUT",
-        body:    file,
-        headers: { "Content-Type": file.type || "video/mp4" },
-      });
+      // Step 2 — PUT file directly to R2
+      if (uploadUrl) {
+        const uploadRes = await fetch(uploadUrl, {
+          method:  "PUT",
+          body:    file,
+          headers: { "Content-Type": file.type || "video/mp4" },
+        });
+        if (!uploadRes.ok) throw new Error("Upload failed");
+      }
 
-      if (!uploadRes.ok) throw new Error("Upload failed");
+      // Step 3 — if logged in, save to player vault in PostgreSQL
+      if (user && token && key) {
+        const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+        const vaultRes = await fetch(`${API}/player/vault/upload`, {
+          method:  "POST",
+          headers: {
+            "Content-Type":  "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            r2_key:    key,
+            video_url: publicUrl,
+            tag:       label || file.name,
+            size_mb:   +(file.size / 1024 / 1024).toFixed(2),
+          }),
+        });
+        setSavedToVault(vaultRes.ok);
+      }
+
       setStatus("done");
     } catch (err) {
       console.error(err);
@@ -262,8 +290,17 @@ function VideoUpload() {
               className="w-full py-4 rounded-xl font-bold text-white text-base"
               style={{ background: GRS_GREEN }}
             >
-              Upload video
+              {user ? "Upload to my vault" : "Upload video"}
             </button>
+            {!user && (
+              <p className="text-xs text-gray-400">
+                No account?{" "}
+                <Link href="/register" className="underline" style={{ color: GRS_GREEN }}>
+                  Create one free
+                </Link>{" "}
+                to save this to your vault and share with scouts.
+              </p>
+            )}
           </div>
         )}
 
@@ -277,16 +314,36 @@ function VideoUpload() {
 
         {status === "done" && (
           <div className="py-4 space-y-3">
-            <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
-              ✓ Video uploaded to your vault
-            </div>
-            <Link
-              href="/player/profile"
-              className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
-              style={{ background: GRS_GREEN }}
-            >
-              View in your profile →
-            </Link>
+            {savedToVault ? (
+              <>
+                <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
+                  ✓ Saved to your vault
+                </div>
+                <Link
+                  href="/player/vault"
+                  className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
+                  style={{ background: GRS_GREEN }}
+                >
+                  View in vault →
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
+                  ✓ Video uploaded
+                </div>
+                <p className="text-xs text-gray-500">
+                  Create an account to save this to your vault and share with scouts.
+                </p>
+                <Link
+                  href="/register"
+                  className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
+                  style={{ background: GRS_GREEN }}
+                >
+                  Create free account →
+                </Link>
+              </>
+            )}
           </div>
         )}
 
