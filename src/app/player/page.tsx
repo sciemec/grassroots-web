@@ -105,7 +105,6 @@ const FEATURES = [
 export default function PlayerDashboardHome() {
   const router   = useRouter();
   const user     = useAuthStore((s) => s.user);
-  const token    = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s._hasHydrated);
   const [wireIndex,    setWireIndex]    = useState(0);
   const [sessionCount, setSessionCount] = useState<number | null>(null);
@@ -135,45 +134,22 @@ export default function PlayerDashboardHome() {
       }
     } catch { /* storage unavailable */ }
 
-    // Day Streak — count consecutive "done" mission days back from today
-    try {
-      const raw = localStorage.getItem("gs_goal_missions");
-      if (raw) {
-        const missions: Array<{ mission_date: string; status: string }> = JSON.parse(raw);
-        const doneDates = new Set(
-          missions.filter((m) => m.status === "done").map((m) => m.mission_date),
-        );
-        let count = 0;
-        const d = new Date();
-        d.setHours(0, 0, 0, 0);
-        while (true) {
-          const key = d.toISOString().slice(0, 10);
-          if (!doneDates.has(key)) break;
-          count++;
-          d.setDate(d.getDate() - 1);
-        }
-        setStreak(count);
-      }
-    } catch { /* storage unavailable */ }
+    // Day Streak — uses the platform's canonical check-in streak calculator
+    setStreak(getCurrentStreak());
 
-    // Sessions — fetch count from backend (falls back to null if no token)
-    if (token) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, {
-        headers: { Authorization: `Bearer ${token}` },
+    // Sessions — fetch count from backend via authenticated Axios client
+    api.get("/sessions")
+      .then((res) => {
+        const data = res.data;
+        const items: unknown[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+        setSessionCount(items.length);
       })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (!data) return;
-          const items: unknown[] = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.data)
-            ? data.data
-            : [];
-          setSessionCount(items.length);
-        })
-        .catch(() => { /* network or auth error — leave "—" */ });
-    }
-  }, [hydrated, user, token]);
+      .catch(() => { /* network or auth error — leave "—" */ });
+  }, [hydrated, user]);
 
   if (!hydrated || !user) {
     return (
