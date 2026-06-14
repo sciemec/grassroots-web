@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Zap, BookOpen, Dumbbell, Activity, Award,
   Brain, Video, TrendingUp, ShieldCheck, GraduationCap,
-  Radio, ChevronRight, Trophy, Flame, Star,
+  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -90,6 +90,13 @@ const FEATURES = [
     iconBg: "#fdf4ff", iconColor: "#a21caf",
     label: "Assessment",
     desc: "Field tests · APK session reports",
+  },
+  {
+    href: "/player/weekly-session",
+    icon: ClipboardList,
+    iconBg: "#fff7ed", iconColor: "#c2410c",
+    label: "Weekly Session",
+    desc: "6-test GRS · jump · sprint · balance · reaction · endurance · ball",
   },
 ];
 
