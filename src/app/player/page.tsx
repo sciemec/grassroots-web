@@ -138,16 +138,20 @@ export default function PlayerDashboardHome() {
     // Day Streak — uses the platform's canonical check-in streak calculator
     setStreak(getCurrentStreak());
 
-    // Sessions — fetch count from backend via authenticated Axios client
+    // Sessions + latest AQ — fetch from backend, override localStorage value if present
     api.get("/sessions")
       .then((res) => {
         const data = res.data;
-        const items: unknown[] = Array.isArray(data)
+        const items: Array<{ aq_score?: number; overall_score?: number }> = Array.isArray(data)
           ? data
           : Array.isArray(data?.data)
           ? data.data
           : [];
         setSessionCount(items.length);
+        // Pull latest AQ from the most recent session if the backend stored it
+        const latest = items[0];
+        if (latest?.aq_score     != null) setAqScore(Math.round(latest.aq_score));
+        else if (latest?.overall_score != null) setAqScore(Math.round(latest.overall_score));
       })
       .catch(() => { /* network or auth error — leave "—" */ });
   }, [hydrated, user]);
