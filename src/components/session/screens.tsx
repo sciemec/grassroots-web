@@ -26,31 +26,40 @@ const GRS_GOLD  = '#c8962a';
 // SETUP SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
-  const [playerName, setPlayerName]   = useState('');
-  const [age,        setAge]          = useState<number>(14);
-  const [position,   setPosition]     = useState<Position>('midfielder');
-  const [verifiedBy, setVerifiedBy]   = useState('');
-
-  const POSITIONS: { key: Position; label: string }[] = [
-    { key: 'striker',    label: 'Striker'    },
-    { key: 'winger',     label: 'Winger'     },
-    { key: 'midfielder', label: 'Midfielder' },
-    { key: 'defender',   label: 'Defender'   },
-    { key: 'goalkeeper', label: 'Goalkeeper' },
-  ];
+  const [playerName, setPlayerName] = useState('');
+  const [age,        setAge]        = useState<number>(14);
+  const [gender,     setGender]     = useState<'male' | 'female'>('male');
+  const [position,   setPosition]   = useState<Position>('midfielder');
+  const [verifiedBy, setVerifiedBy] = useState('');
 
   const ALL_TESTS = ['t1_jump','t2_sprint','t3_balance','t4_reaction','t5_endurance','t6_ball'] as const;
   const [selectedTests, setSelectedTests] = useState<string[]>([...ALL_TESTS]);
 
-  const TEST_NAMES: Record<string, string> = {
-    t1_jump: 'T1 Jump', t2_sprint: 'T2 Sprint', t3_balance: 'T3 Balance',
-    t4_reaction: 'T4 Reaction', t5_endurance: 'T5 Endurance', t6_ball: 'T6 Ball',
+  const TEST_META: Record<string, { label: string; icon: string; duration: string }> = {
+    t1_jump:       { label: 'Jump',      icon: '↑', duration: '5 min' },
+    t2_sprint:     { label: 'Sprint',    icon: '⚡', duration: '5 min' },
+    t3_balance:    { label: 'Balance',   icon: '⚖', duration: '6 min' },
+    t4_reaction:   { label: 'Reaction',  icon: '◎', duration: '5 min' },
+    t5_endurance:  { label: 'Endurance', icon: '♥', duration: '8 min' },
+    t6_ball:       { label: 'Ball',      icon: '●', duration: '5 min' },
   };
+
+  const POSITIONS: { key: Position; label: string; abbr: string }[] = [
+    { key: 'striker',    label: 'Striker',    abbr: 'ST' },
+    { key: 'winger',     label: 'Winger',     abbr: 'WG' },
+    { key: 'midfielder', label: 'Midfielder', abbr: 'MF' },
+    { key: 'defender',   label: 'Defender',   abbr: 'DF' },
+    { key: 'goalkeeper', label: 'Goalkeeper', abbr: 'GK' },
+  ];
 
   const toggleTest = (t: string) =>
     setSelectedTests(prev =>
       prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]
     );
+
+  const totalMins = selectedTests.reduce(
+    (sum, t) => sum + parseInt(TEST_META[t]?.duration ?? '5'), 0
+  );
 
   const canStart = playerName.trim().length > 0 && verifiedBy.trim().length > 0 && selectedTests.length > 0;
 
@@ -58,6 +67,7 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
     const config: SessionConfig = {
       playerName:    playerName.trim(),
       age,
+      gender,
       position,
       sessionDate:   new Date().toISOString().split('T')[0],
       verifiedBy:    verifiedBy.trim(),
@@ -68,107 +78,218 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
     onAdvance({});
   };
 
+  // ── Colour tokens (match ResultsScreen) ───────────────────────────────────
+  const BG     = '#111111';
+  const CARD   = '#1c1c1c';
+  const BORDER = '#2a2a2a';
+  const TEXT   = '#f0f0f0';
+  const MUTED  = '#666';
+  const GOLD   = '#c8962a';
+  const GREEN  = '#2ecc71';
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '12px 14px',
+    background: '#161616', border: `1px solid ${BORDER}`,
+    borderRadius: 10, color: TEXT, fontSize: 14,
+    outline: 'none', boxSizing: 'border-box',
+  };
+
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 10, fontWeight: 800, color: MUTED,
+    letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12,
+  };
+
   return (
-    <div className="min-h-screen bg-[#F4F2EE]">
-      {/* Hero */}
-      <div className="px-4 pt-8 pb-6" style={{ background: GRS_GREEN }}>
-        <div className="text-xs font-medium text-white/60 uppercase tracking-widest mb-1">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 120 }}>
+
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div style={{
+        padding: '36px 20px 24px',
+        borderBottom: `1px solid ${BORDER}`,
+        background: 'linear-gradient(160deg, #1a1a1a 0%, #0d0d0d 100%)',
+      }}>
+        <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 8 }}>
           GrassRoots Sports
         </div>
-        <div className="text-2xl font-black text-white">Weekly test session</div>
-        <div className="text-sm text-white/70 mt-1">
+        <div style={{ fontSize: 26, fontWeight: 900, color: TEXT, lineHeight: 1.1 }}>
+          Weekly Session
+        </div>
+        <div style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>
           {new Date().toLocaleDateString('en-ZW', { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
       </div>
 
-      <div className="px-4 py-5 space-y-5">
+      <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {/* Player details */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Player details</div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500">Player name</label>
-            <input
-              type="text"
-              value={playerName}
-              onChange={e => setPlayerName(e.target.value)}
-              placeholder="Full name"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-green-300"
-            />
+        {/* ── Player details ────────────────────────────────────────────────── */}
+        <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px 12px', borderBottom: `1px solid ${BORDER}` }}>
+            <span style={sectionLabel}>Player details</span>
           </div>
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500">Age</label>
-            <div className="flex items-center gap-3">
-              <input type="range" min={6} max={35} value={age}
-                onChange={e => setAge(+e.target.value)} className="flex-1" />
-              <span className="text-2xl font-black w-10 text-right" style={{ color: GRS_GREEN }}>{age}</span>
+            {/* Name */}
+            <div>
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6 }}>Player name</div>
+              <input
+                type="text"
+                value={playerName}
+                onChange={e => setPlayerName(e.target.value)}
+                placeholder="Full name"
+                style={inputStyle}
+              />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-500">Position</label>
-            <div className="flex flex-wrap gap-2">
-              {POSITIONS.map(p => (
-                <button key={p.key} onClick={() => setPosition(p.key)}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-                  style={position === p.key
-                    ? { background: GRS_GREEN, color: '#fff' }
-                    : { background: '#f1f1f1', color: '#555' }
-                  }>
-                  {p.label}
-                </button>
-              ))}
+            {/* Age stepper */}
+            <div>
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6 }}>Age</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={() => setAge(a => Math.max(6, a - 1))}
+                  style={{
+                    width: 40, height: 40, borderRadius: 10, border: `1px solid ${BORDER}`,
+                    background: '#161616', color: TEXT, fontSize: 20, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}
+                >−</button>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: 36, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{age}</div>
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>years old</div>
+                </div>
+                <button
+                  onClick={() => setAge(a => Math.min(35, a + 1))}
+                  style={{
+                    width: 40, height: 40, borderRadius: 10, border: `1px solid ${BORDER}`,
+                    background: '#161616', color: TEXT, fontSize: 20, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}
+                >+</button>
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500">Coach / verifier name</label>
-            <input
-              type="text"
-              value={verifiedBy}
-              onChange={e => setVerifiedBy(e.target.value)}
-              placeholder="Your name"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-green-300"
-            />
+            {/* Gender */}
+            <div>
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6 }}>Gender</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {(['male', 'female'] as const).map(g => (
+                  <button key={g} onClick={() => setGender(g)} style={{
+                    padding: '10px', borderRadius: 10, cursor: 'pointer',
+                    fontSize: 13, fontWeight: 700,
+                    border: gender === g ? `1.5px solid ${GOLD}` : `1px solid ${BORDER}`,
+                    background: gender === g ? `${GOLD}18` : '#161616',
+                    color: gender === g ? GOLD : MUTED,
+                  }}>
+                    {g === 'male' ? '♂ Male' : '♀ Female'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Position */}
+            <div>
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 8 }}>Position</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                {POSITIONS.map(p => {
+                  const active = position === p.key;
+                  return (
+                    <button key={p.key} onClick={() => setPosition(p.key)} style={{
+                      padding: '10px 4px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
+                      border: active ? `1.5px solid ${GREEN}` : `1px solid ${BORDER}`,
+                      background: active ? `${GREEN}18` : '#161616',
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: active ? GREEN : '#555' }}>
+                        {p.abbr}
+                      </div>
+                      <div style={{ fontSize: 9, color: active ? GREEN : MUTED, marginTop: 3, fontWeight: 600 }}>
+                        {p.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Coach name */}
+            <div>
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6 }}>Coach / verifier name</div>
+              <input
+                type="text"
+                value={verifiedBy}
+                onChange={e => setVerifiedBy(e.target.value)}
+                placeholder="Your name"
+                style={inputStyle}
+              />
+            </div>
+
           </div>
         </div>
 
-        {/* Test selection */}
-        <div className="bg-white rounded-2xl p-4 space-y-3">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Tests to run today</div>
-          <div className="text-xs text-gray-400">Deselect tests you cannot run today (no wall for jump, no ball, etc.)</div>
-          <div className="grid grid-cols-3 gap-2">
-            {ALL_TESTS.map(t => {
-              const active = selectedTests.includes(t);
-              return (
-                <button key={t} onClick={() => toggleTest(t)}
-                  className="py-2.5 rounded-xl text-xs font-medium border transition-all"
-                  style={active
-                    ? { background: GRS_GREEN, color: '#fff', borderColor: GRS_GREEN }
-                    : { borderColor: '#e5e5e5', color: '#888' }
-                  }>
-                  {TEST_NAMES[t]}
-                </button>
-              );
-            })}
+        {/* ── Test selection ────────────────────────────────────────────────── */}
+        <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px 12px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={sectionLabel}>Tests today</span>
+            <span style={{ fontSize: 11, color: MUTED }}>
+              {selectedTests.length}/6 · ~{totalMins} min
+            </span>
           </div>
-          <div className="text-xs text-gray-400 text-center">
-            {selectedTests.length} of 6 tests selected · ~{selectedTests.length * 7} minutes
+          <div style={{ padding: '12px 16px 16px' }}>
+            <div style={{ fontSize: 11, color: MUTED, marginBottom: 12 }}>
+              Tap to deselect any test you cannot run today.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {ALL_TESTS.map(t => {
+                const active = selectedTests.includes(t);
+                const meta   = TEST_META[t];
+                return (
+                  <button key={t} onClick={() => toggleTest(t)} style={{
+                    padding: '12px 8px', borderRadius: 12, cursor: 'pointer', textAlign: 'center',
+                    border: active ? `1.5px solid ${GREEN}44` : `1px solid ${BORDER}`,
+                    background: active ? `${GREEN}0f` : '#161616',
+                    opacity: active ? 1 : 0.45,
+                  }}>
+                    <div style={{ fontSize: 18, marginBottom: 4, color: active ? GREEN : MUTED }}>
+                      {meta.icon}
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: active ? TEXT : MUTED }}>
+                      {meta.label}
+                    </div>
+                    <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>
+                      {meta.duration}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Start button */}
+      </div>
+
+      {/* ── Sticky start button ───────────────────────────────────────────────── */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: '#0d0d0d', borderTop: `1px solid ${BORDER}`,
+        padding: '12px 16px 24px',
+      }}>
         <button
           onClick={handleStart}
           disabled={!canStart}
-          className={`w-full py-4 rounded-2xl font-black text-base ${canStart ? 'text-white' : 'text-gray-400 bg-gray-100'}`}
-          style={canStart ? { background: GRS_GREEN } : {}}>
-          {canStart ? `Start session — ${selectedTests.length} tests` : 'Fill in player details above'}
+          style={{
+            width: '100%', padding: '15px', borderRadius: 12, border: 'none',
+            cursor: canStart ? 'pointer' : 'not-allowed',
+            fontSize: 14, fontWeight: 800, letterSpacing: '0.04em',
+            background: canStart
+              ? 'linear-gradient(90deg, #1a5c2a, #2ecc71)'
+              : '#1a1a1a',
+            color: canStart ? '#fff' : '#444',
+          }}
+        >
+          {canStart
+            ? `Start session — ${selectedTests.length} test${selectedTests.length !== 1 ? 's' : ''}`
+            : 'Enter player name and coach name to begin'}
         </button>
-
       </div>
+
     </div>
   );
 }
