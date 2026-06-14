@@ -7972,3 +7972,74 @@ curl "https://bhora-ai.onrender.com/api/v1/player/vault/TOKEN?by=passport_token&
 | Vault controller | DOCUMENTED — NOT IN bhora-ai | Add `?by=passport_token` + `visibility` filter for public vault access |
 | `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 14 June 2026
+
+### Theme — GRS Session Pipeline Fix + WhatsApp → Arena Feed Integration
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. GRS Session Pipeline TypeScript Fixes ✅
+
+All 6 TypeScript errors in `src/app/player/session/page.tsx` fixed + `RestScreen.tsx` created.
+
+**`src/components/session/RestScreen.tsx`** — 60-second countdown SVG ring, shows completed test value, next test equipment + coaching tips, Start button locks until 0.
+
+| Error | Fix |
+|---|---|
+| `TS2307: Cannot find module '@/components/session/RestScreen'` | Created RestScreen.tsx |
+| `TS2322: 't5_chitima' not assignable to TestId` | `NEXT_TEST['t4_reaction']` → `'t5_endurance'` |
+| `sprint20mSec`, `reactionCatchRate`, `enduranceTotalSec`, `jugglingSequence` | Corrected all 8 wrong field names |
+
+#### 2. WhatsApp → Arena Feed Integration ✅
+
+**Commit:** `1fa40b6`
+
+**`src/app/api/whatsapp/webhook/route.ts`** — completely rewritten:
+- Text (≥3 chars, not a command) → `POST /api/v1/arena/posts/from-whatsapp` → "✅ Posted to your Arena feed!"
+- Photo/video → Twilio download → R2 presigned PUT upload → Laravel `action=media_pending` → 3-choice routing prompt (1=Arena, 2=Vault, 3=Biometric)
+- R2 uses `generatePresignedPutUrl` + `getPublicUrl` from `@/lib/r2` (no AWS SDK — Web Crypto signing)
+
+**`src/app/arena/page.tsx`** — `from_whatsapp?: boolean` in `Post` interface + green WhatsApp icon badge next to timestamp on matching posts.
+
+---
+
+### LARAVEL BACKEND NEEDED (copy-paste ready)
+
+**Migration: `2026_06_14_000001_add_whatsapp_fields_to_arena_posts_table.php`**
+```php
+Schema::table('arena_posts', function (Blueprint $table) {
+    $table->text('image_url')->nullable()->after('province');
+    $table->text('video_url')->nullable()->after('image_url');
+    $table->boolean('from_whatsapp')->default(false)->after('video_url');
+});
+```
+
+**Route (no auth — trusted webhook):**
+```php
+Route::post('/arena/posts/from-whatsapp', [ArenaFeedController::class, 'fromWhatsapp']);
+```
+
+**`ArenaFeedController::fromWhatsapp()` logic:**
+- Validate: phone (required), body (required, max 280), image_url (nullable url), video_url (nullable url)
+- Resolve user: strip digits from phone, match against `player_profiles.phone` digits → 404 if not found
+- Rate limit: max 5 posts/hour with `from_whatsapp=true` → 429
+- Insert `arena_posts` with `from_whatsapp=true`, `post_type='standard'`, like/comment counts 0
+- Return `{ post_id, user_name }`
+
+---
+
+### WHAT STILL NEEDS DOING (14 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `arena_posts` WhatsApp migration | NOT YET ON RENDER | Copy migration above to bhora-ai + push |
+| `ArenaFeedController::fromWhatsapp()` | NOT IN bhora-ai | Add method + route |
+| `passport_token` migration | NOT YET ON RENDER | See 13 June session log |
+| `AuthController` passport fields | NOT IN bhora-ai | See 13 June session log |
+| `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
