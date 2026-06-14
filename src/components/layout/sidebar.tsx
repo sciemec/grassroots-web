@@ -76,7 +76,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/arena", label: "The Arena", icon: <Globe size={18} />, roles: ["player", "athlete", "coach", "scout", "fan"], feature: "arena" },
   
   // WORLD CUP
-  { href: "/world-cup", label: "World Cup", icon: <Trophy size={18} />, roles: ["player", "athlete", "coach", "scout", "fan"], feature: "worldCup" },
+  { href: "/worldcup", label: "🏆 World Cup", icon: <Trophy size={18} />, roles: ["player", "athlete", "coach", "scout", "fan"], feature: "worldCup" },
   
   // DISABLED FEATURES (hidden when FEATURES flag is false)
   { href: "/fan-hub", label: "Fan Hub", icon: <Heart size={18} />, roles: ["fan"], feature: "fanHub" },

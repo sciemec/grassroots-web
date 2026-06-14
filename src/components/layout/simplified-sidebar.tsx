@@ -7,7 +7,7 @@ import {
   Home, Target, Dumbbell, TrendingUp, IdCard,
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Medal, BarChart3,
-  LogOut, Menu, X, FileText, Star, Briefcase
+  LogOut, Menu, X, FileText, Star, Briefcase, Trophy
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { FEATURES } from "@/config/features";
@@ -53,6 +53,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/business-hub", label: "Business Hub", icon: <Briefcase size={18} />, roles: ["player", "coach"], feature: "businessHub" },
   { href: "/analyst", label: "Analyst Hub", icon: <BarChart3 size={18} />, roles: ["analyst"], feature: "analystHub" },
   
+  // WORLD CUP
+  { href: "/worldcup", label: "🏆 World Cup", icon: <Trophy size={18} />, roles: ["player", "athlete", "coach", "scout", "fan"] },
+
   // UTILITIES
   { href: "/settings", label: "Settings", icon: <Settings size={18} />, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
 ];
