@@ -28,8 +28,30 @@ import { ResultsScreen }  from '@/components/session/screens';
 import RestScreen         from '@/components/session/RestScreen';
 import {
   createInitialState, submitSession, saveSession,
-  type SessionState, type TestId,
+  type SessionState, type TestId, type SessionPartials,
 } from '@/lib/session-manager';
+import { useSessionSubmit } from '@/hooks/useSessionSubmit';
+import { useAuthStore }     from '@/lib/auth-store';
+
+// Auto-mark ball_wizard challenge when juggling test is completed this week
+function autoMarkChallengesFromSession(partials: SessionPartials): void {
+  try {
+    const raw = localStorage.getItem('gs_weekly_challenges');
+    if (!raw) return;
+    const weekState = JSON.parse(raw) as {
+      challenges: Array<{ id: string; progress: number; completed: boolean }>;
+    };
+    let changed = false;
+    weekState.challenges = weekState.challenges.map((c) => {
+      if (c.id === 'ball_wizard' && (partials.jugglingSequence ?? 0) > 0 && !c.completed) {
+        changed = true;
+        return { ...c, progress: 100, completed: true };
+      }
+      return c;
+    });
+    if (changed) localStorage.setItem('gs_weekly_challenges', JSON.stringify(weekState));
+  } catch { /* storage unavailable */ }
+}
 
 // ── Screen types — interleaved tests and rest screens ────────────────────────
 type ScreenId =
@@ -94,6 +116,9 @@ export default function SessionPage() {
   const [state,     setState]     = useState<SessionState>(createInitialState());
   const [lastTest,  setLastTest]  = useState<string>('t1_jump'); // for rest screen
 
+  const user = useAuthStore((s) => s.user);
+  const { submit: submitGamification } = useSessionSubmit();
+
   // ── Advance to the next screen in sequence ───────────────────────────────
   const advance = useCallback((newPartials?: Record<string, unknown>) => {
     const currentIndex = SCREEN_SEQUENCE.indexOf(screen);
@@ -145,8 +170,13 @@ export default function SessionPage() {
   // ── POST result to backend when results screen loads ──────────────────────
   useEffect(() => {
     if (screen !== 'results' || !state.result || !state.config) return;
+
+    // Auto-mark weekly challenges based on what was completed this session
+    autoMarkChallengesFromSession(state.partials);
+
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     if (!token || token === 'dev-token') return;
+
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/grs-test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -162,6 +192,14 @@ export default function SessionPage() {
         partials:     state.partials,
       }),
     }).catch(() => { /* fire and forget */ });
+
+    // Gamification + drill unlock (only when the player is the one doing the session)
+    if (user?.id && state.result) {
+      submitGamification({
+        playerId: String(user.id),
+        result:   state.result,
+      }).catch(() => { /* fire and forget */ });
+    }
   }, [screen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Common props passed to every test screen ─────────────────────────────
