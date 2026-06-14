@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   MapPin, Calendar, Radio, MicOff, Volume2, RefreshCw, 
   Tv, Activity, Languages, Zap, Share2, Copy, Check,
-  TrendingUp, Clock, Youtube, MessageCircle
+  TrendingUp, Clock, Youtube, MessageCircle, Lock, Unlock,
+  Smartphone, CreditCard, Loader2, X, Star, Users, Trophy as TrophyIcon
 } from 'lucide-react';
 
 // ============================================
@@ -129,7 +130,276 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
 }
 
 // ============================================
-// DATA FETCHING (ESPN API + worldcup.json)
+// PERKS LIST (NEW)
+// ============================================
+const PERKS = [
+  { icon: Star, text: "Vote Player of the Tournament" },
+  { icon: Tv, text: "Live match updates via WhatsApp" },
+  { icon: Users, text: "Follow your favourite local players" },
+  { icon: Volume2, text: "Unlock audio commentary — $1 per match" },
+];
+
+function PerksList() {
+  return (
+    <div className="flex flex-wrap justify-center gap-3 mt-6">
+      {PERKS.map(({ icon: Icon, text }) => (
+        <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-white/5 text-white/55">
+          <Icon size={13} className="text-[#f0b429]" />
+          {text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================
+// PAYMENT MODAL (NEW)
+// ============================================
+type PayTab = "card" | "mobile";
+type MobileMethod = "ecocash" | "innbucks" | "onemoney";
+
+function PaymentModal({ 
+  match, onClose, onUnlocked, userName 
+}: { 
+  match: Match; 
+  onClose: () => void; 
+  onUnlocked: (id: string) => void; 
+  userName: string;
+}) {
+  const [tab, setTab] = useState<PayTab>("mobile");
+  const [method, setMethod] = useState<MobileMethod>("ecocash");
+  const [phone, setPhone] = useState("");
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
+  const [pollUrl, setPollUrl] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPoll = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+  useEffect(() => () => stopPoll(), []);
+
+  useEffect(() => {
+    if (!polling || !pollUrl) return;
+    stopPoll();
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payments/paynow/status?pollUrl=${encodeURIComponent(pollUrl)}`);
+        const data = await res.json() as { paid?: boolean };
+        if (data.paid) {
+          stopPoll();
+          setPolling(false);
+          onUnlocked(match.id);
+          onClose();
+        }
+      } catch { /* keep polling */ }
+    }, 3000);
+    return stopPoll;
+  }, [polling, pollUrl, match.id, onUnlocked, onClose]);
+
+  const payMobile = async () => {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 9) { setError("Enter a valid phone number."); return; }
+    setPaying(true); setError(null);
+    try {
+      const res = await fetch("/api/payments/match-donate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: match.id,
+          amount: "1",
+          phone: phone,
+          donor_name: userName || "Fan",
+        }),
+      });
+      const data = await res.json() as { poll_url?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Payment failed.");
+      if (data.poll_url) { setPollUrl(data.poll_url); setPolling(true); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally { setPaying(false); }
+  };
+
+  const payCard = async () => {
+    setPaying(true); setError(null);
+    try {
+      const res = await fetch("/api/payments/match-unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId: match.id, matchTitle: `${match.homeTeam} vs ${match.awayTeam}` }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Could not start payment.");
+      if (data.url) window.location.href = data.url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setPaying(false);
+    }
+  };
+
+  const phoneOk = phone.replace(/\D/g, "").length >= 9;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-sm rounded-2xl p-6 relative bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
+        
+        <div className="mb-5">
+          <div className="text-xs font-black uppercase tracking-widest mb-1 text-[#f0b429]">Unlock Audio Commentary</div>
+          <h3 className="text-white font-black text-base leading-tight">{match.homeTeam} vs {match.awayTeam}</h3>
+          <p className="text-xs mt-0.5 text-white/35">{match.stadium}</p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black mt-3 bg-[rgba(240,180,41,0.12)] text-[#f0b429]">
+            <Volume2 size={11} /> $1.00 — one-time unlock
+          </div>
+        </div>
+
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setTab("mobile"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "mobile" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}>
+            <Smartphone size={12} /> Mobile Money
+          </button>
+          <button onClick={() => { setTab("card"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "card" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}>
+            <CreditCard size={12} /> Card
+          </button>
+        </div>
+
+        {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
+
+        {polling ? (
+          <div className="text-center py-6">
+            <Loader2 size={28} className="animate-spin mx-auto mb-3 text-[#f0b429]" />
+            <p className="text-white text-sm font-bold">Check your phone</p>
+            <p className="text-xs mt-1 text-white/40">Approve the $1 payment on your {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"} app</p>
+            <button onClick={() => { stopPoll(); setPolling(false); }} className="mt-4 text-xs text-white/30 hover:underline">Cancel</button>
+          </div>
+        ) : tab === "mobile" ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-1.5">
+              {(["ecocash", "innbucks", "onemoney"] as MobileMethod[]).map((m) => (
+                <button key={m} onClick={() => setMethod(m)} className={`py-2 rounded-xl text-xs font-bold border transition-all ${method === m ? "bg-[rgba(240,180,41,0.15)] border-[#f0b429] text-[#f0b429]" : "bg-transparent border-white/10 text-white/40"}`}>
+                  {m === "ecocash" ? "EcoCash" : m === "innbucks" ? "InnBucks" : "OneMoney"}
+                </button>
+              ))}
+            </div>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+263 77 123 4567" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+            <button disabled={paying || !phoneOk} onClick={payMobile} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying && phoneOk ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>
+              {paying ? <><Loader2 size={14} className="animate-spin" /> Sending push...</> : <>Pay $1 via {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"}</>}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-white/40">Pay securely with Visa, Mastercard or any debit card. You will be taken to Stripe to complete the $1 payment.</p>
+            <button disabled={paying} onClick={payCard} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>
+              {paying ? <><Loader2 size={14} className="animate-spin" /> Redirecting...</> : <><CreditCard size={14} /> Pay $1 with Card</>}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// FAN REGISTRATION MODAL (NEW)
+// ============================================
+function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => void; onRegisterSuccess: () => void }) {
+  const [fullName, setFullName] = useState("");
+  const [country, setCountry] = useState("Zimbabwe");
+  const [contactType, setContactType] = useState<"phone" | "email">("phone");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const COUNTRIES = ["Zimbabwe", "South Africa", "Zambia", "Botswana", "Malawi", "Mozambique", "Namibia", "Other"];
+
+  const contactValid = contactType === "email" ? email.includes("@") : phone.replace(/\D/g, "").length >= 9;
+  const canSubmit = fullName.trim().length >= 2 && country !== "" && contactValid && password.length >= 6;
+
+  const handleRegister = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const parts = fullName.trim().split(" ");
+      const first_name = parts[0];
+      const surname = parts.slice(1).join(" ") || parts[0];
+      const body: Record<string, unknown> = {
+        first_name, surname, name: fullName.trim(), country,
+        password, password_confirmation: password, role: "fan",
+      };
+      if (contactType === "email") {
+        body.email = email.trim().toLowerCase();
+      } else {
+        body.phone = phone.trim();
+      }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("Registration failed");
+      onRegisterSuccess();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md rounded-2xl p-6 bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
+        <h2 className="text-lg font-black text-white mb-1">Join as a Fan</h2>
+        <p className="text-xs mb-5 text-white/35">Takes 30 seconds. Then unlock audio commentary for any match — $1 each.</p>
+        
+        {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
+        
+        <div className="space-y-4">
+          <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          
+          <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8">
+            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          
+          <div className="flex gap-2">
+            <button onClick={() => setContactType("phone")} className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-all ${contactType === "phone" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/50"}`}>Phone Number</button>
+            <button onClick={() => setContactType("email")} className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-all ${contactType === "email" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/50"}`}>Email</button>
+          </div>
+          
+          {contactType === "phone" ? (
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+263 77 123 4567" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          ) : (
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          )}
+          
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 6 characters)" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          
+          <button disabled={!canSubmit || isSubmitting} onClick={handleRegister} className={`w-full py-3.5 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${canSubmit && !isSubmitting ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/7 text-white/25 cursor-not-allowed"}`}>
+            {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <>Join & Access Matches</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// LOCALSTORAGE HELPERS FOR UNLOCKED MATCHES (NEW)
+// ============================================
+const UNLOCK_KEY = "wc_unlocked_matches";
+function loadUnlocked(): string[] {
+  try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? "[]"); }
+  catch { return []; }
+}
+function saveUnlocked(ids: string[]) {
+  localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
+}
+
+// ============================================
+// DATA FETCHING (ESPN API + worldcup.json) - YOUR EXISTING CODE
 // ============================================
 async function fetchLiveMatches(): Promise<Match[]> {
   try {
@@ -153,8 +423,6 @@ async function fetchLiveMatches(): Promise<Match[]> {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         stadium: event.competitions[0].venue?.fullName || 'TBD',
         city: event.competitions[0].venue?.city || 'TBD',
-        
-        // Dynamic Sponsor Fallbacks (Replace with database lookups if available)
         pitchSponsorName: "Grassroots Partner",
         pitchLogoLeftUrl: null,
         pitchLogoRightUrl: null,
@@ -172,10 +440,7 @@ async function fetchScheduledMatches(): Promise<Match[]> {
     if (!res.ok) throw new Error('worldcup.json error');
     const data = await res.json();
     if (!data.matches) return [];
-    
-    // Isolate fixtures scheduled strictly for the current day
     const today = new Date().toISOString().split('T')[0];
-    
     return data.matches
       .filter((m: any) => m.date === today)
       .map((m: any) => ({
@@ -201,7 +466,7 @@ async function fetchScheduledMatches(): Promise<Match[]> {
 }
 
 // ============================================
-// PLATINUM 2D PITCH WITH INTEGRATED SPONSORS
+// 2D FOOTBALL PITCH (YOUR EXISTING CODE)
 // ============================================
 interface FootballPitchProps {
   ballPosition?: { x: number; y: number };
@@ -222,7 +487,6 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 1. Grass Base Gradient
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, '#1a5c2a');
     grad.addColorStop(0.5, '#0e4a1e');
@@ -230,13 +494,11 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Mowed Grass Strips
     ctx.fillStyle = '#0a3d16';
     for (let i = 0; i < width; i += 40) ctx.fillRect(i, 0, 20, height);
     ctx.fillStyle = '#1a5c2a';
     for (let i = 20; i < width; i += 40) ctx.fillRect(i, 0, 20, height);
 
-    // 3. Technical Markings
     ctx.shadowBlur = 0;
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';
     ctx.lineWidth = 3;
@@ -251,7 +513,6 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     ctx.strokeRect(40, height / 2 - 90, 90, 180);
     ctx.strokeRect(width - 130, height / 2 - 90, 90, 180);
 
-    // 4. Goals
     ctx.fillStyle = '#ddd';
     ctx.fillRect(25, height / 2 - 40, 15, 80);
     ctx.fillStyle = '#aaa';
@@ -259,7 +520,6 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     ctx.fillRect(width - 40, height / 2 - 40, 15, 80);
     ctx.fillRect(width - 25, height / 2 - 42, 3, 84);
 
-    // 5. Center Shadow Accent
     ctx.shadowBlur = 8;
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.beginPath();
@@ -268,7 +528,6 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // 6. Dynamic Watermarks (Flanking Center Circle)
     const drawWatermarkImage = (url: string, isLeft: boolean) => {
       const img = new Image();
       img.src = url;
@@ -285,7 +544,6 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     if (pitchLogoLeftUrl) drawWatermarkImage(pitchLogoLeftUrl, true);
     if (pitchLogoRightUrl) drawWatermarkImage(pitchLogoRightUrl, false);
 
-    // 7. Shot Heatmap Rendering
     for (const shot of shots) {
       const x = 40 + (shot.x / 100) * (width - 80);
       const y = 40 + (shot.y / 100) * (height - 80);
@@ -305,7 +563,6 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
       ctx.fill();
     }
 
-    // 8. Ball Object
     if (ballPosition) {
       const x = 40 + (ballPosition.x / 100) * (width - 80);
       const y = 40 + (ballPosition.y / 100) * (height - 80);
@@ -324,7 +581,6 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
       ctx.shadowBlur = 0;
     }
 
-    // 9. Core Branding Layer
     ctx.font = 'bold 24px "Inter", system-ui';
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.textAlign = 'center';
@@ -338,17 +594,12 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
 }
 
 // ============================================
-// MATCH ODDS (KEPT - Right Column)
+// MATCH ODDS (YOUR EXISTING CODE)
 // ============================================
 function MatchOdds({ match }: { match: Match | null }) {
   if (!match || match.status !== 'scheduled') return null;
   
-  // Simulated odds - replace with real API
-  const odds = {
-    home: 2.10,
-    draw: 3.20,
-    away: 2.15
-  };
+  const odds = { home: 2.10, draw: 3.20, away: 2.15 };
   
   return (
     <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
@@ -364,26 +615,21 @@ function MatchOdds({ match }: { match: Match | null }) {
 }
 
 // ============================================
-// NEW FEATURE 1: SHARE BUTTONS (Right Column)
+// SHARE BUTTONS (YOUR EXISTING CODE)
 // ============================================
 function ShareButtons({ match }: { match: Match | null }) {
   const [copied, setCopied] = useState(false);
-  
   if (!match) return null;
-  
   const shareUrl = `${window.location.origin}/world-cup?match=${match.id}`;
   const shareText = `🏆 World Cup 2026: ${match.homeTeam} vs ${match.awayTeam} - Live on GrassRoots Sports!`;
-  
   const copyLink = async () => {
     await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  
   const shareWhatsApp = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
   };
-  
   return (
     <div className="flex gap-2">
       <button onClick={copyLink} className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">
@@ -398,7 +644,7 @@ function ShareButtons({ match }: { match: Match | null }) {
 }
 
 // ============================================
-// NEW FEATURE 2: HIGHLIGHTS MODAL
+// HIGHLIGHTS MODAL (YOUR EXISTING CODE)
 // ============================================
 interface Highlight {
   id: string;
@@ -414,7 +660,6 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
 
   useEffect(() => {
     if (!match) return;
-    
     const fetchHighlights = async () => {
       setLoading(true);
       try {
@@ -435,7 +680,6 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
         setLoading(false);
       }
     };
-    
     fetchHighlights();
   }, [match]);
 
@@ -448,15 +692,10 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
           <h3 className="font-bold flex items-center gap-2"><Youtube size={18} className="text-red-500" /> Match Highlights</h3>
           <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
         </div>
-        
         <div className="p-4 overflow-y-auto max-h-[70vh]">
           {selectedVideo ? (
             <div>
-              <iframe 
-                src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1`}
-                className="w-full aspect-video rounded-lg"
-                allowFullScreen
-              />
+              <iframe src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1`} className="w-full aspect-video rounded-lg" allowFullScreen />
               <button onClick={() => setSelectedVideo(null)} className="mt-3 text-sm text-[#1a5c2a] hover:underline">← Back to list</button>
             </div>
           ) : loading ? (
@@ -468,10 +707,7 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
               {highlights.map(h => (
                 <div key={h.id} className="flex gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer" onClick={() => setSelectedVideo(h.id)}>
                   <img src={h.thumbnail} alt={h.title} className="w-32 h-20 rounded object-cover" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium line-clamp-2">{h.title}</p>
-                    <p className="text-[10px] text-gray-400 mt-1">Click to watch ▶</p>
-                  </div>
+                  <div className="flex-1"><p className="text-sm font-medium line-clamp-2">{h.title}</p><p className="text-[10px] text-gray-400 mt-1">Click to watch ▶</p></div>
                 </div>
               ))}
             </div>
@@ -483,7 +719,7 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
 }
 
 // ============================================
-// NEW FEATURE 3: MATCH TIMELINE (Under 2D Pitch)
+// MATCH TIMELINE (YOUR EXISTING CODE)
 // ============================================
 interface TimelineEvent {
   id: string;
@@ -499,20 +735,16 @@ function MatchTimeline({ match, ballPosition }: { match: Match | null; ballPosit
   const [highlightedEvent, setHighlightedEvent] = useState<string | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Simulated events - replace with real API data
   useEffect(() => {
     if (!match) return;
-    
     const mockEvents: TimelineEvent[] = [
       { id: '1', minute: 23, type: 'goal', team: 'away', player: 'Neymar', description: 'Goal! Brazil takes the lead' },
       { id: '2', minute: 45, type: 'yellow_card', team: 'home', player: 'Musona', description: 'Yellow card for late tackle' },
       { id: '3', minute: 56, type: 'goal', team: 'away', player: 'Vinicius', description: 'Goal! Brazil doubles the lead' },
     ];
-    
     setEvents(mockEvents);
   }, [match]);
 
-  // Highlight event when ball position changes (sync)
   useEffect(() => {
     if (ballPosition && events.length > 0) {
       const fakeMinute = Math.floor((ballPosition.x / 100) * 90);
@@ -520,9 +752,7 @@ function MatchTimeline({ match, ballPosition }: { match: Match | null; ballPosit
       if (nearestEvent && highlightedEvent !== nearestEvent.id) {
         setHighlightedEvent(nearestEvent.id);
         const element = document.getElementById(`timeline-event-${nearestEvent.id}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
   }, [ballPosition, events]);
@@ -550,67 +780,39 @@ function MatchTimeline({ match, ballPosition }: { match: Match | null; ballPosit
   return (
     <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200 mt-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-          <Clock size={14} className="text-[#1a5c2a]" /> Match Timeline
-          <span className="text-[9px] font-normal text-gray-400">(syncs with live action)</span>
-        </h3>
-        {match.status === 'live' && (
-          <div className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-[9px] text-red-500 font-medium">LIVE</span>
-          </div>
-        )}
+        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Clock size={14} className="text-[#1a5c2a]" /> Match Timeline</h3>
+        {match.status === 'live' && <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /><span className="text-[9px] text-red-500 font-medium">LIVE</span></div>}
       </div>
-      
       <div className="relative">
         <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
-        
         <div className="space-y-3 max-h-48 overflow-y-auto pr-2" ref={timelineRef}>
           {events.map((event) => (
-            <div 
-              key={event.id}
-              id={`timeline-event-${event.id}`}
-              className={`flex items-start gap-3 p-2 rounded-lg transition-all duration-300 ${
-                highlightedEvent === event.id 
-                  ? 'bg-[#f0b429]/20 border-l-4 border-[#f0b429] animate-pulse' 
-                  : 'hover:bg-gray-50'
-              }`}
-            >
+            <div key={event.id} id={`timeline-event-${event.id}`} className={`flex items-start gap-3 p-2 rounded-lg transition-all duration-300 ${highlightedEvent === event.id ? 'bg-[#f0b429]/20 border-l-4 border-[#f0b429] animate-pulse' : 'hover:bg-gray-50'}`}>
               <div className="relative z-10 w-7 h-7 rounded-full bg-white border-2 flex items-center justify-center text-sm shrink-0" style={{ borderColor: highlightedEvent === event.id ? '#f0b429' : '#e5e7eb' }}>
                 <span className="text-xs">{getEventIcon(event.type)}</span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-gray-700">{event.minute}'</span>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${getEventColor(event.type)}`}>
-                    {event.type.replace('_', ' ').toUpperCase()}
-                  </span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${getEventColor(event.type)}`}>{event.type.replace('_', ' ').toUpperCase()}</span>
                   <span className="text-xs text-gray-600">{event.description}</span>
                 </div>
                 <p className="text-[9px] text-gray-400 mt-0.5">{event.player}</p>
               </div>
-              {highlightedEvent === event.id && (
-                <div className="animate-pulse text-[#f0b429] text-[10px] shrink-0">▶ NOW</div>
-              )}
+              {highlightedEvent === event.id && <div className="animate-pulse text-[#f0b429] text-[10px] shrink-0">▶ NOW</div>}
             </div>
           ))}
         </div>
       </div>
-      
-      {match.status === 'live' && ballPosition && (
-        <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[9px] text-gray-400">
-          <span>⚡ Synced with ball tracking</span>
-          <span>🎙️ Commentary linked</span>
-        </div>
-      )}
+      {match.status === 'live' && ballPosition && <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[9px] text-gray-400"><span>⚡ Synced with ball tracking</span><span>🎙️ Commentary linked</span></div>}
     </div>
   );
 }
 
 // ============================================
-// AI COMMENTARY PIPELINE
+// AI COMMENTARY PIPELINE (YOUR EXISTING CODE - MODIFIED TO CHECK UNLOCK STATUS)
 // ============================================
-function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
+function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | null; isUnlocked: boolean }) {
   const [isSpeaking, setIsSpeaking] = useState(true);
   const [selectedLang, setSelectedLang] = useState<'en' | 'shona' | 'ndebele' | 'zulu' | 'tswana'>('en');
   const [currentCommentary, setCurrentCommentary] = useState('Select a match, then trigger simulator options for local slang telemetry analytics.');
@@ -647,7 +849,6 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
       if (data.success) {
         const cleanedText = data.script.replace(/\[.*?\]/g, "").trim();
         setCurrentCommentary(cleanedText);
-
         if (isSpeaking && data.audio) {
           const audio = new Audio(data.audio);
           currentAudioRef.current = audio;
@@ -667,6 +868,16 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
     }
   }, [selectedMatch, selectedLang]);
 
+  if (!isUnlocked) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-200 text-center">
+        <Lock size={32} className="mx-auto text-gray-400 mb-3" />
+        <h3 className="text-lg font-bold text-gray-900 mb-2">Audio Commentary Locked</h3>
+        <p className="text-sm text-gray-500 mb-4">Unlock live AI commentary for this match for only $1</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200 space-y-4">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
@@ -674,32 +885,18 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           <h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">AI Live Commentary</h3>
         </div>
-        
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
             <Languages size={12} className="text-[#1a5c2a]" /> Dialect:
           </div>
           <div className="flex gap-1 bg-gray-100 p-0.5 rounded-xl border border-gray-200">
             {dialects.map((d) => (
-              <button
-                key={d.code}
-                onClick={() => setSelectedLang(d.code as 'en' | 'shona' | 'ndebele' | 'zulu' | 'tswana')}
-                className={`px-2 py-1 text-[10px] font-extrabold rounded-lg transition-all flex items-center gap-1 ${
-                  selectedLang === d.code ? 'bg-[#1a5c2a] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <span>{d.flag}</span>
-                <span className="hidden md:inline">{d.label}</span>
+              <button key={d.code} onClick={() => setSelectedLang(d.code as any)} className={`px-2 py-1 text-[10px] font-extrabold rounded-lg transition-all flex items-center gap-1 ${selectedLang === d.code ? 'bg-[#1a5c2a] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+                <span>{d.flag}</span><span className="hidden md:inline">{d.label}</span>
               </button>
             ))}
           </div>
-
-          <button 
-            onClick={() => setIsSpeaking(!isSpeaking)} 
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition font-bold ${
-              isSpeaking ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-700'
-            }`}
-          >
+          <button onClick={() => setIsSpeaking(!isSpeaking)} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition font-bold ${isSpeaking ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-700'}`}>
             {isSpeaking ? <Volume2 size={12} className="animate-bounce" /> : <MicOff size={12} />}
             {isSpeaking ? "AUDIO ON" : "MUTED"}
           </button>
@@ -707,9 +904,7 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
       </div>
 
       <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2">
-        <div className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1">
-          <Zap size={10} className="text-[#f0b429]" /> Trigger Sound & Slang Simulation Board:
-        </div>
+        <div className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1"><Zap size={10} className="text-[#f0b429]" /> Trigger Sound & Slang Simulation Board:</div>
         <div className="flex flex-wrap gap-1.5">
           <button onClick={() => processAndPlayLiveSlang("GOAL", "The Striker")} disabled={isTranslating} className="bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">⚽ SCREAM GOAL!</button>
           <button onClick={() => processAndPlayLiveSlang("DRIBBLE", "The Captain")} disabled={isTranslating} className="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">🕺 Hype Dribble Skill</button>
@@ -719,13 +914,9 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
 
       <div className="bg-gray-900 text-green-400 rounded-xl p-4 h-28 overflow-y-auto border border-gray-800 flex items-center font-mono relative">
         {isTranslating ? (
-          <div className="flex items-center gap-2 text-xs text-yellow-400 font-semibold italic mx-auto">
-            <RefreshCw size={14} className="animate-spin" /> DeepSeek V3 compiling audio matrix...
-          </div>
+          <div className="flex items-center gap-2 text-xs text-yellow-400 font-semibold italic mx-auto"><RefreshCw size={14} className="animate-spin" /> DeepSeek V3 compiling audio matrix...</div>
         ) : (
-          <p className="text-sm italic leading-relaxed text-gray-100 w-full pl-2 border-l-2 border-[#f0b429]">
-            "{currentCommentary}"
-          </p>
+          <p className="text-sm italic leading-relaxed text-gray-100 w-full pl-2 border-l-2 border-[#f0b429]">"{currentCommentary}"</p>
         )}
       </div>
     </div>
@@ -733,9 +924,15 @@ function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
 }
 
 // ============================================
-// NATIVE LIST CARD COMPONENT
+// NATIVE LIST CARD COMPONENT (YOUR EXISTING CODE - ADDED UNLOCK BUTTON)
 // ============================================
-function MatchCard({ match, isSelected, onClick }: { match: Match; isSelected: boolean; onClick: () => void }) {
+function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: { 
+  match: Match; 
+  isSelected: boolean; 
+  onClick: () => void; 
+  isUnlocked: boolean;
+  onUnlockClick: (match: Match) => void;
+}) {
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
   
@@ -767,6 +964,23 @@ function MatchCard({ match, isSelected, onClick }: { match: Match; isSelected: b
         </div>
       </div>
       {isLive && <div className="mt-2 text-[11px] text-yellow-500 font-mono">{match.minute} • Live now</div>}
+      
+      {/* Unlock badge for live matches not unlocked */}
+      {isLive && !isUnlocked && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onUnlockClick(match); }}
+            className="text-xs text-[#1a5c2a] font-bold flex items-center gap-1"
+          >
+            <Lock size={10} /> Unlock Audio ($1)
+          </button>
+        </div>
+      )}
+      {isLive && isUnlocked && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <span className="text-xs text-green-600 font-bold flex items-center gap-1"><Unlock size={10} /> Audio Unlocked</span>
+        </div>
+      )}
     </button>
   );
 }
@@ -782,7 +996,29 @@ export default function WorldCupPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
   const [showHighlightsModal, setShowHighlightsModal] = useState(false);
+  const [unlockedMatches, setUnlockedMatches] = useState<string[]>([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPayMatch, setSelectedPayMatch] = useState<Match | null>(null);
+  const [showFanRegister, setShowFanRegister] = useState(false);
   const hasSetInitial = useRef(false);
+
+  // Load unlocked matches from localStorage
+  useEffect(() => {
+    setUnlockedMatches(loadUnlocked());
+  }, []);
+
+  const handleUnlockMatch = (match: Match) => {
+    setSelectedPayMatch(match);
+    setShowPaymentModal(true);
+  };
+
+  const onPaymentSuccess = (matchId: string) => {
+    const newUnlocked = [...unlockedMatches, matchId];
+    setUnlockedMatches(newUnlocked);
+    saveUnlocked(newUnlocked);
+  };
+
+  const isMatchUnlocked = (matchId: string) => unlockedMatches.includes(matchId);
 
   const loadData = async () => {
     try {
@@ -838,6 +1074,7 @@ export default function WorldCupPage() {
               <p className="text-white/80 text-sm">USA · Canada · Mexico | 11 June – 19 July 2026</p>
             </div>
             <div className="flex items-center gap-4">
+              <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">Join as Fan</button>
               {liveMatchesCount > 0 && (
                 <div className="bg-red-500/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1">
                   <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
@@ -853,6 +1090,11 @@ export default function WorldCupPage() {
         </div>
       </div>
 
+      {/* PERKS LIST (NEW) */}
+      <div className="max-w-[1400px] mx-auto px-4 pt-4">
+        <PerksList />
+      </div>
+
       {/* CORE 3-COLUMN LAYERS GRID */}
       <div className="max-w-[1400px] mx-auto px-4 py-6">
         {error ? (
@@ -865,17 +1107,14 @@ export default function WorldCupPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            {/* === LEFT COLUMN: SCHEDULE & BRONZE DISPLAY (3/12 Space) === */}
+            {/* LEFT COLUMN: SCHEDULE & BRONZE DISPLAY */}
             <div className="lg:col-span-3 space-y-4">
               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                 <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
                   <Calendar size={14} /> Today's Schedule
                 </h2>
-                
                 {matches.length === 0 ? (
-                  <p className="text-xs text-gray-500 italic py-4 text-center">
-                    No world cup fixtures scheduled for today.
-                  </p>
+                  <p className="text-xs text-gray-500 italic py-4 text-center">No world cup fixtures scheduled for today.</p>
                 ) : (
                   <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
                     {matches.map(match => (
@@ -884,16 +1123,17 @@ export default function WorldCupPage() {
                         match={match} 
                         isSelected={selectedMatch?.id === match.id} 
                         onClick={() => setSelectedMatch(match)} 
+                        isUnlocked={isMatchUnlocked(match.id)}
+                        onUnlockClick={handleUnlockMatch}
                       />
                     ))}
                   </div>
                 )}
               </div>
-
               <AdBanner tier="BRONZE" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
             </div>
 
-            {/* === CENTER COLUMN: APPLICATION ENGINE METRICS (6/12 Space) === */}
+            {/* CENTER COLUMN: APPLICATION ENGINE METRICS */}
             <div className="lg:col-span-6 space-y-6">
               {selectedMatch ? (
                 <>
@@ -939,11 +1179,11 @@ export default function WorldCupPage() {
                     />
                   </div>
 
-                  {/* === NEW: MATCH TIMELINE (UNDER PITCH) === */}
+                  {/* MATCH TIMELINE (UNDER PITCH) */}
                   <MatchTimeline match={selectedMatch} ballPosition={ballPosition} />
 
-                  {/* COMMENTARY PIPELINE */}
-                  <AICommentary selectedMatch={selectedMatch} />
+                  {/* COMMENTARY PIPELINE (NOW PAYWALLED) */}
+                  <AICommentary selectedMatch={selectedMatch} isUnlocked={isMatchUnlocked(selectedMatch.id)} />
                 </>
               ) : (
                 <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">
@@ -952,23 +1192,14 @@ export default function WorldCupPage() {
               )}
             </div>
 
-            {/* === RIGHT COLUMN: GOLD, SILVER, ODDS, SHARE, HIGHLIGHTS === */}
+            {/* RIGHT COLUMN: GOLD, SILVER, ODDS, SHARE, HIGHLIGHTS */}
             <div className="lg:col-span-3 space-y-4">
               <AdBanner tier="GOLD" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
               <AdBanner tier="SILVER" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
-              
-              {/* KEPT: Match Odds */}
               <MatchOdds match={selectedMatch} />
-              
-              {/* NEW: Share Buttons */}
               <ShareButtons match={selectedMatch} />
-              
-              {/* NEW: Watch Highlights Button */}
               {selectedMatch?.status === 'finished' && (
-                <button 
-                  onClick={() => setShowHighlightsModal(true)}
-                  className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2"
-                >
+                <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
                   <Youtube size={16} /> Watch Match Highlights
                 </button>
               )}
@@ -978,9 +1209,29 @@ export default function WorldCupPage() {
         )}
       </div>
 
-      {/* NEW: Highlights Modal */}
+      {/* HIGHLIGHTS MODAL */}
       {showHighlightsModal && selectedMatch && (
         <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />
+      )}
+
+      {/* PAYMENT MODAL */}
+      {showPaymentModal && selectedPayMatch && (
+        <PaymentModal
+          match={selectedPayMatch}
+          onClose={() => setShowPaymentModal(false)}
+          onUnlocked={onPaymentSuccess}
+          userName={""}
+        />
+      )}
+
+      {/* FAN REGISTRATION MODAL */}
+      {showFanRegister && (
+        <FanRegistrationModal 
+          onClose={() => setShowFanRegister(false)}
+          onRegisterSuccess={() => {
+            window.location.href = "/login?registered=1";
+          }}
+        />
       )}
     </div>
   );
