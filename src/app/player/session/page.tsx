@@ -147,7 +147,7 @@ export default function SessionPage() {
     if (screen !== 'results' || !state.result || !state.config) return;
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     if (!token || token === 'dev-token') return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/grs-test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
