@@ -10,6 +10,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   InstructionCard, MeasurementInput, CounterInput,
   QualityRating, NavBar, SessionTimer,
@@ -759,6 +760,7 @@ export function BallScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 // RESULTS SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 export function ResultsScreen({ state }: TestScreenProps) {
+  const router = useRouter();
   const result = state.result;
   if (!result) return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -890,14 +892,25 @@ export function ResultsScreen({ state }: TestScreenProps) {
 
         {/* Actions */}
         <div className="space-y-2 pb-6">
-          <button className="w-full py-4 rounded-xl font-bold text-white text-sm"
+          <button
+            onClick={() => router.push('/player/passport')}
+            className="w-full py-4 rounded-xl font-bold text-white text-sm"
             style={{ background: GRS_GREEN }}>
             Generate Talent Passport
           </button>
-          <button className="w-full py-3 rounded-xl font-medium text-sm border border-gray-200 text-gray-600">
+          <button
+            onClick={() => {
+              const text = encodeURIComponent(
+                `🏆 ${result.playerName} scored AQ ${result.aq} (${result.tier}) on the GRS Weekly Test!\n\nView their Talent Passport: grassrootssports.live/player/passport`
+              );
+              window.open(`https://wa.me/?text=${text}`, '_blank');
+            }}
+            className="w-full py-3 rounded-xl font-medium text-sm border border-gray-200 text-gray-600">
             Share player card via WhatsApp
           </button>
-          <button className="w-full py-3 rounded-xl font-medium text-sm border border-gray-200 text-gray-600">
+          <button
+            onClick={() => { window.location.href = '/player/session'; }}
+            className="w-full py-3 rounded-xl font-medium text-sm border border-gray-200 text-gray-600">
             Test another player
           </button>
         </div>
