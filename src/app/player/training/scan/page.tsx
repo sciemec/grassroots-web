@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Camera, Upload, AlertTriangle, ShieldCheck, Activity, RefreshCw } from "lucide-react";
+import { ArrowLeft, Camera, Upload, ShieldCheck, Activity, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 export default function TrainingScanPage() {
   const [trackingPhase, setTrackingPhase] = useState<"idle" | "tracking" | "analyzing" | "ready">("idle");
   const [framesCounted, setFramesCounted] = useState(0);
-  const [metricsData, setMetricsData] = useState<{ formScore: number; structuralSway: string } | null>(null);
+  const [metricsData, setMetricsData] = useState<{ feedback: string } | null>(null);
 
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
@@ -104,17 +104,38 @@ export default function TrainingScanPage() {
     ctx.stroke();
   }
 
-  function evaluateBiomechanicalTelemetry() {
+  function captureCurrentFrame(): string | null {
+    const video = videoElementRef.current;
+    if (!video || !video.videoWidth) return null;
+    const tmp = document.createElement('canvas');
+    tmp.width = video.videoWidth;
+    tmp.height = video.videoHeight;
+    const ctx = tmp.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0);
+    return tmp.toDataURL('image/jpeg', 0.6).split(',')[1];
+  }
+
+  async function evaluateBiomechanicalTelemetry() {
+    const base64 = captureCurrentFrame();
     shutDownScannerStreams();
     setTrackingPhase("analyzing");
 
-    setTimeout(() => {
-      setMetricsData({
-        formScore: Math.floor(82 + Math.random() * 14),
-        structuralSway: "Optimal structural distribution. Symmetry variation holds at a safe 3.8% tier threshold."
+    try {
+      const res = await fetch('/api/vision-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: base64,
+          context: 'Player performing a posture and movement assessment. Analyse their body position, balance, and athletic stance.',
+        }),
       });
-      setTrackingPhase("ready");
-    }, 1000);
+      const data = await res.json();
+      setMetricsData({ feedback: data.feedback });
+    } catch {
+      setMetricsData({ feedback: 'Could not reach AI coach. Ask your coach to review your form in person.' });
+    }
+    setTrackingPhase("ready");
   }
 
   return (
@@ -134,8 +155,8 @@ export default function TrainingScanPage() {
       <main className="max-w-3xl mx-auto px-4 mt-6 space-y-6">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="mb-4">
-            <h2 className="text-sm font-bold text-gray-800">Biomechanical Performance Metric Scan</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Optimized telemetry capture interface bypassing cloud models.</p>
+            <h2 className="text-sm font-bold text-gray-800">Movement Scan</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Point the camera at your full body. AI coach will give feedback on what it observes.</p>
           </div>
 
           {/* Operational Viewfinder Canvas */}
@@ -149,7 +170,7 @@ export default function TrainingScanPage() {
             {trackingPhase === "analyzing" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-center space-y-2">
                 <RefreshCw size={20} className="text-blue-500 animate-spin" />
-                <p className="text-xs font-extrabold text-white uppercase tracking-widest">Parsing target kinematic frames...</p>
+                <p className="text-xs font-extrabold text-white uppercase tracking-widest">Sending to AI coach...</p>
               </div>
             )}
 
@@ -157,42 +178,29 @@ export default function TrainingScanPage() {
             <canvas ref={canvasElementRef} className="absolute inset-0 w-full h-full pointer-events-none" />
           </div>
 
-          {/* Analytics Metadata Card Outputs */}
           {trackingPhase === "ready" && metricsData && (
             <div className="mb-4 p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck size={14} /> Telemetry Check Confirmed
-                </span>
-                <span className="text-sm font-black text-blue-900">{metricsData.formScore}/100</span>
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed">{metricsData.structuralSway}</p>
+              <span className="text-xs font-extrabold text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck size={14} /> AI Coach Feedback
+              </span>
+              <p className="text-sm text-gray-700 leading-relaxed">{metricsData.feedback}</p>
             </div>
           )}
 
-          {/* Action Trigger Deck */}
           <div className="flex gap-3">
             {trackingPhase === "idle" || trackingPhase === "ready" ? (
-              <>
-                <button
-                  onClick={activateLiveTrackingStream}
-                  className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition"
-                >
-                  <Camera size={14} /> Open Assessment Camera
-                </button>
-                <button
-                  onClick={evaluateBiomechanicalTelemetry}
-                  className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition"
-                >
-                  <Upload size={14} /> Upload Video Capture
-                </button>
-              </>
+              <button
+                onClick={activateLiveTrackingStream}
+                className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition"
+              >
+                <Camera size={14} /> {trackingPhase === "ready" ? "Scan Again" : "Open Camera"}
+              </button>
             ) : (
               <button
                 onClick={evaluateBiomechanicalTelemetry}
                 className="flex-1 bg-red-50 text-red-600 border border-red-200 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-red-100 transition"
               >
-                <Activity size={14} className="animate-pulse" /> Complete Scan Capture Cycle ({framesCounted}f)
+                <Activity size={14} className="animate-pulse" /> Stop & Get Feedback ({framesCounted} frames)
               </button>
             )}
           </div>

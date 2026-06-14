@@ -1,39 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, Upload, X, Scan, ChevronDown, AlertCircle, Save, CheckCircle2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Camera, Upload, X, Scan, ChevronDown, AlertCircle, Save, CheckCircle2, RefreshCw } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-interface AnalysisResult {
-  score100: number;
-  level: "Elite" | "Good" | "Raw";
-  rating: string;
-  angle?: number;
-}
-
-interface AsymmetryResult {
-  detected: boolean;
-  isAsymmetric: boolean;
-  weakSide: "left" | "right";
-  leftKneeAngle: number;
-  rightKneeAngle: number;
-  asymmetryDiff: number;
-  asymmetryScore: number;
-}
-
 interface ScanEntry {
   mode: string;
-  score: number;
-  level: string;
-  asymmetry_score: number;
-  asymmetry_diff: number;
-  weak_side: string | null;
+  mode_label: string;
+  feedback: string;
   frames_analysed: number;
   session_date: string;
-  mode_label: string;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -41,65 +20,16 @@ const MODES = [
   {
     id: "SPRINT_KNEE_DRIVE",
     label: "Sprint Drive",
-    desc: "Knee angle & drive phase mechanics — analyzed via custom lightweight biometric engine",
+    desc: "Point the camera at your full body while sprinting or running. AI coach will analyse your running form and give feedback.",
   },
   {
     id: "JUGGLING_CUSHION",
     label: "Ball Control",
-    desc: "Head stability & vertical drift — optimized for football first-touch tracking",
+    desc: "Point the camera at yourself while juggling or controlling the ball. AI coach will analyse your touch and technique.",
   },
 ];
 
-const LEVEL_STYLE: Record<string, { bg: string; border: string; text: string; mark: string }> = {
-  Elite: { bg: "#f0fdf4", border: "#86efac", text: "#166534", mark: "ELITE" },
-  Good:  { bg: "#fefce8", border: "#fde047", text: "#854d0e", mark: "GOOD"  },
-  Raw:   { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b", mark: "RAW"   },
-};
-
 const LS_KEY = "gs_biometric_scans";
-
-// ─── Custom Lean Biometric Core Engine ───────────────────────────────────────
-/**
- * Grassroots Sports Proprietary Biometric Logic
- * Calculates athletic movement parameters natively without external cloud models
- */
-function runCustomBiometricAnalysis(mode: string): { analysis: AnalysisResult; asymmetry: AsymmetryResult } {
-  // Simulate native processing based on biometric inputs (e.g., target tracking over video frame streams)
-  const simulatedKneeAngle = Math.round(75 + Math.random() * 65); // 75° to 140°
-  const rightKneeAngle = Math.round(simulatedKneeAngle + (Math.random() * 14 - 7));
-  const asymmetryDiff = Math.abs(simulatedKneeAngle - rightKneeAngle);
-  
-  let level: "Elite" | "Good" | "Raw" = "Raw";
-  let rating = "";
-  let score100 = 40;
-
-  if (simulatedKneeAngle < 95) {
-    level = "Elite";
-    rating = "Explosive hip flexion. Excellent extension angle profile for maximizing ground force production.";
-    score100 = Math.min(100, 88 + (95 - simulatedKneeAngle));
-  } else if (simulatedKneeAngle < 120) {
-    level = "Good";
-    rating = "Solid, stable knee drive. Fluid extension path observed across execution cycles.";
-    score100 = Math.min(87, 72 + (120 - simulatedKneeAngle) / 2);
-  } else {
-    level = "Raw";
-    rating = "Low vertical displacement. Hip flexibility extension requires development adjustment.";
-    score100 = Math.max(45, 68 - (simulatedKneeAngle - 120) / 2);
-  }
-
-  return {
-    analysis: { score100: Math.round(score100), level, rating, angle: simulatedKneeAngle },
-    asymmetry: {
-      detected: asymmetryDiff > 10,
-      isAsymmetric: asymmetryDiff > 10,
-      weakSide: simulatedKneeAngle < rightKneeAngle ? "left" : "right",
-      leftKneeAngle: simulatedKneeAngle,
-      rightKneeAngle,
-      asymmetryDiff,
-      asymmetryScore: Math.min(100, Math.round(asymmetryDiff * 2)),
-    }
-  };
-}
 
 function saveScanToStorage(entry: ScanEntry): void {
   try {
@@ -121,8 +51,8 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("SPRINT_KNEE_DRIVE");
   const [phase, setPhase] = useState<"idle" | "scanning" | "stopped">("idle");
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [asymmetry, setAsymmetry] = useState<AsymmetryResult | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const [framesDone, setFramesDone] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -147,10 +77,41 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
     }
   }
 
+  function captureFrame(): string | null {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return null;
+    const tmp = document.createElement("canvas");
+    tmp.width = video.videoWidth;
+    tmp.height = video.videoHeight;
+    const ctx = tmp.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0);
+    return tmp.toDataURL("image/jpeg", 0.6).split(",")[1];
+  }
+
+  async function analyseWithAI(base64: string | null) {
+    setAnalyzing(true);
+    const context = mode === "SPRINT_KNEE_DRIVE"
+      ? "Player performing a sprint or running drill. Analyse their running form, body lean, stride, and technique."
+      : "Player performing a ball control or juggling drill. Analyse their touch, body shape, head position, and technique.";
+
+    try {
+      const res = await fetch("/api/vision-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, context }),
+      });
+      const data = await res.json();
+      setFeedback(data.feedback ?? "Analysis complete. Ask your coach for detailed feedback.");
+    } catch {
+      setFeedback("Could not reach AI coach. Ask your coach to review your technique in person.");
+    }
+    setAnalyzing(false);
+  }
+
   async function startCamera() {
     setError(null);
-    setResult(null);
-    setAsymmetry(null);
+    setFeedback(null);
     setFramesDone(0);
     setSaved(false);
     setPhase("scanning");
@@ -173,14 +134,16 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
         await videoRef.current.play();
         loop();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       let msg = "Could not open camera. Try uploading a video clip instead.";
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        msg = "Camera access was blocked. Click the camera icon in your browser address bar and allow access, then try again.";
-      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-        msg = "No camera found on this device. Try uploading a recorded video clip instead.";
-      } else if (err.name === "NotReadableError") {
-        msg = "Camera is in use by another app. Close other apps using the camera and try again.";
+      if (err instanceof Error) {
+        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+          msg = "Camera access was blocked. Click the camera icon in your browser address bar and allow access, then try again.";
+        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+          msg = "No camera found on this device. Try uploading a recorded video clip instead.";
+        } else if (err.name === "NotReadableError") {
+          msg = "Camera is in use by another app. Close other apps using the camera and try again.";
+        }
       }
       setError(msg);
       setPhase("idle");
@@ -193,8 +156,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
     e.target.value = "";
 
     setError(null);
-    setResult(null);
-    setAsymmetry(null);
+    setFeedback(null);
     setFramesDone(0);
     setSaved(false);
     stopAll();
@@ -205,7 +167,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
     try {
       const video = videoRef.current;
       if (!video) throw new Error("Video element not found");
-      
+
       video.src = objectUrl;
       video.srcObject = null;
       video.muted = true;
@@ -213,14 +175,15 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
 
       const videoLoop = () => {
         if (!videoRef.current || videoRef.current.ended || videoRef.current.paused) {
+          const base64 = captureFrame();
           URL.revokeObjectURL(objectUrl);
-          triggerCustomAnalysis();
           setPhase("stopped");
+          analyseWithAI(base64);
           return;
         }
         rafRef.current = requestAnimationFrame(() => {
           setFramesDone(n => n + 1);
-          renderCustomOverlay();
+          renderOverlay();
           videoLoop();
         });
       };
@@ -236,13 +199,13 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
     rafRef.current = requestAnimationFrame(() => {
       if (streamRef.current?.active && videoRef.current) {
         setFramesDone(n => n + 1);
-        renderCustomOverlay();
+        renderOverlay();
         loop();
       }
     });
   }
 
-  function renderCustomOverlay() {
+  function renderOverlay() {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video) return;
@@ -256,39 +219,32 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
     if (!ctx) return;
     ctx.clearRect(0, 0, w, h);
 
-    // Draw custom lightweight tracking target target box overlay (Lean UX)
     ctx.strokeStyle = "rgba(34, 197, 94, 0.6)";
     ctx.lineWidth = 2;
     ctx.strokeRect(w * 0.25, h * 0.15, w * 0.5, h * 0.7);
-    
-    // Corner accent ticks
+
     ctx.fillStyle = "#22c55e";
     ctx.fillRect(w * 0.25, h * 0.15, 15, 3);
     ctx.fillRect(w * 0.25, h * 0.15, 3, 15);
   }
 
-  function triggerCustomAnalysis() {
-    const metrics = runCustomBiometricAnalysis(mode);
-    setResult(metrics.analysis);
-    if (metrics.asymmetry.detected) {
-      setAsymmetry(metrics.asymmetry);
-    }
+  async function handleStop() {
+    const base64 = captureFrame();
+    stopAll();
+    setPhase("stopped");
+    await analyseWithAI(base64);
   }
 
   async function saveScan() {
-    if (!result || saved) return;
+    if (!feedback || saved) return;
     setSaving(true);
 
     const entry: ScanEntry = {
       mode,
-      score: result.score100 ?? 0,
-      level: result.level ?? "Raw",
-      asymmetry_score: asymmetry?.asymmetryScore ?? 0,
-      asymmetry_diff: asymmetry?.asymmetryDiff ?? 0,
-      weak_side: asymmetry?.weakSide ?? null,
+      mode_label: MODES.find(m => m.id === mode)?.label ?? mode,
+      feedback,
       frames_analysed: framesDone === 0 ? 120 : framesDone,
       session_date: new Date().toISOString().slice(0, 10),
-      mode_label: MODES.find(m => m.id === mode)?.label ?? mode,
     };
 
     saveScanToStorage(entry);
@@ -302,29 +258,22 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
         body: JSON.stringify(entry),
       });
     } catch {
-      // safe fallback complete
+      // localStorage fallback already saved above
     }
 
     if (onScanComplete) onScanComplete(entry);
-    
     setSaving(false);
     setSaved(true);
-  }
-
-  function handleStop() {
-    stopAll();
-    triggerCustomAnalysis();
-    setPhase("stopped");
   }
 
   function handleReset() {
     stopAll();
     setPhase("idle");
-    setResult(null);
-    setAsymmetry(null);
+    setFeedback(null);
     setError(null);
     setFramesDone(0);
     setSaved(false);
+    setAnalyzing(false);
   }
 
   function handleClose() {
@@ -332,10 +281,9 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
     setOpen(false);
   }
 
-  const levelStyle = result?.level ? LEVEL_STYLE[result.level] ?? LEVEL_STYLE.Raw : null;
   const isScanning = phase === "scanning";
   const isStopped = phase === "stopped";
-  const canSave = isStopped && result && !saved;
+  const canSave = isStopped && feedback && !saved && !analyzing;
 
   if (!open) {
     return (
@@ -349,7 +297,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
           </div>
           <div>
             <p className="font-black text-gray-900 text-sm">Biometric Body Scan</p>
-            <p className="text-xs text-gray-400">Custom Biometric Engine — Fast Native Tracking Mode</p>
+            <p className="text-xs text-gray-400">Point camera at your body — AI coach gives real feedback</p>
           </div>
         </div>
         <ChevronDown size={16} className="text-gray-400 group-hover:text-green-700 transition" />
@@ -367,7 +315,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
           <span className="font-black text-gray-900 text-sm">Biometric Body Scan</span>
           {isScanning && (
             <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-600 border border-red-200 rounded-full animate-pulse">
-              TRACKING
+              LIVE
             </span>
           )}
         </div>
@@ -380,13 +328,13 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
         {/* Mode selector */}
         <div className="mb-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
-            Analysis Mode
+            Scan Type
           </p>
           <div className="flex flex-wrap gap-2">
             {MODES.map((m) => (
               <button
                 key={m.id}
-                onClick={() => { setMode(m.id); setResult(null); setAsymmetry(null); setSaved(false); }}
+                onClick={() => { setMode(m.id); setFeedback(null); setSaved(false); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                   mode === m.id
                     ? "bg-[#1a5c2a] text-white border-[#1a5c2a]"
@@ -435,6 +383,12 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
               className="relative rounded-xl overflow-hidden bg-black w-full"
               style={{ aspectRatio: "4/3" }}
             >
+              {analyzing && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10 text-center space-y-2">
+                  <RefreshCw size={20} className="text-emerald-400 animate-spin" />
+                  <p className="text-xs font-bold text-white uppercase tracking-wider">Sending to AI coach...</p>
+                </div>
+              )}
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -447,47 +401,16 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
               />
             </div>
 
-            {/* Live score card */}
-            {result && levelStyle && (
-              <div
-                className="rounded-xl p-4 border"
-                style={{ backgroundColor: levelStyle.bg, borderColor: levelStyle.border }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span
-                    className="text-xs font-extrabold uppercase tracking-wider"
-                    style={{ color: levelStyle.text }}
-                  >
-                    {levelStyle.mark} — {MODES.find((m) => m.id === mode)?.label}
-                  </span>
-                  {result.score100 != null && (
-                    <span className="text-sm font-black" style={{ color: levelStyle.text }}>
-                      {result.score100}
-                      <span className="text-xs font-medium">/100</span>
-                    </span>
-                  )}
-                </div>
-                {result.rating && (
-                  <p className="text-xs text-gray-600 leading-relaxed mt-0.5">{result.rating}</p>
-                )}
+            {/* AI Feedback */}
+            {feedback && (
+              <div className="rounded-xl p-4 border border-emerald-200 bg-emerald-50">
+                <p className="text-xs font-extrabold text-emerald-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <CheckCircle2 size={13} /> AI Coach Feedback
+                </p>
+                <p className="text-sm text-gray-700 leading-relaxed">{feedback}</p>
                 {framesDone > 0 && (
-                  <p className="text-[10px] text-gray-400 mt-1">{framesDone} frames mapped natively</p>
+                  <p className="text-[10px] text-gray-400 mt-2">{framesDone} frames captured</p>
                 )}
-              </div>
-            )}
-
-            {/* Asymmetry warning */}
-            {asymmetry?.isAsymmetric && (
-              <div className="rounded-xl p-3 border border-amber-200 bg-amber-50 flex items-start gap-2">
-                <AlertCircle size={13} className="text-amber-500 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-amber-700">
-                    Kinematic Asymmetry Logged — {asymmetry.weakSide} side compensation balance
-                  </p>
-                  <p className="text-[11px] text-amber-600 mt-0.5">
-                    Estimated extension variations tracked across active tracking loop capture. Imbalances &gt;10° increase structural fatigue fatigue thresholds.
-                  </p>
-                </div>
               </div>
             )}
 
@@ -498,7 +421,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
                   onClick={handleStop}
                   className="flex-1 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition"
                 >
-                  Stop & Process
+                  Stop & Get Feedback
                 </button>
               )}
               <button
@@ -524,7 +447,7 @@ export default function BiometricScanner({ onScanComplete }: BiometricScannerPro
                   className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold bg-[#1a5c2a] text-white hover:bg-green-800 transition disabled:opacity-50"
                 >
                   <Save size={12} />
-                  {saving ? "Saving…" : "Save Metrics"}
+                  {saving ? "Saving…" : "Save"}
                 </button>
               ) : null}
             </div>
