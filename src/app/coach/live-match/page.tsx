@@ -269,7 +269,7 @@ function FatigueMonitoringPanel({ fatiguedPlayers, injuryRisk }: {
 
 export default function LiveMatchPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user  = useAuthStore((s) => s.user);
   const [phase, setPhase] = useState<MatchPhase>("setup");
   const [setup, setSetup] = useState<MatchSetup>(DEFAULT_SETUP);
   const [events, setEvents] = useState<MatchEvent[]>([]);
@@ -455,7 +455,45 @@ export default function LiveMatchPage() {
         ...existingEvents.slice(0, 19),
       ]));
     } catch { /* non-critical — patterns will still work from coach_matches */ }
-  }, [events, setup, homeScore, awayScore, fatiguedPlayers]);
+
+    // ── POST match to backend + coach gamification (fire-and-forget) ─────────
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (token && token !== 'dev-token') {
+      const API = process.env.NEXT_PUBLIC_API_URL;
+
+      fetch(`${API}/matches`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          opponent:     record.opponent,
+          venue:        record.venue,
+          date:         record.date,
+          our_score:    record.our_score,
+          their_score:  record.their_score,
+          formation:    record.formation,
+          sport:        setup.sport,
+          scorers:      record.scorers,
+          yellow_cards: record.yellow_cards,
+          red_cards:    record.red_cards,
+          notes:        record.notes,
+        }),
+      }).catch(() => { /* fire and forget */ });
+
+      if (user?.id) {
+        fetch('/api/gamification', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            playerId:      String(user.id),
+            action:        'match_completed',
+            aqScore:       50,
+            coachVerified: true,
+            sessionDate:   record.date,
+          }),
+        }).catch(() => { /* fire and forget */ });
+      }
+    }
+  }, [events, setup, homeScore, awayScore, fatiguedPlayers, user]);
 
   const logEvent = (evt: Omit<MatchEvent, "id">) => {
     const event: MatchEvent = { ...evt, id: crypto.randomUUID() };
