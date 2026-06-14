@@ -1,89 +1,70 @@
 // src/app/api/sessions/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Next.js route handler — saves GRS test session results to PostgreSQL
-// via the Laravel backend. Fails gracefully so the results screen always
-// loads even when the backend is cold-starting or the player is offline.
-//
-// Called by: src/hooks/useSessionSubmit.ts → Step 1
-// Laravel endpoint: POST /api/v1/sessions
+// Session save API — stores GRS test results
+// Proxies to bhora-ai backend. Falls back to localStorage on failure.
+// Called by: useSessionSubmit.ts, talent-id page
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const LARAVEL = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
 export async function POST(req: NextRequest) {
-  let body: Record<string, unknown>;
+  const body = await req.json();
+
+  // Get auth token from request header (passed by client)
+  const authHeader = req.headers.get('authorization');
+
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ saved: false, error: 'Invalid request body' }, { status: 400 });
-  }
+    const res = await fetch(`${API}/player/test-sessions`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Accept':        'application/json',
+        ...(authHeader ? { 'Authorization': authHeader } : {}),
+      },
+      body: JSON.stringify(body),
+    });
 
-  const authHeader  = req.headers.get('authorization') ?? '';
-  const token       = authHeader.replace(/^Bearer\s+/i, '').trim();
-  const isRealToken = token.length > 10 && token !== 'dev-token';
-
-  // ── Forward to Laravel when a real auth token is present ─────────────────
-  if (isRealToken) {
-    try {
-      const laravelRes = await fetch(`${LARAVEL}/sessions`, {
-        method:  'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Accept':        'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body:   JSON.stringify(body),
-        signal: AbortSignal.timeout(8000), // never block the results screen > 8s
-      });
-
-      if (laravelRes.ok) {
-        const data = await laravelRes.json();
-        return NextResponse.json({ saved: true, ...data });
-      }
-
-      const errText = await laravelRes.text().catch(() => '');
-      console.error(`[sessions] Laravel ${laravelRes.status}:`, errText);
-
-    } catch (err) {
-      console.error('[sessions] Backend unreachable:', err);
+    if (!res.ok) {
+      // Return 200 with a localStorage hint — client handles offline fallback
+      return NextResponse.json({
+        saved:   false,
+        offline: true,
+        message: 'Session saved locally — will sync when connected',
+      }, { status: 200 });
     }
-  }
 
-  // ── Offline / unauthenticated / backend unavailable ──────────────────────
-  // Return 200 so useSessionSubmit doesn't throw and the results screen loads.
-  return NextResponse.json({
-    saved:     false,
-    local:     true,
-    sessionId: (body?.sessionId as string) ?? crypto.randomUUID(),
-    message:   isRealToken
-      ? 'Backend unavailable — session saved locally and will sync on next login'
-      : 'Sign in to save your results to your permanent record',
-  });
+    const data = await res.json();
+    return NextResponse.json({ saved: true, session: data });
+
+  } catch (err) {
+    // Network error — client will use localStorage
+    return NextResponse.json({
+      saved:   false,
+      offline: true,
+      message: 'Offline — session saved locally',
+    }, { status: 200 });
+  }
 }
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization') ?? '';
-  const token      = authHeader.replace(/^Bearer\s+/i, '').trim();
+  const authHeader = req.headers.get('authorization');
   const { searchParams } = new URL(req.url);
   const limit = searchParams.get('limit') ?? '12';
 
-  if (!token || token === 'dev-token') {
-    return NextResponse.json({ sessions: [] });
-  }
-
   try {
-    const res = await fetch(`${LARAVEL}/sessions?limit=${limit}`, {
+    const res = await fetch(`${API}/player/test-sessions?limit=${limit}`, {
       headers: {
-        'Accept':        'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        ...(authHeader ? { 'Authorization': authHeader } : {}),
       },
-      signal: AbortSignal.timeout(8000),
     });
 
     if (!res.ok) return NextResponse.json({ sessions: [] });
-    return NextResponse.json(await res.json());
+    const data = await res.json();
+    return NextResponse.json(data);
+
   } catch {
     return NextResponse.json({ sessions: [] });
   }

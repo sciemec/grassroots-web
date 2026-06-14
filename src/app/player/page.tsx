@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
+import { getCurrentStreak } from "@/lib/success/streak";
+import api from "@/lib/api";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -50,7 +52,7 @@ const FEATURES = [
     desc: "Visibility · CV share · Plays Like",
   },
   {
-    href: "/player/goal",
+    href: "/player/success",
     icon: Zap,
     iconBg: "#fef3c7", iconColor: "#d97706",
     label: "Success Engine",

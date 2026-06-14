@@ -58,7 +58,7 @@ const NEXT_TEST: Record<string, TestId> = {
   't1_jump':   't2_sprint',
   't2_sprint':  't3_balance',
   't3_balance': 't4_reaction',
-  't4_reaction':'t5_chitima',
+  't4_reaction':'t5_endurance',
   't5_chitima': 't6_ball',
 };
 
@@ -71,19 +71,19 @@ function completedValueLabel(testId: string, state: SessionState): string {
       if (p.jumpFlightTimeSec) return `${p.jumpFlightTimeSec} sec`;
       return 'Recorded';
     case 't2_sprint':
-      return p.sprintSec ? `${p.sprintSec} sec` : 'Recorded';
+      return p.sprint20mSec ? `${p.sprint20mSec} sec` : 'Recorded';
     case 't3_balance':
       return (p.balanceRightOpen !== undefined)
         ? `R: ${(p.balanceRightOpen ?? 0) + (p.balanceRightClosed ?? 0)} · L: ${(p.balanceLeftOpen ?? 0) + (p.balanceLeftClosed ?? 0)} corrections`
         : 'Recorded';
     case 't4_reaction':
-      return (p.reactionCatches !== undefined) ? `${p.reactionCatches}/5 catches` : 'Recorded';
-    case 't5_chitima':
-      return p.chitimaTotalSec
-        ? `${Math.floor(p.chitimaTotalSec / 60)}:${String(p.chitimaTotalSec % 60).padStart(2, '0')}`
+      return (p.reactionCatchRate !== undefined) ? `${p.reactionCatchRate}/5 catches` : 'Recorded';
+    case 't5_endurance':
+      return p.enduranceTotalSec
+        ? `${Math.floor(p.enduranceTotalSec / 60)}:${String(p.enduranceTotalSec % 60).padStart(2, '0')}`
         : 'Recorded';
     case 't6_ball':
-      return (p.jugglingBest !== undefined) ? `${p.jugglingBest} juggles` : 'Recorded';
+      return (p.jugglingSequence !== undefined) ? `${p.jugglingSequence} juggles` : 'Recorded';
     default:
       return 'Recorded';
   }
