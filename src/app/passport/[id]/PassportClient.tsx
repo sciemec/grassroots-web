@@ -54,7 +54,7 @@ interface PassportProps {
 }
 
 export default function PassportClient({
-  player, latestSession, recentSessions, gamification, videos, token,
+  player, latestSession, recentSessions, gamification, videos, token, drillScores,
 }: PassportProps) {
   const [activeVideo, setActiveVideo] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
@@ -310,6 +310,43 @@ export default function PassportClient({
                 </span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Gemini drill scores ───────────────────────────────────────── */}
+        {drillScores && drillScores.length > 0 && (
+          <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+              Gemini drill analysis
+            </div>
+            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 10 }}>
+              AI video analysis — Gemini 2.0 Flash · technique measured across motion
+            </div>
+            {drillScores.map(ds => {
+              const pct = Math.round((ds.overall_score / 10) * 100);
+              const color = ds.overall_score >= 8 ? GRS_GREEN : ds.overall_score >= 6 ? GRS_GOLD : '#b42318';
+              return (
+                <div key={ds.drillId} style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#333' }}>{ds.passportLabel}</span>
+                      {ds.top_strength && (
+                        <div style={{ fontSize: 10, color: '#888', marginTop: 1 }}>{ds.top_strength}</div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color }}>{ds.overall_score.toFixed(1)}/10</span>
+                      {ds.data_confidence && (
+                        <div style={{ fontSize: 9, color: '#aaa', marginTop: 1 }}>{ds.data_confidence} confidence</div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 3 }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
