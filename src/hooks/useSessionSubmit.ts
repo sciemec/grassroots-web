@@ -55,11 +55,18 @@ export function useSessionSubmit() {
     let gamificationData: any = null;
     let drillData: any = null;
 
+    // Read auth token once — passed to all three proxy routes so Laravel can authenticate
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const authHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(token && token !== 'dev-token' ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
     try {
       // ── Step 1: Save the test session to PostgreSQL ──────────────────────
       const sessionRes = await fetch('/api/sessions', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           playerId,
           ageGroup:         result.ageGroup,
@@ -100,7 +107,7 @@ export function useSessionSubmit() {
       // ── Step 2: Update gamification ──────────────────────────────────────
       const gamRes = await fetch('/api/gamification', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           action:         'session',
           playerId,
@@ -122,7 +129,7 @@ export function useSessionSubmit() {
       // ── Step 3: Unlock next drill ────────────────────────────────────────
       const drillRes = await fetch('/api/drills', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           action:       'unlock',
           playerId,
