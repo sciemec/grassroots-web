@@ -12,6 +12,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 import { getCurrentStreak } from "@/lib/success/streak";
 import api from "@/lib/api";
+import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -338,6 +339,12 @@ export default function PlayerDashboardHome() {
             <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </section>
+
+        {/* ── Weekly Challenges + School Leaderboard ── */}
+        <WeeklyChallenges
+          playerAqScore={aqScore ?? 0}
+          playerSessionCount={sessionCount ?? 0}
+        />
 
         {/* ── Identity footer ── */}
         <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
