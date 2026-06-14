@@ -8,6 +8,15 @@ import { useState } from 'react';
 import { isPlausible } from '@/lib/grs-engine';
 import type { SessionState } from '@/lib/session-manager';
 
+// ── Dark theme tokens ─────────────────────────────────────────────────────────
+const BG     = '#111111';
+const CARD   = '#1c1c1c';
+const BORDER = '#2a2a2a';
+const TEXT   = '#f0f0f0';
+const MUTED  = '#666';
+const GOLD   = '#c8962a';
+const GREEN  = '#2ecc71';
+
 // ── Shared props interface ────────────────────────────────────────────────────
 export interface TestScreenProps {
   state:      SessionState;
@@ -25,54 +34,56 @@ export function SessionHeader({ state }: { state: SessionState }) {
   const progress    = activeTests.length > 0 ? (completed / activeTests.length) * 100 : 0;
 
   const TEST_LABELS: Record<string, string> = {
-    t1_jump:     'T1 Jump',
-    t2_sprint:   'T2 Sprint',
-    t3_balance:  'T3 Balance',
-    t4_reaction: 'T4 Reaction',
+    t1_jump:      'T1 Jump',
+    t2_sprint:    'T2 Sprint',
+    t3_balance:   'T3 Balance',
+    t4_reaction:  'T4 Reaction',
     t5_endurance: 'T5 Endurance',
-    t6_ball:     'T6 Ball',
+    t6_ball:      'T6 Ball',
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3">
-      <div className="flex items-center justify-between mb-2">
+    <div style={{
+      position: 'sticky', top: 0, zIndex: 10,
+      background: CARD, borderBottom: `1px solid ${BORDER}`,
+      padding: '10px 16px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div>
-          <div className="text-sm font-medium text-gray-900">
+          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>
             {state.config?.playerName ?? 'Athlete'}
           </div>
-          <div className="text-xs text-gray-400">
+          <div style={{ fontSize: 11, color: MUTED }}>
             Age {state.config?.age} · {state.config?.position}
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs font-medium" style={{ color: '#1c3d22' }}>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: GOLD }}>
             {TEST_LABELS[state.currentTest] ?? state.currentTest}
           </div>
-          <div className="text-xs text-gray-400">
+          <div style={{ fontSize: 11, color: MUTED }}>
             {completed} / {activeTests.length} tests
           </div>
         </div>
       </div>
-      {/* Progress bar */}
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${progress}%`, background: '#1c3d22' }}
-        />
+      <div style={{ height: 3, background: BORDER, borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 99,
+          width: `${progress}%`, background: GREEN,
+          transition: 'width 0.3s ease',
+        }} />
       </div>
-      {/* Test dots */}
-      <div className="flex items-center justify-center gap-1.5 mt-2">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 }}>
         {activeTests.map(t => (
-          <div key={t}
-            className="w-2 h-2 rounded-full transition-all"
-            style={{
-              background: state.completedTests.includes(t)
-                ? '#1c3d22'
-                : state.currentTest === t
-                ? '#c8962a'
-                : '#e5e5e5',
-            }}
-          />
+          <div key={t} style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: state.completedTests.includes(t)
+              ? GREEN
+              : state.currentTest === t
+              ? GOLD
+              : BORDER,
+            transition: 'background 0.2s',
+          }} />
         ))}
       </div>
     </div>
@@ -81,7 +92,7 @@ export function SessionHeader({ state }: { state: SessionState }) {
 
 // ── Instruction card — shown at top of every test screen ─────────────────────
 export function InstructionCard({
-  testNum, testName, icon, steps, equipment, timeEstimate, canSkip,
+  testNum, testName, icon, steps, equipment, timeEstimate,
 }: {
   testNum:      string;
   testName:     string;
@@ -94,44 +105,60 @@ export function InstructionCard({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-4">
-      {/* Header */}
+    <div style={{
+      background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`,
+      overflow: 'hidden',
+    }}>
       <button
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 14px', textAlign: 'left',
+          background: 'none', border: 'none', cursor: 'pointer',
+        }}
       >
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-          style={{ background: '#1c3d22' }}>
+        <div style={{
+          width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, background: `${GOLD}22`, border: `1px solid ${GOLD}44`,
+        }}>
           {icon}
         </div>
-        <div className="flex-1">
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">{testNum}</div>
-          <div className="text-sm font-bold text-gray-900">{testName}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            {testNum}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{testName}</div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{timeEstimate}</span>
-          <span className="text-gray-400 text-xs">{expanded ? '▲' : '▼'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: MUTED }}>{timeEstimate}</span>
+          <span style={{ fontSize: 10, color: MUTED }}>{expanded ? '▲' : '▼'}</span>
         </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-gray-50">
-          {/* Equipment */}
-          <div className="flex items-center gap-2 pt-3">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide w-20 flex-shrink-0">
+        <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${BORDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, paddingTop: 12, marginBottom: 10 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: GOLD,
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+              width: 60, flexShrink: 0, paddingTop: 1,
+            }}>
               You need
             </span>
-            <span className="text-xs text-gray-600">{equipment}</span>
+            <span style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{equipment}</span>
           </div>
-          {/* Steps */}
-          <div className="space-y-1.5">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {steps.map((step, i) => (
-              <div key={i} className="flex gap-2.5">
-                <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white mt-0.5"
-                  style={{ background: '#1c3d22', fontSize: '10px' }}>
+              <div key={i} style={{ display: 'flex', gap: 10 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 900, color: BG, background: GOLD, marginTop: 1,
+                }}>
                   {i + 1}
                 </div>
-                <div className="text-xs text-gray-600 leading-relaxed">{step}</div>
+                <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>{step}</div>
               </div>
             ))}
           </div>
@@ -144,7 +171,7 @@ export function InstructionCard({
 // ── Numeric input with live validation ────────────────────────────────────────
 export function MeasurementInput({
   label, unit, value, onChange, min, max, step = 0.01,
-  placeholder, hint, validationField,
+  placeholder, hint,
 }: {
   label:            string;
   unit:             string;
@@ -157,15 +184,18 @@ export function MeasurementInput({
   hint?:            string;
   validationField?: Parameters<typeof isPlausible>[0];
 }) {
-  const isValid   = value === '' || (typeof value === 'number' && value >= min && value <= max);
-  const showWarn  = value !== '' && !isValid;
+  const isValid  = value === '' || (typeof value === 'number' && value >= min && value <= max);
+  const showWarn = value !== '' && !isValid;
+
+  const borderColor = showWarn ? '#e74c3c' : value !== '' ? GREEN : BORDER;
+  const bgColor     = showWarn ? '#1f0f0f' : value !== '' ? '#0f1f14' : '#161616';
 
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
         {label}
       </label>
-      <div className="relative">
+      <div style={{ position: 'relative' }}>
         <input
           type="number"
           inputMode="decimal"
@@ -178,27 +208,32 @@ export function MeasurementInput({
             const v = e.target.value === '' ? '' : parseFloat(e.target.value);
             onChange(v);
           }}
-          className={`w-full pr-14 text-xl font-bold rounded-xl border py-3 px-4 outline-none transition-all ${
-            showWarn
-              ? 'border-red-300 bg-red-50 text-red-700'
-              : value !== ''
-              ? 'border-green-200 bg-green-50 text-gray-900'
-              : 'border-gray-200 bg-white text-gray-900'
-          }`}
-          style={{ fontSize: '20px' }}
+          style={{
+            width: '100%', paddingRight: 52, paddingLeft: 14,
+            paddingTop: 12, paddingBottom: 12,
+            fontSize: 22, fontWeight: 900,
+            background: bgColor,
+            border: `1.5px solid ${borderColor}`,
+            borderRadius: 12, color: showWarn ? '#e74c3c' : TEXT,
+            outline: 'none', boxSizing: 'border-box',
+            transition: 'border-color 0.2s, background 0.2s',
+          }}
         />
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">
+        <span style={{
+          position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 12, fontWeight: 600, color: MUTED,
+        }}>
           {unit}
         </span>
       </div>
       {showWarn && (
-        <div className="text-xs text-red-500 flex items-center gap-1">
+        <div style={{ fontSize: 11, color: '#e74c3c', display: 'flex', alignItems: 'center', gap: 4 }}>
           <span>⚠</span>
           <span>Valid range: {min}–{max} {unit}. Check and re-enter.</span>
         </div>
       )}
       {hint && !showWarn && (
-        <div className="text-xs text-gray-400">{hint}</div>
+        <div style={{ fontSize: 11, color: MUTED }}>{hint}</div>
       )}
     </div>
   );
@@ -215,24 +250,32 @@ export function CounterInput({
   max?:     number;
 }) {
   return (
-    <div className="space-y-1">
-      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</div>
-      <div className="flex items-center gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <button
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="w-11 h-11 rounded-xl border border-gray-200 flex items-center justify-center text-xl font-light text-gray-600 active:scale-95 transition-transform"
-        >
-          −
-        </button>
-        <div className="flex-1 text-center">
-          <span className="text-3xl font-black" style={{ color: '#1c3d22' }}>{value}</span>
+          style={{
+            width: 44, height: 44, borderRadius: 12,
+            border: `1px solid ${BORDER}`, background: '#161616',
+            color: TEXT, fontSize: 22, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}
+        >−</button>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <span style={{ fontSize: 32, fontWeight: 900, color: GOLD }}>{value}</span>
         </div>
         <button
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="w-11 h-11 rounded-xl border border-gray-200 flex items-center justify-center text-xl font-light text-gray-600 active:scale-95 transition-transform"
-        >
-          +
-        </button>
+          style={{
+            width: 44, height: 44, borderRadius: 12,
+            border: `1px solid ${BORDER}`, background: '#161616',
+            color: TEXT, fontSize: 22, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}
+        >+</button>
       </div>
     </div>
   );
@@ -243,29 +286,32 @@ export function QualityRating({
   label, value, onChange,
   labels = ['Very poor', 'Poor', 'OK', 'Good', 'Excellent'],
 }: {
-  label:   string;
-  value:   number;
-  onChange:(v: number) => void;
-  labels?: string[];
+  label:    string;
+  value:    number;
+  onChange: (v: number) => void;
+  labels?:  string[];
 }) {
   return (
-    <div className="space-y-2">
-      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</div>
-      <div className="flex gap-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
         {[1, 2, 3, 4, 5].map(n => (
-          <button key={n} onClick={() => onChange(n)}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              value === n
-                ? 'text-white'
-                : 'bg-gray-100 text-gray-400'
-            }`}
-            style={value === n ? { background: '#1c3d22' } : {}}>
+          <button key={n} onClick={() => onChange(n)} style={{
+            flex: 1, paddingTop: 10, paddingBottom: 10, borderRadius: 10,
+            fontSize: 14, fontWeight: 800, cursor: 'pointer',
+            border: value === n ? `1.5px solid ${GOLD}` : `1px solid ${BORDER}`,
+            background: value === n ? `${GOLD}22` : '#161616',
+            color: value === n ? GOLD : MUTED,
+            transition: 'all 0.15s',
+          }}>
             {n}
           </button>
         ))}
       </div>
       {value > 0 && (
-        <div className="text-xs text-center" style={{ color: '#1c3d22' }}>
+        <div style={{ fontSize: 11, textAlign: 'center', color: GOLD, fontWeight: 600 }}>
           {labels[value - 1]}
         </div>
       )}
@@ -276,7 +322,7 @@ export function QualityRating({
 // ── Bottom navigation bar ─────────────────────────────────────────────────────
 export function NavBar({
   onBack, onNext, onSkip,
-  canGoBack = true, canGoNext, isFirst = false, isLast = false,
+  canGoBack = true, canGoNext, isFirst = false,
   nextLabel = 'Next test →',
 }: {
   onBack?:    () => void;
@@ -289,32 +335,47 @@ export function NavBar({
   nextLabel?: string;
 }) {
   return (
-    <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-3 space-y-2">
+    <div style={{
+      position: 'sticky', bottom: 0,
+      background: '#0d0d0d', borderTop: `1px solid ${BORDER}`,
+      padding: '10px 16px 20px',
+      display: 'flex', flexDirection: 'column', gap: 8,
+    }}>
       <button
         onClick={onNext}
         disabled={!canGoNext}
-        className={`w-full py-4 rounded-xl font-bold text-base transition-all ${
-          canGoNext
-            ? 'text-white active:scale-98'
-            : 'text-gray-400 bg-gray-100 cursor-not-allowed'
-        }`}
-        style={canGoNext ? { background: '#1c3d22' } : {}}>
+        style={{
+          width: '100%', padding: '14px', borderRadius: 12, border: 'none',
+          fontSize: 14, fontWeight: 800,
+          cursor: canGoNext ? 'pointer' : 'not-allowed',
+          background: canGoNext ? 'linear-gradient(90deg, #1a5c2a, #2ecc71)' : '#1a1a1a',
+          color: canGoNext ? '#fff' : '#444',
+        }}
+      >
         {nextLabel}
       </button>
-      <div className="flex gap-2">
-        {!isFirst && canGoBack && onBack && (
-          <button onClick={onBack}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600">
-            ← Back
-          </button>
-        )}
-        {onSkip && (
-          <button onClick={onSkip}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-500">
-            Skip this test
-          </button>
-        )}
-      </div>
+      {(!isFirst || onSkip) && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          {!isFirst && canGoBack && onBack && (
+            <button onClick={onBack} style={{
+              flex: 1, padding: '10px', borderRadius: 10,
+              border: `1px solid ${BORDER}`, background: 'none',
+              color: MUTED, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}>
+              ← Back
+            </button>
+          )}
+          {onSkip && (
+            <button onClick={onSkip} style={{
+              flex: 1, padding: '10px', borderRadius: 10,
+              border: `1px solid ${BORDER}`, background: 'none',
+              color: MUTED, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}>
+              Skip this test
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -352,38 +413,51 @@ export function SessionTimer({
   };
 
   const pct = (elapsed / seconds) * 100;
+  const R   = 40;
+  const CIR = 2 * Math.PI * R;
 
   return (
-    <div className="space-y-3">
-      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</div>
-      {/* Circle timer */}
-      <div className="flex justify-center">
-        <div className="relative w-24 h-24">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
-            <circle cx="48" cy="48" r="40" fill="none" stroke="#e5e5e5" strokeWidth="6" />
-            <circle cx="48" cy="48" r="40" fill="none"
-              stroke={done ? '#1c3d22' : '#c8962a'} strokeWidth="6"
-              strokeDasharray={`${2 * Math.PI * 40}`}
-              strokeDashoffset={`${2 * Math.PI * 40 * (1 - pct / 100)}`}
-              strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', width: 96, height: 96 }}>
+          <svg width={96} height={96} style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx={48} cy={48} r={R} fill="none" stroke={BORDER} strokeWidth={6} />
+            <circle
+              cx={48} cy={48} r={R}
+              fill="none"
+              stroke={done ? GREEN : GOLD}
+              strokeWidth={6}
+              strokeDasharray={CIR}
+              strokeDashoffset={CIR * (1 - pct / 100)}
+              strokeLinecap="round"
+              style={{ transition: 'stroke-dashoffset 0.5s' }}
+            />
           </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-2xl font-black" style={{ color: done ? '#1c3d22' : '#1a1a1a' }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: 24, fontWeight: 900, color: done ? GREEN : TEXT }}>
               {done ? '✓' : seconds - elapsed}
             </span>
           </div>
         </div>
       </div>
       {!done ? (
-        <button onClick={start} disabled={running}
-          className={`w-full py-3 rounded-xl text-sm font-bold ${
-            running ? 'bg-gray-100 text-gray-400' : 'text-white'
-          }`}
-          style={!running ? { background: '#c8962a' } : {}}>
+        <button onClick={start} disabled={running} style={{
+          width: '100%', padding: '12px', borderRadius: 10, border: 'none',
+          fontSize: 13, fontWeight: 700,
+          cursor: running ? 'not-allowed' : 'pointer',
+          background: running ? BORDER : GOLD,
+          color: running ? MUTED : '#0d0d0d',
+        }}>
           {running ? 'Timing...' : 'Start timer'}
         </button>
       ) : (
-        <div className="text-center text-sm font-medium" style={{ color: '#1c3d22' }}>
+        <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: GREEN }}>
           Timer complete ✓
         </div>
       )}

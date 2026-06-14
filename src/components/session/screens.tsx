@@ -19,8 +19,13 @@ import {
 import type { Position } from '@/lib/grs-engine';
 import type { SessionConfig } from '@/lib/session-manager';
 
-const GRS_GREEN = '#1c3d22';
-const GRS_GOLD  = '#c8962a';
+const BG     = '#111111';
+const CARD   = '#1c1c1c';
+const BORDER = '#2a2a2a';
+const TEXT   = '#f0f0f0';
+const MUTED  = '#666';
+const GOLD   = '#c8962a';
+const GREEN  = '#2ecc71';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SETUP SCREEN
@@ -298,17 +303,25 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
 // T1 — JUMP SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 export function JumpScreen({ state, onAdvance, onBack, onSkip }: TestScreenProps) {
-  const [method, setMethod] = useState<'measure' | 'video_time'>('measure');
-  const [heightCm, setHeightCm]     = useState<number | ''>('');
-  const [flightSec, setFlightSec]   = useState<number | ''>('');
+  const [method,    setMethod]    = useState<'measure' | 'video_time'>('measure');
+  const [heightCm,  setHeightCm]  = useState<number | ''>('');
+  const [flightSec, setFlightSec] = useState<number | ''>('');
 
   const canNext = method === 'measure'
     ? heightCm !== '' && heightCm >= 5 && heightCm <= 90
     : flightSec !== '' && flightSec >= 0.2 && flightSec <= 0.9;
 
+  const cardStyle: React.CSSProperties = {
+    background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`, padding: '14px 16px',
+  };
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, color: MUTED,
+    textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12,
+  };
+
   return (
-    <div className="min-h-screen bg-[#F4F2EE] flex flex-col">
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
+      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
 
         <InstructionCard
           testNum="Test 1 of 6"
@@ -326,17 +339,17 @@ export function JumpScreen({ state, onAdvance, onBack, onSkip }: TestScreenProps
         />
 
         {/* Input method toggle */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">How are you measuring?</div>
-          <div className="grid grid-cols-2 gap-2">
+        <div style={cardStyle}>
+          <div style={sectionLabel}>How are you measuring?</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
             {(['measure', 'video_time'] as const).map(m => (
-              <button key={m} onClick={() => setMethod(m)}
-                className="py-3 rounded-xl text-xs font-medium border transition-all"
-                style={method === m
-                  ? { background: GRS_GREEN, color: '#fff', borderColor: GRS_GREEN }
-                  : { borderColor: '#e5e5e5', color: '#666' }
-                }>
-                {m === 'measure' ? 'Measuring tape (cm)' : 'Video timing (sec)'}
+              <button key={m} onClick={() => setMethod(m)} style={{
+                padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                border: method === m ? `1.5px solid ${GOLD}` : `1px solid ${BORDER}`,
+                background: method === m ? `${GOLD}22` : '#161616',
+                color: method === m ? GOLD : MUTED,
+              }}>
+                {m === 'measure' ? 'Tape measure (cm)' : 'Video timing (sec)'}
               </button>
             ))}
           </div>
@@ -352,7 +365,7 @@ export function JumpScreen({ state, onAdvance, onBack, onSkip }: TestScreenProps
               hint="Measure from standing reach to the highest point touched"
             />
           ) : (
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <MeasurementInput
                 label="Flight time from video"
                 unit="sec"
@@ -363,7 +376,12 @@ export function JumpScreen({ state, onAdvance, onBack, onSkip }: TestScreenProps
                 hint="Time from feet leaving ground to first landing contact. App converts to cm automatically."
               />
               {flightSec !== '' && typeof flightSec === 'number' && flightSec >= 0.2 && (
-                <div className="text-xs text-center font-medium rounded-lg py-2" style={{ background: '#eaf3de', color: GRS_GREEN }}>
+                <div style={{
+                  textAlign: 'center', fontSize: 12, fontWeight: 700,
+                  padding: '8px', borderRadius: 8,
+                  background: `${GREEN}18`, color: GREEN,
+                  border: `1px solid ${GREEN}33`,
+                }}>
                   ≈ {Math.round(122.6 * Math.pow(flightSec, 2))} cm jump height
                 </div>
               )}
@@ -391,9 +409,24 @@ export function JumpScreen({ state, onAdvance, onBack, onSkip }: TestScreenProps
 export function SprintScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
   const [sprintSec, setSprintSec] = useState<number | ''>('');
 
+  const cardStyle: React.CSSProperties = {
+    background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`, padding: '14px 16px',
+  };
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, color: MUTED,
+    textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12,
+  };
+
+  const REF_TIMES = [
+    { range: 'Under 3.0s', label: 'Elite — top 10%',       colour: GOLD },
+    { range: '3.0–3.4s',   label: 'Competitive — top 25%', colour: GREEN },
+    { range: '3.4–3.9s',   label: 'Developmental — average', colour: '#60a5fa' },
+    { range: 'Over 3.9s',  label: 'Foundation — needs work', colour: MUTED },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F4F2EE] flex flex-col">
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
+      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
 
         <InstructionCard
           testNum="Test 2 of 6"
@@ -410,7 +443,7 @@ export function SprintScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
           ]}
         />
 
-        <div className="bg-white rounded-2xl p-4">
+        <div style={cardStyle}>
           <MeasurementInput
             label="Best sprint time"
             unit="sec"
@@ -422,23 +455,22 @@ export function SprintScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
           />
         </div>
 
-        {/* Age reference */}
-        <div className="bg-white rounded-2xl p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Reference times</div>
-          <div className="space-y-1.5 text-xs">
-            {[
-              { range: 'Under 3.0s', label: 'Elite — top 10%' },
-              { range: '3.0–3.4s',   label: 'Competitive — top 25%' },
-              { range: '3.4–3.9s',   label: 'Developmental — average' },
-              { range: 'Over 3.9s',  label: 'Foundation — needs work' },
-            ].map(r => (
-              <div key={r.range} className="flex justify-between">
-                <span className="font-mono text-gray-700">{r.range}</span>
-                <span className="text-gray-400">{r.label}</span>
+        <div style={cardStyle}>
+          <div style={sectionLabel}>Reference times</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {REF_TIMES.map(r => (
+              <div key={r.range} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '8px 10px', borderRadius: 8, background: '#161616',
+              }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: r.colour }}>
+                  {r.range}
+                </span>
+                <span style={{ fontSize: 11, color: MUTED }}>{r.label}</span>
               </div>
             ))}
           </div>
-          <div className="text-xs text-gray-400 mt-2">For age 13–15. Other age groups vary.</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 10 }}>For age 13–15. Other age groups vary.</div>
         </div>
       </div>
 
@@ -462,17 +494,24 @@ export function BalanceScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
   const [leftClosed,  setLeftClosed]  = useState(0);
   const [phase, setPhase] = useState<'eyes_open' | 'eyes_closed'>('eyes_open');
 
-  // Asymmetry preview
   const rightTotal = rightOpen + rightClosed;
   const leftTotal  = leftOpen  + leftClosed;
-  const worse  = Math.max(rightTotal, leftTotal);
-  const better = Math.min(rightTotal, leftTotal);
-  const asymmetry = worse === 0 ? 0 : Math.round(((worse - better) / worse) * 100);
-  const riskFlag  = asymmetry > 25;
+  const worse      = Math.max(rightTotal, leftTotal);
+  const better     = Math.min(rightTotal, leftTotal);
+  const asymmetry  = worse === 0 ? 0 : Math.round(((worse - better) / worse) * 100);
+  const riskFlag   = asymmetry > 25;
+
+  const cardStyle: React.CSSProperties = {
+    background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`, padding: '14px 16px',
+  };
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, color: MUTED,
+    textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12,
+  };
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE] flex flex-col">
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
+      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
 
         <InstructionCard
           testNum="Test 3 of 6"
@@ -488,57 +527,57 @@ export function BalanceScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
           ]}
         />
 
-        {/* Phase toggle */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-2">
+        {/* Phase toggle + timer */}
+        <div style={cardStyle}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
             {(['eyes_open', 'eyes_closed'] as const).map(p => (
-              <button key={p} onClick={() => setPhase(p)}
-                className="py-2.5 rounded-xl text-xs font-medium border transition-all"
-                style={phase === p
-                  ? { background: GRS_GREEN, color: '#fff', borderColor: GRS_GREEN }
-                  : { borderColor: '#e5e5e5', color: '#666' }
-                }>
-                {p === 'eyes_open' ? 'Eyes open' : 'Eyes closed'}
+              <button key={p} onClick={() => setPhase(p)} style={{
+                padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                border: phase === p ? `1.5px solid ${GOLD}` : `1px solid ${BORDER}`,
+                background: phase === p ? `${GOLD}22` : '#161616',
+                color: phase === p ? GOLD : MUTED,
+              }}>
+                {p === 'eyes_open' ? '👁 Eyes open' : '🙈 Eyes closed'}
               </button>
             ))}
           </div>
-
-          <SessionTimer
-            seconds={30}
-            label={`Timer — 30 seconds per leg`}
-            onComplete={() => {}}
-          />
+          <SessionTimer seconds={30} label="Timer — 30 seconds per leg" onComplete={() => {}} />
         </div>
 
         {/* Correction counts */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+        <div style={cardStyle}>
+          <div style={sectionLabel}>
             {phase === 'eyes_open' ? 'Eyes open — corrections' : 'Eyes closed — corrections'}
           </div>
-          <div className="text-xs text-gray-400">
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 16 }}>
             Tap + each time the athlete touches their other foot down to stop falling.
           </div>
-
-          {phase === 'eyes_open' ? (
-            <div className="grid grid-cols-2 gap-4">
-              <CounterInput label="Right leg" value={rightOpen} onChange={setRightOpen} />
-              <CounterInput label="Left leg"  value={leftOpen}  onChange={setLeftOpen}  />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <CounterInput label="Right leg" value={rightClosed} onChange={setRightClosed} />
-              <CounterInput label="Left leg"  value={leftClosed}  onChange={setLeftClosed}  />
-            </div>
-          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {phase === 'eyes_open' ? (
+              <>
+                <CounterInput label="Right leg" value={rightOpen}   onChange={setRightOpen}   />
+                <CounterInput label="Left leg"  value={leftOpen}    onChange={setLeftOpen}    />
+              </>
+            ) : (
+              <>
+                <CounterInput label="Right leg" value={rightClosed} onChange={setRightClosed} />
+                <CounterInput label="Left leg"  value={leftClosed}  onChange={setLeftClosed}  />
+              </>
+            )}
+          </div>
         </div>
 
         {/* Live asymmetry preview */}
         {(rightOpen > 0 || leftOpen > 0) && (
-          <div className={`rounded-xl p-3 ${riskFlag ? 'bg-red-50' : 'bg-green-50'}`}>
-            <div className="text-xs font-bold mb-1" style={{ color: riskFlag ? '#b42318' : GRS_GREEN }}>
+          <div style={{
+            borderRadius: 12, padding: '12px 14px',
+            background: riskFlag ? '#1f0d0d' : '#0d1f0d',
+            border: `1px solid ${riskFlag ? '#e74c3c44' : `${GREEN}44`}`,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: riskFlag ? '#e74c3c' : GREEN, marginBottom: 4 }}>
               {riskFlag ? '⚠ Asymmetry flag' : '✓ Balance looks symmetric'}
             </div>
-            <div className="text-xs" style={{ color: riskFlag ? '#9b2335' : '#3b6d11' }}>
+            <div style={{ fontSize: 12, color: riskFlag ? '#c0392b' : '#27ae60' }}>
               Left-right difference: {asymmetry}%
               {riskFlag ? ' — above 25% threshold. Injury risk noted.' : ' — within normal range.'}
             </div>
@@ -563,8 +602,8 @@ export function BalanceScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 // T4 — REACTION SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 export function ReactionScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
-  const [catches, setCatches]  = useState(0);
-  const [attempt, setAttempt]  = useState(0);
+  const [catches, setCatches] = useState(0);
+  const [attempt, setAttempt] = useState(0);
   const MAX_ATTEMPTS = 5;
 
   const recordAttempt = (caught: boolean) => {
@@ -575,14 +614,18 @@ export function ReactionScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 
   const reset = () => { setCatches(0); setAttempt(0); };
 
+  const cardStyle: React.CSSProperties = {
+    background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`, padding: '14px 16px',
+  };
+
   return (
-    <div className="min-h-screen bg-[#F4F2EE] flex flex-col">
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
+      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
 
         <InstructionCard
           testNum="Test 4 of 6"
           testName="Reaction — cognitive speed"
-          icon="⚡"
+          icon="◎"
           equipment="One football. 2 metres of open space."
           timeEstimate="~5 mins"
           steps={[
@@ -595,52 +638,73 @@ export function ReactionScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
         />
 
         {/* Attempt tracker */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Attempts {attempt}/{MAX_ATTEMPTS}
             </div>
-            <button onClick={reset} className="text-xs text-gray-400 underline">Reset</button>
+            <button onClick={reset} style={{
+              fontSize: 11, color: MUTED, background: 'none', border: 'none',
+              cursor: 'pointer', textDecoration: 'underline',
+            }}>Reset</button>
           </div>
 
           {/* Dot indicators */}
-          <div className="flex gap-2 justify-center">
-            {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-bold"
-                style={{
-                  borderColor: i < attempt ? GRS_GREEN : '#e5e5e5',
-                  background:  i < attempt ? (i < catches ? GRS_GREEN : '#fee2e2') : 'transparent',
-                  color:       i < attempt ? '#fff' : '#ccc',
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 16 }}>
+            {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => {
+              const done    = i < attempt;
+              const caught  = done && i < catches;
+              const missed  = done && i >= catches;
+              return (
+                <div key={i} style={{
+                  width: 40, height: 40, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 800,
+                  border: done ? `2px solid ${caught ? GREEN : '#e74c3c'}` : `2px solid ${BORDER}`,
+                  background: caught ? `${GREEN}22` : missed ? '#1f0d0d' : 'transparent',
+                  color: caught ? GREEN : missed ? '#e74c3c' : MUTED,
                 }}>
-                {i < attempt ? (i < catches ? '✓' : '✗') : i + 1}
-              </div>
-            ))}
+                  {done ? (caught ? '✓' : '✗') : i + 1}
+                </div>
+              );
+            })}
           </div>
 
           {attempt < MAX_ATTEMPTS ? (
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => recordAttempt(true)}
-                className="py-4 rounded-xl font-bold text-white text-base"
-                style={{ background: GRS_GREEN }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button onClick={() => recordAttempt(true)} style={{
+                padding: '16px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: `${GREEN}22`, border: `1.5px solid ${GREEN}`,
+                color: GREEN, fontSize: 15, fontWeight: 800,
+              }}>
                 ✓ Caught
               </button>
-              <button onClick={() => recordAttempt(false)}
-                className="py-4 rounded-xl font-bold text-sm border-2"
-                style={{ borderColor: '#fee2e2', color: '#b42318' }}>
+              <button onClick={() => recordAttempt(false)} style={{
+                padding: '16px', borderRadius: 12, cursor: 'pointer',
+                background: '#1f0d0d', border: `1.5px solid #e74c3c44`,
+                color: '#e74c3c', fontSize: 15, fontWeight: 800,
+              }}>
                 ✗ Missed
               </button>
             </div>
           ) : (
-            <div className="text-center py-3 rounded-xl font-bold text-lg" style={{ background: '#eaf3de', color: GRS_GREEN }}>
+            <div style={{
+              textAlign: 'center', padding: '12px', borderRadius: 12,
+              background: `${GREEN}18`, border: `1px solid ${GREEN}33`,
+              fontSize: 16, fontWeight: 800, color: GREEN,
+            }}>
               {catches}/5 catches recorded
             </div>
           )}
         </div>
 
-        {/* Science note */}
-        <div className="bg-amber-50 rounded-xl p-3">
-          <div className="text-xs font-bold text-amber-700 mb-1">Coach note</div>
-          <div className="text-xs text-amber-600 leading-relaxed">
+        {/* Coach note */}
+        <div style={{
+          borderRadius: 12, padding: '12px 14px',
+          background: '#1a1200', border: `1px solid ${GOLD}33`,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, marginBottom: 4 }}>Coach note</div>
+          <div style={{ fontSize: 12, color: '#b8862a', lineHeight: 1.6 }}>
             This test measures cognitive speed — how fast the brain reacts and the body responds.
             Research shows simple reaction time alone does not definitively identify elite talent,
             so this score has a lower weight in the overall AQ.
@@ -663,18 +727,17 @@ export function ReactionScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 // T5 — CHITIMA SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
-  const [totalSec,  setTotalSec]  = useState<number | ''>('');
-  const [round1Q,   setRound1Q]   = useState(0);
-  const [round3Q,   setRound3Q]   = useState(0);
-  const [timerSec,  setTimerSec]  = useState(0);
-  const [running,   setRunning]   = useState(false);
-  const [elapsed,   setElapsed]   = useState(0);
+  const [totalSec, setTotalSec] = useState<number | ''>('');
+  const [round1Q,  setRound1Q]  = useState(0);
+  const [round3Q,  setRound3Q]  = useState(0);
+  const [running,  setRunning]  = useState(false);
+  const [elapsed,  setElapsed]  = useState(0);
 
   const startTimer = () => {
     setElapsed(0);
     setRunning(true);
     const interval = setInterval(() => {
-      setElapsed(e => { const n = e + 1; return n; });
+      setElapsed(e => e + 1);
     }, 1000);
     (window as any).__enduranceTimer = interval;
   };
@@ -685,13 +748,21 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
     setTotalSec(elapsed);
   };
 
-  const formatTime = (s: number) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   const canNext = totalSec !== '' && round1Q > 0 && round3Q > 0;
 
+  const cardStyle: React.CSSProperties = {
+    background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`, padding: '14px 16px',
+  };
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, color: MUTED,
+    textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12,
+  };
+
   return (
-    <div className="min-h-screen bg-[#F4F2EE] flex flex-col">
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
+      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
 
         <InstructionCard
           testNum="Test 5 of 6"
@@ -709,60 +780,73 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
         />
 
         {/* Live timer */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Circuit timer</div>
-          <div className="text-center">
-            <div className="text-5xl font-black" style={{ color: running ? GRS_GOLD : GRS_GREEN }}>
+        <div style={cardStyle}>
+          <div style={sectionLabel}>Circuit timer</div>
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <div style={{
+              fontSize: 56, fontWeight: 900, lineHeight: 1,
+              color: running ? GOLD : totalSec !== '' ? GREEN : TEXT,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
               {formatTime(elapsed)}
             </div>
+            {totalSec !== '' && !running && (
+              <div style={{ fontSize: 11, color: GREEN, marginTop: 6, fontWeight: 600 }}>
+                Time recorded ✓
+              </div>
+            )}
           </div>
           {!running && elapsed === 0 ? (
-            <button onClick={startTimer}
-              className="w-full py-3 rounded-xl font-bold text-white"
-              style={{ background: GRS_GREEN }}>
+            <button onClick={startTimer} style={{
+              width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+              background: `${GREEN}22`, border: `1.5px solid ${GREEN}`,
+              color: GREEN, fontSize: 14, fontWeight: 800, cursor: 'pointer',
+            }}>
               Start circuit
             </button>
           ) : running ? (
-            <button onClick={stopTimer}
-              className="w-full py-3 rounded-xl font-bold text-white"
-              style={{ background: '#b42318' }}>
+            <button onClick={stopTimer} style={{
+              width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+              background: '#1f0d0d', border: `1.5px solid #e74c3c44`,
+              color: '#e74c3c', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+            }}>
               Stop — circuit complete
             </button>
-          ) : (
-            <div className="text-center text-sm font-medium" style={{ color: GRS_GREEN }}>
-              Time recorded: {formatTime(elapsed)} ✓
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Technique quality */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">
-            Technique quality — coach rating
+        <div style={cardStyle}>
+          <div style={sectionLabel}>Technique quality — coach rating</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 16 }}>
+            Rate movement quality 1–5. Watch burpees and squat jumps in round 1 vs round 3.
           </div>
-          <div className="text-xs text-gray-400">
-            Rate movement quality 1–5. Watch how burpees and squat jumps look in round 1 vs round 3.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <QualityRating
+              label="Round 1 quality"
+              value={round1Q}
+              onChange={setRound1Q}
+              labels={['Breaking down', 'Struggling', 'Acceptable', 'Good form', 'Excellent form']}
+            />
+            <QualityRating
+              label="Round 3 quality"
+              value={round3Q}
+              onChange={setRound3Q}
+              labels={['Collapsed', 'Very tired', 'Holding on', 'Maintained', 'Strong finish']}
+            />
           </div>
-          <QualityRating
-            label="Round 1 quality"
-            value={round1Q}
-            onChange={setRound1Q}
-            labels={['Breaking down', 'Struggling', 'Acceptable', 'Good form', 'Excellent form']}
-          />
-          <QualityRating
-            label="Round 3 quality"
-            value={round3Q}
-            onChange={setRound3Q}
-            labels={['Collapsed', 'Very tired', 'Holding on', 'Maintained', 'Strong finish']}
-          />
 
           {round1Q > 0 && round3Q > 0 && (
-            <div className={`rounded-xl p-3 text-xs font-medium ${
-              round3Q >= round1Q ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
-            }`}>
+            <div style={{
+              marginTop: 16, borderRadius: 10, padding: '10px 12px',
+              background: round3Q >= round1Q ? `${GREEN}18` : '#1a1200',
+              border: `1px solid ${round3Q >= round1Q ? GREEN : GOLD}33`,
+              fontSize: 12, fontWeight: 600,
+              color: round3Q >= round1Q ? GREEN : GOLD,
+            }}>
               {round3Q >= round1Q
-                ? `Excellent engine — technique held or improved under fatigue.`
-                : `Technique dropped ${round1Q - round3Q} point${round1Q-round3Q>1?'s':''} from round 1 to round 3.`}
+                ? 'Excellent engine — technique held or improved under fatigue.'
+                : `Technique dropped ${round1Q - round3Q} point${round1Q - round3Q > 1 ? 's' : ''} from round 1 to round 3.`}
             </div>
           )}
         </div>
@@ -786,23 +870,31 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 // T6 — BALL MASTERY SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 export function BallScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
-  const [juggling,  setJuggling]  = useState<number | ''>('');
-  const [turn1,     setTurn1]     = useState(0);
-  const [turn2,     setTurn2]     = useState(0);
-  const [turn3,     setTurn3]     = useState(0);
-  const [turn4,     setTurn4]     = useState(0);
-  const [turn5,     setTurn5]     = useState(0);
+  const [juggling, setJuggling] = useState<number | ''>('');
+  const [turn1,    setTurn1]    = useState(0);
+  const [turn2,    setTurn2]    = useState(0);
+  const [turn3,    setTurn3]    = useState(0);
+  const [turn4,    setTurn4]    = useState(0);
+  const [turn5,    setTurn5]    = useState(0);
 
   const turnTotal = turn1 + turn2 + turn3 + turn4 + turn5;
   const canNext   = juggling !== '' && [turn1,turn2,turn3,turn4,turn5].every(t => t > 0);
 
-  const TURN_LABELS = ['1st turn', '2nd turn', '3rd turn', '4th turn', '5th turn'];
-  const turns = [turn1, turn2, turn3, turn4, turn5];
+  const turns    = [turn1, turn2, turn3, turn4, turn5];
   const setTurns = [setTurn1, setTurn2, setTurn3, setTurn4, setTurn5];
 
+  const cardStyle: React.CSSProperties = {
+    background: CARD, border: `1px solid ${BORDER}`,
+    borderRadius: 16, padding: '16px', marginBottom: 0,
+  };
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 11, fontWeight: 700, color: MUTED,
+    textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12,
+  };
+
   return (
-    <div className="min-h-screen bg-[#F4F2EE] flex flex-col">
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 100 }}>
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
         <InstructionCard
           testNum="Test 6 of 6"
@@ -818,37 +910,47 @@ export function BallScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
         />
 
         {/* Juggling */}
-        <div className="bg-white rounded-2xl p-4 space-y-3">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Part A — Juggling</div>
+        <div style={cardStyle}>
+          <div style={sectionLabel}>Part A — Juggling</div>
           <SessionTimer seconds={30} label="30-second juggling window" onComplete={() => {}} />
-          <MeasurementInput
-            label="Longest unbroken sequence"
-            unit="touches"
-            value={juggling}
-            onChange={setJuggling}
-            min={0} max={500} step={1}
-            placeholder="e.g. 18"
-            hint="Count the longest run without a drop. Total touches not needed."
-          />
+          <div style={{ marginTop: 12 }}>
+            <MeasurementInput
+              label="Longest unbroken sequence"
+              unit="touches"
+              value={juggling}
+              onChange={setJuggling}
+              min={0} max={500} step={1}
+              placeholder="e.g. 18"
+              hint="Count the longest run without a drop. Total touches not needed."
+            />
+          </div>
         </div>
 
         {/* Turn quality */}
-        <div className="bg-white rounded-2xl p-4 space-y-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Part B — Inside-cut turns</div>
-          <div className="text-xs text-gray-400">
-            Rate each turn 1–3. 1 = ball runs away · 2 = close but stiff · 3 = ball and body as one
+        <div style={cardStyle}>
+          <div style={sectionLabel}>Part B — Inside-cut turns</div>
+          <div style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>
+            Rate each turn 1–3.&nbsp; 1 = ball runs away · 2 = close but stiff · 3 = ball and body as one
           </div>
-          <div className="grid grid-cols-5 gap-2">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
             {turns.map((t, i) => (
-              <div key={i} className="space-y-1">
-                <div className="text-xs text-gray-400 text-center">{i + 1}</div>
-                {[1,2,3].map(n => (
-                  <button key={n} onClick={() => setTurns[i](n)}
-                    className="w-full py-2 rounded-lg text-xs font-bold border transition-all"
-                    style={t === n
-                      ? { background: GRS_GREEN, color: '#fff', borderColor: GRS_GREEN }
-                      : { borderColor: '#e5e5e5', color: '#aaa' }
-                    }>
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ fontSize: 11, color: MUTED, textAlign: 'center', fontWeight: 600 }}>
+                  {i + 1}
+                </div>
+                {[1, 2, 3].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setTurns[i](n)}
+                    style={{
+                      width: '100%', padding: '8px 0', borderRadius: 8,
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      background: t === n ? `${GOLD}22` : 'transparent',
+                      border: t === n ? `1.5px solid ${GOLD}` : `1px solid ${BORDER}`,
+                      color: t === n ? GOLD : MUTED,
+                      transition: 'all 0.15s',
+                    }}
+                  >
                     {n}
                   </button>
                 ))}
@@ -856,7 +958,9 @@ export function BallScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
             ))}
           </div>
           {turnTotal > 0 && (
-            <div className="text-center text-sm font-bold" style={{ color: GRS_GREEN }}>
+            <div style={{
+              marginTop: 14, textAlign: 'center', fontSize: 13, fontWeight: 700, color: GOLD,
+            }}>
               Turn quality total: {turnTotal}/15
             </div>
           )}
