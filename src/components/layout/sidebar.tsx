@@ -52,7 +52,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/vault", label: "Highlight Vault", icon: <Video size={18} />, roles: ["player"], feature: "passport" },
   { href: "/player/media", label: "Media Gallery", icon: <Camera size={18} />, roles: ["player"], feature: "passport" },
   { href: "/player/position-fit", label: "Position Finder", icon: <Crosshair size={18} />, roles: ["player"], feature: "biometrics" },
-  
+  { href: "/player/gemini-drills", label: "Gemini Drills", icon: <Video size={18} />, roles: ["player"], feature: "drills" },
+
   // ATHLETE CORE (Multi-sport)
   { href: "/athlete/scan", label: "Biometric Scan", icon: <Activity size={18} />, roles: ["athlete"], feature: "biometrics" },
   { href: "/athlete/vault", label: "Video Vault", icon: <Video size={18} />, roles: ["athlete"], feature: "passport" },
@@ -62,7 +63,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/squad", label: "My Squad", icon: <Users size={18} />, roles: ["coach"], feature: "drills" },
   { href: "/coach/hub", label: "Coach Hub", icon: <BookOpen size={18} />, roles: ["coach"], feature: "drills" },
   { href: "/coach/talent-id", label: "Talent ID", icon: <Target size={18} />, roles: ["coach"], feature: "biometrics" },
-  
+  { href: "/coach/gemini-drills", label: "Gemini Drills", icon: <Video size={18} />, roles: ["coach"], feature: "drills" },
+
   // SCOUT CORE
   { href: "/scout/discover", label: "Discover Talent", icon: <UserSearch size={18} />, roles: ["scout"], feature: "passport" },
   { href: "/scout/reports", label: "Scouting Reports", icon: <BarChart3 size={18} />, roles: ["scout"], feature: "passport" },

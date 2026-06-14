@@ -33,6 +33,16 @@ const SOURCE_BADGES: Record<string, { label: string; bg: string; color: string }
   whatsapp:        { label: 'WhatsApp upload',  bg: '#e7fde8', color: '#166534' },
 };
 
+interface DrillScore {
+  drillId: string;
+  drillName: string;
+  passportLabel: string;
+  overall_score: number;
+  top_strength?: string;
+  analysedAt: string;
+  data_confidence?: string;
+}
+
 interface PassportProps {
   player:         { id: string; name: string; age: number; position: string; school: string; username: string };
   latestSession:  any;
@@ -40,6 +50,7 @@ interface PassportProps {
   gamification:   any;
   videos:         any[];
   token:          string;
+  drillScores?:   DrillScore[];
 }
 
 export default function PassportClient({

@@ -108,6 +108,13 @@ const FEATURES = [
     label: "Position Finder",
     desc: "Find your best football position · GRS Engine",
   },
+  {
+    href: "/player/gemini-drills",
+    icon: Video,
+    iconBg: "#ede9fe", iconColor: "#7c3aed",
+    label: "Gemini Drills",
+    desc: "Upload video · AI analyses your technique",
+  },
 ];
 
 export default function PlayerDashboardHome() {
