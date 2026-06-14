@@ -762,67 +762,161 @@ export function BallScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
 export function ResultsScreen({ state }: TestScreenProps) {
   const router = useRouter();
   const result = state.result;
+
   if (!result) return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="text-sm text-gray-400">Calculating results...</div>
+    <div style={{ minHeight: '100vh', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#666', fontSize: 13 }}>Calculating results…</div>
     </div>
   );
 
-  const TIER_BG: Record<string, string> = {
-    Elite: GRS_GOLD, Competitive: GRS_GREEN, Developmental: '#185fa5', Foundation: '#888',
+  // ── Colour tokens ──────────────────────────────────────────────────────────
+  const BG      = '#111111';
+  const CARD    = '#1c1c1c';
+  const BORDER  = '#2a2a2a';
+  const TEXT    = '#f0f0f0';
+  const MUTED   = '#666';
+  const GOLD    = '#c8962a';
+  const GREEN   = '#2ecc71';
+  const RED     = '#e74c3c';
+  const AMBER   = '#f39c12';
+
+  const TIER_COLOUR: Record<string, string> = {
+    Elite: GOLD, Competitive: GREEN, Developmental: '#60a5fa', Foundation: '#888',
+  };
+  const tierColour = TIER_COLOUR[result.tier] ?? '#888';
+
+  const DOMAIN_META: Record<string, { label: string; icon: string }> = {
+    explosivePower: { label: 'Vertical Jump',  icon: '↑' },
+    linearSpeed:    { label: 'Sprint Speed',   icon: '⚡' },
+    balance:        { label: 'Balance',        icon: '⚖' },
+    cognitiveSpeed: { label: 'Reaction',       icon: '◎' },
+    endurance:      { label: 'Endurance',      icon: '♥' },
+    ballMastery:    { label: 'Ball Mastery',   icon: '●' },
   };
 
-  const domainLabels: Record<string, string> = {
-    explosivePower: 'Jump',  linearSpeed: 'Sprint',  balance: 'Balance',
-    cognitiveSpeed: 'React', endurance:   'Endurance', ballMastery: 'Ball',
+  const POSITIONS = ['striker','winger','midfielder','defender','goalkeeper'] as const;
+  const POS_SHORT: Record<string, string> = {
+    striker: 'ST', winger: 'WG', midfielder: 'MF', defender: 'DF', goalkeeper: 'GK',
   };
+
+  // AQ ring geometry
+  const R   = 54;
+  const CIR = 2 * Math.PI * R;
+  const pct = Math.min(result.aq / 100, 1);
+
+  const barColour = (p: number) => p >= 75 ? GREEN : p >= 40 ? GOLD : RED;
 
   return (
-    <div className="min-h-screen bg-[#F4F2EE]">
-      {/* Tier banner */}
-      <div className="px-4 pt-6 pb-5 text-white" style={{ background: TIER_BG[result.tier] }}>
-        <div className="text-xs font-medium opacity-70 uppercase tracking-widest mb-1">
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 120 }}>
+
+      {/* ── Hero ──────────────────────────────────────────────────────────────── */}
+      <div style={{
+        padding: '32px 20px 28px',
+        background: `linear-gradient(160deg, #1a1a1a 0%, #0d0d0d 100%)`,
+        borderBottom: `1px solid ${BORDER}`,
+        textAlign: 'center',
+      }}>
+        {/* Player meta */}
+        <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 20 }}>
           {result.playerName} · {result.ageGroup} · {result.position}
         </div>
-        <div className="text-3xl font-black">{result.tier}</div>
-        <div className="flex items-end gap-3 mt-2">
-          <div>
-            <div className="text-5xl font-black">{result.aq}</div>
-            <div className="text-xs opacity-70">Athletic Quotient</div>
+
+        {/* AQ ring */}
+        <div style={{ position: 'relative', width: 140, height: 140, margin: '0 auto 20px' }}>
+          <svg width={140} height={140} style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx={70} cy={70} r={R} fill="none" stroke={BORDER} strokeWidth={8} />
+            <circle
+              cx={70} cy={70} r={R}
+              fill="none"
+              stroke={tierColour}
+              strokeWidth={8}
+              strokeLinecap="round"
+              strokeDasharray={CIR}
+              strokeDashoffset={CIR * (1 - pct)}
+              style={{ filter: `drop-shadow(0 0 6px ${tierColour}88)` }}
+            />
+          </svg>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{ fontSize: 42, fontWeight: 900, lineHeight: 1, color: tierColour }}>{result.aq}</div>
+            <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>AQ Score</div>
           </div>
+        </div>
+
+        {/* Tier + trend */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <span style={{
+            display: 'inline-block',
+            padding: '4px 14px',
+            borderRadius: 99,
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: tierColour,
+            background: `${tierColour}18`,
+            border: `1px solid ${tierColour}44`,
+          }}>
+            {result.tier}
+          </span>
           {result.dq !== null && (
-            <div className="mb-1">
-              <div className="text-xl font-bold">
-                {result.dq > 0 ? '+' : ''}{result.dq}%/wk
-              </div>
-              <div className="text-xs opacity-70">{result.dqLabel}</div>
-            </div>
+            <span style={{
+              fontSize: 12, fontWeight: 700,
+              color: result.dq >= 0 ? GREEN : RED,
+            }}>
+              {result.dq > 0 ? '+' : ''}{result.dq}%/wk
+            </span>
           )}
         </div>
+
+        {/* Rank label */}
+        {result.rank && (
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 10, fontWeight: 600 }}>
+            {result.rank}
+          </div>
+        )}
       </div>
 
-      <div className="px-4 py-4 space-y-4">
+      <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {/* Domain scores */}
-        <div className="bg-white rounded-2xl p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Domain scores</div>
-          <div className="space-y-2.5">
+        {/* ── Domain scores ─────────────────────────────────────────────────── */}
+        <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${BORDER}` }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Domain Scores
+            </span>
+          </div>
+          <div style={{ padding: '10px 16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {Object.entries(result.domains).map(([key, domain]: [string, any]) => {
               if (!domain.tested) return null;
+              const meta   = DOMAIN_META[key] ?? { label: key, icon: '·' };
+              const colour = barColour(domain.percentile);
               return (
                 <div key={key}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-600">{domainLabels[key]}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{domain.rawScore}</span>
-                      <span className="text-xs font-bold" style={{ color: GRS_GREEN }}>{domain.percentile}th pct</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ fontSize: 13, color: colour, width: 16, textAlign: 'center' }}>{meta.icon}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: TEXT }}>{meta.label}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: MUTED }}>{domain.rawScore}</span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, color: colour,
+                        background: `${colour}18`, border: `1px solid ${colour}33`,
+                        borderRadius: 99, padding: '2px 7px',
+                      }}>
+                        {domain.percentile}th
+                      </span>
                     </div>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{
+                  <div style={{ height: 4, background: '#2a2a2a', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 99,
                       width: `${domain.percentile}%`,
-                      background: domain.percentile >= 75 ? GRS_GREEN
-                        : domain.percentile >= 40 ? GRS_GOLD : '#b42318',
+                      background: colour,
+                      boxShadow: `0 0 6px ${colour}66`,
                     }} />
                   </div>
                 </div>
@@ -831,73 +925,141 @@ export function ResultsScreen({ state }: TestScreenProps) {
           </div>
         </div>
 
-        {/* PQ */}
-        <div className="bg-white rounded-2xl p-4">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Position match</div>
-          <div className="grid grid-cols-5 gap-1.5">
-            {(['striker','winger','midfielder','defender','goalkeeper'] as const).map(pos => (
-              <div key={pos} className={`rounded-xl p-2 text-center ${pos === result.pq.bestFit ? 'ring-2' : ''}`}
-                style={pos === result.pq.bestFit ? { outline: `2px solid ${GRS_GREEN}`, background: '#eaf3de' } : { background: '#f5f5f5' }}>
-                <div className="text-sm font-black" style={{ color: pos === result.pq.bestFit ? GRS_GREEN : '#888' }}>
-                  {result.pq[pos]}
+        {/* ── Position match ────────────────────────────────────────────────── */}
+        <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}` }}>
+          <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${BORDER}` }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Position Match
+            </span>
+          </div>
+          <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+            {POSITIONS.map(pos => {
+              const isBest = pos === result.pq.bestFit;
+              return (
+                <div key={pos} style={{
+                  borderRadius: 12,
+                  padding: '10px 4px',
+                  textAlign: 'center',
+                  background: isBest ? `${GREEN}18` : '#222',
+                  border: isBest ? `1.5px solid ${GREEN}` : `1px solid ${BORDER}`,
+                  boxShadow: isBest ? `0 0 12px ${GREEN}22` : 'none',
+                }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: isBest ? GREEN : '#555' }}>
+                    {result.pq[pos]}
+                  </div>
+                  <div style={{ fontSize: 9, color: isBest ? GREEN : MUTED, marginTop: 3, fontWeight: 700, letterSpacing: '0.05em' }}>
+                    {POS_SHORT[pos]}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400 mt-0.5" style={{ fontSize: '9px' }}>
-                  {pos.slice(0,3).toUpperCase()}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Injury flag */}
+        {/* ── Injury flag ───────────────────────────────────────────────────── */}
         {result.injuryRiskFlag && (
-          <div className="bg-red-50 rounded-2xl p-4">
-            <div className="text-xs font-bold text-red-700 mb-1">⚠ Balance asymmetry flag</div>
-            <div className="text-xs text-red-600">
-              Left-right difference: {result.balanceAsymmetry}% — above the 25% injury risk threshold.
-              Prioritise single-leg stability work this week.
+          <div style={{
+            background: '#1f1200',
+            borderRadius: 14,
+            border: `1px solid ${AMBER}44`,
+            padding: '14px 16px',
+            display: 'flex', gap: 12, alignItems: 'flex-start',
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>⚠</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: AMBER, marginBottom: 4 }}>
+                Balance asymmetry detected
+              </div>
+              <div style={{ fontSize: 12, color: '#c8852a', lineHeight: 1.5 }}>
+                Left–right difference: <strong>{result.balanceAsymmetry}%</strong> — above the 25% injury risk threshold.
+                Prioritise single-leg stability drills this week.
+              </div>
             </div>
           </div>
         )}
 
-        {/* Suggested drills */}
+        {/* ── Suggested drills ──────────────────────────────────────────────── */}
         {result.suggestedDrills.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 space-y-3">
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Drills for this week</div>
-            {result.suggestedDrills.map((drill, i) => (
-              <div key={drill.id} className={`rounded-xl p-3 ${i === result.suggestedDrills.length - 1 ? 'border border-dashed border-gray-200' : 'bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-xs font-bold text-gray-800">{drill.name}</span>
-                  <span className="text-xs text-gray-400">{drill.duration}</span>
+          <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}` }}>
+            <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${BORDER}` }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                Drills This Week
+              </span>
+            </div>
+            <div style={{ padding: '8px 16px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {result.suggestedDrills.map((drill: any, i: number) => (
+                <div key={drill.id} style={{
+                  padding: '12px 0',
+                  borderBottom: i < result.suggestedDrills.length - 1 ? `1px solid ${BORDER}` : 'none',
+                  display: 'flex', gap: 12, alignItems: 'flex-start',
+                }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 8, background: `${GOLD}18`,
+                    border: `1px solid ${GOLD}33`, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', flexShrink: 0, fontSize: 12, color: GOLD, fontWeight: 900,
+                  }}>
+                    {i + 1}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{drill.name}</span>
+                      <span style={{ fontSize: 11, color: MUTED, flexShrink: 0, marginLeft: 8 }}>{drill.duration}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.4 }}>{drill.reason}</div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">{drill.reason}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Scout narrative */}
-        <div className="bg-white rounded-2xl p-4 space-y-2">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">Scout report</div>
-          <div className="text-xs text-gray-600 leading-relaxed">{result.scoutNarrative}</div>
+        {/* ── Scout report ──────────────────────────────────────────────────── */}
+        <div style={{
+          background: CARD, borderRadius: 16,
+          border: `1px solid ${BORDER}`,
+          borderLeft: `3px solid ${GOLD}`,
+          padding: '16px',
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
+            Scout Report
+          </div>
+          <div style={{ fontSize: 13, color: '#ccc', lineHeight: 1.65 }}>{result.scoutNarrative}</div>
           {result.coachVerified && (
-            <div className="flex items-center gap-1 mt-2">
-              <span style={{ color: GRS_GREEN }}>✓</span>
-              <span className="text-xs font-medium" style={{ color: GRS_GREEN }}>
-                Verified by {result.verifiedBy}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 800, color: GREEN,
+                background: `${GREEN}18`, border: `1px solid ${GREEN}33`,
+                borderRadius: 99, padding: '3px 10px', letterSpacing: '0.06em',
+              }}>
+                ✓ VERIFIED
               </span>
+              <span style={{ fontSize: 11, color: MUTED }}>by {result.verifiedBy}</span>
             </div>
           )}
         </div>
 
-        {/* Actions */}
-        <div className="space-y-2 pb-6">
-          <button
-            onClick={() => router.push('/player/passport')}
-            className="w-full py-4 rounded-xl font-bold text-white text-sm"
-            style={{ background: GRS_GREEN }}>
-            Generate Talent Passport
-          </button>
+      </div>
+
+      {/* ── Sticky action bar ─────────────────────────────────────────────────── */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: '#0d0d0d',
+        borderTop: `1px solid ${BORDER}`,
+        padding: '12px 16px 20px',
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}>
+        <button
+          onClick={() => router.push('/player/passport')}
+          style={{
+            width: '100%', padding: '14px', borderRadius: 12, border: 'none',
+            background: `linear-gradient(90deg, #1a5c2a, #2ecc71)`,
+            color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Generate Talent Passport
+        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => {
               const text = encodeURIComponent(
@@ -905,12 +1067,22 @@ export function ResultsScreen({ state }: TestScreenProps) {
               );
               window.open(`https://wa.me/?text=${text}`, '_blank');
             }}
-            className="w-full py-3 rounded-xl font-medium text-sm border border-gray-200 text-gray-600">
-            Share player card via WhatsApp
+            style={{
+              flex: 1, padding: '12px 8px', borderRadius: 12,
+              border: `1px solid ${BORDER}`, background: '#1a1a1a',
+              color: '#aaa', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            Share via WhatsApp
           </button>
           <button
             onClick={() => { window.location.href = '/player/weekly-session'; }}
-            className="w-full py-3 rounded-xl font-medium text-sm border border-gray-200 text-gray-600">
+            style={{
+              flex: 1, padding: '12px 8px', borderRadius: 12,
+              border: `1px solid ${BORDER}`, background: '#1a1a1a',
+              color: '#aaa', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}
+          >
             Test another player
           </button>
         </div>
