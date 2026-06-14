@@ -7,7 +7,6 @@ import Link from "next/link";
 export default function PlayerTrainPage() {
   const [phase, setPhase] = useState<"idle" | "capturing" | "processing" | "done">("idle");
   const [framesMapped, setFramesMapped] = useState(0);
-  const [drillScore, setDrillScore] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string>("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -33,7 +32,6 @@ export default function PlayerTrainPage() {
   async function startTrainingDrill() {
     setPhase("capturing");
     setFramesMapped(0);
-    setDrillScore(null);
     setFeedback("");
 
     try {
@@ -96,21 +94,38 @@ export default function PlayerTrainPage() {
     ctx.setLineDash([]);
   }
 
-  function processDrillMetrics() {
+  function captureCurrentFrame(): string | null {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return null;
+    const tmp = document.createElement('canvas');
+    tmp.width = video.videoWidth;
+    tmp.height = video.videoHeight;
+    const ctx = tmp.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0);
+    return tmp.toDataURL('image/jpeg', 0.6).split(',')[1];
+  }
+
+  async function processDrillMetrics() {
+    const base64 = captureCurrentFrame();
     clearTelemetrySession();
     setPhase("processing");
 
-    // Process evaluation metrics natively via telemetry timestamps
-    setTimeout(() => {
-      const computedScore = Math.floor(78 + Math.random() * 18);
-      setDrillScore(computedScore);
-      setFeedback(
-        computedScore > 88 
-          ? "Excellent core spatial alignment. Lateral sway remained within elite development baselines."
-          : "Good technical retention. Focus on optimizing knee lift response path speed adjustments."
-      );
-      setPhase("done");
-    }, 1200);
+    try {
+      const res = await fetch('/api/vision-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: base64,
+          context: 'Player performing an agility and stability drill. Analyse their body position, movement quality, and technique.',
+        }),
+      });
+      const data = await res.json();
+      setFeedback(data.feedback ?? 'Analysis complete. Ask your coach for detailed feedback.');
+    } catch {
+      setFeedback('Could not reach AI coach. Ask your coach to review your technique in person.');
+    }
+    setPhase("done");
   }
 
   return (
@@ -121,8 +136,8 @@ export default function PlayerTrainPage() {
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-base font-black text-gray-900">Nurture Performance Vault</h1>
-            <p className="text-xs text-gray-400">Real-time technique development feedback tracking dashboard</p>
+            <h1 className="text-base font-black text-gray-900">Drill Camera</h1>
+            <p className="text-xs text-gray-400">Record your drill — AI coach gives feedback on your technique</p>
           </div>
         </div>
       </div>
@@ -130,8 +145,8 @@ export default function PlayerTrainPage() {
       <main className="max-w-3xl mx-auto px-4 mt-6 space-y-6">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-5">
           <div className="mb-4">
-            <h2 className="text-sm font-bold text-gray-800">Active Drill: Agility Stability Check</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Keeps tracking execution center plane coordinates tightly aligned.</p>
+            <h2 className="text-sm font-bold text-gray-800">Active Drill</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Face the camera and perform your drill. Stop when done to get AI feedback.</p>
           </div>
 
           {/* Core Viewport Container Deck */}
@@ -156,16 +171,13 @@ export default function PlayerTrainPage() {
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
           </div>
 
-          {/* Parameter States Interface Feedbacks */}
-          {phase === "done" && drillScore && (
+          {/* AI Feedback */}
+          {phase === "done" && feedback && (
             <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wide flex items-center gap-1.5">
-                  <CheckCircle size={14} /> Tracking Assessment Completed
-                </span>
-                <span className="text-base font-black text-emerald-900">{drillScore} <span className="text-xs font-medium">/100</span></span>
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed mt-1">{feedback}</p>
+              <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wide flex items-center gap-1.5">
+                <CheckCircle size={14} /> AI Coach Feedback
+              </span>
+              <p className="text-sm text-gray-700 leading-relaxed mt-1">{feedback}</p>
             </div>
           )}
 

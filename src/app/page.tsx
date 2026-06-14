@@ -367,23 +367,23 @@ function WorldCupBanner() {
     <section className="py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <Link
-          href="/world-cup"
+          href="/worldcup"
           className="block rounded-2xl overflow-hidden p-6 text-center transition-opacity hover:opacity-90"
           style={{
-            background: "linear-gradient(135deg, #1c3d22 0%, #185fa5 100%)",
+            background: "linear-gradient(135deg, #0a1a0f 0%, #1a3a20 60%, #f0b429 100%)",
           }}
         >
           <div
             className="text-xs font-medium tracking-widest uppercase mb-1"
-            style={{ color: "rgba(255,255,255,0.6)" }}
+            style={{ color: "rgba(240,180,41,0.8)" }}
           >
-            World Cup 2026
+            GRS World Cup
           </div>
           <div className="text-xl font-black text-white">
-            Live Scores · AI Commentary · All Fixtures →
+            🏆 Join as a Fan — Follow Every Match →
           </div>
-          <div className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.6)" }}>
-            48 teams · 104 matches · USA · Canada · Mexico
+          <div className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+            Vote for Player of the Tournament · Live WhatsApp updates · Discover local talent
           </div>
         </Link>
       </div>
