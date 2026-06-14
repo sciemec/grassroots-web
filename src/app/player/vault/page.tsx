@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Film, Upload, Trash2, Play, X, Plus, Copy, Check,
-  HardDrive, Tag, Clock, AlertCircle, ChevronRight, Loader2, WifiOff,
+  HardDrive, Tag, Clock, AlertCircle, ChevronRight, Loader2, WifiOff, Share2,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -317,6 +317,7 @@ function VideoCard({
   video,
   onPlay,
   onDelete,
+  onShareToArena,
   selected,
   selectable,
   onToggleSelect,
@@ -324,6 +325,7 @@ function VideoCard({
   video: PlayerVideo;
   onPlay: (v: PlayerVideo) => void;
   onDelete: (id: string) => void;
+  onShareToArena?: (v: PlayerVideo) => void;
   selected?: boolean;
   selectable?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -401,6 +403,14 @@ function VideoCard({
       {/* Info */}
       <div className="p-3">
         <p className="truncate text-sm font-medium text-[#f0b429]">{video.title}</p>
+        {!selectable && onShareToArena && video.video_url && !video.id.startsWith("local-") && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onShareToArena(video); }}
+            className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-green-400 hover:text-green-300 transition-colors"
+          >
+            <Share2 className="h-3 w-3" /> Share to Arena
+          </button>
+        )}
         <div className="mt-1.5 flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -631,6 +641,98 @@ function ShareLinkPanel({ url, title, onDismiss }: { url: string; title: string;
   );
 }
 
+// ─── Share to Arena Modal ─────────────────────────────────────────────────────
+
+function ShareToArenaModal({
+  video,
+  onClose,
+  onShared,
+}: {
+  video: PlayerVideo;
+  onClose: () => void;
+  onShared: () => void;
+}) {
+  const [caption, setCaption] = useState(`New video: ${video.title}`);
+  const [sharing, setSharing] = useState(false);
+  const [error, setError]     = useState("");
+
+  async function handleShare() {
+    setSharing(true);
+    setError("");
+    try {
+      await api.post("/arena/posts/share-video", {
+        video_id: video.id,
+        body:     caption.trim() || `New video: ${video.title}`,
+      });
+      onShared();
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Could not share — please try again.";
+      setError(msg);
+      setSharing(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[#f0b429]/15 px-5 py-4">
+          <h3 className="flex items-center gap-2 font-semibold text-[#f0b429]">
+            <Share2 className="h-5 w-5 text-primary" /> Share to The Arena
+          </h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-[#f0b429]">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <p className="text-xs text-muted-foreground">
+            This will post <span className="font-semibold text-[#f0b429]">{video.title}</span> to The Arena feed where scouts and coaches can discover it.
+          </p>
+
+          <textarea
+            value={caption}
+            onChange={e => setCaption(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="Add a caption..."
+            className="w-full resize-none rounded-lg border border-[#f0b429]/15 bg-background px-3 py-2.5 text-sm text-[#f0b429] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          />
+          <p className="text-right text-[10px] text-muted-foreground">{caption.length}/500</p>
+
+          {error && (
+            <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-[#f0b429]/15 px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {sharing ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Posting…</>
+              ) : (
+                <><Share2 className="h-4 w-4" /> Post to Arena</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function PlayerVaultPage() {
@@ -644,6 +746,8 @@ export default function PlayerVaultPage() {
   const [playingVideo, setPlayingVideo] = useState<PlayerVideo | null>(null);
   const [showReelModal, setShowReelModal] = useState(false);
   const [shareLink, setShareLink] = useState<{ url: string; title: string } | null>(null);
+  const [shareTarget, setShareTarget] = useState<PlayerVideo | null>(null);
+  const [arenaShared, setArenaShared] = useState(false);
 
   const fetchVault = useCallback(async () => {
     try {
@@ -811,6 +915,7 @@ export default function PlayerVaultPage() {
                     video={video}
                     onPlay={setPlayingVideo}
                     onDelete={handleDeleted}
+                    onShareToArena={setShareTarget}
                   />
                 ))}
               </div>
@@ -852,6 +957,28 @@ export default function PlayerVaultPage() {
           onClose={() => setShowReelModal(false)}
           onCreated={handleReelCreated}
         />
+      )}
+
+      {/* Share to Arena modal */}
+      {shareTarget && (
+        <ShareToArenaModal
+          video={shareTarget}
+          onClose={() => setShareTarget(null)}
+          onShared={() => {
+            setShareTarget(null);
+            setArenaShared(true);
+            setTimeout(() => setArenaShared(false), 5000);
+          }}
+        />
+      )}
+
+      {/* Arena success toast */}
+      {arenaShared && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-2xl bg-[#1a5c2a] px-5 py-3 shadow-xl">
+          <Check className="h-4 w-4 text-green-400" />
+          <span className="text-sm font-semibold text-white">Posted to The Arena!</span>
+          <a href="/arena" className="text-xs font-bold text-[#f0b429] hover:underline ml-1">View →</a>
+        </div>
       )}
     </div>
   );
