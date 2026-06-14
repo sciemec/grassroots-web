@@ -909,7 +909,7 @@ export function ResultsScreen({ state }: TestScreenProps) {
             Share player card via WhatsApp
           </button>
           <button
-            onClick={() => { window.location.href = '/player/session'; }}
+            onClick={() => { window.location.href = '/player/weekly-session'; }}
             className="w-full py-3 rounded-xl font-medium text-sm border border-gray-200 text-gray-600">
             Test another player
           </button>
