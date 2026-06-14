@@ -10,12 +10,15 @@ export function PublicNavbar() {
   const [open, setOpen] = useState(false);
   const { user } = useAuthStore();
 
-  const links = [
+  type NavLink = { href: string; label: string; gold?: boolean };
+
+  const links: NavLink[] = [
     { href: "/schools", label: "Schools & Clubs" },
     { href: "/player", label: "Player Hub" },
     { href: "/coach", label: "Coach Hub" },
     { href: "/scout", label: "Scout Hub" },
     { href: "/arena", label: "The Arena" },
+    { href: "/worldcup", label: "🏆 World Cup", gold: true },
   ];
 
   return (
@@ -46,7 +49,8 @@ export function PublicNavbar() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm text-green-200 hover:text-white transition-colors"
+              className={l.gold ? "text-sm font-bold transition-colors hover:opacity-80" : "text-sm text-green-200 hover:text-white transition-colors"}
+              style={l.gold ? { color: "#f0b429" } : undefined}
             >
               {l.label}
             </Link>
@@ -101,7 +105,8 @@ export function PublicNavbar() {
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="text-sm text-green-200 hover:text-white"
+                className={l.gold ? "text-sm font-bold" : "text-sm text-green-200 hover:text-white"}
+                style={l.gold ? { color: "#f0b429" } : undefined}
               >
                 {l.label}
               </Link>
