@@ -4,7 +4,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   MapPin, Calendar, Radio, MicOff, Volume2, RefreshCw, 
-  Tv, Activity, Languages, Zap 
+  Tv, Activity, Languages, Zap, Share2, Copy, Check,
+  TrendingUp, Clock, Youtube, MessageCircle
 } from 'lucide-react';
 
 // ============================================
@@ -67,7 +68,7 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
               if (parent) {
                 const fallbackDiv = document.createElement('div');
                 fallbackDiv.className = "w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 text-gray-500 font-medium p-4 text-center";
-                fallbackDiv.innerHTML = `<span class="text-sm font-bold text-gray-700">${displaySponsor}</span><span class="text-[11px] text-gray-400 mt-1">Tap to visit partner website</span>`;
+                fallbackDiv.innerHTML = `<span className="text-sm font-bold text-gray-700">${displaySponsor}</span><span className="text-[11px] text-gray-400 mt-1">Tap to visit partner website</span>`;
                 parent.appendChild(fallbackDiv);
               }
             }}
@@ -337,6 +338,276 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
 }
 
 // ============================================
+// MATCH ODDS (KEPT - Right Column)
+// ============================================
+function MatchOdds({ match }: { match: Match | null }) {
+  if (!match || match.status !== 'scheduled') return null;
+  
+  // Simulated odds - replace with real API
+  const odds = {
+    home: 2.10,
+    draw: 3.20,
+    away: 2.15
+  };
+  
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+      <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><TrendingUp size={14} className="text-[#1a5c2a]" /> Match Odds</h3>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="p-2 bg-gray-50 rounded-lg"><p className="text-[10px] text-gray-500">{match.homeTeam}</p><p className="text-lg font-bold text-[#1a5c2a]">{odds.home}</p></div>
+        <div className="p-2 bg-gray-50 rounded-lg"><p className="text-[10px] text-gray-500">Draw</p><p className="text-lg font-bold text-[#1a5c2a]">{odds.draw}</p></div>
+        <div className="p-2 bg-gray-50 rounded-lg"><p className="text-[10px] text-gray-500">{match.awayTeam}</p><p className="text-lg font-bold text-[#1a5c2a]">{odds.away}</p></div>
+      </div>
+      <p className="text-[8px] text-gray-400 text-center mt-2">Odds for entertainment purposes</p>
+    </div>
+  );
+}
+
+// ============================================
+// NEW FEATURE 1: SHARE BUTTONS (Right Column)
+// ============================================
+function ShareButtons({ match }: { match: Match | null }) {
+  const [copied, setCopied] = useState(false);
+  
+  if (!match) return null;
+  
+  const shareUrl = `${window.location.origin}/world-cup?match=${match.id}`;
+  const shareText = `🏆 World Cup 2026: ${match.homeTeam} vs ${match.awayTeam} - Live on GrassRoots Sports!`;
+  
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const shareWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
+  };
+  
+  return (
+    <div className="flex gap-2">
+      <button onClick={copyLink} className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">
+        {copied ? <Check size={14} /> : <Copy size={14} />}
+        {copied ? 'Copied!' : 'Copy Link'}
+      </button>
+      <button onClick={shareWhatsApp} className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#25D366] text-white hover:bg-[#20b859] rounded-lg text-sm font-medium transition">
+        <MessageCircle size={14} /> Share
+      </button>
+    </div>
+  );
+}
+
+// ============================================
+// NEW FEATURE 2: HIGHLIGHTS MODAL
+// ============================================
+interface Highlight {
+  id: string;
+  title: string;
+  thumbnail: string;
+  url: string;
+}
+
+function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () => void }) {
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!match) return;
+    
+    const fetchHighlights = async () => {
+      setLoading(true);
+      try {
+        const query = `${match.homeTeam} vs ${match.awayTeam} world cup 2026 highlights`;
+        const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.items) {
+          setHighlights(data.items.map((item: any) => ({
+            id: item.id.videoId,
+            title: item.snippet.title,
+            thumbnail: item.snippet.thumbnails.medium.url,
+            url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch highlights:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHighlights();
+  }, [match]);
+
+  if (!match) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] p-4 text-white flex justify-between items-center">
+          <h3 className="font-bold flex items-center gap-2"><Youtube size={18} className="text-red-500" /> Match Highlights</h3>
+          <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
+        </div>
+        
+        <div className="p-4 overflow-y-auto max-h-[70vh]">
+          {selectedVideo ? (
+            <div>
+              <iframe 
+                src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1`}
+                className="w-full aspect-video rounded-lg"
+                allowFullScreen
+              />
+              <button onClick={() => setSelectedVideo(null)} className="mt-3 text-sm text-[#1a5c2a] hover:underline">← Back to list</button>
+            </div>
+          ) : loading ? (
+            <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
+          ) : highlights.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No highlights available yet. Check back after the match.</p>
+          ) : (
+            <div className="space-y-3">
+              {highlights.map(h => (
+                <div key={h.id} className="flex gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer" onClick={() => setSelectedVideo(h.id)}>
+                  <img src={h.thumbnail} alt={h.title} className="w-32 h-20 rounded object-cover" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium line-clamp-2">{h.title}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">Click to watch ▶</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// NEW FEATURE 3: MATCH TIMELINE (Under 2D Pitch)
+// ============================================
+interface TimelineEvent {
+  id: string;
+  minute: number;
+  type: 'goal' | 'yellow_card' | 'red_card' | 'substitution' | 'shot';
+  team: 'home' | 'away';
+  player: string;
+  description: string;
+}
+
+function MatchTimeline({ match, ballPosition }: { match: Match | null; ballPosition?: { x: number; y: number } }) {
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [highlightedEvent, setHighlightedEvent] = useState<string | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+
+  // Simulated events - replace with real API data
+  useEffect(() => {
+    if (!match) return;
+    
+    const mockEvents: TimelineEvent[] = [
+      { id: '1', minute: 23, type: 'goal', team: 'away', player: 'Neymar', description: 'Goal! Brazil takes the lead' },
+      { id: '2', minute: 45, type: 'yellow_card', team: 'home', player: 'Musona', description: 'Yellow card for late tackle' },
+      { id: '3', minute: 56, type: 'goal', team: 'away', player: 'Vinicius', description: 'Goal! Brazil doubles the lead' },
+    ];
+    
+    setEvents(mockEvents);
+  }, [match]);
+
+  // Highlight event when ball position changes (sync)
+  useEffect(() => {
+    if (ballPosition && events.length > 0) {
+      const fakeMinute = Math.floor((ballPosition.x / 100) * 90);
+      const nearestEvent = events.find(e => Math.abs(e.minute - fakeMinute) < 5);
+      if (nearestEvent && highlightedEvent !== nearestEvent.id) {
+        setHighlightedEvent(nearestEvent.id);
+        const element = document.getElementById(`timeline-event-${nearestEvent.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+  }, [ballPosition, events]);
+
+  if (!match || (match.status !== 'live' && match.status !== 'finished')) return null;
+  if (events.length === 0) return null;
+
+  const getEventIcon = (type: string) => {
+    switch(type) {
+      case 'goal': return '⚽';
+      case 'yellow_card': return '🟨';
+      case 'red_card': return '🟥';
+      case 'substitution': return '🔄';
+      default: return '⚡';
+    }
+  };
+
+  const getEventColor = (type: string) => {
+    if (type === 'goal') return 'bg-green-100 text-green-700 border-green-200';
+    if (type === 'yellow_card') return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    if (type === 'red_card') return 'bg-red-100 text-red-700 border-red-200';
+    return 'bg-gray-100 text-gray-600 border-gray-200';
+  };
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200 mt-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+          <Clock size={14} className="text-[#1a5c2a]" /> Match Timeline
+          <span className="text-[9px] font-normal text-gray-400">(syncs with live action)</span>
+        </h3>
+        {match.status === 'live' && (
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-[9px] text-red-500 font-medium">LIVE</span>
+          </div>
+        )}
+      </div>
+      
+      <div className="relative">
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+        
+        <div className="space-y-3 max-h-48 overflow-y-auto pr-2" ref={timelineRef}>
+          {events.map((event) => (
+            <div 
+              key={event.id}
+              id={`timeline-event-${event.id}`}
+              className={`flex items-start gap-3 p-2 rounded-lg transition-all duration-300 ${
+                highlightedEvent === event.id 
+                  ? 'bg-[#f0b429]/20 border-l-4 border-[#f0b429] animate-pulse' 
+                  : 'hover:bg-gray-50'
+              }`}
+            >
+              <div className="relative z-10 w-7 h-7 rounded-full bg-white border-2 flex items-center justify-center text-sm shrink-0" style={{ borderColor: highlightedEvent === event.id ? '#f0b429' : '#e5e7eb' }}>
+                <span className="text-xs">{getEventIcon(event.type)}</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-gray-700">{event.minute}'</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${getEventColor(event.type)}`}>
+                    {event.type.replace('_', ' ').toUpperCase()}
+                  </span>
+                  <span className="text-xs text-gray-600">{event.description}</span>
+                </div>
+                <p className="text-[9px] text-gray-400 mt-0.5">{event.player}</p>
+              </div>
+              {highlightedEvent === event.id && (
+                <div className="animate-pulse text-[#f0b429] text-[10px] shrink-0">▶ NOW</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {match.status === 'live' && ballPosition && (
+        <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between text-[9px] text-gray-400">
+          <span>⚡ Synced with ball tracking</span>
+          <span>🎙️ Commentary linked</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
 // AI COMMENTARY PIPELINE
 // ============================================
 function AICommentary({ selectedMatch }: { selectedMatch: Match | null }) {
@@ -501,7 +772,7 @@ function MatchCard({ match, isSelected, onClick }: { match: Match; isSelected: b
 }
 
 // ============================================
-// ROOT MASTER INTERFACE COLLAPSING BOTH BLOCKS
+// ROOT MASTER INTERFACE
 // ============================================
 export default function WorldCupPage() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -510,6 +781,7 @@ export default function WorldCupPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
+  const [showHighlightsModal, setShowHighlightsModal] = useState(false);
   const hasSetInitial = useRef(false);
 
   const loadData = async () => {
@@ -667,6 +939,9 @@ export default function WorldCupPage() {
                     />
                   </div>
 
+                  {/* === NEW: MATCH TIMELINE (UNDER PITCH) === */}
+                  <MatchTimeline match={selectedMatch} ballPosition={ballPosition} />
+
                   {/* COMMENTARY PIPELINE */}
                   <AICommentary selectedMatch={selectedMatch} />
                 </>
@@ -677,23 +952,36 @@ export default function WorldCupPage() {
               )}
             </div>
 
-            {/* === RIGHT COLUMN: GOLD & SILVER MONETIZATION SLOTS (3/12 Space) === */}
+            {/* === RIGHT COLUMN: GOLD, SILVER, ODDS, SHARE, HIGHLIGHTS === */}
             <div className="lg:col-span-3 space-y-4">
-              <AdBanner 
-                tier="GOLD" 
-                targetUrl={selectedMatch?.sponsorTargetUrl} 
-                sponsorName={selectedMatch?.pitchSponsorName} 
-              />
-              <AdBanner 
-                tier="SILVER" 
-                targetUrl={selectedMatch?.sponsorTargetUrl} 
-                sponsorName={selectedMatch?.pitchSponsorName} 
-              />
+              <AdBanner tier="GOLD" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
+              <AdBanner tier="SILVER" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
+              
+              {/* KEPT: Match Odds */}
+              <MatchOdds match={selectedMatch} />
+              
+              {/* NEW: Share Buttons */}
+              <ShareButtons match={selectedMatch} />
+              
+              {/* NEW: Watch Highlights Button */}
+              {selectedMatch?.status === 'finished' && (
+                <button 
+                  onClick={() => setShowHighlightsModal(true)}
+                  className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2"
+                >
+                  <Youtube size={16} /> Watch Match Highlights
+                </button>
+              )}
             </div>
 
           </div>
         )}
       </div>
+
+      {/* NEW: Highlights Modal */}
+      {showHighlightsModal && selectedMatch && (
+        <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />
+      )}
     </div>
   );
 }
