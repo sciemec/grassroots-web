@@ -57,7 +57,7 @@ const FEATURES = [
     desc: "Highlights · skill clips · AI reels",
   },
   {
-    href: "/world-cup",
+    href: "/worldcup",
     icon: Globe,
     iconBg: "#f0fdf4", iconColor: "#059669",
     label: "World Cup",
@@ -262,7 +262,7 @@ export default function FanHubPage() {
         {/* CTA row */}
         <section className="grid sm:grid-cols-2 gap-3">
           <Link
-            href="/world-cup"
+            href="/worldcup"
             className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
             style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
           >
