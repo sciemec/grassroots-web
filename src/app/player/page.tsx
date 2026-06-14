@@ -105,8 +105,12 @@ const FEATURES = [
 export default function PlayerDashboardHome() {
   const router   = useRouter();
   const user     = useAuthStore((s) => s.user);
+  const token    = useAuthStore((s) => s.token);
   const hydrated = useAuthStore((s) => s._hasHydrated);
-  const [wireIndex, setWireIndex] = useState(0);
+  const [wireIndex,    setWireIndex]    = useState(0);
+  const [sessionCount, setSessionCount] = useState<number | null>(null);
+  const [streak,       setStreak]       = useState<number | null>(null);
+  const [aqScore,      setAqScore]      = useState<number | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
@@ -117,6 +121,59 @@ export default function PlayerDashboardHome() {
     if (!hydrated) return;
     if (!user) router.replace("/login");
   }, [hydrated, user, router]);
+
+  // Load stat tile data once hydrated
+  useEffect(() => {
+    if (!hydrated || !user) return;
+
+    // THUTO Score — read from completed weekly session in localStorage
+    try {
+      const raw = localStorage.getItem("grs_active_session");
+      if (raw) {
+        const state = JSON.parse(raw);
+        if (state?.result?.aq != null) setAqScore(Math.round(state.result.aq));
+      }
+    } catch { /* storage unavailable */ }
+
+    // Day Streak — count consecutive "done" mission days back from today
+    try {
+      const raw = localStorage.getItem("gs_goal_missions");
+      if (raw) {
+        const missions: Array<{ mission_date: string; status: string }> = JSON.parse(raw);
+        const doneDates = new Set(
+          missions.filter((m) => m.status === "done").map((m) => m.mission_date),
+        );
+        let count = 0;
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        while (true) {
+          const key = d.toISOString().slice(0, 10);
+          if (!doneDates.has(key)) break;
+          count++;
+          d.setDate(d.getDate() - 1);
+        }
+        setStreak(count);
+      }
+    } catch { /* storage unavailable */ }
+
+    // Sessions — fetch count from backend (falls back to null if no token)
+    if (token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data) return;
+          const items: unknown[] = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.data)
+            ? data.data
+            : [];
+          setSessionCount(items.length);
+        })
+        .catch(() => { /* network or auth error — leave "—" */ });
+    }
+  }, [hydrated, user, token]);
 
   if (!hydrated || !user) {
     return (
@@ -205,9 +262,9 @@ export default function PlayerDashboardHome() {
             {/* Stat tiles */}
             <div className="grid grid-cols-3 gap-2.5 mt-5">
               {[
-                { label: "Sessions", value: "—", Icon: Activity },
-                { label: "Day Streak", value: "—", Icon: Flame },
-                { label: "THUTO Score", value: "—", Icon: Star },
+                { label: "Sessions",    value: sessionCount !== null ? String(sessionCount) : "—", Icon: Activity },
+                { label: "Day Streak",  value: streak       !== null ? `${streak}d`         : "—", Icon: Flame },
+                { label: "THUTO Score", value: aqScore      !== null ? String(aqScore)       : "—", Icon: Star },
               ].map(({ label, value, Icon }) => (
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
                   style={{ backgroundColor: "rgba(240,180,41,0.07)", border: "1px solid rgba(240,180,41,0.15)" }}>
