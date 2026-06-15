@@ -36,15 +36,17 @@ export default async function PassportPage({ params }: Props) {
   const { id } = params;
   if (!id || id.length < 10) notFound();
 
-  const [playerRes, vaultRes] = await Promise.all([
+  const [playerRes, vaultRes, drillRes] = await Promise.all([
     fetch(`${API}/player/public/${id}?by=passport_token`,                  { cache:'no-store' }),
     fetch(`${API}/player/vault/${id}?by=passport_token&visibility=public`,  { cache:'no-store' }),
+    fetch(`${API}/player/drill-scores/${id}?by=passport_token`,             { cache:'no-store' }),
   ]);
 
   if (!playerRes.ok) notFound();
 
   const pd = await playerRes.json();
   const vd = vaultRes.ok ? await vaultRes.json() : [];
+  const dd = drillRes.ok ? await drillRes.json() : [];
 
   return (
     <div style={{ minHeight:'100vh', background:'#f4f2ee' }}>
@@ -55,6 +57,7 @@ export default async function PassportPage({ params }: Props) {
         gamification={pd.gamification ?? null}
         videos={Array.isArray(vd) ? vd : (vd.data ?? [])}
         token={id}
+        drillScores={Array.isArray(dd) ? dd : (dd.data ?? [])}
       />
     </div>
   );
