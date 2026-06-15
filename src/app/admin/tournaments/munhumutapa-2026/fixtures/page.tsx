@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Sidebar } from "@/components/layout/sidebar";
 import {
   Trophy, Plus, Save, Trash2, ArrowLeft,
   CheckCircle2, Clock, Radio,
@@ -178,9 +177,7 @@ export default function AdminFixturesPage() {
   }, [catFixtures]);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 p-6 gs-watermark">
+    <main className="gs-watermark p-6">
 
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -372,8 +369,7 @@ export default function AdminFixturesPage() {
           </div>
         )}
 
-      </main>
-    </div>
+    </main>
   );
 }
 
