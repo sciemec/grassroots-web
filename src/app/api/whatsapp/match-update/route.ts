@@ -7,7 +7,6 @@ import {
   broadcastToSubscribers,
   generateMatchUpdateMessage,
   subscribeUser,
-  getSubscriberCount,
   type MatchEvent,
   type Subscriber,
 } from '@/lib/whatsapp-service';
