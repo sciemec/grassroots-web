@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Smartphone, Monitor, Tablet, Globe, TrendingUp, Calendar, Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 interface PwaStats {
@@ -33,7 +32,8 @@ const PLATFORM_EMOJI: Record<string, string> = {
 const DEVICE_ICON = { mobile: Smartphone, desktop: Monitor, tablet: Tablet };
 
 export default function PwaStatsPage() {
-  const { user, _hasHydrated } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
   const router = useRouter();
 
   useEffect(() => {
@@ -62,9 +62,7 @@ export default function PwaStatsPage() {
   ];
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <main className="gs-watermark overflow-auto p-6">
 
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
@@ -229,7 +227,6 @@ export default function PwaStatsPage() {
           )}
         </div>
 
-      </main>
-    </div>
+    </main>
   );
 }

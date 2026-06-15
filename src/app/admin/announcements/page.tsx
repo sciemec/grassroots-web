@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Megaphone, ChevronUp, Plus, Trash2, Send, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 
 interface Announcement {
   id: string;
@@ -88,9 +87,7 @@ export default function AdminAnnouncementsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <main className="gs-watermark overflow-auto p-6">
 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between gap-4">
@@ -231,7 +228,6 @@ export default function AdminAnnouncementsPage() {
           </div>
         )}
 
-      </main>
-    </div>
+    </main>
   );
 }

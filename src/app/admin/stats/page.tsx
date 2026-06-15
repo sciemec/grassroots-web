@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowLeft, BarChart2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 interface DayCount       { date: string; count: number }
@@ -31,7 +30,7 @@ function SectionSkeleton() {
 }
 
 export default function AdminStatsPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const { data, isLoading } = useQuery<{ data: AnalyticsData }>({
     queryKey: ["admin-analytics"],
@@ -45,9 +44,7 @@ export default function AdminStatsPage() {
   const analytics = data?.data;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <main className="gs-watermark overflow-auto p-6">
 
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
@@ -224,7 +221,6 @@ export default function AdminStatsPage() {
           </div>
 
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

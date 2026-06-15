@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Film, CheckCircle, Trash2, Eye, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { safeArray } from "@/lib/safe-array";
 
@@ -57,7 +56,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function AdminFanHubPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [statusTab, setStatusTab] = useState<StatusTab>("pending");
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -91,9 +90,7 @@ export default function AdminFanHubPage() {
   const previewVideo = videos.find((v) => v.id === previewId);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-6">
+    <main className="overflow-y-auto p-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -270,7 +267,6 @@ export default function AdminFanHubPage() {
             />
           </div>
         )}
-      </main>
-    </div>
+    </main>
   );
 }

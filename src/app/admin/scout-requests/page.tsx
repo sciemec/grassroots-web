@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, Search, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 // Backend response shape: { id, scout_id, player_id, status, message, created_at }
@@ -67,7 +66,7 @@ function CardSkeleton() {
 }
 
 export default function AdminScoutRequestsPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [statusTab, setStatusTab] = useState<StatusTab>("pending");
 
@@ -100,9 +99,7 @@ export default function AdminScoutRequestsPage() {
   const requests: ScoutRequest[] = (data?.data ?? []).map(mapContactRequest);
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <main className="gs-watermark overflow-auto p-6">
 
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
@@ -197,7 +194,6 @@ export default function AdminScoutRequestsPage() {
           </div>
         )}
 
-      </main>
-    </div>
+    </main>
   );
 }

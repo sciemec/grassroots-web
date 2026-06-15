@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, Search, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 interface AdminUser {
@@ -48,7 +47,7 @@ function TableSkeleton() {
 }
 
 export default function AdminUsersPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -95,9 +94,7 @@ export default function AdminUsersPage() {
   const meta = data?.meta;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <main className="gs-watermark overflow-auto p-6">
 
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
@@ -244,7 +241,6 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-      </main>
-    </div>
+    </main>
   );
 }

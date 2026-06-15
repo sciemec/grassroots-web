@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send, RotateCcw, User, Sparkles } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
 
 // ── Persona system prompts (mirrors ThutoController.php) ─────────────────────
 
@@ -174,9 +173,7 @@ export default function PlayerPreviewPage() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="flex flex-1 flex-col overflow-hidden">
+    <main className="flex flex-col overflow-hidden" style={{ height: "100%" }}>
 
         {/* ── Top bar ── */}
         <div className="flex items-center gap-3 border-b border-[#f0b429]/10 bg-card/60 px-5 py-3 shrink-0">
@@ -371,7 +368,6 @@ export default function PlayerPreviewPage() {
           </div>
         </div>
 
-      </main>
-    </div>
+    </main>
   );
 }
