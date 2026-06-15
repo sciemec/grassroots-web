@@ -1,33 +1,11 @@
-// lib/whatsapp-service.ts
-import twilio from 'twilio';
+// src/lib/whatsapp-service.ts
+const twilio = require('twilio');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromNumber = process.env.TWILIO_WHATSAPP_FROM;
 
-// Lazy client — avoids crash at module load when env vars are not set
-let _client: ReturnType<typeof twilio> | null = null;
-function getClient() {
-  if (!_client) {
-    if (!accountSid || !authToken) throw new Error('Twilio env vars TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN not set');
-    _client = twilio(accountSid, authToken);
-  }
-  return _client;
-}
-
-export interface MatchEvent {
-  id: string;
-  minute: number;
-  type: 'goal' | 'yellow_card' | 'red_card' | 'half_start' | 'half_end' | 'full_time';
-  team: 'home' | 'away';
-  playerName?: string;
-  homeScore: number;
-  awayScore: number;
-  homePossession?: number;
-  awayPossession?: number;
-  homeShots?: number;
-  awayShots?: number;
-}
+const client = twilio(accountSid, authToken);
 
 export interface Subscriber {
   phoneNumber: string;
@@ -58,10 +36,7 @@ export async function subscribeUser(phoneNumber: string, name: string): Promise<
   };
   
   subscribers.set(phoneNumber, subscriber);
-
-  // Always returns true once the subscriber is stored.
-  // Welcome message failure is logged inside sendWhatsAppMessage but does not
-  // prevent subscription — the user is already in the Map.
+  
   await sendWhatsAppMessage(
     phoneNumber,
     `🇿🇼 Welcome to GrassRoots Sports World Cup Live, ${name}!\n\n` +
@@ -76,21 +51,13 @@ export async function subscribeUser(phoneNumber: string, name: string): Promise<
   return true;
 }
 
-export function getSubscriberCount(): number {
-  return subscribers.size;
-}
-
+// Send text message
 export async function sendWhatsAppMessage(to: string, body: string): Promise<boolean> {
   try {
-    if (!fromNumber) {
-      throw new Error('TWILIO_WHATSAPP_FROM env var is not set');
-    }
-    // Normalise: strip any existing whatsapp: prefix before re-adding it
-    const normalised = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
-    await getClient().messages.create({
-      body,
+    await client.messages.create({
+      body: body,
       from: fromNumber,
-      to: normalised,
+      to: `whatsapp:${to}`
     });
     return true;
   } catch (error) {
@@ -99,101 +66,47 @@ export async function sendWhatsAppMessage(to: string, body: string): Promise<boo
   }
 }
 
-export async function broadcastToSubscribers(message: string, filter?: (sub: Subscriber) => boolean): Promise<number> {
+// 🆕 Send Video Message (NEW)
+export async function sendWhatsAppVideo(to: string, videoUrl: string, caption?: string): Promise<boolean> {
+  try {
+    // Video requirements: MP4, H.264 codec, AAC audio, max 16MB
+    await client.messages.create({
+      from: fromNumber,
+      to: `whatsapp:${to}`,
+      mediaUrl: [videoUrl],
+      body: caption || ''
+    });
+    return true;
+  } catch (error) {
+    console.error('WhatsApp video send error:', error);
+    return false;
+  }
+}
+
+// 🆕 Send Match Highlight Video (NEW)
+export async function sendMatchHighlight(to: string, matchTitle: string, videoUrl: string): Promise<boolean> {
+  const caption = `🎥 ${matchTitle} Highlight\n\nWatch the key moment from this match!\n\nPowered by GrassRoots Sports`;
+  return sendWhatsAppVideo(to, videoUrl, caption);
+}
+
+// Broadcast to all subscribers
+export async function broadcastToAll(message: string): Promise<number> {
   let successCount = 0;
-  
   for (const [phoneNumber, subscriber] of subscribers) {
-    if (filter && !filter(subscriber)) continue;
-    
     const sent = await sendWhatsAppMessage(phoneNumber, message);
     if (sent) successCount++;
-    
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  
   return successCount;
 }
 
-// Generate match update message
-export function generateMatchUpdateMessage(event: MatchEvent, affiliateLink?: string): string {
-  switch (event.type) {
-    case 'goal':
-      return `
-⚽ GOAL! ${event.playerName || 'A player'} scores!
-${event.minute}' minute
-
-📊 Score: ${event.homeScore} - ${event.awayScore}
-
-🎙️ ${process.env.SPONSOR_GOAL_MESSAGE || 'Sponsored by GrassRoots Sports'}
-
-${affiliateLink ? `🔗 Bet on next goal: ${affiliateLink}` : ''}
-
-Reply "STATS" for match statistics
-      `.trim();
-      
-    case 'half_end':
-      return `
-🎙️ HALF-TIME ANALYSIS - ${event.minute}' minutes played
-
-📊 STATS:
-Home: ${event.homePossession || 50}% possession, ${event.homeShots || 0} shots
-Away: ${event.awayPossession || 50}% possession, ${event.awayShots || 0} shots
-
-🤖 AI ANALYSIS:
-${generateHalftimeAnalysis(event)}
-
-${process.env.SPONSOR_HALFTIME_MESSAGE || 'Sponsored by GrassRoots Sports'}
-
-${(affiliateLink || process.env.BETWAY_AFFILIATE_URL) ? `💰 Second half specials: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL}` : ''}
-
-Reply "GOAL" for goal alerts only
-      `.trim();
-      
-    case 'full_time':
-      return `
-🏁 FULL TIME - ${event.minute}' minutes played
-
-FINAL SCORE: ${event.homeScore} - ${event.awayScore}
-
-📊 FULL STATS:
-Possession: ${event.homePossession || 50}% - ${event.awayPossession || 50}%
-Shots: ${event.homeShots || 0} - ${event.awayShots || 0}
-
-${process.env.SPONSOR_FULLTIME_MESSAGE || 'Sponsored by GrassRoots Sports'}
-
-📱 Share this match with friends!
-${(affiliateLink || process.env.BETWAY_AFFILIATE_URL) ? `🔗 Next match odds: ${affiliateLink || process.env.BETWAY_AFFILIATE_URL}` : ''}
-
-Reply "SUBSCRIBE" for more match updates
-      `.trim();
-      
-    default:
-      return `
-📊 MATCH UPDATE - ${event.minute}' minute
-
-Score: ${event.homeScore} - ${event.awayScore}
-Possession: ${event.homePossession || 50}% - ${event.awayPossession || 50}%
-
-${affiliateLink ? `🔗 Live odds: ${affiliateLink}` : ''}
-
-Reply "STATS" for more details
-      `.trim();
+export async function broadcastToSubscribers(message: string, filter?: (sub: Subscriber) => boolean): Promise<number> {
+  let successCount = 0;
+  for (const [phoneNumber, subscriber] of subscribers) {
+    if (filter && !filter(subscriber)) continue;
+    const sent = await sendWhatsAppMessage(phoneNumber, message);
+    if (sent) successCount++;
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
-}
-
-function generateHalftimeAnalysis(event: MatchEvent): string {
-  const homeDominant = (event.homePossession || 50) > 55;
-  const awayDominant = (event.awayPossession || 50) > 55;
-  const homeShotsMore = (event.homeShots || 0) > (event.awayShots || 0) + 2;
-  
-  if (homeDominant) {
-    return `Home team controlling the game with ${event.homePossession ?? 50}% possession. ` +
-           `${homeShotsMore ? `${event.homeShots ?? 0} shots, surely a goal is coming!` : 'Creating chances but need to be more clinical.'}`;
-  }
-
-  if (awayDominant) {
-    return `Away team looking dangerous on the counter. ${event.awayShots ?? 0} shots despite less possession. Watch for a breakaway goal!`;
-  }
-  
-  return `Very tight contest. Both teams cancelling each other out. Next goal is crucial!`;
+  return successCount;
 }
