@@ -1766,6 +1766,7 @@ return <>{children}</>;
 /player/training-formats/shooting   Shooting
 /player/training-formats/ssg        Small-sided games
 /player/verification       Verification page
+/player/analyse            AI Drill Analysis — 10 sports, Gemini AI feedback, free trial + paywall
 
 /coach                     Coach hub home
 /coach/ai-insights         AI insights
@@ -8043,3 +8044,145 @@ Route::post('/arena/posts/from-whatsapp', [ArenaFeedController::class, 'fromWhat
 | `AuthController` passport fields | NOT IN bhora-ai | See 13 June session log |
 | `AI_SERVICE_URL` on Render | NOT confirmed | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` to Render env vars |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 15 June 2026
+
+### Theme — AI Drill Analysis: Web Upload Page + Gemini Pipeline + Landing Section + Journey Audit
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. AI Drill Analysis Page — FULLY BUILT ✅
+
+**File:** `src/app/player/analyse/page.tsx`
+
+Web-based drill video upload and Gemini AI coaching feedback for all 10 sports.
+
+**Sports covered (all 10):**
+Football, Rugby, Athletics, Netball, Basketball, Cricket, Swimming, Tennis, Volleyball, Hockey
+
+**Each sport has:**
+- Drills list (e.g. Football: Sprint, Dribbling, Shooting, Passing, Defending, Heading, Juggling, Agility)
+- Positions list (e.g. Football: Striker, Midfielder, Defender, Goalkeeper, Winger)
+
+**UI flow:**
+1. Sport selector — 5-column emoji grid, all 10 sports
+2. Drill Type + Your Position — dropdowns, update per sport
+3. Video upload — drag-and-drop zone OR click, max 200MB, mp4/mov
+4. "Analyse with Gemini AI" button
+5. States: `idle | uploading | done | error | paywall`
+
+**Free trial:** 1 free analysis per user. After that → paywall card with link to `/player/subscription`.
+
+**On 402 response:** Shows upgrade card. On success: 3-sentence coaching feedback (strength / improvement / drill to practice).
+
+---
+
+#### 2. /api/analyse Next.js Server Route — FULLY BUILT ✅
+
+**File:** `src/app/api/analyse/route.ts`
+
+Handles multipart form: `video`, `sport`, `drill`, `position`, `token`
+
+**Pipeline:**
+1. Check credits — `GET {API_URL}/video-analysis/credits` with token
+2. Return 402 if `can_analyse = false`
+3. Upload video to Gemini Files API (resumable: initiate → upload bytes)
+4. `sleep(5)` — wait for Gemini processing
+5. `generateContent` with `gemini-2.0-flash` model
+6. Record usage — `POST {API_URL}/video-analysis/record`
+7. Return `{ feedback, free_trial, is_pro }`
+
+**`buildContext(sport, drill, position)`** — lookup table of 30+ sport+drill combinations
+→ returns specific Gemini prompt (e.g. "Player shooting at goal. Analyse approach, plant foot, body shape at contact...")
+→ Falls back to generic prompt for unlisted combinations
+
+**GEMINI_API_KEY** read from `process.env.GEMINI_API_KEY` — server-side only, never exposed to browser.
+
+---
+
+#### 3. Landing Page — AI Drill Analysis Section ✅
+
+**File:** `src/app/page.tsx` — ADDITIVE ONLY (no existing code changed)
+
+New section inserted before `<WorldCupBanner />`:
+- "Pro Feature · 1 Free Trial" badge
+- 10-sport grid — each sport is a link to `/player/analyse`
+- 3-step "How it works" cards
+- CTA button → `/player/analyse`
+- "1 free analysis included · No credit card required" sub-text
+
+---
+
+### FULL JOURNEY AUDIT (15 June 2026)
+
+```
+LANDING → REGISTER → LOGIN → PLAYER HUB
+    ↓ NURTURE
+  THUTO AI coach (needs GROQ_API_KEY)
+  Drills + Training sessions ✅
+  AI Drill Analysis /player/analyse (needs GEMINI_API_KEY)
+  Showcase clips /player/showcase (needs R2_* vars for playback)
+    ↓ IDENTIFY
+  /showcase/discover (public — scouts browse) ✅
+  /talent-database ✅
+  Scout shortlist → player notified ✅
+  QR code → /player/public/[id] ✅
+    ↓ MARKET
+  Arena feed /arena ✅
+  Club discovery /arena/clubs ✅
+  Talent board /arena/recruitment ✅
+    ↓ WHATSAPP
+  Player sends video → Gemini analyses → Arena auto-post + WhatsApp reply
+  (needs GEMINI_API_KEY on Render + TWILIO_* vars)
+```
+
+**Known gap:** Web analysis at `/player/analyse` does NOT auto-post to Arena after feedback.
+Only the WhatsApp pipeline auto-posts. If web analysis should also publish to Arena, that link is missing.
+
+**Known gap:** `/player/analyse` has no auth redirect. Unauthenticated users can access it
+and bypass the free trial gate (token is empty → credit check skipped → unlimited analyses).
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (15 June 2026)
+
+```
+/player/analyse    AI Drill Analysis — 10 sports, Gemini feedback, free trial gate
+```
+
+New Next.js API route:
+```
+POST /api/analyse   multipart video upload → Gemini Files API → coaching feedback
+```
+
+### ENVIRONMENT VARIABLES — UPDATED (15 June 2026)
+
+**Vercel (add these):**
+```
+GEMINI_API_KEY = (from aistudio.google.com → API Keys)
+                  Used by: /api/analyse (web drill analysis)
+GROQ_API_KEY   = (from console.groq.com → API Keys)
+                  Used by: /api/ai-coach (THUTO chat)
+```
+
+**Render (add this):**
+```
+GEMINI_API_KEY = (same key — used by GeminiAnalysisService for WhatsApp pipeline)
+```
+
+### WHAT STILL NEEDS DOING (15 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GEMINI_API_KEY` | NOT set on Vercel | `/player/analyse` web analysis broken |
+| `GEMINI_API_KEY` | NOT set on Render | WhatsApp video pipeline broken |
+| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| `video_analysis_count` migration | NOT YET RUN | Auto-runs on next Render deploy |
+| Auth gate on `/player/analyse` | MISSING | Unauthenticated users bypass free trial |
+| Web analysis → Arena post | NOT BUILT | Only WhatsApp pipeline auto-posts to Arena |
+| `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 migrations still pending |
