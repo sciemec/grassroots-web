@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   broadcastToSubscribers,
   generateMatchUpdateMessage,
-  subscribeUser,
   type MatchEvent,
   type Subscriber,
 } from '@/lib/whatsapp-service';
