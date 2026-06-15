@@ -24,12 +24,33 @@ interface Match {
   time: string;
   stadium: string;
   city: string;
-  
-  // Monetization fields embedded directly into match objects
   pitchSponsorName?: string | null;
   pitchLogoLeftUrl?: string | null;
   pitchLogoRightUrl?: string | null;
   sponsorTargetUrl?: string | null;
+}
+
+// ============================================
+// PERKS LIST - BOLD BLACK TEXT (VISIBLE)
+// ============================================
+const PERKS = [
+  { icon: Star, text: "Vote Player of the Tournament" },
+  { icon: Tv, text: "Live match updates via WhatsApp" },
+  { icon: Users, text: "Follow your favourite local players" },
+  { icon: Volume2, text: "Unlock audio commentary — $1 per match" },
+];
+
+function PerksList() {
+  return (
+    <div className="flex flex-wrap justify-center gap-3 mt-6">
+      {PERKS.map(({ icon: Icon, text }) => (
+        <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-gray-100 text-gray-900 border border-gray-300 shadow-sm">
+          <Icon size={13} className="text-[#1a5c2a]" />
+          {text}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ============================================
@@ -50,30 +71,18 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
     const goldAdImage = imageUrl || "/assets/sponsors/default-gold-banner.png";
     return (
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm text-center">
-        <span className="text-[10px] font-bold text-amber-600 block mb-2 uppercase tracking-wide">
-          Gold Tournament Partner
-        </span>
-        <a 
-          href={destination} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="block h-[250px] relative border border-gray-200 rounded overflow-hidden transition-all duration-200 hover:border-amber-500 hover:shadow-md"
-        >
-          <img 
-            src={goldAdImage} 
-            alt={`${displaySponsor} Advertisement`}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              const parent = e.currentTarget.parentElement;
-              if (parent) {
-                const fallbackDiv = document.createElement('div');
-                fallbackDiv.className = "w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 text-gray-500 font-medium p-4 text-center";
-                fallbackDiv.innerHTML = `<span className="text-sm font-bold text-gray-700">${displaySponsor}</span><span className="text-[11px] text-gray-400 mt-1">Tap to visit partner website</span>`;
-                parent.appendChild(fallbackDiv);
-              }
-            }}
-          />
+        <span className="text-[10px] font-bold text-amber-600 block mb-2 uppercase tracking-wide">Gold Tournament Partner</span>
+        <a href={destination} target="_blank" rel="noopener noreferrer" className="block h-[250px] relative border border-gray-200 rounded overflow-hidden transition-all duration-200 hover:border-amber-500 hover:shadow-md">
+          <img src={goldAdImage} alt={`${displaySponsor} Advertisement`} className="w-full h-full object-cover" onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              const fallbackDiv = document.createElement('div');
+              fallbackDiv.className = "w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 text-gray-500 font-medium p-4 text-center";
+              fallbackDiv.innerHTML = `<span className="text-sm font-bold text-gray-700">${displaySponsor}</span><span className="text-[11px] text-gray-400 mt-1">Tap to visit partner website</span>`;
+              parent.appendChild(fallbackDiv);
+            }
+          }} />
         </a>
       </div>
     );
@@ -82,19 +91,10 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
   if (tier === 'SILVER') {
     return (
       <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-center">
-        <span className="text-[9px] text-gray-400 block mb-1 uppercase tracking-wider">
-          Silver Metrics Sponsor
-        </span>
-        <a 
-          href={destination}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block p-3 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded border border-emerald-200 hover:bg-emerald-100 transition duration-150"
-        >
+        <span className="text-[9px] text-gray-400 block mb-1 uppercase tracking-wider">Silver Metrics Sponsor</span>
+        <a href={destination} target="_blank" rel="noopener noreferrer" className="block p-3 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded border border-emerald-200 hover:bg-emerald-100 transition duration-150">
           Match telemetry & analytics powered by <br />
-          <span className="underline font-bold text-sm text-emerald-900 block mt-1">
-            {displaySponsor}
-          </span>
+          <span className="underline font-bold text-sm text-emerald-900 block mt-1">{displaySponsor}</span>
         </a>
       </div>
     );
@@ -103,21 +103,10 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
   const bronzeAdImage = imageUrl || null;
   return (
     <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm text-center">
-      <span className="text-[9px] text-gray-400 block mb-2 uppercase tracking-wider">
-        Bronze Grassroots Sponsor
-      </span>
-      <a 
-        href={destination}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block h-[120px] relative border border-dashed border-gray-300 rounded overflow-hidden hover:border-gray-400 transition bg-gray-50"
-      >
+      <span className="text-[9px] text-gray-400 block mb-2 uppercase tracking-wider">Bronze Grassroots Sponsor</span>
+      <a href={destination} target="_blank" rel="noopener noreferrer" className="block h-[120px] relative border border-dashed border-gray-300 rounded overflow-hidden hover:border-gray-400 transition bg-gray-50">
         {bronzeAdImage ? (
-          <img 
-            src={bronzeAdImage} 
-            alt={`${displaySponsor} Classified`}
-            className="w-full h-full object-cover"
-          />
+          <img src={bronzeAdImage} alt={`${displaySponsor} Classified`} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center text-gray-500">
             <span className="font-semibold text-xs text-gray-700">{displaySponsor}</span>
@@ -130,276 +119,7 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
 }
 
 // ============================================
-// PERKS LIST (NEW)
-// ============================================
-const PERKS = [
-  { icon: Star, text: "Vote Player of the Tournament" },
-  { icon: Tv, text: "Live match updates via WhatsApp" },
-  { icon: Users, text: "Follow your favourite local players" },
-  { icon: Volume2, text: "Unlock audio commentary — $1 per match" },
-];
-
-function PerksList() {
-  return (
-    <div className="flex flex-wrap justify-center gap-3 mt-6">
-      {PERKS.map(({ icon: Icon, text }) => (
-        <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-white/5 text-white/55">
-          <Icon size={13} className="text-[#f0b429]" />
-          {text}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ============================================
-// PAYMENT MODAL (NEW)
-// ============================================
-type PayTab = "card" | "mobile";
-type MobileMethod = "ecocash" | "innbucks" | "onemoney";
-
-function PaymentModal({ 
-  match, onClose, onUnlocked, userName 
-}: { 
-  match: Match; 
-  onClose: () => void; 
-  onUnlocked: (id: string) => void; 
-  userName: string;
-}) {
-  const [tab, setTab] = useState<PayTab>("mobile");
-  const [method, setMethod] = useState<MobileMethod>("ecocash");
-  const [phone, setPhone] = useState("");
-  const [paying, setPaying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [polling, setPolling] = useState(false);
-  const [pollUrl, setPollUrl] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stopPoll = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-  };
-  useEffect(() => () => stopPoll(), []);
-
-  useEffect(() => {
-    if (!polling || !pollUrl) return;
-    stopPoll();
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/payments/paynow/status?pollUrl=${encodeURIComponent(pollUrl)}`);
-        const data = await res.json() as { paid?: boolean };
-        if (data.paid) {
-          stopPoll();
-          setPolling(false);
-          onUnlocked(match.id);
-          onClose();
-        }
-      } catch { /* keep polling */ }
-    }, 3000);
-    return stopPoll;
-  }, [polling, pollUrl, match.id, onUnlocked, onClose]);
-
-  const payMobile = async () => {
-    const digits = phone.replace(/\D/g, "");
-    if (digits.length < 9) { setError("Enter a valid phone number."); return; }
-    setPaying(true); setError(null);
-    try {
-      const res = await fetch("/api/payments/match-donate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event_id: match.id,
-          amount: "1",
-          phone: phone,
-          donor_name: userName || "Fan",
-        }),
-      });
-      const data = await res.json() as { poll_url?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "Payment failed.");
-      if (data.poll_url) { setPollUrl(data.poll_url); setPolling(true); }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-    } finally { setPaying(false); }
-  };
-
-  const payCard = async () => {
-    setPaying(true); setError(null);
-    try {
-      const res = await fetch("/api/payments/match-unlock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId: match.id, matchTitle: `${match.homeTeam} vs ${match.awayTeam}` }),
-      });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "Could not start payment.");
-      if (data.url) window.location.href = data.url;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-      setPaying(false);
-    }
-  };
-
-  const phoneOk = phone.replace(/\D/g, "").length >= 9;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-full max-w-sm rounded-2xl p-6 relative bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
-        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
-        
-        <div className="mb-5">
-          <div className="text-xs font-black uppercase tracking-widest mb-1 text-[#f0b429]">Unlock Audio Commentary</div>
-          <h3 className="text-white font-black text-base leading-tight">{match.homeTeam} vs {match.awayTeam}</h3>
-          <p className="text-xs mt-0.5 text-white/35">{match.stadium}</p>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black mt-3 bg-[rgba(240,180,41,0.12)] text-[#f0b429]">
-            <Volume2 size={11} /> $1.00 — one-time unlock
-          </div>
-        </div>
-
-        <div className="flex gap-2 mb-4">
-          <button onClick={() => { setTab("mobile"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "mobile" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}>
-            <Smartphone size={12} /> Mobile Money
-          </button>
-          <button onClick={() => { setTab("card"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "card" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}>
-            <CreditCard size={12} /> Card
-          </button>
-        </div>
-
-        {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
-
-        {polling ? (
-          <div className="text-center py-6">
-            <Loader2 size={28} className="animate-spin mx-auto mb-3 text-[#f0b429]" />
-            <p className="text-white text-sm font-bold">Check your phone</p>
-            <p className="text-xs mt-1 text-white/40">Approve the $1 payment on your {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"} app</p>
-            <button onClick={() => { stopPoll(); setPolling(false); }} className="mt-4 text-xs text-white/30 hover:underline">Cancel</button>
-          </div>
-        ) : tab === "mobile" ? (
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-1.5">
-              {(["ecocash", "innbucks", "onemoney"] as MobileMethod[]).map((m) => (
-                <button key={m} onClick={() => setMethod(m)} className={`py-2 rounded-xl text-xs font-bold border transition-all ${method === m ? "bg-[rgba(240,180,41,0.15)] border-[#f0b429] text-[#f0b429]" : "bg-transparent border-white/10 text-white/40"}`}>
-                  {m === "ecocash" ? "EcoCash" : m === "innbucks" ? "InnBucks" : "OneMoney"}
-                </button>
-              ))}
-            </div>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+263 77 123 4567" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
-            <button disabled={paying || !phoneOk} onClick={payMobile} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying && phoneOk ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>
-              {paying ? <><Loader2 size={14} className="animate-spin" /> Sending push...</> : <>Pay $1 via {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"}</>}
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-white/40">Pay securely with Visa, Mastercard or any debit card. You will be taken to Stripe to complete the $1 payment.</p>
-            <button disabled={paying} onClick={payCard} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>
-              {paying ? <><Loader2 size={14} className="animate-spin" /> Redirecting...</> : <><CreditCard size={14} /> Pay $1 with Card</>}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// FAN REGISTRATION MODAL (NEW)
-// ============================================
-function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => void; onRegisterSuccess: () => void }) {
-  const [fullName, setFullName] = useState("");
-  const [country, setCountry] = useState("Zimbabwe");
-  const [contactType, setContactType] = useState<"phone" | "email">("phone");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const COUNTRIES = ["Zimbabwe", "South Africa", "Zambia", "Botswana", "Malawi", "Mozambique", "Namibia", "Other"];
-
-  const contactValid = contactType === "email" ? email.includes("@") : phone.replace(/\D/g, "").length >= 9;
-  const canSubmit = fullName.trim().length >= 2 && country !== "" && contactValid && password.length >= 6;
-
-  const handleRegister = async () => {
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      const parts = fullName.trim().split(" ");
-      const first_name = parts[0];
-      const surname = parts.slice(1).join(" ") || parts[0];
-      const body: Record<string, unknown> = {
-        first_name, surname, name: fullName.trim(), country,
-        password, password_confirmation: password, role: "fan",
-      };
-      if (contactType === "email") {
-        body.email = email.trim().toLowerCase();
-      } else {
-        body.phone = phone.trim();
-      }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("Registration failed");
-      onRegisterSuccess();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-full max-w-md rounded-2xl p-6 bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
-        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
-        <h2 className="text-lg font-black text-white mb-1">Join as a Fan</h2>
-        <p className="text-xs mb-5 text-white/35">Takes 30 seconds. Then unlock audio commentary for any match — $1 each.</p>
-        
-        {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
-        
-        <div className="space-y-4">
-          <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
-          
-          <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8">
-            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          
-          <div className="flex gap-2">
-            <button onClick={() => setContactType("phone")} className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-all ${contactType === "phone" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/50"}`}>Phone Number</button>
-            <button onClick={() => setContactType("email")} className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-all ${contactType === "email" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/50"}`}>Email</button>
-          </div>
-          
-          {contactType === "phone" ? (
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+263 77 123 4567" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
-          ) : (
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
-          )}
-          
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 6 characters)" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
-          
-          <button disabled={!canSubmit || isSubmitting} onClick={handleRegister} className={`w-full py-3.5 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${canSubmit && !isSubmitting ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/7 text-white/25 cursor-not-allowed"}`}>
-            {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <>Join & Access Matches</>}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// LOCALSTORAGE HELPERS FOR UNLOCKED MATCHES (NEW)
-// ============================================
-const UNLOCK_KEY = "wc_unlocked_matches";
-function loadUnlocked(): string[] {
-  try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? "[]"); }
-  catch { return []; }
-}
-function saveUnlocked(ids: string[]) {
-  localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
-}
-
-// ============================================
-// DATA FETCHING (ESPN API + worldcup.json) - YOUR EXISTING CODE
+// DATA FETCHING (ESPN API + worldcup.json)
 // ============================================
 async function fetchLiveMatches(): Promise<Match[]> {
   try {
@@ -466,7 +186,7 @@ async function fetchScheduledMatches(): Promise<Match[]> {
 }
 
 // ============================================
-// 2D FOOTBALL PITCH (YOUR EXISTING CODE)
+// 2D FOOTBALL PITCH
 // ============================================
 interface FootballPitchProps {
   ballPosition?: { x: number; y: number };
@@ -594,7 +314,7 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
 }
 
 // ============================================
-// MATCH ODDS (YOUR EXISTING CODE)
+// MATCH ODDS
 // ============================================
 function MatchOdds({ match }: { match: Match | null }) {
   if (!match || match.status !== 'scheduled') return null;
@@ -615,7 +335,7 @@ function MatchOdds({ match }: { match: Match | null }) {
 }
 
 // ============================================
-// SHARE BUTTONS (YOUR EXISTING CODE)
+// SHARE BUTTONS
 // ============================================
 function ShareButtons({ match }: { match: Match | null }) {
   const [copied, setCopied] = useState(false);
@@ -644,7 +364,7 @@ function ShareButtons({ match }: { match: Match | null }) {
 }
 
 // ============================================
-// HIGHLIGHTS MODAL (YOUR EXISTING CODE)
+// HIGHLIGHTS MODAL
 // ============================================
 interface Highlight {
   id: string;
@@ -719,7 +439,7 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
 }
 
 // ============================================
-// MATCH TIMELINE (YOUR EXISTING CODE)
+// MATCH TIMELINE
 // ============================================
 interface TimelineEvent {
   id: string;
@@ -810,7 +530,126 @@ function MatchTimeline({ match, ballPosition }: { match: Match | null; ballPosit
 }
 
 // ============================================
-// AI COMMENTARY PIPELINE (YOUR EXISTING CODE - MODIFIED TO CHECK UNLOCK STATUS)
+// PAYMENT MODAL
+// ============================================
+type PayTab = "card" | "mobile";
+type MobileMethod = "ecocash" | "innbucks" | "onemoney";
+
+function PaymentModal({ match, onClose, onUnlocked, userName }: { match: Match; onClose: () => void; onUnlocked: (id: string) => void; userName: string }) {
+  const [tab, setTab] = useState<PayTab>("mobile");
+  const [method, setMethod] = useState<MobileMethod>("ecocash");
+  const [phone, setPhone] = useState("");
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
+  const [pollUrl, setPollUrl] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPoll = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+  useEffect(() => () => stopPoll(), []);
+
+  useEffect(() => {
+    if (!polling || !pollUrl) return;
+    stopPoll();
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payments/paynow/status?pollUrl=${encodeURIComponent(pollUrl)}`);
+        const data = await res.json() as { paid?: boolean };
+        if (data.paid) {
+          stopPoll();
+          setPolling(false);
+          onUnlocked(match.id);
+          onClose();
+        }
+      } catch { /* keep polling */ }
+    }, 3000);
+    return stopPoll;
+  }, [polling, pollUrl, match.id, onUnlocked, onClose]);
+
+  const payMobile = async () => {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 9) { setError("Enter a valid phone number."); return; }
+    setPaying(true); setError(null);
+    try {
+      const res = await fetch("/api/payments/match-donate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_id: match.id, amount: "1", phone: phone, donor_name: userName || "Fan" }),
+      });
+      const data = await res.json() as { poll_url?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Payment failed.");
+      if (data.poll_url) { setPollUrl(data.poll_url); setPolling(true); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally { setPaying(false); }
+  };
+
+  const payCard = async () => {
+    setPaying(true); setError(null);
+    try {
+      const res = await fetch("/api/payments/match-unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId: match.id, matchTitle: `${match.homeTeam} vs ${match.awayTeam}` }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Could not start payment.");
+      if (data.url) window.location.href = data.url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setPaying(false);
+    }
+  };
+
+  const phoneOk = phone.replace(/\D/g, "").length >= 9;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-sm rounded-2xl p-6 relative bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
+        <div className="mb-5">
+          <div className="text-xs font-black uppercase tracking-widest mb-1 text-[#f0b429]">Unlock Audio Commentary</div>
+          <h3 className="text-white font-black text-base leading-tight">{match.homeTeam} vs {match.awayTeam}</h3>
+          <p className="text-xs mt-0.5 text-white/35">{match.stadium}</p>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black mt-3 bg-[rgba(240,180,41,0.12)] text-[#f0b429]"><Volume2 size={11} /> $1.00 — one-time unlock</div>
+        </div>
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setTab("mobile"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "mobile" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}><Smartphone size={12} /> Mobile Money</button>
+          <button onClick={() => { setTab("card"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "card" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}><CreditCard size={12} /> Card</button>
+        </div>
+        {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
+        {polling ? (
+          <div className="text-center py-6">
+            <Loader2 size={28} className="animate-spin mx-auto mb-3 text-[#f0b429]" />
+            <p className="text-white text-sm font-bold">Check your phone</p>
+            <p className="text-xs mt-1 text-white/40">Approve the $1 payment on your {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"} app</p>
+            <button onClick={() => { stopPoll(); setPolling(false); }} className="mt-4 text-xs text-white/30 hover:underline">Cancel</button>
+          </div>
+        ) : tab === "mobile" ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-1.5">
+              {(["ecocash", "innbucks", "onemoney"] as MobileMethod[]).map((m) => (
+                <button key={m} onClick={() => setMethod(m)} className={`py-2 rounded-xl text-xs font-bold border transition-all ${method === m ? "bg-[rgba(240,180,41,0.15)] border-[#f0b429] text-[#f0b429]" : "bg-transparent border-white/10 text-white/40"}`}>{m === "ecocash" ? "EcoCash" : m === "innbucks" ? "InnBucks" : "OneMoney"}</button>
+              ))}
+            </div>
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+263 77 123 4567" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+            <button disabled={paying || !phoneOk} onClick={payMobile} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying && phoneOk ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>{paying ? <><Loader2 size={14} className="animate-spin" /> Sending push...</> : <>Pay $1 via {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"}</>}</button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-white/40">Pay securely with Visa, Mastercard or any debit card. You will be taken to Stripe to complete the $1 payment.</p>
+            <button disabled={paying} onClick={payCard} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>{paying ? <><Loader2 size={14} className="animate-spin" /> Redirecting...</> : <><CreditCard size={14} /> Pay $1 with Card</>}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// AI COMMENTARY PIPELINE
 // ============================================
 function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | null; isUnlocked: boolean }) {
   const [isSpeaking, setIsSpeaking] = useState(true);
@@ -881,14 +720,9 @@ function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | nu
   return (
     <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200 space-y-4">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">AI Live Commentary</h3>
-        </div>
+        <div className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /><h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">AI Live Commentary</h3></div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
-            <Languages size={12} className="text-[#1a5c2a]" /> Dialect:
-          </div>
+          <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100"><Languages size={12} className="text-[#1a5c2a]" /> Dialect:</div>
           <div className="flex gap-1 bg-gray-100 p-0.5 rounded-xl border border-gray-200">
             {dialects.map((d) => (
               <button key={d.code} onClick={() => setSelectedLang(d.code as any)} className={`px-2 py-1 text-[10px] font-extrabold rounded-lg transition-all flex items-center gap-1 ${selectedLang === d.code ? 'bg-[#1a5c2a] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
@@ -902,7 +736,6 @@ function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | nu
           </button>
         </div>
       </div>
-
       <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-2">
         <div className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1"><Zap size={10} className="text-[#f0b429]" /> Trigger Sound & Slang Simulation Board:</div>
         <div className="flex flex-wrap gap-1.5">
@@ -911,7 +744,6 @@ function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | nu
           <button onClick={() => processAndPlayLiveSlang("TACKLE", "The Defender")} disabled={isTranslating} className="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition disabled:opacity-50">💥 Heavy Tackle</button>
         </div>
       </div>
-
       <div className="bg-gray-900 text-green-400 rounded-xl p-4 h-28 overflow-y-auto border border-gray-800 flex items-center font-mono relative">
         {isTranslating ? (
           <div className="flex items-center gap-2 text-xs text-yellow-400 font-semibold italic mx-auto"><RefreshCw size={14} className="animate-spin" /> DeepSeek V3 compiling audio matrix...</div>
@@ -924,27 +756,14 @@ function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | nu
 }
 
 // ============================================
-// NATIVE LIST CARD COMPONENT (YOUR EXISTING CODE - ADDED UNLOCK BUTTON)
+// MATCH CARD COMPONENT
 // ============================================
-function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: { 
-  match: Match; 
-  isSelected: boolean; 
-  onClick: () => void; 
-  isUnlocked: boolean;
-  onUnlockClick: (match: Match) => void;
-}) {
+function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: { match: Match; isSelected: boolean; onClick: () => void; isUnlocked: boolean; onUnlockClick: (match: Match) => void }) {
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
   
   return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left p-4 rounded-2xl transition-all duration-200 ${
-        isSelected
-          ? 'bg-[#1a5c2a] text-white shadow-lg border-l-4 border-[#f0b429]'
-          : 'bg-white border border-gray-200 hover:shadow-md'
-      }`}
-    >
+    <button onClick={onClick} className={`w-full text-left p-4 rounded-2xl transition-all duration-200 ${isSelected ? 'bg-[#1a5c2a] text-white shadow-lg border-l-4 border-[#f0b429]' : 'bg-white border border-gray-200 hover:shadow-md'}`}>
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-baseline gap-2">
@@ -964,16 +783,9 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
         </div>
       </div>
       {isLive && <div className="mt-2 text-[11px] text-yellow-500 font-mono">{match.minute} • Live now</div>}
-      
-      {/* Unlock badge for live matches not unlocked */}
       {isLive && !isUnlocked && (
         <div className="mt-2 pt-2 border-t border-gray-100">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onUnlockClick(match); }}
-            className="text-xs text-[#1a5c2a] font-bold flex items-center gap-1"
-          >
-            <Lock size={10} /> Unlock Audio ($1)
-          </button>
+          <button onClick={(e) => { e.stopPropagation(); onUnlockClick(match); }} className="text-xs text-[#1a5c2a] font-bold flex items-center gap-1"><Lock size={10} /> Unlock Audio ($1)</button>
         </div>
       )}
       {isLive && isUnlocked && (
@@ -982,6 +794,86 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
         </div>
       )}
     </button>
+  );
+}
+
+// ============================================
+// LOCALSTORAGE HELPERS
+// ============================================
+const UNLOCK_KEY = "wc_unlocked_matches";
+function loadUnlocked(): string[] {
+  try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? "[]"); }
+  catch { return []; }
+}
+function saveUnlocked(ids: string[]) {
+  localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
+}
+
+// ============================================
+// FAN REGISTRATION MODAL
+// ============================================
+function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => void; onRegisterSuccess: () => void }) {
+  const [fullName, setFullName] = useState("");
+  const [country, setCountry] = useState("Zimbabwe");
+  const [contactType, setContactType] = useState<"phone" | "email">("phone");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const COUNTRIES = ["Zimbabwe", "South Africa", "Zambia", "Botswana", "Malawi", "Mozambique", "Namibia", "Other"];
+  const contactValid = contactType === "email" ? email.includes("@") : phone.replace(/\D/g, "").length >= 9;
+  const canSubmit = fullName.trim().length >= 2 && country !== "" && contactValid && password.length >= 6;
+
+  const handleRegister = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const parts = fullName.trim().split(" ");
+      const first_name = parts[0];
+      const surname = parts.slice(1).join(" ") || parts[0];
+      const body: Record<string, unknown> = { first_name, surname, name: fullName.trim(), country, password, password_confirmation: password, role: "fan" };
+      if (contactType === "email") { body.email = email.trim().toLowerCase(); } else { body.phone = phone.trim(); }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error("Registration failed");
+      onRegisterSuccess();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md rounded-2xl p-6 bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
+        <h2 className="text-lg font-black text-white mb-1">Join as a Fan</h2>
+        <p className="text-xs mb-5 text-white/35">Takes 30 seconds. Then unlock audio commentary for any match — $1 each.</p>
+        {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
+        <div className="space-y-4">
+          <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8">
+            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <button onClick={() => setContactType("phone")} className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-all ${contactType === "phone" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/50"}`}>Phone Number</button>
+            <button onClick={() => setContactType("email")} className={`flex-1 py-2 rounded-xl border text-sm font-semibold transition-all ${contactType === "email" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/50"}`}>Email</button>
+          </div>
+          {contactType === "phone" ? (
+            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+263 77 123 4567" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          ) : (
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          )}
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 6 characters)" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
+          <button disabled={!canSubmit || isSubmitting} onClick={handleRegister} className={`w-full py-3.5 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${canSubmit && !isSubmitting ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/7 text-white/25 cursor-not-allowed"}`}>
+            {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <>Join & Access Matches</>}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1002,10 +894,7 @@ export default function WorldCupPage() {
   const [showFanRegister, setShowFanRegister] = useState(false);
   const hasSetInitial = useRef(false);
 
-  // Load unlocked matches from localStorage
-  useEffect(() => {
-    setUnlockedMatches(loadUnlocked());
-  }, []);
+  useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
 
   const handleUnlockMatch = (match: Match) => {
     setSelectedPayMatch(match);
@@ -1037,19 +926,11 @@ export default function WorldCupPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
+  useEffect(() => { loadData(); const interval = setInterval(loadData, 30000); return () => clearInterval(interval); }, []);
   useEffect(() => {
     if (!selectedMatch || selectedMatch.status !== 'live') return;
     const interval = setInterval(() => {
-      setBallPosition(prev => ({
-        x: Math.min(95, Math.max(5, prev.x + (Math.random() - 0.5) * 3)),
-        y: Math.min(95, Math.max(5, prev.y + (Math.random() - 0.5) * 2)),
-      }));
+      setBallPosition(prev => ({ x: Math.min(95, Math.max(5, prev.x + (Math.random() - 0.5) * 3)), y: Math.min(95, Math.max(5, prev.y + (Math.random() - 0.5) * 2)) }));
     }, 3000);
     return () => clearInterval(interval);
   }, [selectedMatch]);
@@ -1058,16 +939,13 @@ export default function WorldCupPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
-      
       {/* HEADER BAR */}
       <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white border-b-4 border-[#f0b429]">
         <div className="max-w-[1400px] mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center">
-                  <span className="text-black font-black text-sm">GRS</span>
-                </div>
+                <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center"><span className="text-black font-black text-sm">GRS</span></div>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tight">World Cup 2026</h1>
                 <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">REALTIME TELEMETRY</span>
               </div>
@@ -1075,164 +953,80 @@ export default function WorldCupPage() {
             </div>
             <div className="flex items-center gap-4">
               <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">Join as Fan</button>
-              {liveMatchesCount > 0 && (
-                <div className="bg-red-500/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-medium">{liveMatchesCount} live matches</span>
-                </div>
-              )}
-              <button onClick={loadData} className="text-white/70 hover:text-white transition text-sm flex items-center gap-1">
-                <RefreshCw size={14} /> Refresh
-              </button>
+              {liveMatchesCount > 0 && (<div className="bg-red-500/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1"><div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /><span className="text-xs font-medium">{liveMatchesCount} live matches</span></div>)}
+              <button onClick={loadData} className="text-white/70 hover:text-white transition text-sm flex items-center gap-1"><RefreshCw size={14} /> Refresh</button>
             </div>
           </div>
           {lastUpdated && <div className="text-right text-[9px] text-white/40 mt-2">Server Sync: {lastUpdated.toLocaleTimeString()}</div>}
         </div>
       </div>
 
-      {/* PERKS LIST (NEW) */}
-      <div className="max-w-[1400px] mx-auto px-4 pt-4">
-        <PerksList />
-      </div>
+      {/* PERKS LIST */}
+      <div className="max-w-[1400px] mx-auto px-4 pt-4"><PerksList /></div>
 
       {/* CORE 3-COLUMN LAYERS GRID */}
       <div className="max-w-[1400px] mx-auto px-4 py-6">
         {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-            <p className="text-red-600">{error}</p>
-            <button onClick={loadData} className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button>
-          </div>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center"><p className="text-red-600">{error}</p><button onClick={loadData} className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button></div>
         ) : isLoading ? (
           <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            {/* LEFT COLUMN: SCHEDULE & BRONZE DISPLAY */}
+            {/* LEFT COLUMN */}
             <div className="lg:col-span-3 space-y-4">
               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
-                  <Calendar size={14} /> Today's Schedule
-                </h2>
-                {matches.length === 0 ? (
-                  <p className="text-xs text-gray-500 italic py-4 text-center">No world cup fixtures scheduled for today.</p>
-                ) : (
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2"><Calendar size={14} /> Today's Schedule</h2>
+                {matches.length === 0 ? (<p className="text-xs text-gray-500 italic py-4 text-center">No world cup fixtures scheduled for today.</p>) : (
                   <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-                    {matches.map(match => (
-                      <MatchCard 
-                        key={match.id} 
-                        match={match} 
-                        isSelected={selectedMatch?.id === match.id} 
-                        onClick={() => setSelectedMatch(match)} 
-                        isUnlocked={isMatchUnlocked(match.id)}
-                        onUnlockClick={handleUnlockMatch}
-                      />
-                    ))}
+                    {matches.map(match => (<MatchCard key={match.id} match={match} isSelected={selectedMatch?.id === match.id} onClick={() => setSelectedMatch(match)} isUnlocked={isMatchUnlocked(match.id)} onUnlockClick={handleUnlockMatch} />))}
                   </div>
                 )}
               </div>
               <AdBanner tier="BRONZE" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
             </div>
 
-            {/* CENTER COLUMN: APPLICATION ENGINE METRICS */}
+            {/* CENTER COLUMN */}
             <div className="lg:col-span-6 space-y-6">
               {selectedMatch ? (
                 <>
-                  {/* SCOREBOARD SUMMARY PANEL */}
                   <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
                     <div className="flex justify-between items-center">
-                      <div className="text-center flex-1">
-                        <span className="text-gray-400 text-xs uppercase">HOME</span>
-                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.homeTeam}</p>
-                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p>
-                      </div>
-                      <div className="text-center px-4">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <span className="text-gray-500 text-xs font-mono">VS</span>
-                        </div>
-                        <div className="mt-2 text-[11px] text-gray-500 font-mono">
-                          {selectedMatch.status === 'live' ? selectedMatch.minute : selectedMatch.time}
-                        </div>
-                      </div>
-                      <div className="text-center flex-1">
-                        <span className="text-gray-400 text-xs uppercase">AWAY</span>
-                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.awayTeam}</p>
-                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p>
-                      </div>
+                      <div className="text-center flex-1"><span className="text-gray-400 text-xs uppercase">HOME</span><p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.homeTeam}</p><p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p></div>
+                      <div className="text-center px-4"><div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"><span className="text-gray-500 text-xs font-mono">VS</span></div><div className="mt-2 text-[11px] text-gray-500 font-mono">{selectedMatch.status === 'live' ? selectedMatch.minute : selectedMatch.time}</div></div>
+                      <div className="text-center flex-1"><span className="text-gray-400 text-xs uppercase">AWAY</span><p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.awayTeam}</p><p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p></div>
                     </div>
-                    <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
-                      <MapPin size={12} /> {selectedMatch.stadium}
-                    </div>
+                    <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3"><MapPin size={12} /> {selectedMatch.stadium}</div>
                   </div>
-
-                  {/* PLATINUM MATCHDAY FIELD ADVERTISING */}
                   <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
-                    <div className="flex items-center gap-2 px-3 pt-2 pb-1">
-                      <div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> LIVE TRACKER VIEW</div>
-                      <div className="flex-1"></div>
-                      <div className="flex items-center gap-1 text-[10px] text-gray-400"><Activity size={10} /> tracking engine telemetry</div>
-                    </div>
-                    <FootballPitch 
-                      ballPosition={selectedMatch.status === 'live' ? ballPosition : undefined}
-                      pitchLogoLeftUrl={selectedMatch.pitchLogoLeftUrl}
-                      pitchLogoRightUrl={selectedMatch.pitchLogoRightUrl}
-                      pitchSponsorName={selectedMatch.pitchSponsorName}
-                    />
+                    <div className="flex items-center gap-2 px-3 pt-2 pb-1"><div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> LIVE TRACKER VIEW</div><div className="flex-1"></div><div className="flex items-center gap-1 text-[10px] text-gray-400"><Activity size={10} /> tracking engine telemetry</div></div>
+                    <FootballPitch ballPosition={selectedMatch.status === 'live' ? ballPosition : undefined} pitchLogoLeftUrl={selectedMatch.pitchLogoLeftUrl} pitchLogoRightUrl={selectedMatch.pitchLogoRightUrl} pitchSponsorName={selectedMatch.pitchSponsorName} />
                   </div>
-
-                  {/* MATCH TIMELINE (UNDER PITCH) */}
                   <MatchTimeline match={selectedMatch} ballPosition={ballPosition} />
-
-                  {/* COMMENTARY PIPELINE (NOW PAYWALLED) */}
                   <AICommentary selectedMatch={selectedMatch} isUnlocked={isMatchUnlocked(selectedMatch.id)} />
                 </>
               ) : (
-                <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">
-                  Select a live match from the calendar panel to spin tracker assets.
-                </div>
+                <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">Select a live match from the calendar panel to spin tracker assets.</div>
               )}
             </div>
 
-            {/* RIGHT COLUMN: GOLD, SILVER, ODDS, SHARE, HIGHLIGHTS */}
+            {/* RIGHT COLUMN */}
             <div className="lg:col-span-3 space-y-4">
               <AdBanner tier="GOLD" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
               <AdBanner tier="SILVER" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
               <MatchOdds match={selectedMatch} />
               <ShareButtons match={selectedMatch} />
-              {selectedMatch?.status === 'finished' && (
-                <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
-                  <Youtube size={16} /> Watch Match Highlights
-                </button>
-              )}
+              {selectedMatch?.status === 'finished' && (<button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2"><Youtube size={16} /> Watch Match Highlights</button>)}
             </div>
 
           </div>
         )}
       </div>
 
-      {/* HIGHLIGHTS MODAL */}
-      {showHighlightsModal && selectedMatch && (
-        <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />
-      )}
-
-      {/* PAYMENT MODAL */}
-      {showPaymentModal && selectedPayMatch && (
-        <PaymentModal
-          match={selectedPayMatch}
-          onClose={() => setShowPaymentModal(false)}
-          onUnlocked={onPaymentSuccess}
-          userName={""}
-        />
-      )}
-
-      {/* FAN REGISTRATION MODAL */}
-      {showFanRegister && (
-        <FanRegistrationModal 
-          onClose={() => setShowFanRegister(false)}
-          onRegisterSuccess={() => {
-            window.location.href = "/login?registered=1";
-          }}
-        />
-      )}
+      {/* MODALS */}
+      {showHighlightsModal && selectedMatch && <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />}
+      {showPaymentModal && selectedPayMatch && <PaymentModal match={selectedPayMatch} onClose={() => setShowPaymentModal(false)} onUnlocked={onPaymentSuccess} userName={""} />}
+      {showFanRegister && <FanRegistrationModal onClose={() => setShowFanRegister(false)} onRegisterSuccess={() => { window.location.href = "/login?registered=1"; }} />}
     </div>
   );
 }
