@@ -676,6 +676,87 @@ export default function GrassrootsSportsLanding() {
 
       </div>
 
+      {/* ── AI Drill Analysis section ── */}
+      <section className="bg-white border-t border-gray-100 py-14 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <span
+              className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 inline-block"
+              style={{ background: "#f0fdf4", color: "#1c3d22" }}
+            >
+              Pro Feature · 1 Free Trial
+            </span>
+            <h2 className="text-2xl font-black text-gray-900 mt-2 mb-2">
+              AI Drill Analysis — All 10 Sports
+            </h2>
+            <p className="text-sm text-gray-500 max-w-xl mx-auto">
+              Upload a short drill video. Gemini AI watches the full clip and gives you
+              professional coaching feedback in seconds — technique, posture, timing.
+            </p>
+          </div>
+
+          {/* Sport grid */}
+          <div className="grid grid-cols-5 gap-3 mb-8">
+            {[
+              { emoji: "⚽", label: "Football" },
+              { emoji: "🏉", label: "Rugby" },
+              { emoji: "🏃", label: "Athletics" },
+              { emoji: "🏐", label: "Netball" },
+              { emoji: "🏀", label: "Basketball" },
+              { emoji: "🏏", label: "Cricket" },
+              { emoji: "🏊", label: "Swimming" },
+              { emoji: "🎾", label: "Tennis" },
+              { emoji: "🏐", label: "Volleyball" },
+              { emoji: "🏑", label: "Hockey" },
+            ].map((s) => (
+              <a
+                key={s.label}
+                href="/player/analyse"
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border border-gray-100 hover:border-[#1c3d22] hover:bg-[#f0fdf4] transition-all text-center group"
+              >
+                <span className="text-2xl leading-none">{s.emoji}</span>
+                <span className="text-[10px] font-black text-gray-500 group-hover:text-[#1c3d22] uppercase tracking-wide leading-tight">
+                  {s.label}
+                </span>
+              </a>
+            ))}
+          </div>
+
+          {/* How it works */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            {[
+              { step: "1", label: "Select Sport & Drill", desc: "Pick from 10 sports and your specific drill type" },
+              { step: "2", label: "Upload Short Video", desc: "Film yourself doing the drill — under 60 seconds" },
+              { step: "3", label: "Get AI Coaching", desc: "Gemini watches the full clip and coaches you instantly" },
+            ].map((item) => (
+              <div key={item.step} className="text-center p-4 rounded-2xl bg-gray-50">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white mx-auto mb-2"
+                  style={{ background: "#1c3d22" }}
+                >
+                  {item.step}
+                </div>
+                <p className="text-xs font-black text-gray-800 mb-1">{item.label}</p>
+                <p className="text-[11px] text-gray-500">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <a
+              href="/player/analyse"
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90"
+              style={{ background: "#1c3d22" }}
+            >
+              ⚡ Try AI Drill Analysis Free
+            </a>
+            <p className="text-[11px] text-gray-400 mt-2">
+              1 free analysis included · No credit card required
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── World Cup banner ── */}
       <WorldCupBanner />
 
