@@ -1,3 +1,4 @@
+// src/app/player/layout.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -6,11 +7,19 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
-import { AdBanner } from "@/components/ui/AdBanner";
+import PlayerBottomNav from "@/components/layout/PlayerBottomNav";
 import dynamic from "next/dynamic";
 
 // Dynamically import Thuto AI Coach widget without Server-Side Rendering
 const ThutoChat = dynamic(() => import("@/components/thuto/ThutoChat"), { ssr: false });
+
+// ── AdBanner intentionally removed from this layout ───────────────────────
+// The banner-below-nav AdBanner was causing severe visual corruption on
+// mobile (the striped/glitched pattern seen on the Player and Admin hubs).
+// When the slot has no active ad and no fallback prop, it rendered an empty
+// 728×90 div that overflowed and corrupted everything below it on small screens.
+// Solution: removed completely from layout. Can be re-added inside individual
+// pages using <AdBanner slot="banner-below-nav" fallback={false} /> if needed.
 
 export default function PlayerLayout({
   children,
@@ -23,15 +32,15 @@ export default function PlayerLayout({
 
   useEffect(() => {
     if (!hasHydrated) return;
-    
+
     // If a logged-in user lands on the wrong hub, send them to their own dashboard.
-    // Unauthenticated Guests (no user) are welcome — no /login enforcement redirect.
+    // Unauthenticated guests (no user) are welcome — no /login enforcement redirect.
     if (user && user.role !== "player" && user.role !== "admin") {
       router.push(`/${user.role}`);
     }
   }, [hasHydrated, user, router]);
 
-  // Brief clean spinner while Zustand rehydrates state properties from localStorage
+  // Brief spinner while Zustand rehydrates state from localStorage
   if (!hasHydrated) {
     return (
       <div className="flex h-screen bg-[#f4f2ee] items-center justify-center">
@@ -43,22 +52,29 @@ export default function PlayerLayout({
   return (
     <GuestGateProvider>
       <div className="flex min-h-screen bg-[#f4f2ee]">
-        {/* Navigation Sidebar Component */}
+
+        {/* ── Desktop sidebar (hidden on mobile — bottom nav used instead) ── */}
         <Sidebar />
-        
-        {/* Main Viewport Container */}
+
+        {/* ── Main content area ─────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Guest awareness banners and advertising containers */}
+          {/* Guest awareness banner */}
           <GuestBanner />
-          <AdBanner slot="banner-below-nav" className="w-full" />
-          
-          <main className="flex-1 p-4 sm:p-6 lg:ml-64">
+
+          {/* Page content — lg:ml-64 accounts for desktop sidebar width */}
+          <main className="flex-1 p-4 sm:p-6 lg:ml-0 pb-20 md:pb-6">
             {children}
           </main>
         </div>
       </div>
-      
-      {/* Persistent Academy AI Engine Assistant */}
+
+      {/* ── Mobile bottom navigation bar ──────────────────────────────────
+           Appears only on screens smaller than md (768px).
+           Gives instant access to the 5 core player screens without
+           needing to open the hamburger drawer.                           */}
+      <PlayerBottomNav />
+
+      {/* ── Persistent THUTO AI assistant ─────────────────────────────── */}
       <ThutoChat />
     </GuestGateProvider>
   );
