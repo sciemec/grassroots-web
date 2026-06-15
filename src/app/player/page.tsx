@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Zap, BookOpen, Dumbbell, Activity, Award,
   Brain, Video, TrendingUp, ShieldCheck, GraduationCap,
-  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair,
+  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair, MapPin,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -241,8 +241,8 @@ export default function PlayerDashboardHome() {
                     <ShieldCheck size={9} /> Player · Active
                   </span>
                   {user.province && (
-                    <span className="text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      📍 {user.province}
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
+                      <MapPin size={9} /> {user.province}
                     </span>
                   )}
                 </div>
