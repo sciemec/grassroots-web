@@ -1,14 +1,21 @@
 // src/hooks/useLiveMatch.ts
-// REAL polling of iSports API - no mocks
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { 
+  fetchLiveMatches, 
+  fetchMatchEvents, 
+  fetchMatchLineups, 
+  fetchMatchStatistics,
+  fetchTodaySchedule,
+  type ISportsMatch,
+  type ISportsEvent,
+  type ISportsLineup,
+  type ISportsStatistics
+} from '@/lib/isports/client';
 
-import { useState, useEffect, useRef } from 'react';
-import { fetchLiveMatch, fetchMatchEvents, fetchMatchLineups, fetchMatchStatistics } from '@/lib/isports/client';
-import type { ISportsMatch, ISportsEvent, ISportsLineup, ISportsStatistics } from '@/lib/isports/types';
-
-interface LiveMatchData {
+interface LiveMatchState {
   match: ISportsMatch | null;
   events: ISportsEvent[];
-  lineups: { home: ISportsLineup | null; away: ISportsLineup | null };
+  lineups: ISportsLineup[];
   statistics: ISportsStatistics | null;
   isLoading: boolean;
   error: string | null;
@@ -16,79 +23,137 @@ interface LiveMatchData {
 }
 
 export function useLiveMatch(matchId: string) {
-  const [data, setData] = useState<LiveMatchData>({
+  const [state, setState] = useState<LiveMatchState>({
     match: null,
     events: [],
-    lineups: { home: null, away: null },
+    lineups: [],
     statistics: null,
     isLoading: true,
     error: null,
     lastUpdated: null,
   });
-  
+
   const lastEventIdRef = useRef<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+  const isMountedRef = useRef(true);
+
+  const fetchData = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
+    try {
+      // Fetch all match data
+      const [match, events, lineups, statistics] = await Promise.all([
+        fetchLiveMatches().then(matches => matches.find(m => m.id === matchId) || null),
+        fetchMatchEvents(matchId, lastEventIdRef.current || undefined),
+        fetchMatchLineups(matchId),
+        fetchMatchStatistics(matchId),
+      ]);
+
+      if (!isMountedRef.current) return;
+
+      // Track last event ID for delta updates
+      if (events && events.length > 0) {
+        const lastEvent = events[events.length - 1];
+        if (lastEvent?.id) {
+          lastEventIdRef.current = lastEvent.id;
+        }
+      }
+
+      setState(prev => ({
+        match: match || prev.match,
+        events: [...prev.events, ...(events || [])],
+        lineups: prev.lineups.length > 0 ? prev.lineups : (lineups || []),
+        statistics: statistics || prev.statistics,
+        isLoading: false,
+        error: null,
+        lastUpdated: new Date(),
+      }));
+
+    } catch (error) {
+      if (isMountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          error: error instanceof Error ? error.message : 'Failed to fetch match data',
+          isLoading: false,
+        }));
+      }
+    }
+  }, [matchId]);
+
+  // Initial fetch and polling
   useEffect(() => {
-    if (!matchId) return;
+    isMountedRef.current = true;
     
+    // Initial fetch
+    fetchData();
+
+    // Poll every 10 seconds
+    intervalRef.current = setInterval(fetchData, 10000);
+
+    return () => {
+      isMountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [fetchData]);
+
+  // Reset when matchId changes
+  useEffect(() => {
+    lastEventIdRef.current = null;
+    setState(prev => ({
+      ...prev,
+      events: [],
+      isLoading: true,
+    }));
+  }, [matchId]);
+
+  return state;
+}
+
+export function useLiveMatches() {
+  const [matches, setMatches] = useState<ISportsMatch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
     let isMounted = true;
-    
-    const fetchAll = async () => {
+
+    const loadMatches = async () => {
       try {
-        // Fetch match data
-        const match = await fetchLiveMatch(matchId);
+        // First try live matches
+        let liveMatches = await fetchLiveMatches();
         
-        // Fetch events (only new ones)
-        const events = await fetchMatchEvents(matchId, lastEventIdRef.current || undefined);
-        if (events.length > 0 && events[events.length - 1]?.event_id) {
-          lastEventIdRef.current = events[events.length - 1].event_id;
+        // If no live matches, get today's schedule
+        if (liveMatches.length === 0) {
+          liveMatches = await fetchTodaySchedule();
         }
-        
-        // Fetch lineups (once per match)
-        let lineups = data.lineups;
-        if (!lineups.home && !lineups.away) {
-          const homeLineup = await fetchMatchLineups(matchId).catch(() => null);
-          const awayLineup = await fetchMatchLineups(matchId).catch(() => null);
-          lineups = { home: homeLineup, away: awayLineup };
-        }
-        
-        // Fetch statistics
-        const statistics = await fetchMatchStatistics(matchId);
-        
+
         if (isMounted) {
-          setData(prev => ({
-            match,
-            events: [...prev.events, ...events].slice(-50), // keep last 50 events
-            lineups,
-            statistics,
-            isLoading: false,
-            error: null,
-            lastUpdated: new Date(),
-          }));
+          setMatches(liveMatches);
+          setError(null);
         }
       } catch (err) {
         if (isMounted) {
-          setData(prev => ({
-            ...prev,
-            error: err instanceof Error ? err.message : 'Failed to fetch match data',
-            isLoading: false,
-          }));
+          setError(err instanceof Error ? err.message : 'Failed to fetch matches');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
     };
-    
-    // Initial fetch
-    fetchAll();
-    
-    // Poll every 5 seconds (iSports recommended interval)
-    intervalRef.current = setInterval(fetchAll, 5000);
-    
+
+    loadMatches();
+
+    // Poll for live matches every 30 seconds
+    const interval = setInterval(loadMatches, 30000);
+
     return () => {
       isMounted = false;
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearInterval(interval);
     };
-  }, [matchId]);
-  
-  return data;
+  }, []);
+
+  return { matches, isLoading, error };
 }

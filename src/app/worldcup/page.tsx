@@ -8,6 +8,7 @@ import {
   TrendingUp, Clock, Youtube, MessageCircle, Lock, Unlock,
   Smartphone, CreditCard, Loader2, X, Star, Users, Trophy as TrophyIcon
 } from 'lucide-react';
+import { useLiveMatches, useLiveMatch } from '@/hooks/useLiveMatch';
 
 // ============================================
 // TYPES
@@ -113,76 +114,9 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
             <span className="text-[10px] text-gray-400 mt-1">Local Academy Space</span>
           </div>
         )}
-      </a>
+      </div>
     </div>
   );
-}
-
-// ============================================
-// DATA FETCHING (ESPN API + worldcup.json)
-// ============================================
-async function fetchLiveMatches(): Promise<Match[]> {
-  try {
-    const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/fifa-world-cup/scoreboard', { cache: 'no-store' });
-    if (!res.ok) throw new Error(`ESPN error: ${res.status}`);
-    const data = await res.json();
-    if (!data.events || data.events.length === 0) return fetchScheduledMatches();
-    
-    return data.events.map((event: any) => {
-      const home = event.competitions[0].competitors.find((c: any) => c.homeAway === 'home');
-      const away = event.competitions[0].competitors.find((c: any) => c.homeAway === 'away');
-      return {
-        id: event.id,
-        homeTeam: home?.team.displayName || '?',
-        awayTeam: away?.team.displayName || '?',
-        homeScore: parseInt(home?.score || '0'),
-        awayScore: parseInt(away?.score || '0'),
-        status: event.status.type.state === 'in' ? 'live' : event.status.type.state === 'post' ? 'finished' : 'scheduled',
-        minute: event.competitions[0].status.type.shortDetail || '0\'',
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        stadium: event.competitions[0].venue?.fullName || 'TBD',
-        city: event.competitions[0].venue?.city || 'TBD',
-        pitchSponsorName: "Grassroots Partner",
-        pitchLogoLeftUrl: null,
-        pitchLogoRightUrl: null,
-        sponsorTargetUrl: "https://grassrootssports.live"
-      };
-    });
-  } catch {
-    return fetchScheduledMatches();
-  }
-}
-
-async function fetchScheduledMatches(): Promise<Match[]> {
-  try {
-    const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
-    if (!res.ok) throw new Error('worldcup.json error');
-    const data = await res.json();
-    if (!data.matches) return [];
-    const today = new Date().toISOString().split('T')[0];
-    return data.matches
-      .filter((m: any) => m.date === today)
-      .map((m: any) => ({
-        id: `${m.team1}-${m.team2}-${m.date}`,
-        homeTeam: m.team1,
-        awayTeam: m.team2,
-        homeScore: 0,
-        awayScore: 0,
-        status: 'scheduled',
-        minute: '0\'',
-        date: m.date,
-        time: m.time || 'TBD',
-        stadium: m.ground || 'TBD',
-        city: m.ground?.split(',')[1]?.trim() || 'TBD',
-        pitchSponsorName: "Grassroots Partner",
-        pitchLogoLeftUrl: null,
-        pitchLogoRightUrl: null,
-        sponsorTargetUrl: "https://grassrootssports.live"
-      }));
-  } catch {
-    return [];
-  }
 }
 
 // ============================================
@@ -881,10 +815,11 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
 // ROOT MASTER INTERFACE
 // ============================================
 export default function WorldCupPage() {
+  // Use the useLiveMatches hook - replaces fetchLiveMatches and fetchScheduledMatches
+  const { matches: liveMatches, isLoading, error } = useLiveMatches();
+  
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
   const [showHighlightsModal, setShowHighlightsModal] = useState(false);
@@ -893,6 +828,38 @@ export default function WorldCupPage() {
   const [selectedPayMatch, setSelectedPayMatch] = useState<Match | null>(null);
   const [showFanRegister, setShowFanRegister] = useState(false);
   const hasSetInitial = useRef(false);
+
+  // Transform iSports data to Match format
+  useEffect(() => {
+    if (liveMatches.length > 0) {
+      const transformed = liveMatches.map((m: any) => ({
+        id: m.id,
+        homeTeam: m.home_team?.name || '?',
+        awayTeam: m.away_team?.name || '?',
+        homeScore: m.home_score || 0,
+        awayScore: m.away_score || 0,
+        status: m.status === 'first_half' || m.status === 'second_half' ? 'live' : 
+                m.status === 'finished' ? 'finished' : 'scheduled',
+        minute: m.minute ? `${m.minute}'` : '0\'',
+        date: m.date || new Date().toISOString().split('T')[0],
+        time: m.time || 'TBD',
+        stadium: m.venue || 'TBD',
+        city: m.venue?.split(',')[1]?.trim() || 'TBD',
+        pitchSponsorName: "Grassroots Partner",
+        pitchLogoLeftUrl: null,
+        pitchLogoRightUrl: null,
+        sponsorTargetUrl: "https://grassrootssports.live"
+      }));
+      setMatches(transformed);
+      
+      // Auto-select first match
+      if (transformed.length > 0 && !hasSetInitial.current) {
+        setSelectedMatch(transformed[0]);
+        hasSetInitial.current = true;
+      }
+      setLastUpdated(new Date());
+    }
+  }, [liveMatches]);
 
   useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
 
@@ -909,24 +876,7 @@ export default function WorldCupPage() {
 
   const isMatchUnlocked = (matchId: string) => unlockedMatches.includes(matchId);
 
-  const loadData = async () => {
-    try {
-      const live = await fetchLiveMatches();
-      setMatches(live);
-      if (live.length > 0 && !hasSetInitial.current) {
-        setSelectedMatch(live[0]);
-        hasSetInitial.current = true;
-      }
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err) {
-      setError('Unable to fetch live data streams. Please trigger direct sync.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => { loadData(); const interval = setInterval(loadData, 30000); return () => clearInterval(interval); }, []);
+  // Update ball position for live matches
   useEffect(() => {
     if (!selectedMatch || selectedMatch.status !== 'live') return;
     const interval = setInterval(() => {
@@ -954,7 +904,6 @@ export default function WorldCupPage() {
             <div className="flex items-center gap-4">
               <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">Join as Fan</button>
               {liveMatchesCount > 0 && (<div className="bg-red-500/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1"><div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /><span className="text-xs font-medium">{liveMatchesCount} live matches</span></div>)}
-              <button onClick={loadData} className="text-white/70 hover:text-white transition text-sm flex items-center gap-1"><RefreshCw size={14} /> Refresh</button>
             </div>
           </div>
           {lastUpdated && <div className="text-right text-[9px] text-white/40 mt-2">Server Sync: {lastUpdated.toLocaleTimeString()}</div>}
@@ -967,7 +916,7 @@ export default function WorldCupPage() {
       {/* CORE 3-COLUMN LAYERS GRID */}
       <div className="max-w-[1400px] mx-auto px-4 py-6">
         {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center"><p className="text-red-600">{error}</p><button onClick={loadData} className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Retry</button></div>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center"><p className="text-red-600">{error}</p></div>
         ) : isLoading ? (
           <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
         ) : (
