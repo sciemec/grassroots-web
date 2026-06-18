@@ -1,4 +1,4 @@
-// src/app/world-cup/page.tsx
+// src/app/worldcup/page.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -8,7 +8,7 @@ import {
   TrendingUp, Clock, Youtube, MessageCircle, Lock, Unlock,
   Smartphone, CreditCard, Loader2, X, Star, Users, Trophy as TrophyIcon
 } from 'lucide-react';
-import { useLiveMatches, useLiveMatch } from '@/hooks/useLiveMatch';
+import { useLiveMatches } from '@/hooks/useLiveMatch';
 
 // ============================================
 // TYPES
@@ -32,7 +32,7 @@ interface Match {
 }
 
 // ============================================
-// PERKS LIST - BOLD BLACK TEXT (VISIBLE)
+// PERKS LIST
 // ============================================
 const PERKS = [
   { icon: Star, text: "Vote Player of the Tournament" },
@@ -55,7 +55,7 @@ function PerksList() {
 }
 
 // ============================================
-// STATIC AD BANNER SUB-COMPONENT
+// AD BANNER
 // ============================================
 interface AdBannerProps {
   tier: 'GOLD' | 'SILVER' | 'BRONZE';
@@ -114,13 +114,13 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
             <span className="text-[10px] text-gray-400 mt-1">Local Academy Space</span>
           </div>
         )}
-      </div>
+      </a>
     </div>
   );
 }
 
 // ============================================
-// 2D FOOTBALL PITCH
+// FOOTBALL PITCH
 // ============================================
 interface FootballPitchProps {
   ballPosition?: { x: number; y: number };
@@ -274,7 +274,7 @@ function MatchOdds({ match }: { match: Match | null }) {
 function ShareButtons({ match }: { match: Match | null }) {
   const [copied, setCopied] = useState(false);
   if (!match) return null;
-  const shareUrl = `${window.location.origin}/world-cup?match=${match.id}`;
+  const shareUrl = `${window.location.origin}/worldcup?match=${match.id}`;
   const shareText = `🏆 World Cup 2026: ${match.homeTeam} vs ${match.awayTeam} - Live on GrassRoots Sports!`;
   const copyLink = async () => {
     await navigator.clipboard.writeText(shareUrl);
@@ -583,7 +583,7 @@ function PaymentModal({ match, onClose, onUnlocked, userName }: { match: Match; 
 }
 
 // ============================================
-// AI COMMENTARY PIPELINE
+// AI COMMENTARY
 // ============================================
 function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | null; isUnlocked: boolean }) {
   const [isSpeaking, setIsSpeaking] = useState(true);
@@ -690,7 +690,7 @@ function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | nu
 }
 
 // ============================================
-// MATCH CARD COMPONENT
+// MATCH CARD
 // ============================================
 function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: { match: Match; isSelected: boolean; onClick: () => void; isUnlocked: boolean; onUnlockClick: (match: Match) => void }) {
   const isLive = match.status === 'live';
@@ -729,18 +729,6 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: { 
       )}
     </button>
   );
-}
-
-// ============================================
-// LOCALSTORAGE HELPERS
-// ============================================
-const UNLOCK_KEY = "wc_unlocked_matches";
-function loadUnlocked(): string[] {
-  try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? "[]"); }
-  catch { return []; }
-}
-function saveUnlocked(ids: string[]) {
-  localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
 }
 
 // ============================================
@@ -812,10 +800,9 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
 }
 
 // ============================================
-// ROOT MASTER INTERFACE
+// MAIN COMPONENT
 // ============================================
 export default function WorldCupPage() {
-  // Use the useLiveMatches hook - replaces fetchLiveMatches and fetchScheduledMatches
   const { matches: liveMatches, isLoading, error } = useLiveMatches();
   
   const [matches, setMatches] = useState<Match[]>([]);
@@ -828,31 +815,44 @@ export default function WorldCupPage() {
   const [selectedPayMatch, setSelectedPayMatch] = useState<Match | null>(null);
   const [showFanRegister, setShowFanRegister] = useState(false);
   const hasSetInitial = useRef(false);
+  const UNLOCK_KEY = "wc_unlocked_matches";
 
-  // Transform iSports data to Match format
+  const loadUnlocked = (): string[] => {
+    try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? "[]"); }
+    catch { return []; }
+  };
+
+  const saveUnlocked = (ids: string[]) => {
+    localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
+  };
+
+  useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
+
+  // FIXED: Properly typed transformation with explicit type casting
   useEffect(() => {
-    if (liveMatches.length > 0) {
-      const transformed = liveMatches.map((m: any) => ({
-        id: m.id,
-        homeTeam: m.home_team?.name || '?',
-        awayTeam: m.away_team?.name || '?',
-        homeScore: m.home_score || 0,
-        awayScore: m.away_score || 0,
-        status: m.status === 'first_half' || m.status === 'second_half' ? 'live' : 
-                m.status === 'finished' ? 'finished' : 'scheduled',
-        minute: m.minute ? `${m.minute}'` : '0\'',
+    if (liveMatches && liveMatches.length > 0) {
+      const transformed: Match[] = liveMatches.map((m: any) => ({
+        id: String(m.id || `match-${Date.now()}-${Math.random()}`),
+        homeTeam: m.home_team?.name || m.home_team || '?',
+        awayTeam: m.away_team?.name || m.away_team || '?',
+        homeScore: typeof m.home_score === 'number' ? m.home_score : 0,
+        awayScore: typeof m.away_score === 'number' ? m.away_score : 0,
+        status: (m.status === 'first_half' || m.status === 'second_half' || m.status === 'live') ? 'live' : 
+                (m.status === 'finished' || m.status === 'ft') ? 'finished' : 'scheduled',
+        minute: m.minute ? `${m.minute}'` : (m.time_elapsed ? `${m.time_elapsed}'` : '0\''),
         date: m.date || new Date().toISOString().split('T')[0],
         time: m.time || 'TBD',
-        stadium: m.venue || 'TBD',
-        city: m.venue?.split(',')[1]?.trim() || 'TBD',
+        stadium: m.venue || m.stadium || 'TBD',
+        city: m.city || (m.venue?.split(',')[1]?.trim()) || 'TBD',
         pitchSponsorName: "Grassroots Partner",
         pitchLogoLeftUrl: null,
         pitchLogoRightUrl: null,
         sponsorTargetUrl: "https://grassrootssports.live"
       }));
+      
       setMatches(transformed);
       
-      // Auto-select first match
+      // Auto-select first match if not already selected
       if (transformed.length > 0 && !hasSetInitial.current) {
         setSelectedMatch(transformed[0]);
         hasSetInitial.current = true;
@@ -860,8 +860,6 @@ export default function WorldCupPage() {
       setLastUpdated(new Date());
     }
   }, [liveMatches]);
-
-  useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
 
   const handleUnlockMatch = (match: Match) => {
     setSelectedPayMatch(match);
@@ -876,11 +874,13 @@ export default function WorldCupPage() {
 
   const isMatchUnlocked = (matchId: string) => unlockedMatches.includes(matchId);
 
-  // Update ball position for live matches
   useEffect(() => {
     if (!selectedMatch || selectedMatch.status !== 'live') return;
     const interval = setInterval(() => {
-      setBallPosition(prev => ({ x: Math.min(95, Math.max(5, prev.x + (Math.random() - 0.5) * 3)), y: Math.min(95, Math.max(5, prev.y + (Math.random() - 0.5) * 2)) }));
+      setBallPosition(prev => ({ 
+        x: Math.min(95, Math.max(5, prev.x + (Math.random() - 0.5) * 3)), 
+        y: Math.min(95, Math.max(5, prev.y + (Math.random() - 0.5) * 2)) 
+      }));
     }, 3000);
     return () => clearInterval(interval);
   }, [selectedMatch]);
@@ -889,46 +889,77 @@ export default function WorldCupPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
-      {/* HEADER BAR */}
+      {/* HEADER */}
       <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white border-b-4 border-[#f0b429]">
         <div className="max-w-[1400px] mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center"><span className="text-black font-black text-sm">GRS</span></div>
+                <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center">
+                  <span className="text-black font-black text-sm">GRS</span>
+                </div>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tight">World Cup 2026</h1>
                 <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">REALTIME TELEMETRY</span>
               </div>
               <p className="text-white/80 text-sm">USA · Canada · Mexico | 11 June – 19 July 2026</p>
             </div>
             <div className="flex items-center gap-4">
-              <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">Join as Fan</button>
-              {liveMatchesCount > 0 && (<div className="bg-red-500/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1"><div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /><span className="text-xs font-medium">{liveMatchesCount} live matches</span></div>)}
+              <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">
+                Join as Fan
+              </button>
+              {liveMatchesCount > 0 && (
+                <div className="bg-red-500/20 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-medium">{liveMatchesCount} live matches</span>
+                </div>
+              )}
             </div>
           </div>
-          {lastUpdated && <div className="text-right text-[9px] text-white/40 mt-2">Server Sync: {lastUpdated.toLocaleTimeString()}</div>}
+          {lastUpdated && (
+            <div className="text-right text-[9px] text-white/40 mt-2">
+              Server Sync: {lastUpdated.toLocaleTimeString()}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* PERKS LIST */}
-      <div className="max-w-[1400px] mx-auto px-4 pt-4"><PerksList /></div>
+      {/* PERKS */}
+      <div className="max-w-[1400px] mx-auto px-4 pt-4">
+        <PerksList />
+      </div>
 
-      {/* CORE 3-COLUMN LAYERS GRID */}
+      {/* MAIN CONTENT */}
       <div className="max-w-[1400px] mx-auto px-4 py-6">
         {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center"><p className="text-red-600">{error}</p></div>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+            <p className="text-red-600">{error}</p>
+          </div>
         ) : isLoading ? (
-          <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
+          <div className="flex justify-center py-20">
+            <div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
             {/* LEFT COLUMN */}
             <div className="lg:col-span-3 space-y-4">
               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2"><Calendar size={14} /> Today's Schedule</h2>
-                {matches.length === 0 ? (<p className="text-xs text-gray-500 italic py-4 text-center">No world cup fixtures scheduled for today.</p>) : (
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
+                  <Calendar size={14} /> Today's Schedule
+                </h2>
+                {matches.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic py-4 text-center">No world cup fixtures scheduled for today.</p>
+                ) : (
                   <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-                    {matches.map(match => (<MatchCard key={match.id} match={match} isSelected={selectedMatch?.id === match.id} onClick={() => setSelectedMatch(match)} isUnlocked={isMatchUnlocked(match.id)} onUnlockClick={handleUnlockMatch} />))}
+                    {matches.map(match => (
+                      <MatchCard 
+                        key={match.id} 
+                        match={match} 
+                        isSelected={selectedMatch?.id === match.id} 
+                        onClick={() => setSelectedMatch(match)} 
+                        isUnlocked={isMatchUnlocked(match.id)} 
+                        onUnlockClick={handleUnlockMatch} 
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -941,21 +972,53 @@ export default function WorldCupPage() {
                 <>
                   <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
                     <div className="flex justify-between items-center">
-                      <div className="text-center flex-1"><span className="text-gray-400 text-xs uppercase">HOME</span><p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.homeTeam}</p><p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p></div>
-                      <div className="text-center px-4"><div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"><span className="text-gray-500 text-xs font-mono">VS</span></div><div className="mt-2 text-[11px] text-gray-500 font-mono">{selectedMatch.status === 'live' ? selectedMatch.minute : selectedMatch.time}</div></div>
-                      <div className="text-center flex-1"><span className="text-gray-400 text-xs uppercase">AWAY</span><p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.awayTeam}</p><p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p></div>
+                      <div className="text-center flex-1">
+                        <span className="text-gray-400 text-xs uppercase">HOME</span>
+                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.homeTeam}</p>
+                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p>
+                      </div>
+                      <div className="text-center px-4">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <span className="text-gray-500 text-xs font-mono">VS</span>
+                        </div>
+                        <div className="mt-2 text-[11px] text-gray-500 font-mono">
+                          {selectedMatch.status === 'live' ? selectedMatch.minute : selectedMatch.time}
+                        </div>
+                      </div>
+                      <div className="text-center flex-1">
+                        <span className="text-gray-400 text-xs uppercase">AWAY</span>
+                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.awayTeam}</p>
+                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p>
+                      </div>
                     </div>
-                    <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3"><MapPin size={12} /> {selectedMatch.stadium}</div>
+                    <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
+                      <MapPin size={12} /> {selectedMatch.stadium}
+                    </div>
                   </div>
                   <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
-                    <div className="flex items-center gap-2 px-3 pt-2 pb-1"><div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> LIVE TRACKER VIEW</div><div className="flex-1"></div><div className="flex items-center gap-1 text-[10px] text-gray-400"><Activity size={10} /> tracking engine telemetry</div></div>
-                    <FootballPitch ballPosition={selectedMatch.status === 'live' ? ballPosition : undefined} pitchLogoLeftUrl={selectedMatch.pitchLogoLeftUrl} pitchLogoRightUrl={selectedMatch.pitchLogoRightUrl} pitchSponsorName={selectedMatch.pitchSponsorName} />
+                    <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+                      <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                        <Tv size={12} /> LIVE TRACKER VIEW
+                      </div>
+                      <div className="flex-1"></div>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                        <Activity size={10} /> tracking engine telemetry
+                      </div>
+                    </div>
+                    <FootballPitch 
+                      ballPosition={selectedMatch.status === 'live' ? ballPosition : undefined} 
+                      pitchLogoLeftUrl={selectedMatch.pitchLogoLeftUrl} 
+                      pitchLogoRightUrl={selectedMatch.pitchLogoRightUrl} 
+                      pitchSponsorName={selectedMatch.pitchSponsorName} 
+                    />
                   </div>
                   <MatchTimeline match={selectedMatch} ballPosition={ballPosition} />
                   <AICommentary selectedMatch={selectedMatch} isUnlocked={isMatchUnlocked(selectedMatch.id)} />
                 </>
               ) : (
-                <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">Select a live match from the calendar panel to spin tracker assets.</div>
+                <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">
+                  Select a live match from the calendar panel to spin tracker assets.
+                </div>
               )}
             </div>
 
@@ -965,17 +1028,34 @@ export default function WorldCupPage() {
               <AdBanner tier="SILVER" targetUrl={selectedMatch?.sponsorTargetUrl} sponsorName={selectedMatch?.pitchSponsorName} />
               <MatchOdds match={selectedMatch} />
               <ShareButtons match={selectedMatch} />
-              {selectedMatch?.status === 'finished' && (<button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2"><Youtube size={16} /> Watch Match Highlights</button>)}
+              {selectedMatch?.status === 'finished' && (
+                <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
+                  <Youtube size={16} /> Watch Match Highlights
+                </button>
+              )}
             </div>
-
           </div>
         )}
       </div>
 
       {/* MODALS */}
-      {showHighlightsModal && selectedMatch && <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />}
-      {showPaymentModal && selectedPayMatch && <PaymentModal match={selectedPayMatch} onClose={() => setShowPaymentModal(false)} onUnlocked={onPaymentSuccess} userName={""} />}
-      {showFanRegister && <FanRegistrationModal onClose={() => setShowFanRegister(false)} onRegisterSuccess={() => { window.location.href = "/login?registered=1"; }} />}
+      {showHighlightsModal && selectedMatch && (
+        <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />
+      )}
+      {showPaymentModal && selectedPayMatch && (
+        <PaymentModal 
+          match={selectedPayMatch} 
+          onClose={() => setShowPaymentModal(false)} 
+          onUnlocked={onPaymentSuccess} 
+          userName={""} 
+        />
+      )}
+      {showFanRegister && (
+        <FanRegistrationModal 
+          onClose={() => setShowFanRegister(false)} 
+          onRegisterSuccess={() => { window.location.href = "/login?registered=1"; }} 
+        />
+      )}
     </div>
   );
 }
