@@ -1,86 +1,59 @@
-"use client";
-
-import type { ISportsMatch } from "@/lib/isports/types";
+// src/components/MatchHeader.tsx
+'use client';
 
 interface MatchHeaderProps {
-  match: ISportsMatch;
-  lastUpdated: Date | null;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  minute?: string;
+  status: string;
+  stadium?: string;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  "1": "Not Started",
-  "2": "Live",
-  "3": "Finished",
-};
-
-const PERIOD_LABEL: Record<string, string> = {
-  "1H": "1st Half",
-  "2H": "2nd Half",
-  HT: "Half Time",
-  ET: "Extra Time",
-  PEN: "Penalties",
-};
-
-export function MatchHeader({ match, lastUpdated }: MatchHeaderProps) {
-  const isLive = match.match_status === "2";
-
+export function MatchHeader({ 
+  homeTeam, 
+  awayTeam, 
+  homeScore, 
+  awayScore, 
+  minute, 
+  status,
+  stadium 
+}: MatchHeaderProps) {
+  const isLive = status === 'live';
+  
   return (
-    <header className="bg-gray-900 border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        {/* League name */}
-        <p className="text-center text-xs text-gray-500 uppercase tracking-widest mb-3">
-          {match.league_name}
-        </p>
-
-        {/* Score row */}
-        <div className="flex items-center justify-center gap-6">
-          <span className="text-white font-bold text-lg text-right w-40 truncate">
-            {match.home_team_name}
-          </span>
-
-          <div className="text-center">
-            <div className="text-4xl font-black text-white tracking-tight">
-              {match.home_score} – {match.away_score}
-            </div>
-            {isLive && (
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-red-400 text-xs font-bold">
-                  {match.match_minute}&apos; {PERIOD_LABEL[match.match_period] ?? match.match_period}
-                </span>
-              </div>
-            )}
-            {!isLive && (
-              <p className="text-gray-400 text-xs mt-1">
-                {STATUS_LABEL[match.match_status] ?? "Unknown"}
-              </p>
-            )}
-          </div>
-
-          <span className="text-white font-bold text-lg text-left w-40 truncate">
-            {match.away_team_name}
-          </span>
+    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
+      <div className="flex justify-between items-center">
+        <div className="text-center flex-1">
+          <span className="text-gray-400 text-xs uppercase">HOME</span>
+          <p className="text-gray-800 font-bold text-xl mt-1">{homeTeam}</p>
+          <p className="text-4xl font-black text-[#1a5c2a] mt-1">{homeScore}</p>
         </div>
-
-        {/* Cards row */}
-        <div className="flex justify-center gap-8 mt-3 text-xs text-gray-500">
-          {match.home_red_card > 0 && (
-            <span>
-              🟥 {match.home_team_name} ×{match.home_red_card}
-            </span>
+        <div className="text-center px-4">
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+            <span className="text-gray-500 text-xs font-mono">VS</span>
+          </div>
+          <div className="mt-2 text-[11px] text-gray-500 font-mono">
+            {isLive ? minute : 'Scheduled'}
+          </div>
+          {isLive && (
+            <div className="mt-1 text-[9px] text-red-500 font-bold animate-pulse">
+              ● LIVE
+            </div>
           )}
-          {match.away_red_card > 0 && (
-            <span>
-              🟥 {match.away_team_name} ×{match.away_red_card}
-            </span>
-          )}
-          {lastUpdated && (
-            <span className="text-gray-600">
-              Updated {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
+        </div>
+        <div className="text-center flex-1">
+          <span className="text-gray-400 text-xs uppercase">AWAY</span>
+          <p className="text-gray-800 font-bold text-xl mt-1">{awayTeam}</p>
+          <p className="text-4xl font-black text-[#1a5c2a] mt-1">{awayScore}</p>
         </div>
       </div>
-    </header>
+      {stadium && (
+        <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
+          <span>📍 {stadium}</span>
+        </div>
+      )}
+    </div>
   );
 }
