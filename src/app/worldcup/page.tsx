@@ -9,6 +9,7 @@ import {
   Smartphone, CreditCard, Loader2, X, Star, Users, Trophy as TrophyIcon
 } from 'lucide-react';
 import { useLiveMatches } from '@/hooks/useLiveMatch';
+import { useMatchWebSocket } from '@/hooks/useMatchWebSocket';
 
 // ============================================
 // TYPES
@@ -31,6 +32,14 @@ interface Match {
   sponsorTargetUrl?: string | null;
 }
 
+interface Player {
+  id: string;
+  number: number;
+  name: string;
+  x: number;
+  y: number;
+}
+
 // ============================================
 // PERKS LIST
 // ============================================
@@ -38,7 +47,7 @@ const PERKS = [
   { icon: Star, text: "Vote Player of the Tournament" },
   { icon: Tv, text: "Live match updates via WhatsApp" },
   { icon: Users, text: "Follow your favourite local players" },
-  { icon: Volume2, text: "Unlock audio commentary — $1 per match" },
+  { icon: Volume2, text: "Free audio commentary for registered fans" },
 ];
 
 function PerksList() {
@@ -120,7 +129,7 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
 }
 
 // ============================================
-// FOOTBALL PITCH
+// FOOTBALL PITCH WITH PLAYERS
 // ============================================
 interface FootballPitchProps {
   ballPosition?: { x: number; y: number };
@@ -128,9 +137,21 @@ interface FootballPitchProps {
   pitchLogoLeftUrl?: string | null;
   pitchLogoRightUrl?: string | null;
   pitchSponsorName?: string | null;
+  homePlayers?: Player[];
+  awayPlayers?: Player[];
+  possession?: 'home' | 'away' | 'neutral';
 }
 
-function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRightUrl, pitchSponsorName }: FootballPitchProps) {
+function FootballPitch({ 
+  ballPosition, 
+  shots = [], 
+  pitchLogoLeftUrl, 
+  pitchLogoRightUrl, 
+  pitchSponsorName,
+  homePlayers = [],
+  awayPlayers = [],
+  possession = 'neutral'
+}: FootballPitchProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const width = 900;
   const height = 600;
@@ -141,6 +162,7 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Draw pitch
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, '#1a5c2a');
     grad.addColorStop(0.5, '#0e4a1e');
@@ -182,6 +204,7 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     ctx.fill();
     ctx.shadowBlur = 0;
 
+    // Draw watermark images
     const drawWatermarkImage = (url: string, isLeft: boolean) => {
       const img = new Image();
       img.src = url;
@@ -198,6 +221,7 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     if (pitchLogoLeftUrl) drawWatermarkImage(pitchLogoLeftUrl, true);
     if (pitchLogoRightUrl) drawWatermarkImage(pitchLogoRightUrl, false);
 
+    // Draw shots
     for (const shot of shots) {
       const x = 40 + (shot.x / 100) * (width - 80);
       const y = 40 + (shot.y / 100) * (height - 80);
@@ -217,6 +241,47 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
       ctx.fill();
     }
 
+    // Draw home players (green)
+    homePlayers.forEach(player => {
+      const x = 40 + (player.x / 100) * (width - 80);
+      const y = 40 + (player.y / 100) * (height - 80);
+      
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = possession === 'home' ? '#00ff00' : '#00aa00';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(player.number, x, y);
+    });
+
+    // Draw away players (red)
+    awayPlayers.forEach(player => {
+      const x = 40 + (player.x / 100) * (width - 80);
+      const y = 40 + (player.y / 100) * (height - 80);
+      
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = possession === 'away' ? '#ff0000' : '#cc0000';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(player.number, x, y);
+    });
+
+    // Draw ball
     if (ballPosition) {
       const x = 40 + (ballPosition.x / 100) * (width - 80);
       const y = 40 + (ballPosition.y / 100) * (height - 80);
@@ -235,6 +300,7 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
       ctx.shadowBlur = 0;
     }
 
+    // Draw sponsor text
     ctx.font = 'bold 24px "Inter", system-ui';
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.textAlign = 'center';
@@ -242,7 +308,19 @@ function FootballPitch({ ballPosition, shots = [], pitchLogoLeftUrl, pitchLogoRi
     ctx.font = '16px monospace';
     ctx.fillStyle = 'rgba(240, 180, 41, 0.4)';
     ctx.fillText("grassrootssports.live", width / 2, height / 2 + 85);
-  }, [ballPosition, shots, pitchLogoLeftUrl, pitchLogoRightUrl, pitchSponsorName]);
+
+    // Possession indicator
+    if (possession !== 'neutral') {
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(
+        possession === 'home' ? '🔵 Home Possession' : '🔴 Away Possession',
+        20, 20
+      );
+    }
+  }, [ballPosition, shots, pitchLogoLeftUrl, pitchLogoRightUrl, pitchSponsorName, homePlayers, awayPlayers, possession]);
 
   return <canvas ref={canvasRef} width={width} height={height} className="w-full rounded-xl shadow-2xl border border-[#f0b429]/20" />;
 }
@@ -464,125 +542,6 @@ function MatchTimeline({ match, ballPosition }: { match: Match | null; ballPosit
 }
 
 // ============================================
-// PAYMENT MODAL
-// ============================================
-type PayTab = "card" | "mobile";
-type MobileMethod = "ecocash" | "innbucks" | "onemoney";
-
-function PaymentModal({ match, onClose, onUnlocked, userName }: { match: Match; onClose: () => void; onUnlocked: (id: string) => void; userName: string }) {
-  const [tab, setTab] = useState<PayTab>("mobile");
-  const [method, setMethod] = useState<MobileMethod>("ecocash");
-  const [phone, setPhone] = useState("");
-  const [paying, setPaying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [polling, setPolling] = useState(false);
-  const [pollUrl, setPollUrl] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stopPoll = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-  };
-  useEffect(() => () => stopPoll(), []);
-
-  useEffect(() => {
-    if (!polling || !pollUrl) return;
-    stopPoll();
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/payments/paynow/status?pollUrl=${encodeURIComponent(pollUrl)}`);
-        const data = await res.json() as { paid?: boolean };
-        if (data.paid) {
-          stopPoll();
-          setPolling(false);
-          onUnlocked(match.id);
-          onClose();
-        }
-      } catch { /* keep polling */ }
-    }, 3000);
-    return stopPoll;
-  }, [polling, pollUrl, match.id, onUnlocked, onClose]);
-
-  const payMobile = async () => {
-    const digits = phone.replace(/\D/g, "");
-    if (digits.length < 9) { setError("Enter a valid phone number."); return; }
-    setPaying(true); setError(null);
-    try {
-      const res = await fetch("/api/payments/match-donate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event_id: match.id, amount: "1", phone: phone, donor_name: userName || "Fan" }),
-      });
-      const data = await res.json() as { poll_url?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "Payment failed.");
-      if (data.poll_url) { setPollUrl(data.poll_url); setPolling(true); }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-    } finally { setPaying(false); }
-  };
-
-  const payCard = async () => {
-    setPaying(true); setError(null);
-    try {
-      const res = await fetch("/api/payments/match-unlock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId: match.id, matchTitle: `${match.homeTeam} vs ${match.awayTeam}` }),
-      });
-      const data = await res.json() as { url?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? "Could not start payment.");
-      if (data.url) window.location.href = data.url;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-      setPaying(false);
-    }
-  };
-
-  const phoneOk = phone.replace(/\D/g, "").length >= 9;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-full max-w-sm rounded-2xl p-6 relative bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
-        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
-        <div className="mb-5">
-          <div className="text-xs font-black uppercase tracking-widest mb-1 text-[#f0b429]">Unlock Audio Commentary</div>
-          <h3 className="text-white font-black text-base leading-tight">{match.homeTeam} vs {match.awayTeam}</h3>
-          <p className="text-xs mt-0.5 text-white/35">{match.stadium}</p>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black mt-3 bg-[rgba(240,180,41,0.12)] text-[#f0b429]"><Volume2 size={11} /> $1.00 — one-time unlock</div>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <button onClick={() => { setTab("mobile"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "mobile" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}><Smartphone size={12} /> Mobile Money</button>
-          <button onClick={() => { setTab("card"); setError(null); }} className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border transition-all ${tab === "card" ? "bg-[#f0b429] text-[#0a1a0f] border-[#f0b429]" : "bg-transparent border-white/12 text-white/45"}`}><CreditCard size={12} /> Card</button>
-        </div>
-        {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
-        {polling ? (
-          <div className="text-center py-6">
-            <Loader2 size={28} className="animate-spin mx-auto mb-3 text-[#f0b429]" />
-            <p className="text-white text-sm font-bold">Check your phone</p>
-            <p className="text-xs mt-1 text-white/40">Approve the $1 payment on your {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"} app</p>
-            <button onClick={() => { stopPoll(); setPolling(false); }} className="mt-4 text-xs text-white/30 hover:underline">Cancel</button>
-          </div>
-        ) : tab === "mobile" ? (
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-1.5">
-              {(["ecocash", "innbucks", "onemoney"] as MobileMethod[]).map((m) => (
-                <button key={m} onClick={() => setMethod(m)} className={`py-2 rounded-xl text-xs font-bold border transition-all ${method === m ? "bg-[rgba(240,180,41,0.15)] border-[#f0b429] text-[#f0b429]" : "bg-transparent border-white/10 text-white/40"}`}>{m === "ecocash" ? "EcoCash" : m === "innbucks" ? "InnBucks" : "OneMoney"}</button>
-              ))}
-            </div>
-            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+263 77 123 4567" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
-            <button disabled={paying || !phoneOk} onClick={payMobile} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying && phoneOk ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>{paying ? <><Loader2 size={14} className="animate-spin" /> Sending push...</> : <>Pay $1 via {method === "ecocash" ? "EcoCash" : method === "innbucks" ? "InnBucks" : "OneMoney"}</>}</button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-white/40">Pay securely with Visa, Mastercard or any debit card. You will be taken to Stripe to complete the $1 payment.</p>
-            <button disabled={paying} onClick={payCard} className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${!paying ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/6 text-white/20 cursor-not-allowed"}`}>{paying ? <><Loader2 size={14} className="animate-spin" /> Redirecting...</> : <><CreditCard size={14} /> Pay $1 with Card</>}</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ============================================
 // AI COMMENTARY
 // ============================================
 function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | null; isUnlocked: boolean }) {
@@ -646,7 +605,7 @@ function AICommentary({ selectedMatch, isUnlocked }: { selectedMatch: Match | nu
       <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-200 text-center">
         <Lock size={32} className="mx-auto text-gray-400 mb-3" />
         <h3 className="text-lg font-bold text-gray-900 mb-2">Audio Commentary Locked</h3>
-        <p className="text-sm text-gray-500 mb-4">Unlock live AI commentary for this match for only $1</p>
+        <p className="text-sm text-gray-500 mb-4">Register as a fan to unlock free AI commentary for this match</p>
       </div>
     );
   }
@@ -719,15 +678,104 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: { 
       {isLive && <div className="mt-2 text-[11px] text-yellow-500 font-mono">{match.minute} • Live now</div>}
       {isLive && !isUnlocked && (
         <div className="mt-2 pt-2 border-t border-gray-100">
-          <button onClick={(e) => { e.stopPropagation(); onUnlockClick(match); }} className="text-xs text-[#1a5c2a] font-bold flex items-center gap-1"><Lock size={10} /> Unlock Audio ($1)</button>
+          <button onClick={(e) => { e.stopPropagation(); onUnlockClick(match); }} className="text-xs text-[#1a5c2a] font-bold flex items-center gap-1"><Unlock size={10} /> Register to Access</button>
         </div>
       )}
       {isLive && isUnlocked && (
         <div className="mt-2 pt-2 border-t border-gray-100">
-          <span className="text-xs text-green-600 font-bold flex items-center gap-1"><Unlock size={10} /> Audio Unlocked</span>
+          <span className="text-xs text-green-600 font-bold flex items-center gap-1"><Unlock size={10} /> Audio & Tracking Unlocked</span>
         </div>
       )}
     </button>
+  );
+}
+
+// ============================================
+// POSSESSION DISPLAY
+// ============================================
+function PossessionDisplay({ homePossession, awayPossession, possession }: { homePossession: number; awayPossession: number; possession: 'home' | 'away' | 'neutral' }) {
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Ball Possession</h3>
+      
+      <div className="space-y-3">
+        {/* Home possession bar */}
+        <div>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="font-medium text-[#1a5c2a]">Home</span>
+            <span className="font-bold">{homePossession}%</span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${
+                possession === 'home' ? 'bg-[#1a5c2a]' : 'bg-[#1a5c2a]/60'
+              }`}
+              style={{ width: `${homePossession}%` }}
+            />
+          </div>
+        </div>
+        
+        {/* Away possession bar */}
+        <div>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="font-medium text-red-600">Away</span>
+            <span className="font-bold">{awayPossession}%</span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${
+                possession === 'away' ? 'bg-red-600' : 'bg-red-400'
+              }`}
+              style={{ width: `${awayPossession}%` }}
+            />
+          </div>
+        </div>
+        
+        {/* Possession indicator */}
+        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+          <span className="text-[10px] text-gray-400">Currently:</span>
+          <span className={`text-xs font-bold ${
+            possession === 'home' ? 'text-[#1a5c2a]' : 
+            possession === 'away' ? 'text-red-600' : 
+            'text-gray-500'
+          }`}>
+            {possession === 'home' && '🔵 Home'}
+            {possession === 'away' && '🔴 Away'}
+            {possession === 'neutral' && '⚪ Neutral'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// FORMATION SELECTOR
+// ============================================
+type FormationName = '4-4-2' | '4-3-3';
+
+function FormationSelector({ currentFormation, onFormationChange }: { currentFormation: FormationName; onFormationChange: (formation: FormationName) => void }) {
+  const formations: FormationName[] = ['4-4-2', '4-3-3'];
+  
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-medium text-gray-500">Formation:</span>
+      <div className="flex gap-1">
+        {formations.map((formation) => (
+          <button
+            key={formation}
+            onClick={() => onFormationChange(formation)}
+            className={`px-2 py-1 text-xs rounded-lg transition-all ${
+              currentFormation === formation
+                ? 'bg-[#1a5c2a] text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {formation}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -773,7 +821,7 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
       <div className="w-full max-w-md rounded-2xl p-6 bg-[#111f14] border border-[rgba(240,180,41,0.2)]">
         <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-white/40"><X size={18} /></button>
         <h2 className="text-lg font-black text-white mb-1">Join as a Fan</h2>
-        <p className="text-xs mb-5 text-white/35">Takes 30 seconds. Then unlock audio commentary for any match — $1 each.</p>
+        <p className="text-xs mb-5 text-white/35">Register to access free live match tracking and AI commentary.</p>
         {error && <div className="mb-4 p-2.5 rounded-xl text-xs bg-red-500/10 border border-red-500/25 text-red-300">{error}</div>}
         <div className="space-y-4">
           <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
@@ -791,7 +839,7 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
           )}
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (min 6 characters)" className="w-full px-3 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-[#1a3a20] border border-white/8" />
           <button disabled={!canSubmit || isSubmitting} onClick={handleRegister} className={`w-full py-3.5 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${canSubmit && !isSubmitting ? "bg-[#f0b429] text-[#0a1a0f]" : "bg-white/7 text-white/25 cursor-not-allowed"}`}>
-            {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <>Join & Access Matches</>}
+            {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : <>Join & Access Free Features</>}
           </button>
         </div>
       </div>
@@ -811,11 +859,23 @@ export default function WorldCupPage() {
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
   const [showHighlightsModal, setShowHighlightsModal] = useState(false);
   const [unlockedMatches, setUnlockedMatches] = useState<string[]>([]);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedPayMatch, setSelectedPayMatch] = useState<Match | null>(null);
   const [showFanRegister, setShowFanRegister] = useState(false);
   const hasSetInitial = useRef(false);
   const UNLOCK_KEY = "wc_unlocked_matches";
+
+  // New state for enhanced features
+  const [formation, setFormation] = useState<FormationName>('4-4-2');
+  const [homePossession, setHomePossession] = useState(55);
+  const [awayPossession, setAwayPossession] = useState(45);
+  const [possession, setPossession] = useState<'home' | 'away' | 'neutral'>('neutral');
+  const [homePlayers, setHomePlayers] = useState<Player[]>([]);
+  const [awayPlayers, setAwayPlayers] = useState<Player[]>([]);
+
+  // WebSocket connection
+  const { isConnected, lastMessage } = useMatchWebSocket(
+    selectedMatch?.id || null,
+    selectedMatch?.status === 'live'
+  );
 
   const loadUnlocked = (): string[] => {
     try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? "[]"); }
@@ -828,7 +888,32 @@ export default function WorldCupPage() {
 
   useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
 
-  // FIXED: Properly typed transformation with explicit type casting
+  // Initialize players when match changes
+  useEffect(() => {
+    if (selectedMatch) {
+      const positions = getFormationPositions(formation);
+      setHomePlayers(
+        positions.home.map((pos, index) => ({
+          id: `h${index + 1}`,
+          number: index + 1,
+          name: `Player ${index + 1}`,
+          x: pos.x,
+          y: pos.y
+        }))
+      );
+      setAwayPlayers(
+        positions.away.map((pos, index) => ({
+          id: `a${index + 1}`,
+          number: index + 1,
+          name: `Player ${index + 1}`,
+          x: pos.x,
+          y: pos.y
+        }))
+      );
+    }
+  }, [selectedMatch, formation]);
+
+  // Transform live matches data
   useEffect(() => {
     if (liveMatches && liveMatches.length > 0) {
       const transformed: Match[] = liveMatches.map((m: any) => ({
@@ -852,7 +937,6 @@ export default function WorldCupPage() {
       
       setMatches(transformed);
       
-      // Auto-select first match if not already selected
       if (transformed.length > 0 && !hasSetInitial.current) {
         setSelectedMatch(transformed[0]);
         hasSetInitial.current = true;
@@ -861,19 +945,65 @@ export default function WorldCupPage() {
     }
   }, [liveMatches]);
 
+  // Process WebSocket messages
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    switch (lastMessage.type) {
+      case 'ball_move':
+        setBallPosition(lastMessage.data);
+        break;
+        
+      case 'player_move':
+        const { player_id, x, y, team } = lastMessage.data;
+        if (team === 'home') {
+          setHomePlayers(prev => 
+            prev.map(p => p.id === player_id ? { ...p, x, y } : p)
+          );
+        } else if (team === 'away') {
+          setAwayPlayers(prev => 
+            prev.map(p => p.id === player_id ? { ...p, x, y } : p)
+          );
+        }
+        break;
+        
+      case 'possession_change':
+        setPossession(lastMessage.data.team);
+        if (lastMessage.data.team === 'home') {
+          setHomePossession(prev => Math.min(90, prev + 2));
+          setAwayPossession(prev => Math.max(10, prev - 2));
+        } else if (lastMessage.data.team === 'away') {
+          setHomePossession(prev => Math.max(10, prev - 2));
+          setAwayPossession(prev => Math.min(90, prev + 2));
+        }
+        break;
+        
+      case 'formation':
+        setHomePlayers(lastMessage.data.home);
+        setAwayPlayers(lastMessage.data.away);
+        break;
+    }
+  }, [lastMessage]);
+
   const handleUnlockMatch = (match: Match) => {
-    setSelectedPayMatch(match);
-    setShowPaymentModal(true);
+    // Auto-unlock for test users - just register
+    setShowFanRegister(true);
   };
 
-  const onPaymentSuccess = (matchId: string) => {
-    const newUnlocked = [...unlockedMatches, matchId];
-    setUnlockedMatches(newUnlocked);
-    saveUnlocked(newUnlocked);
+  const onRegisterSuccess = () => {
+    // Unlock all matches for the registered user
+    const allMatchIds = matches.map(m => m.id);
+    setUnlockedMatches(allMatchIds);
+    saveUnlocked(allMatchIds);
+    window.location.href = "/login?registered=1";
   };
 
-  const isMatchUnlocked = (matchId: string) => unlockedMatches.includes(matchId);
+  const isMatchUnlocked = (matchId: string) => {
+    // All matches are free for registered users
+    return unlockedMatches.includes(matchId) || unlockedMatches.length > 0;
+  };
 
+  // Ball position animation for live matches
   useEffect(() => {
     if (!selectedMatch || selectedMatch.status !== 'live') return;
     const interval = setInterval(() => {
@@ -886,6 +1016,37 @@ export default function WorldCupPage() {
   }, [selectedMatch]);
 
   const liveMatchesCount = matches.filter(m => m.status === 'live').length;
+
+  // Helper function for formation positions
+  function getFormationPositions(formation: FormationName): { home: any[], away: any[] } {
+    const formations = {
+      '4-4-2': {
+        home: [
+          { x: 50, y: 85 }, { x: 15, y: 70 }, { x: 35, y: 75 }, { x: 65, y: 75 }, { x: 85, y: 70 },
+          { x: 10, y: 45 }, { x: 35, y: 45 }, { x: 65, y: 45 }, { x: 90, y: 45 },
+          { x: 35, y: 20 }, { x: 65, y: 20 }
+        ],
+        away: [
+          { x: 50, y: 15 }, { x: 15, y: 30 }, { x: 35, y: 25 }, { x: 65, y: 25 }, { x: 85, y: 30 },
+          { x: 10, y: 55 }, { x: 35, y: 55 }, { x: 65, y: 55 }, { x: 90, y: 55 },
+          { x: 35, y: 80 }, { x: 65, y: 80 }
+        ]
+      },
+      '4-3-3': {
+        home: [
+          { x: 50, y: 85 }, { x: 15, y: 70 }, { x: 35, y: 75 }, { x: 65, y: 75 }, { x: 85, y: 70 },
+          { x: 30, y: 50 }, { x: 50, y: 45 }, { x: 70, y: 50 },
+          { x: 10, y: 30 }, { x: 50, y: 20 }, { x: 90, y: 30 }
+        ],
+        away: [
+          { x: 50, y: 15 }, { x: 15, y: 30 }, { x: 35, y: 25 }, { x: 65, y: 25 }, { x: 85, y: 30 },
+          { x: 30, y: 50 }, { x: 50, y: 55 }, { x: 70, y: 50 },
+          { x: 10, y: 70 }, { x: 50, y: 80 }, { x: 90, y: 70 }
+        ]
+      }
+    };
+    return formations[formation] || formations['4-4-2'];
+  }
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
@@ -970,6 +1131,7 @@ export default function WorldCupPage() {
             <div className="lg:col-span-6 space-y-6">
               {selectedMatch ? (
                 <>
+                  {/* Match header */}
                   <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
                     <div className="flex justify-between items-center">
                       <div className="text-center flex-1">
@@ -994,24 +1156,48 @@ export default function WorldCupPage() {
                     <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
                       <MapPin size={12} /> {selectedMatch.stadium}
                     </div>
+                    
+                    {/* WebSocket connection status and formation selector */}
+                    <div className="mt-3 flex justify-between items-center pt-2 border-t border-gray-100">
+                      <span className="text-[10px] text-gray-400">
+                        {isConnected ? '🟢 Live connected' : '🔴 Reconnecting...'}
+                      </span>
+                      <FormationSelector 
+                        currentFormation={formation}
+                        onFormationChange={(f) => setFormation(f)}
+                      />
+                    </div>
                   </div>
+                  
+                  {/* Pitch with players */}
                   <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
-                    <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+                    <div className="flex items-center justify-between px-3 pt-2 pb-1">
                       <div className="flex items-center gap-1 text-[10px] text-gray-500">
                         <Tv size={12} /> LIVE TRACKER VIEW
                       </div>
-                      <div className="flex-1"></div>
                       <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                        <Activity size={10} /> tracking engine telemetry
+                        <Activity size={10} /> {isConnected ? 'Live Data' : 'Offline'}
                       </div>
                     </div>
                     <FootballPitch 
-                      ballPosition={selectedMatch.status === 'live' ? ballPosition : undefined} 
-                      pitchLogoLeftUrl={selectedMatch.pitchLogoLeftUrl} 
-                      pitchLogoRightUrl={selectedMatch.pitchLogoRightUrl} 
-                      pitchSponsorName={selectedMatch.pitchSponsorName} 
+                      ballPosition={selectedMatch.status === 'live' ? ballPosition : undefined}
+                      homePlayers={homePlayers}
+                      awayPlayers={awayPlayers}
+                      possession={possession}
+                      pitchLogoLeftUrl={selectedMatch.pitchLogoLeftUrl}
+                      pitchLogoRightUrl={selectedMatch.pitchLogoRightUrl}
+                      pitchSponsorName={selectedMatch.pitchSponsorName}
                     />
                   </div>
+                  
+                  {/* Possession display */}
+                  <PossessionDisplay 
+                    homePossession={homePossession}
+                    awayPossession={awayPossession}
+                    possession={possession}
+                  />
+                  
+                  {/* Timeline and commentary */}
                   <MatchTimeline match={selectedMatch} ballPosition={ballPosition} />
                   <AICommentary selectedMatch={selectedMatch} isUnlocked={isMatchUnlocked(selectedMatch.id)} />
                 </>
@@ -1042,18 +1228,10 @@ export default function WorldCupPage() {
       {showHighlightsModal && selectedMatch && (
         <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />
       )}
-      {showPaymentModal && selectedPayMatch && (
-        <PaymentModal 
-          match={selectedPayMatch} 
-          onClose={() => setShowPaymentModal(false)} 
-          onUnlocked={onPaymentSuccess} 
-          userName={""} 
-        />
-      )}
       {showFanRegister && (
         <FanRegistrationModal 
           onClose={() => setShowFanRegister(false)} 
-          onRegisterSuccess={() => { window.location.href = "/login?registered=1"; }} 
+          onRegisterSuccess={onRegisterSuccess}
         />
       )}
     </div>
