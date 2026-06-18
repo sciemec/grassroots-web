@@ -9,7 +9,6 @@ import {
   Smartphone, CreditCard, Loader2, X, Star, Users, Trophy as TrophyIcon
 } from 'lucide-react';
 import { useLiveMatches } from '@/hooks/useLiveMatch';
-import { useMatchWebSocket } from '@/hooks/useMatchWebSocket';
 
 // ============================================
 // TYPES
@@ -43,7 +42,7 @@ interface Player {
 // ============================================
 // PERKS LIST
 // ============================================
-const PERKS = [
+const PERKS: Array<{ icon: React.ElementType; text: string }> = [
   { icon: Star, text: "Vote Player of the Tournament" },
   { icon: Tv, text: "Live match updates via WhatsApp" },
   { icon: Users, text: "Follow your favourite local players" },
@@ -53,9 +52,9 @@ const PERKS = [
 function PerksList() {
   return (
     <div className="flex flex-wrap justify-center gap-3 mt-6">
-      {PERKS.map(({ icon: Icon, text }) => (
+      {PERKS.map(({ icon: IconComponent, text }) => (
         <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-gray-100 text-gray-900 border border-gray-300 shadow-sm">
-          <Icon size={13} className="text-[#1a5c2a]" />
+          <IconComponent size={13} className="text-[#1a5c2a]" />
           {text}
         </div>
       ))}
@@ -162,6 +161,8 @@ function FootballPitch({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    ctx.clearRect(0, 0, width, height);
+
     // Draw pitch
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, '#1a5c2a');
@@ -204,82 +205,55 @@ function FootballPitch({
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Draw watermark images
-    const drawWatermarkImage = (url: string, isLeft: boolean) => {
-      const img = new Image();
-      img.src = url;
-      img.onload = () => {
-        ctx.save();
-        ctx.globalAlpha = 0.15;
-        ctx.globalCompositeOperation = 'overlay';
-        const targetX = isLeft ? (width * 0.25) - 35 : (width * 0.75) - 35;
-        ctx.drawImage(img, targetX, (height / 2) - 35, 70, 70);
-        ctx.restore();
-      };
-    };
-
-    if (pitchLogoLeftUrl) drawWatermarkImage(pitchLogoLeftUrl, true);
-    if (pitchLogoRightUrl) drawWatermarkImage(pitchLogoRightUrl, false);
-
-    // Draw shots
-    for (const shot of shots) {
-      const x = 40 + (shot.x / 100) * (width - 80);
-      const y = 40 + (shot.y / 100) * (height - 80);
-      const radGrad = ctx.createRadialGradient(x, y, 5, x, y, 28);
-      if (shot.isGoal) {
-        radGrad.addColorStop(0, 'rgba(240, 180, 41, 0.9)');
-        radGrad.addColorStop(0.6, 'rgba(240, 180, 41, 0.3)');
-        radGrad.addColorStop(1, 'rgba(240, 180, 41, 0)');
-      } else {
-        radGrad.addColorStop(0, 'rgba(239, 68, 68, 0.7)');
-        radGrad.addColorStop(0.6, 'rgba(239, 68, 68, 0.2)');
-        radGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
-      }
-      ctx.fillStyle = radGrad;
-      ctx.beginPath();
-      ctx.arc(x, y, 30, 0, 2 * Math.PI);
-      ctx.fill();
+    // Draw home players
+    if (homePlayers && homePlayers.length > 0) {
+      homePlayers.forEach(player => {
+        if (!player) return;
+        const x = 40 + (player.x / 100) * (width - 80);
+        const y = 40 + (player.y / 100) * (height - 80);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = possession === 'home' ? '#00ff00' : '#00aa00';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        if (player.number !== undefined && player.number !== null) {
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 8px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(player.number), x, y);
+        }
+      });
     }
 
-    // Draw home players (green)
-    homePlayers.forEach(player => {
-      const x = 40 + (player.x / 100) * (width - 80);
-      const y = 40 + (player.y / 100) * (height - 80);
-      
-      ctx.beginPath();
-      ctx.arc(x, y, 10, 0, 2 * Math.PI);
-      ctx.fillStyle = possession === 'home' ? '#00ff00' : '#00aa00';
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 8px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(player.number, x, y);
-    });
-
-    // Draw away players (red)
-    awayPlayers.forEach(player => {
-      const x = 40 + (player.x / 100) * (width - 80);
-      const y = 40 + (player.y / 100) * (height - 80);
-      
-      ctx.beginPath();
-      ctx.arc(x, y, 10, 0, 2 * Math.PI);
-      ctx.fillStyle = possession === 'away' ? '#ff0000' : '#cc0000';
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 8px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(player.number, x, y);
-    });
+    // Draw away players
+    if (awayPlayers && awayPlayers.length > 0) {
+      awayPlayers.forEach(player => {
+        if (!player) return;
+        const x = 40 + (player.x / 100) * (width - 80);
+        const y = 40 + (player.y / 100) * (height - 80);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = possession === 'away' ? '#ff0000' : '#cc0000';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        if (player.number !== undefined && player.number !== null) {
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 8px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(player.number), x, y);
+        }
+      });
+    }
 
     // Draw ball
     if (ballPosition) {
@@ -300,16 +274,16 @@ function FootballPitch({
       ctx.shadowBlur = 0;
     }
 
-    // Draw sponsor text
+    // Sponsor text
     ctx.font = 'bold 24px "Inter", system-ui';
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.fillText(pitchSponsorName ? pitchSponsorName.toUpperCase() : "GRASSROOTS SPORTS", width / 2, height / 2 + 40);
     ctx.font = '16px monospace';
     ctx.fillStyle = 'rgba(240, 180, 41, 0.4)';
     ctx.fillText("grassrootssports.live", width / 2, height / 2 + 85);
 
-    // Possession indicator
     if (possession !== 'neutral') {
       ctx.fillStyle = 'rgba(255,255,255,0.8)';
       ctx.font = 'bold 12px sans-serif';
@@ -697,48 +671,28 @@ function PossessionDisplay({ homePossession, awayPossession, possession }: { hom
   return (
     <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
       <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Ball Possession</h3>
-      
       <div className="space-y-3">
-        {/* Home possession bar */}
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="font-medium text-[#1a5c2a]">Home</span>
             <span className="font-bold">{homePossession}%</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full transition-all duration-500 ${
-                possession === 'home' ? 'bg-[#1a5c2a]' : 'bg-[#1a5c2a]/60'
-              }`}
-              style={{ width: `${homePossession}%` }}
-            />
+            <div className={`h-full rounded-full transition-all duration-500 ${possession === 'home' ? 'bg-[#1a5c2a]' : 'bg-[#1a5c2a]/60'}`} style={{ width: `${homePossession}%` }} />
           </div>
         </div>
-        
-        {/* Away possession bar */}
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="font-medium text-red-600">Away</span>
             <span className="font-bold">{awayPossession}%</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full transition-all duration-500 ${
-                possession === 'away' ? 'bg-red-600' : 'bg-red-400'
-              }`}
-              style={{ width: `${awayPossession}%` }}
-            />
+            <div className={`h-full rounded-full transition-all duration-500 ${possession === 'away' ? 'bg-red-600' : 'bg-red-400'}`} style={{ width: `${awayPossession}%` }} />
           </div>
         </div>
-        
-        {/* Possession indicator */}
         <div className="flex justify-between items-center pt-2 border-t border-gray-100">
           <span className="text-[10px] text-gray-400">Currently:</span>
-          <span className={`text-xs font-bold ${
-            possession === 'home' ? 'text-[#1a5c2a]' : 
-            possession === 'away' ? 'text-red-600' : 
-            'text-gray-500'
-          }`}>
+          <span className={`text-xs font-bold ${possession === 'home' ? 'text-[#1a5c2a]' : possession === 'away' ? 'text-red-600' : 'text-gray-500'}`}>
             {possession === 'home' && '🔵 Home'}
             {possession === 'away' && '🔴 Away'}
             {possession === 'neutral' && '⚪ Neutral'}
@@ -756,21 +710,12 @@ type FormationName = '4-4-2' | '4-3-3';
 
 function FormationSelector({ currentFormation, onFormationChange }: { currentFormation: FormationName; onFormationChange: (formation: FormationName) => void }) {
   const formations: FormationName[] = ['4-4-2', '4-3-3'];
-  
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs font-medium text-gray-500">Formation:</span>
       <div className="flex gap-1">
         {formations.map((formation) => (
-          <button
-            key={formation}
-            onClick={() => onFormationChange(formation)}
-            className={`px-2 py-1 text-xs rounded-lg transition-all ${
-              currentFormation === formation
-                ? 'bg-[#1a5c2a] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
+          <button key={formation} onClick={() => onFormationChange(formation)} className={`px-2 py-1 text-xs rounded-lg transition-all ${currentFormation === formation ? 'bg-[#1a5c2a] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             {formation}
           </button>
         ))}
@@ -863,19 +808,13 @@ export default function WorldCupPage() {
   const hasSetInitial = useRef(false);
   const UNLOCK_KEY = "wc_unlocked_matches";
 
-  // New state for enhanced features
   const [formation, setFormation] = useState<FormationName>('4-4-2');
   const [homePossession, setHomePossession] = useState(55);
   const [awayPossession, setAwayPossession] = useState(45);
   const [possession, setPossession] = useState<'home' | 'away' | 'neutral'>('neutral');
   const [homePlayers, setHomePlayers] = useState<Player[]>([]);
   const [awayPlayers, setAwayPlayers] = useState<Player[]>([]);
-
-  // WebSocket connection
-  const { isConnected, lastMessage } = useMatchWebSocket(
-    selectedMatch?.id || null,
-    selectedMatch?.status === 'live'
-  );
+  const [isConnected, setIsConnected] = useState(false);
 
   const loadUnlocked = (): string[] => {
     try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? "[]"); }
@@ -888,7 +827,6 @@ export default function WorldCupPage() {
 
   useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
 
-  // Initialize players when match changes
   useEffect(() => {
     if (selectedMatch) {
       const positions = getFormationPositions(formation);
@@ -913,7 +851,6 @@ export default function WorldCupPage() {
     }
   }, [selectedMatch, formation]);
 
-  // Transform live matches data
   useEffect(() => {
     if (liveMatches && liveMatches.length > 0) {
       const transformed: Match[] = liveMatches.map((m: any) => ({
@@ -945,53 +882,11 @@ export default function WorldCupPage() {
     }
   }, [liveMatches]);
 
-  // Process WebSocket messages
-  useEffect(() => {
-    if (!lastMessage) return;
-
-    switch (lastMessage.type) {
-      case 'ball_move':
-        setBallPosition(lastMessage.data);
-        break;
-        
-      case 'player_move':
-        const { player_id, x, y, team } = lastMessage.data;
-        if (team === 'home') {
-          setHomePlayers(prev => 
-            prev.map(p => p.id === player_id ? { ...p, x, y } : p)
-          );
-        } else if (team === 'away') {
-          setAwayPlayers(prev => 
-            prev.map(p => p.id === player_id ? { ...p, x, y } : p)
-          );
-        }
-        break;
-        
-      case 'possession_change':
-        setPossession(lastMessage.data.team);
-        if (lastMessage.data.team === 'home') {
-          setHomePossession(prev => Math.min(90, prev + 2));
-          setAwayPossession(prev => Math.max(10, prev - 2));
-        } else if (lastMessage.data.team === 'away') {
-          setHomePossession(prev => Math.max(10, prev - 2));
-          setAwayPossession(prev => Math.min(90, prev + 2));
-        }
-        break;
-        
-      case 'formation':
-        setHomePlayers(lastMessage.data.home);
-        setAwayPlayers(lastMessage.data.away);
-        break;
-    }
-  }, [lastMessage]);
-
   const handleUnlockMatch = (match: Match) => {
-    // Auto-unlock for test users - just register
     setShowFanRegister(true);
   };
 
   const onRegisterSuccess = () => {
-    // Unlock all matches for the registered user
     const allMatchIds = matches.map(m => m.id);
     setUnlockedMatches(allMatchIds);
     saveUnlocked(allMatchIds);
@@ -999,11 +894,9 @@ export default function WorldCupPage() {
   };
 
   const isMatchUnlocked = (matchId: string) => {
-    // All matches are free for registered users
     return unlockedMatches.includes(matchId) || unlockedMatches.length > 0;
   };
 
-  // Ball position animation for live matches
   useEffect(() => {
     if (!selectedMatch || selectedMatch.status !== 'live') return;
     const interval = setInterval(() => {
@@ -1017,7 +910,6 @@ export default function WorldCupPage() {
 
   const liveMatchesCount = matches.filter(m => m.status === 'live').length;
 
-  // Helper function for formation positions
   function getFormationPositions(formation: FormationName): { home: any[], away: any[] } {
     const formations = {
       '4-4-2': {
@@ -1131,7 +1023,6 @@ export default function WorldCupPage() {
             <div className="lg:col-span-6 space-y-6">
               {selectedMatch ? (
                 <>
-                  {/* Match header */}
                   <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
                     <div className="flex justify-between items-center">
                       <div className="text-center flex-1">
@@ -1157,7 +1048,6 @@ export default function WorldCupPage() {
                       <MapPin size={12} /> {selectedMatch.stadium}
                     </div>
                     
-                    {/* WebSocket connection status and formation selector */}
                     <div className="mt-3 flex justify-between items-center pt-2 border-t border-gray-100">
                       <span className="text-[10px] text-gray-400">
                         {isConnected ? '🟢 Live connected' : '🔴 Reconnecting...'}
@@ -1169,7 +1059,6 @@ export default function WorldCupPage() {
                     </div>
                   </div>
                   
-                  {/* Pitch with players */}
                   <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
                     <div className="flex items-center justify-between px-3 pt-2 pb-1">
                       <div className="flex items-center gap-1 text-[10px] text-gray-500">
@@ -1190,14 +1079,12 @@ export default function WorldCupPage() {
                     />
                   </div>
                   
-                  {/* Possession display */}
                   <PossessionDisplay 
                     homePossession={homePossession}
                     awayPossession={awayPossession}
                     possession={possession}
                   />
                   
-                  {/* Timeline and commentary */}
                   <MatchTimeline match={selectedMatch} ballPosition={ballPosition} />
                   <AICommentary selectedMatch={selectedMatch} isUnlocked={isMatchUnlocked(selectedMatch.id)} />
                 </>
