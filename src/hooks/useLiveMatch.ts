@@ -1,158 +1,48 @@
 // src/hooks/useLiveMatch.ts
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  fetchLiveMatches, 
-  fetchMatchEvents, 
-  fetchMatchLineups, 
-  fetchMatchStatistics,
-  fetchTodaySchedule,
-  type ISportsMatch,
-  type ISportsEvent,
-  type ISportsLineup,
-  type ISportsStatistics
-} from '@/lib/isports/client';
+'use client';
 
-interface LiveMatchState {
-  match: ISportsMatch | null;
-  events: ISportsEvent[];
-  lineups: ISportsLineup[];
-  statistics: ISportsStatistics | null;
-  isLoading: boolean;
-  error: string | null;
-  lastUpdated: Date | null;
-}
-
-export function useLiveMatch(matchId: string) {
-  const [state, setState] = useState<LiveMatchState>({
-    match: null,
-    events: [],
-    lineups: [],
-    statistics: null,
-    isLoading: true,
-    error: null,
-    lastUpdated: null,
-  });
-
-  const lastEventIdRef = useRef<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isMountedRef = useRef(true);
-
-  const fetchData = useCallback(async () => {
-    if (!isMountedRef.current) return;
-
-    try {
-      // Fetch all match data
-      const [match, events, lineups, statistics] = await Promise.all([
-        fetchLiveMatches().then(matches => matches.find(m => m.id === matchId) || null),
-        fetchMatchEvents(matchId, lastEventIdRef.current || undefined),
-        fetchMatchLineups(matchId),
-        fetchMatchStatistics(matchId),
-      ]);
-
-      if (!isMountedRef.current) return;
-
-      // Track last event ID for delta updates
-      if (events && events.length > 0) {
-        const lastEvent = events[events.length - 1];
-        if (lastEvent?.id) {
-          lastEventIdRef.current = lastEvent.id;
-        }
-      }
-
-      setState(prev => ({
-        match: match || prev.match,
-        events: [...prev.events, ...(events || [])],
-        lineups: prev.lineups.length > 0 ? prev.lineups : (lineups || []),
-        statistics: statistics || prev.statistics,
-        isLoading: false,
-        error: null,
-        lastUpdated: new Date(),
-      }));
-
-    } catch (error) {
-      if (isMountedRef.current) {
-        setState(prev => ({
-          ...prev,
-          error: error instanceof Error ? error.message : 'Failed to fetch match data',
-          isLoading: false,
-        }));
-      }
-    }
-  }, [matchId]);
-
-  // Initial fetch and polling
-  useEffect(() => {
-    isMountedRef.current = true;
-    
-    // Initial fetch
-    fetchData();
-
-    // Poll every 10 seconds
-    intervalRef.current = setInterval(fetchData, 10000);
-
-    return () => {
-      isMountedRef.current = false;
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [fetchData]);
-
-  // Reset when matchId changes
-  useEffect(() => {
-    lastEventIdRef.current = null;
-    setState(prev => ({
-      ...prev,
-      events: [],
-      isLoading: true,
-    }));
-  }, [matchId]);
-
-  return state;
-}
+import { useState, useEffect } from 'react';
+import { getLiveMatches, getMatchesByDate, iSportsMatch, LEAGUE_IDS } from '@/lib/isports/client';
 
 export function useLiveMatches() {
-  const [matches, setMatches] = useState<ISportsMatch[]>([]);
+  const [matches, setMatches] = useState<iSportsMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadMatches = async () => {
+    const fetchMatches = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        // First try live matches
-        let liveMatches = await fetchLiveMatches();
+        // Try to get live matches
+        let matchesData = await getLiveMatches(LEAGUE_IDS.WORLD_CUP);
+        console.log('Live matches:', matchesData.length);
         
-        // If no live matches, get today's schedule
-        if (liveMatches.length === 0) {
-          liveMatches = await fetchTodaySchedule();
+        // If no live matches, try today's matches
+        if (matchesData.length === 0) {
+          const today = new Date().toISOString().split('T')[0];
+          matchesData = await getMatchesByDate(today, LEAGUE_IDS.WORLD_CUP);
+          console.log('Today\'s matches:', matchesData.length);
         }
-
-        if (isMounted) {
-          setMatches(liveMatches);
-          setError(null);
-        }
+        
+        setMatches(matchesData);
+        setError(null);
+        
       } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch matches');
-        }
+        console.error('Error fetching matches:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch matches');
+        setMatches([]);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
-    loadMatches();
-
-    // Poll for live matches every 30 seconds
-    const interval = setInterval(loadMatches, 30000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    fetchMatches();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchMatches, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return { matches, isLoading, error };
