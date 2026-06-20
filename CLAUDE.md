@@ -8186,3 +8186,85 @@ GEMINI_API_KEY = (same key — used by GeminiAnalysisService for WhatsApp pipeli
 | Web analysis → Arena post | NOT BUILT | Only WhatsApp pipeline auto-posts to Arena |
 | `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 migrations still pending |
+
+---
+
+## SESSION LOG — 20 June 2026
+
+### Theme — Arena Pages Full Audit + API Endpoint Fixes
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Full Arena Pages Audit — 3 Files Fixed ✅
+
+**Commit:** `b52f7b8` — pushed to `sciemec/grassroots-web` → Vercel auto-deployed
+
+Performed a complete audit of all Arena pages against the backend spec in CLAUDE.md.
+3 files had wrong API endpoints or type mismatches.
+
+---
+
+#### `src/app/arena/messages/page.tsx` — 4 bugs fixed
+
+| Bug | Before | After |
+|---|---|---|
+| Inbox endpoint | `GET /arena/messages/threads` (404) | `GET /arena/inbox` ✅ |
+| Thread fetch | `GET /arena/messages/threads/${id}` (404) | `GET /arena/messages/${id}` ✅ |
+| Send message URL | `POST /arena/messages` with `{recipient_id, body}` in body | `POST /arena/messages/${recipientId}` with `{body}` only ✅ |
+| Missing polling | No interval — inbox stale after open | `setInterval(loadInbox, 30000)` + cleanup ✅ |
+
+---
+
+#### `src/app/arena/network/page.tsx` — 4 bugs fixed
+
+| Bug | Before | After |
+|---|---|---|
+| Connect URL | `POST /arena/connections` with `{user_id}` in body | `POST /arena/connect/${user.id}` no body ✅ |
+| Pending connections | Only `GET /arena/connections` filtered locally | Separate `GET /arena/connections/pending` call ✅ |
+| safeArray data | `safeArray(await res.json())` — returns `[]` on paginated | `safeArray<Connection>(json.data ?? json)` ✅ |
+| Accept/decline URL | `PATCH /arena/connections/${id}` | `PATCH /arena/connect/${id}` ✅ |
+
+---
+
+#### `src/app/coach/recruitment/page.tsx` — 7 bugs fixed
+
+| Bug | Before | After |
+|---|---|---|
+| Postings endpoint | `GET /coach/talent-postings` (404) | `GET /arena/talent-wanted?mine=true` ✅ |
+| `Posting.id` type | `number` | `string` (UUID) ✅ |
+| `Posting.club.id` type | `number` | `string` ✅ |
+| `Application.id` type | `number` | `string` ✅ |
+| `Application.talent_wanted_id` | `number` | `string` ✅ |
+| `Application.applicant_id` | `number` | `string` ✅ |
+| `parseInt(preselectedId)` | Would return `NaN` for UUID | Direct string comparison ✅ |
+
+---
+
+### PAGES AUDITED — NO CHANGES NEEDED
+
+| Page | Status |
+|---|---|
+| `/arena/recruitment/page.tsx` | Clean ✅ |
+| `/arena/recruitment/[id]/page.tsx` | Clean ✅ |
+| `/arena/recruitment/new/page.tsx` | Clean ✅ |
+| `/arena/profile/[id]/page.tsx` | Clean ✅ |
+| `/arena/notifications/page.tsx` | Clean ✅ |
+| `/arena/discover/page.tsx` | Clean ✅ |
+| `/arena/clubs/page.tsx` | Clean ✅ |
+| `/arena/clubs/[id]/page.tsx` | Uses join/leave endpoints not in CLAUDE.md spec — may need backend alignment |
+| `/arena/clubs/new/page.tsx` | Clean ✅ |
+
+---
+
+### WHAT STILL NEEDS DOING (20 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `/arena/clubs/{id}/join` + `/leave` | Not in CLAUDE.md spec | Confirm backend has these routes or change to `POST /arena/clubs/{id}/follow` toggle |
+| `GEMINI_API_KEY` | NOT set on Vercel | `/player/analyse` web analysis broken |
+| `GEMINI_API_KEY` | NOT set on Render | WhatsApp video pipeline broken |
+| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 migrations still pending |
