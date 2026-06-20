@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
+import { Sidebar } from "@/components/layout/sidebar";
 
 export default function ScoutLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -28,8 +29,15 @@ export default function ScoutLayout({ children }: { children: React.ReactNode })
 
   return (
     <GuestGateProvider>
-      <GuestBanner />
-      {children}
+      <div className="flex min-h-screen bg-[#f4f2ee]">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <GuestBanner />
+          <main className="flex-1 p-4 sm:p-6 md:ml-64 pb-20 md:pb-6">
+            {children}
+          </main>
+        </div>
+      </div>
     </GuestGateProvider>
   );
 }
