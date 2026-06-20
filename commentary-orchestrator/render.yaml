@@ -1,0 +1,59 @@
+# render.yaml - Render Blueprint Configuration
+# Place this in: D:/bhora-ai/commentary-orchestrator/render.yaml
+
+services:
+  - type: worker
+    name: commentary-orchestrator
+    runtime: python
+    repo: https://github.com/sciemec/grassroots-web
+    rootDir: commentary-orchestrator
+    plan: starter
+    region: frankfurt  # Closest to Zimbabwe
+    
+    buildCommand: |
+      pip install -r requirements.txt
+    
+    startCommand: |
+      ./start.sh
+    
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+        description: "Your Gemini API key from Google AI Studio"
+      
+      - key: ISPORTS_API_KEY
+        sync: false
+        description: "Your iSports API key"
+      
+      - key: ISPORTS_MATCH_ID
+        value: worldcup_2026_001
+      
+      - key: LIQUIDSOAP_HOST
+        value: localhost
+      
+      - key: LIQUIDSOAP_PORT
+        value: 8000
+      
+      - key: LIQUIDSOAP_PASSWORD
+        generateValue: true
+        description: "Auto-generated password for Liquidsoap"
+      
+      - key: ICECAST_HOST
+        sync: false
+        description: "Your Icecast server IP or hostname"
+      
+      - key: ICECAST_PORT
+        value: 8000
+      
+      - key: ICECAST_PASSWORD
+        sync: false
+        description: "Your Icecast source password"
+      
+      - key: ICECAST_MOUNT
+        value: /live
+      
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      
+      - key: LOG_LEVEL
+        value: INFO

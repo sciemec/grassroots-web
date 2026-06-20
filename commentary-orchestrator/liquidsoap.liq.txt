@@ -1,0 +1,33 @@
+# liquidsoap.liq
+set("log.level", 3)
+
+# Silence source for gaps
+silence = source.silence()
+
+# Live input from Python orchestrator
+live = input.harbor(
+    protocol="icy",
+    port=8000,
+    password="your_password",
+    icy_metadata=true,
+    fallible=true,
+    timeout=30.
+)
+
+# Fallback: use live if available, otherwise silence
+radio = fallback(track_sensitive=false, [live, silence])
+
+# Output to Icecast
+output.icecast(
+    %mp3(bitrate=192, samplerate=44100, stereo=true),
+    host="139.84.250.73",
+    port=8000,
+    password="your_icecast_password",
+    mount="/live",
+    name="World Cup 2026 - AI Commentary",
+    description="Gemini-powered storytelling commentary",
+    genre="Sports",
+    url="https://grassrootssports.live/world-cup",
+    public=true,
+    radio
+)
