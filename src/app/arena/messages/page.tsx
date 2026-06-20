@@ -90,16 +90,21 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(`${API}/arena/messages/threads`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.ok ? r.json() : { data: [] })
-      .then((json) => setThreads(safeArray(json.data ?? json)))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const loadInbox = () => {
+      fetch(`${API}/arena/inbox`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.ok ? r.json() : { data: [] })
+        .then((json) => setThreads(safeArray(json.data ?? json)))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    };
+    loadInbox();
+    const interval = setInterval(loadInbox, 30000);
+    return () => clearInterval(interval);
   }, [token]);
 
   useEffect(() => {
     if (!activeThread || !token) return;
-    fetch(`${API}/arena/messages/threads/${activeThread.other_user.id}`, {
+    fetch(`${API}/arena/messages/${activeThread.other_user.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.ok ? r.json() : { data: [] })
@@ -119,10 +124,10 @@ export default function MessagesPage() {
     const optimistic: Message = { id: Date.now().toString(), sender_id: user?.id ?? "", body, created_at: new Date().toISOString() };
     setMessages((m) => [...m, optimistic]);
     try {
-      await fetch(`${API}/arena/messages`, {
+      await fetch(`${API}/arena/messages/${activeThread.other_user.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ recipient_id: activeThread.other_user.id, body }),
+        body: JSON.stringify({ body }),
       });
     } catch {}
     setSending(false);

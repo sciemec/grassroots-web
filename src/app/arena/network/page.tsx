@@ -66,10 +66,9 @@ function UserCard({ user, token, onConnect }: { user: SuggestedUser; token: stri
   const connect = async () => {
     setSent(true);
     try {
-      await fetch(`${API}/arena/connections`, {
+      await fetch(`${API}/arena/connect/${user.id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ user_id: user.id }),
+        headers: { Authorization: `Bearer ${token}` },
       });
       onConnect(user.id);
     } catch { setSent(false); }
@@ -107,14 +106,18 @@ export default function NetworkPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const [connRes, sugRes] = await Promise.allSettled([
-          fetch(`${API}/arena/connections`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API}/arena/discover`,    { headers: { Authorization: `Bearer ${token}` } }),
+        const [connRes, pendingRes, sugRes] = await Promise.allSettled([
+          fetch(`${API}/arena/connections`,         { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/arena/connections/pending`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/arena/discover`,            { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         if (connRes.status === "fulfilled" && connRes.value.ok) {
-          const data: Connection[] = safeArray(await connRes.value.json());
-          setConnections(data.filter((c) => c.status === "accepted"));
-          setPending(data.filter((c) => c.status === "pending"));
+          const json = await connRes.value.json();
+          setConnections(safeArray<Connection>(json.data ?? json));
+        }
+        if (pendingRes.status === "fulfilled" && pendingRes.value.ok) {
+          const json = await pendingRes.value.json();
+          setPending(safeArray<Connection>(json.data ?? json));
         }
         if (sugRes.status === "fulfilled" && sugRes.value.ok) {
           const json = await sugRes.value.json();
@@ -128,7 +131,7 @@ export default function NetworkPage() {
 
   const respond = async (id: string, status: "accepted" | "declined") => {
     try {
-      await fetch(`${API}/arena/connections/${id}`, {
+      await fetch(`${API}/arena/connect/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token ?? ""}` },
         body: JSON.stringify({ status }),

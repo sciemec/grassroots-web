@@ -13,7 +13,7 @@ import { safeArray } from "@/lib/safe-array";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Posting {
-  id: number;
+  id: string;
   sport: string;
   position: string;
   age_min: number;
@@ -26,19 +26,19 @@ interface Posting {
   closes_at: string | null;
   created_at: string;
   applications_count: number;
-  club: { id: number; name: string } | null;
+  club: { id: string; name: string } | null;
 }
 
 interface Application {
-  id: number;
-  talent_wanted_id: number;
-  applicant_id: number;
+  id: string;
+  talent_wanted_id: string;
+  applicant_id: string;
   message: string;
   availability: string | null;
   status: "pending" | "shortlisted" | "declined" | "trial_invited";
   created_at: string;
   applicant: {
-    id: number;
+    id: string;
     name: string;
     province: string | null;
     sport: string | null;
@@ -245,7 +245,7 @@ export default function CoachRecruitmentPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;
 
   const [postings, setPostings]         = useState<Posting[]>([]);
-  const [activePostingId, setActivePostingId] = useState<number | null>(null);
+  const [activePostingId, setActivePostingId] = useState<string | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingPostings, setLoadingPostings] = useState(true);
   const [loadingApps, setLoadingApps]   = useState(false);
@@ -255,7 +255,7 @@ export default function CoachRecruitmentPage() {
   useEffect(() => {
     if (!token) return;
     setLoadingPostings(true);
-    fetch(`${API}/coach/talent-postings`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/arena/talent-wanted?mine=true`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((j) => setPostings(safeArray<Posting>(j)))
       .catch(() => setError("Failed to load postings."))
@@ -265,13 +265,12 @@ export default function CoachRecruitmentPage() {
   // Pre-select from URL param
   useEffect(() => {
     if (preselectedId && postings.length > 0) {
-      const id = parseInt(preselectedId);
-      if (postings.some((p) => p.id === id)) setActivePostingId(id);
+      if (postings.some((p) => p.id === preselectedId)) setActivePostingId(preselectedId);
     }
   }, [preselectedId, postings]);
 
   // Load applications when active posting changes
-  const loadApplications = useCallback(async (postingId: number) => {
+  const loadApplications = useCallback(async (postingId: string) => {
     if (!token) return;
     setLoadingApps(true);
     setApplications([]);
@@ -292,7 +291,7 @@ export default function CoachRecruitmentPage() {
     if (activePostingId !== null) loadApplications(activePostingId);
   }, [activePostingId, loadApplications]);
 
-  const handleStatusChange = async (appId: number, status: Application["status"]) => {
+  const handleStatusChange = async (appId: string, status: Application["status"]) => {
     if (!token || activePostingId === null) return;
     try {
       await fetch(`${API}/arena/talent-wanted/${activePostingId}/applications/${appId}`, {
