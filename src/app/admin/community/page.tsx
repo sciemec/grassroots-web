@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import api from "@/lib/api";
 import { Trash2, Plus } from "lucide-react";
 
@@ -53,7 +52,7 @@ export default function CommunityPage() {
   ];
 
   return (
-    <DashboardLayout>
+    <div className="p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-balance">Community Access</h1>
         <p className="text-sm text-muted-foreground">
@@ -134,6 +133,6 @@ export default function CommunityPage() {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

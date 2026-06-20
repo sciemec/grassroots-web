@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { CheckCircle2, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface HealthCheck {
@@ -74,7 +73,7 @@ export default function HealthPage() {
   ];
 
   return (
-    <DashboardLayout>
+    <div className="p-6 max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">System Health</h1>
@@ -190,6 +189,6 @@ export default function HealthPage() {
           </p>
         </>
       )}
-    </DashboardLayout>
+    </div>
   );
 }
