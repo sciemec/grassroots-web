@@ -3,11 +3,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Home, Users, Heart, MessageCircle, Share2, Image,
   Video, MapPin, Globe, LogIn, Plus, Send,
-  Play, Eye, UserPlus, Filter,
+  Play, Eye, UserPlus, Filter, Briefcase, MessageSquare,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -31,6 +31,38 @@ function timeAgo(iso: string): string {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Arena Nav
+// ─────────────────────────────────────────────────────────────────────────────
+function ArenaNav({ userName }: { userName: string }) {
+  const pathname = usePathname();
+  const initials = userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const links = [
+    { href: "/arena",             label: "Feed" },
+    { href: "/arena/network",     label: "Network" },
+    { href: "/arena/clubs",       label: "Clubs" },
+    { href: "/arena/recruitment", label: "Talent Board" },
+    { href: "/arena/messages",    label: "Messages" },
+  ];
+  return (
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        <Link href="/arena" className="font-bold text-lg flex-shrink-0" style={{ color: GRS_GREEN }}>The Arena</Link>
+        <nav className="hidden md:flex items-center gap-1">
+          {links.map(({ href, label }) => (
+            <Link key={href} href={href}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${pathname === href ? "text-white" : "text-gray-600 hover:bg-gray-100"}`}
+              style={pathname === href ? { background: GRS_GREEN } : {}}>
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{initials}</div>
+      </div>
+    </header>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -279,6 +311,7 @@ export default function ArenaPage() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG }}>
+      <ArenaNav userName={user?.name ?? "You"} />
 
       {/* Hero banner */}
       <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white">
