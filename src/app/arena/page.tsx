@@ -245,7 +245,14 @@ export default function ArenaPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ body }),
       });
-      await loadComments(postId);
+      // Re-fetch comments directly (don't call loadComments — it toggles/collapses if already open)
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const cr = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
+      if (cr.ok) {
+        const cj = await cr.json();
+        setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(cj.data ?? cj) }));
+      }
       setNewComment(prev => ({ ...prev, [postId]: "" }));
       fetchPosts();
     } catch {}
