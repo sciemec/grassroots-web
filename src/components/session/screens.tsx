@@ -673,7 +673,7 @@ export function ReactionScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
           {attempt < MAX_ATTEMPTS ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <button onClick={() => recordAttempt(true)} style={{
-                padding: '16px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                padding: '16px', borderRadius: 12, cursor: 'pointer',
                 background: `${GREEN}22`, border: `1.5px solid ${GREEN}`,
                 color: GREEN, fontSize: 15, fontWeight: 800,
               }}>
@@ -798,7 +798,7 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
           </div>
           {!running && elapsed === 0 ? (
             <button onClick={startTimer} style={{
-              width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+              width: '100%', padding: '13px', borderRadius: 12,
               background: `${GREEN}22`, border: `1.5px solid ${GREEN}`,
               color: GREEN, fontSize: 14, fontWeight: 800, cursor: 'pointer',
             }}>
@@ -806,7 +806,7 @@ export function ChitimaScreen({ onAdvance, onBack, onSkip }: TestScreenProps) {
             </button>
           ) : running ? (
             <button onClick={stopTimer} style={{
-              width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+              width: '100%', padding: '13px', borderRadius: 12,
               background: '#1f0d0d', border: `1.5px solid #e74c3c44`,
               color: '#e74c3c', fontSize: 14, fontWeight: 800, cursor: 'pointer',
             }}>

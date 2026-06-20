@@ -51,7 +51,7 @@ Commentary:`;
     });
 
     // Extract audio data from response
-    const audioData = audioResponse.response.candidates?.[0]?.content?.parts?.[0]?.data;
+    const audioData = (audioResponse.response.candidates?.[0]?.content?.parts?.[0] as { inlineData?: { data?: string } })?.inlineData?.data;
     
     if (!audioData) {
       throw new Error('No audio data generated');

@@ -34,7 +34,7 @@ export default function PlayerBottomNav() {
           const active =
             href === "/player"
               ? path === "/player"
-              : path.startsWith(href);
+              : (path?.startsWith(href) ?? false);
 
           return (
             <Link

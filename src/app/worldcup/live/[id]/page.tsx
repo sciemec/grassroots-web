@@ -252,8 +252,8 @@ export default function LiveMatchPage() {
               <div className="flex justify-between items-center">
                 <div className="text-center flex-1">
                   <span className="text-gray-400 text-xs uppercase">HOME</span>
-                  <p className="text-gray-800 font-bold text-xl mt-1">{match.homeTeam || 'Home'}</p>
-                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.homeScore || 0}</p>
+                  <p className="text-gray-800 font-bold text-xl mt-1">{match.home_team?.name || 'Home'}</p>
+                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.home_score ?? 0}</p>
                 </div>
                 <div className="text-center px-4">
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
@@ -268,8 +268,8 @@ export default function LiveMatchPage() {
                 </div>
                 <div className="text-center flex-1">
                   <span className="text-gray-400 text-xs uppercase">AWAY</span>
-                  <p className="text-gray-800 font-bold text-xl mt-1">{match.awayTeam || 'Away'}</p>
-                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.awayScore || 0}</p>
+                  <p className="text-gray-800 font-bold text-xl mt-1">{match.away_team?.name || 'Away'}</p>
+                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.away_score ?? 0}</p>
                 </div>
               </div>
               <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">

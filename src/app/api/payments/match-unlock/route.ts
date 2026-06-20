@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing matchId or matchTitle" }, { status: 400 });
   }
 
-  const stripe  = new Stripe(secretKey, { apiVersion: "2026-02-25.clover" });
+  const stripe  = new Stripe(secretKey, { apiVersion: "2026-05-27.dahlia" });
   const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? "https://grassrootssports.live";
 
   try {

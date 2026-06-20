@@ -1,5 +1,9 @@
 // src/app/api/stream/monitor/route.ts
 import { NextResponse } from 'next/server';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 export async function GET() {
     const status = {
@@ -20,7 +24,7 @@ export async function GET() {
         status.icecast = true;
         
         // Check FFmpeg process
-        const ffmpegCheck = await exec('pgrep -f ffmpeg');
+        const ffmpegCheck = await execAsync('pgrep -f ffmpeg');
         status.ffmpeg = ffmpegCheck.stdout.trim() !== '';
         
         return NextResponse.json({ 

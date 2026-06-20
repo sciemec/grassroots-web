@@ -26,8 +26,8 @@ export class CommentaryProducer {
 
       this.buffer = '';
 
-      for await (const chunk of stream) {
-        const text = chunk.text();
+      for await (const chunk of stream.stream) {
+        const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
         this.buffer += text;
 
         // Detect complete sentences
@@ -147,7 +147,7 @@ export class CommentaryConsumer {
         },
       });
 
-      const audioData = response.response.candidates?.[0]?.content?.parts?.[0]?.data;
+      const audioData = (response.response.candidates?.[0]?.content?.parts?.[0] as { inlineData?: { data?: string } })?.inlineData?.data;
       
       if (!audioData) {
         throw new Error('No audio data generated');

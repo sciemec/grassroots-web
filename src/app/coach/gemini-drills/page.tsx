@@ -123,7 +123,7 @@ function ResultCard({ result }: { result: DrillResult }) {
           {result.scores && Object.entries(result.scores).length > 0 && (
             <div style={{ marginTop: 12, marginBottom: 12 }}>
               {Object.entries(result.scores).map(([k, v]) => (
-                <ScoreBar key={k} label={k.replace(/_/g, " ")} value={v as number} />
+                <ScoreBar key={k} label={k.replace(/_/g, " ")} value={typeof v === 'number' ? v : (v as { score: number }).score} />
               ))}
             </div>
           )}
@@ -430,8 +430,8 @@ export default function CoachGeminiDrillsPage() {
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
                       {drill.dimensions.slice(0, 3).map(d => (
-                        <span key={d} style={{ fontSize: 9, background: "#f3f4f6", color: "#555", padding: "2px 5px", borderRadius: 4 }}>
-                          {d}
+                        <span key={d.key} style={{ fontSize: 9, background: "#f3f4f6", color: "#555", padding: "2px 5px", borderRadius: 4 }}>
+                          {d.label}
                         </span>
                       ))}
                     </div>
@@ -529,7 +529,7 @@ export default function CoachGeminiDrillsPage() {
 
                     {/* Score bars */}
                     {drillResult.scores && Object.entries(drillResult.scores).map(([k, v]) => (
-                      <ScoreBar key={k} label={k.replace(/_/g, " ")} value={v as number} />
+                      <ScoreBar key={k} label={k.replace(/_/g, " ")} value={typeof v === 'number' ? v : (v as { score: number }).score} />
                     ))}
 
                     {/* Strength / improvement grid */}

@@ -33,7 +33,7 @@ export class EventPoller {
     if (!this.isPolling) return;
 
     try {
-      const events = await isportsclient.fetchMatchEvents(this.matchId, this.lastEventId || undefined);
+      const events = await fetchMatchEvents(this.matchId, this.lastEventId || undefined);
       
       // Process new events
       for (const event of events) {

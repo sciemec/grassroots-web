@@ -5,9 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!params.id?.trim()) {
+  const { id } = await params;
+  if (!id?.trim()) {
     return NextResponse.json({ error: 'Match ID required' }, { status: 400 });
   }
 
@@ -17,7 +18,7 @@ export async function POST(
 
     if (action === 'start') {
       return NextResponse.json({
-        sessionId: `session-${params.id}-${Date.now()}`,
+        sessionId: `session-${id}-${Date.now()}`,
       });
     }
 
