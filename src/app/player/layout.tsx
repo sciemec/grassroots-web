@@ -62,7 +62,7 @@ export default function PlayerLayout({
           <GuestBanner />
 
           {/* Page content — lg:ml-64 accounts for desktop sidebar width */}
-          <main className="flex-1 p-4 sm:p-6 lg:ml-0 pb-20 md:pb-6">
+          <main className="flex-1 p-4 sm:p-6 md:ml-64 pb-20 md:pb-6">
             {children}
           </main>
         </div>
