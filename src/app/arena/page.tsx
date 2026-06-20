@@ -1,7 +1,7 @@
 // src/app/arena/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -146,6 +146,12 @@ export default function ArenaPage() {
   const [newComment,        setNewComment]         = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment]  = useState<Record<string, boolean>>({});
   const [showLoginPrompt,   setShowLoginPrompt]    = useState(false);
+  const [mediaFile,         setMediaFile]          = useState<File | null>(null);
+  const [mediaPreview,      setMediaPreview]       = useState<string | null>(null);
+  const [mediaType,         setMediaType]          = useState<"image" | "video" | null>(null);
+  const [uploadingMedia,    setUploadingMedia]     = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   // ── Tab state — four tabs: For You / Following / Connections / Videos ──────
   const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos">("for-you");
@@ -256,18 +262,66 @@ export default function ArenaPage() {
     } catch { fetchPosts(); }
   };
 
+  const uploadMedia = async (file: File): Promise<string | null> => {
+    try {
+      const res = await fetch("/api/upload/presigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+      });
+      if (!res.ok) return null;
+      const { uploadUrl, publicUrl } = await res.json();
+      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      return publicUrl as string;
+    } catch { return null; }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMediaFile(file);
+    setMediaType("image");
+    setMediaPreview(URL.createObjectURL(file));
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMediaFile(file);
+    setMediaType("video");
+    setMediaPreview(URL.createObjectURL(file));
+  };
+
+  const clearMedia = () => {
+    setMediaFile(null);
+    setMediaPreview(null);
+    setMediaType(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  };
+
   const handleCreatePost = async () => {
-    if (!newPostBody.trim()) return;
+    if (!newPostBody.trim() && !mediaFile) return;
     if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
     setSubmitting(true);
     try {
-      const res = await fetch(`${API}/api/v1/arena/posts`, {
+      let image_url: string | undefined;
+      let video_url: string | undefined;
+      if (mediaFile) {
+        setUploadingMedia(true);
+        const url = await uploadMedia(mediaFile);
+        setUploadingMedia(false);
+        if (mediaType === "image") image_url = url ?? undefined;
+        else video_url = url ?? undefined;
+      }
+      const res = await fetch(`${API}/arena/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ body: newPostBody, post_type: "standard" }),
+        body: JSON.stringify({ body: newPostBody, post_type: "standard", image_url, video_url }),
       });
       if (!res.ok) throw new Error();
       setNewPostBody("");
+      clearMedia();
       fetchPosts();
     } catch { alert("Could not create post"); }
     setSubmitting(false);
@@ -284,7 +338,7 @@ export default function ArenaPage() {
   const handleFollow = async (playerId: string) => {
     if (!authToken) { window.location.href = "/login"; return; }
     try {
-      await fetch(`${API}/api/v1/arena/follow/${playerId}`, {
+      await fetch(`${API}/arena/follow/${playerId}`, {
         method: "POST", headers: { Authorization: `Bearer ${authToken}` },
       });
       setFollowing(prev => new Set([...prev, playerId]));
@@ -300,7 +354,7 @@ export default function ArenaPage() {
   const recordView = async (videoId: string) => {
     if (!authToken) return;
     try {
-      await fetch(`${API}/api/v1/arena/posts/${videoId}/view`, {
+      await fetch(`${API}/arena/posts/${videoId}/view`, {
         method: "POST", headers: { Authorization: `Bearer ${authToken}` },
       });
     } catch {}
@@ -524,17 +578,41 @@ export default function ArenaPage() {
                       className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] resize-none"
                       rows={2}
                     />
+                    {/* Media preview */}
+                    {mediaPreview && (
+                      <div className="relative mt-2 rounded-xl overflow-hidden border border-gray-200">
+                        {mediaType === "image"
+                          ? <img src={mediaPreview} alt="Preview" className="w-full max-h-64 object-cover" />
+                          : <video src={mediaPreview} className="w-full max-h-64" controls />
+                        }
+                        <button onClick={clearMedia}
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80">
+                          ✕
+                        </button>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center mt-2">
                       <div className="flex gap-2">
-                        <button className="p-2 text-gray-400 hover:text-[#1a5c2a] transition"><Image size={18} /></button>
-                        <button className="p-2 text-gray-400 hover:text-[#1a5c2a] transition"><Video size={18} /></button>
-                        <button className="p-2 text-gray-400 hover:text-[#1a5c2a] transition"><MapPin size={18} /></button>
+                        <button onClick={() => imageInputRef.current?.click()}
+                          className={`p-2 transition ${mediaType === "image" ? "text-[#1a5c2a]" : "text-gray-400 hover:text-[#1a5c2a]"}`}
+                          title="Add photo">
+                          <Image size={18} />
+                        </button>
+                        <button onClick={() => videoInputRef.current?.click()}
+                          className={`p-2 transition ${mediaType === "video" ? "text-[#1a5c2a]" : "text-gray-400 hover:text-[#1a5c2a]"}`}
+                          title="Add video">
+                          <Video size={18} />
+                        </button>
                       </div>
-                      <button onClick={handleCreatePost} disabled={submitting || !newPostBody.trim()}
+                      <button onClick={handleCreatePost}
+                        disabled={submitting || uploadingMedia || (!newPostBody.trim() && !mediaFile)}
                         className="px-4 py-2 bg-[#1a5c2a] text-white rounded-lg text-sm font-bold hover:bg-[#2a6e3a] transition disabled:opacity-50">
-                        {submitting ? "Posting..." : "Post"}
+                        {uploadingMedia ? "Uploading..." : submitting ? "Posting..." : "Post"}
                       </button>
                     </div>
+                    {/* Hidden file inputs */}
+                    <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+                    <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
                   </div>
                 </div>
               </div>
