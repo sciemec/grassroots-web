@@ -23,7 +23,7 @@ interface ClubDetail {
   playing_style?: string;
   description?: string;
   member_count: number;
-  is_member: boolean;
+  is_following: boolean;
   open_for_trials: boolean;
   scouting_open: boolean;
   created_by: string;
@@ -97,16 +97,14 @@ export default function ClubDetailPage() {
 
   const toggleJoin = async () => {
     if (!token || !club) return;
+    const wasFollowing = club.is_following;
+    setClub({ ...club, is_following: !wasFollowing, member_count: club.member_count + (wasFollowing ? -1 : 1) });
     setJoining(true);
     try {
-      if (club.is_member) {
-        await fetch(`${API}/arena/clubs/${id}/leave`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-        setClub({ ...club, is_member: false, member_count: club.member_count - 1 });
-      } else {
-        await fetch(`${API}/arena/clubs/${id}/join`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-        setClub({ ...club, is_member: true, member_count: club.member_count + 1 });
-      }
-    } catch {}
+      await fetch(`${API}/arena/clubs/${id}/follow`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    } catch {
+      setClub({ ...club, is_following: wasFollowing, member_count: club.member_count });
+    }
     setJoining(false);
   };
 
@@ -209,10 +207,10 @@ export default function ClubDetailPage() {
             </div>
             <button onClick={toggleJoin} disabled={joining}
               className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border transition-colors disabled:opacity-50"
-              style={club.is_member
+              style={club.is_following
                 ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN }
                 : { borderColor: GRS_GREEN, color: GRS_GREEN }}>
-              {joining ? "..." : club.is_member ? "Joined" : "Join Club"}
+              {joining ? "..." : club.is_following ? "Following" : "Follow Club"}
             </button>
           </div>
         </div>
