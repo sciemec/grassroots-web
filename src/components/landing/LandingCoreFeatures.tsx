@@ -324,7 +324,7 @@ export default function GrassrootsSportsLanding() {
     async function fetchLandingMetrics() {
       try {
         const [wireRes, leaderboardRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/ticker-wire`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticker-wire`),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/talent-leaderboard?limit=3`),
         ]);
 

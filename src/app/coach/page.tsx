@@ -333,8 +333,8 @@ export default function CoachHubPage() {
     if (!token || !user) return;
     setLoadingStats(true);
     Promise.allSettled([
-      fetch(`${API}/api/v1/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
-      fetch(`${API}/api/v1/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetch(`${API}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+      fetch(`${API}/coach/injuries`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
     ])
       .then(([squadRes, injuryRes]) => {
         const players = squadRes.status === "fulfilled" ? squadRes.value.data ?? squadRes.value : [];
@@ -388,7 +388,7 @@ export default function CoachHubPage() {
     setLoadingAi(true);
 
     try {
-      const res = await fetch(`${API}/api/v1/ask`, {
+      const res = await fetch(`${API}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ question: userMsg.text, role: activeRole, language: "en" }),
