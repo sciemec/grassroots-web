@@ -20,6 +20,8 @@ import { NextRequest, NextResponse } from 'next/server';
 //   6. Return { feedback, free_trial, count }
 // ─────────────────────────────────────────────────────────────────────────────
 
+export const maxDuration = 300;
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const API_URL        = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
@@ -185,8 +187,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Video not accepted by AI service.' }, { status: 502 });
   }
 
-  // Step 3 — Wait for Gemini processing
-  await new Promise((r) => setTimeout(r, 5_000));
+  // Step 3 — Poll until Gemini file is ACTIVE (max 3 min)
+  const fileName = uploaded?.file?.name;
+  if (fileName) {
+    for (let i = 0; i < 36; i++) {
+      await new Promise((r) => setTimeout(r, 5_000));
+      const stateRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${GEMINI_API_KEY}`,
+        { signal: AbortSignal.timeout(10_000) }
+      );
+      if (stateRes.ok) {
+        const s = await stateRes.json();
+        if (s.state === 'ACTIVE') break;
+      }
+    }
+  }
 
   // Step 4 — Generate coaching feedback
   const context = buildContext(sport, drill, position);

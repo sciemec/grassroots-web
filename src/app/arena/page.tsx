@@ -101,7 +101,8 @@ const PROVINCES = [
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ArenaPage() {
-  const { user, token } = useAuthStore();
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
 
   // ── Social feed state (from Document 15) ──────────────────────────────────
   const [posts,             setPosts]             = useState<Post[]>([]);
@@ -135,9 +136,9 @@ export default function ArenaPage() {
     setLoadingPosts(true);
     try {
       const urlMap: Record<string, string> = {
-        "for-you":     `${API}/api/v1/arena/feed`,
-        "following":   `${API}/api/v1/arena/feed/following`,
-        "connections": `${API}/api/v1/arena/feed/connections`,
+        "for-you":     `${API}/arena/feed`,
+        "following":   `${API}/arena/feed/following`,
+        "connections": `${API}/arena/feed/connections`,
       };
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
@@ -159,7 +160,7 @@ export default function ArenaPage() {
       if (province !== "All provinces") params.set("province", province);
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const res = await fetch(`${API}/api/v1/arena/videos?${params}`, { headers });
+      const res = await fetch(`${API}/arena/videos?${params}`, { headers });
       if (res.ok) {
         const d = await res.json();
         setVideos(safeArray<ArenaVideo>(Array.isArray(d) ? d : (d.data ?? [])));
@@ -187,7 +188,7 @@ export default function ArenaPage() {
     try {
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const res = await fetch(`${API}/api/v1/arena/posts/${postId}/comments`, { headers });
+      const res = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
       if (!res.ok) throw new Error();
       const json = await res.json();
       setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(json.data ?? json) }));
@@ -201,7 +202,7 @@ export default function ArenaPage() {
     if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
     setSubmittingComment(prev => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`${API}/api/v1/arena/posts/${postId}/comments`, {
+      await fetch(`${API}/arena/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ body }),
@@ -217,7 +218,7 @@ export default function ArenaPage() {
     if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
     setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, liked: p.liked === 1 ? 0 : 1, like_count: p.liked === 1 ? p.like_count - 1 : p.like_count + 1 }));
     try {
-      await fetch(`${API}/api/v1/arena/posts/${postId}/like`, {
+      await fetch(`${API}/arena/posts/${postId}/like`, {
         method: "POST", headers: { Authorization: `Bearer ${authToken}` },
       });
     } catch { fetchPosts(); }

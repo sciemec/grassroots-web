@@ -1,0 +1,127 @@
+<!-- src/app/stream/feature-phone/page.tsx -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrassRoots Sports - Live Commentary</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f2ee;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .live-badge {
+            background: red;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .match-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .play-button {
+            display: block;
+            background: #1a5c2a;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .play-button:hover {
+            background: #0d3d1a;
+        }
+        .info {
+            color: #666;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .dial-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a5c2a;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <div style="font-size: 24px; font-weight: bold; color: #1a5c2a;">
+            🏆 GrassRoots Sports
+        </div>
+        
+        <!-- Live Status -->
+        <div style="margin: 15px 0;">
+            <span class="live-badge">🔴 LIVE</span>
+        </div>
+        
+        <!-- Match Info -->
+        <div class="match-title">
+            Brazil vs Argentina
+        </div>
+        <div class="info">
+            ⚽ World Cup 2026 · 67' minute
+        </div>
+        
+        <hr>
+        
+        <!-- Option 1: Direct Audio Link (Works on most feature phones) -->
+        <h3 style="font-size: 16px; color: #333;">Listen Now</h3>
+        
+        <!-- This will open in the phone's media player -->
+        <a href="http://139.84.250.73:8000/live" class="play-button">
+            ▶ Play Commentary
+        </a>
+        
+        <hr>
+        
+        <!-- Option 2: USSD/SMS Alternative -->
+        <h3 style="font-size: 16px; color: #333;">Alternative Access</h3>
+        <p style="font-size: 14px; color: #666;">
+            Dial the following number on your phone:
+        </p>
+        <div class="dial-number">
+            *123*456#
+        </div>
+        <p style="font-size: 12px; color: #999; margin-top: 10px;">
+            Or send SMS to +263 77 123 4567 with "LIVE"
+        </p>
+        
+        <hr>
+        
+        <!-- Footer -->
+        <div style="font-size: 12px; color: #999; margin-top: 20px;">
+            Data charges may apply · Listen live for free<br>
+            Powered by GrassRoots Sports
+        </div>
+    </div>
+</body>
+</html>

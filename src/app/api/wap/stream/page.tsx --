@@ -1,0 +1,33 @@
+<!-- src/app/wap/stream/page.tsx -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GrassRoots Live</title>
+    <!-- WAP-specific meta -->
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta name="HandheldFriendly" content="true">
+    <meta name="MobileOptimized" content="320">
+</head>
+<body style="background:#f4f2ee;font-family:system-ui;text-align:center;padding:10px;">
+    <h1 style="font-size:24px;color:#1a5c2a;">🏆 Live Commentary</h1>
+    
+    <div style="background:white;padding:15px;border-radius:10px;margin:10px 0;">
+        <h2 style="font-size:18px;">Brazil vs Argentina</h2>
+        <p style="font-size:14px;color:red;">● LIVE</p>
+        <p style="font-size:24px;font-weight:bold;">2 - 1</p>
+        <p style="font-size:12px;color:#666;">67' minute</p>
+    </div>
+    
+    <a href="http://139.84.250.73:8000/live" 
+       style="display:block;background:#1a5c2a;color:white;padding:15px;border-radius:10px;text-decoration:none;font-size:18px;font-weight:bold;margin:10px 0;">
+        ▶ Listen Now
+    </a>
+    
+    <div style="font-size:12px;color:#999;">
+        <p>📱 Data charges may apply</p>
+        <p>📞 SMS "LIVE" to +263 77 123 4567</p>
+    </div>
+</body>
+</html>

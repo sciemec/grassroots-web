@@ -1,62 +1,88 @@
-import { NextRequest, NextResponse } from "next/server";
-import { liveCommentaryPrompt } from "@/config/prompts";
-import { groqText } from "@/lib/groq";
+// src/app/api/commentary/route.ts
+import { NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-/**
- * POST /api/commentary
- *
- * Generates a single Zimbabwean-style commentary line for a match event.
- * Called by the useCommentary hook on the live match page.
- */
-export async function POST(req: NextRequest) {
-  let body: {
-    event?: { type: string; minute: number; player?: string; team: string };
-    homeTeam?: string;
-    awayTeam?: string;
-    homeScore?: number;
-    awayScore?: number;
-    sport?: string;
-  };
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const llmModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+
+export async function POST(req: Request) {
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
-  }
+    const { event, matchContext } = await req.json();
 
-  const { event, homeTeam = "Home", awayTeam = "Away", homeScore = 0, awayScore = 0, sport = "football" } = body;
+    // Step 1: Generate commentary with Gemini 2.5 Flash-Lite
+    const prompt = `
+You are a Zimbabwean football commentator. Generate exciting, broadcast-ready commentary for this match event.
 
-  if (!event) {
-    return NextResponse.json({ error: "event is required." }, { status: 400 });
-  }
+Match: ${matchContext.homeTeam} vs ${matchContext.awayTeam}
+Score: ${matchContext.score || '0-0'}
+Time: ${event.time || '0'}' minute
 
-  const teamName  = event.team === "home" ? homeTeam : awayTeam;
-  const playerStr = event.player ? `${event.player} (${teamName})` : teamName;
-  const scoreStr  = `${homeTeam} ${homeScore}–${awayScore} ${awayTeam}`;
+Event: ${event.type}
+Player: ${event.player || 'Unknown'}
+Team: ${event.team || 'Unknown'}
+Description: ${event.description || ''}
 
-  const eventDescriptions: Record<string, string> = {
-    goal:           `GOAL! ${playerStr} scores! ${scoreStr} — Minute ${event.minute}`,
-    shot_on_target: `Shot on target by ${playerStr} — Minute ${event.minute}. Score: ${scoreStr}`,
-    yellow_card:    `Yellow card for ${playerStr} — Minute ${event.minute}`,
-    red_card:       `RED CARD! ${playerStr} is sent off — Minute ${event.minute}`,
-    foul:           `Foul committed by ${playerStr} — Minute ${event.minute}`,
-    sub:            `Substitution for ${teamName} — Minute ${event.minute}`,
-    injury:         `Player down — ${playerStr} — Minute ${event.minute}`,
-    assist:         `Assist by ${playerStr} — Minute ${event.minute}`,
-  };
+Rules:
+- Keep it short (15-25 words)
+- Use natural sports terminology
+- Match the emotion of the event
+- Be enthusiastic for goals, calm for cards
 
-  const eventDesc  = eventDescriptions[event.type] ?? `${event.type} by ${playerStr} — Minute ${event.minute}`;
-  const userMessage = `Sport: ${sport}\nMatch: ${homeTeam} vs ${awayTeam}\nCurrent score: ${scoreStr}\nEvent: ${eventDesc}\n\nGenerate commentary for this moment.`;
+Commentary:`;
 
-  try {
-    const commentary = await groqText(
-      liveCommentaryPrompt(),
-      [{ role: "user", content: userMessage }],
-      { max_tokens: 100, temperature: 0.9 },
+    const result = await llmModel.generateContent(prompt);
+    const commentary = result.response.text().trim();
+
+    // Step 2: Convert to speech with Gemini 2.5 Flash TTS
+    const ttsModel = genAI.getGenerativeModel({ 
+      model: 'gemini-2.5-flash-preview-tts'
+    });
+
+    // Add vocal directions for natural emotion
+    const ttsInput = addVocalDirections(commentary, event.type);
+
+    const audioResponse = await ttsModel.generateContent({
+      contents: [{ role: 'user', parts: [{ text: ttsInput }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 500,
+      }
+    });
+
+    // Extract audio data from response
+    const audioData = audioResponse.response.candidates?.[0]?.content?.parts?.[0]?.data;
+    
+    if (!audioData) {
+      throw new Error('No audio data generated');
+    }
+
+    // Return audio for streaming
+    return new Response(audioData, {
+      headers: {
+        'Content-Type': 'audio/wav',
+        'X-Commentary': encodeURIComponent(commentary),
+      }
+    });
+
+  } catch (error) {
+    console.error('Commentary generation error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate commentary' },
+      { status: 500 }
     );
-    return NextResponse.json({ commentary });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Commentary request failed";
-    console.error("Commentary exception", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
   }
+}
+
+function addVocalDirections(commentary: string, eventType: string): string {
+  const directions: Record<string, string> = {
+    'GOAL': `[excitement] GOAL! ${commentary} [cheerful]`,
+    'PENALTY': `[excitement] ${commentary}`,
+    'CARD': `[serious] ${commentary}`,
+    'SHOT': `[normal] ${commentary} [slight excitement]`,
+    'SUBSTITUTION': `[normal] ${commentary}`,
+    'HALF_TIME': `[calm] ${commentary}`,
+    'FULL_TIME': `[excitement] ${commentary} [cheerful]`,
+  };
+  return directions[eventType] || `[normal] ${commentary}`;
 }
