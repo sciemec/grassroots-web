@@ -100,8 +100,10 @@ export async function generatePresignedPutUrl(params: {
     'X-Amz-SignedHeaders': 'content-type;host',
   });
 
-  const host         = `${bucket}.${getAccountId()}.r2.cloudflarestorage.com`;
-  const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+  // Path-style: host = accountId.r2.cloudflarestorage.com, URI = /bucket/key
+  // Must match the URL format used in the return value below
+  const host         = `${getAccountId()}.r2.cloudflarestorage.com`;
+  const canonicalUri = `/${bucket}/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
   const canonicalQS  = queryParams.toString();
 
   // Canonical request
@@ -148,8 +150,8 @@ export async function deleteR2Object(key: string): Promise<boolean> {
   const amzDate  = `${timeStr}Z`;
   const scope    = `${dateStr}/${REGION}/${SERVICE}/aws4_request`;
 
-  const host         = `${bucket}.${getAccountId()}.r2.cloudflarestorage.com`;
-  const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+  const host         = `${getAccountId()}.r2.cloudflarestorage.com`;
+  const canonicalUri = `/${bucket}/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
   const payloadHash  = await sha256('');
 
   const canonicalRequest = [
