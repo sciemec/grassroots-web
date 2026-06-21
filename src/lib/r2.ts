@@ -24,19 +24,30 @@
 const REGION = 'auto';
 const SERVICE = 's3';
 
-function getAccountId(): string {
-  return (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID)!;
+// ── Environment validation ──────────────────────────────────────────────────
+function validateEnv(): void {
+  const required = [
+    'CLOUDFLARE_ACCOUNT_ID',
+    'R2_ACCESS_KEY_ID',
+    'R2_SECRET_ACCESS_KEY',
+    'R2_BUCKET_NAME',
+    'R2_PUBLIC_URL'
+  ];
+  
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    throw new Error(`Missing required env vars for R2: ${missing.join(', ')}`);
+  }
 }
 
-function getBucket(): string {
-  return (process.env.R2_BUCKET_NAME || process.env.R2_BUCKET)!;
-}
-
+// ── Endpoint helpers ──────────────────────────────────────────────────────────
 function getEndpoint(): string {
-  return `https://${getAccountId()}.r2.cloudflarestorage.com`;
+  validateEnv();
+  return `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 }
 
 export function getPublicUrl(r2Key: string): string {
+  validateEnv();
   return `${process.env.R2_PUBLIC_URL}/${r2Key}`;
 }
 
@@ -69,6 +80,15 @@ function toHex(buf: ArrayBuffer): string {
     .join('');
 }
 
+// ── Check if crypto.subtle is available ──────────────────────────────────────
+function isCryptoAvailable(): boolean {
+  try {
+    return typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined';
+  } catch {
+    return false;
+  }
+}
+
 // ── Generate a pre-signed PUT URL (valid for 15 minutes) ─────────────────────
 // The client browser uploads directly to this URL with:
 //   fetch(uploadUrl, { method: 'PUT', body: videoBlob, headers: { 'Content-Type': contentType } })
@@ -77,11 +97,19 @@ export async function generatePresignedPutUrl(params: {
   contentType:  string;   // 'video/mp4'
   expiresInSec?: number;  // default 900 (15 minutes)
 }): Promise<string> {
+  // Check crypto availability
+  if (!isCryptoAvailable()) {
+    throw new Error('crypto.subtle is not available in this environment. Make sure you are using Node.js 18+ or a secure context.');
+  }
+
+  validateEnv();
+
   const { key, contentType, expiresInSec = 900 } = params;
 
-  const bucket    = getBucket();
+  const bucket    = process.env.R2_BUCKET_NAME!;
   const accessKey = process.env.R2_ACCESS_KEY_ID!;
   const secretKey = process.env.R2_SECRET_ACCESS_KEY!;
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID!;
   const endpoint  = getEndpoint();
 
   const now       = new Date();
@@ -102,9 +130,9 @@ export async function generatePresignedPutUrl(params: {
 
   // Use virtual-hosted style: host = bucket.accountId.r2.cloudflarestorage.com
   // URL and canonical request MUST use the same style or R2 rejects with SignatureDoesNotMatch
-  const host         = `${bucket}.${getAccountId()}.r2.cloudflarestorage.com`;
-  const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
-
+  const host = `${bucket}.${accountId}.r2.cloudflarestorage.com`;
+  const encodedKey = key.split('/').map(part => encodeURIComponent(part)).join('/');
+  const canonicalUri = `/${encodedKey}`;
   const canonicalQS  = queryParams.toString();
 
   // Canonical request
@@ -134,15 +162,23 @@ export async function generatePresignedPutUrl(params: {
 
   const signature = toHex(await hmac(kSigning, stringToSign));
 
-  // Virtual-hosted URL — matches the signed host exactly
-  return `https://${host}/${key}?${canonicalQS}&X-Amz-Signature=${signature}`;
+  // Final URL — virtual-hosted style to match the signed host
+  return `https://${host}/${encodedKey}?${canonicalQS}&X-Amz-Signature=${signature}`;
 }
 
 // ── Simple delete (no presigning needed — server-side only) ──────────────────
 export async function deleteR2Object(key: string): Promise<boolean> {
-  const bucket    = getBucket();
+  if (!isCryptoAvailable()) {
+    console.warn('crypto.subtle not available, skipping delete');
+    return false;
+  }
+
+  validateEnv();
+
+  const bucket    = process.env.R2_BUCKET_NAME!;
   const accessKey = process.env.R2_ACCESS_KEY_ID!;
   const secretKey = process.env.R2_SECRET_ACCESS_KEY!;
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID!;
   const endpoint  = getEndpoint();
 
   const now      = new Date();
@@ -151,8 +187,9 @@ export async function deleteR2Object(key: string): Promise<boolean> {
   const amzDate  = `${timeStr}Z`;
   const scope    = `${dateStr}/${REGION}/${SERVICE}/aws4_request`;
 
-  const host         = `${getAccountId()}.r2.cloudflarestorage.com`;
-  const canonicalUri = `/${bucket}/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+  const host = `${bucket}.${accountId}.r2.cloudflarestorage.com`;
+  const encodedKey = key.split('/').map(part => encodeURIComponent(part)).join('/');
+  const canonicalUri = `/${encodedKey}`;
   const payloadHash  = await sha256('');
 
   const canonicalRequest = [
@@ -173,14 +210,32 @@ export async function deleteR2Object(key: string): Promise<boolean> {
   const kSigning = await hmac(kService, 'aws4_request');
   const signature = toHex(await hmac(kSigning, stringToSign));
 
-  const res = await fetch(`${endpoint}/${bucket}/${key}`, {
-    method:  'DELETE',
-    headers: {
-      'host':         host,
-      'x-amz-date':  amzDate,
-      'authorization': `AWS4-HMAC-SHA256 Credential=${accessKey}/${scope},SignedHeaders=host;x-amz-date,Signature=${signature}`,
-    },
-  });
+  try {
+    const res = await fetch(`${endpoint}/${bucket}/${encodedKey}`, {
+      method: 'DELETE',
+      headers: {
+        'host': host,
+        'x-amz-date': amzDate,
+        'authorization': `AWS4-HMAC-SHA256 Credential=${accessKey}/${scope},SignedHeaders=host;x-amz-date,Signature=${signature}`,
+      },
+    });
 
-  return res.ok;
+    if (!res.ok) {
+      console.warn(`R2 delete failed: ${res.status} ${res.statusText} for key: ${key}`);
+    }
+    return res.ok;
+  } catch (error) {
+    console.error('R2 delete error:', error);
+    return false;
+  }
+}
+
+// ── Check if all R2 env vars are present ─────────────────────────────────────
+export function isR2Configured(): boolean {
+  try {
+    validateEnv();
+    return true;
+  } catch {
+    return false;
+  }
 }

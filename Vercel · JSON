@@ -1,0 +1,32 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "rm -rf .next tsconfig.tsbuildinfo && npm run build",
+  "outputDirectory": ".next",
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": "https://bhora-ai.onrender.com/api/v1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "headers": [
+    {
+      "source": "/_next/static/(.*).js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/streak-reminder",
+      "schedule": "0 14 * * 5"
+    },
+    {
+      "path": "/api/cron/generate-tactical-report",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

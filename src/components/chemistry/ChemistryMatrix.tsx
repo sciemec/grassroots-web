@@ -56,7 +56,7 @@ export default function ChemistryMatrix({ pairs, players }: ChemistryMatrixProps
 
   if (players.length === 0) {
     return (
-      <p className="text-sm text-white/50 py-8 text-center">
+      <p className="text-sm text-gray-600 py-8 text-center">
         No squad members with chemistry data yet.
       </p>
     );

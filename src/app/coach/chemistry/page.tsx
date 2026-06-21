@@ -29,10 +29,10 @@ function getGroup(position: string): string {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-4">
+    <div className="rounded-2xl border border-gray-200 bg-white p-4">
       <div className="text-2xl font-black text-[#f0b429]">{value}</div>
-      <div className="text-sm font-semibold text-white mt-0.5">{label}</div>
-      <div className="text-xs text-[#f0b429]/40 mt-0.5">{sub}</div>
+      <div className="text-sm font-bold text-black mt-0.5">{label}</div>
+      <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
     </div>
   );
 }
@@ -158,14 +158,14 @@ export default function CoachChemistryPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <Link href="/coach" className="flex items-center gap-1.5 text-[#f0b429]/50 hover:text-white text-xs mb-2 transition-colors">
+            <Link href="/coach" className="flex items-center gap-1.5 text-gray-500 hover:text-black text-xs mb-2 transition-colors">
               <ArrowLeft size={12} /> Coach Hub
             </Link>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-white">Squad Chemistry</h1>
-              <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-300">v1</span>
+              <h1 className="text-2xl font-black text-black">Squad Chemistry</h1>
+              <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-purple-700">v1</span>
             </div>
-            <p className="text-[#f0b429]/50 text-sm mt-0.5">
+            <p className="text-gray-600 text-sm mt-0.5">
               Style Compatibility · 60% style · 25% demographic · 15% geographic · Full Chemistry Rating coming soon
             </p>
           </div>
@@ -204,14 +204,14 @@ export default function CoachChemistryPage() {
         </div>
 
         {/* Chemistry Matrix */}
-        <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-6">
-          <h2 className="text-white font-bold mb-1">Style Compatibility Matrix</h2>
-          <p className="text-[#f0b429]/40 text-xs mb-5">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6">
+          <h2 className="text-black font-bold mb-1">Style Compatibility Matrix</h2>
+          <p className="text-gray-500 text-xs mb-5">
             Each cell = style compatibility score between two players. Click any cell to see the full breakdown.
           </p>
 
           {loading && (
-            <div className="text-[#f0b429]/50 text-sm py-8 text-center">Loading chemistry data…</div>
+            <div className="text-gray-500 text-sm py-8 text-center">Loading chemistry data…</div>
           )}
           {error && !loading && (
             <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-red-300 text-sm">
