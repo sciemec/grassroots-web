@@ -8,6 +8,7 @@ import {
   Home, Users, Heart, MessageCircle, Share2, Image,
   Video, MapPin, Globe, LogIn, Plus, Send,
   Play, Eye, UserPlus, Filter, Briefcase, MessageSquare,
+  MoreVertical, Pencil, Trash2, X, Check,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -151,6 +152,13 @@ export default function ArenaPage() {
   const [uploadingMedia,    setUploadingMedia]     = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Edit / delete state ────────────────────────────────────────────────────
+  const [postMenuOpen,   setPostMenuOpen]   = useState<string | null>(null);
+  const [editingPostId,  setEditingPostId]  = useState<string | null>(null);
+  const [editBody,       setEditBody]       = useState("");
+  const [savingEdit,     setSavingEdit]     = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   // ── Tab state — four tabs: For You / Following / Connections / Videos ──────
   const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos">("for-you");
@@ -339,6 +347,48 @@ export default function ArenaPage() {
     setSubmitting(false);
   };
 
+  const handleDeletePost = async (postId: string) => {
+    if (!window.confirm("Delete this post? This cannot be undone.")) return;
+    setDeletingPostId(postId);
+    try {
+      await fetch(`${API}/arena/posts/${postId}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setPosts(prev => prev.filter(p => p.id !== postId));
+    } catch { alert("Could not delete post. Please try again."); }
+    setDeletingPostId(null);
+    setPostMenuOpen(null);
+  };
+
+  const startEditPost = (post: Post) => {
+    setEditingPostId(post.id);
+    setEditBody(post.body);
+    setPostMenuOpen(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingPostId(null);
+    setEditBody("");
+  };
+
+  const handleSaveEdit = async (postId: string) => {
+    const body = editBody.trim();
+    if (!body) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`${API}/arena/posts/${postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ body }),
+      });
+      if (!res.ok) throw new Error();
+      setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, body }));
+      setEditingPostId(null);
+      setEditBody("");
+    } catch { alert("Could not save edit. Please try again."); }
+    setSavingEdit(false);
+  };
+
   const handleShare = async (postId: string) => {
     if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
     navigator.clipboard.writeText(`${window.location.origin}/arena/post/${postId}`);
@@ -401,6 +451,11 @@ export default function ArenaPage() {
             </Link>
           </div>
         </div>
+      )}
+
+      {/* Menu backdrop — closes ⋮ menu on outside click */}
+      {postMenuOpen && (
+        <div className="fixed inset-0 z-10" onClick={() => setPostMenuOpen(null)} />
       )}
 
       {/* Login toast */}
@@ -645,15 +700,27 @@ export default function ArenaPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {posts.map(post => (
-                  <div key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                {posts.map(post => {
+                  const isOwner = user?.id === post.user_id || user?.id === post.user?.id;
+                  const isEditing = editingPostId === post.id;
+                  const isDeleting = deletingPostId === post.id;
+                  const menuOpen = postMenuOpen === post.id;
+                  return (
+                  <div key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative"
+                    style={
+                      post.post_type === "milestone" || post.post_type === "achievement"
+                        ? { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0" }
+                        : post.post_type === "prediction_upgrade"
+                        ? { borderColor: "#fde68a" }
+                        : {}
+                    }>
 
                     {/* Post header */}
                     <div className="p-4 flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1a5c2a] to-[#2a6e3a] flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1a5c2a] to-[#2a6e3a] flex items-center justify-center text-white font-bold flex-shrink-0">
                         {post.user?.name?.charAt(0) || "U"}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-gray-900">{post.user?.name || post.user?.role || "Player"}</span>
                           <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
@@ -675,13 +742,62 @@ export default function ArenaPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">{post.body}</p>
+
+                        {/* Body — inline editor or plain text */}
+                        {isEditing ? (
+                          <div className="mt-2">
+                            <textarea
+                              value={editBody}
+                              onChange={e => setEditBody(e.target.value)}
+                              maxLength={280}
+                              rows={3}
+                              className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] resize-none"
+                            />
+                            <div className="flex gap-2 mt-1">
+                              <button onClick={() => handleSaveEdit(post.id)}
+                                disabled={savingEdit || !editBody.trim()}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-[#1a5c2a] text-white rounded-lg text-xs font-bold disabled:opacity-50">
+                                <Check size={12} /> {savingEdit ? "Saving…" : "Save"}
+                              </button>
+                              <button onClick={cancelEdit}
+                                className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-xs font-medium">
+                                <X size={12} /> Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">{post.body}</p>
+                        )}
+
                         {post.aq_at_post && (
                           <div className="mt-2 inline-flex items-center gap-1 bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded-full">
                             🏆 AQ: {post.aq_at_post}
                           </div>
                         )}
                       </div>
+
+                      {/* ⋮ owner menu */}
+                      {isOwner && !isEditing && (
+                        <div className="relative flex-shrink-0">
+                          <button onClick={() => setPostMenuOpen(menuOpen ? null : post.id)}
+                            className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition">
+                            <MoreVertical size={16} />
+                          </button>
+                          {menuOpen && (
+                            <div className="absolute right-0 top-8 z-20 w-36 bg-white rounded-xl shadow-lg border border-gray-200 py-1 text-sm">
+                              <button onClick={() => startEditPost(post)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-50 transition">
+                                <Pencil size={14} /> Edit
+                              </button>
+                              <button onClick={() => handleDeletePost(post.id)}
+                                disabled={isDeleting}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 transition disabled:opacity-50">
+                                <Trash2 size={14} /> {isDeleting ? "Deleting…" : "Delete"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Media */}
@@ -760,7 +876,8 @@ export default function ArenaPage() {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
