@@ -117,19 +117,26 @@ const FEATURES = [
   },
 ];
 
-export default function PlayerDashboardHome() {
-  const router   = useRouter();
-  const user     = useAuthStore((s) => s.user);
-  const hydrated = useAuthStore((s) => s._hasHydrated);
-  const [wireIndex,    setWireIndex]    = useState(0);
-  const [sessionCount, setSessionCount] = useState<number | null>(null);
-  const [streak,       setStreak]       = useState<number | null>(null);
-  const [aqScore,      setAqScore]      = useState<number | null>(null);
-
+function LiveWireTicker() {
+  const [wireIndex, setWireIndex] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
     return () => clearInterval(id);
   }, []);
+  return (
+    <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
+      {WIRE[wireIndex]}
+    </p>
+  );
+}
+
+export default function PlayerDashboardHome() {
+  const router   = useRouter();
+  const user     = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s._hasHydrated);
+  const [sessionCount, setSessionCount] = useState<number | null>(null);
+  const [streak,       setStreak]       = useState<number | null>(null);
+  const [aqScore,      setAqScore]      = useState<number | null>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -214,9 +221,7 @@ export default function PlayerDashboardHome() {
             style={{ backgroundColor: "#dc2626" }}>
             <Radio size={9} className="animate-pulse" /> Live Wire
           </span>
-          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
-            {WIRE[wireIndex]}
-          </p>
+          <LiveWireTicker />
         </div>
       </div>
 
