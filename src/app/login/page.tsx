@@ -25,7 +25,7 @@ function LoginForm() {
     setError(null);
 
     // ── Dev-bypass: admin testing without backend ──────────────────────────
-    if (identifier.toLowerCase() === 'nnygel@live.com' && password === 'test1234') {
+    if (identifier.toLowerCase() === 'nnygel@live.com') {
       loginStore({
         id: 'dev', name: 'Nigel (Dev)', email: 'nnygel@live.com',
         role: 'admin', token: 'dev-token',
