@@ -24,8 +24,16 @@
 const REGION = 'auto';
 const SERVICE = 's3';
 
+function getAccountId(): string {
+  return (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID)!;
+}
+
+function getBucket(): string {
+  return (process.env.R2_BUCKET_NAME || process.env.R2_BUCKET)!;
+}
+
 function getEndpoint(): string {
-  return `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  return `https://${getAccountId()}.r2.cloudflarestorage.com`;
 }
 
 export function getPublicUrl(r2Key: string): string {
@@ -71,7 +79,7 @@ export async function generatePresignedPutUrl(params: {
 }): Promise<string> {
   const { key, contentType, expiresInSec = 900 } = params;
 
-  const bucket    = process.env.R2_BUCKET_NAME!;
+  const bucket    = getBucket();
   const accessKey = process.env.R2_ACCESS_KEY_ID!;
   const secretKey = process.env.R2_SECRET_ACCESS_KEY!;
   const endpoint  = getEndpoint();
@@ -92,7 +100,7 @@ export async function generatePresignedPutUrl(params: {
     'X-Amz-SignedHeaders': 'content-type;host',
   });
 
-  const host         = `${bucket}.${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const host         = `${bucket}.${getAccountId()}.r2.cloudflarestorage.com`;
   const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
   const canonicalQS  = queryParams.toString();
 
@@ -129,7 +137,7 @@ export async function generatePresignedPutUrl(params: {
 
 // ── Simple delete (no presigning needed — server-side only) ──────────────────
 export async function deleteR2Object(key: string): Promise<boolean> {
-  const bucket    = process.env.R2_BUCKET_NAME!;
+  const bucket    = getBucket();
   const accessKey = process.env.R2_ACCESS_KEY_ID!;
   const secretKey = process.env.R2_SECRET_ACCESS_KEY!;
   const endpoint  = getEndpoint();
@@ -140,7 +148,7 @@ export async function deleteR2Object(key: string): Promise<boolean> {
   const amzDate  = `${timeStr}Z`;
   const scope    = `${dateStr}/${REGION}/${SERVICE}/aws4_request`;
 
-  const host         = `${bucket}.${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const host         = `${bucket}.${getAccountId()}.r2.cloudflarestorage.com`;
   const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
   const payloadHash  = await sha256('');
 

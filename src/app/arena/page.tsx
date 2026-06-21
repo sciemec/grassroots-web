@@ -271,7 +271,7 @@ export default function ArenaPage() {
       const res = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+        body: JSON.stringify({ fileName: file.name, contentType: file.type }),
       });
       if (!res.ok) return null;
       const { uploadUrl, publicUrl } = await res.json();

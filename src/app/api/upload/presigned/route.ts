@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
 
   // Check required R2 env vars are present — degrade gracefully if not configured
   if (
-    !process.env.CLOUDFLARE_ACCOUNT_ID ||
-    !process.env.R2_ACCESS_KEY_ID      ||
+    (!process.env.CLOUDFLARE_ACCOUNT_ID && !process.env.R2_ACCOUNT_ID) ||
+    !process.env.R2_ACCESS_KEY_ID                                        ||
     !process.env.R2_SECRET_ACCESS_KEY
   ) {
     // R2 not configured — return empty URL so callers can handle gracefully
