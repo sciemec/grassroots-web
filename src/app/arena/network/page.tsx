@@ -62,7 +62,7 @@ function ArenaNav({ userName }: { userName: string }) {
 
 function UserCard({ user, token, onConnect }: { user: SuggestedUser; token: string; onConnect: (id: string) => void }) {
   const [sent, setSent] = useState(false);
-  const initials = user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const initials = (user.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const connect = async () => {
     setSent(true);
     try {
