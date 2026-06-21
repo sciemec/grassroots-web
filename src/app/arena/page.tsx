@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Home, Users, Heart, MessageCircle, Share2, Image,
   Video, MapPin, Globe, LogIn, Plus, Send,
@@ -100,23 +100,21 @@ interface Comment {
   user?: { id: string; name: string; role: string };
 }
 
-// From Document 14 — video discovery feed
+// Showcase discover feed — GET /showcase/discover
 interface ArenaVideo {
-  id:            string;
-  player_id:     string;
-  player_name:   string;
-  player_rank:   string;
-  position:      string;
-  province:      string;
-  aq_score:      number | null;
-  video_url:     string;
-  label:         string;
-  source:        string;
-  view_count:    number;
-  like_count:    number;
-  comment_count: number;
-  created_at:    string;
-  passport_token: string | null;
+  id:             string;
+  user_id:        string;
+  skill_type:     string;
+  video_url:      string;
+  thumbnail_url?: string;
+  ai_rating?:     number;
+  top_strength?:  string;
+  scout_note?:    string;
+  view_count:     number;
+  like_count:     number;
+  open_for_scouting: boolean;
+  created_at:     string;
+  user?: { id: string; name: string; role: string; sport?: string; province?: string; position?: string };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -133,8 +131,9 @@ const PROVINCES = [
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ArenaPage() {
-  const user  = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
+  const user        = useAuthStore((s) => s.user);
+  const token       = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   // ── Social feed state (from Document 15) ──────────────────────────────────
   const [posts,             setPosts]             = useState<Post[]>([]);
@@ -188,7 +187,7 @@ export default function ArenaPage() {
     setLoadingPosts(false);
   }, [activeTab, authToken]);
 
-  // ── Fetch video feed (Document 14) ────────────────────────────────────────
+  // ── Fetch video feed — /showcase/discover (public endpoint) ──────────────
   const fetchVideos = useCallback(async () => {
     if (activeTab !== "videos") return;
     setLoadingVideos(true);
@@ -196,16 +195,14 @@ export default function ArenaPage() {
       const params = new URLSearchParams();
       if (position !== "All") params.set("position", position.toLowerCase());
       if (province !== "All provinces") params.set("province", province);
-      const headers: HeadersInit = {};
-      if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const res = await fetch(`${API}/arena/videos?${params}`, { headers });
+      const res = await fetch(`${API}/showcase/discover?${params}`);
       if (res.ok) {
         const d = await res.json();
-        setVideos(safeArray<ArenaVideo>(Array.isArray(d) ? d : (d.data ?? [])));
+        setVideos(safeArray<ArenaVideo>(d.data ?? d));
       }
     } catch {}
     setLoadingVideos(false);
-  }, [activeTab, position, province, authToken]);
+  }, [activeTab, position, province]);
 
   useEffect(() => {
     fetchPosts();
@@ -352,24 +349,17 @@ export default function ArenaPage() {
     } catch {}
   };
 
-  const handlePipeline = (playerId: string, playerName: string) => {
+  const handlePipeline = (userId: string, userName: string) => {
     if (!authToken) { window.location.href = "/login"; return; }
-    sessionStorage.setItem("pipeline_add", JSON.stringify({ id: playerId, name: playerName }));
+    sessionStorage.setItem("pipeline_add", JSON.stringify({ id: userId, name: userName }));
     window.location.href = "/scout/pipeline";
-  };
-
-  const recordView = async (videoId: string) => {
-    if (!authToken) return;
-    try {
-      await fetch(`${API}/arena/posts/${videoId}/view`, {
-        method: "POST", headers: { Authorization: `Bearer ${authToken}` },
-      });
-    } catch {}
   };
 
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
+  if (!hasHydrated) return null;
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG }}>
       <ArenaNav userName={user?.name ?? "You"} />
@@ -479,31 +469,34 @@ export default function ArenaPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {videos.map(video => (
+                {videos.map(video => {
+                  const playerName = video.user?.name ?? "Player";
+                  const initial = playerName.charAt(0).toUpperCase();
+                  const meta = [video.user?.position, video.user?.sport, video.user?.province].filter(Boolean).join(" · ");
+                  return (
                   <div key={video.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
 
                     {/* Player row */}
                     <div className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#1a5c2a] to-[#2a6e3a] flex items-center justify-center text-white font-bold text-sm">
-                        {video.player_name.charAt(0).toUpperCase()}
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ background: GRS_GREEN }}>
+                        {initial}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-gray-900 text-sm">{video.player_name}</div>
-                        <div className="text-xs text-gray-400">
-                          {video.position} · {video.province}
-                          {video.aq_score != null && ` · AQ ${video.aq_score}`}
-                        </div>
+                        <div className="font-bold text-gray-900 text-sm">{playerName}</div>
+                        {meta && <div className="text-xs text-gray-400">{meta}</div>}
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">
-                        {video.player_rank}
-                      </span>
+                      {video.ai_rating != null && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+                          AI {video.ai_rating}/10
+                        </span>
+                      )}
                     </div>
 
                     {/* Inline video */}
                     <div
                       className="relative bg-black"
                       style={{ aspectRatio: "16/9", cursor: "pointer" }}
-                      onClick={() => { setActiveVideo(video.id); recordView(video.id); }}>
+                      onClick={() => setActiveVideo(video.id)}>
                       {activeVideo === video.id ? (
                         <video src={video.video_url} controls autoPlay
                           className="w-full h-full object-cover" />
@@ -516,52 +509,52 @@ export default function ArenaPage() {
                       )}
                     </div>
 
-                    {/* Label + stats */}
+                    {/* Skill + stats */}
                     <div className="px-4 pt-3 pb-1">
-                      <p className="text-sm font-semibold text-gray-800">{video.label}</p>
+                      <p className="text-sm font-semibold text-gray-800 capitalize">{video.skill_type}</p>
+                      {video.top_strength && <p className="text-xs text-gray-500 mt-0.5">{video.top_strength}</p>}
                       <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
                         <span className="flex items-center gap-1"><Eye size={11}/>{video.view_count}</span>
                         <span className="flex items-center gap-1"><Heart size={11}/>{video.like_count}</span>
-                        <span className="flex items-center gap-1"><MessageCircle size={11}/>{video.comment_count}</span>
                         <span className="ml-auto">{timeAgo(video.created_at)}</span>
                       </div>
                     </div>
 
                     {/* Action buttons */}
                     <div className="px-4 pb-4 pt-2 flex items-center gap-2 flex-wrap">
-                      {/* Talent passport link */}
-                      {video.passport_token && (
-                        <Link href={`/passport/${video.passport_token}`}
+                      {video.user?.id && (
+                        <Link href={`/arena/profile/${video.user.id}`}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:border-[#1a5c2a] hover:text-[#1a5c2a] transition">
-                          View Passport
+                          View Profile
                         </Link>
                       )}
                       {/* Follow */}
-                      <button onClick={() => handleFollow(video.player_id)}
-                        disabled={following.has(video.player_id)}
+                      <button onClick={() => handleFollow(video.user_id)}
+                        disabled={following.has(video.user_id)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                          following.has(video.player_id)
+                          following.has(video.user_id)
                             ? "bg-gray-100 text-gray-400 cursor-default"
                             : "bg-[#1a5c2a] text-white hover:bg-[#2a6e3a]"
                         }`}>
                         <UserPlus size={12} />
-                        {following.has(video.player_id) ? "Following" : "Follow"}
+                        {following.has(video.user_id) ? "Following" : "Follow"}
                       </button>
                       {/* Pipeline — scouts only */}
-                      <button onClick={() => handlePipeline(video.player_id, video.player_name)}
-                        disabled={pipedPlayers.has(video.player_id)}
+                      <button onClick={() => handlePipeline(video.user_id, playerName)}
+                        disabled={pipedPlayers.has(video.user_id)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition"
                         style={{
                           borderColor: GRS_GOLD,
-                          color: pipedPlayers.has(video.player_id) ? "#aaa" : GRS_GOLD,
-                          background: pipedPlayers.has(video.player_id) ? "#faeeda" : "transparent",
+                          color: pipedPlayers.has(video.user_id) ? "#aaa" : GRS_GOLD,
+                          background: pipedPlayers.has(video.user_id) ? "#faeeda" : "transparent",
                         }}>
                         <Users size={12} />
-                        {pipedPlayers.has(video.player_id) ? "In pipeline" : "+ Pipeline"}
+                        {pipedPlayers.has(video.user_id) ? "In pipeline" : "+ Pipeline"}
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
