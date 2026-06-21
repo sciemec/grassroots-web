@@ -6,6 +6,9 @@ import { useAuthStore } from "@/lib/auth-store";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
 import { Sidebar } from "@/components/layout/sidebar";
+import dynamic from "next/dynamic";
+
+const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
 
 export default function ScoutLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -38,6 +41,7 @@ export default function ScoutLayout({ children }: { children: React.ReactNode })
           </main>
         </div>
       </div>
+      <ThutoChatCoach />
     </GuestGateProvider>
   );
 }
