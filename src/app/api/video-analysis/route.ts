@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { groqVision, groqText } from "@/lib/groq";
+import { geminiVision, geminiText } from "@/lib/gemini";
 
 /**
  * POST /api/video-analysis
  *
- * Server-side Groq vision proxy for the AI Video Analysis Studio.
+ * Server-side Gemini 2.0 Flash vision proxy for the AI Video Analysis Studio.
  * Accepts extracted video frames (base64 JPEGs) + match context and returns analysis.
  *
  * Body: {
  *   frames:        string[]   base64 JPEG strings (max 15), may be empty
  *   context:       string     match context text built from the form
- *   system_prompt: string     from videoAnalysisPrompt() in src/config/prompts.ts
+ *   system_prompt: string     optional override
  * }
  */
 export async function POST(req: NextRequest) {
@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const analysis = frames.length > 0
-      ? await groqVision(systemPrompt, frames.slice(0, 15), userText, { max_tokens: 2000 })
-      : await groqText(systemPrompt, [{ role: "user", content: userText }], { max_tokens: 2000 });
+      ? await geminiVision(systemPrompt, frames.slice(0, 15), userText, { max_tokens: 2000 })
+      : await geminiText(systemPrompt, [{ role: "user", content: userText }], { max_tokens: 2000 });
 
     return NextResponse.json({ analysis });
   } catch (err: unknown) {

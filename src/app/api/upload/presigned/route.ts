@@ -22,6 +22,9 @@ export async function POST(req: NextRequest) {
     contentType?: string;
     source?:      string;
     label?:       string;
+    // snake_case aliases sent by video-studio page
+    filename?:     string;
+    content_type?: string;
   };
 
   try {
@@ -30,7 +33,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { fileName, contentType = 'video/mp4', source = 'player_upload', label } = body;
+  // Accept both camelCase (fileName/contentType) and snake_case (filename/content_type)
+  const fileName    = body.fileName    ?? (body as Record<string, string>).filename;
+  const contentType = body.contentType ?? (body as Record<string, string>).content_type ?? 'video/mp4';
+  const source      = body.source ?? 'player_upload';
+  const label       = body.label;
 
   if (!fileName) {
     return NextResponse.json({ error: 'fileName is required' }, { status: 400 });

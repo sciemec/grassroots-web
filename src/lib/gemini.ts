@@ -62,3 +62,55 @@ export async function geminiText(
   if (!reply) throw new Error("Gemini returned an empty response.");
   return reply;
 }
+
+/**
+ * Gemini vision — analyse video frames (base64 JPEGs) with optional text context.
+ * Sends images inline as inlineData parts alongside the user text prompt.
+ */
+export async function geminiVision(
+  systemPrompt: string,
+  frames: string[],        // base64 JPEG strings (no data: prefix)
+  userText: string,
+  options: { max_tokens?: number; model?: string } = {},
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured in Vercel environment variables.");
+
+  const model = options.model ?? GEMINI_TEXT_MODEL;
+  const url   = `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
+
+  // Build parts: image frames first, then the text prompt
+  type GeminiPart =
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } };
+
+  const parts: GeminiPart[] = [
+    ...frames.slice(0, 15).map((frame) => ({
+      inlineData: { mimeType: "image/jpeg", data: frame },
+    })),
+    { text: userText },
+  ];
+
+  const res = await fetch(url, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts }],
+      generationConfig: {
+        maxOutputTokens: options.max_tokens ?? 2000,
+        temperature:     0.7,
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini vision error ${res.status}: ${err}`);
+  }
+
+  const data  = await res.json();
+  const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+  if (!reply) throw new Error("Gemini returned an empty vision response.");
+  return reply;
+}
