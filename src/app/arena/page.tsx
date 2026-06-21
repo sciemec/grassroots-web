@@ -150,6 +150,8 @@ export default function ArenaPage() {
   const [mediaPreview,      setMediaPreview]       = useState<string | null>(null);
   const [mediaType,         setMediaType]          = useState<"image" | "video" | null>(null);
   const [uploadingMedia,    setUploadingMedia]     = useState(false);
+  const [uploadProgress,    setUploadProgress]     = useState(0);
+  const [mediaError,        setMediaError]         = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -276,6 +278,7 @@ export default function ArenaPage() {
 
   const uploadMedia = async (file: File): Promise<string | null> => {
     try {
+      // Step 1 — get presigned PUT URL (fast, <1s)
       const res = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
@@ -284,10 +287,27 @@ export default function ArenaPage() {
       if (!res.ok) return null;
       const { uploadUrl, publicUrl } = await res.json();
       if (!uploadUrl || !publicUrl) return null;
-      const putRes = await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!putRes.ok) { console.error("R2 upload failed:", putRes.status, await putRes.text()); return null; }
+
+      // Step 2 — upload directly to R2 with progress tracking via XHR
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`R2 ${xhr.status}`));
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send(file);
+      });
+
       return publicUrl as string;
-    } catch (e) { console.error("uploadMedia error:", e); return null; }
+    } catch (e) {
+      console.error("uploadMedia error:", e);
+      return null;
+    }
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,6 +321,13 @@ export default function ArenaPage() {
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setMediaError(null);
+    const MB = file.size / (1024 * 1024);
+    if (MB > 100) {
+      setMediaError(`Video is ${Math.round(MB)}MB — max 100MB. Trim it or reduce resolution to 720p.`);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+      return;
+    }
     setMediaFile(file);
     setMediaType("video");
     setMediaPreview(URL.createObjectURL(file));
@@ -322,9 +349,11 @@ export default function ArenaPage() {
       let image_url: string | undefined;
       let video_url: string | undefined;
       if (mediaFile) {
+        setUploadProgress(0);
         setUploadingMedia(true);
         const url = await uploadMedia(mediaFile);
         setUploadingMedia(false);
+        setUploadProgress(0);
         if (mediaType === "image") image_url = url ?? undefined;
         else video_url = url ?? undefined;
       }
@@ -656,28 +685,47 @@ export default function ArenaPage() {
                         </button>
                       </div>
                     )}
+                    {/* Upload progress bar */}
+                    {uploadingMedia && (
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-gray-500 mb-1">
+                          <span>Uploading{mediaType === "video" ? " video" : " photo"}…</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                          <div
+                            className="bg-[#1a5c2a] h-1.5 rounded-full transition-all duration-200"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {/* File size error */}
+                    {mediaError && (
+                      <p className="mt-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{mediaError}</p>
+                    )}
                     <div className="flex justify-between items-center mt-2">
-                      <div className="flex gap-2">
-                        <button onClick={() => imageInputRef.current?.click()}
+                      <div className="flex gap-2 items-center">
+                        <button onClick={() => { setMediaError(null); imageInputRef.current?.click(); }}
                           className={`p-2 transition ${mediaType === "image" ? "text-[#1a5c2a]" : "text-gray-400 hover:text-[#1a5c2a]"}`}
                           title="Add photo">
                           <Image size={18} />
                         </button>
-                        <button onClick={() => videoInputRef.current?.click()}
+                        <button onClick={() => { setMediaError(null); videoInputRef.current?.click(); }}
                           className={`p-2 transition ${mediaType === "video" ? "text-[#1a5c2a]" : "text-gray-400 hover:text-[#1a5c2a]"}`}
-                          title="Add video">
+                          title="Add video (MP4, 720p, under 50MB for fastest upload)">
                           <Video size={18} />
                         </button>
                       </div>
                       <button onClick={handleCreatePost}
                         disabled={submitting || uploadingMedia || (!newPostBody.trim() && !mediaFile)}
                         className="px-4 py-2 bg-[#1a5c2a] text-white rounded-lg text-sm font-bold hover:bg-[#2a6e3a] transition disabled:opacity-50">
-                        {uploadingMedia ? "Uploading..." : submitting ? "Posting..." : "Post"}
+                        {uploadingMedia ? `${uploadProgress}%` : submitting ? "Posting…" : "Post"}
                       </button>
                     </div>
                     {/* Hidden file inputs */}
                     <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-                    <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
+                    <input ref={videoInputRef} type="file" accept="video/mp4,video/quicktime,video/*" className="hidden" onChange={handleVideoSelect} />
                   </div>
                 </div>
               </div>
