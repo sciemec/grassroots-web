@@ -702,6 +702,9 @@ export default function ArenaPage() {
               <div className="space-y-4">
                 {posts.map(post => {
                   const isOwner = user?.id === post.user_id || user?.id === post.user?.id;
+                  if (process.env.NODE_ENV !== 'production') console.log('[Arena] isOwner', { myId: user?.id, postUserId: post.user_id, nestedId: post.user?.id, isOwner });
+                  // Temporary production debug — remove after fix
+                  console.log('[Arena debug]', { myId: user?.id, postUserId: post.user_id, nestedId: post.user?.id });
                   const isEditing = editingPostId === post.id;
                   const isDeleting = deletingPostId === post.id;
                   const menuOpen = postMenuOpen === post.id;
