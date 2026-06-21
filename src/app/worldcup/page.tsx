@@ -47,7 +47,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, type MatchStats } from '@/lib/tactical-iq/phase-classifier';
 import { type QuizMoment } from '@/lib/tactical-iq/quiz-generator';
 import { calculateTacticalIQ, type QuizAnswer, type TacticalIQResult } from '@/lib/tactical-iq/tactical-iq-engine';
-import WhatWouldYouDo from '@/components/tactical-iq/WhatWouldYouDo';
+import WhatWouldYouDo from '@/lib/tactical-iq/WhatWouldYouDo';
 
 const GRS_GREEN = '#1a5c2a';
 const GRS_GOLD  = '#f0b429';
