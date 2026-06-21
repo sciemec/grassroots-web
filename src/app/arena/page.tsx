@@ -647,7 +647,7 @@ export default function ArenaPage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-gray-900">{post.user?.name || "Unknown"}</span>
+                          <span className="font-bold text-gray-900">{post.user?.name || post.user?.role || "Player"}</span>
                           <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
                             {post.user?.role || "Player"}
                           </span>
@@ -727,7 +727,7 @@ export default function ArenaPage() {
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold">{comment.user?.name || "Unknown"}</span>
+                                  <span className="text-xs font-bold">{comment.user?.name || comment.user?.role || "Player"}</span>
                                   <span className="text-[9px] text-gray-400">{timeAgo(comment.created_at)}</span>
                                 </div>
                                 <p className="text-xs text-gray-700 mt-0.5">{comment.body}</p>
