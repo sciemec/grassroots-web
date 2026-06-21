@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
+
+const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
 import {
   Award, Zap, MapPin, Users, Globe, ChevronRight,
   Radio, ArrowRight, Camera, Dumbbell, IdCard,
@@ -770,6 +773,7 @@ export default function GrassrootsSportsLanding() {
           Zimbabwe&apos;s First AI-Powered Multi-Sport Talent Discovery Platform
         </p>
       </footer>
+      <ThutoChatVisitor />
     </div>
   );
 }
