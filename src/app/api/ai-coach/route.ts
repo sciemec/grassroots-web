@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findRelevantSessions } from "@/lib/football-knowledge";
-import { groqText } from "@/lib/groq";
+import { geminiText } from "@/lib/gemini";
 
 /**
  * POST /api/ai-coach
  *
  * TWO-ENGINE RULE (unchanged from original):
  *   1. DeepSeek first  — fast, cheap, handles simple questions
- *   2. Groq second     — complex/analytical questions, or when DeepSeek fails
- *   3. DeepSeek again  — last resort if Groq also fails
+ *   2. Gemini second   — complex/analytical questions, or when DeepSeek fails
+ *   3. DeepSeek again  — last resort if Gemini also fails
  *
  * PERSONA SELECTION (new):
  *   gender === 'female' → Amara (coaching persona for female athletes)
@@ -81,8 +81,8 @@ const AMARA_BASE_PROMPT =
 // Engine config (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 const AI_CONFIG = {
-  deepseek:  { max_tokens: 1024, temperature: 0.7 },
-  groq:      { max_tokens: 1500 },
+  deepseek: { max_tokens: 1024, temperature: 0.7 },
+  gemini:   { max_tokens: 1500 },
 } as const;
 
 const COMPLEX_KEYWORDS = [
@@ -144,11 +144,11 @@ async function callDeepSeek(
   return reply;
 }
 
-async function callGroq(
+async function callGemini(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
-  return groqText(systemPrompt, messages, { max_tokens: AI_CONFIG.groq.max_tokens });
+  return geminiText(systemPrompt, messages, { max_tokens: AI_CONFIG.gemini.max_tokens });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -220,26 +220,26 @@ export async function POST(req: NextRequest) {
 
   const complex = isComplex(message);
 
-  // ── Engine routing (unchanged from original) ──────────────────────────────
+  // ── Engine routing ────────────────────────────────────────────────────────
   // Simple → DeepSeek first
   if (!complex) {
     try {
       const reply = await callDeepSeek(fullSystem, messages);
       return NextResponse.json({ response: reply, engine: "deepseek", coach: coachName });
     } catch (err) {
-      console.error("DeepSeek failed, escalating to Groq:", err);
+      console.error("DeepSeek failed, escalating to Gemini:", err);
     }
   }
 
-  // Complex (or DeepSeek failure) → Groq
+  // Complex (or DeepSeek failure) → Gemini
   try {
-    const result = await callGroq(fullSystem, messages);
-    return NextResponse.json({ response: result, engine: "groq", coach: coachName });
-  } catch (groqErr) {
-    console.error("Groq failed, trying DeepSeek as last resort:", groqErr);
+    const result = await callGemini(fullSystem, messages);
+    return NextResponse.json({ response: result, engine: "gemini", coach: coachName });
+  } catch (geminiErr) {
+    console.error("Gemini failed, trying DeepSeek as last resort:", geminiErr);
   }
 
-  // Last resort → DeepSeek for complex when Groq fails
+  // Last resort → DeepSeek for complex when Gemini fails
   if (complex) {
     try {
       const result = await callDeepSeek(fullSystem, messages);
