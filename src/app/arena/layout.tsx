@@ -2,6 +2,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
+import dynamic from "next/dynamic";
+
+const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
 
 export default function ArenaLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -14,5 +17,10 @@ export default function ArenaLayout({ children }: { children: React.ReactNode })
   }, [hasHydrated, user, router]);
 
   if (!hasHydrated || !user) return null;
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <ThutoChatVisitor />
+    </>
+  );
 }
