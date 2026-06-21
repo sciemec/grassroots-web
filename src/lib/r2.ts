@@ -100,10 +100,11 @@ export async function generatePresignedPutUrl(params: {
     'X-Amz-SignedHeaders': 'content-type;host',
   });
 
-  // Path-style: host = accountId.r2.cloudflarestorage.com, URI = /bucket/key
-  // Must match the URL format used in the return value below
-  const host         = `${getAccountId()}.r2.cloudflarestorage.com`;
-  const canonicalUri = `/${bucket}/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+  // Use virtual-hosted style: host = bucket.accountId.r2.cloudflarestorage.com
+  // URL and canonical request MUST use the same style or R2 rejects with SignatureDoesNotMatch
+  const host         = `${bucket}.${getAccountId()}.r2.cloudflarestorage.com`;
+  const canonicalUri = `/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+
   const canonicalQS  = queryParams.toString();
 
   // Canonical request
@@ -133,8 +134,8 @@ export async function generatePresignedPutUrl(params: {
 
   const signature = toHex(await hmac(kSigning, stringToSign));
 
-  // Final URL
-  return `${endpoint}/${bucket}/${key}?${canonicalQS}&X-Amz-Signature=${signature}`;
+  // Virtual-hosted URL — matches the signed host exactly
+  return `https://${host}/${key}?${canonicalQS}&X-Amz-Signature=${signature}`;
 }
 
 // ── Simple delete (no presigning needed — server-side only) ──────────────────
