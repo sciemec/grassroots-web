@@ -318,16 +318,24 @@ export default function ArenaPage() {
         if (mediaType === "image") image_url = url ?? undefined;
         else video_url = url ?? undefined;
       }
+      // Body is required by the backend — use a fallback when only media is posted
+      const postBody = newPostBody.trim() || (mediaType === "image" ? "📸" : mediaType === "video" ? "🎥" : "");
+      const payload: Record<string, unknown> = { body: postBody, post_type: "standard" };
+      if (image_url) payload.image_url = image_url;
+      if (video_url) payload.video_url = video_url;
       const res = await fetch(`${API}/arena/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ body: newPostBody, post_type: "standard", image_url, video_url }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message || `${res.status}`);
+      }
       setNewPostBody("");
       clearMedia();
       fetchPosts();
-    } catch { alert("Could not create post"); }
+    } catch (e) { alert(`Could not create post: ${e instanceof Error ? e.message : "please try again"}`); }
     setSubmitting(false);
   };
 
