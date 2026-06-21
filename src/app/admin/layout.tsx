@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import dynamic from "next/dynamic";
+
+const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
 
 export default function AdminLayout({
   children,
@@ -36,11 +39,14 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f4f2ee]">
-      <AdminSidebar />
-      <main className="flex-1 lg:ml-80">
-        {children}
-      </main>
-    </div>
+    <>
+      <div className="flex min-h-screen bg-[#f4f2ee]">
+        <AdminSidebar />
+        <main className="flex-1 lg:ml-80">
+          {children}
+        </main>
+      </div>
+      <ThutoChatCoach />
+    </>
   );
 }
