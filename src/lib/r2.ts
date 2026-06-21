@@ -211,7 +211,7 @@ export async function deleteR2Object(key: string): Promise<boolean> {
   const signature = toHex(await hmac(kSigning, stringToSign));
 
   try {
-    const res = await fetch(`${endpoint}/${bucket}/${encodedKey}`, {
+    const res = await fetch(`https://${host}/${encodedKey}`, {
       method: 'DELETE',
       headers: {
         'host': host,
