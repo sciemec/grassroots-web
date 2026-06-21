@@ -279,13 +279,15 @@ export default function ArenaPage() {
       const res = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+        body: JSON.stringify({ fileName: file.name, contentType: file.type, source: "arena" }),
       });
       if (!res.ok) return null;
       const { uploadUrl, publicUrl } = await res.json();
-      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      if (!uploadUrl || !publicUrl) return null;
+      const putRes = await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      if (!putRes.ok) { console.error("R2 upload failed:", putRes.status, await putRes.text()); return null; }
       return publicUrl as string;
-    } catch { return null; }
+    } catch (e) { console.error("uploadMedia error:", e); return null; }
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
