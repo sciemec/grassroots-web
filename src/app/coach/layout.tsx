@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { CoachSidebar } from "@/components/layout/CoachSidebar";
+import dynamic from "next/dynamic";
+
+const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
 
 export default function CoachLayout({
   children,
@@ -36,11 +39,14 @@ export default function CoachLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f4f2ee]">
-      <CoachSidebar />
-      <main className="flex-1 lg:ml-72">
-        {children}
-      </main>
-    </div>
+    <>
+      <div className="flex min-h-screen bg-[#f4f2ee]">
+        <CoachSidebar />
+        <main className="flex-1 lg:ml-72">
+          {children}
+        </main>
+      </div>
+      <ThutoChatCoach />
+    </>
   );
 }
