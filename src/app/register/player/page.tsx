@@ -5,28 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell } from "lucide-react";
 import { normalizePhone } from "@/lib/phone-normalize";
-
-const COUNTRIES = [
-  "Zimbabwe","Afghanistan","Albania","Algeria","Angola","Argentina","Armenia","Australia",
-  "Austria","Azerbaijan","Bahrain","Bangladesh","Belarus","Belgium","Benin","Bolivia",
-  "Bosnia and Herzegovina","Botswana","Brazil","Bulgaria","Burkina Faso","Burundi",
-  "Cambodia","Cameroon","Canada","Chad","Chile","China","Colombia","Congo","Costa Rica",
-  "Croatia","Cuba","Czech Republic","Denmark","DR Congo","Ecuador","Egypt","El Salvador",
-  "Eritrea","Estonia","Ethiopia","Finland","France","Gabon","Gambia","Georgia","Germany",
-  "Ghana","Greece","Guatemala","Guinea","Haiti","Honduras","Hungary","India","Indonesia",
-  "Iran","Iraq","Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan",
-  "Kazakhstan","Kenya","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia",
-  "Libya","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Mali","Malta",
-  "Mauritania","Mauritius","Mexico","Moldova","Mongolia","Morocco","Mozambique","Myanmar",
-  "Namibia","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea",
-  "Norway","Oman","Pakistan","Palestine","Panama","Paraguay","Peru","Philippines","Poland",
-  "Portugal","Qatar","Romania","Russia","Rwanda","Saudi Arabia","Senegal","Serbia",
-  "Sierra Leone","Singapore","Slovakia","Slovenia","Somalia","South Africa","South Korea",
-  "South Sudan","Spain","Sri Lanka","Sudan","Sweden","Switzerland","Syria","Taiwan",
-  "Tajikistan","Tanzania","Thailand","Togo","Tunisia","Turkey","Turkmenistan","Uganda",
-  "Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan",
-  "Venezuela","Vietnam","Yemen","Zambia","Other",
-];
+import { COUNTRIES } from "@/lib/countries";
 
 // Coach name per gender — shown under each button so the player
 // knows which AI coach they will be assigned
@@ -348,7 +327,7 @@ export default function RegisterPlayerPage() {
                         type="tel"
                         value={form.phone.replace(/^\+?263/, "").replace(/^0/, "")}
                         onChange={(e) => {
-                          const digits = e.target.value.replace(/\D/g, "");
+                          const digits = e.target.value.replace(/\D/g, "").replace(/^0+/, "");
                           set("phone", "+263" + digits);
                         }}
                         placeholder="77 123 4567"

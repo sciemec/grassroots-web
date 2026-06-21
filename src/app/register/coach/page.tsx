@@ -5,28 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Users } from "lucide-react";
 import { normalizePhone } from "@/lib/phone-normalize";
-
-const COUNTRIES = [
-  "Zimbabwe","Afghanistan","Albania","Algeria","Angola","Argentina","Armenia","Australia",
-  "Austria","Azerbaijan","Bahrain","Bangladesh","Belarus","Belgium","Benin","Bolivia",
-  "Bosnia and Herzegovina","Botswana","Brazil","Bulgaria","Burkina Faso","Burundi",
-  "Cambodia","Cameroon","Canada","Chad","Chile","China","Colombia","Congo","Costa Rica",
-  "Croatia","Cuba","Czech Republic","Denmark","DR Congo","Ecuador","Egypt","El Salvador",
-  "Eritrea","Estonia","Ethiopia","Finland","France","Gabon","Gambia","Georgia","Germany",
-  "Ghana","Greece","Guatemala","Guinea","Haiti","Honduras","Hungary","India","Indonesia",
-  "Iran","Iraq","Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan",
-  "Kazakhstan","Kenya","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia",
-  "Libya","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Mali","Malta",
-  "Mauritania","Mauritius","Mexico","Moldova","Mongolia","Morocco","Mozambique","Myanmar",
-  "Namibia","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea",
-  "Norway","Oman","Pakistan","Palestine","Panama","Paraguay","Peru","Philippines","Poland",
-  "Portugal","Qatar","Romania","Russia","Rwanda","Saudi Arabia","Senegal","Serbia",
-  "Sierra Leone","Singapore","Slovakia","Slovenia","Somalia","South Africa","South Korea",
-  "South Sudan","Spain","Sri Lanka","Sudan","Sweden","Switzerland","Syria","Taiwan",
-  "Tajikistan","Tanzania","Thailand","Togo","Tunisia","Turkey","Turkmenistan","Uganda",
-  "Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan",
-  "Venezuela","Vietnam","Yemen","Zambia","Other",
-];
+import { COUNTRIES } from "@/lib/countries";
 
 interface FormData {
   first_name: string;
@@ -69,7 +48,7 @@ export default function RegisterCoachPage() {
     form.surname.trim().length >= 2 &&
     form.gender !== "" &&
     form.age !== "" &&
-    parseInt(form.age) >= 5 &&
+    parseInt(form.age) >= 18 &&
     parseInt(form.age) <= 100 &&
     form.country !== "";
 
@@ -130,6 +109,15 @@ export default function RegisterCoachPage() {
           (data.errors ? Object.values(data.errors).flat().join(" ") : null) ||
           "Registration failed. Please try again.";
         throw new Error(msg);
+      }
+
+      const data = await res.json();
+
+      if (data.token) {
+        localStorage.setItem("auth_token", data.token);
+      }
+      if (data.user?.id) {
+        localStorage.setItem("player_id", data.user.id);
       }
 
       router.push("/login?registered=1");
@@ -283,13 +271,21 @@ export default function RegisterCoachPage() {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 ) : (
-                  <input
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => set("phone", e.target.value)}
-                    placeholder="+263 77 123 4567"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
+                  <div className="flex gap-2 items-center">
+                    <span className="px-3 py-2.5 bg-[#25D366] text-white text-sm font-bold rounded-xl flex-shrink-0">
+                      +263
+                    </span>
+                    <input
+                      type="tel"
+                      value={form.phone.replace(/^\+?263/, "").replace(/^0/, "")}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").replace(/^0+/, "");
+                        set("phone", "+263" + digits);
+                      }}
+                      placeholder="77 123 4567"
+                      className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
                 )}
               </div>
 
