@@ -1,7 +1,7 @@
 // src/lib/isports/client.ts
 
 const API_BASE_URL = 'https://api.isportsapi.com/v1/football';
-const API_KEY = process.env.NEXT_PUBLIC_ISPORTS_API_KEY || 'TH5aYbIbe2XhXb2G';
+const API_KEY = process.env.ISPORTS_API_KEY || process.env.NEXT_PUBLIC_ISPORTS_API_KEY || 'TH5aYbIbe2XhXb2G';
 
 // ============================================
 // TYPES

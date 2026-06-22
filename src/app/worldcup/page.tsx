@@ -498,7 +498,7 @@ export default function WorldCupTacticalLabPage() {
     const loadMatches = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/world-cup/matches?status=completed`);
+        const res = await fetch('/api/world-cup/matches?status=completed');
         if (!res.ok) throw new Error('Could not load matches');
         const data = await res.json();
         const transformed: Match[] = (data.matches ?? []).map((m: any) => ({
@@ -540,7 +540,7 @@ export default function WorldCupTacticalLabPage() {
   useEffect(() => {
     const loadLive = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/world-cup/matches?status=live`);
+        const res = await fetch('/api/world-cup/matches?status=live');
         if (!res.ok) return;
         const data = await res.json();
         setLiveMatches((data.matches ?? []).map((m: any) => ({
