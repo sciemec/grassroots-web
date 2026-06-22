@@ -8268,3 +8268,79 @@ Performed a complete audit of all Arena pages against the backend spec in CLAUDE
 | `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
 | `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 migrations still pending |
+
+---
+
+## SESSION LOG — 22 June 2026
+
+### Theme — Arena Feed postToArena() Hooks + Talent Passport Backend Complete
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Arena Feed — postToArena() Hooks Added to 3 Pages ✅
+
+**`src/lib/arena-poster.ts`** — utility committed in prior session. Fire-and-forget POST to `/arena/posts`. Skips `dev-token` and unauthenticated users. Never throws.
+
+**Three pages wired this session:**
+
+| File | Trigger | Pillar |
+|---|---|---|
+| `src/app/player/training/scan/page.tsx` | After AI coach feedback received in `evaluateBiomechanicalTelemetry()` | IDENTIFY — biometric scan surfaces to scouts |
+| `src/app/player/stats/new/page.tsx` | After `setSaved(true)` in `handleSave()` | IDENTIFY — match stats become discoverable |
+| `src/app/coach/live-match/page.tsx` | Inside `handleEndMatch()` after gamification call | MARKET — match result posted to social feed |
+
+**Post body formats:**
+- Scan: `"Completed a biometric movement scan."`
+- Stats: `"Logged {sport} stats vs {opponent} ({result} {score})."`
+- Match: `"{homeTeam} {homeScore}–{awayScore} {awayTeam} · {sport}"`
+
+---
+
+#### 2. Talent Passport Backend — COMPLETE ✅
+
+**All 4 required changes confirmed live on Render:**
+
+| File | Status | What it does |
+|---|---|---|
+| `app/Models/User.php` | ✅ CONFIRMED ALREADY DONE | `passport_token` + `gender` in `$fillable`; `boot()` auto-generates UUID token for player role |
+| `app/Http/Controllers/Api/AuthController.php` | ✅ CONFIRMED ALREADY DONE | `register()` accepts `gender`; `formatUser()` returns `passport_token` + `gender` on all auth endpoints |
+| `app/Http/Controllers/Api/PublicPlayerController.php` | ✅ FIXED + DEPLOYED | `?by=passport_token` lookup + try-catch for PostgreSQL UUID cast error |
+| `routes/api.php` (vault closure) | ✅ FIXED + DEPLOYED | Column names corrected (`r2_key`/`title`/`tag`); try-catch for UUID cast error; `R2_PUBLIC_URL` prefix added |
+
+**bhora-ai commits:**
+- `5d62eb0` — fix vault column names (r2_key, title, tag, duration, created_at)
+- `9291259` — guard UUID cast errors with try-catch in both public endpoints
+
+**End-to-end test results (22 June 2026):**
+```
+GET /player/public/00000000-0000-0000-0000-000000000000?by=passport_token
+→ 404 {"message": "Profile not found."}  ✅
+
+GET /player/vault/00000000-0000-0000-0000-000000000000?by=passport_token&visibility=public
+→ 200 []  ✅
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (22 June 2026)
+
+No new routes — existing routes fixed:
+```
+GET /api/v1/player/public/{id}?by=passport_token   Now returns 404 gracefully (was 500)
+GET /api/v1/player/vault/{token}?by=passport_token&visibility=public   Now returns [] gracefully (was 500)
+```
+
+---
+
+### WHAT STILL NEEDS DOING (22 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GEMINI_API_KEY` | NOT set on Vercel | `/player/analyse` web analysis broken |
+| `GEMINI_API_KEY` | NOT set on Render | WhatsApp video pipeline broken |
+| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables pending |
+| First real user/coach | ZERO active users | Top priority — onboard ONE coach at ONE school |
