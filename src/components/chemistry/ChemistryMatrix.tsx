@@ -76,7 +76,7 @@ export default function ChemistryMatrix({ pairs, players }: ChemistryMatrixProps
                 style={{ minWidth: 44 }}
               >
                 <span
-                  className="block text-[10px] text-white/60 font-medium leading-tight"
+                  className="block text-[10px] text-gray-700 font-bold leading-tight"
                   style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", maxHeight: 72 }}
                 >
                   {p.name.split(" ")[0]}
@@ -89,7 +89,7 @@ export default function ChemistryMatrix({ pairs, players }: ChemistryMatrixProps
           {players.map((rowPlayer) => (
             <tr key={rowPlayer.id}>
               {/* Row label */}
-              <td className="pr-2 text-right text-[11px] text-white/60 font-medium whitespace-nowrap align-middle">
+              <td className="pr-2 text-right text-[11px] text-gray-700 font-bold whitespace-nowrap align-middle">
                 {rowPlayer.name.split(" ")[0]}
               </td>
 

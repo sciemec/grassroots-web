@@ -225,8 +225,8 @@ export default function CoachChemistryPage() {
 
         {/* Top pairs list */}
         {!loading && topPairs.length > 0 && (
-          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-6">
-            <h2 className="text-white font-bold mb-4">Top 5 Chemistry Pairs</h2>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="text-black font-bold mb-4">Top 5 Chemistry Pairs</h2>
             <div className="space-y-4">
               {topPairs.map((pair, i) => {
                 const aName = playerName(pair.player_a_id);
@@ -237,12 +237,12 @@ export default function CoachChemistryPage() {
                     href={`/coach/chemistry/pair/${pair.player_a_id}/${pair.player_b_id}`}
                     className="flex items-center gap-3 group"
                   >
-                    <span className="text-[#f0b429]/30 text-sm w-5 text-right">{i + 1}</span>
+                    <span className="text-gray-400 text-sm w-5 text-right">{i + 1}</span>
                     <div className="flex-1">
-                      <div className="text-white text-sm font-semibold group-hover:text-[#f0b429] transition-colors">
+                      <div className="text-black font-bold text-sm group-hover:text-[#1a5c2a] transition-colors">
                         {aName} × {bName}
                       </div>
-                      <div className="h-1.5 bg-[#f0b429]/10 rounded-full mt-1.5 overflow-hidden">
+                      <div className="h-1.5 bg-gray-200 rounded-full mt-1.5 overflow-hidden">
                         <div
                           className="h-full bg-green-500 rounded-full transition-all duration-500"
                           style={{ width: `${Math.min(100, pair.chemistry_score)}%` }}
@@ -261,8 +261,8 @@ export default function CoachChemistryPage() {
 
         {/* Empty state */}
         {!loading && !error && pairs.length === 0 && (
-          <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-sm p-10 text-center">
-            <p className="text-[#f0b429]/40 text-sm max-w-md mx-auto">
+          <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center">
+            <p className="text-gray-600 text-sm max-w-md mx-auto">
               No chemistry data yet. Players need at least 8 drills across 3 sessions in the GrassRoots
               app to generate a style fingerprint. The nightly similarity job runs at 02:00 Harare time.
             </p>
