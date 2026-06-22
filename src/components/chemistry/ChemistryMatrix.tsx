@@ -102,7 +102,7 @@ export default function ChemistryMatrix({ pairs, players }: ChemistryMatrixProps
                 return (
                   <td key={colPlayer.id} className="p-0.5 align-middle">
                     {isSelf ? (
-                      <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center text-white/20 text-xs select-none">
+                      <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs select-none">
                         —
                       </div>
                     ) : pair ? (
@@ -117,7 +117,7 @@ export default function ChemistryMatrix({ pairs, players }: ChemistryMatrixProps
                       </button>
                     ) : (
                       <div
-                        className="w-10 h-10 rounded bg-white/5 flex items-center justify-center text-white/20 text-xs"
+                        className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs"
                         title="No data yet"
                       >
                         ?
@@ -132,15 +132,15 @@ export default function ChemistryMatrix({ pairs, players }: ChemistryMatrixProps
       </table>
 
       {/* Legend */}
-      <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-white/50">
-        <span className="font-medium text-white/70">Chemistry score:</span>
+      <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+        <span className="font-bold text-gray-800">Chemistry score:</span>
         {[
           { label: "85+ Excellent", cls: "bg-green-600" },
           { label: "70–84 Strong", cls: "bg-green-400" },
           { label: "55–69 Good", cls: "bg-yellow-500" },
           { label: "40–54 Moderate", cls: "bg-orange-500" },
           { label: "<40 Low", cls: "bg-red-600" },
-          { label: "No data", cls: "bg-white/10" },
+          { label: "No data", cls: "bg-gray-200" },
         ].map(({ label, cls }) => (
           <span key={label} className="flex items-center gap-1">
             <span className={`w-3 h-3 rounded ${cls} inline-block flex-shrink-0`} />
@@ -149,7 +149,7 @@ export default function ChemistryMatrix({ pairs, players }: ChemistryMatrixProps
         ))}
       </div>
 
-      <p className="mt-2 text-xs text-white/30">
+      <p className="mt-2 text-xs text-gray-500">
         Click any cell to view the full chemistry breakdown for that pair.
       </p>
     </div>
