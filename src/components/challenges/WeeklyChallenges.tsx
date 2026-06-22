@@ -230,18 +230,18 @@ export default function WeeklyChallenges({
   return (
     <div
       className={`rounded-2xl border overflow-hidden ${className}`}
-      style={{ borderColor: "rgba(255,255,255,0.12)", background: "#1a3d26" }}
+      style={{ borderColor: "#e5e7eb", background: "#ffffff" }}
     >
       {/* Header */}
       <div
         className="px-5 pt-5 pb-3 flex items-center justify-between"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        style={{ borderBottom: "1px solid #e5e7eb" }}
       >
         <div>
-          <h3 className="font-bold text-base" style={{ color: "#f0b429" }}>
+          <h3 className="font-bold text-base text-black">
             Weekly Challenges
           </h3>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+          <p className="text-xs mt-0.5 text-gray-500">
             {getISOWeekKey()} &bull; {completedCount}/{state.challenges.length} complete
           </p>
         </div>
@@ -257,15 +257,15 @@ export default function WeeklyChallenges({
       </div>
 
       {/* Tab switcher */}
-      <div className="flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="flex" style={{ borderBottom: "1px solid #e5e7eb" }}>
         {(["challenges", "leaderboard"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className="flex-1 py-2.5 text-xs font-medium capitalize transition-colors"
             style={{
-              color: activeTab === tab ? "#f0b429" : "rgba(255,255,255,0.45)",
-              borderBottom: activeTab === tab ? "2px solid #f0b429" : "2px solid transparent",
+              color: activeTab === tab ? "#c8962a" : "#6b7280",
+              borderBottom: activeTab === tab ? "2px solid #c8962a" : "2px solid transparent",
               background: "transparent",
             }}
           >
@@ -283,11 +283,11 @@ export default function WeeklyChallenges({
               className="rounded-xl p-3.5"
               style={{
                 background: challenge.completed
-                  ? "rgba(34,197,94,0.1)"
-                  : "rgba(255,255,255,0.05)",
+                  ? "#f0fdf4"
+                  : "#f9fafb",
                 border: challenge.completed
-                  ? "1px solid rgba(34,197,94,0.3)"
-                  : "1px solid rgba(255,255,255,0.08)",
+                  ? "1px solid #bbf7d0"
+                  : "1px solid #e5e7eb",
               }}
             >
               <div className="flex items-start gap-3">
@@ -296,7 +296,7 @@ export default function WeeklyChallenges({
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-white truncate">
+                    <p className="text-sm font-bold text-black truncate">
                       {challenge.title}
                     </p>
                     {challenge.completed ? (
@@ -313,7 +313,7 @@ export default function WeeklyChallenges({
                       </button>
                     )}
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  <p className="text-xs mt-0.5 text-gray-500">
                     {challenge.description}
                   </p>
 
@@ -321,7 +321,7 @@ export default function WeeklyChallenges({
                   {challenge.progress > 0 && (
                     <div
                       className="mt-2 rounded-full overflow-hidden"
-                      style={{ height: 4, background: "rgba(255,255,255,0.1)" }}
+                      style={{ height: 4, background: "#e5e7eb" }}
                     >
                       <div
                         className="h-full rounded-full transition-all"
@@ -341,15 +341,15 @@ export default function WeeklyChallenges({
           <div
             className="rounded-xl p-3.5 flex items-center justify-between gap-3"
             style={{
-              background: "rgba(240,180,41,0.08)",
-              border: "1px solid rgba(240,180,41,0.2)",
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
             }}
           >
             <div>
-              <p className="text-xs font-semibold" style={{ color: "#f0b429" }}>
+              <p className="text-xs font-bold" style={{ color: "#92400e" }}>
                 Friday Streak Reminder
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+              <p className="text-xs mt-0.5 text-gray-500">
                 {state.notifScheduled
                   ? "Reminder is set for this Friday"
                   : "Get a push alert every Friday to protect your streak"}
@@ -359,7 +359,7 @@ export default function WeeklyChallenges({
               <button
                 onClick={scheduleFridayReminder}
                 className="text-xs font-medium px-3 py-1.5 rounded-lg shrink-0 transition-opacity hover:opacity-80"
-                style={{ background: "rgba(240,180,41,0.2)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.4)" }}
+                style={{ background: "#f0b429", color: "#1a3a1a", border: "none" }}
               >
                 Remind me
               </button>
@@ -368,7 +368,7 @@ export default function WeeklyChallenges({
               <span className="text-lg shrink-0">🔔</span>
             )}
             {notifPermission === "denied" && (
-              <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <span className="text-xs text-gray-400">
                 Blocked
               </span>
             )}
@@ -379,7 +379,7 @@ export default function WeeklyChallenges({
       {/* School leaderboard tab */}
       {activeTab === "leaderboard" && (
         <div className="p-4">
-          <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
+          <p className="text-xs mb-3 text-gray-500">
             Top players by weekly challenge score — anonymised
           </p>
           <div className="space-y-2">
@@ -387,39 +387,39 @@ export default function WeeklyChallenges({
               <div
                 key={entry.rank}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-2.5"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
               >
                 <span
                   className="text-sm font-bold w-6 text-center shrink-0"
                   style={{
                     color:
                       entry.rank === 1
-                        ? "#f0b429"
+                        ? "#c8962a"
                         : entry.rank === 2
-                        ? "#94a3b8"
+                        ? "#64748b"
                         : entry.rank === 3
-                        ? "#cd7f32"
-                        : "rgba(255,255,255,0.4)",
+                        ? "#92400e"
+                        : "#9ca3af",
                   }}
                 >
                   {entry.rank}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">{entry.initials}</p>
-                  <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  <p className="text-sm font-bold text-black">{entry.initials}</p>
+                  <p className="text-xs truncate text-gray-500">
                     {entry.school}
                   </p>
                 </div>
                 <span
                   className="text-sm font-bold shrink-0"
-                  style={{ color: "#f0b429" }}
+                  style={{ color: "#c8962a" }}
                 >
                   {entry.score}
                 </span>
               </div>
             ))}
           </div>
-          <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p className="text-center text-xs mt-4 text-gray-400">
             Complete challenges to climb the board
           </p>
         </div>
