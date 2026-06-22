@@ -61,6 +61,12 @@ const nextConfig = {
    * If embedding external content breaks, scope the headers to only
    * the /video-studio and /streaming/broadcast paths.
    */
+  async redirects() {
+    return [
+      { source: "/world-cup", destination: "/worldcup", permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {
