@@ -8344,3 +8344,189 @@ GET /api/v1/player/vault/{token}?by=passport_token&visibility=public   Now retur
 | `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables pending |
 | First real user/coach | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 22 June 2026 (continued)
+
+### Theme — Arena Activity Feed Platform Connection + Talent Passport Share + Premium Blur
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `src/lib/arena-poster.ts` — Extended ✅
+
+**Commit:** `ad34d57`
+
+Added `activityType` and `activityData` to the options parameter. Both fields are conditionally
+spread into the POST body only when values are defined (no `undefined` keys sent to Laravel).
+
+```typescript
+options?: {
+  postType?: "standard" | "milestone" | "achievement" | "session_milestone";
+  metadata?: Record<string, unknown>;
+  activityType?: string;
+  activityData?: Record<string, unknown>;
+}
+// In body:
+...(options?.activityType && { activity_type: options.activityType }),
+...(options?.activityData  && { activity_data:  options.activityData  }),
+```
+
+---
+
+#### 2. `/player/drills` — Arena Hook on Drill Completion ✅
+
+**File:** `src/app/player/drills/page.tsx`
+
+- Added `import { postToArena } from "@/lib/arena-poster"`
+- Modified `toggleDrillCompletion()` — detects `isMarkingDone` (not unmarking), fires
+  `postToArena()` only when marking a drill done, not when unchecking it
+- Post body: `Completed "{drill.name}" · {position} · {tierLabel} tier`
+- `activityType: "drill_completion"`, `activityData: { drillId, drillName, position, tier }`
+- `postType: "milestone"` — shows green card background on Arena feed
+
+---
+
+#### 3. Arena Activity Feed — 4 Changes ✅
+
+**File:** `src/app/arena/page.tsx`
+
+**Change 1 — Post interface extended:**
+```typescript
+activity_type?: string;
+activity_data?: Record<string, unknown>;
+```
+
+**Change 2 — `activityFilter` state added:**
+```typescript
+const [activityFilter, setActivityFilter] = useState<string>("all");
+```
+
+**Change 3 — `fetchPosts` appends `?type=` when filter is active:**
+```typescript
+const url = activityFilter !== "all" ? `${base}?type=${activityFilter}` : base;
+// activityFilter added to useCallback deps
+```
+
+**Change 4 — Activity filter chip bar inserted above "Posts feed":**
+6 chips rendered in a horizontally scrollable row (non-video tabs only):
+- All · ⚽ Drills (`drill_completion`) · 📈 AQ (`aq_score`) · 🏆 Tiers (`tier_unlock`) · 🤖 Scored (`session`) · 🔥 Streaks (`streak`)
+- Active chip: `bg-[#1a5c2a] text-white`; inactive: `bg-gray-100 text-gray-600`
+- Selecting a chip sets `activityFilter` → `fetchPosts` re-runs with `?type=` param
+
+**Change 5 — `ActivityBody` enrichment cards rendered after post body text:**
+- `drill_completion` → green card: "⚽ Drill completed · {drillName} · {position}"
+- `session_milestone` → blue card: "📈 Score improved → {new_score}"
+- `prediction_upgrade` → amber card: "⬆️ Level up · {new_label}"
+- Only rendered when `post.activity_type` matches
+
+**Change 6 — Scout/coach action row on player posts:**
+- Shown when `post.user?.role === "player"` AND `!isOwner`
+- `+ Add to Pipeline` → `/scout/pipeline?playerId={post.user_id}`
+- `View Passport →` → `/passport/{post.user_id}`
+- Small buttons, green border, subtle hover
+
+---
+
+#### 4. Talent Passport — Share + Premium Blur ✅
+
+**File:** `src/app/passport/[id]/PassportClient.tsx`
+
+**`handleShare()`** — native Web Share API with clipboard fallback:
+```typescript
+const handleShare = async () => {
+  if (typeof navigator.share === 'function') {
+    try { await navigator.share({ title, text, url }); return; }
+    catch { /* cancelled — fall through */ }
+  }
+  navigator.clipboard.writeText(url);
+  setCopied(true);
+};
+```
+
+**`unlocked` state** — default `false`. `PremiumGate` reads this.
+
+**`PremiumGate` component** — inline, accepts `children: ReactNode`:
+- When `unlocked`: renders children unchanged
+- When locked: `filter: blur(5px)` overlay with white frosted glass, "🔒 Scout-only data" label,
+  "Unlock · $1.50/week" gold button that sets `setUnlocked(true)`
+
+**4 sections now gated:**
+| Section | Why gated |
+|---|---|
+| Position Quotient | Tactical data scouts pay for |
+| AQ Progression Timeline | Development trajectory — premium intel |
+| Scout Narrative | AI-generated scouting report |
+| Gemini Drill Scores | Video analysis scores |
+
+**Share/Copy buttons:**
+- "Share Passport" (green) → `handleShare()` — uses native share on mobile
+- "Copy Link" (outlined) → `handleCopyLink()` — clipboard only
+
+---
+
+### LARAVEL BACKEND NEEDED — COPY-PASTE READY
+
+**Migration: `2026_06_22_000001_extend_arena_posts_activity_fields.php`**
+```php
+Schema::table('arena_posts', function (Blueprint $table) {
+    $table->string('activity_type')->nullable()->after('from_whatsapp');
+    $table->jsonb('activity_data')->nullable()->after('activity_type');
+    $table->boolean('is_auto_generated')->default(false)->after('activity_data');
+    $table->string('visibility')->default('public')->after('is_auto_generated');
+});
+```
+
+**`app/Models/ArenaPost.php`** — add to `$fillable` and `$casts`:
+```php
+// $fillable:
+'activity_type', 'activity_data', 'is_auto_generated', 'visibility',
+// $casts:
+'activity_data'     => 'array',
+'is_auto_generated' => 'boolean',
+```
+
+**`ArenaFeedController`** — add `?type=` filter in `forYou()`, `following()`, `connections()`:
+```php
+if ($type = $request->query('type')) {
+    $query->where('activity_type', $type);
+}
+```
+Add to `store()` validation + `ArenaPost::create()`:
+```php
+// validation:
+'activity_type' => 'nullable|string|max:80',
+'activity_data' => 'nullable|array',
+// create():
+'activity_type'     => $data['activity_type'] ?? null,
+'activity_data'     => $data['activity_data'] ?? null,
+'is_auto_generated' => false,
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (22 June 2026, continued)
+
+No new routes — enhanced existing:
+```
+/player/drills       Now auto-posts to Arena on drill completion
+/arena               Activity filter chips, ActivityBody cards, scout action row
+/passport/[id]       Native share button, PremiumGate blur on 4 premium sections
+```
+
+---
+
+### WHAT STILL NEEDS DOING (22 June 2026, continued)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `arena_posts` activity migration | WRITTEN — NOT YET ON RENDER | Copy migration above to bhora-ai → push → auto-migrates |
+| `ArenaPost` model fields | WRITTEN — NOT IN bhora-ai | Add to `$fillable` + `$casts` |
+| `ArenaFeedController ?type=` filter | WRITTEN — NOT IN bhora-ai | Add to `forYou/following/connections` + `store()` |
+| `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
+| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
+| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| First real user/coach | ZERO active users | Top priority — onboard ONE coach at ONE school |
