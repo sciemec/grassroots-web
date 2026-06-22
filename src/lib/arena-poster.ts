@@ -7,6 +7,8 @@ export async function postToArena(
   options?: {
     postType?: "standard" | "milestone" | "achievement" | "session_milestone";
     metadata?: Record<string, unknown>;
+    activityType?: string;
+    activityData?: Record<string, unknown>;
   }
 ): Promise<void> {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
@@ -22,6 +24,8 @@ export async function postToArena(
       body,
       post_type: options?.postType ?? "standard",
       metadata: options?.metadata ?? {},
+      ...(options?.activityType && { activity_type: options.activityType }),
+      ...(options?.activityData  && { activity_data:  options.activityData  }),
     }),
   }).catch(() => {}); // fire-and-forget — never surface errors to user
 }

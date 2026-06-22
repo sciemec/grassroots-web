@@ -91,6 +91,8 @@ interface Post {
   liked?: number;
   my_reaction?: string | null;
   from_whatsapp?: boolean;
+  activity_type?: string;
+  activity_data?: Record<string, unknown>;
   user?: { id: string; name: string; role: string; sport?: string; province?: string };
 }
 
@@ -165,6 +167,9 @@ export default function ArenaPage() {
   // ── Tab state — four tabs: For You / Following / Connections / Videos ──────
   const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos">("for-you");
 
+  // ── Activity filter chips (under social tabs, non-video tabs only) ─────────
+  const [activityFilter, setActivityFilter] = useState<string>("all");
+
   // ── Video feed state (from Document 14) ───────────────────────────────────
   const [videos,       setVideos]       = useState<ArenaVideo[]>([]);
   const [loadingVideos,setLoadingVideos]= useState(false);
@@ -187,15 +192,17 @@ export default function ArenaPage() {
         "following":   `${API}/arena/feed/following`,
         "connections": `${API}/arena/feed/connections`,
       };
+      const base = urlMap[activeTab];
+      const url = activityFilter !== "all" ? `${base}?type=${activityFilter}` : base;
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const res = await fetch(urlMap[activeTab], { headers });
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error();
       const json = await res.json();
       setPosts(safeArray<Post>(json.data ?? json));
     } catch {}
     setLoadingPosts(false);
-  }, [activeTab, authToken]);
+  }, [activeTab, activityFilter, authToken]);
 
   // ── Fetch video feed — /showcase/discover (public endpoint) ──────────────
   const fetchVideos = useCallback(async () => {
@@ -731,6 +738,29 @@ export default function ArenaPage() {
               </div>
             )}
 
+            {/* Activity filter chips */}
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+              {[
+                { key: "all",              label: "All" },
+                { key: "drill_completion", label: "⚽ Drills" },
+                { key: "aq_score",         label: "📈 AQ" },
+                { key: "tier_unlock",      label: "🏆 Tiers" },
+                { key: "session",          label: "🤖 Scored" },
+                { key: "streak",           label: "🔥 Streaks" },
+              ].map(chip => (
+                <button
+                  key={chip.key}
+                  onClick={() => setActivityFilter(chip.key)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition ${
+                    activityFilter === chip.key
+                      ? "bg-[#1a5c2a] text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}>
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
             {/* Posts feed */}
             {loadingPosts ? (
               <div className="flex justify-center py-12">
@@ -822,6 +852,51 @@ export default function ArenaPage() {
                         {post.aq_at_post && (
                           <div className="mt-2 inline-flex items-center gap-1 bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded-full">
                             🏆 AQ: {post.aq_at_post}
+                          </div>
+                        )}
+
+                        {/* Activity enrichment card */}
+                        {post.activity_type === "drill_completion" && post.activity_data && (
+                          <div className="mt-2 rounded-xl bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-800">
+                            <span className="font-bold">⚽ Drill completed</span>
+                            {post.activity_data.drillName && (
+                              <span className="ml-1 text-green-700">· {String(post.activity_data.drillName)}</span>
+                            )}
+                            {post.activity_data.position && (
+                              <span className="ml-1 text-green-600">· {String(post.activity_data.position)}</span>
+                            )}
+                          </div>
+                        )}
+                        {post.activity_type === "session_milestone" && post.activity_data && (
+                          <div className="mt-2 rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-800">
+                            <span className="font-bold">📈 Score improved</span>
+                            {post.activity_data.new_score !== undefined && (
+                              <span className="ml-1">→ {String(post.activity_data.new_score)}</span>
+                            )}
+                          </div>
+                        )}
+                        {post.activity_type === "prediction_upgrade" && post.activity_data && (
+                          <div className="mt-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+                            <span className="font-bold">⬆️ Level up</span>
+                            {post.activity_data.new_label && (
+                              <span className="ml-1 font-semibold">· {String(post.activity_data.new_label)}</span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Scout / coach action row — shown on player posts */}
+                        {post.user?.role === "player" && !isOwner && (
+                          <div className="mt-3 flex items-center gap-2 flex-wrap">
+                            <Link
+                              href={`/scout/pipeline?playerId=${post.user_id}`}
+                              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#1a5c2a] text-[#1a5c2a] hover:bg-green-50 transition">
+                              + Add to Pipeline
+                            </Link>
+                            <Link
+                              href={`/passport/${post.user_id}`}
+                              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                              View Passport →
+                            </Link>
                           </div>
                         )}
                       </div>

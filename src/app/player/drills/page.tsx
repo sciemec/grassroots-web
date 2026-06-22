@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
+import { postToArena } from "@/lib/arena-poster";
 
 const FOOTBALL_POSITION_DRILLS = {
   striker: {
@@ -182,11 +183,31 @@ export default function FootballDrillsLabPage() {
   };
 
   const toggleDrillCompletion = async (drillId: string) => {
-    const newCompleted = completedDrills.includes(drillId)
-      ? completedDrills.filter(id => id !== drillId)
-      : [...completedDrills, drillId];
+    const isMarkingDone = !completedDrills.includes(drillId);
+    const newCompleted = isMarkingDone
+      ? [...completedDrills, drillId]
+      : completedDrills.filter(id => id !== drillId);
     setCompletedDrills(newCompleted);
     await saveProgress(newCompleted, activePosition);
+    if (isMarkingDone) {
+      const selectedData = FOOTBALL_POSITION_DRILLS[activePosition];
+      const drill = selectedData?.drills.find(d => d.id === drillId);
+      if (drill) {
+        postToArena(
+          `Completed "${drill.name}" · ${activePosition} · ${tierProgress?.currentTierLabel ?? "Spark"} tier`,
+          {
+            postType: "milestone",
+            activityType: "drill_completion",
+            activityData: {
+              drillId,
+              drillName: drill.name,
+              position: activePosition,
+              tier: tierProgress?.currentTier ?? 1,
+            },
+          }
+        );
+      }
+    }
   };
 
   const generateTalentPassport = () => {

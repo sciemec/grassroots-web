@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 const GRS_GREEN = '#1c3d22';
 const GRS_GOLD  = '#c8962a';
@@ -57,7 +57,8 @@ export default function PassportClient({
   player, latestSession, recentSessions, gamification, videos, token, drillScores,
 }: PassportProps) {
   const [activeVideo, setActiveVideo] = useState<any | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied,   setCopied]   = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   const tier = latestSession?.tier ?? 'Foundation';
   const aq   = latestSession?.aqScore ?? 0;
@@ -84,6 +85,48 @@ export default function PassportClient({
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = async () => {
+    const url  = window.location.href;
+    const text = `${player.name}'s GRS Talent Passport — AQ ${aq} · ${player.position}`;
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: 'GRS Talent Passport', text, url });
+        return;
+      } catch { /* user cancelled — fall through to clipboard */ }
+    }
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Inline gate component for premium sections
+  const PremiumGate = ({ children }: { children: ReactNode }) => {
+    if (unlocked) return <>{children}</>;
+    return (
+      <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 12 }}>
+        <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>
+          {children}
+        </div>
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 8,
+          background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(2px)', borderRadius: 12,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: GRS_GREEN }}>🔒 Scout-only data</div>
+          <div style={{ fontSize: 12, color: '#555', textAlign: 'center', maxWidth: 200, lineHeight: 1.4 }}>
+            Full talent data for scouts and clubs
+          </div>
+          <button
+            onClick={() => setUnlocked(true)}
+            style={{ padding: '8px 18px', background: GRS_GOLD, color: '#fff', border: 'none',
+                     borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            Unlock · $1.50/week
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const barColor = (pct: number) =>
@@ -186,6 +229,7 @@ export default function PassportClient({
 
         {/* ── Position quotient ────────────────────────────────────────── */}
         {latestSession && (
+          <PremiumGate>
           <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
               Position match
@@ -212,6 +256,7 @@ export default function PassportClient({
               })}
             </div>
           </div>
+          </PremiumGate>
         )}
 
         {/* ── Injury flag ──────────────────────────────────────────────── */}
@@ -228,6 +273,7 @@ export default function PassportClient({
 
         {/* ── AQ progression timeline ──────────────────────────────────── */}
         {timeline.length >= 2 && (
+          <PremiumGate>
           <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
               Development trajectory — AQ over time
@@ -247,6 +293,7 @@ export default function PassportClient({
               {timeline.length} sessions tracked
             </div>
           </div>
+          </PremiumGate>
         )}
 
         {/* ── Passport videos ──────────────────────────────────────────── */}
@@ -292,6 +339,7 @@ export default function PassportClient({
 
         {/* ── Scout narrative ───────────────────────────────────────────── */}
         {latestSession?.scoutNarrative && (
+          <PremiumGate>
           <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
               Scout report
@@ -311,10 +359,12 @@ export default function PassportClient({
               </div>
             )}
           </div>
+          </PremiumGate>
         )}
 
         {/* ── Gemini drill scores ───────────────────────────────────────── */}
         {drillScores && drillScores.length > 0 && (
+          <PremiumGate>
           <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
               Gemini drill analysis
@@ -348,14 +398,20 @@ export default function PassportClient({
               );
             })}
           </div>
+          </PremiumGate>
         )}
 
         {/* ── Share / copy link ─────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 24 }}>
           <button
-            onClick={handleCopyLink}
+            onClick={handleShare}
             style={{ width: '100%', padding: '14px', borderRadius: 12, background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>
-            {copied ? 'Link copied ✓' : 'Copy passport link'}
+            Share Passport
+          </button>
+          <button
+            onClick={handleCopyLink}
+            style={{ width: '100%', padding: '12px', borderRadius: 12, background: 'transparent', color: GRS_GREEN, fontWeight: 600, fontSize: 13, border: `1.5px solid ${GRS_GREEN}`, cursor: 'pointer' }}>
+            {copied ? 'Link copied ✓' : 'Copy Link'}
           </button>
           <div style={{ fontSize: 11, color: '#aaa', textAlign: 'center' }}>
             grassrootssports.live/passport/{token}
