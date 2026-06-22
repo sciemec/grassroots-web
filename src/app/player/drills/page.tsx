@@ -1,74 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Dumbbell, Target, Shield, Award, Users,
-  ArrowLeft, GraduationCap, Play,
-  CheckCircle2, AlertTriangle, Download, TrendingUp, Flame
+  Dumbbell, Award,
+  ArrowLeft, GraduationCap,
+  AlertTriangle, Download, Flame, Filter, X
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
 import { postToArena } from "@/lib/arena-poster";
-
-const FOOTBALL_POSITION_DRILLS = {
-  striker: {
-    title: "Striker & Attacking Forward Track",
-    focus: "Attacking intent, positive first-touch control, creative blind turns, and clinical box execution.",
-    drills: [
-      { id: "eng_st_01", name: "Lions' Den Central Turning",      duration: "15 mins", description: "Receive a firm vertical entry pass inside a tight 8x8-yard square under physical contact. Protect the ball with your body, turn sharply on the half-turn, and play forward to a teammate." },
-      { id: "eng_st_02", name: "Tri-Third Elimination End Zones", duration: "20 mins", description: "Combine out of the defensive third to play an incisive line-breaking pass past the midfield layer. Time your forward run into the shaded end zone to collect and finish without running offside." },
-      { id: "eng_st_03", name: "Three-Goal Endline Finale",       duration: "15 mins", description: "Small-sided competitive match attacking a baseline with one large central goal and two corner mini-goals. Any regular goal is 1 point; a first-time finish is worth 2 points." },
-      { id: "eng_st_04", name: "Double Trouble Combination",      duration: "15 mins", description: "Attack a keeper and defender in pairs on a 35x25-yard pitch. Move and combine to open up space and score. If the defender wins it, recover to help your unit." },
-      { id: "eng_st_05", name: "The Great Escape Funnel",         duration: "20 mins", description: "Start inside a cone funnel before breaking out into a 35x35-yard area against two central guards. Use feints and body movement to disguise your intentions and escape through perimeter gates." },
-    ],
-  },
-  midfielder: {
-    title: "Central Midfield & Pivot Track",
-    focus: "Pre-receipt shoulder scanning, body shape openness, cover shadows drop, and tactical point switches.",
-    drills: [
-      { id: "cat_md_01", name: "Barcelona 3-2-1 Build Up Choices", duration: "15 mins", description: "7v7 positional small-sided game. Receive deep build-up passes from the center-back, scan before receiving, use your back foot to open your body shape, and decide whether to combine via a wall-pass or switch play wide." },
-      { id: "eng_md_02", name: "Around the Clock Passing Ring",    duration: "12 mins", description: "Position symmetrically around a 20-yard diameter circle. Execute rapid one-touch and two-touch passing patterns through and across the clock structure to break blocks while central defenders chase interceptions." },
-      { id: "eng_md_03", name: "Connect Four Corner Squares",      duration: "20 mins", description: "A 35x20-yard directional transition game. Midfielders use quick horizontal circulation to pull the defensive block out of alignment, then launch a vertical through-ball into any of the 4 shaded corner target boxes." },
-      { id: "eng_md_04", name: "Table Football Tri-Thirds Match",  duration: "25 mins", description: "Play a match inside a field split into thirds where outfielders are entirely locked into their areas to emphasize vertical lines. Work the ball dynamically through the thirds to feed your striker." },
-      { id: "eng_md_05", name: "Three-Channel Tight Turning",      duration: "15 mins", description: "Receive a pass inside a small central vertical channel under tight pressure. Keep a tight turning circle, use an outside hook or Cruyff turn to escape interference, and pass to create width." },
-    ],
-  },
-  defender: {
-    title: "Defensive Unit & Fullback Track",
-    focus: "Defensive approach angles, arm's-length pressure, deceleration braking, and line cover support.",
-    drills: [
-      { id: "eng_df_01", name: "Angled Pressing & Directional Dictation", duration: "15 mins", description: "Approach a perimeter attacker at an angle rather than straight-on to limit their options. Get within arm's-length to apply high pressure and dictate their movement toward the wide sidelines." },
-      { id: "eng_df_02", name: "Cover and Recover Horizontal Channels",   duration: "15 mins", description: "Work in tandem inside a pitch split horizontally into thirds. Establish optimal supporting distances between the pressing and covering players; if the primary presser is bypassed, the covering player steps out immediately." },
-      { id: "eng_df_03", name: "Line Cover and Press 2v2",                duration: "20 mins", description: "Small-sided area with mini-goals behind a baseline. One player presses the ball carrier while the other provides deep covering support directly in front of the goal mouth." },
-      { id: "eng_df_04", name: "Stadium Game 1v1 Marking",               duration: "15 mins", description: "Pair up with an opponent inside an isolated half of a 30x20-yard area. Stay close to prevent them from receiving easily, position goal-side, and use a side-on stance to steal possession." },
-      { id: "eng_df_05", name: "Five-Section Possession Grid",            duration: "20 mins", description: "Engage in parallel 1v1 duels inside a 30x20-yard pitch split into five sections. Work together as a compact unit off the ball to mark, cover, and intercept passes." },
-    ],
-  },
-  goalkeeper: {
-    title: "Goalkeeper Elite Protocol",
-    focus: "Balls-of-feet readiness, handling holds ('W' and 'M' catch styles), low ground diving, and wide distribution.",
-    drills: [
-      { id: "so_gk_01",  name: "Ground Side-Diving & Ball Recovery",  duration: "15 mins", description: "Crouch to lower your center of gravity before diving on the side of your body. Get both hands to the ball using the secure 'M' little-finger line for low shots, then immediately hug it into your chest." },
-      { id: "so_gk_02",  name: "The 'W' & 'M' Handling Fundamentals", duration: "10 mins", description: "Practice forming a 'W' with your thumbs almost touching to secure incoming high balls, and an 'M' with little fingers touching to handle low balls. Stand lightly on the balls of your feet with hands open at waist height." },
-      { id: "eng_gk_03", name: "Circular Target-Gate Angle Coverage",  duration: "15 mins", description: "Position inside standalone square keeper boxes placed symmetrically within a circle layout. Move dynamically to adjust your positioning angle relative to passing pairs, making safe interceptions on first-time pass inputs." },
-      { id: "eng_gk_04", name: "Feeder-Attacker Isolation Guard",     duration: "15 mins", description: "Manage angle coverage in a 20x15-yard pitch with a goal at one end. Direct your defender to mark the attacker tight, tracking the ball from the feeder, and be alert to make reflex saves." },
-      { id: "eng_gk_05", name: "Asymmetric Low Block Clearing",       duration: "20 mins", description: "Defend a full-size goal with a backline of 8 outfielders against 7 attackers on half a pitch. Dominate your box, collect loose crosses, and quickly distribute wide after a rebound." },
-    ],
-  },
-  winger: {
-    title: "Winger & Wide Forward Track",
-    focus: "Explosive width, 1v1 isolation, low cross delivery, and recovery tracking.",
-    drills: [
-      { id: "grs_wn_01", name: "Wide Channel Sprint & Cross",  duration: "15 mins", description: "Sprint into the wide channel, receive a pass, and deliver a low driven cross before the defender closes. Vary between near-post and cutback deliveries." },
-      { id: "grs_wn_02", name: "1v1 Isolation Wing Attack",   duration: "15 mins", description: "Start 15m from the full-back. Use a feint to commit them, then accelerate past. Finish by crossing or cutting inside. Best of 5 runs." },
-      { id: "grs_wn_03", name: "Recovery Run Tracking",       duration: "12 mins", description: "After losing possession in the final third, sprint back to get goal-side of the ball within 5 seconds. Coach rates effort with 1–3. Target average above 2.5." },
-      { id: "grs_wn_04", name: "Overlap Combination Triangle",duration: "20 mins", description: "3-player combination: winger, full-back, striker. Winger plays inside and then overlaps to receive in behind. Finish with a first-time cross or cut-back." },
-      { id: "grs_wn_05", name: "Cutback Decision Rondo",      duration: "15 mins", description: "Reach the byline and choose between a near-post cutback, far-post driven cross, or pulling back to the penalty spot runner. Defenders rotate. 3 points for a first-time finish." },
-    ],
-  },
-};
+import DrillCard from "@/components/drills/DrillCard";
+import {
+  FOOTBALL_POSITION_DRILLS,
+  type PositionKey,
+  type DrillCategory,
+  type EquipmentTier,
+} from "@/lib/drill-data";
 
 const TIER_CONFIG: Record<number, { label: string; color: string; bg: string; source: string; flag: string }> = {
   1: { label: "Spark",   color: "#888780", bg: "#f1efe8", source: "GRS Original",             flag: "🇿🇼" },
@@ -94,12 +43,25 @@ interface TierProgress {
   } | null;
 }
 
+const ALL_CATEGORIES: DrillCategory[]  = ["Technical", "Physical", "Tactical"];
+const ALL_EQUIPMENT:  EquipmentTier[]  = ["zero", "basic", "gym"];
+const EQUIPMENT_LABELS: Record<EquipmentTier, string> = {
+  zero:  "No equipment",
+  basic: "Ball / partner",
+  gym:   "Gym needed",
+};
+const DIFFICULTY_LABELS: Record<1 | 2 | 3, string> = {
+  1: "Beginner",
+  2: "Intermediate",
+  3: "Advanced",
+};
+
 export default function FootballDrillsLabPage() {
   const router   = useRouter();
   const user     = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s._hasHydrated);
 
-  const [activePosition, setActivePosition] = useState<keyof typeof FOOTBALL_POSITION_DRILLS>("striker");
+  const [activePosition, setActivePosition] = useState<PositionKey>("striker");
   const [completedDrills, setCompletedDrills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving,  setIsSaving]  = useState(false);
@@ -108,6 +70,12 @@ export default function FootballDrillsLabPage() {
   const [expandedDrill, setExpandedDrill] = useState<string | null>(null);
   const [coachTip,   setCoachTip]   = useState<string>("");
   const [tipLoading, setTipLoading] = useState(false);
+
+  // Filter bar
+  const [filterCategory,   setFilterCategory]   = useState<DrillCategory | "all">("all");
+  const [filterEquipment,  setFilterEquipment]  = useState<EquipmentTier | "all">("all");
+  const [filterDifficulty, setFilterDifficulty] = useState<1 | 2 | 3 | "all">("all");
+  const [showFilters,      setShowFilters]      = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -118,9 +86,8 @@ export default function FootballDrillsLabPage() {
         const progressRes = await fetch("/api/player/progress");
         if (progressRes.ok) {
           const data = await progressRes.json();
-          // ── Safe array guard — prevents filter crash if API returns object ──
           setCompletedDrills(Array.isArray(data.drills) ? data.drills : []);
-          if (data.position) setActivePosition(data.position as keyof typeof FOOTBALL_POSITION_DRILLS);
+          if (data.position) setActivePosition(data.position as PositionKey);
           else mapUserPosition();
         } else {
           mapUserPosition();
@@ -132,7 +99,6 @@ export default function FootballDrillsLabPage() {
         });
         if (tierRes.ok) setTierProgress(await tierRes.json());
 
-        // ── Fix: safe parse of localStorage drill assignments ─────────────
         const raw = localStorage.getItem("gs_futurefit_assignments");
         if (raw) {
           try {
@@ -146,6 +112,7 @@ export default function FootballDrillsLabPage() {
     };
 
     loadAll();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, user, router]);
 
   const mapUserPosition = () => {
@@ -190,8 +157,7 @@ export default function FootballDrillsLabPage() {
     setCompletedDrills(newCompleted);
     await saveProgress(newCompleted, activePosition);
     if (isMarkingDone) {
-      const selectedData = FOOTBALL_POSITION_DRILLS[activePosition];
-      const drill = selectedData?.drills.find(d => d.id === drillId);
+      const drill = FOOTBALL_POSITION_DRILLS[activePosition].drills.find(d => d.id === drillId);
       if (drill) {
         postToArena(
           `Completed "${drill.name}" · ${activePosition} · ${tierProgress?.currentTierLabel ?? "Spark"} tier`,
@@ -232,7 +198,7 @@ export default function FootballDrillsLabPage() {
     if (coachTip || tipLoading) return;
     setTipLoading(true);
     try {
-      const gender = localStorage.getItem("player_gender") ?? "male";
+      const gender = typeof window !== "undefined" ? localStorage.getItem("player_gender") ?? "male" : "male";
       const res = await fetch("/api/ai-coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -266,8 +232,26 @@ export default function FootballDrillsLabPage() {
   const completedCount = completedDrills.filter(id => selectedData.drills.some(d => d.id === id)).length;
   const completionPct  = (completedCount / selectedData.drills.length) * 100;
   const tierCfg        = TIER_CONFIG[tierProgress?.currentTier ?? 1];
-  const gender         = localStorage.getItem("player_gender") ?? "male";
+  const gender         = typeof window !== "undefined" ? localStorage.getItem("player_gender") ?? "male" : "male";
   const coachName      = gender === "female" ? "Amara" : "THUTO";
+  const isPremiumUser  = (user as { subscription_tier?: string }).subscription_tier === "pro";
+
+  // Active filter count
+  const activeFilterCount = (filterCategory !== "all" ? 1 : 0) + (filterEquipment !== "all" ? 1 : 0) + (filterDifficulty !== "all" ? 1 : 0);
+
+  // Filtered + sorted drills
+  const filteredDrills = useMemo(() => {
+    return selectedData.drills.filter(d => {
+      if (filterCategory   !== "all" && d.category        !== filterCategory)   return false;
+      if (filterEquipment  !== "all" && d.equipment_tier  !== filterEquipment)  return false;
+      if (filterDifficulty !== "all" && d.difficulty_level !== filterDifficulty) return false;
+      return true;
+    });
+  }, [selectedData.drills, filterCategory, filterEquipment, filterDifficulty]);
+
+  // Today's recommended = first incomplete drill
+  const todaysDrill = filteredDrills.find(d => !completedDrills.includes(d.id));
+  const remainingDrills = filteredDrills.filter(d => d !== todaysDrill);
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 font-sans antialiased">
@@ -352,6 +336,7 @@ export default function FootballDrillsLabPage() {
         {/* ── TAB: DRILLS ── */}
         {activeTab === "drills" && (
           <>
+            {/* Progress card */}
             <div className="bg-gradient-to-r from-[#1c3d22] to-[#2a5532] rounded-2xl p-5 text-white shadow-lg">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-3">
@@ -379,14 +364,15 @@ export default function FootballDrillsLabPage() {
               </div>
             </div>
 
+            {/* Position selector */}
             <section className="space-y-2">
               <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Select your position</h4>
               <div className="flex flex-wrap gap-2">
-                {(Object.keys(FOOTBALL_POSITION_DRILLS) as (keyof typeof FOOTBALL_POSITION_DRILLS)[]).map(key => {
+                {(Object.keys(FOOTBALL_POSITION_DRILLS) as PositionKey[]).map(key => {
                   const isActive = activePosition === key;
                   const cnt = completedDrills.filter(id => FOOTBALL_POSITION_DRILLS[key].drills.some(d => d.id === id)).length;
                   return (
-                    <button key={key} onClick={() => setActivePosition(key)}
+                    <button key={key} onClick={() => { setActivePosition(key); setExpandedDrill(null); }}
                       className={`relative text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl border transition-all cursor-pointer ${
                         isActive ? "bg-[#1c3d22] text-white border-[#1c3d22] shadow-md" : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
                       }`}>
@@ -401,6 +387,7 @@ export default function FootballDrillsLabPage() {
             </section>
 
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Sidebar info */}
               <div className="lg:col-span-4 bg-white border border-gray-200 rounded-3xl p-5 shadow-sm space-y-4 lg:sticky lg:top-44">
                 <div className="bg-blue-50 text-blue-700 w-10 h-10 rounded-xl flex items-center justify-center">
                   <Dumbbell size={20} />
@@ -449,43 +436,162 @@ export default function FootballDrillsLabPage() {
                 )}
               </div>
 
-              <div className="lg:col-span-8 space-y-3">
-                {selectedData.drills.map((drill, index) => {
-                  const isDone     = completedDrills.includes(drill.id);
-                  const isExpanded = expandedDrill === drill.id;
-                  return (
-                    <div key={drill.id} className={`group bg-white border rounded-2xl overflow-hidden transition-all shadow-sm ${isDone ? "border-emerald-200 bg-emerald-50/20" : "border-gray-200 hover:border-gray-300 hover:shadow-md"}`}>
-                      <button onClick={() => setExpandedDrill(isExpanded ? null : drill.id)}
-                        className="w-full flex items-center gap-3 px-5 py-4 text-left bg-transparent border-none cursor-pointer">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${isDone ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-700"}`}>
-                          {isDone ? "✓" : index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0 space-y-0.5">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="bg-gray-100 text-gray-700 font-mono font-bold text-[9px] px-1.5 py-0.5 rounded">{drill.duration}</span>
-                            <span className="text-[9px] font-black text-gray-400 uppercase">Drill {index + 1}/{selectedData.drills.length}</span>
-                          </div>
-                          <h3 className={`text-sm font-black uppercase tracking-wide ${isDone ? "text-emerald-700 line-through opacity-70" : "text-gray-900"}`}>{drill.name}</h3>
-                        </div>
-                        <span className="text-xs text-gray-300">{isExpanded ? "▲" : "▼"}</span>
-                      </button>
-                      {isExpanded && (
-                        <div className="border-t border-gray-100 px-5 py-4 bg-gray-50/50 space-y-3">
-                          <p className="text-xs font-semibold text-gray-500 leading-relaxed">{drill.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            <button onClick={() => toggleDrillCompletion(drill.id)}
-                              className={`text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${isDone ? "bg-emerald-600 text-white border-emerald-600" : "bg-[#1c3d22] text-white border-[#1c3d22]"}`}>
-                              {isDone ? <><CheckCircle2 size={12} /> Completed</> : <><Play size={12} className="fill-current" /> Mark as done</>}
-                            </button>
-                            <Link href="/player/talent-id" className="text-xs font-semibold px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:border-gray-300 transition-colors">
-                              Test after drilling →
-                            </Link>
-                          </div>
-                        </div>
+              {/* Drills list */}
+              <div className="lg:col-span-8 space-y-4">
+
+                {/* ── STICKY FILTER BAR ── */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-3 shadow-sm">
+                  <div className="flex items-center justify-between mb-0">
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-gray-600 hover:text-[#1a5c2a] transition-colors"
+                    >
+                      <Filter size={13} />
+                      Filter drills
+                      {activeFilterCount > 0 && (
+                        <span className="bg-[#1a5c2a] text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">{filteredDrills.length} drill{filteredDrills.length !== 1 ? "s" : ""}</span>
+                      {activeFilterCount > 0 && (
+                        <button
+                          onClick={() => { setFilterCategory("all"); setFilterEquipment("all"); setFilterDifficulty("all"); }}
+                          className="text-[9px] font-black text-red-500 flex items-center gap-0.5 hover:text-red-700"
+                        >
+                          <X size={10} /> Clear
+                        </button>
                       )}
                     </div>
-                  );
-                })}
+                  </div>
+
+                  {showFilters && (
+                    <div className="mt-3 space-y-3 border-t border-gray-100 pt-3">
+                      {/* Category */}
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Category</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(["all", ...ALL_CATEGORIES] as const).map(c => (
+                            <button key={c} onClick={() => setFilterCategory(c as typeof filterCategory)}
+                              className="text-[10px] font-bold px-3 py-1 rounded-full border transition-all"
+                              style={filterCategory === c
+                                ? { background: "#1a5c2a", color: "#fff", borderColor: "#1a5c2a" }
+                                : { background: "#f9fafb", color: "#374151", borderColor: "#e5e7eb" }}>
+                              {c === "all" ? "All" : c}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Equipment */}
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Equipment</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(["all", ...ALL_EQUIPMENT] as const).map(e => (
+                            <button key={e} onClick={() => setFilterEquipment(e as typeof filterEquipment)}
+                              className="text-[10px] font-bold px-3 py-1 rounded-full border transition-all"
+                              style={filterEquipment === e
+                                ? { background: "#1a5c2a", color: "#fff", borderColor: "#1a5c2a" }
+                                : { background: "#f9fafb", color: "#374151", borderColor: "#e5e7eb" }}>
+                              {e === "all" ? "Any equipment" : EQUIPMENT_LABELS[e]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Difficulty */}
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Difficulty</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(["all", 1, 2, 3] as const).map(d => (
+                            <button key={d} onClick={() => setFilterDifficulty(d as typeof filterDifficulty)}
+                              className="text-[10px] font-bold px-3 py-1 rounded-full border transition-all"
+                              style={filterDifficulty === d
+                                ? { background: "#1a5c2a", color: "#fff", borderColor: "#1a5c2a" }
+                                : { background: "#f9fafb", color: "#374151", borderColor: "#e5e7eb" }}>
+                              {d === "all" ? "Any level" : DIFFICULTY_LABELS[d]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {filteredDrills.length === 0 ? (
+                  <div className="text-center py-10 bg-white border border-gray-200 rounded-2xl">
+                    <p className="text-sm font-bold text-gray-400">No drills match your filters.</p>
+                    <button onClick={() => { setFilterCategory("all"); setFilterEquipment("all"); setFilterDifficulty("all"); }}
+                      className="mt-2 text-xs font-bold text-[#1a5c2a] underline">Clear filters</button>
+                  </div>
+                ) : (
+                  <>
+                    {/* TODAY'S RECOMMENDED */}
+                    {todaysDrill && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-[#c8962a]">Today&rsquo;s Recommended</h4>
+                          <div className="flex-1 h-px bg-[#c8962a]/20" />
+                        </div>
+                        <DrillCard
+                          drill={todaysDrill}
+                          index={filteredDrills.indexOf(todaysDrill)}
+                          isDone={completedDrills.includes(todaysDrill.id)}
+                          isExpanded={expandedDrill === todaysDrill.id}
+                          isPremiumUser={isPremiumUser}
+                          onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
+                          onMarkDone={toggleDrillCompletion}
+                        />
+                      </div>
+                    )}
+
+                    {/* ALL DRILLS */}
+                    {remainingDrills.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">All Drills</h4>
+                          <div className="flex-1 h-px bg-gray-200" />
+                        </div>
+                        {remainingDrills.map((drill, i) => (
+                          <DrillCard
+                            key={drill.id}
+                            drill={drill}
+                            index={filteredDrills.indexOf(drill)}
+                            isDone={completedDrills.includes(drill.id)}
+                            isExpanded={expandedDrill === drill.id}
+                            isPremiumUser={isPremiumUser}
+                            onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
+                            onMarkDone={toggleDrillCompletion}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* If all drills done, show just the list */}
+                    {!todaysDrill && filteredDrills.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">All Drills</h4>
+                          <div className="flex-1 h-px bg-gray-200" />
+                        </div>
+                        {filteredDrills.map((drill) => (
+                          <DrillCard
+                            key={drill.id}
+                            drill={drill}
+                            index={filteredDrills.indexOf(drill)}
+                            isDone={completedDrills.includes(drill.id)}
+                            isExpanded={expandedDrill === drill.id}
+                            isPremiumUser={isPremiumUser}
+                            onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
+                            onMarkDone={toggleDrillCompletion}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </section>
 
@@ -502,9 +608,9 @@ export default function FootballDrillsLabPage() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { value: completedCount,                 label: "Drills mastered"  },
-                    { value: `${Math.round(completionPct)}%`,label: "Completion rate"  },
-                    { value: activePosition,                 label: "Primary position" },
+                    { value: completedCount,                  label: "Drills mastered"  },
+                    { value: `${Math.round(completionPct)}%`, label: "Completion rate"  },
+                    { value: activePosition,                  label: "Primary position" },
                     { value: `${selectedData.drills.filter(d => completedDrills.includes(d.id)).reduce((a, d) => a + parseInt(d.duration), 0)} min`, label: "Total practice" },
                   ].map(s => (
                     <div key={s.label} className="text-center p-3 bg-gray-50 rounded-xl">
