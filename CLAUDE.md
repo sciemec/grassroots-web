@@ -8347,6 +8347,92 @@ GET /api/v1/player/vault/{token}?by=passport_token&visibility=public   Now retur
 
 ---
 
+## SESSION LOG — 23 June 2026
+
+### Theme — Drill Card Enrichment + Gemini AI Measurement System
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `src/lib/drill-data.ts` — Enriched Drill Data Module ✅
+
+**Exports:** `PositionKey`, `EquipmentTier`, `DrillCategory`, `DrillData` interface, `PositionTrack` interface, `FOOTBALL_POSITION_DRILLS` constant
+
+**`DrillData` interface (14 fields per drill):**
+- `id`, `name`, `duration` — identity
+- `category: DrillCategory` — `"Technical" | "Physical" | "Tactical"`
+- `football_benefit` — why this drill matters
+- `instructions: string[]` — numbered how-to steps
+- `success_feels_like` — coach cue quote shown in green card
+- `gemini_scores: string[]` — attributes Gemini AI will score (premium-gated)
+- `equipment_tier: EquipmentTier` — `"zero" | "basic" | "gym"`
+- `position_tags: string[]`, `muscles_targeted: string[]`
+- `difficulty_level: 1 | 2 | 3` — Beginner / Intermediate / Advanced
+
+25 drills across 5 positions (striker, midfielder, defender, goalkeeper, winger).
+
+---
+
+#### 2. `src/components/drills/DrillCard.tsx` — NEW ✅
+
+Collapsed/expanded drill card. Expanded sections:
+1. WHY THIS DRILL — `drill.football_benefit`
+2. HOW TO DO IT — numbered steps + equipment pill
+3. WHAT GOOD FEELS LIKE — green card with italic quote
+4. GEMINI WILL SCORE — purple (Pro) or gray+Lock (free); link to `/player/subscription`
+5. META GRID — Equipment / Duration / Positions / Muscles
+6. ACTION BUTTONS — "Record & Get AI Feedback" → `/player/analyse?drill={id}&name={name}` (purple if Pro, gray+Lock if free) + Mark as done toggle
+7. DISCLAIMER — Gemini cannot measure match intelligence
+
+---
+
+#### 3. `src/app/player/drills/page.tsx` — REWRITTEN ✅
+
+- Replaced inline drill data with imports from `@/lib/drill-data`
+- Filter bar: Category / Equipment / Difficulty pill chips, active count badge, "Clear all"
+- `isPremiumUser = user.subscription_tier === "pro"`
+- `todaysDrill` (first incomplete) → "TODAY'S RECOMMENDED" (gold header)
+- `remainingDrills` → "ALL DRILLS" (gray header)
+- `localStorage` guarded with `typeof window !== "undefined"`
+
+---
+
+#### 4. Laravel Backend — Drill Analysis ✅
+
+**Files (bhora-ai commit `16e0712`):**
+- `database/migrations/2026_06_23_000001_create_drill_analysis_tables.php` — `drill_analysis_results` + `drill_completions` tables
+- `app/Http/Controllers/Api/DrillAnalysisController.php` — `analyze()` + `history()`
+- `routes/api.php` — `POST /drills/{drill}/analyze` + `GET /drills/{drill}/analysis-history`
+
+**Migration:** Auto-runs on Render deploy.
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (23 June 2026)
+
+New API routes (bhora-ai — live after deploy):
+```
+POST /api/v1/drills/{drill}/analyze           Save Gemini AI analysis result
+GET  /api/v1/drills/{drill}/analysis-history  Last 10 results for this drill + user
+```
+
+---
+
+### WHAT STILL NEEDS DOING (23 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Drill analysis migration | Auto-runs on deploy | Verify tables after 16e0712 deploys |
+| `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
+| `arena_posts` WhatsApp migration | NOT YET ON RENDER | From 14 June session |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 tables still pending |
+| `GEMINI_API_KEY` | NOT confirmed | `/player/analyse` broken without this |
+| `GROQ_API_KEY` | NOT confirmed | THUTO AI chat broken without this |
+| First real coach | ZERO active users | Top priority |
+
+---
+
 ## SESSION LOG — 22 June 2026 (continued)
 
 ### Theme — Arena Activity Feed Platform Connection + Talent Passport Share + Premium Blur
