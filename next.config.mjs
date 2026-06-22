@@ -38,7 +38,14 @@ const nextConfig = {
     // persists it across builds. Map its absolute path to false so webpack
     // treats it as an empty module and never tries to compile it.
     config.resolve.alias[`${process.cwd()}/src/app/coach/page.jsx`] = false;
-    
+
+    // Vercel build cache may restore a stale worldcup/page.tsx that still
+    // imports WhatWouldYouDo from @/components/tactical-iq/ (wrong path).
+    // The component actually lives in @/lib/tactical-iq/. This alias redirects
+    // the stale path to the correct file so the build never fails on it.
+    config.resolve.alias[`${process.cwd()}/src/components/tactical-iq/WhatWouldYouDo`] =
+      `${process.cwd()}/src/lib/tactical-iq/WhatWouldYouDo.tsx`;
+
     return config;
   },
 
