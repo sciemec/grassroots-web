@@ -149,47 +149,68 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
     }
     set({ uploading: true, error: "", progress: 0 });
 
-    const form = new FormData();
-    form.append("file", state.file);
-    form.append("title", state.title);
-    form.append("tag", state.tag);
-    if (state.description) form.append("description", state.description);
+    const file    = state.file;
+    const sizeMb  = round1(file.size / (1024 * 1024));
 
     try {
       if (localMode) throw new Error("local");
-      const res = await api.post("/player/vault/upload", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress(evt) {
-          if (evt.total) {
-            set({ progress: Math.round((evt.loaded / evt.total) * 100) });
-          }
-        },
+
+      // Step 1 — get presigned PUT URL from Next.js
+      set({ progress: 5 });
+      const presignRes = await fetch("/api/upload/presigned", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          fileName:    file.name,
+          contentType: file.type,
+          source:      "vault",
+        }),
+      });
+      if (!presignRes.ok) throw new Error("presign");
+      const { uploadUrl, key } = await presignRes.json() as { uploadUrl: string; key: string; publicUrl: string };
+
+      // Step 2 — PUT file directly to R2 (progress via XHR for accurate %)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) set({ progress: 10 + Math.round((e.loaded / e.total) * 80) });
+        };
+        xhr.onload  = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`r2:${xhr.status}`)));
+        xhr.onerror = () => reject(new Error("r2:network"));
+        xhr.send(file);
+      });
+      set({ progress: 92 });
+
+      // Step 3 — save metadata to Laravel
+      const res = await api.post("/player/vault/metadata", {
+        r2_key:      key,
+        title:       state.title,
+        tag:         state.tag,
+        description: state.description || undefined,
+        size_mb:     sizeMb,
       });
       onUploaded(res.data.video);
-      set({
-        file: null, title: "", tag: "Skills", description: "",
-        progress: 0, uploading: false, error: "",
-      });
+      set({ file: null, title: "", tag: "Skills", description: "", progress: 0, uploading: false, error: "" });
       if (inputRef.current) inputRef.current.value = "";
+
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      // Backend not deployed → save metadata locally so the vault is still usable
-      if ((err as Error)?.message === "local" || !status || status === 404 || status === 405 || status >= 500) {
+      // Fallback to localStorage when backend or R2 is unavailable
+      if ((err as Error)?.message === "local" || (err as Error)?.message === "presign" || !status || status === 404 || status === 405 || status >= 500) {
         const localVideo: PlayerVideo = {
-          id: `local-${Date.now()}`,
-          title: state.title,
+          id:          `local-${Date.now()}`,
+          title:       state.title,
           description: state.description || undefined,
-          r2_key: "",
-          tag: state.tag,
-          size_mb: round1(state.file!.size / (1024 * 1024)),
-          video_url: "", // blob URLs are session-only; can't persist across refresh
-          created_at: new Date().toISOString(),
+          r2_key:      "",
+          tag:         state.tag,
+          size_mb:     sizeMb,
+          video_url:   "",
+          created_at:  new Date().toISOString(),
         };
         onUploaded(localVideo);
-        set({
-          file: null, title: "", tag: "Skills", description: "",
-          progress: 0, uploading: false, error: "",
-        });
+        set({ file: null, title: "", tag: "Skills", description: "", progress: 0, uploading: false, error: "" });
         if (inputRef.current) inputRef.current.value = "";
         return;
       }
