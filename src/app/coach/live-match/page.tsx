@@ -28,6 +28,7 @@ import { EventLog } from "./_components/event-log";
 import { LiveStatsSidebar } from "./_components/live-stats-sidebar";
 import { useCommentary } from "@/lib/use-commentary";
 import { SPORTS } from "@/config/sports";
+import { postToArena } from "@/lib/arena-poster";
 
 /** Formations / systems per sport — omitted for individual sports */
 const SPORT_FORMATIONS: Record<string, string[]> = {
@@ -492,6 +493,13 @@ export default function LiveMatchPage() {
           }),
         }).catch(() => { /* fire and forget */ });
       }
+
+      // Arena: MARKET pillar — match result posted to social feed for visibility
+      const result = homeScore > awayScore ? "W" : homeScore < awayScore ? "L" : "D";
+      postToArena(
+        `${setup.homeTeam} ${homeScore}–${awayScore} ${setup.awayTeam} · ${setup.sport}`,
+        { postType: "milestone", metadata: { home: setup.homeTeam, away: setup.awayTeam, home_score: homeScore, away_score: awayScore, sport: setup.sport, result } }
+      );
     }
   }, [events, setup, homeScore, awayScore, fatiguedPlayers, user]);
 

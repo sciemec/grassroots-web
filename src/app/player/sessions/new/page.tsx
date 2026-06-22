@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuthStore } from "@/lib/auth-store";
+import { postToArena } from "@/lib/arena-poster";
 import { PoseCamera } from "@/components/video/pose-camera";
 import { useGuestGate } from "@/components/ui/register-modal";
 import api from "@/lib/api";
@@ -77,6 +78,12 @@ export default function NewSessionPage() {
           }
         })
         .catch(() => {}); // never surface to player
+
+      // Arena: NURTURE pillar — training activity appears in social feed
+      postToArena(
+        `Completed a ${data.focus_area} training session.`,
+        { postType: "session_milestone", metadata: { focus_area: data.focus_area, session_type: data.session_type } }
+      );
 
       if (sessionId) {
         router.push(`/sessions/${sessionId}`);

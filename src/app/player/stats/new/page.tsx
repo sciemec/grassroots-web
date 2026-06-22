@@ -10,6 +10,7 @@ import { SPORTS, SPORT_STATS, SportKey } from "@/config/sports";
 import { queryAI } from "@/lib/ai-query";
 import { useGuestGate } from "@/components/ui/register-modal";
 import api from "@/lib/api";
+import { postToArena } from "@/lib/arena-poster";
 
 // Human-readable labels + field types for every stat key
 const FIELD_META: Record<string, { label: string; type: "number" | "text"; placeholder: string; unit?: string }> = {
@@ -173,6 +174,13 @@ export default function LogStatsPage() {
         stats: statValues, notes,
       });
       setSaved(true);
+
+      // Arena: IDENTIFY pillar — match performance becomes discoverable by scouts
+      const resultLabel = result && result !== "N/A" ? ` (${result}${score ? ` ${score}` : ""})` : "";
+      postToArena(
+        `Logged ${sport} stats${opponent ? ` vs ${opponent}` : ""}${resultLabel}.`,
+        { postType: "milestone", metadata: { sport, role, match_type: matchType, result } }
+      );
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setSaveError(msg ?? "Failed to save. Please try again.");

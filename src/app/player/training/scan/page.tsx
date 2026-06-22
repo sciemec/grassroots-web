@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { postToArena } from "@/lib/arena-poster";
 import { ArrowLeft, Camera, Upload, ShieldCheck, Activity, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
@@ -136,6 +137,12 @@ export default function TrainingScanPage() {
       setMetricsData({ feedback: 'Could not reach AI coach. Ask your coach to review your form in person.' });
     }
     setTrackingPhase("ready");
+
+    // Arena: IDENTIFY pillar — biometric scan activity surfaces to scouts
+    postToArena(
+      "Completed a biometric movement scan.",
+      { postType: "milestone", metadata: { scan_type: "kinematic_assessment" } }
+    );
   }
 
   return (
