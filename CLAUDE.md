@@ -9009,3 +9009,181 @@ private function sendWhatsAppReply(string $phone, string $message): void
 | `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
 | `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
 
+---
+
+## SESSION LOG — 23 June 2026 (continued)
+
+### Theme — GRS Coaching Blueprints: Full Stack (Frontend → Stripe → Laravel)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. GRS Coaching Blueprint — FULLY WIRED END-TO-END ✅
+
+A paid PDF product ($4.99 one-time) that turns a World Cup tactical report
+into a 5-day coaching microcycle PDF. Built across 3 layers.
+
+---
+
+#### Frontend — `src/app/worldcup/page.tsx` (revised architecture)
+
+State variables added after `purchasedBlueprints`:
+```typescript
+const [showBlueprintModal, setShowBlueprintModal]         = useState(false);
+const [isDownloadingBlueprint, setIsDownloadingBlueprint] = useState(false);
+const [hasPurchasedBlueprint, setHasPurchasedBlueprint]   = useState(false);
+```
+
+`useEffect` — checks purchase status whenever `selectedMatch` changes:
+- Checks localStorage cache first, then calls `GET /api/world-cup/matches/{id}/check-purchase`
+- Sets `hasPurchasedBlueprint` accordingly
+
+`handleDownloadBlueprint(matchId)`:
+- POSTs to `/api/world-cup/matches/{matchId}/generate-blueprint`
+- 402 response → opens purchase modal
+- 200 → blobs the PDF and triggers browser download
+
+Right sidebar card (after `<ShareButtons>`):
+- Shows "Unlock for $4.99" button → opens modal when not purchased
+- Shows "Download Blueprint" button (with spinner) when purchased
+- Only renders when `selectedMatch && report` both exist
+
+Modal at bottom of JSX:
+```tsx
+{showBlueprintModal && selectedMatch && (
+  <BlueprintPurchaseModal
+    matchId={selectedMatch.id}
+    matchName={`${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`}
+    onClose={() => setShowBlueprintModal(false)}
+    onPurchaseComplete={() => setHasPurchasedBlueprint(true)}
+  />
+)}
+```
+
+---
+
+#### Frontend — `src/components/tactical-iq/BlueprintPurchaseModal.tsx` (NEW)
+
+Stripe $4.99 checkout modal.
+- Props: `{ matchId, matchName, onClose, onPurchaseComplete }`
+- Calls `POST /api/payments/checkout` with `planId: 'blueprint_single'`, `price: 4.99`
+- `successUrl`: `/worldcup?blueprint_paid=${matchId}`
+- 5-item feature checklist, error state, loading state
+- Sandbox bypass: if no Stripe `url` returned, calls `onPurchaseComplete()` + `onClose()` immediately
+
+---
+
+#### Next.js API Routes (NEW)
+
+**`src/app/api/world-cup/matches/[matchId]/check-purchase/route.ts`**
+- `GET` — proxies to `NEXT_PUBLIC_API_URL/world-cup/blueprints/check?match_id=`
+- Always returns `{ purchased: boolean }`, defaults to `false` on any error or missing auth
+
+**`src/app/api/world-cup/matches/[matchId]/generate-blueprint/route.ts`**
+- `POST` — auth check (401 if no token)
+- Purchase check via Laravel (402 if not purchased; falls through on 404 so feature works before Laravel table exists)
+- Fetches tactical report phases from `/world-cup/matches/{matchId}/tactical-report`
+- Falls back to hardcoded weak phases if report unavailable
+- Server-side jsPDF: 3-page PDF (Title + Phase Summary, 5-Day Plan, Drill Cards)
+- Returns `application/pdf` binary with `Content-Disposition: attachment`
+
+---
+
+#### Stripe Checkout — `src/app/api/payments/checkout/route.ts` (UPDATED)
+
+Added `blueprint_single` branch (one-time payment, not subscription):
+- Accepts `planId`, `price`, `successUrl`, `cancelUrl`, `metadata` from body
+- Calls `GET /auth/user` with bearer token → resolves `user_id` server-side
+- Returns 401 if user not authenticated
+- Creates Stripe Checkout session with `mode: "payment"` (not subscription)
+- Injects `user_id` into Stripe metadata so webhook can record the purchase
+- Existing subscription flow (`body.plan`) unchanged
+
+---
+
+#### Stripe Webhook — `src/app/api/payments/webhook/route.ts` (UPDATED)
+
+Added blueprint purchase recording before the subscription handler:
+```typescript
+if (event.type === "checkout.session.completed") {
+  const session = event.data.object as Stripe.Checkout.Session;
+  if (session.metadata?.type === "coaching_blueprint") {
+    // POST to /world-cup/blueprints/confirm
+    // then return early — never reaches subscription handler
+  }
+}
+```
+- Calls `POST ${apiUrl}/world-cup/blueprints/confirm` with `{ user_id, match_id, stripe_payment_intent, amount_cents }`
+- Returns `{ received: true }` immediately — blueprint events never reach the subscription webhook
+
+---
+
+#### Laravel Backend — bhora-ai (NEW — commit `54a7f8b`)
+
+**`database/migrations/2026_06_30_000002_create_blueprint_purchases_table.php`**
+- UUID PK with `gen_random_uuid()` default
+- `user_id` FK → `users.id` (cascade delete)
+- `match_id` FK → `world_cup_matches.id` (cascade delete)
+- `stripe_payment_intent`, `paynow_ref` (nullable)
+- `amount_cents` default 499, `currency` default `USD`
+- `UNIQUE(user_id, match_id)` — one purchase per user per match
+- `purchased_at` timestamp
+
+**`app/Models/BlueprintPurchase.php`**
+- UUID primary key, auto-generated via `Str::uuid()` on `creating`
+- `BelongsTo` user relationship
+
+**`app/Http/Controllers/Api/BlueprintPurchaseController.php`**
+
+| Method | Route | Auth | Purpose |
+|---|---|---|---|
+| `check()` | `GET /world-cup/blueprints/check?match_id=` | `auth:sanctum` | Returns `{ purchased: bool }` |
+| `myPurchases()` | `GET /world-cup/blueprints/my-purchases` | `auth:sanctum` | Returns all purchased match IDs |
+| `confirm()` | `POST /world-cup/blueprints/confirm` | Public (webhook) | Records purchase; idempotent via `updateOrCreate` |
+
+**`routes/api.php`** additions:
+- `use App\Http\Controllers\Api\BlueprintPurchaseController;` added to imports
+- 3 routes added in correct middleware positions
+
+---
+
+#### Render Deploy Triggered — commit `45c801a`
+
+Empty commit to bhora-ai master to force `start.sh` → `php artisan migrate --force`.
+`blueprint_purchases` table will be created on the running PostgreSQL instance.
+
+---
+
+### FULL PURCHASE FLOW (end-to-end)
+
+```
+1. Coach clicks "Unlock for $4.99" in right sidebar of Tactical Lab
+2. BlueprintPurchaseModal opens
+3. POST /api/payments/checkout  { planId: 'blueprint_single', metadata: { matchId, type: 'coaching_blueprint' } }
+4. checkout/route.ts resolves user_id via GET /auth/user → creates Stripe one-time session
+5. User completes payment on Stripe-hosted page
+6. Stripe fires checkout.session.completed → POST /api/payments/webhook
+7. webhook/route.ts sees metadata.type === 'coaching_blueprint'
+   → POSTs to /world-cup/blueprints/confirm (Laravel records purchase idempotently)
+   → returns early (skips subscription handler)
+8. User lands on /worldcup?blueprint_paid={matchId}
+9. Next load: check-purchase returns { purchased: true } → Download button shown
+10. Coach clicks Download → server generates jsPDF → browser downloads PDF
+```
+
+---
+
+### WHAT STILL NEEDS DOING (23 June 2026 — session end)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `blueprint_purchases` migration | Triggered — pending Render deploy | Confirm in Render dashboard logs |
+| Stripe webhook `checkout.session.completed` | Needs verification | Stripe dashboard → Developers → Webhooks → confirm event is subscribed |
+| `STRIPE_WEBHOOK_SECRET` | Must be set in Vercel | Required for webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT YET UPDATED | Replace Twilio HTTP client with Meta API call (from 23 June earlier session) |
+| bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
+| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
+| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+
