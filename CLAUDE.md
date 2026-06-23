@@ -8754,3 +8754,71 @@ Upsert uses `DB::raw('completions_count = drill_completions.completions_count + 
 | `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
 | `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` broken |
 | `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+
+---
+
+#### Change 7 — Training Reminders ✅
+
+**File:** `src/app/player/drills/page.tsx`
+
+Three helper functions added after `fetchCoachTip`:
+- `enableReminder()` — requests browser Notification permission, then calls `saveReminder()`
+- `saveReminder(time)` — writes `{ time }` to `gs_drill_reminder` localStorage, updates state
+- `cancelReminder()` — removes `gs_drill_reminder` + `gs_drill_reminder_last`, resets state
+
+Reminder UI row added after age group selector:
+- Bell icon (green when set, grey when unset)
+- "Daily reminder" label
+- Time picker input (`type="time"`)
+- "Set reminder" button (unset state) → calls `enableReminder()`
+- Time picker + "Cancel" button (set state) → changing time calls `saveReminder()`, cancel calls `cancelReminder()`
+- "Reminder set ✓" confirmation label when active
+
+Reminder fires on page load (inside `loadAll()`) if:
+- Permission is granted
+- Not already fired today (`gs_drill_reminder_last !== today`)
+- Current time is past the saved reminder time
+
+---
+
+#### Change 8 — Achievement Badge Toasts ✅
+
+**File:** `src/app/player/drills/page.tsx`
+
+Badge toast JSX added at top of return (above header), fixed position, auto-dismisses after 4 seconds:
+- Gold pill (`bg-[#f0b429]`) with `Award` icon + badge label
+- Appears when `earnedBadge` state is non-null, disappears after `setTimeout(() => setEarnedBadge(null), 4000)`
+
+Three badge milestones (detected inside `toggleDrillCompletion`, only when marking done not unmarking):
+| Badge ID | Trigger | Label |
+|---|---|---|
+| `first_drill` | 1st drill ever completed | "First Drill!" |
+| `five_drills` | 5th drill completed (total) | "5 Drills Done" |
+| `track_{position}` | All drills in current position track done | "Track Complete" |
+
+Deduplication: `gs_earned_badges` localStorage array — each badge only fires once per player.
+
+---
+
+### COMMITS — 23 June 2026
+
+```
+grassroots-web:  536122e  feat: add training reminders + achievement badge toasts to drill lab (Changes 7 & 8)
+bhora-ai:        92431d0  feat: drill mastery tracking — completions_count column + GET/POST routes (committed prior session)
+```
+
+---
+
+### GRS DRILL SYSTEM REDESIGN — ALL 8 CHANGES COMPLETE ✅
+
+| Change | Feature | Status |
+|---|---|---|
+| 1 | `AgeGroup` type + `AgeVariant` interface + age variants on 5 drills in drill-data.ts | ✅ DONE |
+| 2 | Gender notes on 4 drills in drill-data.ts | ✅ DONE |
+| 3 | Bilingual instructions (Shona) on 3 drills in drill-data.ts | ✅ DONE |
+| 4 | Age group pill selector + `ageGroup`/`masteryCount` props to DrillCard | ✅ DONE |
+| 5 | bhora-ai migration: `completions_count` column on `drill_completions` | ✅ DONE |
+| 6 | bhora-ai routes: `GET` + `POST /player/drill-completions` | ✅ DONE |
+| 7 | Training reminders (browser Notification API, time picker, localStorage) | ✅ DONE |
+| 8 | Achievement badge toasts (first drill / 5 drills / track complete) | ✅ DONE |
+
