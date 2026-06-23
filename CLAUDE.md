@@ -8616,3 +8616,42 @@ No new routes — enhanced existing:
 | `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
 | `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
 | First real user/coach | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 23 June 2026
+
+### Theme — Talent Passport Gap Audit + GRS Test Session Pipeline Fix
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Talent Passport Full Audit ✅
+
+**Files audited:** `src/app/player/passport/page.tsx`, `src/app/passport/[id]/PassportClient.tsx`, `src/app/passport/[id]/page.tsx`, `src/lib/grs-engine.ts`, `routes/api.php`, `2026_06_14_000001_create_grs_test_sessions_table.php`
+
+**Confirmed built:** 6 test screens ✅ · `grs_test_sessions` migration ✅ · `passport_token` on users ✅ · `passport_views` column on player_profiles ✅ · PremiumGate blur ✅ · Web Share API ✅ · public passport + vault routes ✅
+
+#### 2. `POST /sessions/grs-test` Route — ADDED ✅
+
+**Root cause:** `src/app/player/session/page.tsx` line 180 POSTs to `/sessions/grs-test` but the route was absent. Every GRS test result was silently dropped (`.catch(() => {})`).
+
+**Fix:** Added inline route closure inside `auth:sanctum` group in `routes/api.php`. Validates all 9 fields and inserts into `grs_test_sessions`.
+
+#### 3. `player_test_sessions` Table Name Mismatch — FIXED ✅
+
+**Root cause:** Public passport routes queried `player_test_sessions` (does not exist). Migration creates `grs_test_sessions`. Also `player_id` → `user_id` column mismatch.
+
+**Fix:** Changed all 3 occurrences in `routes/api.php` (passport lookup lines 105/110 + WhatsApp phone-lookup line 209). Passport page now returns real AQ scores and session history.
+
+**bhora-ai commit:** `71217b9` — pushed to master, auto-deploys on Render.
+
+---
+
+### REMAINING MINOR GAPS (23 June 2026)
+
+| Item | Notes |
+|---|---|
+| `GET /player/drill-scores/{id}?by=passport_token` | Missing from routes/api.php — `passport/[id]/page.tsx` catches 404 gracefully, `drillScores` prop is null, Gemini Drill Scores section shows nothing |
+| PremiumGate "Unlock · $1.50/week" | Sets `unlocked=true` client-side only — not connected to real payment. Wire to `/player/subscription` when Stripe is live |
