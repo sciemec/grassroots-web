@@ -101,11 +101,6 @@ export default function MatchDayPage() {
   return (
     <div
       className="min-h-screen bg-[#1a5c2a]"
-      style={{
-        backgroundImage:
-          "repeating-linear-gradient(-45deg, transparent 0px, transparent 8px, rgba(180,160,0,0.06) 8px, rgba(180,160,0,0.06) 10px)," +
-          "repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(180,160,0,0.06) 8px, rgba(180,160,0,0.06) 10px)",
-      }}
     >
       <div className="mx-auto max-w-md px-4 py-8">
         {/* Header */}

@@ -171,10 +171,7 @@ export default function FixturesPage() {
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-gradient-to-b from-[#0D4A1F] to-[#0a1f0e] px-5 pb-8 pt-10">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-5"
-          style={{ backgroundImage: "repeating-linear-gradient(-45deg,#f0b429 0,#f0b429 1px,transparent 0,transparent 50%)", backgroundSize: "12px 12px" }}
-        />
+
         <div className="relative mb-4 flex items-center justify-between">
           <Link href="/tournaments/munhumutapa-2026" className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white">
             <ArrowLeft className="h-3.5 w-3.5" /> Tournament

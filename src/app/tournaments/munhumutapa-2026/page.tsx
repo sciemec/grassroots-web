@@ -174,10 +174,6 @@ export default function MunhumutapaPage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-gradient-to-b from-[#0D4A1F] to-[#0a1f0e] px-5 pb-10 pt-12">
-        {/* Gold chevron pattern */}
-        <div className="pointer-events-none absolute inset-0 opacity-5"
-          style={{ backgroundImage: "repeating-linear-gradient(-45deg, #f0b429 0,#f0b429 1px,transparent 0,transparent 50%)", backgroundSize: "12px 12px" }}
-        />
 
         {/* Co-branding */}
         <div className="relative mb-6 flex items-center justify-between">

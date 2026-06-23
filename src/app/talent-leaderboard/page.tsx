@@ -148,10 +148,6 @@ export default function TalentLeaderboardPage() {
       className="min-h-screen"
       style={{
         background: "#1a5c2a",
-        backgroundImage: `
-          repeating-linear-gradient(-45deg, transparent 0px, transparent 8px, rgba(180,160,0,0.08) 8px, rgba(180,160,0,0.08) 10px),
-          repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(180,160,0,0.08) 8px, rgba(180,160,0,0.08) 10px)
-        `,
       }}
     >
       <div className="mx-auto max-w-2xl px-4 py-10">

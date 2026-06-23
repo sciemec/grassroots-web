@@ -100,12 +100,7 @@ export default function SchoolCurriculumPage() {
 
       {/* ── Hero ──────────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-gradient-to-br from-[#0d2b1a] via-[#1a5c2a] to-[#0d2b1a] px-6 py-20 text-center">
-        <div className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(-45deg, transparent 0px, transparent 8px, rgba(240,180,41,0.3) 8px, rgba(240,180,41,0.3) 10px), repeating-linear-gradient(45deg, transparent 0px, transparent 8px, rgba(240,180,41,0.3) 8px, rgba(240,180,41,0.3) 10px)",
-          }}
-        />
+
         <div className="relative mx-auto max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-[#f0b429]">
             <Award className="h-3.5 w-3.5" />

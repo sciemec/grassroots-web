@@ -167,10 +167,6 @@ export default function ScoutHubPage() {
           {/* Dark green top */}
           <div className="relative px-5 pt-6 pb-5"
             style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
-            {/* Chevron watermark */}
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
-              style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent 0,transparent 8px,#f0b429 8px,#f0b429 10px)" }}
-            />
             <div className="relative flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>{greeting()},</p>
