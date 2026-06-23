@@ -162,14 +162,15 @@ export default function LiveMatchPage() {
   const matchId = params?.id as string;
   const { matches, isLoading, error } = useLiveMatches();
   
-  const match = matches?.find((m: any) => m.id === matchId);
+  const LIVE_STATUSES = [1, 2, 3, 4, 5];
+  const match = matches?.find((m) => m.matchId === matchId);
   
   const [ballPosition, setBallPosition] = useState({ x: 55, y: 50 });
   const [events] = useState<any[]>([]);
   const emptyPlayers: Player[] = [];
   
   useEffect(() => {
-    if (!match || match.status !== 'live') return;
+    if (!match || !LIVE_STATUSES.includes(match.status)) return;
     const interval = setInterval(() => {
       setBallPosition(prev => ({ 
         x: Math.min(95, Math.max(5, prev.x + (Math.random() - 0.5) * 3)), 
@@ -217,7 +218,7 @@ export default function LiveMatchPage() {
     );
   }
   
-  const isLive = match.status === 'live';
+  const isLive = LIVE_STATUSES.includes(match.status);
   
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
@@ -252,15 +253,15 @@ export default function LiveMatchPage() {
               <div className="flex justify-between items-center">
                 <div className="text-center flex-1">
                   <span className="text-gray-400 text-xs uppercase">HOME</span>
-                  <p className="text-gray-800 font-bold text-xl mt-1">{match.home_team?.name || 'Home'}</p>
-                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.home_score ?? 0}</p>
+                  <p className="text-gray-800 font-bold text-xl mt-1">{match.homeName || 'Home'}</p>
+                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.homeScore ?? 0}</p>
                 </div>
                 <div className="text-center px-4">
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                     <span className="text-gray-500 text-xs font-mono">VS</span>
                   </div>
                   <div className="mt-2 text-[11px] text-gray-500 font-mono">
-                    {isLive ? (match.minute || '0\'') : 'Scheduled'}
+                    {isLive ? `${match.extraExplain?.minute ?? 0}'` : 'Scheduled'}
                   </div>
                   {isLive && (
                     <div className="mt-1 text-[9px] text-red-500 font-bold animate-pulse">● LIVE</div>
@@ -268,12 +269,12 @@ export default function LiveMatchPage() {
                 </div>
                 <div className="text-center flex-1">
                   <span className="text-gray-400 text-xs uppercase">AWAY</span>
-                  <p className="text-gray-800 font-bold text-xl mt-1">{match.away_team?.name || 'Away'}</p>
-                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.away_score ?? 0}</p>
+                  <p className="text-gray-800 font-bold text-xl mt-1">{match.awayName || 'Away'}</p>
+                  <p className="text-4xl font-black text-[#1a5c2a] mt-1">{match.awayScore ?? 0}</p>
                 </div>
               </div>
               <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
-                <span>📍 {match.stadium || 'TBD'}</span>
+                <span>📍 {match.location || 'TBD'}</span>
               </div>
             </div>
             
@@ -302,20 +303,16 @@ export default function LiveMatchPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Status</span>
                   <span className={`font-bold ${isLive ? 'text-red-500' : 'text-gray-700'}`}>
-                    {isLive ? 'Live' : match.status || 'Scheduled'}
+                    {isLive ? 'Live' : 'Scheduled'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Stadium</span>
-                  <span className="text-gray-700">{match.stadium || 'TBD'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">City</span>
-                  <span className="text-gray-700">{match.city || 'TBD'}</span>
+                  <span className="text-gray-700">{match.location || 'TBD'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Date</span>
-                  <span className="text-gray-700">{match.date || 'TBD'}</span>
+                  <span className="text-gray-700">{new Date(match.matchTime * 1000).toISOString().split('T')[0]}</span>
                 </div>
               </div>
             </div>

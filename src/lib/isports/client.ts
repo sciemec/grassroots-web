@@ -1,53 +1,67 @@
 // src/lib/isports/client.ts
+// Correct base URL: http://api.isportsapi.com/sport/football
+// Auth: ?api_key=KEY (query param, not header)
 
-const API_BASE_URL = 'http://api.isportsapi.com/v1/football';
+const API_BASE_URL = 'http://api.isportsapi.com/sport/football';
 const API_KEY = process.env.ISPORTS_API_KEY || process.env.NEXT_PUBLIC_ISPORTS_API_KEY || 'UxvtgcXSXEP2Qzy1';
 
-// ============================================
-// TYPES
-// ============================================
-export interface iSportsTeam {
-  id: string;
-  name: string;
-  logo?: string;
-}
+// World Cup 2026 league ID on iSports
+export const ISPORTS_WORLD_CUP_LEAGUE_ID = '1572';
 
+// ============================================
+// TYPES  (reflect the actual iSports response)
+// ============================================
 export interface iSportsMatch {
-  id: string;
-  home_team: iSportsTeam;
-  away_team: iSportsTeam;
-  home_score: number;
-  away_score: number;
-  status: 'first_half' | 'second_half' | 'finished' | 'not_started' | 'live';
-  minute?: number;
-  time_elapsed?: number;
-  date: string;
-  time: string;
-  venue?: string;
-  stadium?: string;
-  city?: string;
-  league_id?: string;
-  league_name?: string;
+  matchId: string;
+  leagueId: string;
+  leagueName: string;
+  leagueShortName?: string;
+  matchTime: number;        // Unix timestamp
+  halfStartTime?: number;
+  status: number;           // -1=FT, 0=NS, 1=1H, 2=HT, 3=2H, 4=ET, 5=PEN
+  homeId: string;
+  homeName: string;
+  awayId: string;
+  awayName: string;
+  homeScore: number;
+  awayScore: number;
+  homeHalfScore?: number;
+  awayHalfScore?: number;
+  homeRed?: number;
+  awayRed?: number;
+  homeYellow?: number;
+  awayYellow?: number;
+  homeCorner?: number;
+  awayCorner?: number;
+  homeRank?: string;
+  awayRank?: string;
+  season?: string;
   round?: string;
+  group?: string;
+  location?: string;
+  weather?: string;
+  temperature?: string;
+  extraExplain?: {
+    minute?: number;
+    homeScore?: number;
+    awayScore?: number;
+    kickOff?: number;
+  };
 }
 
 export interface iSportsApiResponse {
-  status: string;
-  message?: string;
-  data?: {
-    matches?: iSportsMatch[];
-    match?: iSportsMatch;
-    [key: string]: any;
-  };
-  matches?: iSportsMatch[];
-  [key: string]: any;
+  code: number;
+  message: string;
+  data: iSportsMatch[] | null;
 }
 
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
-async function request(endpoint: string): Promise<any> {
-  const url = `${API_BASE_URL}${endpoint}&api_key=${API_KEY}`;
+async function request(endpoint: string): Promise<iSportsApiResponse> {
+  // Append api_key correctly regardless of whether endpoint already has ?
+  const sep = endpoint.includes('?') ? '&' : '?';
+  const url = `${API_BASE_URL}${endpoint}${sep}api_key=${API_KEY}`;
   console.log('iSports API Request:', url);
   
   try {
@@ -73,21 +87,8 @@ async function request(endpoint: string): Promise<any> {
 }
 
 function extractMatches(data: iSportsApiResponse): iSportsMatch[] {
-  if (!data) return [];
-  
-  // Try different response structures
-  if (data.data?.matches) {
-    return data.data.matches;
-  }
-  if (data.matches) {
-    return data.matches;
-  }
-  if (Array.isArray(data)) {
-    return data;
-  }
-  if (data.data && Array.isArray(data.data)) {
-    return data.data;
-  }
+  if (!data || data.code !== 0) return [];
+  if (Array.isArray(data.data)) return data.data;
   return [];
 }
 
@@ -95,163 +96,62 @@ function extractMatches(data: iSportsApiResponse): iSportsMatch[] {
 // PUBLIC API FUNCTIONS
 // ============================================
 
-/**
- * Get live matches for a specific league
- * @param leagueId - League ID (default: '1' for FIFA World Cup)
- */
-export async function getLiveMatches(leagueId: string = '1'): Promise<iSportsMatch[]> {
+/** Live/in-progress matches. Optionally filter by league. */
+export async function getLiveMatches(leagueId?: string): Promise<iSportsMatch[]> {
   try {
-    const data = await request(`/matches/live?league_id=${leagueId}`);
+    const q = leagueId ? `?league_id=${leagueId}` : '';
+    const data = await request(`/livescores${q}`);
     return extractMatches(data);
   } catch (error) {
-    console.error('Error fetching live matches:', error);
+    console.error('iSports getLiveMatches error:', error);
     return [];
   }
 }
 
-/**
- * Get matches for a specific date
- * @param date - Date in YYYY-MM-DD format
- * @param leagueId - League ID (default: '1' for FIFA World Cup)
- */
-export async function getMatchesByDate(date: string, leagueId: string = '1'): Promise<iSportsMatch[]> {
+/** Completed/results. Optionally filter by league. */
+export async function getCompletedMatches(leagueId?: string): Promise<iSportsMatch[]> {
   try {
-    const data = await request(`/matches/date?date=${date}&league_id=${leagueId}`);
+    const q = leagueId ? `?league_id=${leagueId}` : '';
+    const data = await request(`/results${q}`);
+    const all = extractMatches(data);
+    return all.filter((m) => m.status === -1);
+  } catch (error) {
+    console.error('iSports getCompletedMatches error:', error);
+    return [];
+  }
+}
+
+/** Scheduled (not started) matches for a date. */
+export async function getMatchesByDate(date: string, leagueId?: string): Promise<iSportsMatch[]> {
+  try {
+    let q = `?date=${date}`;
+    if (leagueId) q += `&league_id=${leagueId}`;
+    const data = await request(`/schedule${q}`);
     return extractMatches(data);
   } catch (error) {
-    console.error('Error fetching matches by date:', error);
+    console.error('iSports getMatchesByDate error:', error);
     return [];
   }
 }
 
-/**
- * Get match details by match ID
- * @param matchId - Match ID
- */
-export async function getMatchDetails(matchId: string): Promise<iSportsMatch | null> {
+/** All matches (live + scheduled + recent results) for a league. */
+export async function getMatchesByLeague(leagueId: string): Promise<iSportsMatch[]> {
   try {
-    const data = await request(`/matches/details?id=${matchId}`);
-    if (data?.data?.match) {
-      return data.data.match;
-    }
-    return null;
+    const [live, results] = await Promise.allSettled([
+      getLiveMatches(leagueId),
+      getCompletedMatches(leagueId),
+    ]);
+    return [
+      ...(live.status === 'fulfilled' ? live.value : []),
+      ...(results.status === 'fulfilled' ? results.value : []),
+    ];
   } catch (error) {
-    console.error('Error fetching match details:', error);
-    return null;
-  }
-}
-
-/**
- * Get matches for a specific league
- * @param leagueId - League ID (default: '1' for FIFA World Cup)
- */
-export async function getMatchesByLeague(leagueId: string = '1'): Promise<iSportsMatch[]> {
-  try {
-    const data = await request(`/matches/league?league_id=${leagueId}`);
-    return extractMatches(data);
-  } catch (error) {
-    console.error('Error fetching league matches:', error);
+    console.error('iSports getMatchesByLeague error:', error);
     return [];
   }
 }
 
-/**
- * Get today's matches across all leagues
- */
-export async function getTodayMatches(): Promise<iSportsMatch[]> {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    return await getMatchesByDate(today);
-  } catch (error) {
-    console.error('Error fetching today\'s matches:', error);
-    return [];
-  }
-}
-
-/**
- * Get matches for a specific date range
- * @param fromDate - Start date in YYYY-MM-DD format
- * @param toDate - End date in YYYY-MM-DD format
- */
-export async function getMatchesByDateRange(fromDate: string, toDate: string): Promise<iSportsMatch[]> {
-  try {
-    const data = await request(`/matches/range?from=${fromDate}&to=${toDate}`);
-    return extractMatches(data);
-  } catch (error) {
-    console.error('Error fetching matches by date range:', error);
-    return [];
-  }
-}
-
-/**
- * Search for teams by name
- * @param query - Search query
- */
-export async function searchTeams(query: string): Promise<any> {
-  try {
-    const data = await request(`/teams/search?q=${encodeURIComponent(query)}`);
-    return data?.data?.teams || [];
-  } catch (error) {
-    console.error('Error searching teams:', error);
-    return [];
-  }
-}
-
-/**
- * Get team details by team ID
- * @param teamId - Team ID
- */
-export async function getTeamDetails(teamId: string): Promise<any> {
-  try {
-    const data = await request(`/teams/details?id=${teamId}`);
-    return data?.data?.team || null;
-  } catch (error) {
-    console.error('Error fetching team details:', error);
-    return null;
-  }
-}
-
-// ============================================
-// AVAILABLE LEAGUE IDs
-// ============================================
+// iSports league IDs (corrected from live API data)
 export const LEAGUE_IDS = {
-  WORLD_CUP: '1',
-  PREMIER_LEAGUE: '2',
-  LA_LIGA: '3',
-  SERIE_A: '4',
-  BUNDESLIGA: '5',
-  LIGUE_1: '6',
-  CHAMPIONS_LEAGUE: '7',
-  EUROPA_LEAGUE: '8',
-  WORLD_CUP_QUALIFIERS: '9',
-  INTERNATIONAL_FRIENDLY: '10',
+  WORLD_CUP_2026: '1572',
 } as const;
-
-export type LeagueId = typeof LEAGUE_IDS[keyof typeof LEAGUE_IDS];
-
-// ============================================
-// REACT HOOK (optional export)
-// ============================================
-/**
- * React hook to get live matches with auto-refresh
- * This can be imported separately if needed
- */
-export function useISportsLive(leagueId: string = '1', refreshInterval: number = 30000) {
-  // This is just for exporting the pattern - actual hook is in src/hooks/useLiveMatch.ts
-  throw new Error('Please use src/hooks/useLiveMatch.ts instead');
-}
-
-// ============================================
-// DEFAULT EXPORT
-// ============================================
-export default {
-  getLiveMatches,
-  getMatchesByDate,
-  getMatchDetails,
-  getMatchesByLeague,
-  getTodayMatches,
-  getMatchesByDateRange,
-  searchTeams,
-  getTeamDetails,
-  LEAGUE_IDS,
-};

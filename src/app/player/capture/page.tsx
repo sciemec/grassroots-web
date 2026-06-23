@@ -138,21 +138,21 @@ async function uploadToR2(blob: Blob, drillId: string): Promise<string | null> {
       body:    JSON.stringify({ filename, content_type: "video/webm", folder: "captures" }),
     });
     if (!presignRes.ok) return null;
-    const { upload_url, public_url } = (await presignRes.json()) as {
-      upload_url: string;
-      public_url: string | null;
+    const { uploadUrl, publicUrl } = (await presignRes.json()) as {
+      uploadUrl: string;
+      publicUrl: string | null;
       key: string;
     };
 
     // 2. PUT blob directly to R2
-    const putRes = await fetch(upload_url, {
+    const putRes = await fetch(uploadUrl, {
       method:  "PUT",
       body:    blob,
       headers: { "Content-Type": "video/webm" },
     });
     if (!putRes.ok) return null;
 
-    return public_url;
+    return publicUrl;
   } catch {
     return null;
   }
@@ -214,17 +214,26 @@ export default function MomentCapturePage() {
   const startCamera = async () => {
     setCameraError(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
+      // Try rear camera first; fall back to any camera on Android Chrome
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        // NotFoundError / OverconstrainedError on some Android devices — retry without facingMode
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(() => {});
       }
-    } catch {
+    } catch (err) {
+      // NotAllowedError (permission denied) or no camera at all
       setCameraError(true);
+      console.warn("Camera access failed:", err instanceof Error ? err.message : err);
     }
   };
 

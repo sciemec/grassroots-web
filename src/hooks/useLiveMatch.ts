@@ -16,13 +16,13 @@ export function useLiveMatches() {
       
       try {
         // Try to get live matches
-        let matchesData = await getLiveMatches(LEAGUE_IDS.WORLD_CUP);
+        let matchesData = await getLiveMatches(LEAGUE_IDS.WORLD_CUP_2026);
         console.log('Live matches:', matchesData.length);
-        
+
         // If no live matches, try today's matches
         if (matchesData.length === 0) {
           const today = new Date().toISOString().split('T')[0];
-          matchesData = await getMatchesByDate(today, LEAGUE_IDS.WORLD_CUP);
+          matchesData = await getMatchesByDate(today, LEAGUE_IDS.WORLD_CUP_2026);
           console.log('Today\'s matches:', matchesData.length);
         }
         

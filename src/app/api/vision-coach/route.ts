@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 30; // extend Vercel function timeout for Claude vision API
+
 export async function POST(req: NextRequest) {
   const { image, context } = await req.json();
 
