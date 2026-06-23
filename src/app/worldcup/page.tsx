@@ -51,6 +51,7 @@ import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, 
 import { type QuizMoment } from '@/lib/tactical-iq/quiz-generator';
 import { calculateTacticalIQ, type QuizAnswer, type TacticalIQResult } from '@/lib/tactical-iq/tactical-iq-engine';
 import WhatWouldYouDo from '@/lib/tactical-iq/WhatWouldYouDo';
+import { BlueprintPurchaseModal } from '@/lib/tactical-iq/BlueprintPurchaseModal';
 
 const GRS_GREEN = '#1a5c2a';
 const GRS_GOLD  = '#f0b429';
@@ -1216,6 +1217,15 @@ export default function WorldCupTacticalLabPage() {
                         </div>
                       )}
 
+                      {/* Coaching Blueprint CTA */}
+                      {user && (
+                        <button
+                          onClick={() => setShowBlueprintModal(true)}
+                          className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
+                        >
+                          <Lock size={16} /> Unlock Coaching Blueprint — $4.99
+                        </button>
+                      )}
                     </>
                   ) : (
                     <div className="bg-white rounded-2xl p-8 text-center border shadow-sm text-gray-500">
@@ -1282,7 +1292,7 @@ export default function WorldCupTacticalLabPage() {
           matchId={selectedMatch.id}
           matchName={`${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`}
           onClose={() => setShowBlueprintModal(false)}
-          onPurchaseComplete={() => setHasPurchasedBlueprint(true)}
+          onPurchaseComplete={() => { setHasPurchasedBlueprint(true); setShowBlueprintModal(false); }}
         />
       )}
     </div>
