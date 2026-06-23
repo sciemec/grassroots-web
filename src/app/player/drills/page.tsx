@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Dumbbell, Award,
   ArrowLeft, GraduationCap,
-  AlertTriangle, Download, Flame, Filter, X
+  AlertTriangle, Download, Flame, Filter, X, Bell
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
@@ -76,6 +76,13 @@ export default function FootballDrillsLabPage() {
   const [ageGroup,    setAgeGroup]    = useState<AgeGroup>("senior");
   const [masteryMap,  setMasteryMap]  = useState<Record<string, number>>({});
 
+  // Achievement badges (Change 8)
+  const [earnedBadge, setEarnedBadge] = useState<{ id: string; label: string } | null>(null);
+
+  // Training reminder (Change 7)
+  const [reminderSet,  setReminderSet]  = useState(false);
+  const [reminderTime, setReminderTime] = useState("18:00");
+
   // Filter bar
   const [filterCategory,   setFilterCategory]   = useState<DrillCategory | "all">("all");
   const [filterEquipment,  setFilterEquipment]  = useState<EquipmentTier | "all">("all");
@@ -143,6 +150,33 @@ export default function FootballDrillsLabPage() {
         if (userAg.includes("u13") || userAg.includes("13")) setAgeGroup("u13");
         else if (userAg.includes("u16") || userAg.includes("16")) setAgeGroup("u16");
         else if (userAg.includes("u19") || userAg.includes("19")) setAgeGroup("u19");
+
+        // Load reminder state + fire if due today (Change 7)
+        const savedReminder = localStorage.getItem("gs_drill_reminder");
+        if (savedReminder) {
+          try {
+            const { time } = JSON.parse(savedReminder) as { time: string };
+            setReminderSet(true);
+            setReminderTime(time ?? "18:00");
+            const lastFired = localStorage.getItem("gs_drill_reminder_last");
+            const today = new Date().toDateString();
+            if (
+              lastFired !== today &&
+              "Notification" in window &&
+              Notification.permission === "granted"
+            ) {
+              const [h, m] = (time ?? "18:00").split(":").map(Number);
+              const now = new Date();
+              if (now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m)) {
+                new Notification("Time to train! 🏆", {
+                  body: "Your daily drill session is waiting.",
+                  icon: "/favicon.ico",
+                });
+                localStorage.setItem("gs_drill_reminder_last", today);
+              }
+            }
+          } catch { /* silent */ }
+        }
       } catch { mapUserPosition(); }
       finally  { setIsLoading(false); }
     };
@@ -233,6 +267,27 @@ export default function FootballDrillsLabPage() {
           }
         );
       }
+
+      // Achievement badge detection (Change 8)
+      const earnedBadges: string[] = JSON.parse(localStorage.getItem("gs_earned_badges") ?? "[]");
+      const trackDrills = FOOTBALL_POSITION_DRILLS[activePosition].drills;
+      const trackDone = trackDrills.filter(d => newCompleted.includes(d.id)).length;
+      let newBadge: { id: string; label: string } | null = null;
+
+      if (!earnedBadges.includes("first_drill") && newCompleted.length === 1) {
+        newBadge = { id: "first_drill", label: "First Drill!" };
+      } else if (!earnedBadges.includes("five_drills") && newCompleted.length >= 5) {
+        newBadge = { id: "five_drills", label: "5 Drills Done" };
+      } else if (!earnedBadges.includes(`track_${activePosition}`) && trackDone === trackDrills.length) {
+        newBadge = { id: `track_${activePosition}`, label: "Track Complete" };
+      }
+
+      if (newBadge) {
+        earnedBadges.push(newBadge.id);
+        localStorage.setItem("gs_earned_badges", JSON.stringify(earnedBadges));
+        setEarnedBadge(newBadge);
+        setTimeout(() => setEarnedBadge(null), 4000);
+      }
     }
   };
 
@@ -277,6 +332,26 @@ export default function FootballDrillsLabPage() {
     setTipLoading(false);
   };
 
+  // ── Training reminder helpers (Change 7) ──
+  const enableReminder = async () => {
+    if (!("Notification" in window)) return;
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return;
+    saveReminder(reminderTime);
+  };
+
+  const saveReminder = (time: string) => {
+    localStorage.setItem("gs_drill_reminder", JSON.stringify({ time }));
+    setReminderSet(true);
+    setReminderTime(time);
+  };
+
+  const cancelReminder = () => {
+    localStorage.removeItem("gs_drill_reminder");
+    localStorage.removeItem("gs_drill_reminder_last");
+    setReminderSet(false);
+  };
+
   if (!hydrated || isLoading || !user) {
     return (
       <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center">
@@ -315,6 +390,14 @@ export default function FootballDrillsLabPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 font-sans antialiased">
+
+      {/* Achievement badge toast (Change 8) */}
+      {earnedBadge && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[#f0b429] text-[#1c3d22] px-5 py-2.5 rounded-full shadow-lg font-black text-sm animate-bounce">
+          <Award size={16} />
+          {earnedBadge.label}
+        </div>
+      )}
 
       {/* Header */}
       <div className="bg-[#1c3d22] text-white border-b-4 border-[#f0b429] px-6 py-4 shadow-sm sticky top-0 z-10">
@@ -463,6 +546,44 @@ export default function FootballDrillsLabPage() {
                   </button>
                 ))}
               </div>
+            </section>
+
+            {/* Training reminder row (Change 7) */}
+            <section className="flex flex-wrap items-center gap-3 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
+              <Bell size={15} className={reminderSet ? "text-[#1c3d22]" : "text-gray-400"} />
+              <span className="text-xs font-black uppercase tracking-wider text-gray-600">Daily reminder</span>
+              {reminderSet ? (
+                <>
+                  <input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => saveReminder(e.target.value)}
+                    className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1 text-gray-700 bg-gray-50"
+                  />
+                  <button
+                    onClick={cancelReminder}
+                    className="text-[10px] font-black uppercase tracking-wider text-red-500 hover:text-red-700 flex items-center gap-1"
+                  >
+                    <X size={10} /> Cancel
+                  </button>
+                  <span className="text-[10px] text-[#1c3d22] font-bold ml-auto">Reminder set ✓</span>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                    className="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1 text-gray-700 bg-gray-50"
+                  />
+                  <button
+                    onClick={enableReminder}
+                    className="text-[10px] font-black uppercase tracking-wider bg-[#1c3d22] text-white px-3 py-1.5 rounded-xl hover:bg-[#2a5532] transition-colors"
+                  >
+                    Set reminder
+                  </button>
+                </>
+              )}
             </section>
 
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
