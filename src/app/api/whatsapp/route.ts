@@ -1,345 +1,298 @@
-import { NextRequest, NextResponse } from "next/server";
-import { generatePresignedPutUrl, getPublicUrl, isR2Configured } from "@/lib/r2";
+// src/app/api/whatsapp/route.ts
+// Meta Cloud API — WhatsApp webhook
+// Migrated from Twilio on 23 June 2026
+// Two-turn video routing: video → prompt → choice 1 (biometric) or 2 (vault)
+
+import { NextRequest, NextResponse } from 'next/server';
+import {
+  S3Client,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3';
+
+// ─── Meta API helpers ────────────────────────────────────────────────────────
+
+const GRAPH_URL = 'https://graph.facebook.com/v19.0';
 
 /**
- * POST /api/whatsapp
- * Twilio inbound WhatsApp webhook receiver with interactive prompt routing.
- *
- * Two-turn conversation flow:
- *
- *   Turn 1 — video arrives:
- *     → Validates media is a video
- *     → Downloads video from Twilio (Basic Auth) and uploads to Cloudflare R2
- *     → Forwards to Laravel with action="prompt" and the stable R2 URL
- *     → Laravel stores pending video keyed by phone (whatsapp_pending_videos table)
- *     → Bot replies asking the user to choose: Biometric Scan or Video Vault
- *
- *   Turn 2 — user replies "1" or "2" (text-only):
- *     → Forwards to Laravel with action="route_pending" + choice
- *     → Laravel looks up pending video by phone and dispatches:
- *         choice=1 → AnalyseWhatsappVideoJob (reads R2 URL — no Twilio auth needed)
- *         choice=2 → saves R2 URL to player_highlights table
- *     → Bot confirms the action taken
- *
- * Required env vars:
- *   TWILIO_ACCOUNT_SID  — for downloading Twilio-hosted media (Basic Auth)
- *   TWILIO_AUTH_TOKEN   — confirms service is configured
- *   NEXT_PUBLIC_API_URL — Laravel backend base URL
- *
- * R2 upload env vars (optional — falls back to Twilio URL if not set):
- *   R2_ACCOUNT_ID        — Cloudflare account ID
- *   R2_ACCESS_KEY_ID     — R2 API token key ID
- *   R2_SECRET_ACCESS_KEY — R2 API token secret
- *   R2_BUCKET            — bucket name (default: grassroots-videos)
- *   R2_PUBLIC_URL        — public base URL (e.g. https://pub-xxx.r2.dev)
- *
- * Laravel endpoint called:
- *   POST /api/v1/whatsapp/inbound
- *   Turn 1 body: { action, message_sid, phone, media_url, media_type, profile_name }
- *   Turn 2 body: { action, message_sid, phone, choice }
- *   Response:    { ok, user_id?, message? }
+ * Send a WhatsApp text message via Meta Cloud API
  */
+async function sendWhatsAppMessage(to: string, text: string): Promise<void> {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken   = process.env.WHATSAPP_ACCESS_TOKEN;
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+  if (!phoneNumberId || !accessToken) {
+    console.error('[WhatsApp] Missing WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN');
+    return;
+  }
 
-const PROMPT_MESSAGE =
-  "Video received! What would you like to do?\n\n" +
-  "Reply *1* — Run AI Biometric Scan\n" +
-  "Reply *2* — Save to Video Vault";
+  const res = await fetch(`${GRAPH_URL}/${phoneNumberId}/messages`, {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'text',
+      text: { body: text },
+    }),
+  });
 
-const HELP_MESSAGE =
-  "Send a video clip to get started.\n\n" +
-  "If you already sent a video, reply *1* for Biometric Scan or *2* for Video Vault.";
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface TwilioInboundPayload {
-  MessageSid: string;
-  From: string;
-  To: string;
-  Body: string;
-  NumMedia: string;
-  MediaUrl0?: string;
-  MediaContentType0?: string;
-  ProfileName?: string;
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[WhatsApp] Failed to send message:', err);
+  }
 }
-
-interface BackendInboundBody {
-  action: "prompt" | "route_pending";
-  message_sid: string;
-  phone: string;
-  media_url?: string;
-  media_type?: string;
-  profile_name?: string | null;
-  choice?: "1" | "2";
-}
-
-interface BackendInboundResponse {
-  ok: boolean;
-  user_id?: string;
-  message?: string;
-}
-
-// ─── R2 helpers ──────────────────────────────────────────────────────────────
 
 /**
- * Download a Twilio-hosted media file using Basic Auth, then upload the bytes
- * to Cloudflare R2 via a presigned PUT URL (uses @/lib/r2 — no AWS SDK).
- *
- * Key format: whatsapp/{phone_digits}/{messageSid}.{ext}
- * e.g.        whatsapp/263712345678/MM1234abcd.mp4
- *
- * Returns the public R2 URL on success, or null if R2 is not configured or
- * any step fails. The caller falls back to the original Twilio URL.
+ * Fetch the download URL for a Meta media object using its ID
  */
-async function uploadToR2(
-  twilioUrl: string,
-  mediaType: string,
-  phone: string,
-  messageSid: string,
-  LOG: string,
-): Promise<string | null> {
-  if (!isR2Configured()) {
-    console.log(`${LOG} R2 not configured — storing Twilio URL directly`);
+async function fetchMetaMediaUrl(mediaId: string): Promise<string | null> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+
+  const res = await fetch(`${GRAPH_URL}/${mediaId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    console.error('[WhatsApp] Failed to fetch media URL for', mediaId);
     return null;
   }
 
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken  = process.env.TWILIO_AUTH_TOKEN;
-  if (!accountSid || !authToken) {
-    console.warn(`${LOG} TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN missing — cannot download media`);
-    return null;
-  }
-
-  // 1. Download from Twilio with Basic Auth
-  let videoBytes: ArrayBuffer;
-  try {
-    const res = await fetch(twilioUrl, {
-      headers: {
-        Authorization: "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
-      },
-    });
-    if (!res.ok) {
-      console.error(`${LOG} Twilio media download failed status=${res.status}`);
-      return null;
-    }
-    videoBytes = await res.arrayBuffer();
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`${LOG} Twilio media download error: ${msg}`);
-    return null;
-  }
-
-  // 2. Build R2 key — strip leading '+' from phone so the key is path-safe
-  const ext    = mediaType.includes("quicktime") || mediaType.includes("mov") ? "mov" : "mp4";
-  const digits = phone.replace(/^\+/, "");
-  const key    = `whatsapp/${digits}/${messageSid}.${ext}`;
-
-  // 3. Upload via presigned PUT URL (server-side fetch — no browser involved)
-  try {
-    const uploadUrl = await generatePresignedPutUrl({ key, contentType: mediaType });
-    const putRes = await fetch(uploadUrl, {
-      method: "PUT",
-      body: Buffer.from(videoBytes),
-      headers: { "Content-Type": mediaType },
-    });
-    if (!putRes.ok) {
-      console.error(`${LOG} R2 PUT failed status=${putRes.status} key=${key}`);
-      return null;
-    }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`${LOG} R2 upload failed key=${key}: ${msg}`);
-    return null;
-  }
-
-  const publicUrl = getPublicUrl(key);
-  console.log(`${LOG} Uploaded to R2 key=${key} url=${publicUrl}`);
-  return publicUrl;
+  const data = await res.json();
+  return data.url ?? null;
 }
 
-// ─── Twilio payload helpers ───────────────────────────────────────────────────
+/**
+ * Download video bytes from Meta CDN using Bearer token
+ */
+async function downloadMetaMedia(mediaUrl: string): Promise<ArrayBuffer | null> {
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
 
-function parseRoutingChoice(body: string): "1" | "2" | null {
-  const t = body.trim().toLowerCase();
-  if (t === "1" || t.includes("scan") || t.includes("biometric")) return "1";
-  if (t === "2" || t.includes("vault") || t.includes("save") || t.includes("highlight")) return "2";
-  return null;
-}
+  const res = await fetch(mediaUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 
-async function parseTwilioPayload(req: NextRequest): Promise<TwilioInboundPayload | null> {
-  try {
-    const form = await req.formData();
-    return {
-      MessageSid:        String(form.get("MessageSid") ?? ""),
-      From:              String(form.get("From") ?? ""),
-      To:                String(form.get("To") ?? ""),
-      Body:              String(form.get("Body") ?? ""),
-      NumMedia:          String(form.get("NumMedia") ?? "0"),
-      MediaUrl0:         form.has("MediaUrl0")         ? String(form.get("MediaUrl0"))         : undefined,
-      MediaContentType0: form.has("MediaContentType0") ? String(form.get("MediaContentType0")) : undefined,
-      ProfileName:       form.has("ProfileName")       ? String(form.get("ProfileName"))       : undefined,
-    };
-  } catch {
+  if (!res.ok) {
+    console.error('[WhatsApp] Failed to download media from', mediaUrl);
     return null;
   }
+
+  return res.arrayBuffer();
 }
 
-function normalisePhone(from: string): string {
-  return from.replace(/^whatsapp:/i, "").trim();
-}
+// ─── R2 upload helper (unchanged from Twilio version) ────────────────────────
 
-function twimlResponse(message?: string): NextResponse {
-  const body = message
-    ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${message}</Message></Response>`
-    : `<?xml version="1.0" encoding="UTF-8"?><Response/>`;
-  return new NextResponse(body, {
-    status: 200,
-    headers: { "Content-Type": "text/xml; charset=utf-8" },
+function getS3Client(): S3Client | null {
+  const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY } = process.env;
+  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) return null;
+
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId:     R2_ACCESS_KEY_ID,
+      secretAccessKey: R2_SECRET_ACCESS_KEY,
+    },
   });
 }
 
-// ─── Route Handler ────────────────────────────────────────────────────────────
+async function uploadToR2(
+  buffer: ArrayBuffer,
+  phone: string,
+  messageId: string,
+  mimeType: string,
+): Promise<string | null> {
+  const s3 = getS3Client();
+  if (!s3) return null;
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const LOG = "[whatsapp/inbound]";
+  const ext    = mimeType.includes('mp4') ? 'mp4' : mimeType.split('/')[1] ?? 'bin';
+  const digits = phone.replace(/\D/g, '');
+  const key    = `whatsapp/${digits}/${messageId}.${ext}`;
+  const bucket = process.env.R2_BUCKET ?? 'grassroots-videos';
 
-  // 1. Confirm required env vars
-  const apiUrl         = process.env.NEXT_PUBLIC_API_URL;
-  const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+  try {
+    await s3.send(new PutObjectCommand({
+      Bucket:      bucket,
+      Key:         key,
+      Body:        Buffer.from(buffer),
+      ContentType: mimeType,
+    }));
 
-  if (!twilioAuthToken) {
-    console.error(`${LOG} TWILIO_AUTH_TOKEN is not set — rejecting webhook`);
-    return twimlResponse();
+    const publicUrl = process.env.R2_PUBLIC_URL;
+    return publicUrl ? `${publicUrl}/${key}` : null;
+  } catch (err) {
+    console.error('[R2] Upload failed:', err);
+    return null;
   }
-  if (!apiUrl) {
-    console.error(`${LOG} NEXT_PUBLIC_API_URL is not set — cannot forward to backend`);
-    return twimlResponse();
+}
+
+// ─── Laravel forwarding helper (unchanged) ────────────────────────────────────
+
+async function forwardToLaravel(payload: Record<string, string>): Promise<void> {
+  const laravelUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
+
+  try {
+    await fetch(`${laravelUrl}/whatsapp/inbound`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.error('[Laravel] Forward failed:', err);
+  }
+}
+
+// ─── Routing choice parser (unchanged) ───────────────────────────────────────
+
+function parseRoutingChoice(text: string): '1' | '2' | null {
+  const t = text.trim().toLowerCase();
+  if (['1', 'scan', 'biometric'].includes(t)) return '1';
+  if (['2', 'vault', 'save', 'highlight'].includes(t)) return '2';
+  return null;
+}
+
+// ─── Message strings ──────────────────────────────────────────────────────────
+
+const PROMPT_MESSAGE = `🎬 *GrassRoots Sports* received your video!
+
+Reply with:
+*1* — Biometric Scan (AI analyses your movement)
+*2* — Video Vault (save to your Highlight Vault)`;
+
+const HELP_MESSAGE = `👋 *GrassRoots Sports Bot*
+
+Send a video to get started.
+Reply *1* to run a Biometric Scan or *2* to save to your Vault.
+
+🔗 grassrootssports.live`;
+
+const SCAN_CONFIRM  = '🏃 *Running your Biometric Scan now…* You will receive your results in under 2 minutes.';
+const VAULT_CONFIRM = '✅ *Video saved to your Highlight Vault!* View it at grassrootssports.live/player/vault';
+
+// ─── GET — Meta webhook verification ─────────────────────────────────────────
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const { searchParams } = new URL(request.url);
+
+  const mode      = searchParams.get('hub.mode');
+  const token     = searchParams.get('hub.verify_token');
+  const challenge = searchParams.get('hub.challenge');
+
+  if (
+    mode === 'subscribe' &&
+    token === process.env.WHATSAPP_VERIFY_TOKEN
+  ) {
+    console.log('[WhatsApp] Webhook verified ✅');
+    return new NextResponse(challenge, { status: 200 });
   }
 
-  // 2. Parse Twilio form-encoded payload
-  const payload = await parseTwilioPayload(req);
-  if (!payload) {
-    console.warn(`${LOG} Failed to parse form body — ignoring request`);
-    return twimlResponse();
+  console.warn('[WhatsApp] Webhook verification failed');
+  return new NextResponse('Forbidden', { status: 403 });
+}
+
+// ─── POST — Incoming WhatsApp messages ───────────────────────────────────────
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  let payload: Record<string, unknown>;
+
+  try {
+    payload = await request.json();
+  } catch {
+    return new NextResponse('Bad Request', { status: 400 });
   }
 
-  const { MessageSid, From, Body, NumMedia, MediaUrl0, MediaContentType0, ProfileName } = payload;
+  // Extract message from Meta's nested payload structure
+  const entry   = (payload?.entry as Record<string, unknown>[])?.[0];
+  const change  = (entry?.changes as Record<string, unknown>[])?.[0];
+  const value   = change?.value as Record<string, unknown> | undefined;
+  const message = (value?.messages as Record<string, unknown>[])?.[0];
 
-  console.log(
-    `${LOG} Received sid=${MessageSid} from=${From}` +
-    ` numMedia=${NumMedia} profile=${ProfileName ?? "unknown"}`
-  );
-
-  // 3. Normalise sender phone
-  const phone = normalisePhone(From);
-  if (!phone) {
-    console.error(`${LOG} Could not extract phone from From="${From}" sid=${MessageSid}`);
-    return twimlResponse();
+  // Ignore delivery receipts and read receipts (no message object)
+  if (!message) {
+    return new NextResponse('OK', { status: 200 });
   }
 
-  const numMedia = parseInt(NumMedia, 10);
+  const from      = message.from as string;       // E.164 without + e.g. "263712345678"
+  const messageId = message.id as string;          // "wamid.xxxxx"
+  const type      = message.type as string;        // "video" | "text" | "image" | etc.
 
-  // ── TURN 2: Text-only reply ──────────────────────────────────────────────
-  if (numMedia === 0 || !MediaUrl0 || !MediaContentType0) {
-    const choice = parseRoutingChoice(Body);
+  // ── TURN 1: Video arrives ─────────────────────────────────────────────────
+  if (type === 'video' || type === 'audio') {
+    const videoObj = (message?.video ?? message?.audio) as Record<string, string> | undefined;
+    const mediaId  = videoObj?.id;
+    const mimeType = videoObj?.mime_type ?? 'video/mp4';
+
+    if (!mediaId) {
+      await sendWhatsAppMessage(from, HELP_MESSAGE);
+      return new NextResponse('OK', { status: 200 });
+    }
+
+    // Fetch the actual download URL from Meta
+    const mediaUrl = await fetchMetaMediaUrl(mediaId);
+    if (!mediaUrl) {
+      await sendWhatsAppMessage(from, '⚠️ Could not process your video. Please try again.');
+      return new NextResponse('OK', { status: 200 });
+    }
+
+    // Download video bytes
+    const buffer = await downloadMetaMedia(mediaUrl);
+    if (!buffer) {
+      await sendWhatsAppMessage(from, '⚠️ Could not download your video. Please try again.');
+      return new NextResponse('OK', { status: 200 });
+    }
+
+    // Upload to R2
+    const r2Url     = await uploadToR2(buffer, from, messageId, mimeType);
+    const storedUrl = r2Url ?? mediaUrl; // fallback to Meta URL if R2 fails
+
+    // Forward to Laravel — store as pending, await player choice
+    await forwardToLaravel({
+      action:      'prompt',
+      phone:       `+${from}`,
+      message_sid: messageId,
+      media_url:   storedUrl,
+      media_type:  mimeType,
+    });
+
+    // Send routing prompt to player
+    await sendWhatsAppMessage(from, PROMPT_MESSAGE);
+    return new NextResponse('OK', { status: 200 });
+  }
+
+  // ── Reject images (not supported) ────────────────────────────────────────
+  if (type === 'image') {
+    await sendWhatsAppMessage(
+      from,
+      '📹 Please send a *video*, not a photo. We need a video clip to run your analysis.',
+    );
+    return new NextResponse('OK', { status: 200 });
+  }
+
+  // ── TURN 2: Player replies with choice ───────────────────────────────────
+  if (type === 'text') {
+    const body   = (message?.text as Record<string, string> | undefined)?.body ?? '';
+    const choice = parseRoutingChoice(body);
 
     if (!choice) {
-      console.log(`${LOG} Unrecognised text body="${Body}" sid=${MessageSid}`);
-      return twimlResponse(HELP_MESSAGE);
+      await sendWhatsAppMessage(from, HELP_MESSAGE);
+      return new NextResponse('OK', { status: 200 });
     }
 
-    console.log(`${LOG} Routing choice=${choice} phone=${phone} sid=${MessageSid}`);
-
-    const forwardBody: BackendInboundBody = {
-      action:      "route_pending",
-      message_sid: MessageSid,
-      phone,
+    // Forward choice to Laravel
+    await forwardToLaravel({
+      action: 'route_pending',
+      phone:  `+${from}`,
       choice,
-    };
-
-    let backendMessage: string | undefined;
-    try {
-      const res = await fetch(`${apiUrl}/whatsapp/inbound`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(forwardBody),
-      });
-      if (res.ok) {
-        const data: BackendInboundResponse = await res.json();
-        backendMessage = data.message;
-        console.log(`${LOG} Route dispatched userId=${data.user_id ?? "unknown"} choice=${choice} sid=${MessageSid}`);
-      } else {
-        const errText = await res.text();
-        console.error(`${LOG} Backend rejected status=${res.status} body=${errText} sid=${MessageSid}`);
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`${LOG} Backend fetch failed: ${msg} sid=${MessageSid}`);
-    }
-
-    return twimlResponse(
-      backendMessage ??
-        (choice === "1"
-          ? "Running your Biometric Scan now. Results will appear on your profile shortly."
-          : "Video saved to your Vault. View it at grassrootssports.live")
-    );
-  }
-
-  // ── TURN 1: Video arrives ────────────────────────────────────────────────
-
-  // 4. Reject non-video media
-  if (!MediaContentType0.startsWith("video/")) {
-    console.warn(`${LOG} Non-video media rejected contentType=${MediaContentType0} sid=${MessageSid}`);
-    return twimlResponse(
-      `File type "${MediaContentType0}" is not supported. ` +
-      "Please send a video file (MP4, MOV, AVI, etc.) to submit your highlight."
-    );
-  }
-
-  console.log(`${LOG} Video confirmed type=${MediaContentType0} url=${MediaUrl0} sid=${MessageSid}`);
-
-  // 5. Upload to R2 now so the pending record holds a permanent, auth-free URL.
-  //    Falls back to the Twilio URL if R2 is not configured or the upload fails.
-  const r2Url    = await uploadToR2(MediaUrl0, MediaContentType0, phone, MessageSid, LOG);
-  const mediaUrl = r2Url ?? MediaUrl0;
-
-  if (r2Url) {
-    console.log(`${LOG} Using R2 URL for pending record sid=${MessageSid}`);
-  } else {
-    console.log(`${LOG} Using Twilio URL for pending record (R2 unavailable) sid=${MessageSid}`);
-  }
-
-  // 6. Forward to Laravel — passes the R2 URL (or Twilio fallback) as media_url
-  const forwardBody: BackendInboundBody = {
-    action:       "prompt",
-    message_sid:  MessageSid,
-    phone,
-    media_url:    mediaUrl,
-    media_type:   MediaContentType0,
-    profile_name: ProfileName ?? null,
-  };
-
-  let backendMessage: string | undefined;
-  try {
-    const res = await fetch(`${apiUrl}/whatsapp/inbound`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify(forwardBody),
     });
-    if (res.ok) {
-      const data: BackendInboundResponse = await res.json();
-      backendMessage = data.message;
-      console.log(`${LOG} Pending video stored userId=${data.user_id ?? "pending"} sid=${MessageSid}`);
-    } else {
-      const errText = await res.text();
-      console.error(`${LOG} Backend rejected status=${res.status} body=${errText} sid=${MessageSid}`);
-    }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`${LOG} Backend fetch failed: ${msg} sid=${MessageSid}`);
+
+    // Confirm to player
+    await sendWhatsAppMessage(from, choice === '1' ? SCAN_CONFIRM : VAULT_CONFIRM);
+    return new NextResponse('OK', { status: 200 });
   }
 
-  // 7. Always reply with the routing prompt
-  return twimlResponse(backendMessage ?? PROMPT_MESSAGE);
+  // ── Unknown message type ──────────────────────────────────────────────────
+  await sendWhatsAppMessage(from, HELP_MESSAGE);
+  return new NextResponse('OK', { status: 200 });
 }
