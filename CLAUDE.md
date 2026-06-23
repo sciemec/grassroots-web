@@ -8653,5 +8653,5 @@ No new routes — enhanced existing:
 
 | Item | Notes |
 |---|---|
-| `GET /player/drill-scores/{id}?by=passport_token` | Missing from routes/api.php — `passport/[id]/page.tsx` catches 404 gracefully, `drillScores` prop is null, Gemini Drill Scores section shows nothing |
+| `GET /player/drill-scores/{id}?by=passport_token` | ✅ BUILT — `9cab132` — returns best Gemini score per drill from `drill_analysis_results` |
 | PremiumGate "Unlock · $1.50/week" | Sets `unlocked=true` client-side only — not connected to real payment. Wire to `/player/subscription` when Stripe is live |
