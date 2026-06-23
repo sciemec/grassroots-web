@@ -45,7 +45,6 @@ import {
   Loader2, X, Star, Users, Trophy as TrophyIcon, Brain, ChevronRight,
   FileDown, Download, FileText,
 } from 'lucide-react';
-import { BlueprintPurchaseModal } from '@/components/tactical-iq/BlueprintPurchaseModal';
 import { useAuthStore } from '@/lib/auth-store';
 import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, type MatchStats } from '@/lib/tactical-iq/phase-classifier';
 import { type QuizMoment } from '@/lib/tactical-iq/quiz-generator';
