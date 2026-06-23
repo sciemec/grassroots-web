@@ -352,6 +352,26 @@ export default function FootballDrillsLabPage() {
     setReminderSet(false);
   };
 
+  // ── Derived values — must be BEFORE early return so useMemo is always called ──
+  const selectedData   = FOOTBALL_POSITION_DRILLS[activePosition];
+  const completedCount = completedDrills.filter(id => selectedData.drills.some(d => d.id === id)).length;
+  const completionPct  = selectedData.drills.length > 0 ? (completedCount / selectedData.drills.length) * 100 : 0;
+  const tierCfg        = TIER_CONFIG[tierProgress?.currentTier ?? 1];
+  const gender         = typeof window !== "undefined" ? localStorage.getItem("player_gender") ?? "male" : "male";
+  const coachName      = gender === "female" ? "Amara" : "THUTO";
+  const isPremiumUser  = (user as { subscription_tier?: string } | null)?.subscription_tier === "pro";
+  const activeFilterCount = (filterCategory !== "all" ? 1 : 0) + (filterEquipment !== "all" ? 1 : 0) + (filterDifficulty !== "all" ? 1 : 0);
+
+  // useMemo MUST be before any early return (Rules of Hooks)
+  const filteredDrills = useMemo(() => {
+    return selectedData.drills.filter(d => {
+      if (filterCategory   !== "all" && d.category        !== filterCategory)   return false;
+      if (filterEquipment  !== "all" && d.equipment_tier  !== filterEquipment)  return false;
+      if (filterDifficulty !== "all" && d.difficulty_level !== filterDifficulty) return false;
+      return true;
+    });
+  }, [selectedData.drills, filterCategory, filterEquipment, filterDifficulty]);
+
   if (!hydrated || isLoading || !user) {
     return (
       <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center">
@@ -362,27 +382,6 @@ export default function FootballDrillsLabPage() {
       </div>
     );
   }
-
-  const selectedData   = FOOTBALL_POSITION_DRILLS[activePosition];
-  const completedCount = completedDrills.filter(id => selectedData.drills.some(d => d.id === id)).length;
-  const completionPct  = (completedCount / selectedData.drills.length) * 100;
-  const tierCfg        = TIER_CONFIG[tierProgress?.currentTier ?? 1];
-  const gender         = typeof window !== "undefined" ? localStorage.getItem("player_gender") ?? "male" : "male";
-  const coachName      = gender === "female" ? "Amara" : "THUTO";
-  const isPremiumUser  = (user as { subscription_tier?: string }).subscription_tier === "pro";
-
-  // Active filter count
-  const activeFilterCount = (filterCategory !== "all" ? 1 : 0) + (filterEquipment !== "all" ? 1 : 0) + (filterDifficulty !== "all" ? 1 : 0);
-
-  // Filtered + sorted drills
-  const filteredDrills = useMemo(() => {
-    return selectedData.drills.filter(d => {
-      if (filterCategory   !== "all" && d.category        !== filterCategory)   return false;
-      if (filterEquipment  !== "all" && d.equipment_tier  !== filterEquipment)  return false;
-      if (filterDifficulty !== "all" && d.difficulty_level !== filterDifficulty) return false;
-      return true;
-    });
-  }, [selectedData.drills, filterCategory, filterEquipment, filterDifficulty]);
 
   // Today's recommended = first incomplete drill
   const todaysDrill = filteredDrills.find(d => !completedDrills.includes(d.id));
