@@ -32,7 +32,37 @@ export async function POST(req: NextRequest) {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
-  // Forward relevant events to Laravel to update subscription records
+  // ── Blueprint one-time purchase ─────────────────────────────────────────────
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    if (session.metadata?.type === "coaching_blueprint") {
+      const userId  = session.metadata.user_id;
+      const matchId = session.metadata.matchId;
+
+      if (userId && matchId) {
+        await fetch(`${apiUrl}/world-cup/blueprints/confirm`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id:               userId,
+            match_id:              matchId,
+            stripe_payment_intent: typeof session.payment_intent === "string"
+              ? session.payment_intent
+              : null,
+            amount_cents: session.amount_total ?? 499,
+          }),
+        }).catch(() => {
+          console.error("Failed to record blueprint purchase for match:", matchId);
+        });
+      }
+
+      // Blueprint purchase handled — do not forward to the subscription webhook
+      return NextResponse.json({ received: true });
+    }
+  }
+
+  // ── Subscription events — forward to Laravel ────────────────────────────────
   if (
     event.type === "checkout.session.completed" ||
     event.type === "customer.subscription.deleted" ||
@@ -43,7 +73,6 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: event.type, data: event.data }),
     }).catch(() => {
-      // Laravel may be cold-starting — log but don't fail the webhook
       console.error("Failed to forward Stripe event to Laravel:", event.type);
     });
   }
