@@ -246,9 +246,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     const formData = new FormData();
     formData.append("photo", file);
     try {
-      const res = await api.post("/profile/photo", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.post("/profile/photo", formData);
       setPhotoUrl(res.data.photo_url ?? preview);
     } catch {
       setError("Photo upload failed. Please try again.");
