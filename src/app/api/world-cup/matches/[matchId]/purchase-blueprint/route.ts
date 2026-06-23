@@ -1,4 +1,4 @@
-// src/app/api/world-cup/matches/[id]/purchase-blueprint/route.ts
+// src/app/api/world-cup/matches/[matchId]/purchase-blueprint/route.ts
 // Creates a Stripe Payment Intent for a $4.99 Coaching Blueprint purchase.
 // Auth: Bearer JWT from the GRS auth store (not next-auth).
 // Returns: { clientSecret, paymentIntentId } — frontend confirms with Stripe.js.
@@ -33,7 +33,7 @@ async function resolveUser(req: NextRequest): Promise<{ id: string } | null> {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { matchId: string } }
 ) {
   const user = await resolveUser(req);
   if (!user) {
@@ -45,7 +45,7 @@ export async function POST(
     return NextResponse.json({ error: 'Payments not configured' }, { status: 503 });
   }
 
-  const matchId = params.id;
+  const matchId = params.matchId;
 
   try {
     const paymentIntent = await stripe.paymentIntents.create({

@@ -180,15 +180,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const token     = searchParams.get('hub.verify_token');
   const challenge = searchParams.get('hub.challenge');
 
+  const expectedToken = process.env.WHATSAPP_VERIFY_TOKEN?.trim();
+
   if (
     mode === 'subscribe' &&
-    token === process.env.WHATSAPP_VERIFY_TOKEN
+    token?.trim() === expectedToken &&
+    expectedToken
   ) {
     console.log('[WhatsApp] Webhook verified ✅');
     return new NextResponse(challenge, { status: 200 });
   }
 
-  console.warn('[WhatsApp] Webhook verification failed');
+  console.warn('[WhatsApp] Verification failed — mode:', mode, '| token match:', token?.trim() === expectedToken, '| env set:', !!expectedToken);
   return new NextResponse('Forbidden', { status: 403 });
 }
 
