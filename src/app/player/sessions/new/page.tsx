@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Dumbbell, ArrowLeft, Play, Loader2, Activity, ChevronDown, ChevronUp } from "lucide-react";
+import { Dumbbell, ArrowLeft, Play, Loader2, Activity, ChevronDown, ChevronUp, Video } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +37,8 @@ export default function NewSessionPage() {
   const [error, setError] = useState("");
   const [poseOpen, setPoseOpen] = useState(false);
   const [poseScore, setPoseScore] = useState<number | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -55,7 +57,36 @@ export default function NewSessionPage() {
     if (!user) { requireAuth("start a session"); return; }
     setError("");
     try {
-      const payload = poseScore !== null ? { ...data, pre_session_pose_score: poseScore } : data;
+      // Upload highlight video to R2 if one was selected
+      let videoUrl: string | undefined;
+      if (videoFile) {
+        setVideoUploading(true);
+        try {
+          const presignRes = await fetch("/api/upload/presigned", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileName: videoFile.name,
+              contentType: videoFile.type,
+              source: "training",
+            }),
+          });
+          const { uploadUrl, publicUrl } = await presignRes.json();
+          if (uploadUrl) {
+            await fetch(uploadUrl, {
+              method: "PUT",
+              body: videoFile,
+              headers: { "Content-Type": videoFile.type },
+            });
+            videoUrl = publicUrl || undefined;
+          }
+        } catch { /* non-fatal — session still saves without video */ }
+        setVideoUploading(false);
+      }
+
+      const payload = poseScore !== null
+        ? { ...data, pre_session_pose_score: poseScore, ...(videoUrl ? { video_url: videoUrl } : {}) }
+        : { ...data, ...(videoUrl ? { video_url: videoUrl } : {}) };
       const res = await api.post("/sessions", payload);
       const sessionId = res.data?.session?.id ?? res.data?.id ?? res.data?.data?.id;
 
@@ -79,10 +110,10 @@ export default function NewSessionPage() {
         })
         .catch(() => {}); // never surface to player
 
-      // Arena: NURTURE pillar — training activity appears in social feed
+      // Arena: NURTURE pillar — training activity appears in social feed (with video if uploaded)
       postToArena(
         `Completed a ${data.focus_area} training session.`,
-        { postType: "session_milestone", metadata: { focus_area: data.focus_area, session_type: data.session_type } }
+        { postType: "session_milestone", metadata: { focus_area: data.focus_area, session_type: data.session_type }, videoUrl }
       );
 
       if (sessionId) {
@@ -212,6 +243,27 @@ export default function NewSessionPage() {
             />
           </div>
 
+          {/* Session highlight video (optional) */}
+          <div style={{ backgroundColor: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", padding: 20 }}>
+            <p style={{ fontWeight: 700, fontSize: 13, color: "#374151", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Session Highlight <span style={{ fontWeight: 400, textTransform: "none", fontSize: 12, color: "#9ca3af" }}>(optional)</span>
+            </p>
+            <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 10 }}>Upload a clip — it auto-posts to your Arena feed.</p>
+            {videoFile ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <Video style={{ width: 16, height: 16, color: "#1a5c2a", flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: "#14532d", fontWeight: 600, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{videoFile.name}</span>
+                <button type="button" onClick={() => setVideoFile(null)} style={{ fontSize: 11, color: "#dc2626", background: "none", border: "none", cursor: "pointer", padding: "0 4px", flexShrink: 0 }}>Remove</button>
+              </div>
+            ) : (
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", borderRadius: 10, border: "1.5px dashed #d1d5db", padding: "12px 14px", backgroundColor: "#f9fafb" }}>
+                <Video style={{ width: 18, height: 18, color: "#9ca3af" }} />
+                <span style={{ fontSize: 13, color: "#6b7280" }}>Tap to choose a video</span>
+                <input type="file" accept="video/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) setVideoFile(f); }} />
+              </label>
+            )}
+          </div>
+
           {error && (
             <div style={{ borderRadius: 12, backgroundColor: "#fef2f2", border: "1px solid #fca5a5", padding: "12px 16px", fontSize: 13, color: "#dc2626" }}>
               {error}
@@ -274,7 +326,7 @@ export default function NewSessionPage() {
           {/* Start button */}
           <button
             type="submit"
-            disabled={isSubmitting || !focusArea}
+            disabled={isSubmitting || videoUploading || !focusArea}
             style={{
               display: "flex",
               width: "100%",
@@ -288,12 +340,14 @@ export default function NewSessionPage() {
               padding: "15px 16px",
               fontSize: 15,
               fontWeight: 700,
-              cursor: focusArea && !isSubmitting ? "pointer" : "not-allowed",
+              cursor: focusArea && !isSubmitting && !videoUploading ? "pointer" : "not-allowed",
               transition: "background-color 0.15s",
-              opacity: isSubmitting ? 0.7 : 1,
+              opacity: isSubmitting || videoUploading ? 0.7 : 1,
             }}
           >
-            {isSubmitting ? (
+            {videoUploading ? (
+              <><Loader2 style={{ width: 18, height: 18 }} className="animate-spin" /> Uploading video…</>
+            ) : isSubmitting ? (
               <><Loader2 style={{ width: 18, height: 18 }} className="animate-spin" /> Creating session…</>
             ) : (
               <><Play style={{ width: 18, height: 18 }} /> Start Session</>

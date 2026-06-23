@@ -95,7 +95,7 @@ function CoreGoals() {
               ],
               links: [
                 { href: "/player/talent-id", label: "Talent Passport", icon: <IdCard size={14} />, color: "#60a5fa" },
-                { href: "/arena", label: "Arena Network", icon: <Globe2 size={14} />, color: "#a78bfa" },
+                { href: "/arena",            label: "Arena Network",   icon: <Globe2 size={14} />, color: "#a78bfa" },
               ],
               icon: <Share2 size={20} />,
             },
@@ -170,9 +170,9 @@ function CoreGoals() {
 function VideoUpload() {
   const user  = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
-  const [file,   setFile]   = useState<File | null>(null);
-  const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
-  const [label,  setLabel]  = useState("");
+  const [file,         setFile]         = useState<File | null>(null);
+  const [status,       setStatus]       = useState<"idle" | "uploading" | "done" | "error">("idle");
+  const [label,        setLabel]        = useState("");
   const [savedToVault, setSavedToVault] = useState(false);
   const [postedToArena, setPostedToArena] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -194,12 +194,10 @@ function VideoUpload() {
           fileName:    file.name,
           contentType: file.type || "video/mp4",
           source:      "player_upload",
-          label:       label || file.name,
         }),
       });
-
       if (!presignRes.ok) throw new Error("Could not get upload URL");
-      const { uploadUrl, publicUrl, key } = await presignRes.json();
+      const { uploadUrl, key } = await presignRes.json() as { uploadUrl: string; key: string; publicUrl: string };
 
       // Step 2 — PUT file directly to R2
       if (uploadUrl) {
@@ -211,20 +209,20 @@ function VideoUpload() {
         if (!uploadRes.ok) throw new Error("Upload failed");
       }
 
-      // Step 3 — if logged in, save to player vault in PostgreSQL
+      // Step 3 — if logged in, save metadata to player vault
       let vaultSaved = false;
       if (user && token && key) {
-        const vaultRes = await fetch(`${API}/player/vault/upload`, {
+        const vaultRes = await fetch(`${API}/player/vault/metadata`, {
           method:  "POST",
           headers: {
             "Content-Type":  "application/json",
             "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({
-            r2_key:    key,
-            video_url: publicUrl,
-            tag:       label || file.name,
-            size_mb:   +(file.size / 1024 / 1024).toFixed(2),
+            r2_key:  key,
+            title:   label || file.name,
+            tag:     "Skills",
+            size_mb: +(file.size / 1024 / 1024).toFixed(2),
           }),
         });
         vaultSaved = vaultRes.ok;
@@ -339,9 +337,7 @@ function VideoUpload() {
 
         {status === "uploading" && (
           <div className="py-4">
-            <div className="text-sm text-gray-600 animate-pulse">
-              Uploading your video...
-            </div>
+            <div className="text-sm text-gray-600 animate-pulse">Uploading your video...</div>
           </div>
         )}
 
@@ -410,9 +406,7 @@ function VideoUpload() {
 
         {status === "error" && (
           <div className="py-4">
-            <div className="text-sm text-red-600">
-              Upload failed. Please try again.
-            </div>
+            <div className="text-sm text-red-600">Upload failed. Please try again.</div>
           </div>
         )}
       </div>
@@ -421,7 +415,7 @@ function VideoUpload() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WorldCupBanner — links to /world-cup
+// WorldCupBanner — links to /worldcup
 // ─────────────────────────────────────────────────────────────────────────────
 function WorldCupBanner() {
   return (
@@ -456,9 +450,9 @@ function WorldCupBanner() {
 // Main page component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function GrassrootsSportsLanding() {
-  const [activityWire, setActivityWire] = useState<string[]>([]);
-  const [wireIndex,    setWireIndex]    = useState(0);
-  const [topTalents,   setTopTalents]   = useState<LeaderboardAthlete[]>([]);
+  const [activityWire,   setActivityWire]   = useState<string[]>([]);
+  const [wireIndex,      setWireIndex]      = useState(0);
+  const [topTalents,     setTopTalents]     = useState<LeaderboardAthlete[]>([]);
   const [talentsLoading, setTalentsLoading] = useState(true);
 
   useEffect(() => {
@@ -476,13 +470,15 @@ export default function GrassrootsSportsLanding() {
 
         if (leaderboardRes.ok) {
           const leaderboardData = await leaderboardRes.json();
-          const transformed = (leaderboardData.data || []).map((item: { user_id: string; initials?: string; sport?: string; province?: string; percentile?: number }) => ({
-            id:       item.user_id,
-            name:     item.initials || "Athlete",
-            sport:    item.sport    || "Multi-sport",
-            province: item.province || "Zimbabwe",
-            score:    item.percentile || 0,
-          }));
+          const transformed = (leaderboardData.data || []).map(
+            (item: { user_id: string; initials?: string; sport?: string; province?: string; percentile?: number }) => ({
+              id:       item.user_id,
+              name:     item.initials  || "Athlete",
+              sport:    item.sport     || "Multi-sport",
+              province: item.province  || "Zimbabwe",
+              score:    item.percentile || 0,
+            })
+          );
           setTopTalents(transformed);
         }
       } catch (err) {
@@ -756,19 +752,18 @@ export default function GrassrootsSportsLanding() {
             </p>
           </div>
 
-          {/* Sport grid */}
           <div className="grid grid-cols-5 gap-3 mb-8">
             {[
-              { emoji: "⚽", label: "Football" },
-              { emoji: "🏉", label: "Rugby" },
-              { emoji: "🏃", label: "Athletics" },
-              { emoji: "🏐", label: "Netball" },
+              { emoji: "⚽", label: "Football"   },
+              { emoji: "🏉", label: "Rugby"      },
+              { emoji: "🏃", label: "Athletics"  },
+              { emoji: "🏐", label: "Netball"    },
               { emoji: "🏀", label: "Basketball" },
-              { emoji: "🏏", label: "Cricket" },
-              { emoji: "🏊", label: "Swimming" },
-              { emoji: "🎾", label: "Tennis" },
+              { emoji: "🏏", label: "Cricket"    },
+              { emoji: "🏊", label: "Swimming"   },
+              { emoji: "🎾", label: "Tennis"     },
               { emoji: "🏐", label: "Volleyball" },
-              { emoji: "🏑", label: "Hockey" },
+              { emoji: "🏑", label: "Hockey"     },
             ].map((s) => (
               <a
                 key={s.label}
@@ -783,12 +778,11 @@ export default function GrassrootsSportsLanding() {
             ))}
           </div>
 
-          {/* How it works */}
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
               { step: "1", label: "Select Sport & Drill", desc: "Pick from 10 sports and your specific drill type" },
-              { step: "2", label: "Upload Short Video", desc: "Film yourself doing the drill — under 60 seconds" },
-              { step: "3", label: "Get AI Coaching", desc: "Gemini watches the full clip and coaches you instantly" },
+              { step: "2", label: "Upload Short Video",   desc: "Film yourself doing the drill — under 60 seconds" },
+              { step: "3", label: "Get AI Coaching",      desc: "Gemini watches the full clip and coaches you instantly" },
             ].map((item) => (
               <div key={item.step} className="text-center p-4 rounded-2xl bg-gray-50">
                 <div
@@ -831,6 +825,7 @@ export default function GrassrootsSportsLanding() {
           Zimbabwe&apos;s First AI-Powered Multi-Sport Talent Discovery Platform
         </p>
       </footer>
+
       <ThutoChatVisitor />
     </div>
   );
