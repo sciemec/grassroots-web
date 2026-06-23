@@ -8999,9 +8999,9 @@ private function sendWhatsAppReply(string $phone, string $message): void
 
 | Item | Status | Action Required |
 |---|---|---|
-| Vercel env vars | ACTION REQUIRED | Remove `TWILIO_*` (3 vars). Add `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN=grs_webhook_2026` |
-| Render env vars | ACTION REQUIRED | Same Twilio removal. Add `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN` |
-| Meta Developer Console | ACTION REQUIRED | Set webhook URL + verify token + subscribe to `messages` |
+| Vercel env vars | ✅ SET | `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN` all confirmed set |
+| Render env vars | ✅ SET | Same vars confirmed on Render |
+| Meta Developer Console | ✅ DONE | Webhook URL, verify token, `messages` subscription confirmed |
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT YET UPDATED | Replace Twilio HTTP client with Meta API call |
 | bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
 | `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
