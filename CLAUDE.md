@@ -8655,3 +8655,102 @@ No new routes — enhanced existing:
 |---|---|
 | `GET /player/drill-scores/{id}?by=passport_token` | ✅ BUILT — `9cab132` — returns best Gemini score per drill from `drill_analysis_results` |
 | PremiumGate "Unlock · $1.50/week" | Sets `unlocked=true` client-side only — not connected to real payment. Wire to `/player/subscription` when Stripe is live |
+
+---
+
+## SESSION LOG — 23 June 2026 (continued)
+
+### Theme — GRS Drill System Redesign: Age Variants, Mastery Tracking, Bilingual Labels
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### GRS Drill System Redesign — ALL 6 CHANGES DONE ✅
+
+**Brief:** 8-part redesign of the drill library covering age variants, gender notes, i18n, mastery tracking, and achievement badges.
+
+---
+
+#### Change 1 — `src/lib/drill-data.ts` ✅
+
+New types and interfaces added:
+```typescript
+export type AgeGroup = "u13" | "u16" | "u19" | "senior";
+export interface AgeVariant {
+  instructions: string[];
+  coaching_notes?: string;
+}
+// Added to DrillData:
+age_variants?: Partial<Record<AgeGroup, AgeVariant>>;
+gender_notes?: string;
+i18n?: { sn?: { name?: string; instructions?: string[] }; nd?: { name?: string; instructions?: string[] } };
+```
+
+Sample age variants added to first 2 striker drills:
+- `eng_st_01` (Lions' Den Central Turning) — u13 + u16 age variants + Shona i18n
+- `eng_st_02` (Tri-Third Elimination End Zones) — u13 + u16 age variants
+
+---
+
+#### Change 2 — `public/locales/en.json`, `sn.json`, `nd.json` ✅
+
+Added `drills` i18n section to all 3 locale files with keys:
+`age_group`, `u13`, `u16`, `u19`, `senior`, `mastered`, `in_progress`, `not_started`,
+`times_done`, `mark_done`, `completed_label`, `badge_first_drill`, `badge_5_drills`,
+`badge_track_complete`, `age_variant_note`, `gender_note_label`, `coaching_note_label`
+
+---
+
+#### Change 3 — `src/components/drills/DrillCard.tsx` ✅
+
+- Added `ageGroup?: AgeGroup` + `masteryCount?: number` to `DrillCardProps`
+- Resolves age-variant instructions: `ageVariant?.instructions ?? drill.instructions`
+- Mastery badge in header: "Mastered" (green) if ≥3, "Nx done" (amber) if ≥1
+- "U13/U16/U19/Senior version" badge in header when age variant active
+- Coaching note above instructions: `ageVariant?.coaching_notes` in blue italics
+- Gender note chip after equipment pill: `drill.gender_notes`
+
+---
+
+#### Change 4 — `src/app/player/drills/page.tsx` ✅
+
+- Added `const [ageGroup, setAgeGroup] = useState<AgeGroup>("senior")`
+- Added `const [masteryMap, setMasteryMap] = useState<Record<string, number>>({})`
+- Auto-detects age group from `user.age_group` field on load
+- In `loadAll()`: fetches `GET /player/drill-completions` for mastery counts (localStorage fallback)
+- In `toggleDrillCompletion()`: increments `masteryMap` locally + POSTs to backend (fire-and-forget)
+- **Age group selector UI** inserted between position selector and filter bar — 4 pills: Under 13 / Under 16 / Under 19 / Senior
+- All 3 `DrillCard` render sites now pass `ageGroup={ageGroup}` + `masteryCount={masteryMap[drill.id] ?? 0}`
+
+---
+
+#### Change 5 — bhora-ai migration ✅
+
+**File:** `database/migrations/2026_06_23_000002_add_completions_count_to_drill_completions_table.php`
+- Adds `completions_count UNSIGNED INTEGER DEFAULT 0` to `drill_completions` table (additive, no data loss)
+- Auto-runs on next Render deploy via `start.sh → php artisan migrate --force`
+
+---
+
+#### Change 6 — bhora-ai routes/api.php ✅
+
+Added 2 inline route closures inside `auth:sanctum` group:
+```
+GET  /player/drill-completions          Returns { drill_id, completions_count } for all of user's drills
+POST /player/drill-completions/{drillId} Upserts — inserts with count=1, or increments existing count
+```
+
+Upsert uses `DB::raw('completions_count = drill_completions.completions_count + 1')` — PostgreSQL-safe increment.
+
+---
+
+### WHAT STILL NEEDS DOING (23 June 2026, continued)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `drill_completions` migration | Auto-runs on next Render deploy | Verify after push to bhora-ai |
+| Changes 7–8 of the brief (reminders, badges) | NOT YET BUILT | Build when Nigel gives the go-ahead |
+| `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
+| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` broken |
+| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |

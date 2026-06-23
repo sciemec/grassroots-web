@@ -4,6 +4,12 @@
 export type PositionKey = "striker" | "midfielder" | "defender" | "goalkeeper" | "winger";
 export type EquipmentTier = "zero" | "basic" | "gym";
 export type DrillCategory = "Technical" | "Physical" | "Tactical";
+export type AgeGroup = "u13" | "u16" | "u19" | "senior";
+
+export interface AgeVariant {
+  instructions: string[];
+  coaching_notes?: string;
+}
 
 export interface DrillData {
   id: string;
@@ -20,6 +26,13 @@ export interface DrillData {
   muscles_targeted: string[];
   difficulty_level: 1 | 2 | 3;
   is_premium: boolean;
+  // Optional enhancement fields
+  age_variants?: Partial<Record<AgeGroup, AgeVariant>>;
+  gender_notes?: string;
+  i18n?: {
+    sn?: { name?: string; instructions?: string[] };
+    nd?: { name?: string; instructions?: string[] };
+  };
 }
 
 export interface PositionTrack {
@@ -56,6 +69,43 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Glutes", "Hip flexors", "Ankle stabilisers"],
         difficulty_level: 2,
         is_premium: false,
+        age_variants: {
+          u13: {
+            instructions: [
+              "Set up a 6×6 yard square with 4 cones",
+              "A partner stands beside you — shoulder contact only, no pushing",
+              "Receive a soft pass from a third player outside the square",
+              "Use your body to stay between the ball and your partner",
+              "Turn slowly using a drag-back — take your time to get it right",
+              "Play the ball out of the square to a target player",
+            ],
+            coaching_notes: "Focus on body shape, not speed. Reward correct technique even if slow.",
+          },
+          u16: {
+            instructions: [
+              "Set up a 7×7 yard square using 4 cones",
+              "Partner applies shoulder-to-shoulder pressure from behind",
+              "Receive a firm pass from outside the square",
+              "Use your forearm (not elbow) to create space and shield",
+              "Turn using a Cruyff or drag-back at moderate pace",
+              "Play forward to a target — aim for 5 clean turns in a row",
+            ],
+            coaching_notes: "Introduce 'pre-turning' — deciding your direction before the ball arrives.",
+          },
+        },
+        i18n: {
+          sn: {
+            name: "Kupotera Mumuzinda — Nzira dzeKupona",
+            instructions: [
+              "Isa mahombekombe mana kuti ugadzire nzvimbo yevasere 8×8",
+              "Umwe wenzako anobva shure kuzokumanikidza nemuviri",
+              "Gamuchira pasi rinouya kubva kunze kwenzvimbo",
+              "Shandisa muviri wako kurinda bhora kubva kumukwikwidzi",
+              "Tendeuka nekukurumidza — Cruyff, drag-back, kana hook yeninja",
+              "Tuma bhora mberi kunze kwenzvimbo kumuteyi",
+            ],
+          },
+        },
       },
       {
         id: "eng_st_02",
@@ -81,6 +131,29 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Hip flexors", "Glutes", "Calves"],
         difficulty_level: 2,
         is_premium: false,
+        age_variants: {
+          u13: {
+            instructions: [
+              "Mark a 25×18 yard area divided into two halves (no thirds) with cones",
+              "One defender tracks the striker from the centre line",
+              "A coach or parent plays simple passes to feet",
+              "Striker collects and dribbles to the end zone — no finishing required yet",
+              "Award a point for reaching the end zone in control",
+            ],
+            coaching_notes: "Remove the finish for U13 — spatial awareness and run timing are the priority at this age.",
+          },
+          u16: {
+            instructions: [
+              "Mark a 35×22 yard pitch divided into three thirds",
+              "Start in the middle third with one defender tracking you",
+              "Two players build play short in the defensive third",
+              "Time your diagonal run into the shaded end zone as the pass breaks through",
+              "Control on the half-turn and finish — or square to a teammate",
+              "Rotate every 4 runs",
+            ],
+            coaching_notes: "Emphasise timing over pace — arrive just before the ball does, not early.",
+          },
+        },
       },
       {
         id: "eng_st_03",

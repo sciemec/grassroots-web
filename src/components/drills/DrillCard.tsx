@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2, Play, Video, Lock, ChevronDown, ChevronUp } from "lucide-react";
-import type { DrillData } from "@/lib/drill-data";
+import type { DrillData, AgeGroup } from "@/lib/drill-data";
 
 const DIFFICULTY_CONFIG = {
   1: { label: "Beginner",     color: "#15803d", bg: "#dcfce7" },
@@ -30,6 +30,8 @@ interface DrillCardProps {
   isPremiumUser:  boolean;
   onToggleExpand: (id: string) => void;
   onMarkDone:     (id: string) => void;
+  ageGroup?:      AgeGroup;
+  masteryCount?:  number;
 }
 
 export default function DrillCard({
@@ -40,10 +42,26 @@ export default function DrillCard({
   isPremiumUser,
   onToggleExpand,
   onMarkDone,
+  ageGroup,
+  masteryCount = 0,
 }: DrillCardProps) {
   const diff  = DIFFICULTY_CONFIG[drill.difficulty_level];
   const equip = EQUIPMENT_CONFIG[drill.equipment_tier];
   const cat   = CATEGORY_CONFIG[drill.category];
+
+  // Resolve age-variant instructions if available
+  const ageVariant = ageGroup ? drill.age_variants?.[ageGroup] : undefined;
+  const instructionsToShow = ageVariant?.instructions ?? drill.instructions;
+
+  // Mastery badge colour
+  const masteryColor =
+    masteryCount >= 3 ? "#15803d" :
+    masteryCount >= 1 ? "#92400e" :
+    "#9ca3af";
+  const masteryBg =
+    masteryCount >= 3 ? "#dcfce7" :
+    masteryCount >= 1 ? "#fef3c7" :
+    "#f3f4f6";
 
   return (
     <div
@@ -71,6 +89,19 @@ export default function DrillCard({
             <span className="bg-gray-100 text-gray-700 font-mono font-bold text-[9px] px-1.5 py-0.5 rounded">
               {drill.duration}
             </span>
+            {masteryCount > 0 && (
+              <span
+                className="text-[9px] font-black px-2 py-0.5 rounded"
+                style={{ color: masteryColor, background: masteryBg }}
+              >
+                {masteryCount >= 3 ? "Mastered" : `${masteryCount}x done`}
+              </span>
+            )}
+            {ageVariant && ageGroup && (
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700">
+                {ageGroup === "u13" ? "U13" : ageGroup === "u16" ? "U16" : ageGroup === "u19" ? "U19" : "Senior"} version
+              </span>
+            )}
             <span
               className="text-[9px] font-black px-2 py-0.5 rounded"
               style={{ color: diff.color, background: diff.bg }}
@@ -117,8 +148,13 @@ export default function DrillCard({
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1a5c2a] mb-2">
               How to do it
             </h4>
+            {ageVariant?.coaching_notes && (
+              <p className="text-xs italic text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-3">
+                Coach tip: {ageVariant.coaching_notes}
+              </p>
+            )}
             <div className="space-y-2">
-              {drill.instructions.map((step, i) => (
+              {instructionsToShow.map((step, i) => (
                 <div key={i} className="flex gap-3 items-start">
                   <span className="w-5 h-5 rounded-full bg-[#1a5c2a] text-white text-[9px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">
                     {i + 1}
@@ -132,6 +168,11 @@ export default function DrillCard({
               <span className="text-sm">{equip.icon}</span>
               <span className="text-[10px] font-bold text-gray-600">Equipment: {equip.label}</span>
             </div>
+            {drill.gender_notes && (
+              <div className="mt-2 text-[10px] text-purple-700 bg-purple-50 border border-purple-100 rounded-full px-3 py-1 inline-block ml-2">
+                {drill.gender_notes}
+              </div>
+            )}
           </div>
 
           {/* ③ WHAT GOOD FEELS LIKE */}

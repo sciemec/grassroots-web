@@ -17,6 +17,7 @@ import {
   type PositionKey,
   type DrillCategory,
   type EquipmentTier,
+  type AgeGroup,
 } from "@/lib/drill-data";
 
 const TIER_CONFIG: Record<number, { label: string; color: string; bg: string; source: string; flag: string }> = {
@@ -71,6 +72,10 @@ export default function FootballDrillsLabPage() {
   const [coachTip,   setCoachTip]   = useState<string>("");
   const [tipLoading, setTipLoading] = useState(false);
 
+  // Age group + mastery
+  const [ageGroup,    setAgeGroup]    = useState<AgeGroup>("senior");
+  const [masteryMap,  setMasteryMap]  = useState<Record<string, number>>({});
+
   // Filter bar
   const [filterCategory,   setFilterCategory]   = useState<DrillCategory | "all">("all");
   const [filterEquipment,  setFilterEquipment]  = useState<EquipmentTier | "all">("all");
@@ -107,6 +112,37 @@ export default function FootballDrillsLabPage() {
             else localStorage.removeItem("gs_futurefit_assignments");
           } catch { localStorage.removeItem("gs_futurefit_assignments"); }
         }
+
+        // Load mastery counts from backend
+        const apiToken = localStorage.getItem("auth_token");
+        if (apiToken && apiToken !== "dev-token") {
+          try {
+            const masteryRes = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/player/drill-completions`,
+              { headers: { Authorization: `Bearer ${apiToken}` } }
+            );
+            if (masteryRes.ok) {
+              const masteryJson = await masteryRes.json();
+              const arr = Array.isArray(masteryJson.data) ? masteryJson.data : [];
+              const map: Record<string, number> = {};
+              arr.forEach((item: { drill_id: string; completions_count: number }) => {
+                map[item.drill_id] = item.completions_count ?? 1;
+              });
+              setMasteryMap(map);
+              // Sync completedDrills from mastery data (merge with existing)
+              const doneIds = arr.map((item: { drill_id: string }) => item.drill_id);
+              if (doneIds.length > 0) {
+                setCompletedDrills(prev => Array.from(new Set([...prev, ...doneIds])));
+              }
+            }
+          } catch { /* silent — mastery loads from localStorage fallback */ }
+        }
+
+        // Set default age group from user's age_group field
+        const userAg = (user as { age_group?: string }).age_group ?? "";
+        if (userAg.includes("u13") || userAg.includes("13")) setAgeGroup("u13");
+        else if (userAg.includes("u16") || userAg.includes("16")) setAgeGroup("u16");
+        else if (userAg.includes("u19") || userAg.includes("19")) setAgeGroup("u19");
       } catch { mapUserPosition(); }
       finally  { setIsLoading(false); }
     };
@@ -158,6 +194,30 @@ export default function FootballDrillsLabPage() {
     await saveProgress(newCompleted, activePosition);
     if (isMarkingDone) {
       const drill = FOOTBALL_POSITION_DRILLS[activePosition].drills.find(d => d.id === drillId);
+
+      // Increment mastery count locally
+      setMasteryMap(prev => ({ ...prev, [drillId]: (prev[drillId] ?? 0) + 1 }));
+
+      // Persist mastery to backend (fire-and-forget)
+      const apiToken = localStorage.getItem("auth_token");
+      if (apiToken && apiToken !== "dev-token" && drill) {
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/player/drill-completions/${drillId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiToken}`,
+            },
+            body: JSON.stringify({
+              drill_name: drill.name,
+              position: activePosition,
+              tier: tierProgress?.currentTier ?? 1,
+            }),
+          }
+        ).catch(() => {});
+      }
+
       if (drill) {
         postToArena(
           `Completed "${drill.name}" · ${activePosition} · ${tierProgress?.currentTierLabel ?? "Spark"} tier`,
@@ -386,6 +446,25 @@ export default function FootballDrillsLabPage() {
               </div>
             </section>
 
+            {/* Age group selector */}
+            <section className="space-y-2">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Age group</h4>
+              <div className="flex flex-wrap gap-2">
+                {(["u13", "u16", "u19", "senior"] as const).map(ag => (
+                  <button
+                    key={ag}
+                    onClick={() => setAgeGroup(ag)}
+                    className="text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl border transition-all cursor-pointer"
+                    style={ageGroup === ag
+                      ? { background: "#1c3d22", color: "#fff", borderColor: "#1c3d22" }
+                      : { background: "#fff", color: "#374151", borderColor: "#e5e7eb" }}
+                  >
+                    {ag === "u13" ? "Under 13" : ag === "u16" ? "Under 16" : ag === "u19" ? "Under 19" : "Senior"}
+                  </button>
+                ))}
+              </div>
+            </section>
+
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* Sidebar info */}
               <div className="lg:col-span-4 bg-white border border-gray-200 rounded-3xl p-5 shadow-sm space-y-4 lg:sticky lg:top-44">
@@ -543,6 +622,8 @@ export default function FootballDrillsLabPage() {
                           isPremiumUser={isPremiumUser}
                           onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
                           onMarkDone={toggleDrillCompletion}
+                          ageGroup={ageGroup}
+                          masteryCount={masteryMap[todaysDrill.id] ?? 0}
                         />
                       </div>
                     )}
@@ -564,6 +645,8 @@ export default function FootballDrillsLabPage() {
                             isPremiumUser={isPremiumUser}
                             onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
                             onMarkDone={toggleDrillCompletion}
+                            ageGroup={ageGroup}
+                            masteryCount={masteryMap[drill.id] ?? 0}
                           />
                         ))}
                       </div>
@@ -586,6 +669,8 @@ export default function FootballDrillsLabPage() {
                             isPremiumUser={isPremiumUser}
                             onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
                             onMarkDone={toggleDrillCompletion}
+                            ageGroup={ageGroup}
+                            masteryCount={masteryMap[drill.id] ?? 0}
                           />
                         ))}
                       </div>

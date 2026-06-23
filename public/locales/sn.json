@@ -89,6 +89,25 @@
     "for_scouts": "Kune Vatsvairi",
     "trusted_by": "Vachitimidzirwa nevadzidzisi nevatambi muZimbabwe"
   },
+  "drills": {
+    "age_group": "Boka reZera",
+    "u13": "Pasi pe-13",
+    "u16": "Pasi pe-16",
+    "u19": "Pasi pe-19",
+    "senior": "Vakuru",
+    "mastered": "Waziva",
+    "in_progress": "Uchiri Kudzidza",
+    "not_started": "Usati Watanga",
+    "times_done": "{{count}}x akadaro",
+    "mark_done": "Saina kuti Wapedza",
+    "completed_label": "Wapedza",
+    "badge_first_drill": "Zviitiko Zvokutanga!",
+    "badge_5_drills": "Zviitiko 5 Zvapedza",
+    "badge_track_complete": "Nzira Yapedza",
+    "age_variant_note": "Shanduro ye-{{age}}",
+    "gender_note_label": "Ziva",
+    "coaching_note_label": "Zano reMudzidzisi"
+  },
   "subscription": {
     "weekly": "Svondo",
     "monthly": "Mwedzi",

@@ -89,6 +89,25 @@
     "for_scouts": "Kubabukeli",
     "trusted_by": "Bexwayiswa ngabaqeqeshi nabalindeli eZimbabwe"
   },
+  "drills": {
+    "age_group": "Iqembu Leminyaka",
+    "u13": "Ngaphansi kwe-13",
+    "u16": "Ngaphansi kwe-16",
+    "u19": "Ngaphansi kwe-19",
+    "senior": "Amalunga Amadala",
+    "mastered": "Uphumelele",
+    "in_progress": "Usafunda",
+    "not_started": "Awukaqi",
+    "times_done": "{{count}}x kwenziwe",
+    "mark_done": "Phawula njengokuqedwe",
+    "completed_label": "Kuqedwe",
+    "badge_first_drill": "Umsebenzi Wokuqala!",
+    "badge_5_drills": "Imisebenzi emi-5 Iqediwe",
+    "badge_track_complete": "Indlela Iqediwe",
+    "age_variant_note": "Uhlelo lwe-{{age}}",
+    "gender_note_label": "Qaphela",
+    "coaching_note_label": "Icebo lomqeqeshi"
+  },
   "subscription": {
     "weekly": "Iviki",
     "monthly": "Inyanga",

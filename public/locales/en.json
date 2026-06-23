@@ -89,6 +89,25 @@
     "for_scouts": "For Scouts",
     "trusted_by": "Trusted by coaches and players across Zimbabwe"
   },
+  "drills": {
+    "age_group": "Age Group",
+    "u13": "Under 13",
+    "u16": "Under 16",
+    "u19": "Under 19",
+    "senior": "Senior",
+    "mastered": "Mastered",
+    "in_progress": "In Progress",
+    "not_started": "Not Started",
+    "times_done": "{{count}}x done",
+    "mark_done": "Mark as done",
+    "completed_label": "Completed",
+    "badge_first_drill": "First Drill!",
+    "badge_5_drills": "5 Drills Done",
+    "badge_track_complete": "Track Complete",
+    "age_variant_note": "{{age}} version",
+    "gender_note_label": "Note",
+    "coaching_note_label": "Coach tip"
+  },
   "subscription": {
     "weekly": "Weekly",
     "monthly": "Monthly",
