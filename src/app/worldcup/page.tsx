@@ -37,12 +37,15 @@
 
 'use client';
 
+import jsPDF from 'jspdf';
 import { useState, useEffect, useRef } from 'react';
 import {
   MapPin, Calendar, RefreshCw, Tv, Activity, Share2, Copy, Check,
   TrendingUp, Clock, Youtube, MessageCircle, Lock, Unlock,
   Loader2, X, Star, Users, Trophy as TrophyIcon, Brain, ChevronRight,
+  FileDown, Download, FileText,
 } from 'lucide-react';
+import { BlueprintPurchaseModal } from '@/components/tactical-iq/BlueprintPurchaseModal';
 import { useAuthStore } from '@/lib/auth-store';
 import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, type MatchStats } from '@/lib/tactical-iq/phase-classifier';
 import { type QuizMoment } from '@/lib/tactical-iq/quiz-generator';
@@ -465,6 +468,350 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// COACHING BLUEPRINTS — premium $4.99 per-match PDF coaching microcycle
+// ─────────────────────────────────────────────────────────────────────────────
+interface TrainingModule {
+  title: string;
+  focus: string;
+  drills: { name: string; setup: string; reps: string; coachingPoint: string }[];
+}
+
+const BLUEPRINT_DAY_PLAN = [
+  'Recovery + Tactical Video Review',
+  'Core Weakness Drill Session',
+  'Drill Progression + Small-Sided Game',
+  'Tactical Shape Training',
+  'Match Simulation — Apply the Blueprint',
+];
+
+function getModulesFromPhases(phases: PhaseReport): TrainingModule[] {
+  const modules: TrainingModule[] = [];
+
+  if (phases.regain.successRate < 40) {
+    modules.push({
+      title: 'Pressing Triggers',
+      focus: 'Win the ball back quicker in transition',
+      drills: [
+        {
+          name: 'Shadow Pressing',
+          setup: '8v8 + 2 neutrals in half pitch. GK plays short = press trigger. Force play wide, never inside.',
+          reps: '4 × 6-min rounds',
+          coachingPoint: 'Press in pairs — never solo. If the first presser gets beaten, the second must be there.',
+        },
+        {
+          name: 'Counter-Press Rondo',
+          setup: '5v5 in 20×20m. Team that loses possession has a 5-second window to win it back immediately.',
+          reps: '6 × 4-min rounds',
+          coachingPoint: 'First 3 seconds after losing the ball is the press window. After that — drop and organise.',
+        },
+      ],
+    });
+  }
+
+  if (phases.build.successRate < 40) {
+    modules.push({
+      title: 'Positional Play Under Pressure',
+      focus: 'Play through the midfield press with composure',
+      drills: [
+        {
+          name: '4v2 Positional Rondo',
+          setup: '4 attackers vs 2 defenders in 15×15m grid. 8 passes = 1 point. Rotate defenders every 2 min.',
+          reps: '5 × 5-min rounds',
+          coachingPoint: 'Move before receiving. Create a third-man option behind the press — never play into pressure.',
+        },
+        {
+          name: 'Build-Out Pattern 11v6',
+          setup: 'Full team vs 6-man high press. GK → CB → CM → wide player sequence. Restart on GK each time.',
+          reps: '3 × 10-min runs',
+          coachingPoint: 'Goalkeeper is a real passing option, not a last resort. No hoofing under pressure.',
+        },
+      ],
+    });
+  }
+
+  if (phases.finish.successRate < 40) {
+    modules.push({
+      title: 'Clinical Finishing',
+      focus: 'Convert chances in the final third',
+      drills: [
+        {
+          name: 'Combination Finishing 2v1',
+          setup: '2 attackers vs 1 defender, entering from midfield. Vary angle and distance of approach each rep.',
+          reps: '20 reps each side',
+          coachingPoint: 'Communicate before the box — "square it" or "shoot". Hesitation inside the area is fatal.',
+        },
+        {
+          name: 'Crossing & Arrival Timing',
+          setup: 'Winger crosses from 3 zones (byline, cut-back, early cross). 2 strikers attack near/far post on cue.',
+          reps: '25 crosses per winger',
+          coachingPoint: 'Late arrival into the box hits the ball harder than an early run that slows down.',
+        },
+      ],
+    });
+  }
+
+  if (modules.length === 0) {
+    modules.push({
+      title: 'Advanced Transition Play',
+      focus: 'Exploit both defensive and attacking transitions',
+      drills: [
+        {
+          name: 'Counter-Attack Burst 3v2',
+          setup: 'GK distributes to CM. Instant 3v2 fast break. Add a covering defender after every 5 reps.',
+          reps: '15 reps each way',
+          coachingPoint: '2 touches maximum in the break. First pass sets the angle, second pass or shot finishes.',
+        },
+        {
+          name: 'Transition Game 6v6',
+          setup: '6v6 on 40×50m. Goal only counts if scored within 6 seconds of winning possession.',
+          reps: '4 × 8-min rounds',
+          coachingPoint: 'Attack the space between defenders — not the man. Speed of decision beats speed of running.',
+        },
+      ],
+    });
+  }
+
+  return modules;
+}
+
+function generateBlueprintPDF(match: Match, phases: PhaseReport, modules: TrainingModule[]): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210;
+  const H = 297;
+  const margin = 14;
+
+  // ── PAGE 1: Title + Phase Summary + Module Overview ────────────────────────
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, 0, W, 58, 'F');
+  doc.setFillColor(240, 180, 41);
+  doc.rect(0, 58, W, 3, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(240, 180, 41);
+  doc.text('GRS COACHING BLUEPRINTS', W / 2, 18, { align: 'center' });
+
+  doc.setFontSize(19);
+  doc.setTextColor(255, 255, 255);
+  doc.text('5-Day Training Microcycle', W / 2, 34, { align: 'center' });
+
+  doc.setFontSize(11);
+  doc.text(`${match.homeTeam}  ${match.homeScore} – ${match.awayScore}  ${match.awayTeam}`, W / 2, 48, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.text('Based on the AI tactical report generated by GrassRoots Sports.', margin, 72);
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, 80);
+
+  // Phase summary box
+  doc.setFillColor(245, 250, 246);
+  doc.roundedRect(margin, 88, W - margin * 2, 50, 3, 3, 'F');
+  doc.setDrawColor(26, 92, 42);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(margin, 88, W - margin * 2, 50, 3, 3, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(26, 92, 42);
+  doc.text('MATCH PHASE ANALYSIS', margin + 4, 97);
+
+  const phaseRows = [
+    { label: 'Regaining Possession', rate: phases.regain.successRate },
+    { label: 'Building the Attack',  rate: phases.build.successRate },
+    { label: 'Finishing',            rate: phases.finish.successRate },
+  ];
+  phaseRows.forEach((p, i) => {
+    const y = 107 + i * 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`${p.label}:`, margin + 4, y);
+
+    const col: [number, number, number] = p.rate < 40 ? [190, 40, 40] : p.rate < 60 ? [180, 120, 0] : [26, 92, 42];
+    doc.setTextColor(col[0], col[1], col[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${p.rate}% success`, 118, y);
+
+    if (p.rate < 40) {
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'italic');
+      doc.text('  ← focus area this week', 145, y);
+    }
+  });
+
+  // Modules overview
+  let y = 152;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(26, 92, 42);
+  doc.text('TRAINING FOCUS THIS WEEK', margin, y);
+  y += 8;
+
+  modules.forEach((mod, i) => {
+    doc.setFillColor(240, 180, 41);
+    doc.rect(margin, y + 1, 2, 5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(30, 30, 30);
+    doc.text(`${i + 1}. ${mod.title}`, margin + 6, y + 6);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(mod.focus, margin + 6, y + 13);
+    y += 22;
+  });
+
+  // Footer
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, H - 14, W, 14, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text("GrassRoots Sports · grassrootssports.live · Zimbabwe's First AI Sports Platform", W / 2, H - 6, { align: 'center' });
+
+  // ── PAGE 2: 5-Day Plan ─────────────────────────────────────────────────────
+  doc.addPage();
+
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, 0, W, 18, 'F');
+  doc.setTextColor(240, 180, 41);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('5-DAY MICROCYCLE PLAN', W / 2, 12, { align: 'center' });
+
+  y = 26;
+  BLUEPRINT_DAY_PLAN.forEach((dayLabel, dayIdx) => {
+    const isModuleDay = dayIdx >= 1 && dayIdx <= 3;
+    const mod = isModuleDay ? modules[dayIdx - 1] : null;
+    const boxH = mod ? 54 : 22;
+
+    doc.setFillColor(245, 250, 246);
+    doc.roundedRect(margin, y, W - margin * 2, boxH, 2, 2, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(26, 92, 42);
+    doc.text(`DAY ${dayIdx + 1}`, margin + 4, y + 7);
+
+    doc.setFontSize(10);
+    doc.setTextColor(30, 30, 30);
+    doc.text(mod ? mod.title : dayLabel, margin + 20, y + 7);
+
+    if (mod) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Focus: ${mod.focus}`, margin + 4, y + 16);
+
+      mod.drills.forEach((drill, di) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(50, 50, 50);
+        doc.text(`• ${drill.name}  (${drill.reps})`, margin + 4, y + 26 + di * 12);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(110, 110, 110);
+        const lines = doc.splitTextToSize(drill.setup, W - margin * 2 - 10) as string[];
+        doc.text(lines[0], margin + 8, y + 32 + di * 12);
+      });
+      y += boxH + 6;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(dayLabel, margin + 4, y + 16);
+      y += boxH + 6;
+    }
+  });
+
+  // ── PAGE 3: Drill Cards ────────────────────────────────────────────────────
+  doc.addPage();
+
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, 0, W, 18, 'F');
+  doc.setTextColor(240, 180, 41);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('DRILL CARDS', W / 2, 12, { align: 'center' });
+
+  y = 24;
+  modules.forEach((mod) => {
+    if (y > H - 70) { doc.addPage(); y = 20; }
+
+    doc.setFillColor(240, 180, 41);
+    doc.rect(margin, y, W - margin * 2, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(26, 92, 42);
+    doc.text(mod.title.toUpperCase(), margin + 4, y + 6);
+    y += 12;
+
+    mod.drills.forEach((drill) => {
+      if (y > H - 58) { doc.addPage(); y = 20; }
+
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(margin, y, W - margin * 2, 50, 2, 2, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(30, 30, 30);
+      doc.text(drill.name, margin + 4, y + 8);
+
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(26, 92, 42);
+      doc.text('SETUP', margin + 4, y + 17);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(60, 60, 60);
+      const setupLines = doc.splitTextToSize(drill.setup, W - margin * 2 - 8) as string[];
+      doc.text(setupLines.slice(0, 2), margin + 4, y + 23);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(26, 92, 42);
+      doc.text('REPS', margin + 110, y + 17);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(60, 60, 60);
+      doc.text(drill.reps, margin + 110, y + 23);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(200, 130, 0);
+      doc.text('COACHING POINT', margin + 4, y + 37);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      doc.setTextColor(60, 60, 60);
+      const cpLines = doc.splitTextToSize(drill.coachingPoint, W - margin * 2 - 8) as string[];
+      doc.text(cpLines.slice(0, 2), margin + 4, y + 43);
+
+      y += 56;
+    });
+    y += 4;
+  });
+
+  // Stamp every page with footer
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(26, 92, 42);
+    doc.rect(0, H - 10, W, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.text(
+      `GRS Coaching Blueprint · ${match.homeTeam} vs ${match.awayTeam} · Page ${p} of ${totalPages}`,
+      W / 2, H - 4, { align: 'center' }
+    );
+  }
+
+  doc.save(`GRS-Blueprint-${match.homeTeam.replace(/\s+/g, '-')}-vs-${match.awayTeam.replace(/\s+/g, '-')}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WorldCupTacticalLabPage() {
@@ -481,6 +828,10 @@ export default function WorldCupTacticalLabPage() {
   const [showFanRegister, setShowFanRegister] = useState(false);
   const [tacticalIQ, setTacticalIQ]          = useState<TacticalIQResult | null>(null);
   const [liveMatches, setLiveMatches]        = useState<LiveScoreboardMatch[]>([]);
+  const [purchasedBlueprints, setPurchasedBlueprints] = useState<string[]>([]);
+  const [showBlueprintModal, setShowBlueprintModal]   = useState(false);
+  const [isDownloadingBlueprint, setIsDownloadingBlueprint] = useState(false);
+  const [hasPurchasedBlueprint, setHasPurchasedBlueprint]   = useState(false);
   const hasSetInitial = useRef(false);
   const UNLOCK_KEY = 'wc_unlocked_matches';
 
@@ -491,6 +842,42 @@ export default function WorldCupTacticalLabPage() {
   const saveUnlocked = (ids: string[]) => localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
 
   useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
+
+  // ── Load purchased blueprints + handle Stripe return ─────────────────────
+  useEffect(() => {
+    try {
+      const stored: string[] = JSON.parse(localStorage.getItem('grs_blueprints') ?? '[]');
+      setPurchasedBlueprints(stored);
+    } catch { /* ignore */ }
+
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const paidId = params.get('blueprint_paid');
+    if (paidId) {
+      setPurchasedBlueprints(prev => {
+        const updated = [...new Set([...prev, paidId])];
+        localStorage.setItem('grs_blueprints', JSON.stringify(updated));
+        return updated;
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  // ── Check whether the current match's blueprint has been purchased ────────
+  useEffect(() => {
+    if (!selectedMatch || !authToken) { setHasPurchasedBlueprint(false); return; }
+    // Optimistic local check first
+    if (purchasedBlueprints.includes(selectedMatch.id)) {
+      setHasPurchasedBlueprint(true);
+      return;
+    }
+    fetch(`/api/world-cup/matches/${selectedMatch.id}/check-purchase`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+      .then(r => r.json())
+      .then(data => setHasPurchasedBlueprint(data.purchased || false))
+      .catch(() => setHasPurchasedBlueprint(false));
+  }, [selectedMatch, authToken]);
 
   // ── Load completed matches ────────────────────────────────────────────────
   // No 3-second polling, no live socket — fetched once, refreshed manually
@@ -609,6 +996,32 @@ export default function WorldCupTacticalLabPage() {
         }),
       });
     } catch {}
+  };
+
+  const handleDownloadBlueprint = async (matchId: string) => {
+    setIsDownloadingBlueprint(true);
+    try {
+      const response = await fetch(`/api/world-cup/matches/${matchId}/generate-blueprint`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        if (response.status === 402) { setShowBlueprintModal(true); return; }
+        throw new Error(data.error || 'Failed to generate blueprint');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `GRS-Blueprint-${selectedMatch?.homeTeam}-vs-${selectedMatch?.awayTeam}.pdf`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to download blueprint');
+    } finally {
+      setIsDownloadingBlueprint(false);
+    }
   };
 
   const phaseIcons: Record<keyof PhaseReport, string> = { regain: '🛡️', build: '⚙️', finish: '🎯' };
@@ -802,6 +1215,7 @@ export default function WorldCupTacticalLabPage() {
                           ))}
                         </div>
                       )}
+
                     </>
                   ) : (
                     <div className="bg-white rounded-2xl p-8 text-center border shadow-sm text-gray-500">
@@ -824,6 +1238,37 @@ export default function WorldCupTacticalLabPage() {
               <AdBanner tier="SILVER" />
               <MatchOdds match={selectedMatch} />
               <ShareButtons match={selectedMatch} />
+
+              {selectedMatch && report && (
+                <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText size={16} className="text-[#1a5c2a]" />
+                    <h3 className="text-sm font-bold text-gray-900">GRS Coaching Blueprint</h3>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">Turn this tactical analysis into a 5-day training microcycle.</p>
+                  {hasPurchasedBlueprint ? (
+                    <button
+                      onClick={() => handleDownloadBlueprint(selectedMatch.id)}
+                      disabled={isDownloadingBlueprint}
+                      className="w-full py-2.5 bg-[#1a5c2a] hover:bg-[#0d3d1a] text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                      {isDownloadingBlueprint ? (
+                        <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Generating...</>
+                      ) : (
+                        <><Download size={16} />Download Blueprint</>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowBlueprintModal(true)}
+                      className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Lock size={14} />Unlock for $4.99
+                    </button>
+                  )}
+                  <p className="text-[9px] text-gray-400 text-center mt-2">PDF includes drills, coaching points, and age adaptations</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -832,6 +1277,14 @@ export default function WorldCupTacticalLabPage() {
       {/* MODALS */}
       {showHighlightsModal && selectedMatch && <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />}
       {showFanRegister && <FanRegistrationModal onClose={() => setShowFanRegister(false)} onRegisterSuccess={onRegisterSuccess} />}
+      {showBlueprintModal && selectedMatch && (
+        <BlueprintPurchaseModal
+          matchId={selectedMatch.id}
+          matchName={`${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`}
+          onClose={() => setShowBlueprintModal(false)}
+          onPurchaseComplete={() => setHasPurchasedBlueprint(true)}
+        />
+      )}
     </div>
   );
 }
