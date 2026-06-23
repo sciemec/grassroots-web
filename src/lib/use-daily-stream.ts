@@ -38,7 +38,9 @@ export function useDailyStream(): DailyStreamResult {
       setRoomName(room_name);
 
       // 2. Dynamically import Daily.js (only loads when streaming is actually used)
-      const DailyIframe = (await import("@daily-co/daily-js")).default;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // @ts-ignore — @daily-co/daily-js resolves at runtime; types not required
+      const DailyIframe = ((await import("@daily-co/daily-js")) as any).default;
 
       // 3. Create a call object using the existing camera stream
       const videoTrack = stream.getVideoTracks()[0] ?? false;

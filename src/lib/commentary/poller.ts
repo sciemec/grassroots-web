@@ -1,5 +1,9 @@
 // src/lib/commentary/poller.ts
-import  fetchMatchEvents from '@/lib/isports/client';
+// iSports match event polling — stubbed (no active subscription)
+const fetchMatchEvents = async (
+  _matchId: string,
+  _lastEventId?: string
+): Promise<Array<{ id: string; minute?: number; event_type: string; team_name: string; player_name: string; assist_player_name?: string }>> => [];
 import { CommentaryBroadcaster } from './broadcaster';
 import type { MatchEvent } from './engine';
 

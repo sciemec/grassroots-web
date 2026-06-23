@@ -15,11 +15,11 @@ function evaluateBiometrics(args: Record<string, unknown>): EngineOutput { retur
 /** Matches the ScanEntry shape emitted by BiometricScanner's onScanComplete callback. */
 interface ScanEntry {
   mode: string;
-  score: number;       // 0–100 quality score from MediaPipe analysis
-  level: string;       // "Elite" | "Good" | "Raw"
-  asymmetry_score: number;
-  asymmetry_diff: number;
-  weak_side: string | null;
+  score?: number;       // 0–100 quality score from MediaPipe analysis (optional — depends on scanner version)
+  level?: string;       // "Elite" | "Good" | "Raw"
+  asymmetry_score?: number;
+  asymmetry_diff?: number;
+  weak_side?: string | null;
   frames_analysed: number;
   session_date: string;
   mode_label: string;
@@ -51,7 +51,7 @@ export default function AthleteScanPage() {
     try {
       // 1. Map scanner score (0–100) to approximate 20m sprint duration.
       //    Elite (~90) ≈ 2.8s · Good (~60) ≈ 3.8s · Raw (~20) ≈ 4.5s
-      const durationSeconds = 5 - (scannerData.score / 100) * 2.5;
+      const durationSeconds = 5 - ((scannerData.score ?? 50) / 100) * 2.5;
 
       // 2. Evaluate with your real biometric algorithm engine
       const evaluation = evaluateBiometrics({

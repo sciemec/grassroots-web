@@ -92,7 +92,7 @@ interface Post {
   my_reaction?: string | null;
   from_whatsapp?: boolean;
   activity_type?: string;
-  activity_data?: Record<string, unknown>;
+  activity_data?: Record<string, string | number | boolean | null | undefined>;
   user?: { id: string; name: string; role: string; sport?: string; province?: string };
 }
 

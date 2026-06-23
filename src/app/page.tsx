@@ -165,7 +165,7 @@ function CoreGoals() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VideoUpload — R2 upload wired to player vault when logged in
+// VideoUpload — R2 upload → Vault + Arena Feed (IDENTIFY → MARKET)
 // ─────────────────────────────────────────────────────────────────────────────
 function VideoUpload() {
   const user  = useAuthStore((s) => s.user);
@@ -174,14 +174,18 @@ function VideoUpload() {
   const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [label,  setLabel]  = useState("");
   const [savedToVault, setSavedToVault] = useState(false);
+  const [postedToArena, setPostedToArena] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async () => {
     if (!file) return;
     setStatus("uploading");
     setSavedToVault(false);
+    setPostedToArena(false);
 
     try {
+      const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+
       // Step 1 — get presigned R2 URL
       const presignRes = await fetch("/api/upload/presigned", {
         method:  "POST",
@@ -208,8 +212,8 @@ function VideoUpload() {
       }
 
       // Step 3 — if logged in, save to player vault in PostgreSQL
+      let vaultSaved = false;
       if (user && token && key) {
-        const API = process.env.NEXT_PUBLIC_API_URL ?? "";
         const vaultRes = await fetch(`${API}/player/vault/upload`, {
           method:  "POST",
           headers: {
@@ -223,7 +227,33 @@ function VideoUpload() {
             size_mb:   +(file.size / 1024 / 1024).toFixed(2),
           }),
         });
-        setSavedToVault(vaultRes.ok);
+        vaultSaved = vaultRes.ok;
+        setSavedToVault(vaultSaved);
+
+        // ✅ NEW: Step 4 — Auto-post to Arena Feed (MARKET pillar)
+        if (vaultSaved) {
+          const arenaPost = await fetch(`${API}/arena/posts`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              body: `🎥 New training video: ${label || file.name}`,
+              video_url: publicUrl,
+              post_type: "achievement",
+              metadata: {
+                source: "landing_page",
+                file_name: file.name,
+                uploaded_at: new Date().toISOString(),
+              },
+            }),
+          });
+
+          if (arenaPost.ok) {
+            setPostedToArena(true);
+          }
+        }
       }
 
       setStatus("done");
@@ -244,7 +274,7 @@ function VideoUpload() {
         </h2>
         <p className="text-sm text-gray-500 mb-8 max-w-md mx-auto">
           Upload a training clip or match highlight. It goes straight to your
-          vault and can be shared with scouts via your Talent Passport.
+          vault <strong>and</strong> appears in the Arena feed for scouts to see.
         </p>
 
         <div
@@ -293,7 +323,7 @@ function VideoUpload() {
               className="w-full py-4 rounded-xl font-bold text-white text-base"
               style={{ background: GRS_GREEN }}
             >
-              {user ? "Upload to my vault" : "Upload video"}
+              {user ? "Upload to vault & Arena" : "Upload video"}
             </button>
             {!user && (
               <p className="text-xs text-gray-400">
@@ -301,7 +331,7 @@ function VideoUpload() {
                 <Link href="/register" className="underline" style={{ color: GRS_GREEN }}>
                   Create one free
                 </Link>{" "}
-                to save this to your vault and share with scouts.
+                to save this to your vault <strong>and</strong> share with scouts on Arena.
               </p>
             )}
           </div>
@@ -317,11 +347,39 @@ function VideoUpload() {
 
         {status === "done" && (
           <div className="py-4 space-y-3">
-            {savedToVault ? (
+            {savedToVault && postedToArena ? (
+              <>
+                <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
+                  ✓ Saved to vault & posted to Arena!
+                </div>
+                <p className="text-xs text-gray-500">
+                  Your video is now visible to scouts on the Arena feed.
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Link
+                    href="/player/vault"
+                    className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
+                    style={{ background: GRS_GREEN }}
+                  >
+                    View in vault →
+                  </Link>
+                  <Link
+                    href="/arena"
+                    className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
+                    style={{ background: "#c8962a" }}
+                  >
+                    View on Arena →
+                  </Link>
+                </div>
+              </>
+            ) : savedToVault ? (
               <>
                 <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
                   ✓ Saved to your vault
                 </div>
+                <p className="text-xs text-gray-500">
+                  (Arena post skipped — you can post manually from the Arena page)
+                </p>
                 <Link
                   href="/player/vault"
                   className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"

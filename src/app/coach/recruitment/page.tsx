@@ -61,7 +61,7 @@ function ApplicationRow({
   onStatusChange,
 }: {
   app: Application;
-  onStatusChange: (appId: number, status: Application["status"]) => Promise<void>;
+  onStatusChange: (appId: string, status: Application["status"]) => Promise<void>;
 }) {
   const [expanded, setExpanded]   = useState(false);
   const [updating, setUpdating]   = useState(false);

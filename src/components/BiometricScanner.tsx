@@ -43,7 +43,7 @@ function saveScanToStorage(entry: ScanEntry): void {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 interface BiometricScannerProps {
-  onScanComplete?: (data: ScanEntry) => void;
+  onScanComplete?: (data: ScanEntry) => void | Promise<void>;
 }
 
 export default function BiometricScanner({ onScanComplete }: BiometricScannerProps = {}) {
