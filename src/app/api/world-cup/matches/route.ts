@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import {
   getLiveMatches,
   getCompletedMatches,
@@ -15,6 +16,31 @@ import {
   ISPORTS_WORLD_CUP_LEAGUE_ID,
   type iSportsMatch,
 } from '@/lib/isports/client';
+
+function getR2(): S3Client | null {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const keyId     = process.env.R2_ACCESS_KEY_ID;
+  const secret    = process.env.R2_SECRET_ACCESS_KEY;
+  if (!accountId || !keyId || !secret) return null;
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId: keyId, secretAccessKey: secret },
+  });
+}
+
+async function getReportManifest(): Promise<Record<string, boolean>> {
+  const r2 = getR2();
+  if (!r2) return {};
+  try {
+    const bucket = process.env.R2_BUCKET ?? 'grassroots-videos';
+    const res = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: 'tactical-reports/index.json' }));
+    const body = await res.Body?.transformToString();
+    return body ? JSON.parse(body) : {};
+  } catch {
+    return {};
+  }
+}
 
 // iSports status codes:
 // -1 = FT (finished)   0 = NS (not started)
@@ -25,7 +51,7 @@ function isoFromUnix(ts: number): string {
   return new Date(ts * 1000).toISOString();
 }
 
-function mapToPageMatch(m: iSportsMatch) {
+function mapToPageMatch(m: iSportsMatch, manifest: Record<string, boolean> = {}) {
   const iso  = isoFromUnix(m.matchTime);
   const minute = m.extraExplain?.minute ?? 0;
 
@@ -49,7 +75,7 @@ function mapToPageMatch(m: iSportsMatch) {
     minute,
     possession_home:           50,
     possession_away:           50,
-    tactical_report_generated: false,
+    tactical_report_generated: manifest[m.matchId] === true,
     round:                     m.round ?? '',
     group:                     m.group ?? '',
     status:                    statusCode,
@@ -65,15 +91,18 @@ export async function GET(req: NextRequest) {
   const lid    = ISPORTS_WORLD_CUP_LEAGUE_ID;
 
   try {
+    // Fetch manifest once — used to set tactical_report_generated on each match
+    const manifest = await getReportManifest();
+
     if (status === 'live') {
       const matches = await getLiveMatches(lid);
       const live = matches.filter((m) => LIVE_STATUSES.has(m.status));
-      return NextResponse.json({ matches: live.map(mapToPageMatch) });
+      return NextResponse.json({ matches: live.map((m) => mapToPageMatch(m, manifest)) });
     }
 
     if (status === 'completed') {
       const matches = await getCompletedMatches(lid);
-      return NextResponse.json({ matches: matches.map(mapToPageMatch) });
+      return NextResponse.json({ matches: matches.map((m) => mapToPageMatch(m, manifest)) });
     }
 
     // No param — today's live + schedule, plus recent results
@@ -91,7 +120,7 @@ export async function GET(req: NextRequest) {
         for (const m of r.value) {
           if (!seen.has(m.matchId)) {
             seen.add(m.matchId);
-            all.push(mapToPageMatch(m));
+            all.push(mapToPageMatch(m, manifest));
           }
         }
       }

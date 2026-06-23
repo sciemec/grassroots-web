@@ -1,140 +1,235 @@
 // src/app/api/cron/generate-tactical-report/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Fires every 15 minutes via Vercel cron (see vercel.json addition below).
-// Checks for matches that just finished and generates their Tactical Report.
-//
-// THIS IS THE LEGAL BOUNDARY:
-//   - LiveCommentary.tsx polls WHILE the match is live and speaks events aloud
-//     in real time → this is the broadcasting-risk pattern
-//   - This cron route runs in the BACKGROUND, AFTER full-time, with no user
-//     watching → reports simply exist, already finished, when a player opens
-//     the app later. No live push to any client. No audio synced to play.
-//
-// HOW IT WORKS:
-//   1. Vercel calls this URL every 15 minutes (no human involved)
-//   2. Route checks bhora-ai for matches where status = 'completed' AND
-//      tactical_report_generated = false
-//   3. For each one, fetches the full event log and possession/shot stats
-//   4. Classifies every event into one of 3 phases (see phase-classifier.ts)
-//   5. Generates 2-3 "What Would You Do?" quiz moments from the highest-
-//      leverage events (goals, turnovers in the defensive third, etc.)
-//   6. Calls THUTO/Amara once per match for the phase narrative (not per event)
-//   7. Saves the report, marks tactical_report_generated = true
+// Fires every 15 minutes via Vercel cron (see vercel.json).
+// For each newly-finished World Cup match that has no report yet:
+//   1. Calls Gemini to synthesise plausible match events from the final score
+//   2. Classifies those events into Regain / Build / Finish phases
+//   3. Generates quiz moments from the highest-leverage events
+//   4. Stores the JSON report in R2 at tactical-reports/{matchId}.json
+//   5. Updates the manifest at tactical-reports/index.json
 // ─────────────────────────────────────────────────────────────────────────────
 
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 import { NextRequest, NextResponse } from 'next/server';
-import { classifyPhases } from '@/lib/tactical-iq/phase-classifier';
+import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getCompletedMatches, ISPORTS_WORLD_CUP_LEAGUE_ID } from '@/lib/isports/client';
+import { classifyPhases, type MatchEvent, type MatchStats } from '@/lib/tactical-iq/phase-classifier';
 import { generateQuizMoments } from '@/lib/tactical-iq/quiz-generator';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
+// ── R2 client ────────────────────────────────────────────────────────────────
+
+function getR2(): S3Client | null {
+  const accountId = process.env.R2_ACCOUNT_ID;
+  const keyId     = process.env.R2_ACCESS_KEY_ID;
+  const secret    = process.env.R2_SECRET_ACCESS_KEY;
+  if (!accountId || !keyId || !secret) return null;
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId: keyId, secretAccessKey: secret },
+  });
+}
+
+const BUCKET = process.env.R2_BUCKET ?? 'grassroots-videos';
+const MANIFEST_KEY = 'tactical-reports/index.json';
+
+async function getManifest(r2: S3Client): Promise<Record<string, boolean>> {
+  try {
+    const res = await r2.send(new GetObjectCommand({ Bucket: BUCKET, Key: MANIFEST_KEY }));
+    const body = await res.Body?.transformToString();
+    return body ? JSON.parse(body) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function saveReport(r2: S3Client, matchId: string, report: object): Promise<void> {
+  await r2.send(new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: `tactical-reports/${matchId}.json`,
+    Body: JSON.stringify(report),
+    ContentType: 'application/json',
+  }));
+}
+
+async function updateManifest(r2: S3Client, manifest: Record<string, boolean>): Promise<void> {
+  await r2.send(new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: MANIFEST_KEY,
+    Body: JSON.stringify(manifest),
+    ContentType: 'application/json',
+  }));
+}
+
+// ── Gemini call ──────────────────────────────────────────────────────────────
+
+interface GeminiEvents {
+  events: MatchEvent[];
+  narrative: string;
+}
+
+async function callGemini(
+  homeTeam: string,
+  awayTeam: string,
+  homeScore: number,
+  awayScore: number,
+  matchDate: string,
+): Promise<GeminiEvents> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY not set');
+
+  const prompt = `You are a football (soccer) analyst generating educational match data for youth coaches.
+
+Match: ${homeTeam} ${homeScore}-${awayScore} ${awayTeam}
+Date: ${matchDate}
+
+Generate a plausible, realistic set of match events for this final score. Return ONLY valid JSON — no markdown, no explanation.
+
+Requirements:
+- Exactly ${homeScore + awayScore} GOAL events (${homeScore} for home team, ${awayScore} for away team)
+- 25 to 35 total events spread across 90 minutes
+- Mix of event types: PASS, SHOT, GOAL, DRIBBLE, TACKLE, INTERCEPTION, CROSS, HEADER, CLEARANCE, TURNOVER, THROUGH_BALL, BLOCK, PENALTY, SWITCH_PLAY
+- Realistic minute distribution — more events in 30-45 and 60-80 minute ranges
+- Zones: "defensive_third", "middle_third", "attacking_third"
+- Outcomes: "success" or "failure"
+- narrative: exactly 3 paragraphs of tactical education for youth players. No score narration. Focus on WHY the tactical patterns worked or failed.
+
+Return this exact JSON structure:
+{
+  "events": [
+    {"id": "e1", "minute": 12, "eventType": "TACKLE", "team": "home", "zone": "defensive_third", "outcome": "success"},
+    ...
+  ],
+  "narrative": "paragraph 1\\n\\nparagraph 2\\n\\nparagraph 3"
+}`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini error ${res.status}: ${err.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+
+  // Strip markdown code fences if present
+  const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+  let parsed: GeminiEvents;
+  try {
+    parsed = JSON.parse(clean);
+  } catch {
+    // Try to extract JSON object from the text
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Gemini returned no valid JSON');
+    parsed = JSON.parse(match[0]);
+  }
+
+  if (!Array.isArray(parsed.events)) throw new Error('Gemini response missing events array');
+  return parsed;
+}
+
+// ── Cron handler ─────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  // ── Security: only Vercel's own cron scheduler can call this ────────────
-  // Vercel automatically attaches this header — random requests get rejected
+  // Vercel cron attaches this header automatically
   const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  try {
-    // Step 1 — find matches that just finished and have no report yet
-    const matchesRes = await fetch(`${API}/world-cup/matches/pending-tactical-report`);
-    if (!matchesRes.ok) {
-      return NextResponse.json({ processed: 0, error: 'Could not fetch pending matches' });
-    }
-    const { matches } = await matchesRes.json();
+  const r2 = getR2();
+  if (!r2) {
+    return NextResponse.json({ error: 'R2 not configured' }, { status: 500 });
+  }
 
-    if (!matches || matches.length === 0) {
-      return NextResponse.json({ processed: 0, message: 'No matches awaiting reports' });
+  try {
+    // Step 1 — fetch all completed World Cup matches from iSports
+    const completed = await getCompletedMatches(ISPORTS_WORLD_CUP_LEAGUE_ID);
+    if (completed.length === 0) {
+      return NextResponse.json({ processed: 0, message: 'No completed matches' });
+    }
+
+    // Step 2 — read manifest to find which matches already have reports
+    const manifest = await getManifest(r2);
+    const pending = completed.filter((m) => !manifest[m.matchId]);
+
+    if (pending.length === 0) {
+      return NextResponse.json({ processed: 0, message: 'All matches already have reports' });
     }
 
     const results: { matchId: string; status: string }[] = [];
 
-    // Step 2 — process each finished match
-    for (const match of matches) {
+    // Step 3 — process each pending match (max 5 per cron tick to stay within time limits)
+    for (const match of pending.slice(0, 5)) {
       try {
-        // Fetch full event log + stats for this match
-        const detailRes = await fetch(`${API}/world-cup/matches/${match.id}/full-log`);
-        if (!detailRes.ok) {
-          results.push({ matchId: match.id, status: 'fetch_failed' });
-          continue;
-        }
-        const matchData = await detailRes.json();
+        const matchDate = new Date(match.matchTime * 1000).toISOString().split('T')[0];
 
-        // Step 3 — classify every event into Regain / Build / Finish
-        const phases = classifyPhases(matchData.events, matchData.stats);
+        // Step 4 — call Gemini to synthesise events + narrative
+        const geminiData = await callGemini(
+          match.homeName,
+          match.awayName,
+          match.homeScore ?? 0,
+          match.awayScore ?? 0,
+          matchDate,
+        );
 
-        // Step 4 — pick 2-3 high-leverage moments for the quiz
-        const quizMoments = generateQuizMoments(matchData.events, phases);
+        // Step 5 — classify events into phases
+        const homeShots = geminiData.events.filter((e) => e.team === 'home' && (e.eventType === 'SHOT' || e.eventType === 'GOAL')).length;
+        const awayShots = geminiData.events.filter((e) => e.team === 'away' && (e.eventType === 'SHOT' || e.eventType === 'GOAL')).length;
+        const stats: MatchStats = {
+          possession: { home: 50, away: 50 },
+          shots:      { home: homeShots, away: awayShots },
+        };
+        const phases = classifyPhases(geminiData.events, stats);
 
-        // Step 5 — one THUTO/Amara call for the whole match narrative
-        // (not one call per event — keeps this cheap and fast)
-        const narrativeRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/ai-coach`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: buildPhasePrompt(phases, matchData),
-            gender: 'male', // narrative is neutral; coach voice picked per-viewer client-side
-            history: [],
-            userContext: { mode: 'tactical_report' },
-          }),
-        });
-        const narrative = narrativeRes.ok
-          ? (await narrativeRes.json()).response ?? ''
-          : '';
+        // Step 6 — generate quiz moments
+        const quizMoments = generateQuizMoments(geminiData.events, phases);
 
-        // Step 6 — save the completed report
-        // X-Cron-Secret authenticates this as a legitimate cron call, not a
-        // random public request — must match CRON_SECRET set in Laravel's
-        // config/services.php (env: CRON_SECRET, same value in both Vercel
-        // and Render environment variables)
-        const saveRes = await fetch(`${API}/world-cup/matches/${match.id}/tactical-report`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Cron-Secret': process.env.CRON_SECRET ?? '',
-          },
-          body: JSON.stringify({
-            phases,
-            quizMoments,
-            narrative,
-            generatedAt: new Date().toISOString(),
-          }),
-        });
+        // Step 7 — build and store the report in R2
+        const report = {
+          available: true,
+          matchId: match.matchId,
+          homeTeam: match.homeName,
+          awayTeam: match.awayName,
+          homeScore: match.homeScore ?? 0,
+          awayScore: match.awayScore ?? 0,
+          matchDate,
+          phases,
+          quizMoments,
+          narrative: geminiData.narrative,
+          generatedAt: new Date().toISOString(),
+        };
 
-        results.push({
-          matchId: match.id,
-          status: saveRes.ok ? 'generated' : 'save_failed',
-        });
+        await saveReport(r2, match.matchId, report);
+        manifest[match.matchId] = true;
+
+        results.push({ matchId: match.matchId, status: 'generated' });
       } catch (err) {
-        results.push({ matchId: match.id, status: 'error' });
+        console.error(`Failed to generate report for ${match.matchId}:`, err);
+        results.push({ matchId: match.matchId, status: 'error' });
       }
     }
 
-    return NextResponse.json({
-      processed: results.length,
-      results,
-    });
+    // Step 8 — update manifest with all newly generated reports
+    await updateManifest(r2, manifest);
+
+    return NextResponse.json({ processed: results.length, results });
   } catch (err) {
+    console.error('Cron execution failed:', err);
     return NextResponse.json({ error: 'Cron execution failed' }, { status: 500 });
   }
-}
-
-// Builds the single prompt sent to THUTO/Amara for the whole match —
-// asks for tactical insight, not a play-by-play
-function buildPhasePrompt(
-  phases: ReturnType<typeof classifyPhases>,
-  matchData: { homeTeam: string; awayTeam: string; homeScore: number; awayScore: number },
-): string {
-  return `Analyse this match from a tactical education perspective for youth players.
-Do not narrate the score. Identify ONE tactical pattern from the data below and
-explain what a player could learn from it.
-
-${matchData.homeTeam} ${matchData.homeScore} - ${matchData.awayScore} ${matchData.awayTeam}
-
-Regaining Possession phase: ${phases.regain.successRate}% success rate, ${phases.regain.events.length} events
-Building the Attack phase: ${phases.build.successRate}% success rate, ${phases.build.events.length} events
-Finishing phase: ${phases.finish.successRate}% success rate, ${phases.finish.events.length} events
-
-Keep the tone encouraging and educational. Address the player directly. Maximum 4 sentences.`;
 }

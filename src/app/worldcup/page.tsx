@@ -564,7 +564,7 @@ export default function WorldCupTacticalLabPage() {
   useEffect(() => {
     if (!selectedMatch || !selectedMatch.reportReady) { setReport(null); return; }
     setReportLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/world-cup/matches/${selectedMatch.id}/tactical-report`)
+    fetch(`/api/world-cup/reports/${selectedMatch.id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => setReport(data?.available ? data : null))
       .catch(() => setReport(null))
