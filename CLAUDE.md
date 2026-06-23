@@ -8822,3 +8822,190 @@ bhora-ai:        92431d0  feat: drill mastery tracking — completions_count col
 | 7 | Training reminders (browser Notification API, time picker, localStorage) | ✅ DONE |
 | 8 | Achievement badge toasts (first drill / 5 drills / track complete) | ✅ DONE |
 
+---
+
+## SESSION LOG — 23 June 2026
+
+### Theme — Pre-Launch Fix List: Multipart Upload Fix + AI Coach Timeout + WhatsApp Meta Migration
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Fix #4 — Video Upload Network Errors (multipart boundary bug) ✅
+
+**Root cause:** Manually setting `Content-Type: multipart/form-data` in the Axios options object
+overrides the browser/Axios auto-generated header which includes the required `boundary=...` parameter.
+Without the boundary, the server cannot parse the multipart body — returns 400/422.
+
+**Files fixed:**
+
+`src/app/player/profile/page.tsx` (lines 249-251):
+```tsx
+// BEFORE (broken):
+const res = await api.post("/profile/photo", formData, {
+  headers: { "Content-Type": "multipart/form-data" },
+});
+// AFTER (fixed):
+const res = await api.post("/profile/photo", formData);
+```
+
+`src/app/player/verification/page.tsx` (lines 212-214):
+```tsx
+// BEFORE (broken):
+await api.post("/verification/upload-document", formData, {
+  headers: { "Content-Type": "multipart/form-data" },
+});
+// AFTER (fixed):
+await api.post("/verification/upload-document", formData);
+```
+
+**Rule (permanent):** NEVER manually set `Content-Type: multipart/form-data` when passing a `FormData` object.
+Axios detects `FormData` automatically and generates the correct header including the boundary.
+
+---
+
+#### Fix #6 — AI Coach Unreachable on Render Cold Starts ✅
+
+**Root cause:** `callDeepSeek()` had no fetch timeout. On Render's free tier, the service sleeps
+after inactivity. First requests take 30-60 seconds. Vercel serverless functions default to a
+10-second timeout — the fetch hung until Vercel killed it, never falling through to Gemini.
+
+**File:** `src/app/api/ai-coach/route.ts`
+
+**Changes:**
+1. Added `export const maxDuration = 60` at the top of the file — extends Vercel function timeout to 60s
+2. Wrapped `callDeepSeek()` fetch in a 25-second `AbortController` timeout:
+
+```typescript
+export const maxDuration = 60; // seconds — allow time for Render cold starts
+
+async function callDeepSeek(...): Promise<string> {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) throw new Error("DEEPSEEK_API_KEY not configured");
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25_000);
+
+  let res: Response;
+  try {
+    res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: { ... },
+      body: JSON.stringify({ ... }),
+    });
+  } finally {
+    clearTimeout(timer);  // always clear timer, even if fetch throws
+  }
+  // ... rest unchanged
+}
+```
+
+**Result:** DeepSeek times out at 25s → throws → falls through to Gemini. Gemini has its own
+try/catch. If both fail, the last-resort DeepSeek attempt runs. Users never see a hung request.
+
+---
+
+#### Fix #8 — WhatsApp: Twilio → Meta Cloud API Migration ✅
+
+**Commit:** `68688a6` — pushed to `sciemec/grassroots-web` master → Vercel auto-deployed
+
+**File:** `src/app/api/whatsapp/route.ts` — complete replacement (346 lines old → ~230 lines new)
+
+**What changed:**
+
+| Aspect | Twilio (old) | Meta Cloud API (new) |
+|---|---|---|
+| Webhook payload | `req.formData()` — URL-encoded | `req.json()` — nested JSON |
+| Message extraction | `body.get("Body")`, `body.get("MediaUrl0")` | `payload.entry[0].changes[0].value.messages[0]` |
+| Send reply | TwiML XML response | `POST graph.facebook.com/v19.0/{phoneNumberId}/messages` |
+| Download media | `fetch(url, { headers: { Authorization: "Basic ..." } })` | 2-step: GET `{mediaId}` → get `url` field → GET with Bearer token |
+| Webhook verify | No GET handler | GET handler responds to `hub.mode/hub.verify_token/hub.challenge` |
+| Response type | `application/xml` TwiML | `text/plain` "OK" |
+
+**What stayed identical:**
+- R2 upload: `S3Client` + `PutObjectCommand`, key format `whatsapp/{phone}/{messageId}.{ext}`
+- Laravel forwarding: `POST /whatsapp/inbound` with `action=prompt` / `action=route_pending`
+- `parseRoutingChoice()` logic
+- Two-turn flow (video → prompt → choice)
+- All message text strings (PROMPT_MESSAGE, HELP_MESSAGE, etc.)
+
+**New env vars required (Vercel + Render):**
+```
+WHATSAPP_PHONE_NUMBER_ID  — from Meta Developer Console → WhatsApp → Getting Started
+WHATSAPP_ACCESS_TOKEN     — System User token or Temporary Token
+WHATSAPP_VERIFY_TOKEN     — grs_webhook_2026 (or any secret string you choose)
+WHATSAPP_BUSINESS_ACCOUNT_ID  — (optional — for future message templates)
+```
+
+**Env vars to REMOVE:**
+```
+TWILIO_ACCOUNT_SID    — no longer used by Next.js webhook
+TWILIO_AUTH_TOKEN     — no longer used by Next.js webhook
+TWILIO_WHATSAPP_FROM  — no longer used by Next.js webhook
+```
+
+**Meta Developer Console config required:**
+- Webhook URL: `https://grassrootssports.live/api/whatsapp`
+- Verify Token: `grs_webhook_2026`
+- Subscribed fields: `messages`
+- Click "Verify and Save" → GET handler responds with challenge
+
+**bhora-ai changes still needed (not in this commit):**
+
+`app/Jobs/AnalyseWhatsappVideoJob.php` — replace Twilio reply block:
+```php
+// REMOVE:
+$twilio->messages->create('whatsapp:+' . ltrim($phone, '+'), [
+    'from' => config('services.twilio.whatsapp_from'),
+    'body' => $message,
+]);
+
+// REPLACE WITH:
+private function sendWhatsAppReply(string $phone, string $message): void
+{
+    Http::withHeaders([
+        'Authorization' => 'Bearer ' . config('services.whatsapp.access_token'),
+        'Content-Type'  => 'application/json',
+    ])->post("https://graph.facebook.com/v19.0/" . config('services.whatsapp.phone_number_id') . "/messages", [
+        'messaging_product' => 'whatsapp',
+        'to'   => ltrim($phone, '+'),
+        'type' => 'text',
+        'text' => ['body' => $message],
+    ]);
+}
+```
+
+`config/services.php` — replace `twilio` block with `whatsapp` block:
+```php
+// REMOVE:
+'twilio' => [
+    'account_sid'    => env('TWILIO_ACCOUNT_SID'),
+    'auth_token'     => env('TWILIO_AUTH_TOKEN'),
+    'whatsapp_from'  => env('TWILIO_WHATSAPP_FROM'),
+],
+
+// REPLACE WITH:
+'whatsapp' => [
+    'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+    'access_token'    => env('WHATSAPP_ACCESS_TOKEN'),
+],
+```
+
+---
+
+### WHAT STILL NEEDS DOING (23 June 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Vercel env vars | ACTION REQUIRED | Remove `TWILIO_*` (3 vars). Add `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN=grs_webhook_2026` |
+| Render env vars | ACTION REQUIRED | Same Twilio removal. Add `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN` |
+| Meta Developer Console | ACTION REQUIRED | Set webhook URL + verify token + subscribe to `messages` |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT YET UPDATED | Replace Twilio HTTP client with Meta API call |
+| bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
+| `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
+| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
+| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+
