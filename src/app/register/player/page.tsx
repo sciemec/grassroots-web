@@ -14,10 +14,24 @@ const GENDER_COACH: Record<"male" | "female", { label: string; coach: string }> 
   female: { label: "Female", coach: "Amara" },
 };
 
+const SPORTS = [
+  { key: "football",   emoji: "⚽", label: "Football"   },
+  { key: "rugby",      emoji: "🏉", label: "Rugby"      },
+  { key: "athletics",  emoji: "🏃", label: "Athletics"  },
+  { key: "netball",    emoji: "🏐", label: "Netball"    },
+  { key: "basketball", emoji: "🏀", label: "Basketball" },
+  { key: "cricket",    emoji: "🏏", label: "Cricket"    },
+  { key: "swimming",   emoji: "🏊", label: "Swimming"   },
+  { key: "tennis",     emoji: "🎾", label: "Tennis"     },
+  { key: "volleyball", emoji: "🏐", label: "Volleyball" },
+  { key: "hockey",     emoji: "🏑", label: "Hockey"     },
+];
+
 interface FormData {
   first_name:      string;
   surname:         string;
   gender:          "male" | "female" | "";
+  sport:           string;
   age:             string;
   country:         string;
   contactType:     "email" | "phone";
@@ -47,6 +61,7 @@ export default function RegisterPlayerPage() {
     first_name:      "",
     surname:         "",
     gender:          "",
+    sport:           "",
     age:             "",
     country:         "Zimbabwe",
     contactType:     "email",
@@ -63,6 +78,7 @@ export default function RegisterPlayerPage() {
     form.first_name.trim().length >= 2 &&
     form.surname.trim().length >= 2 &&
     form.gender !== "" &&
+    form.sport !== "" &&
     form.age !== "" &&
     parseInt(form.age) >= 5 &&
     parseInt(form.age) <= 100 &&
@@ -87,6 +103,7 @@ export default function RegisterPlayerPage() {
         surname:               form.surname.trim(),
         name:                  `${form.first_name.trim()} ${form.surname.trim()}`,
         gender:                form.gender || "male",
+        sport:                 form.sport,
         age:                   parseInt(form.age),
         country:               form.country,
         password:              form.password,
@@ -133,6 +150,7 @@ export default function RegisterPlayerPage() {
       // talent-id-page.tsx, and thuto-whatsapp-route.ts to auto-select
       // THUTO (male) or Amara (female) coaching persona
       localStorage.setItem("player_gender", form.gender || "male");
+      localStorage.setItem("player_sport",  form.sport);
 
       // Save token and user if returned — avoids a separate /auth/me call
       if (data.token) {
@@ -273,6 +291,30 @@ export default function RegisterPlayerPage() {
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Sport selector */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-2">
+                  Primary Sport <span className="text-red-400">*</span>
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {SPORTS.map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => set("sport", s.key)}
+                      className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-colors ${
+                        form.sport === s.key
+                          ? "bg-[#1a5c2a] border-[#1a5c2a] text-white"
+                          : "border-gray-200 text-gray-600 hover:border-[#1a5c2a]"
+                      }`}
+                    >
+                      <span className="text-lg leading-none">{s.emoji}</span>
+                      <span className="text-[10px] leading-none">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button
