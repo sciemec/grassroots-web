@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { findRelevantSessions } from "@/lib/football-knowledge";
 import { geminiText } from "@/lib/gemini";
 
+export const maxDuration = 60; // seconds — allow time for Render cold starts
+
 /**
  * POST /api/ai-coach
  *
@@ -116,22 +118,31 @@ async function callDeepSeek(
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) throw new Error("DEEPSEEK_API_KEY not configured");
 
-  const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      max_tokens: AI_CONFIG.deepseek.max_tokens,
-      temperature: AI_CONFIG.deepseek.temperature,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
-    }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25_000);
+
+  let res: Response;
+  try {
+    res = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        max_tokens: AI_CONFIG.deepseek.max_tokens,
+        temperature: AI_CONFIG.deepseek.temperature,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+        ],
+      }),
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) {
     const err = await res.text();
