@@ -101,8 +101,33 @@ export async function GET(req: NextRequest) {
     }
 
     if (status === 'completed') {
-      const matches = await getCompletedMatches(lid);
-      return NextResponse.json({ matches: matches.map((m) => mapToPageMatch(m, manifest)) });
+      // iSports /results with no date only returns today's completed matches.
+      // Fetch every tournament day from the WC 2026 start through today.
+      const WC_START = new Date('2026-06-11');
+      const today    = new Date();
+      const dates: string[] = [];
+      for (let d = new Date(WC_START); d <= today; d.setDate(d.getDate() + 1)) {
+        dates.push(d.toISOString().split('T')[0]);
+      }
+
+      const settled = await Promise.allSettled(
+        dates.map((date) => getCompletedMatches(lid, date))
+      );
+
+      const seen      = new Set<string>();
+      const completed: iSportsMatch[] = [];
+      for (const r of settled) {
+        if (r.status === 'fulfilled') {
+          for (const m of r.value) {
+            if (!seen.has(m.matchId)) {
+              seen.add(m.matchId);
+              completed.push(m);
+            }
+          }
+        }
+      }
+      completed.sort((a, b) => b.matchTime - a.matchTime);
+      return NextResponse.json({ matches: completed.map((m) => mapToPageMatch(m, manifest)) });
     }
 
     // No param — today's live + schedule, plus recent results

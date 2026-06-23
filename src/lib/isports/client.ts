@@ -108,10 +108,13 @@ export async function getLiveMatches(leagueId?: string): Promise<iSportsMatch[]>
   }
 }
 
-/** Completed/results. Optionally filter by league. */
-export async function getCompletedMatches(leagueId?: string): Promise<iSportsMatch[]> {
+/** Completed/results. Optionally filter by league and/or date (YYYY-MM-DD). */
+export async function getCompletedMatches(leagueId?: string, date?: string): Promise<iSportsMatch[]> {
   try {
-    const q = leagueId ? `?league_id=${leagueId}` : '';
+    const params = new URLSearchParams();
+    if (leagueId) params.set('league_id', leagueId);
+    if (date)     params.set('date', date);
+    const q = params.size ? `?${params}` : '';
     const data = await request(`/results${q}`);
     const all = extractMatches(data);
     return all.filter((m) => m.status === -1);
