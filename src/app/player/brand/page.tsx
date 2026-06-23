@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Upload, Wand2, Download, Image as ImageIcon, Sparkles, Loader2 } from "lucide-react";
-import { PlayerSidebar } from "@/components/layout/player-sidebar";
 
 export default function BrandStudioPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -54,11 +53,7 @@ export default function BrandStudioPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-950">
-      <PlayerSidebar />
-      
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
           
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
@@ -183,8 +178,6 @@ export default function BrandStudioPage() {
             </div>
           </div>
 
-        </div>
-      </main>
     </div>
   );
 }

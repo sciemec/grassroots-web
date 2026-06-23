@@ -7,8 +7,6 @@ import {
   Activity, Download, Loader2
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-// ✅ FIXED: Imported PlayerSidebar cleanly to align with line 98
-import { PlayerSidebar } from "@/components/layout/player-sidebar";
 
 interface TrainingSession {
   overallForm: number;
@@ -102,7 +100,7 @@ export default function PlayerTrainingProgressPage() {
 
   if (!hasHydrated) {
     return (
-      <div className="flex h-screen bg-gray-950 items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-emerald-500" size={24} />
       </div>
     );
@@ -111,12 +109,7 @@ export default function PlayerTrainingProgressPage() {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-950">
-      {/* ✅ RENDERS SMOOTHLY NOW THAT IMPORT IS EXTRACTED */}
-      <PlayerSidebar />
-      
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
           
           {/* Header Controls */}
           <div className="mb-6 flex items-center justify-between">
@@ -232,8 +225,6 @@ export default function PlayerTrainingProgressPage() {
             </div>
           )}
 
-        </div>
-      </main>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, Calendar, Award, LineChart, Activity } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { PlayerSidebar } from "@/components/layout/player-sidebar";
 
 interface TrainingSession {
   overallForm: number;
@@ -17,7 +16,7 @@ interface TrainingSession {
 }
 
 export default function PlayerProgressPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [latestBiometric, setLatestBiometric] = useState<TrainingSession | null>(null);
   const [improvement, setImprovement] = useState(0);
@@ -62,11 +61,7 @@ export default function PlayerProgressPage() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-gray-950">
-      <PlayerSidebar />
-      
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
           
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
@@ -218,8 +213,6 @@ export default function PlayerProgressPage() {
             </div>
           )}
 
-        </div>
-      </main>
     </div>
   );
 }

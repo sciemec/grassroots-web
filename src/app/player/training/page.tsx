@@ -8,7 +8,6 @@ import {
   Sparkles, Clock, CheckCircle, Zap, Heart
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { PlayerSidebar } from "@/components/layout/player-sidebar";
 
 interface TrainingSession {
   overallForm: number;
@@ -40,11 +39,7 @@ export default function PlayerTrainingHub() {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-950">
-      <PlayerSidebar />
-      
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-6 lg:px-8">
           
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
@@ -147,8 +142,6 @@ export default function PlayerTrainingHub() {
             </p>
           </div>
 
-        </div>
-      </main>
     </div>
   );
 }

@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mic, Save, Edit2, CheckCircle, Globe, Heart } from "lucide-react";
-import { PlayerSidebar } from "@/components/layout/player-sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 
 export default function PlayerStoryPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [isEditing, setIsEditing] = useState(false);
   const [story, setStory] = useState("");
   const [savedStory, setSavedStory] = useState("");
@@ -40,11 +39,7 @@ Follow my journey as I chase my dreams! 🇿🇼⚽`;
   };
 
   return (
-    <div className="flex h-screen bg-gray-950">
-      <PlayerSidebar />
-      
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 lg:px-8">
           
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
@@ -144,8 +139,6 @@ Follow my journey as I chase my dreams! 🇿🇼⚽`;
             </div>
           </div>
 
-        </div>
-      </main>
     </div>
   );
 }
