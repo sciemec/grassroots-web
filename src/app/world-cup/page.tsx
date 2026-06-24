@@ -815,7 +815,8 @@ function generateBlueprintPDF(match: Match, phases: PhaseReport, modules: Traini
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WorldCupTacticalLabPage() {
-  const { user, token } = useAuthStore();
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
 
   const [matches, setMatches]               = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch]    = useState<Match | null>(null);
@@ -832,11 +833,16 @@ export default function WorldCupTacticalLabPage() {
   const [showBlueprintModal, setShowBlueprintModal]   = useState(false);
   const [isDownloadingBlueprint, setIsDownloadingBlueprint] = useState(false);
   const [hasPurchasedBlueprint, setHasPurchasedBlueprint]   = useState(false);
+  const [authToken, setAuthToken]            = useState<string | null>(null);
+  const [gender, setGender]                  = useState<'male' | 'female'>('male');
   const hasSetInitial = useRef(false);
   const UNLOCK_KEY = 'wc_unlocked_matches';
 
-  const authToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
-  const gender = (typeof window !== 'undefined' ? localStorage.getItem('player_gender') : null) as 'male' | 'female' | null ?? 'male';
+  useEffect(() => {
+    setAuthToken(token ?? localStorage.getItem('auth_token'));
+    const stored = localStorage.getItem('player_gender');
+    if (stored === 'female') setGender('female');
+  }, [token]);
 
   const loadUnlocked = (): string[] => { try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? '[]'); } catch { return []; } };
   const saveUnlocked = (ids: string[]) => localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
