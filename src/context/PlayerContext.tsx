@@ -1,6 +1,6 @@
+'use client';
 // src/context/PlayerContext.tsx
 // Minimal stub used by NurtureLab.tsx
-'use client';
 
 import { createContext, useContext } from 'react';
 

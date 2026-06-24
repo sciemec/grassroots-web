@@ -1,9 +1,9 @@
+'use client';
 // app/passport/[token]/PassportClient.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // GRS Talent Passport — client component
 // Renders everything a scout or club owner sees
 // ─────────────────────────────────────────────────────────────────────────────
-'use client';
 
 import { useState, type ReactNode } from 'react';
 

@@ -1,3 +1,4 @@
+'use client';
 // hooks/useSessionSubmit.ts
 // ─────────────────────────────────────────────────────────────────────────────
 // The central hook that connects everything after a test session completes.
@@ -12,8 +13,6 @@
 // Returns a summary of everything that changed so the results screen
 // can show: rank up banner, new drill unlock, streak milestone, etc.
 // ─────────────────────────────────────────────────────────────────────────────
-
-'use client';
 
 import { useState, useCallback } from 'react';
 import type { GRSResult } from '@/lib/grs-engine';

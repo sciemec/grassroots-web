@@ -1,3 +1,4 @@
+'use client';
 // components/session/screens.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // All 8 screens in the session flow:
@@ -7,7 +8,6 @@
 // Each screen exports a default component.
 // Split into separate files in production; combined here for Claude Code.
 // ─────────────────────────────────────────────────────────────────────────────
-'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';

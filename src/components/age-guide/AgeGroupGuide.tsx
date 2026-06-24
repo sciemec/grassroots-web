@@ -1,3 +1,4 @@
+'use client';
 // components/age-guide/AgeGroupGuide.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // GRS Age Group Guide
@@ -7,7 +8,6 @@
 //   3. Home testing — test by test
 //   4. Solo vs helper split + two-mode callout
 // ─────────────────────────────────────────────────────────────────────────────
-'use client';
 
 import { useState } from 'react';
 

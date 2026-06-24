@@ -1,3 +1,4 @@
+'use client';
 // app/talent-testing/session/page.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // GRS Weekly Test Session — Main Orchestrator
@@ -11,7 +12,6 @@
 //   - Validation (instant feedback if value looks wrong)
 //   - Navigation (back / next / skip)
 // ─────────────────────────────────────────────────────────────────────────────
-'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
