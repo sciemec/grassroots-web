@@ -1,3 +1,5 @@
+'use client';
+
 // src/app/world-cup/page.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // FINAL PRODUCT — GRS World Cup Tactical Lab
@@ -34,8 +36,6 @@
 //   - "Report ready" gate — a match only becomes visible here once
 //     /api/cron/generate-tactical-report has processed it (15 min after FT)
 // ─────────────────────────────────────────────────────────────────────────────
-
-'use client';
 
 import jsPDF from 'jspdf';
 import { useState, useEffect, useRef } from 'react';
