@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import ScholarshipReel, { type ReelState, EMPTY_REEL } from '@/components/passport/ScholarshipReel';
 
 const GRS_GREEN = '#1c3d22';
 const GRS_GOLD  = '#c8962a';
@@ -51,10 +52,11 @@ interface PassportProps {
   videos:         any[];
   token:          string;
   drillScores?:   DrillScore[];
+  reel?:          ReelState;
 }
 
 export default function PassportClient({
-  player, latestSession, recentSessions, gamification, videos, token, drillScores,
+  player, latestSession, recentSessions, gamification, videos, token, drillScores, reel,
 }: PassportProps) {
   const [activeVideo, setActiveVideo] = useState<any | null>(null);
   const [copied,   setCopied]   = useState(false);
@@ -397,6 +399,18 @@ export default function PassportClient({
                 </div>
               );
             })}
+          </div>
+          </PremiumGate>
+        )}
+
+        {/* ── Scholarship Reel ──────────────────────────────────────────── */}
+        {reel && (Object.values(reel) as (ReelState[keyof ReelState])[]).some(Boolean) && (
+          <PremiumGate>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
+            <ScholarshipReel
+              editable={false}
+              reel={reel ?? EMPTY_REEL}
+            />
           </div>
           </PremiumGate>
         )}

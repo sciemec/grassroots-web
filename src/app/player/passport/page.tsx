@@ -9,6 +9,11 @@ import {
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
+import ScholarshipReel, {
+  REEL_STORAGE_KEY,
+  EMPTY_REEL,
+  type ReelState,
+} from "@/components/passport/ScholarshipReel";
 
 // ─── Local storage keys ───────────────────────────────────────────────────────
 const LS_ACADEMIC     = "gs_passport_academic";
@@ -96,6 +101,7 @@ export default function PassportPage() {
   });
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [aiSummary, setAiSummary] = useState("");
+  const [reel, setReel] = useState<ReelState>(EMPTY_REEL);
 
   // ── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -105,6 +111,8 @@ export default function PassportPage() {
       if (a.schoolName !== undefined) setAcademic(a);
       const e = JSON.parse(localStorage.getItem(LS_ENDORSEMENTS) ?? "[]");
       if (Array.isArray(e)) setEndorsements(e);
+      const r = JSON.parse(localStorage.getItem(REEL_STORAGE_KEY) ?? "null");
+      if (r && typeof r === "object") setReel(r as ReelState);
       const s = localStorage.getItem(LS_AI_SUMMARY);
       if (s) setAiSummary(s);
     } catch {}
@@ -144,6 +152,7 @@ export default function PassportPage() {
   const saveAll = () => {
     localStorage.setItem(LS_ACADEMIC, JSON.stringify(academic));
     localStorage.setItem(LS_ENDORSEMENTS, JSON.stringify(endorsements));
+    localStorage.setItem(REEL_STORAGE_KEY, JSON.stringify(reel));
     api.patch("/profile", {
       school_name:          academic.schoolName,
       grade_level:          academic.gradeLevel,
@@ -708,6 +717,20 @@ Output exactly 3 sentences. No bullet points. No headers.`,
                 ))}
               </div>
             )}
+          </div>
+
+          {/* ── Scholarship Reel ── */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <ScholarshipReel
+              editable
+              playerName={`${profile?.first_name ?? ""} ${profile?.surname ?? ""}`.trim() || user?.name || ""}
+              sport={profile?.sport?.toLowerCase() ?? "football"}
+              reel={reel}
+              onReelChange={(next) => {
+                setReel(next);
+                localStorage.setItem(REEL_STORAGE_KEY, JSON.stringify(next));
+              }}
+            />
           </div>
 
           {/* ── Save + Action bar ── */}
