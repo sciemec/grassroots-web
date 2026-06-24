@@ -197,7 +197,9 @@ function VideoUpload() {
         }),
       });
       if (!presignRes.ok) throw new Error("Could not get upload URL");
-      const { uploadUrl, key } = await presignRes.json() as { uploadUrl: string; key: string; publicUrl: string };
+      const presignData = await presignRes.json() as { uploadUrl: string; key: string; publicUrl?: string };
+      const { uploadUrl, key } = presignData;
+      const publicUrl = presignData.publicUrl ?? "";
 
       // Step 2 — PUT file directly to R2
       if (uploadUrl) {

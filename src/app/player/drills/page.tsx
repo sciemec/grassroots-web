@@ -101,7 +101,7 @@ export default function FootballDrillsLabPage() {
         if (progressRes.ok) {
           const data = await progressRes.json();
           setCompletedDrills(Array.isArray(data.drills) ? data.drills : []);
-          if (data.position) setActivePosition(data.position as PositionKey);
+          if (data.position) setActivePosition(data.position as string);
           else mapUserPosition();
         } else {
           mapUserPosition();

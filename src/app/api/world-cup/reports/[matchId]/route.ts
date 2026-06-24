@@ -23,9 +23,9 @@ const BUCKET = process.env.R2_BUCKET ?? 'grassroots-videos';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { matchId: string } }
+  { params }: { params: Promise<{ matchId: string }> }
 ) {
-  const { matchId } = params;
+  const { matchId } = await params;
   if (!matchId) {
     return NextResponse.json({ available: false }, { status: 400 });
   }

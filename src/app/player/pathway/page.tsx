@@ -629,7 +629,7 @@ export default function PathwayPage() {
                       <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{f.label}</div>
                       <input
                         type={f.key === 'contacted_date' ? 'date' : 'text'}
-                        value={(newEntry as Record<string, string>)[f.key] ?? ''}
+                        value={(newEntry as unknown as Record<string, string>)[f.key] ?? ''}
                         onChange={e => setNewEntry(p => ({ ...p, [f.key]: e.target.value }))}
                         placeholder={f.placeholder}
                         style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 12 }}

@@ -206,7 +206,7 @@ export default function GeminiDrillsPage() {
   // Auto-detect user's sport on load
   useEffect(() => {
     if (!hydrated || !user) return;
-    const userSport = (user as Record<string, unknown>).sport as string | undefined;
+    const userSport = (user as unknown as Record<string, unknown>).sport as string | undefined;
     if (userSport) setSport(userSport.toLowerCase());
   }, [hydrated, user]);
   const [selected, setSelected]   = useState<GeminiDrill | null>(null);

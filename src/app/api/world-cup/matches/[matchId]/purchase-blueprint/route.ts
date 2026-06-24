@@ -11,7 +11,7 @@ import Stripe from 'stripe';
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
-  return new Stripe(key, { apiVersion: '2025-05-28.basil' });
+  return new Stripe(key, { apiVersion: '2026-05-27.dahlia' });
 }
 
 async function resolveUser(req: NextRequest): Promise<{ id: string } | null> {
@@ -33,7 +33,7 @@ async function resolveUser(req: NextRequest): Promise<{ id: string } | null> {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { matchId: string } }
+  { params }: { params: Promise<{ matchId: string }> }
 ) {
   const user = await resolveUser(req);
   if (!user) {
@@ -45,7 +45,7 @@ export async function POST(
     return NextResponse.json({ error: 'Payments not configured' }, { status: 503 });
   }
 
-  const matchId = params.matchId;
+  const { matchId } = await params;
 
   try {
     const paymentIntent = await stripe.paymentIntents.create({
