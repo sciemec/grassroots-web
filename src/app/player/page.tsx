@@ -115,6 +115,13 @@ const FEATURES = [
     label: "Gemini Drills",
     desc: "Upload video · AI analyses your technique",
   },
+  {
+    href: "/player/pathway",
+    icon: GraduationCap,
+    iconBg: "#fef3c7", iconColor: "#c8962a",
+    label: "My Scholarship Pathway",
+    desc: "Academic profile · Coach outreach · NCAA & European pathway",
+  },
 ];
 
 function LiveWireTicker() {
