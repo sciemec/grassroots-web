@@ -50,6 +50,10 @@ function ArenaNav({ userName }: { userName: string }) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+        <Link href="/player" className="flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border flex-shrink-0 transition-colors hover:bg-amber-50"
+          style={{ color: GRS_GOLD, borderColor: GRS_GOLD }}>
+          ← Hub
+        </Link>
         <Link href="/arena" className="font-bold text-lg flex-shrink-0" style={{ color: GRS_GREEN }}>The Arena</Link>
         <nav className="hidden md:flex items-center gap-1">
           {links.map(({ href, label }) => (
