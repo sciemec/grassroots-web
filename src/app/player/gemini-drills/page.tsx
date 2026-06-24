@@ -15,6 +15,7 @@ import {
   Loader2, Star, Info, History, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { postToArena } from '@/lib/arena-poster';
 import {
   FOOTBALL_DRILLS, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,
@@ -246,6 +247,36 @@ export default function GeminiDrillsPage() {
       [result.drillId]: Math.max(prev[result.drillId] ?? 0, result.overall_score),
     }));
     setHistory(prev => [result, ...prev].slice(0, 20));
+
+    // Persist to backend + Arena (fire-and-forget — never blocks the UI)
+    const apiToken = localStorage.getItem('auth_token');
+    if (apiToken && apiToken !== 'dev-token') {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/drills/${result.drillId}/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
+        body: JSON.stringify({
+          overall_score:   result.overall_score,
+          top_strength:    result.top_strength,
+          key_improvement: result.key_improvement,
+          sport:           result.sport,
+        }),
+      }).catch(() => {});
+
+      postToArena(
+        `Scored ${result.overall_score}/10 on "${result.drillName}" drill`,
+        {
+          postType:     'milestone',
+          activityType: 'gemini_drill',
+          activityData: {
+            drillId:      result.drillId,
+            drillName:    result.drillName,
+            score:        result.overall_score,
+            sport:        result.sport,
+            top_strength: result.top_strength,
+          },
+        }
+      );
+    }
   }, [user]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {

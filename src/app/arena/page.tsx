@@ -747,6 +747,7 @@ export default function ArenaPage() {
                 { key: "tier_unlock",      label: "🏆 Tiers" },
                 { key: "session",          label: "🤖 Scored" },
                 { key: "streak",           label: "🔥 Streaks" },
+                { key: "gemini_drill",     label: "🤖 AI Drills" },
               ].map(chip => (
                 <button
                   key={chip.key}
@@ -880,6 +881,17 @@ export default function ArenaPage() {
                             <span className="font-bold">⬆️ Level up</span>
                             {post.activity_data.new_label && (
                               <span className="ml-1 font-semibold">· {String(post.activity_data.new_label)}</span>
+                            )}
+                          </div>
+                        )}
+                        {post.activity_type === "gemini_drill" && post.activity_data && (
+                          <div className="mt-2 rounded-xl bg-purple-50 border border-purple-200 px-3 py-2 text-xs text-purple-800">
+                            <span className="font-bold">🤖 AI Drill Analysis</span>
+                            {post.activity_data.drillName && (
+                              <span className="ml-1 text-purple-700">· {String(post.activity_data.drillName)}</span>
+                            )}
+                            {post.activity_data.score !== undefined && (
+                              <span className="ml-2 font-semibold text-purple-900">{String(post.activity_data.score)}/10</span>
                             )}
                           </div>
                         )}
