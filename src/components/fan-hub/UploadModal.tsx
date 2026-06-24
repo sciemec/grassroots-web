@@ -19,7 +19,23 @@ const PROVINCES = [
   "Matabeleland North", "Matabeleland South", "Midlands",
 ];
 
-const MAX_BYTES = 500 * 1024 * 1024; // 500 MB
+const MAX_BYTES = 20 * 1024 * 1024; // 20 MB — keeps data costs low on Zimbabwe networks
+
+// Estimate upload time at typical Zimbabwe mobile speeds
+function uploadEstimate(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  // 2G: ~0.5 Mbps = 62.5 KB/s; 3G: ~2 Mbps = 250 KB/s
+  const secs3G = Math.round((bytes / (250 * 1024)));
+  if (secs3G < 60) return `~${secs3G}s on 3G`;
+  return `~${Math.ceil(secs3G / 60)}min on 3G`;
+}
+
+// Rough data cost: Econet charges ~$0.10/MB on daily bundles
+function dataCost(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  const cost = (mb * 0.10).toFixed(2);
+  return `≈$${cost} data`;
+}
 
 interface UploadModalProps {
   onClose: () => void;
@@ -47,7 +63,8 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
       return "Only MP4 and MOV files are accepted.";
     }
     if (f.size > MAX_BYTES) {
-      return `File is too large (${(f.size / (1024 * 1024)).toFixed(0)} MB). Maximum is 500 MB.`;
+      const mb = (f.size / (1024 * 1024)).toFixed(0);
+      return `File is ${mb} MB — too large for Zimbabwe networks. Record in 480p or trim to under 20 MB. Tip: on your phone go to Camera Settings → Video Quality → 480p.`;
     }
     return null;
   };
@@ -189,7 +206,8 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
               <Film className="w-12 h-12 text-amber-400/60 mx-auto mb-3" />
               <p className="text-white font-semibold mb-1">Drop your video here</p>
               <p className="text-green-300/60 text-sm">or click to browse</p>
-              <p className="text-green-300/40 text-xs mt-3">MP4 or MOV · max 500 MB</p>
+              <p className="text-green-300/40 text-xs mt-3">MP4 or MOV · max 20 MB · record in 480p</p>
+              <p className="text-green-300/30 text-xs mt-1">Tip: Phone → Camera Settings → Video Quality → 480p</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -204,9 +222,14 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
           {step === "uploading" && (
             <div className="text-center py-6">
               <p className="text-white font-semibold mb-1">Uploading{file ? ` ${file.name}` : ""}...</p>
-              <p className="text-green-300/60 text-sm mb-4">
+              <p className="text-green-300/60 text-sm mb-1">
                 {file ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : ""}
               </p>
+              {file && (
+                <p className="text-amber-400/70 text-xs mb-4">
+                  {dataCost(file.size)} · {uploadEstimate(file.size)}
+                </p>
+              )}
               <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
                 <div
                   className="h-full bg-amber-400 rounded-full transition-all duration-300"
