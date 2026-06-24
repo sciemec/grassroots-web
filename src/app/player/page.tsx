@@ -238,7 +238,7 @@ export default function PlayerDashboardHome() {
         <div className="rounded-2xl overflow-hidden shadow-sm">
           {/* Top section — dark green with greeting */}
           <div className="relative px-5 pt-6 pb-5"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
+            style={{ background: "#1a5c2a" }}>
             <div className="relative flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>{greeting()},</p>
