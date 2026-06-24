@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Save, Plus, Trash2, ExternalLink, CheckCircle2, Circle } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { postToArena } from '@/lib/arena-poster';
 
 const G   = '#1a5c2a';
 const GO  = '#c8962a';
@@ -190,14 +191,31 @@ export default function PathwayPage() {
     setOutreach(prev => prev.filter(e => e.id !== id));
   }, [token]);
 
+  // Milestones that trigger Arena auto-posts when first completed
+  const ARENA_MILESTONE_POSTS: Record<string, string> = {
+    scholarship_reel_complete: "Scholarship Reel complete — all 4 categories showcased for scouts.",
+    ncaa_registered:           "NCAA Eligibility Center registration complete.",
+    coach_outreach_started:    "Started reaching out to university coaches.",
+    scholarship_applied:       "Applied for a scholarship — pathway checkpoint reached.",
+  };
+
   const toggleCheckpoint = (key: string) => {
+    const wasDone = !!(profile.pathway_checkpoints?.[key]);
     setProfile(prev => ({
       ...prev,
       pathway_checkpoints: {
         ...(prev.pathway_checkpoints ?? {}),
-        [key]: !(prev.pathway_checkpoints?.[key]),
+        [key]: !wasDone,
       },
     }));
+    // Fire Arena auto-post only when marking done (not unmarking)
+    if (!wasDone && ARENA_MILESTONE_POSTS[key]) {
+      postToArena(ARENA_MILESTONE_POSTS[key], {
+        postType: "milestone",
+        activityType: "pathway_checkpoint",
+        activityData: { checkpoint: key },
+      });
+    }
   };
 
   const completedCount = CHECKPOINTS.filter(c => profile.pathway_checkpoints?.[c.key]).length;
