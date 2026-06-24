@@ -156,7 +156,7 @@ function SubscriptionContent() {
         const res  = await fetch("/api/payments/paynow", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: selected, phone, method: payMethod, email: user?.email }),
+          body: JSON.stringify({ plan: selected, phone, method: payMethod, email: user?.email, user_id: user?.id }),
         });
         const data = await res.json() as { poll_url?: string; error?: string };
         if (!res.ok || !data.poll_url) throw new Error(data.error ?? "Could not initiate payment.");

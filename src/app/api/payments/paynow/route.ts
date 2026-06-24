@@ -1,14 +1,123 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+
+const PAYNOW_URL = "https://www.paynow.co.zw/interface/remotetransaction";
+
+const PLAN_AMOUNTS: Record<string, string> = {
+  weekly:    "1.50",
+  monthly:   "5.00",
+  "3-month": "12.00",
+};
+
+const PLAN_LABELS: Record<string, string> = {
+  weekly:    "GrassRoots Sports — 1 Week",
+  monthly:   "GrassRoots Sports — Monthly",
+  "3-month": "GrassRoots Sports — 3 Months",
+};
+
+// Normalise Zimbabwean phone number to international format required by Paynow
+// e.g. 0771234567 → 2637712345678, +263... → 263...
+function normalisePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("263")) return digits;
+  if (digits.startsWith("0"))   return "263" + digits.slice(1);
+  return "263" + digits;
+}
+
+// SHA-512 via Web Crypto API (available in both Node.js and Edge runtime)
+async function sha512Hex(input: string): Promise<string> {
+  const encoded = new TextEncoder().encode(input);
+  const buffer  = await crypto.subtle.digest("SHA-512", encoded);
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+}
 
 export async function POST(req: NextRequest) {
+  const integrationId  = process.env.PAYNOW_INTEGRATION_ID;
+  const integrationKey = process.env.PAYNOW_INTEGRATION_KEY;
+  const appUrl         = process.env.NEXT_PUBLIC_APP_URL ?? "https://grassrootssports.live";
+
+  if (!integrationId || !integrationKey) {
+    return NextResponse.json(
+      { error: "Payment service not configured." },
+      { status: 503 }
+    );
+  }
+
   try {
-    const { userId, matchId, purchaseType, amount, userEmail, userPhone } = await req.json();
-    const reference = `GRS_WC_${matchId}_${userId}_${Date.now()}`;
-    
-    // In production: Call Paynow API here
-    // For now, simulate success
-    return NextResponse.json({ success: true, redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/world-cup?payment=success`, reference });
-  } catch (error) {
-    return NextResponse.json({ error: 'Payment failed' }, { status: 500 });
+    const { plan, phone, method, email, user_id } = await req.json() as {
+      plan:    string;
+      phone:   string;
+      method:  string;
+      email?:  string;
+      user_id?: string | number;
+    };
+
+    const amount = PLAN_AMOUNTS[plan];
+    if (!amount) {
+      return NextResponse.json({ error: "Invalid plan." }, { status: 400 });
+    }
+
+    const normalisedPhone = normalisePhone(phone ?? "");
+    if (normalisedPhone.length < 11) {
+      return NextResponse.json(
+        { error: "Please enter your full phone number (e.g. 0771 234 567)." },
+        { status: 400 }
+      );
+    }
+
+    // Reference format required by PaynowController::confirm() to parse plan + userId
+    const reference = `grassroots_${plan}_${user_id ?? email ?? "unknown"}`;
+
+    const additionalInfo = PLAN_LABELS[plan] ?? "GrassRoots Sports Subscription";
+    const returnUrl  = `${appUrl}/player/subscription?paynow=1`;
+    const resultUrl  = `${appUrl}/api/payments/paynow/webhook`;
+    const status     = "Message";
+
+    // Hash: id + reference + amount + additionalinfo + returnurl + resulturl + status + integrationKey
+    const hashInput = `${integrationId}${reference}${amount}${additionalInfo}${returnUrl}${resultUrl}${status}${integrationKey}`;
+    const hash      = await sha512Hex(hashInput);
+
+    const body = new URLSearchParams({
+      id:             integrationId,
+      reference,
+      amount,
+      additionalinfo: additionalInfo,
+      returnurl:      returnUrl,
+      resulturl:      resultUrl,
+      status,
+      phone:          normalisedPhone,
+      method:         method ?? "ecocash",
+      hash,
+    });
+
+    const paynowRes = await fetch(PAYNOW_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:    body.toString(),
+    });
+
+    const responseText = await paynowRes.text();
+    const params       = new URLSearchParams(responseText);
+    const paynowStatus = (params.get("status") ?? "").toLowerCase();
+
+    if (paynowStatus === "error") {
+      const errorMsg = params.get("error") ?? "Payment initiation failed.";
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
+    }
+
+    const pollUrl = params.get("pollurl");
+    if (!pollUrl) {
+      return NextResponse.json(
+        { error: "Could not initiate payment. Please try again." },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json({ poll_url: pollUrl });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unexpected error.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
