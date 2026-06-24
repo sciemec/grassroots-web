@@ -17,13 +17,24 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import { postToArena } from '@/lib/arena-poster';
 import {
-  FOOTBALL_DRILLS, getDrillById, drillStorageKey, allDrillResultsKey,
+  getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,
 } from '@/config/gemini-drills';
 
 const GRS_GREEN  = '#1a5c2a';
 const GRS_GOLD   = '#c8962a';
-const SPORT_TABS = [{ id: 'football', label: 'Football', emoji: '⚽' }] as const;
+const SPORT_TABS = [
+  { id: 'football',   label: 'Football',   emoji: '⚽' },
+  { id: 'rugby',      label: 'Rugby',       emoji: '🏉' },
+  { id: 'athletics',  label: 'Athletics',   emoji: '🏃' },
+  { id: 'netball',    label: 'Netball',     emoji: '🏐' },
+  { id: 'basketball', label: 'Basketball',  emoji: '🏀' },
+  { id: 'cricket',    label: 'Cricket',     emoji: '🏏' },
+  { id: 'swimming',   label: 'Swimming',    emoji: '🏊' },
+  { id: 'tennis',     label: 'Tennis',      emoji: '🎾' },
+  { id: 'volleyball', label: 'Volleyball',  emoji: '🏐' },
+  { id: 'hockey',     label: 'Hockey',      emoji: '🏑' },
+] as const;
 
 type Phase =
   | 'idle'
@@ -190,7 +201,14 @@ export default function GeminiDrillsPage() {
   const user      = useAuthStore((s) => s.user);
   const hydrated  = useAuthStore((s) => s._hasHydrated);
 
-  const [sport, setSport]         = useState<'football'>('football');
+  const [sport, setSport]         = useState<string>('football');
+
+  // Auto-detect user's sport on load
+  useEffect(() => {
+    if (!hydrated || !user) return;
+    const userSport = (user as Record<string, unknown>).sport as string | undefined;
+    if (userSport) setSport(userSport.toLowerCase());
+  }, [hydrated, user]);
   const [selected, setSelected]   = useState<GeminiDrill | null>(null);
   const [upload, setUpload]       = useState<UploadState>({
     phase: 'idle', progress: 0, result: null, error: null,
@@ -353,7 +371,7 @@ export default function GeminiDrillsPage() {
 
   const resetUpload = () => setUpload({ phase: 'idle', progress: 0, result: null, error: null });
 
-  const drills = sport === 'football' ? FOOTBALL_DRILLS : [];
+  const drills = getDrillsForSport(sport);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f2ee' }}>
@@ -389,9 +407,6 @@ export default function GeminiDrillsPage() {
               {s.emoji} {s.label}
             </button>
           ))}
-          <div style={{ fontSize: 12, color: '#aaa', padding: '8px 4px', whiteSpace: 'nowrap', alignSelf: 'center' }}>
-            Rugby · Athletics · Netball — coming soon
-          </div>
         </div>
 
         {/* What Gemini can do — info banner */}
