@@ -25,7 +25,7 @@ const NAV_ITEMS = [
   { href: '/coach/ai-insights', label: 'AI Insights', icon: <BookOpen size={18} /> },
   { href: '/coach/recruitment', label: 'Recruitment', icon: <Shield size={18} /> },
   { href: '/arena', label: 'The Arena', icon: <Globe size={18} /> },
-  { href: '/worldcup', label: '🏆 World Cup', icon: <Trophy size={18} /> },
+  { href: '/world-cup', label: '🏆 World Cup', icon: <Trophy size={18} /> },
 ];
 
 export function CoachSidebar() {
