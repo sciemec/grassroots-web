@@ -60,7 +60,7 @@ export default async function PassportPage({ params }: Props) {
         videos={Array.isArray(vd) ? vd : (vd.data ?? [])}
         token={id}
         drillScores={Array.isArray(dd) ? dd : (dd.data ?? [])}
-        reel={rd?.reel ?? rd ?? undefined}
+        reelClips={Array.isArray(rd?.data) ? rd.data : []}
       />
     </div>
   );

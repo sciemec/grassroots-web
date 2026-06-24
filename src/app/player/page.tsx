@@ -74,6 +74,13 @@ const FEATURES = [
     desc: "Shareable profile · QR code",
   },
   {
+    href: "/player/scholarship-reel",
+    icon: Video,
+    iconBg: "#fdf4ff", iconColor: "#7c3aed",
+    label: "Scholarship Reel",
+    desc: "10 clips · scouts see this on your passport",
+  },
+  {
     href: "/player/training",
     icon: Brain,
     iconBg: "#ecfdf5", iconColor: "#059669",

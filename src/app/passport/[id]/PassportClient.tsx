@@ -6,7 +6,24 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import ScholarshipReel, { type ReelState, EMPTY_REEL } from '@/components/passport/ScholarshipReel';
+
+interface ReelClip {
+  id: string;
+  r2_url: string;
+  thumbnail_url?: string;
+  title: string;
+  category: string;
+  created_at: string;
+}
+
+const REEL_CAT_COLORS: Record<string, { bg: string; color: string }> = {
+  drill:     { bg: '#dcfce7', color: '#15803d' },
+  match:     { bg: '#dbeafe', color: '#1d4ed8' },
+  skills:    { bg: '#f3e8ff', color: '#7e22ce' },
+  physical:  { bg: '#ffedd5', color: '#c2410c' },
+  interview: { bg: '#fef9c3', color: '#854d0e' },
+  other:     { bg: '#f1f5f9', color: '#475569' },
+};
 
 const GRS_GREEN = '#1c3d22';
 const GRS_GOLD  = '#c8962a';
@@ -52,13 +69,14 @@ interface PassportProps {
   videos:         any[];
   token:          string;
   drillScores?:   DrillScore[];
-  reel?:          ReelState;
+  reelClips?:     ReelClip[];
 }
 
 export default function PassportClient({
-  player, latestSession, recentSessions, gamification, videos, token, drillScores, reel,
+  player, latestSession, recentSessions, gamification, videos, token, drillScores, reelClips,
 }: PassportProps) {
-  const [activeVideo, setActiveVideo] = useState<any | null>(null);
+  const [activeVideo,     setActiveVideo]     = useState<any | null>(null);
+  const [activeReelVideo, setActiveReelVideo] = useState<string | null>(null);
   const [copied,   setCopied]   = useState(false);
   const [unlocked, setUnlocked] = useState(false);
 
@@ -404,13 +422,68 @@ export default function PassportClient({
         )}
 
         {/* ── Scholarship Reel ──────────────────────────────────────────── */}
-        {reel && (Object.values(reel) as (ReelState[keyof ReelState])[]).some(Boolean) && (
+        {reelClips && reelClips.length > 0 && (
           <PremiumGate>
           <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
-            <ScholarshipReel
-              editable={false}
-              reel={reel ?? EMPTY_REEL}
-            />
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
+              Scholarship Reel
+            </div>
+            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 12 }}>
+              {reelClips.length} clip{reelClips.length !== 1 ? 's' : ''} · curated by the player
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {reelClips.map((clip) => {
+                const col = REEL_CAT_COLORS[clip.category] ?? REEL_CAT_COLORS.other;
+                const isPlaying = activeReelVideo === clip.id;
+                return (
+                  <div key={clip.id} style={{ border: '0.5px solid #e5e5e5', borderRadius: 10, overflow: 'hidden' }}>
+                    <div
+                      onClick={() => setActiveReelVideo(isPlaying ? null : clip.id)}
+                      style={{ padding: '10px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {/* Thumbnail */}
+                      <div style={{
+                        width: 60, height: 44, borderRadius: 6, flexShrink: 0,
+                        background: clip.thumbnail_url ? 'transparent' : '#f0fdf4',
+                        border: '0.5px solid #e5e5e5', overflow: 'hidden',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        position: 'relative',
+                      }}>
+                        {clip.thumbnail_url
+                          ? <img src={clip.thumbnail_url} alt={clip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <span style={{ fontSize: 18 }}>🎬</span>
+                        }
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: 0, height: 0, borderStyle: 'solid', borderWidth: '4px 0 4px 7px', borderColor: 'transparent transparent transparent #1c3d22', marginLeft: 1 }} />
+                          </div>
+                        </div>
+                      </div>
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: '#222', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
+                          {clip.title}
+                        </div>
+                        <span style={{ fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 12, background: col.bg, color: col.color }}>
+                          {clip.category.charAt(0).toUpperCase() + clip.category.slice(1)}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#bbb', flexShrink: 0 }}>
+                        {new Date(clip.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    {isPlaying && (
+                      <video
+                        src={clip.r2_url}
+                        controls
+                        playsInline
+                        autoPlay
+                        style={{ width: '100%', maxHeight: 260, background: '#000', display: 'block' }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           </PremiumGate>
         )}
