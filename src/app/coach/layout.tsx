@@ -1,10 +1,12 @@
 // src/app/coach/layout.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { CoachSidebar } from "@/components/layout/CoachSidebar";
+import GuestBanner from "@/components/ui/guest-banner";
+import { GuestGateProvider } from "@/components/ui/register-modal";
 import dynamic from "next/dynamic";
 
 const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
@@ -17,20 +19,17 @@ export default function CoachLayout({
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!hasHydrated) return;
-    
-    if (!user) {
-      router.push("/login");
-    } else if (user.role !== "coach" && user.role !== "admin") {
+    // Redirect wrong-role logged-in users to their own hub.
+    // Guests (no user) are welcome — no /login redirect.
+    if (user && user.role !== "coach" && user.role !== "admin") {
       router.push(`/${user.role}`);
     }
-    setIsLoading(false);
   }, [hasHydrated, user, router]);
 
-  if (!hasHydrated || isLoading) {
+  if (!hasHydrated) {
     return (
       <div className="flex h-screen bg-[#f4f2ee] items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#1a5c2a] border-t-transparent" />
@@ -39,14 +38,17 @@ export default function CoachLayout({
   }
 
   return (
-    <>
+    <GuestGateProvider>
       <div className="flex min-h-screen bg-[#f4f2ee]">
         <CoachSidebar />
-        <main className="flex-1 lg:ml-72">
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col min-w-0 lg:ml-72">
+          <GuestBanner />
+          <main className="flex-1">
+            {children}
+          </main>
+        </div>
       </div>
       <ThutoChatCoach />
-    </>
+    </GuestGateProvider>
   );
 }

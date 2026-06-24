@@ -1,26 +1,21 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
+import GuestBanner from "@/components/ui/guest-banner";
+import { GuestGateProvider } from "@/components/ui/register-modal";
 import dynamic from "next/dynamic";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
 
 export default function ArenaLayout({ children }: { children: React.ReactNode }) {
-  const router      = useRouter();
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const user        = useAuthStore((s) => s.user);
 
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (!user) router.push("/login");
-  }, [hasHydrated, user, router]);
+  if (!hasHydrated) return null;
 
-  if (!hasHydrated || !user) return null;
   return (
-    <>
+    <GuestGateProvider>
+      <GuestBanner />
       {children}
       <ThutoChatVisitor />
-    </>
+    </GuestGateProvider>
   );
 }
