@@ -17,9 +17,9 @@ const stripePromise = loadStripe(
 );
 
 interface Props {
-  matchId:           string;
-  matchName:         string;
-  onClose:           () => void;
+  matchId:            string;
+  matchName:          string;
+  onClose:            () => void;
   onPurchaseComplete: () => void;
 }
 
@@ -32,10 +32,10 @@ function CheckoutForm({
   onClose,
   onPurchaseComplete,
 }: {
-  matchId:           string;
-  matchName:         string;
+  matchId:            string;
+  matchName:          string;
   paymentIntentId:   string;
-  onClose:           () => void;
+  onClose:            () => void;
   onPurchaseComplete: () => void;
 }) {
   const stripe   = useStripe();
@@ -239,7 +239,7 @@ export function BlueprintPurchaseModal({ matchId, matchName, onClose, onPurchase
         ) : (
           <>
             <h2 className="text-lg font-black text-white mb-4">Complete Payment</h2>
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night' } }}>
               <CheckoutForm
                 matchId={matchId}
                 matchName={matchName}
