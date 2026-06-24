@@ -14,11 +14,12 @@ import { postToArena } from "@/lib/arena-poster";
 import DrillCard from "@/components/drills/DrillCard";
 import {
   FOOTBALL_POSITION_DRILLS,
-  type PositionKey,
+  type PositionTrack,
   type DrillCategory,
   type EquipmentTier,
   type AgeGroup,
 } from "@/lib/drill-data";
+import { getSportDrills, SPORT_POSITION_MAP } from "@/lib/sport-drills";
 
 const TIER_CONFIG: Record<number, { label: string; color: string; bg: string; source: string; flag: string }> = {
   1: { label: "Spark",   color: "#888780", bg: "#f1efe8", source: "GRS Original",             flag: "🇿🇼" },
@@ -62,7 +63,8 @@ export default function FootballDrillsLabPage() {
   const user     = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s._hasHydrated);
 
-  const [activePosition, setActivePosition] = useState<PositionKey>("striker");
+  const [activePosition, setActivePosition] = useState<string>("striker");
+  const [playerSport,    setPlayerSport]    = useState<string>("football");
   const [completedDrills, setCompletedDrills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving,  setIsSaving]  = useState(false);
@@ -118,6 +120,16 @@ export default function FootballDrillsLabPage() {
             if (Array.isArray(parsed)) setCompletedDrills(parsed);
             else localStorage.removeItem("gs_futurefit_assignments");
           } catch { localStorage.removeItem("gs_futurefit_assignments"); }
+        }
+
+        // Read player sport from localStorage and set default position for that sport
+        const storedSport = typeof window !== "undefined"
+          ? (localStorage.getItem("player_sport") ?? "football")
+          : "football";
+        setPlayerSport(storedSport);
+        if (storedSport !== "football") {
+          const positions = SPORT_POSITION_MAP[storedSport] ?? [];
+          if (positions.length > 0) setActivePosition(positions[0]);
         }
 
         // Load mastery counts from backend
@@ -185,6 +197,18 @@ export default function FootballDrillsLabPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, user, router]);
 
+  // When sport changes, reset to the first position of the new sport
+  useEffect(() => {
+    const drillSet: Record<string, PositionTrack> = playerSport === "football"
+      ? FOOTBALL_POSITION_DRILLS
+      : (getSportDrills(playerSport) ?? FOOTBALL_POSITION_DRILLS);
+    const keys = Object.keys(drillSet);
+    if (keys.length > 0 && !keys.includes(activePosition)) {
+      setActivePosition(keys[0]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerSport]);
+
   const mapUserPosition = () => {
     const pos = (user?.position ?? "").toLowerCase();
     if (pos.includes("strik") || pos.includes("forward")) setActivePosition("striker");
@@ -227,7 +251,10 @@ export default function FootballDrillsLabPage() {
     setCompletedDrills(newCompleted);
     await saveProgress(newCompleted, activePosition);
     if (isMarkingDone) {
-      const drill = FOOTBALL_POSITION_DRILLS[activePosition].drills.find(d => d.id === drillId);
+      const currentSet: Record<string, PositionTrack> = playerSport === "football"
+        ? FOOTBALL_POSITION_DRILLS
+        : (getSportDrills(playerSport) ?? FOOTBALL_POSITION_DRILLS);
+      const drill = (currentSet[activePosition]?.drills ?? []).find(d => d.id === drillId);
 
       // Increment mastery count locally
       setMasteryMap(prev => ({ ...prev, [drillId]: (prev[drillId] ?? 0) + 1 }));
@@ -270,7 +297,7 @@ export default function FootballDrillsLabPage() {
 
       // Achievement badge detection (Change 8)
       const earnedBadges: string[] = JSON.parse(localStorage.getItem("gs_earned_badges") ?? "[]");
-      const trackDrills = FOOTBALL_POSITION_DRILLS[activePosition].drills;
+      const trackDrills = currentSet[activePosition]?.drills ?? [];
       const trackDone = trackDrills.filter(d => newCompleted.includes(d.id)).length;
       let newBadge: { id: string; label: string } | null = null;
 
@@ -292,7 +319,10 @@ export default function FootballDrillsLabPage() {
   };
 
   const generateTalentPassport = () => {
-    const selectedData = FOOTBALL_POSITION_DRILLS[activePosition];
+    const passportSet: Record<string, PositionTrack> = playerSport === "football"
+      ? FOOTBALL_POSITION_DRILLS
+      : (getSportDrills(playerSport) ?? FOOTBALL_POSITION_DRILLS);
+    const selectedData = passportSet[activePosition] ?? { title: "", focus: "", drills: [] };
     const report = {
       playerName:           user?.name ?? "Player",
       position:             activePosition,
@@ -353,7 +383,10 @@ export default function FootballDrillsLabPage() {
   };
 
   // ── Derived values — must be BEFORE early return so useMemo is always called ──
-  const selectedData   = FOOTBALL_POSITION_DRILLS[activePosition];
+  const activeDrillSet: Record<string, PositionTrack> = playerSport === "football"
+    ? FOOTBALL_POSITION_DRILLS
+    : (getSportDrills(playerSport) ?? FOOTBALL_POSITION_DRILLS);
+  const selectedData = activeDrillSet[activePosition] ?? { title: "", focus: "", drills: [] };
   const completedCount = completedDrills.filter(id => selectedData.drills.some(d => d.id === id)).length;
   const completionPct  = selectedData.drills.length > 0 ? (completedCount / selectedData.drills.length) * 100 : 0;
   const tierCfg        = TIER_CONFIG[tierProgress?.currentTier ?? 1];
@@ -510,9 +543,9 @@ export default function FootballDrillsLabPage() {
             <section className="space-y-2">
               <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Select your position</h4>
               <div className="flex flex-wrap gap-2">
-                {(Object.keys(FOOTBALL_POSITION_DRILLS) as PositionKey[]).map(key => {
+                {Object.keys(activeDrillSet).map(key => {
                   const isActive = activePosition === key;
-                  const cnt = completedDrills.filter(id => FOOTBALL_POSITION_DRILLS[key].drills.some(d => d.id === id)).length;
+                  const cnt = completedDrills.filter(id => activeDrillSet[key]?.drills.some(d => d.id === id) ?? false).length;
                   return (
                     <button key={key} onClick={() => { setActivePosition(key); setExpandedDrill(null); }}
                       className={`relative text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl border transition-all cursor-pointer ${
