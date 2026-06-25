@@ -81,11 +81,25 @@ const FEATURES = [
     desc: "10 clips · scouts see this on your passport",
   },
   {
+    href: "/player/drills/guides",
+    icon: BookOpen,
+    iconBg: "#dbeafe", iconColor: "#1d4ed8",
+    label: "Drill Guides",
+    desc: "Age-group training blueprints · U13 → Senior",
+  },
+  {
     href: "/player/nutrition",
     icon: TrendingUp,
     iconBg: "#f0fdf4", iconColor: "#15803d",
     label: "Nutrition",
     desc: "Meal logging · macros · recovery fuel",
+  },
+  {
+    href: "/player/nutrition/guides",
+    icon: MapPin,
+    iconBg: "#ecfdf5", iconColor: "#059669",
+    label: "Nutrition Guides",
+    desc: "Age-specific meal plans · AI feedback on your meals",
   },
   {
     href: "/player/assessment",
