@@ -25,25 +25,30 @@ const REGION = 'auto';
 const SERVICE = 's3';
 
 // ── Environment validation ──────────────────────────────────────────────────
+// Accepts both documented names (R2_ACCOUNT_ID, R2_BUCKET) and legacy aliases
+// (CLOUDFLARE_ACCOUNT_ID, R2_BUCKET_NAME) so either set works in Vercel.
 function validateEnv(): void {
-  const required = [
-    'CLOUDFLARE_ACCOUNT_ID',
-    'R2_ACCESS_KEY_ID',
-    'R2_SECRET_ACCESS_KEY',
-    'R2_BUCKET_NAME',
-    'R2_PUBLIC_URL'
-  ];
-  
-  const missing = required.filter(key => !process.env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing required env vars for R2: ${missing.join(', ')}`);
-  }
+  const missing: string[] = [];
+  if (!process.env.R2_ACCOUNT_ID && !process.env.CLOUDFLARE_ACCOUNT_ID) missing.push('R2_ACCOUNT_ID');
+  if (!process.env.R2_BUCKET     && !process.env.R2_BUCKET_NAME)         missing.push('R2_BUCKET');
+  if (!process.env.R2_ACCESS_KEY_ID)                                      missing.push('R2_ACCESS_KEY_ID');
+  if (!process.env.R2_SECRET_ACCESS_KEY)                                  missing.push('R2_SECRET_ACCESS_KEY');
+  if (!process.env.R2_PUBLIC_URL)                                         missing.push('R2_PUBLIC_URL');
+  if (missing.length > 0) throw new Error(`Missing R2 env vars: ${missing.join(', ')}`);
+}
+
+// ── Resolved env helpers ─────────────────────────────────────────────────────
+function getAccountId(): string {
+  return (process.env.R2_ACCOUNT_ID ?? process.env.CLOUDFLARE_ACCOUNT_ID)!;
+}
+function getBucket(): string {
+  return (process.env.R2_BUCKET ?? process.env.R2_BUCKET_NAME)!;
 }
 
 // ── Endpoint helpers ──────────────────────────────────────────────────────────
 function getEndpoint(): string {
   validateEnv();
-  return `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  return `https://${getAccountId()}.r2.cloudflarestorage.com`;
 }
 
 export function getPublicUrl(r2Key: string): string {
@@ -106,10 +111,10 @@ export async function generatePresignedPutUrl(params: {
 
   const { key, contentType, expiresInSec = 900 } = params;
 
-  const bucket    = process.env.R2_BUCKET_NAME!;
+  const bucket    = getBucket();
   const accessKey = process.env.R2_ACCESS_KEY_ID!;
   const secretKey = process.env.R2_SECRET_ACCESS_KEY!;
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID!;
+  const accountId = getAccountId();
   const endpoint  = getEndpoint();
 
   const now       = new Date();
@@ -175,10 +180,10 @@ export async function deleteR2Object(key: string): Promise<boolean> {
 
   validateEnv();
 
-  const bucket    = process.env.R2_BUCKET_NAME!;
+  const bucket    = getBucket();
   const accessKey = process.env.R2_ACCESS_KEY_ID!;
   const secretKey = process.env.R2_SECRET_ACCESS_KEY!;
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID!;
+  const accountId = getAccountId();
   const endpoint  = getEndpoint();
 
   const now      = new Date();
