@@ -55,7 +55,7 @@ const PLANS = [
 
 function SubscriptionContent() {
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const { requireAuth } = useGuestGate();
   const [sub, setSub] = useState<SubStatus | null>(null);
   const [loading, setLoading] = useState(true);
