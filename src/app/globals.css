@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── GrassRoots Sports — CSS Variable Palette ─────────────────────────────
+   Dark green hub design. These variables are consumed by tailwind.config.ts
+   (bg-background, bg-card, text-foreground, border, etc.)
+   Confirmed values from March 2026 session log in CLAUDE.md.
+   ──────────────────────────────────────────────────────────────────────── */
+:root {
+  --background:          #1a5c2a;   /* Zimbabwe green — main page background  */
+  --foreground:          #ffffff;   /* White text on dark backgrounds         */
+
+  --card:                #1a3d26;   /* Darker green card surface              */
+  --card-foreground:     #ffffff;
+
+  --popover:             #1a3d26;
+  --popover-foreground:  #ffffff;
+
+  --primary:             #2ecc71;   /* Vivid green — buttons, active states   */
+  --primary-foreground:  #1a3a1a;
+
+  --secondary:           #163220;
+  --secondary-foreground:#ffffff;
+
+  --muted:               rgba(255,255,255,0.06);
+  --muted-foreground:    #c8edd0;   /* Bright mint — visible on dark cards    */
+
+  --accent:              #f5c542;   /* Gold accent                            */
+  --accent-foreground:   #1a3a1a;
+
+  --destructive:         #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border:              rgba(255,255,255,0.28);
+  --input:               rgba(255,255,255,0.12);
+  --ring:                #f5c542;
+
+  --radius:              0.5rem;
+}
+
 /* --- Native CSS Adaptive Structural Normalization Rules --- */
 html, body {
   max-width: 100vw;
