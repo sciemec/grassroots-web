@@ -76,7 +76,7 @@ export function BlueprintPurchaseModal({ matchId, matchName, onClose, onPurchase
       const res  = await fetch('/api/payments/paynow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: 'blueprint_single', phone, method, email: user.email ?? '', matchId }),
+        body: JSON.stringify({ plan: 'world_cup_class', phone, method, email: user.email ?? '', matchId }),
       });
       const data = await res.json() as { poll_url?: string; error?: string };
       if (!res.ok || !data.poll_url) throw new Error(data.error ?? 'Could not initiate payment.');
@@ -118,7 +118,7 @@ export function BlueprintPurchaseModal({ matchId, matchName, onClose, onPurchase
             <Loader2 size={36} className="mx-auto text-amber-500 animate-spin mb-4" />
             <p className="text-white font-semibold mb-1">Check your phone</p>
             <p className="text-white/60 text-sm">
-              Approve the $4.99 payment in your {label} app or via USSD.
+              Approve the $3 payment in your {label} app or via USSD.
             </p>
             <p className="text-white/30 text-xs mt-4">Checking every 3 seconds…</p>
             <button onClick={onClose} className="mt-6 text-white/40 text-xs underline">Cancel</button>
@@ -137,7 +137,7 @@ export function BlueprintPurchaseModal({ matchId, matchName, onClose, onPurchase
             <X size={18} />
           </button>
           <h2 className="text-lg font-black text-white mb-1">Mobile Payment</h2>
-          <p className="text-white/50 text-sm mb-5">$4.99 · {matchName}</p>
+          <p className="text-white/50 text-sm mb-5">$3 · {matchName}</p>
 
           <div className="flex gap-2 mb-4">
             {METHODS.map(m => (
@@ -180,7 +180,7 @@ export function BlueprintPurchaseModal({ matchId, matchName, onClose, onPurchase
           >
             {paying
               ? <><Loader2 size={16} className="animate-spin" /> Sending…</>
-              : <><Smartphone size={16} /> Pay $4.99</>}
+              : <><Smartphone size={16} /> Pay $3</>}
           </button>
           <p className="text-[10px] text-white/30 text-center mt-3">
             You will receive a USSD prompt to approve the payment.
@@ -202,15 +202,16 @@ export function BlueprintPurchaseModal({ matchId, matchName, onClose, onPurchase
           <div className="w-16 h-16 mx-auto bg-amber-600 rounded-full flex items-center justify-center mb-3">
             <Lock size={24} className="text-white" />
           </div>
-          <h2 className="text-xl font-black text-white">Unlock Coaching Blueprint</h2>
-          <p className="text-sm text-white/60 mt-1">5-day training plan for {matchName}</p>
+          <h2 className="text-xl font-black text-white">Join the After-Match Class</h2>
+          <p className="text-sm text-white/60 mt-1">Full tactical academy for {matchName}</p>
         </div>
 
         <div className="space-y-3 mb-6">
           {[
-            'Full 5-day training plan with drill diagrams',
-            'Age-group adaptations (U8 to Adult)',
-            'Instant PDF download',
+            'Full tactical match analysis — all phases',
+            '25-question match quiz with AI explanations',
+            'Match Analysis Certificate PDF',
+            'Full Module PDF — analysis, drills, 5-day plan',
           ].map(item => (
             <div key={item} className="flex items-center gap-3 text-sm text-white/80 bg-white/5 p-3 rounded-xl">
               <Check size={16} className="text-amber-500 shrink-0" />
@@ -227,7 +228,7 @@ export function BlueprintPurchaseModal({ matchId, matchName, onClose, onPurchase
           onClick={() => { if (!user) { setError('Please log in to purchase.'); return; } setStep('phone'); }}
           className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
         >
-          <Smartphone size={16} /> Buy Now — $4.99
+          <Smartphone size={16} /> Join Class — $3
         </button>
 
         <p className="text-[10px] text-white/30 text-center mt-3">

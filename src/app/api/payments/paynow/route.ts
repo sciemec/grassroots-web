@@ -3,15 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 const PAYNOW_URL = "https://www.paynow.co.zw/interface/remotetransaction";
 
 const PLAN_AMOUNTS: Record<string, string> = {
-  weekly:    "1.50",
-  monthly:   "5.00",
-  "3-month": "12.00",
+  weekly:           "1.50",
+  monthly:          "5.00",
+  "3-month":        "12.00",
+  world_cup_class:  "3.00",
 };
 
 const PLAN_LABELS: Record<string, string> = {
-  weekly:    "GrassRoots Sports — 1 Week",
-  monthly:   "GrassRoots Sports — Monthly",
-  "3-month": "GrassRoots Sports — 3 Months",
+  weekly:           "GrassRoots Sports — 1 Week",
+  monthly:          "GrassRoots Sports — Monthly",
+  "3-month":        "GrassRoots Sports — 3 Months",
+  world_cup_class:  "GrassRoots Sports — After-Match Class",
 };
 
 // Normalise Zimbabwean phone number to international format required by Paynow

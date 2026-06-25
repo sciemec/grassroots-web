@@ -43,7 +43,7 @@ import {
   MapPin, Calendar, RefreshCw, Tv, Activity, Share2, Copy, Check,
   TrendingUp, Clock, Youtube, MessageCircle, Lock, Unlock,
   Loader2, X, Star, Users, Trophy as TrophyIcon, Brain, ChevronRight,
-  FileDown, Download, FileText,
+  FileDown, Download, FileText, Award, CheckCircle2,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, type MatchStats } from '@/lib/tactical-iq/phase-classifier';
@@ -574,7 +574,7 @@ function getModulesFromPhases(phases: PhaseReport): TrainingModule[] {
   return modules;
 }
 
-function generateBlueprintPDF(match: Match, phases: PhaseReport, modules: TrainingModule[]): void {
+function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingModule[]): void {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210;
   const H = 297;
@@ -812,6 +812,82 @@ function generateBlueprintPDF(match: Match, phases: PhaseReport, modules: Traini
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AFTER-MATCH ACADEMY TYPES + CERTIFICATE PDF
+// ─────────────────────────────────────────────────────────────────────────────
+type ClassStage = 'locked' | 'analysis' | 'quiz' | 'results';
+
+interface MCQuestion {
+  id:          number;
+  question:    string;
+  options:     string[];
+  correct:     number; // 0-indexed
+  explanation: string;
+  category:    'tactical' | 'technical' | 'physical' | 'mental' | 'rules';
+}
+
+function generateCertificatePDF(
+  match: Match,
+  score: number,
+  total: number,
+  playerName: string,
+): void {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const W = 297; const H = 210;
+  const pct = Math.round((score / total) * 100);
+
+  // Gold border
+  doc.setDrawColor(240, 180, 41);
+  doc.setLineWidth(6);
+  doc.rect(6, 6, W - 12, H - 12);
+  doc.setLineWidth(1.5);
+  doc.rect(10, 10, W - 20, H - 20);
+
+  // Header
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, 0, W, 30, 'F');
+  doc.setTextColor(240, 180, 41);
+  doc.setFontSize(9); doc.text('GRASSROOTS SPORTS', W / 2, 10, { align: 'center' });
+  doc.setFontSize(20); doc.text('AFTER-MATCH TACTICAL ACADEMY', W / 2, 22, { align: 'center' });
+
+  // Certificate title
+  doc.setTextColor(26, 92, 42);
+  doc.setFontSize(32);
+  doc.text('Certificate of Completion', W / 2, 60, { align: 'center' });
+
+  // Body
+  doc.setFontSize(14); doc.setTextColor(80, 80, 80);
+  doc.text('This certifies that', W / 2, 78, { align: 'center' });
+
+  doc.setFontSize(26); doc.setTextColor(26, 92, 42);
+  doc.text(playerName || 'GRS Student', W / 2, 95, { align: 'center' });
+
+  doc.setFontSize(14); doc.setTextColor(80, 80, 80);
+  doc.text('has successfully completed the After-Match Tactical Class for', W / 2, 110, { align: 'center' });
+
+  doc.setFontSize(18); doc.setTextColor(26, 92, 42);
+  doc.text(`${match.homeTeam} vs ${match.awayTeam}`, W / 2, 124, { align: 'center' });
+
+  doc.setFontSize(12); doc.setTextColor(80, 80, 80);
+  doc.text(`Score: ${score} / ${total} — ${pct}%   ·   Date: ${new Date().toLocaleDateString('en-GB')}`, W / 2, 138, { align: 'center' });
+
+  // Grade badge
+  const grade = pct >= 80 ? 'DISTINCTION' : pct >= 60 ? 'MERIT' : 'PASS';
+  const gradeColor: [number, number, number] = pct >= 80 ? [26, 92, 42] : pct >= 60 ? [37, 99, 235] : [180, 83, 9];
+  doc.setFillColor(...gradeColor);
+  doc.roundedRect(W / 2 - 30, 144, 60, 14, 4, 4, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFontSize(11);
+  doc.text(grade, W / 2, 153, { align: 'center' });
+
+  // Footer
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, H - 20, W, 20, 'F');
+  doc.setTextColor(240, 180, 41); doc.setFontSize(8);
+  doc.text('grassrootssports.live  ·  Zimbabwe\'s AI-Powered Grassroots Sports Platform', W / 2, H - 8, { align: 'center' });
+
+  doc.save(`GRS-Certificate-${match.homeTeam.replace(/\s+/g, '-')}-vs-${match.awayTeam.replace(/\s+/g, '-')}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WorldCupTacticalLabPage() {
@@ -825,18 +901,21 @@ export default function WorldCupTacticalLabPage() {
   const [isLoading, setIsLoading]            = useState(true);
   const [error, setError]                    = useState<string | null>(null);
   const [showHighlightsModal, setShowHighlightsModal] = useState(false);
-  const [unlockedMatches, setUnlockedMatches] = useState<string[]>([]);
   const [showFanRegister, setShowFanRegister] = useState(false);
-  const [tacticalIQ, setTacticalIQ]          = useState<TacticalIQResult | null>(null);
   const [liveMatches, setLiveMatches]        = useState<LiveScoreboardMatch[]>([]);
   const [purchasedBlueprints, setPurchasedBlueprints] = useState<string[]>([]);
   const [showBlueprintModal, setShowBlueprintModal]   = useState(false);
-  const [isDownloadingBlueprint, setIsDownloadingBlueprint] = useState(false);
-  const [hasPurchasedBlueprint, setHasPurchasedBlueprint]   = useState(false);
+  const [hasPurchasedBlueprint, setHasPurchasedBlueprint] = useState(false);
   const [authToken, setAuthToken]            = useState<string | null>(null);
   const [gender, setGender]                  = useState<'male' | 'female'>('male');
+  // Academy stages
+  const [classStage, setClassStage]         = useState<ClassStage>('locked');
+  const [quizQuestions, setQuizQuestions]   = useState<MCQuestion[]>([]);
+  const [userAnswers, setUserAnswers]        = useState<Record<number, number>>({});
+  const [quizScore, setQuizScore]           = useState(0);
+  const [quizLoading, setQuizLoading]       = useState(false);
+  const [quizSubmitting, setQuizSubmitting] = useState(false);
   const hasSetInitial = useRef(false);
-  const UNLOCK_KEY = 'wc_unlocked_matches';
 
   useEffect(() => {
     setAuthToken(token ?? localStorage.getItem('auth_token'));
@@ -844,10 +923,14 @@ export default function WorldCupTacticalLabPage() {
     if (stored === 'female') setGender('female');
   }, [token]);
 
-  const loadUnlocked = (): string[] => { try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? '[]'); } catch { return []; } };
-  const saveUnlocked = (ids: string[]) => localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
-
-  useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
+  // Reset stage when selected match changes
+  useEffect(() => {
+    if (!selectedMatch) return;
+    setClassStage(hasPurchasedBlueprint ? 'analysis' : 'locked');
+    setQuizQuestions([]);
+    setUserAnswers({});
+    setQuizScore(0);
+  }, [selectedMatch?.id]);
 
   // ── Load purchased blueprints + handle Stripe return ─────────────────────
   useEffect(() => {
@@ -964,74 +1047,50 @@ export default function WorldCupTacticalLabPage() {
       .finally(() => setReportLoading(false));
   }, [selectedMatch]);
 
-  // ── Load the player's running Tactical IQ ─────────────────────────────────
-  useEffect(() => {
-    if (!authToken) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/tactical-iq/me`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.answers) setTacticalIQ(calculateTacticalIQ(data.answers)); })
-      .catch(() => {});
-  }, [authToken]);
-
-  const handleUnlockMatch = () => setShowFanRegister(true);
 
   const onRegisterSuccess = () => {
-    const allIds = matches.map(m => m.id);
-    setUnlockedMatches(allIds);
-    saveUnlocked(allIds);
     window.location.href = '/login?registered=1';
   };
 
-  const isMatchUnlocked = (matchId: string) =>
-    unlockedMatches.includes(matchId) || unlockedMatches.length > 0;
-
-  const handleQuizAnswered = async (moment: QuizMoment, wasOptimal: boolean) => {
-    if (!authToken || !selectedMatch) return;
+  const startQuiz = async () => {
+    if (!selectedMatch) return;
+    setQuizLoading(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tactical-iq/answer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({
-          matchId:        selectedMatch.id,
-          quizMomentId:   moment.id,
-          chosenOptionId: moment.options.find(o => o.isOptimal === wasOptimal)?.id ?? moment.options[0].id,
-          wasOptimal,
-          zone:           moment.zone,
-        }),
-      });
-    } catch {}
+      const context = `${selectedMatch.homeTeam} ${selectedMatch.homeScore}–${selectedMatch.awayScore} ${selectedMatch.awayTeam}`;
+      const res = await fetch(`/api/world-cup/questions/${selectedMatch.id}?context=${encodeURIComponent(context)}`);
+      const data = await res.json() as { questions: MCQuestion[] };
+      setQuizQuestions(data.questions ?? []);
+      setUserAnswers({});
+      setClassStage('quiz');
+    } catch {
+      setError('Could not load quiz. Please try again.');
+    } finally {
+      setQuizLoading(false);
+    }
   };
 
-  const handleDownloadBlueprint = async (matchId: string) => {
-    setIsDownloadingBlueprint(true);
+  const submitQuiz = async () => {
+    if (!selectedMatch) return;
+    setQuizSubmitting(true);
+    const score = quizQuestions.reduce((acc, q) => acc + (userAnswers[q.id] === q.correct ? 1 : 0), 0);
+    setQuizScore(score);
+    setClassStage('results');
+    // Fire-and-forget completion record
     try {
-      const response = await fetch(`/api/world-cup/matches/${matchId}/generate-blueprint`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/world-cup/class-completions`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        if (response.status === 402) { setShowBlueprintModal(true); return; }
-        throw new Error(data.error || 'Failed to generate blueprint');
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `GRS-Blueprint-${selectedMatch?.homeTeam}-vs-${selectedMatch?.awayTeam}.pdf`;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to download blueprint');
-    } finally {
-      setIsDownloadingBlueprint(false);
-    }
+        headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
+        body: JSON.stringify({ match_id: selectedMatch.id, score, total: quizQuestions.length }),
+      }).catch(() => {});
+    } catch {}
+    setQuizSubmitting(false);
   };
 
   const phaseIcons: Record<keyof PhaseReport, string> = { regain: '🛡️', build: '⚙️', finish: '🎯' };
   const phaseLabels: Record<keyof PhaseReport, string> = { regain: 'Regaining Possession', build: 'Building the Attack', finish: 'Finishing' };
+
+  const pct = quizQuestions.length > 0 ? Math.round((quizScore / quizQuestions.length) * 100) : 0;
+  const modules = report ? getModulesFromPhases(report.phases) : [];
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
@@ -1045,18 +1104,12 @@ export default function WorldCupTacticalLabPage() {
                 <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center">
                   <span className="text-black font-black text-sm">GRS</span>
                 </div>
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight">World Cup Tactical Lab</h1>
-                <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">EDUCATIONAL · POST-MATCH</span>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight">After-Match Academy</h1>
+                <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">$3 · ONE-TIME PER MATCH</span>
               </div>
-              <p className="text-white/80 text-sm">Study every match like a coach. Reports unlock after full-time.</p>
+              <p className="text-white/80 text-sm">Study every match like a coach. Earn a certificate. Download the full module.</p>
             </div>
             <div className="flex items-center gap-4">
-              {tacticalIQ && (
-                <div className="bg-white/10 backdrop-blur px-4 py-2 rounded-xl text-center">
-                  <div className="text-[9px] text-white/60 uppercase tracking-wide">Your Tactical IQ</div>
-                  <div className="text-xl font-black text-[#f0b429]">{tacticalIQ.score}</div>
-                </div>
-              )}
               <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">
                 Join as Fan
               </button>
@@ -1071,7 +1124,10 @@ export default function WorldCupTacticalLabPage() {
       {/* MAIN CONTENT */}
       <div className="max-w-[1400px] mx-auto px-4 py-6">
         {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center"><p className="text-red-600">{error}</p></div>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+            <p className="text-red-600">{error}</p>
+            <button onClick={() => setError(null)} className="mt-3 text-xs text-red-400 underline">Dismiss</button>
+          </div>
         ) : isLoading ? (
           <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
         ) : (
@@ -1079,10 +1135,6 @@ export default function WorldCupTacticalLabPage() {
 
             {/* LEFT — match list */}
             <div className="lg:col-span-3 space-y-4">
-
-              {/* Muted live scoreboard — score, minute, possession only.
-                  No audio control because there is no audio. No "watch live"
-                  language. This is a scoreboard, not a broadcast surface. */}
               {liveMatches.length > 0 && (
                 <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                   <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
@@ -1106,7 +1158,7 @@ export default function WorldCupTacticalLabPage() {
                     ))}
                   </div>
                   <p className="text-[9px] text-gray-300 mt-3 pt-2 border-t border-gray-100">
-                    Tactical Report available ~15 min after full-time
+                    Class unlocks ~15 min after full-time
                   </p>
                 </div>
               )}
@@ -1121,8 +1173,8 @@ export default function WorldCupTacticalLabPage() {
                   <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
                     {matches.map(match => (
                       <MatchCard key={match.id} match={match} isSelected={selectedMatch?.id === match.id}
-                        onClick={() => setSelectedMatch(match)} isUnlocked={isMatchUnlocked(match.id)}
-                        onUnlockClick={handleUnlockMatch} />
+                        onClick={() => setSelectedMatch(match)} isUnlocked={true}
+                        onUnlockClick={() => {}} />
                     ))}
                   </div>
                 )}
@@ -1130,28 +1182,78 @@ export default function WorldCupTacticalLabPage() {
               <AdBanner tier="BRONZE" />
             </div>
 
-
-            {/* CENTER — the tactical report itself */}
+            {/* CENTER — academy stages */}
             <div className="lg:col-span-6 space-y-6">
               {!selectedMatch ? (
                 <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">
-                  Select a completed match to open its Tactical Report.
-                </div>
-              ) : !isMatchUnlocked(selectedMatch.id) ? (
-                <div className="bg-white rounded-2xl p-8 text-center border shadow-sm">
-                  <Lock size={32} className="mx-auto text-gray-400 mb-3" />
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Report Locked</h3>
-                  <p className="text-sm text-gray-500 mb-4">Register free to study full tactical reports</p>
-                  <button onClick={() => setShowFanRegister(true)} className="px-5 py-2.5 bg-[#1a5c2a] text-white rounded-xl text-sm font-bold">Register Free</button>
+                  Select a completed match to join the After-Match Class.
                 </div>
               ) : !selectedMatch.reportReady ? (
                 <div className="bg-white rounded-2xl p-8 text-center border shadow-sm">
                   <Loader2 size={28} className="mx-auto text-amber-500 mb-3 animate-spin" />
                   <h3 className="text-base font-bold text-gray-900 mb-1">Report generating</h3>
-                  <p className="text-sm text-gray-500">Tactical reports are ready within 15 minutes of full-time. Check back shortly.</p>
+                  <p className="text-sm text-gray-500">Tactical reports are ready within 15 minutes of full-time.</p>
                 </div>
-              ) : (
+
+              ) : classStage === 'locked' ? (
+                /* ── LOCKED STAGE ─────────────────────────────────────────── */
+                <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                  {/* Match preview header */}
+                  <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] p-6 text-white text-center">
+                    <p className="text-white/60 text-xs uppercase tracking-wider mb-1">After-Match Class</p>
+                    <h2 className="text-xl font-black">{selectedMatch.homeTeam} vs {selectedMatch.awayTeam}</h2>
+                    <p className="text-2xl font-black text-[#f0b429] mt-1">{selectedMatch.homeScore} – {selectedMatch.awayScore}</p>
+                    <p className="text-white/50 text-xs mt-2 flex items-center justify-center gap-1"><MapPin size={11} />{selectedMatch.stadium}</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                        <Lock size={18} className="text-amber-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-gray-900">Join the After-Match Class</h3>
+                        <p className="text-xs text-gray-500">Full tactical academy for this match</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2.5 mb-6">
+                      {[
+                        'Full tactical match analysis — all three phases',
+                        '25-question match quiz with AI explanations',
+                        'Match Analysis Certificate PDF',
+                        'Full Module PDF — analysis, drills, 5-day plan',
+                      ].map(item => (
+                        <div key={item} className="flex items-center gap-3 text-sm text-gray-700 bg-green-50 p-3 rounded-xl border border-green-100">
+                          <CheckCircle2 size={15} className="text-[#1a5c2a] shrink-0" />
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setShowBlueprintModal(true)}
+                      className="w-full py-4 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-xl text-base transition-colors flex items-center justify-center gap-2"
+                    >
+                      Join Class — $3
+                    </button>
+                    <p className="text-[10px] text-gray-400 text-center mt-2">One-time purchase · EcoCash / InnBucks / OneMoney / Card</p>
+                  </div>
+                </div>
+
+              ) : classStage === 'analysis' ? (
+                /* ── ANALYSIS STAGE ───────────────────────────────────────── */
                 <>
+                  {/* Stage progress */}
+                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      {['Analysis', 'Quiz', 'Certificate'].map((s, i) => (
+                        <div key={s} className="flex items-center gap-2 flex-1">
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${i === 0 ? 'bg-[#1a5c2a] text-white' : 'bg-gray-100 text-gray-400'}`}>{i + 1}</div>
+                          <span className={`text-xs font-semibold hidden sm:block ${i === 0 ? 'text-[#1a5c2a]' : 'text-gray-400'}`}>{s}</span>
+                          {i < 2 && <div className="flex-1 h-0.5 bg-gray-200 mx-1" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Score header */}
                   <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
                     <div className="flex justify-between items-center">
@@ -1178,18 +1280,14 @@ export default function WorldCupTacticalLabPage() {
                     <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
                   ) : report ? (
                     <>
-                      {/* Phase map — static study diagram, not a live ball tracker */}
                       <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
-                        <div className="flex items-center justify-between px-3 pt-2 pb-1">
-                          <div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> THREE PHASES OF PLAY</div>
-                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500 px-3 pt-2 pb-1"><Tv size={12} /> THREE PHASES OF PLAY</div>
                         <PhaseMap phases={report.phases} homeTeam={selectedMatch.homeTeam} awayTeam={selectedMatch.awayTeam} />
                       </div>
 
-                      {/* THUTO/Amara narrative — generated once, not performed live */}
                       <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-9 h-9 rounded-full bg-[#1a5c2a] flex items-center justify-center font-black text-[#f0b429] text-sm flex-shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#1a5c2a] flex items-center justify-center font-black text-[#f0b429] text-sm shrink-0">
                             {gender === 'female' ? 'A' : 'T'}
                           </div>
                           <h3 className="text-sm font-bold text-gray-900">{gender === 'female' ? 'Amara' : 'THUTO'}'s tactical read</h3>
@@ -1197,7 +1295,6 @@ export default function WorldCupTacticalLabPage() {
                         <p className="text-sm text-gray-700 leading-relaxed">{report.narrative}</p>
                       </div>
 
-                      {/* Phase question cards — the brainstorm's exact teaching pattern */}
                       <div className="space-y-3">
                         {(['regain', 'build', 'finish'] as const).map(phase => (
                           <div key={phase} className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
@@ -1211,77 +1308,243 @@ export default function WorldCupTacticalLabPage() {
                         ))}
                       </div>
 
-                      {/* What Would You Do? quizzes */}
                       {report.quizMoments.length > 0 && (
                         <div className="space-y-3">
                           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Brain size={16} className="text-[#1a5c2a]" /> What Would You Do?</h3>
                           {report.quizMoments.map(moment => (
-                            <WhatWouldYouDo key={moment.id} moment={moment} gender={gender}
-                              onAnswered={(wasOptimal) => handleQuizAnswered(moment, wasOptimal)} />
+                            <WhatWouldYouDo key={moment.id} moment={moment} gender={gender} onAnswered={() => {}} />
                           ))}
                         </div>
                       )}
 
-                      {/* Coaching Blueprint CTA */}
-                      {user && (
-                        <button
-                          onClick={() => setShowBlueprintModal(true)}
-                          className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
-                        >
-                          <Lock size={16} /> Unlock Coaching Blueprint — $4.99
-                        </button>
-                      )}
+                      {/* Start Quiz CTA */}
+                      <button
+                        onClick={startQuiz}
+                        disabled={quizLoading}
+                        className="w-full py-4 bg-[#1a5c2a] hover:bg-[#0d3d1a] text-white font-black rounded-xl text-base transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        {quizLoading
+                          ? <><Loader2 size={18} className="animate-spin" /> Loading Quiz…</>
+                          : <><Brain size={18} /> Start the 25-Question Quiz →</>}
+                      </button>
                     </>
                   ) : (
-                    <div className="bg-white rounded-2xl p-8 text-center border shadow-sm text-gray-500">
-                      Report data unavailable. Please try again shortly.
+                    <div className="bg-white rounded-2xl p-8 text-center border shadow-sm text-gray-500">Report data unavailable. Please try again shortly.</div>
+                  )}
+
+                  <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
+                    <Youtube size={16} /> Watch Match Highlights
+                  </button>
+                </>
+
+              ) : classStage === 'quiz' ? (
+                /* ── QUIZ STAGE ───────────────────────────────────────────── */
+                <>
+                  {/* Progress */}
+                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold text-gray-900">Match Quiz</span>
+                      <span className="text-xs text-gray-500">{Object.keys(userAnswers).length} / {quizQuestions.length} answered</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#1a5c2a] transition-all" style={{ width: `${quizQuestions.length > 0 ? (Object.keys(userAnswers).length / quizQuestions.length) * 100 : 0}%` }} />
+                    </div>
+                    <div className="flex items-center gap-3 mt-2">
+                      {['Analysis', 'Quiz', 'Certificate'].map((s, i) => (
+                        <div key={s} className="flex items-center gap-2 flex-1">
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${i === 1 ? 'bg-[#1a5c2a] text-white' : i === 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>{i === 0 ? '✓' : i + 1}</div>
+                          <span className={`text-xs font-semibold hidden sm:block ${i === 1 ? 'text-[#1a5c2a]' : i === 0 ? 'text-green-600' : 'text-gray-400'}`}>{s}</span>
+                          {i < 2 && <div className="flex-1 h-0.5 bg-gray-200 mx-1" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Questions */}
+                  <div className="space-y-4">
+                    {quizQuestions.map((q, idx) => (
+                      <div key={q.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="w-7 h-7 rounded-full bg-[#1a5c2a]/10 text-[#1a5c2a] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">{idx + 1}</span>
+                          <div className="flex-1">
+                            <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wide">{q.category}</span>
+                            <p className="text-sm font-semibold text-gray-900 mt-0.5">{q.question}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2 pl-10">
+                          {q.options.map((opt, oi) => (
+                            <button
+                              key={oi}
+                              onClick={() => setUserAnswers(prev => ({ ...prev, [q.id]: oi }))}
+                              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${userAnswers[q.id] === oi ? 'bg-[#1a5c2a] text-white border-[#1a5c2a] font-semibold' : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-[#1a5c2a]/40'}`}
+                            >
+                              <span className="font-bold mr-2">{String.fromCharCode(65 + oi)}.</span>{opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Submit */}
+                  <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200 sticky bottom-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-gray-600">{Object.keys(userAnswers).length} of {quizQuestions.length} answered</span>
+                      {Object.keys(userAnswers).length < quizQuestions.length && (
+                        <span className="text-xs text-amber-600">{quizQuestions.length - Object.keys(userAnswers).length} remaining</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={submitQuiz}
+                      disabled={quizSubmitting || Object.keys(userAnswers).length < quizQuestions.length}
+                      className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white font-black rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                    >
+                      {quizSubmitting ? <><Loader2 size={16} className="animate-spin" />Submitting…</> : <>Submit Quiz & Get Results <ChevronRight size={16} /></>}
+                    </button>
+                  </div>
+                </>
+
+              ) : (
+                /* ── RESULTS STAGE ────────────────────────────────────────── */
+                <>
+                  {/* Score badge */}
+                  <div className={`rounded-2xl p-8 text-center shadow-md border ${pct >= 80 ? 'bg-amber-50 border-amber-200' : pct >= 60 ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <Award size={40} className={`mx-auto mb-2 ${pct >= 80 ? 'text-amber-500' : pct >= 60 ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <div className={`text-5xl font-black mb-1 ${pct >= 80 ? 'text-amber-600' : pct >= 60 ? 'text-blue-600' : 'text-gray-700'}`}>{pct}%</div>
+                    <div className={`text-lg font-bold mb-1 ${pct >= 80 ? 'text-amber-700' : pct >= 60 ? 'text-blue-700' : 'text-gray-600'}`}>
+                      {pct >= 80 ? 'Distinction' : pct >= 60 ? 'Merit' : 'Pass'}
+                    </div>
+                    <p className="text-sm text-gray-600">{quizScore} correct out of {quizQuestions.length} questions</p>
+                    <p className="text-xs text-gray-400 mt-1">{selectedMatch.homeTeam} vs {selectedMatch.awayTeam}</p>
+                  </div>
+
+                  {/* Stage progress — all done */}
+                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      {['Analysis', 'Quiz', 'Certificate'].map((s, i) => (
+                        <div key={s} className="flex items-center gap-2 flex-1">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black bg-green-100 text-green-700">✓</div>
+                          <span className="text-xs font-semibold hidden sm:block text-green-600">{s}</span>
+                          {i < 2 && <div className="flex-1 h-0.5 bg-green-200 mx-1" />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Downloads */}
+                  <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Download size={16} className="text-[#1a5c2a]" /> Download Your Results</h3>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => generateCertificatePDF(selectedMatch, quizScore, quizQuestions.length, user?.name ?? 'GRS Student')}
+                        className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Award size={16} /> Download Certificate PDF
+                      </button>
+                      {report && (
+                        <button
+                          onClick={() => generateModulePDF(selectedMatch, report.phases, modules)}
+                          className="w-full py-3 bg-[#1a5c2a] hover:bg-[#0d3d1a] text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                        >
+                          <FileDown size={16} /> Download Full Module PDF
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Wrong answers with explanations */}
+                  {quizQuestions.filter(q => userAnswers[q.id] !== q.correct).length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-bold text-gray-900">Review — What You Missed</h3>
+                      {quizQuestions.filter(q => userAnswers[q.id] !== q.correct).map((q, idx) => (
+                        <div key={q.id} className="bg-white rounded-2xl p-4 shadow-sm border border-red-100">
+                          <p className="text-xs font-bold text-red-500 uppercase mb-1">{q.category} · Q{idx + 1}</p>
+                          <p className="text-sm font-semibold text-gray-900 mb-2">{q.question}</p>
+                          <div className="space-y-1.5 mb-3">
+                            {q.options.map((opt, oi) => (
+                              <div key={oi} className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 ${oi === q.correct ? 'bg-green-50 text-green-800 border border-green-200' : oi === userAnswers[q.id] ? 'bg-red-50 text-red-700 border border-red-200' : 'text-gray-500'}`}>
+                                {oi === q.correct && <CheckCircle2 size={13} className="text-green-600 shrink-0" />}
+                                {oi === userAnswers[q.id] && oi !== q.correct && <X size={13} className="text-red-500 shrink-0" />}
+                                <span className="font-bold mr-1">{String.fromCharCode(65 + oi)}.</span>{opt}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 leading-relaxed">
+                            💡 {q.explanation}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
 
-                  {selectedMatch.status === 'completed' && (
-                    <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
-                      <Youtube size={16} /> Watch Match Highlights
+                  {/* Retake */}
+                  <div className="flex gap-3">
+                    <button onClick={() => setClassStage('analysis')} className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-xl text-sm hover:border-[#1a5c2a] transition">
+                      ← Back to Analysis
                     </button>
-                  )}
+                    <button onClick={startQuiz} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-200 transition">
+                      Retake Quiz
+                    </button>
+                  </div>
+
+                  <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
+                    <Youtube size={16} /> Watch Match Highlights
+                  </button>
                 </>
               )}
             </div>
 
-            {/* RIGHT — ads, odds, share */}
+            {/* RIGHT — ads, odds, share, class progress */}
             <div className="lg:col-span-3 space-y-4">
               <AdBanner tier="GOLD" />
               <AdBanner tier="SILVER" />
               <MatchOdds match={selectedMatch} />
               <ShareButtons match={selectedMatch} />
 
-              {selectedMatch && report && (
+              {/* Class progress tracker (shown when purchased) */}
+              {selectedMatch && hasPurchasedBlueprint && (
+                <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <TrophyIcon size={15} className="text-amber-500" /> Class Progress
+                  </h3>
+                  <div className="space-y-2.5">
+                    {[
+                      { label: 'Tactical Analysis', done: classStage !== 'locked', active: classStage === 'analysis' },
+                      { label: '25-Question Quiz', done: classStage === 'results', active: classStage === 'quiz' },
+                      { label: 'Certificate', done: classStage === 'results', active: classStage === 'results' },
+                    ].map(step => (
+                      <div key={step.label} className="flex items-center gap-2.5">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? 'bg-green-100' : step.active ? 'bg-[#1a5c2a]' : 'bg-gray-100'}`}>
+                          {step.done ? <CheckCircle2 size={12} className="text-green-600" /> : <span className="text-[9px] text-white font-bold">{step.active ? '→' : '○'}</span>}
+                        </div>
+                        <span className={`text-xs ${step.done ? 'text-green-600 font-semibold' : step.active ? 'text-[#1a5c2a] font-bold' : 'text-gray-400'}`}>{step.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {classStage === 'results' && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 text-center">
+                      <span className={`text-lg font-black ${pct >= 80 ? 'text-amber-500' : pct >= 60 ? 'text-blue-500' : 'text-gray-500'}`}>{pct}%</span>
+                      <p className="text-[10px] text-gray-400">Quiz score</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Join class card (shown when not yet purchased) */}
+              {selectedMatch && !hasPurchasedBlueprint && selectedMatch.reportReady && (
                 <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
                   <div className="flex items-center gap-2 mb-3">
                     <FileText size={16} className="text-[#1a5c2a]" />
-                    <h3 className="text-sm font-bold text-gray-900">GRS Coaching Blueprint</h3>
+                    <h3 className="text-sm font-bold text-gray-900">After-Match Class</h3>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Turn this tactical analysis into a 5-day training microcycle.</p>
-                  {hasPurchasedBlueprint ? (
-                    <button
-                      onClick={() => handleDownloadBlueprint(selectedMatch.id)}
-                      disabled={isDownloadingBlueprint}
-                      className="w-full py-2.5 bg-[#1a5c2a] hover:bg-[#0d3d1a] text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
-                    >
-                      {isDownloadingBlueprint ? (
-                        <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Generating...</>
-                      ) : (
-                        <><Download size={16} />Download Blueprint</>
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setShowBlueprintModal(true)}
-                      className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Lock size={14} />Unlock for $4.99
-                    </button>
-                  )}
-                  <p className="text-[9px] text-gray-400 text-center mt-2">PDF includes drills, coaching points, and age adaptations</p>
+                  <p className="text-xs text-gray-600 mb-3">Analysis, quiz, certificate + full PDF module.</p>
+                  <button
+                    onClick={() => setShowBlueprintModal(true)}
+                    className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Lock size={14} /> Join Class — $3
+                  </button>
+                  <p className="text-[9px] text-gray-400 text-center mt-2">EcoCash / InnBucks / OneMoney / Card</p>
                 </div>
               )}
             </div>
@@ -1297,7 +1560,16 @@ export default function WorldCupTacticalLabPage() {
           matchId={selectedMatch.id}
           matchName={`${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`}
           onClose={() => setShowBlueprintModal(false)}
-          onPurchaseComplete={() => { setHasPurchasedBlueprint(true); setShowBlueprintModal(false); }}
+          onPurchaseComplete={() => {
+            setHasPurchasedBlueprint(true);
+            setShowBlueprintModal(false);
+            setPurchasedBlueprints(prev => {
+              const updated = [...new Set([...prev, selectedMatch.id])];
+              localStorage.setItem('grs_blueprints', JSON.stringify(updated));
+              return updated;
+            });
+            setClassStage('analysis');
+          }}
         />
       )}
     </div>

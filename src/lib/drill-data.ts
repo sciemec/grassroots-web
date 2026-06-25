@@ -27,8 +27,8 @@ export interface DrillData {
   difficulty_level: 1 | 2 | 3;
   is_premium: boolean;
   // Context fields
-  when_to_use: string;   // The game situation or phase of play where this skill is needed
-  where_on_pitch: string; // The pitch zone or positional context where this drill applies
+  when_to_use?: string;   // The game situation or phase of play where this skill is needed
+  where_on_pitch?: string; // The pitch zone or positional context where this drill applies
   // Optional enhancement fields
   age_variants?: Partial<Record<AgeGroup, AgeVariant>>;
   gender_notes?: string;
