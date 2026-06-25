@@ -46,6 +46,15 @@ const nextConfig = {
     config.resolve.alias[`${process.cwd()}/src/components/tactical-iq/WhatWouldYouDo`] =
       `${process.cwd()}/src/lib/tactical-iq/WhatWouldYouDo.tsx`;
 
+    // Vercel build cache may restore the old world-cup directory (before it was
+    // renamed back to worldcup in commit f7980ed). These aliases ensure webpack
+    // resolves any stale cached files to the correct current paths rather than
+    // failing the build — which would cause /worldcup to 404 in production.
+    config.resolve.alias[`${process.cwd()}/src/app/world-cup/page`] =
+      `${process.cwd()}/src/app/worldcup/page.tsx`;
+    config.resolve.alias[`${process.cwd()}/src/app/world-cup/live`] =
+      `${process.cwd()}/src/app/worldcup/live`;
+
     return config;
   },
 
