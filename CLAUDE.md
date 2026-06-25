@@ -9006,8 +9006,8 @@ private function sendWhatsAppReply(string $phone, string $message): void
 | bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
 | `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
-| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
-| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| `GEMINI_API_KEY` | ✅ SET in Vercel (confirmed 20 June 2026) | Also needed on Render for WhatsApp pipeline |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI chat broken |
 
 ---
 
@@ -9184,6 +9184,6 @@ Empty commit to bhora-ai master to force `start.sh` → `php artisan migrate --f
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT YET UPDATED | Replace Twilio HTTP client with Meta API call (from 23 June earlier session) |
 | bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
-| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
-| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| `GEMINI_API_KEY` | ✅ SET in Vercel (confirmed 20 June 2026) | Also needed on Render for WhatsApp pipeline |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI chat broken |
 
