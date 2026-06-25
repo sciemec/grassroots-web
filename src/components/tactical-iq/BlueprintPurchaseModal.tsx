@@ -36,8 +36,8 @@ export function BlueprintPurchaseModal({
         body: JSON.stringify({
           planId:     'blueprint_single',
           price:      4.99,
-          successUrl: `${window.location.origin}/worldcup?blueprint_paid=${matchId}`,
-          cancelUrl:  `${window.location.origin}/worldcup`,
+          successUrl: `${window.location.origin}/world-cup?blueprint_paid=${matchId}`,
+          cancelUrl:  `${window.location.origin}/world-cup`,
           metadata:   { matchId, type: 'coaching_blueprint' },
         }),
       });

@@ -1,7 +1,7 @@
 /**
  * POST /api/payments/match-unlock
  * Creates a one-time Stripe Checkout session for $1 to unlock match audio.
- * On success Stripe redirects to /worldcup?unlocked={matchId}
+ * On success Stripe redirects to /world-cup?unlocked={matchId}
  *
  * Required env vars:
  *   STRIPE_SECRET_KEY   — sk_live_... or sk_test_...
@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       metadata:    { matchId },
-      success_url: `${appUrl}/worldcup?unlocked=${matchId}`,
-      cancel_url:  `${appUrl}/worldcup`,
+      success_url: `${appUrl}/world-cup?unlocked=${matchId}`,
+      cancel_url:  `${appUrl}/world-cup`,
     });
 
     return NextResponse.json({ url: session.url });

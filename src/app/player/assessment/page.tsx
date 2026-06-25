@@ -4,19 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Target, Play, CheckCircle2, Brain, Loader2, TrendingUp,
-  Activity, ChevronRight, Star, Zap, Scan, AlertCircle, Trophy,
+  Activity, ChevronRight, Star, Zap, Trophy, Home,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
-import { queryAI } from "@/lib/ai-query";
 import { calcBenchmarkScore } from "@/lib/skill-scoring";
 import api from "@/lib/api";
 import { safeArray } from "@/lib/safe-array";
 import { FIELD_META_LABELS } from "@/config/sports";
+import { postToArena } from "@/lib/arena-poster";
 
 // ── Test definitions ──────────────────────────────────────────────────────────
 
@@ -109,20 +108,6 @@ function scoreLabel(score: number) {
   return "Needs Work";
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
-interface BiometricScan {
-  mode: string;
-  mode_label: string;
-  score: number;
-  level: "Elite" | "Good" | "Raw";
-  asymmetry_score: number;
-  asymmetry_diff: number;
-  weak_side: string | null;
-  frames_analysed: number;
-  session_date: string;
-}
-
 // ── Match stat types ──────────────────────────────────────────────────────────
 
 interface MatchStat {
@@ -151,15 +136,10 @@ const RESULT_LABEL: Record<string, string> = {
   L: "Loss",
 };
 
-const BIOMETRIC_LEVEL_COLOR: Record<string, string> = {
-  Elite: "#22c55e",
-  Good:  "#f0b429",
-  Raw:   "#ef4444",
-};
-
 export default function AssessmentPage() {
-  const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<"field" | "apk" | "biometric" | "stats">("field");
+  const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
+  const [activeTab, setActiveTab] = useState<"field" | "apk" | "stats">("field");
 
   // Field tests state
   const [positionGroup, setPositionGroup] = useState("");
@@ -167,9 +147,6 @@ export default function AssessmentPage() {
   const [results, setResults]             = useState<Record<string, string>>({});
   const [aiReport, setAiReport]           = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
-
-  // Biometric scan history from localStorage
-  const [bioScans, setBioScans] = useState<BiometricScan[]>([]);
 
   // Match stats state
   const [matchStats, setMatchStats]             = useState<MatchStat[]>([]);
@@ -184,17 +161,6 @@ export default function AssessmentPage() {
   const [reportLoading, setReportLoading]     = useState(false);
 
   useEffect(() => { /* auth handled by layout.tsx */ }, [user]);
-
-  // Load biometric scans from localStorage when tab switches
-  useEffect(() => {
-    if (activeTab !== "biometric") return;
-    try {
-      const raw = JSON.parse(localStorage.getItem("gs_biometric_scans") || "[]");
-      setBioScans(Array.isArray(raw) ? raw : []);
-    } catch {
-      setBioScans([]);
-    }
-  }, [activeTab]);
 
   // Load match stats when tab switches to "stats"
   useEffect(() => {
@@ -256,12 +222,23 @@ export default function AssessmentPage() {
       .map((t) => `${t.name}: ${results[t.name]} ${t.unit} (benchmark: ${t.benchmark})`)
       .join(", ");
     try {
-      const reply = await queryAI(
-        `Position assessment results for ${positionGroup}: ${summary}.
-Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to improve, and a 4-week training focus. Be specific and encouraging.`,
-        "player",
-      );
+      const res = await fetch("/api/ai-coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `Position assessment results for ${positionGroup}: ${summary}. Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to improve, and a 4-week training focus. Be specific and encouraging.`,
+          system_prompt: "You are an expert football coach and talent assessor. Give clear, specific, encouraging feedback.",
+        }),
+      });
+      const data = await res.json();
+      const reply: string = data.response ?? data.reply ?? "Unable to generate report.";
       setAiReport(reply);
+      // Post assessment result to Arena feed
+      postToArena(
+        `Completed a ${positionGroup} position assessment — overall score: ${overallScore}/100 (${scoreLabel(overallScore)}).`,
+        { postType: "milestone", activityType: "assessment", activityData: { position: positionGroup, score: overallScore } },
+        token ?? undefined,
+      );
     } catch {
       setAiReport("Unable to connect to AI Coach. Please check your connection and try again.");
     } finally {
@@ -284,12 +261,17 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
       <main className="gs-watermark flex-1 overflow-auto p-6">
 
         <div className="mb-6 flex items-center gap-3">
-          <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
-            <ArrowLeft className="h-4 w-4" style={{ color: "#f0b429" }} />
+          <Link
+            href="/player"
+            className="flex items-center gap-2 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-2 text-sm font-semibold transition-colors hover:bg-[#f0b429]/20"
+            style={{ color: "#f0b429" }}
+          >
+            <Home className="h-4 w-4" />
+            <span>Hub</span>
           </Link>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "#f0b429" }}>Assessment</h1>
-            <p className="text-sm text-muted-foreground">Field tests + APK biomechanics coaching reports</p>
+            <p className="text-sm font-medium text-white/70">Field tests · APK coaching reports · Match stats</p>
           </div>
         </div>
 
@@ -318,17 +300,6 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             APK Sessions
           </button>
           <button
-            onClick={() => setActiveTab("biometric")}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-              activeTab === "biometric"
-                ? "bg-[#f0b429] text-[#1a3a1a]"
-                : "text-[#f0b429]/70 hover:text-[#f0b429]"
-            }`}
-          >
-            <Scan className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
-            Biometric
-          </button>
-          <button
             onClick={() => setActiveTab("stats")}
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
               activeTab === "stats"
@@ -348,7 +319,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
               <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-8 text-center backdrop-blur-sm">
                 <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]" />
                 <h2 className="mb-2 text-xl font-bold" style={{ color: "#f0b429" }}>Position Assessment Hub</h2>
-                <p className="mb-6 text-sm text-muted-foreground">
+                <p className="mb-6 text-sm font-medium text-white/75">
                   Run field tests with a partner and enter your results. AI will generate a performance report and skill radar.
                 </p>
                 <div className="mb-6">
@@ -384,13 +355,13 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 <h2 className="font-bold capitalize" style={{ color: "#f0b429" }}>{positionGroup} Tests</h2>
                 <button
                   onClick={() => { setStarted(false); setResults({}); setAiReport(""); }}
-                  className="text-xs text-muted-foreground hover:text-[#f0b429]"
+                  className="text-xs font-medium text-white/60 hover:text-[#f0b429] transition-colors"
                 >
                   ← Change position
                 </button>
               </div>
 
-              <p className="mb-5 rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 text-sm text-muted-foreground">
+              <p className="mb-5 rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 text-sm font-medium text-white/75">
                 Run each test on the field with a partner. Enter your result — green means you met the Zimbabwe benchmark.
               </p>
 
@@ -409,11 +380,11 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     >
                       <div className="mb-2 flex items-start justify-between">
                         <h3 className="font-semibold text-[#f0b429]">{test.name}</h3>
-                        <span className="rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs text-muted-foreground">
+                        <span className="rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs font-medium text-white/70">
                           Benchmark: {test.benchmark}
                         </span>
                       </div>
-                      <p className="mb-3 text-sm text-muted-foreground">{test.desc}</p>
+                      <p className="mb-3 text-sm font-medium text-white/70">{test.desc}</p>
                       <div className="flex items-center gap-3">
                         <input
                           type="number"
@@ -506,7 +477,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             {!selectedSession ? (
               <>
                 <div className="mb-4 rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 px-4 py-3">
-                  <p className="text-xs text-[#f0b429]">
+                  <p className="text-xs font-medium text-[#f0b429]/90">
                     These are your real training sessions recorded in the GrassRoots APK. Each session includes biomechanics analysis from your phone camera.
                   </p>
                 </div>
@@ -518,8 +489,8 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 ) : sessions.length === 0 ? (
                   <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
                     <Activity className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
-                    <p className="text-[#f0b429]/70 text-sm">No APK sessions found yet.</p>
-                    <p className="mt-1 text-xs text-[#f0b429]/55">
+                    <p className="font-medium text-white/75 text-sm">No APK sessions found yet.</p>
+                    <p className="mt-1 text-xs font-medium text-white/60">
                       Complete a training session in the GrassRoots mobile app to see your coaching reports here.
                     </p>
                   </div>
@@ -544,7 +515,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                             <p className="text-sm font-medium text-[#f0b429]">
                               {session.focus_area ?? "Training Session"}
                             </p>
-                            <p className="text-xs text-[#f0b429]/70">
+                            <p className="text-xs font-medium text-white/65">
                               {new Date(session.created_at).toLocaleDateString("en-ZW", {
                                 day: "numeric", month: "short", year: "numeric"
                               })}
@@ -591,7 +562,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       <span className={`text-2xl font-black ${scoreColor(selectedSession.overall_score)}`}>
                         {selectedSession.overall_score}
                       </span>
-                      <span className="text-sm text-[#f0b429]/55">/ 100</span>
+                      <span className="text-sm font-medium text-white/60">/ 100</span>
                       <span className={`text-xs font-medium ${scoreColor(selectedSession.overall_score)}`}>
                         — {scoreLabel(selectedSession.overall_score)}
                       </span>
@@ -689,11 +660,11 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           {sessionReport.drill_sets!.map((ds, i) => (
                             <div key={i} className="flex items-center gap-3">
                               <div className="flex-1 min-w-0">
-                                <p className="truncate text-sm text-[#f0b429]">
+                                <p className="truncate text-sm font-semibold text-[#f0b429]">
                                   {ds.drill_name ?? `Drill ${i + 1}`}
                                 </p>
                                 {ds.rep_count !== null && ds.rep_count !== undefined && (
-                                  <p className="text-xs text-[#f0b429]/55">{ds.rep_count} reps</p>
+                                  <p className="text-xs font-medium text-white/60">{ds.rep_count} reps</p>
                                 )}
                               </div>
                               {ds.form_score !== null && ds.form_score !== undefined && (
@@ -739,141 +710,6 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           </div>
         )}
 
-        {/* ── BIOMETRIC SCAN HISTORY TAB ── */}
-        {activeTab === "biometric" && (
-          <div className="mx-auto max-w-2xl">
-            {bioScans.length === 0 ? (
-              <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
-                <Scan className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
-                <p className="text-[#f0b429]/70 text-sm">No biometric scans saved yet.</p>
-                <p className="mt-1 text-xs text-[#f0b429]/55">
-                  Run a body scan from the Player Hub or Analyst Hub, then tap "Save Scan" to track your progress here.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Summary stats */}
-                <div className="grid grid-cols-3 gap-3 mb-5">
-                  {(["Elite", "Good", "Raw"] as const).map((lvl) => {
-                    const count = bioScans.filter(s => s.level === lvl).length;
-                    return (
-                      <div key={lvl} className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
-                        <p className="text-xl font-black" style={{ color: BIOMETRIC_LEVEL_COLOR[lvl] }}>{count}</p>
-                        <p className="text-xs text-[#f0b429]/70 mt-0.5">{lvl} scans</p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Score trend chart */}
-                <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 mb-4 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="h-4 w-4 text-[#f0b429]" />
-                    <h3 className="font-semibold text-sm" style={{ color: "#f0b429" }}>Score Trend</h3>
-                  </div>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={[...bioScans].reverse().slice(-12).map((s, i) => ({
-                      name: `#${i + 1}`,
-                      score: s.score,
-                      level: s.level,
-                      date: s.session_date,
-                    }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(240,180,41,0.1)" />
-                      <XAxis dataKey="name" tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
-                      <YAxis domain={[0, 100]} tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(240,180,41,0.2)", borderRadius: 8 }}
-                        labelStyle={{ color: "#f0b429", fontSize: 11 }}
-                        formatter={(value: any, _: any, entry: any) => [
-                          `${value}/100 — ${entry.payload.level}`,
-                          entry.payload.date,
-                        ]}
-                      />
-                      <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-                        {[...bioScans].reverse().slice(-12).map((s, i) => (
-                          <Cell key={i} fill={BIOMETRIC_LEVEL_COLOR[s.level] ?? "#6b7280"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Asymmetry trend */}
-                {bioScans.some(s => s.asymmetry_diff > 0) && (
-                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 mb-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertCircle className="h-4 w-4 text-amber-400" />
-                      <h3 className="font-semibold text-amber-300 text-sm">Asymmetry History</h3>
-                    </div>
-                    <ResponsiveContainer width="100%" height={140}>
-                      <BarChart data={[...bioScans].reverse().slice(-12).map((s, i) => ({
-                        name: `#${i + 1}`,
-                        diff: s.asymmetry_diff,
-                        side: s.weak_side,
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(240,180,41,0.1)" />
-                        <XAxis dataKey="name" tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
-                        <YAxis tick={{ fill: "rgba(240,180,41,0.7)", fontSize: 10 }} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: "#1a3d26", border: "1px solid rgba(240,180,41,0.2)", borderRadius: 8 }}
-                          labelStyle={{ color: "#f0b429", fontSize: 11 }}
-                          formatter={(value: any, _: any, entry: any) => [
-                            `${value}° difference${entry.payload.side ? ` (${entry.payload.side} side weaker)` : ""}`,
-                            "Asymmetry",
-                          ]}
-                        />
-                        <Bar dataKey="diff" radius={[4, 4, 0, 0]}>
-                          {[...bioScans].reverse().slice(-12).map((s, i) => (
-                            <Cell key={i} fill={s.asymmetry_diff > 10 ? "#f59e0b" : "#22c55e"} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <p className="text-[10px] text-amber-400/70 mt-2">
-                      Green = symmetric (&lt;10°). Amber = compensation detected (&gt;10°). Persistent imbalance = injury risk.
-                    </p>
-                  </div>
-                )}
-
-                {/* Recent scans list */}
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/55 mb-3">Recent Scans</p>
-                  {bioScans.slice(0, 10).map((s, i) => (
-                    <div key={i} className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white"
-                          style={{ backgroundColor: BIOMETRIC_LEVEL_COLOR[s.level] ?? "#6b7280" }}
-                        >
-                          {s.score}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#f0b429]">{s.mode_label}</p>
-                          <p className="text-[11px] text-[#f0b429]/55">{s.session_date} · {s.frames_analysed} frames</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{
-                            color: BIOMETRIC_LEVEL_COLOR[s.level],
-                            backgroundColor: `${BIOMETRIC_LEVEL_COLOR[s.level]}20`,
-                          }}
-                        >
-                          {s.level}
-                        </span>
-                        {s.asymmetry_diff > 10 && (
-                          <p className="text-[10px] text-amber-400 mt-0.5">⚠ {s.asymmetry_diff}° gap</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
         {/* ── MATCH STATS TAB ── */}
         {activeTab === "stats" && (
           <div className="mx-auto max-w-2xl">
@@ -882,19 +718,19 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
               <div className="grid grid-cols-3 gap-3 mb-5">
                 <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
                   <p className="text-xl font-black text-[#f0b429]">{matchStats.length}</p>
-                  <p className="text-xs text-[#f0b429]/70 mt-0.5">Total Logged</p>
+                  <p className="text-xs font-medium text-white/70 mt-0.5">Total Logged</p>
                 </div>
                 <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
                   <p className="text-xl font-black text-green-400">
                     {matchStats.filter((s) => s.result === "W").length}
                   </p>
-                  <p className="text-xs text-[#f0b429]/70 mt-0.5">Wins</p>
+                  <p className="text-xs font-medium text-white/70 mt-0.5">Wins</p>
                 </div>
                 <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-3 text-center">
                   <p className="text-xl font-black text-red-400">
                     {matchStats.filter((s) => s.result === "L").length}
                   </p>
-                  <p className="text-xs text-[#f0b429]/70 mt-0.5">Losses</p>
+                  <p className="text-xs font-medium text-white/70 mt-0.5">Losses</p>
                 </div>
               </div>
             )}
@@ -906,8 +742,8 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             ) : matchStats.length === 0 ? (
               <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
                 <Trophy className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
-                <p className="text-[#f0b429]/70 text-sm">No match stats logged yet.</p>
-                <p className="mt-1 text-xs text-[#f0b429]/55 mb-4">
+                <p className="font-medium text-white/75 text-sm">No match stats logged yet.</p>
+                <p className="mt-1 text-xs font-medium text-white/60 mb-4">
                   Log your stats after a match or training session.
                 </p>
                 <Link
@@ -920,12 +756,12 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/55">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/80">
                     Recent Entries
                   </p>
                   <Link
                     href="/player/stats/new"
-                    className="text-xs text-[#f0b429]/70 hover:text-[#f0b429] transition-colors"
+                    className="text-xs font-medium text-[#f0b429]/85 hover:text-[#f0b429] transition-colors"
                   >
                     + Log new stats
                   </Link>
@@ -959,7 +795,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                             <p className="text-sm font-medium text-[#f0b429] truncate">
                               {entry.opponent ? `vs ${entry.opponent}` : entry.match_type ?? "Match"}
                             </p>
-                            <p className="text-[11px] text-[#f0b429]/55">
+                            <p className="text-[11px] font-medium text-white/65">
                               {entry.sport}
                               {entry.match_date
                                 ? ` · ${new Date(entry.match_date).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}`
@@ -986,7 +822,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                             </span>
                           )}
                           <ChevronRight
-                            className={`h-4 w-4 text-[#f0b429]/45 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                            className={`h-4 w-4 text-[#f0b429]/70 transition-transform ${isExpanded ? "rotate-90" : ""}`}
                           />
                         </div>
                       </button>
@@ -994,13 +830,13 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       {/* Expanded stat breakdown */}
                       {isExpanded && statEntries.length > 0 && (
                         <div className="px-4 pb-4 pt-1 border-t border-[#f0b429]/10">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]/45 mb-3">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#f0b429]/80 mb-3">
                             Stats · {entry.role ?? "Player"}
                           </p>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                             {statEntries.map(([key, value]) => (
                               <div key={key} className="flex items-center justify-between">
-                                <span className="text-xs text-[#f0b429]/65 truncate">
+                                <span className="text-xs font-medium text-white/70 truncate">
                                   {FIELD_META_LABELS[key] ?? key.replace(/_/g, " ")}
                                 </span>
                                 <span className="text-xs font-bold text-[#f0b429] ml-2 flex-shrink-0">
@@ -1014,7 +850,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
 
                       {isExpanded && statEntries.length === 0 && (
                         <div className="px-4 pb-4 pt-1 border-t border-[#f0b429]/10">
-                          <p className="text-xs text-[#f0b429]/45">No individual stats recorded for this entry.</p>
+                          <p className="text-xs font-medium text-white/60">No individual stats recorded for this entry.</p>
                         </div>
                       )}
                     </div>

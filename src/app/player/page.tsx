@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Zap, BookOpen, Dumbbell, Activity, Award,
-  Brain, Video, TrendingUp, ShieldCheck, GraduationCap,
+  Video, TrendingUp, ShieldCheck, GraduationCap,
   Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair, MapPin,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -81,18 +81,11 @@ const FEATURES = [
     desc: "10 clips · scouts see this on your passport",
   },
   {
-    href: "/player/training",
-    icon: Brain,
-    iconBg: "#ecfdf5", iconColor: "#059669",
-    label: "AI Training Lab",
-    desc: "Live camera scans · biomechanics",
-  },
-  {
-    href: "/player/progress",
+    href: "/player/nutrition",
     icon: TrendingUp,
     iconBg: "#f0fdf4", iconColor: "#15803d",
-    label: "My Progress",
-    desc: "Stats · milestones · form tracking",
+    label: "Nutrition",
+    desc: "Meal logging · macros · recovery fuel",
   },
   {
     href: "/player/assessment",

@@ -424,7 +424,7 @@ function WorldCupBanner() {
     <section className="py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <Link
-          href="/worldcup"
+          href="/world-cup"
           className="block rounded-2xl overflow-hidden p-6 text-center transition-opacity hover:opacity-90"
           style={{
             background: "linear-gradient(135deg, #0a1a0f 0%, #1a3a20 60%, #f0b429 100%)",

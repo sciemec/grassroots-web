@@ -100,8 +100,8 @@ export async function POST(req: NextRequest) {
           },
         ],
         metadata,
-        success_url: body.successUrl ?? `${appUrl}/worldcup`,
-        cancel_url:  body.cancelUrl  ?? `${appUrl}/worldcup`,
+        success_url: body.successUrl ?? `${appUrl}/world-cup`,
+        cancel_url:  body.cancelUrl  ?? `${appUrl}/world-cup`,
       });
 
       return NextResponse.json({ url: session.url });
