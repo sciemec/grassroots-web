@@ -397,8 +397,13 @@ export default function ArenaPage() {
         const url = await uploadMedia(mediaFile);
         setUploadingMedia(false);
         setUploadProgress(0);
-        if (mediaType === "image") image_url = url ?? undefined;
-        else video_url = url ?? undefined;
+        if (!url) {
+          setMediaError("Media upload failed — please try again or post without media.");
+          setSubmitting(false);
+          return;
+        }
+        if (mediaType === "image") image_url = url;
+        else video_url = url;
       }
       // Body is required by the backend — use a fallback when only media is posted
       const postBody = newPostBody.trim() || (mediaType === "image" ? "📸" : mediaType === "video" ? "🎥" : "");
