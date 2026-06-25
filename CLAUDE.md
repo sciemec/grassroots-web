@@ -166,6 +166,45 @@ To disable THUTO temporarily: set `THUTO_ACTIVE = false` only if Nigel explicitl
 
 ---
 
+## 🏟️ ARENA & FEED PROTECTION RULE — MANDATORY (PERMANENT)
+
+This rule exists because Arena (feed, post card, composer, filters, media viewer) is a
+live social feature used by real players and coaches. Silent changes to existing Arena
+features break the product and destroy user trust.
+
+### THE RULE: Arena changes must be ADDITIVE ONLY. Nothing existing can be silently removed or altered.
+
+**Before changing ANY Arena file, Claude MUST:**
+1. List every existing feature in that component that the change could affect
+2. State explicitly: "I am NOT removing or altering: [list]"
+3. State explicitly: "I AM adding: [list]"
+4. Wait for Nigel to approve before writing code
+
+**Claude MUST NEVER:**
+- Remove a tab, filter, button, badge, or section from any Arena page without explicit approval
+- Change post card layout, like/comment behaviour, or feed ordering without approval
+- Alter the PostComposer fields, post types, or submission logic without approval
+- Disable or stub out any Arena API call without approval
+- Refactor an Arena component in a way that removes functionality as a side-effect
+
+**What counts as "Arena":**
+- `src/app/arena/page.tsx` — activity feed, composer, post cards, feed tabs, activity filters
+- `src/app/arena/network/page.tsx` — follow/connect/pending tabs
+- `src/app/arena/messages/page.tsx` — inbox, thread view, polling
+- `src/app/arena/discover/page.tsx` — athlete discovery, filters
+- `src/app/arena/clubs/` — club directory, detail, review form
+- `src/app/arena/recruitment/` — talent board, posting detail, create form
+- `src/components/` — any component whose name starts with Arena or is used exclusively in Arena
+
+**New additions are always welcome** — extra tabs, new badge types, richer post cards — as long as
+no existing feature is removed or broken in the process.
+
+**Why this rule exists:**
+The Arena feed is the platform's social spine. Every post, like, and connection represents a real
+Zimbabwean athlete's engagement. Silently breaking that erases their activity and destroys trust.
+
+---
+
 ## 🚫 NO GUESSWORK — MANDATORY RULE (PERMANENT)
 
 This is a real, live-changing project. Every solution must meet this standard:

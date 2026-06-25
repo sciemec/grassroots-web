@@ -226,7 +226,7 @@ export default function PathwayPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: OFF, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#aaa', fontSize: 14 }}>Loading pathway...</div>
+        <div style={{ color: '#333', fontSize: 14, fontWeight: 600 }}>Loading pathway...</div>
       </div>
     );
   }
@@ -352,7 +352,7 @@ export default function PathwayPage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: G, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
                 Predicted / Achieved Grades
               </div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: '#333', fontWeight: 600, marginBottom: 10 }}>
                 US coaches need to verify academic eligibility. A-grades help scholarship applications.
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -363,7 +363,7 @@ export default function PathwayPage() {
                   { key: 'gpa_estimate', label: 'GPA estimate (0–4.0)' },
                 ].map(f => (
                   <div key={f.key}>
-                    <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{f.label}</div>
+                    <div style={{ fontSize: 11, color: '#333', fontWeight: 700, marginBottom: 4 }}>{f.label}</div>
                     <input
                       value={(profile.predicted_grades as Record<string, string>)?.[f.key] ?? ''}
                       onChange={e => setProfile(p => ({
@@ -400,7 +400,7 @@ export default function PathwayPage() {
                   </button>
                 ))}
               </div>
-              <div style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+              <div style={{ fontSize: 11, color: '#333', fontWeight: 600, marginTop: 8 }}>
                 Native/Fluent English is a major advantage for US and UK university applications.
               </div>
             </div>
@@ -466,7 +466,7 @@ export default function PathwayPage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: G, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
                 NCAA Eligibility Center / Pathway Registration
               </div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: '#333', fontWeight: 600, marginBottom: 10 }}>
                 If targeting US colleges: register at eligibilitycenter.org before Form 5. Coaches cannot offer a spot until you are registered.
               </div>
               <input
@@ -557,7 +557,7 @@ export default function PathwayPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: done ? G : '#333' }}>{cp.label}</div>
-                    <div style={{ fontSize: 11, color: '#888', marginTop: 3 }}>When: {cp.when}</div>
+                    <div style={{ fontSize: 11, color: '#444', fontWeight: 600, marginTop: 3 }}>When: {cp.when}</div>
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: done ? G : '#ccc', flexShrink: 0 }}>
                     {i + 1}/{CHECKPOINTS.length}
@@ -644,7 +644,7 @@ export default function PathwayPage() {
                     { key: 'contacted_date',    label: 'Date contacted', placeholder: '' },
                   ].map(f => (
                     <div key={f.key}>
-                      <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{f.label}</div>
+                      <div style={{ fontSize: 11, color: '#333', fontWeight: 700, marginBottom: 4 }}>{f.label}</div>
                       <input
                         type={f.key === 'contacted_date' ? 'date' : 'text'}
                         value={(newEntry as unknown as Record<string, string>)[f.key] ?? ''}
@@ -665,7 +665,7 @@ export default function PathwayPage() {
                     </select>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>Status</div>
+                    <div style={{ fontSize: 11, color: '#333', fontWeight: 700, marginBottom: 4 }}>Status</div>
                     <select
                       value={newEntry.status}
                       onChange={e => setNewEntry(p => ({ ...p, status: e.target.value }))}
@@ -692,10 +692,10 @@ export default function PathwayPage() {
             )}
 
             {outreach.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 16px', color: '#aaa' }}>
+              <div style={{ textAlign: 'center', padding: '32px 16px', color: '#333' }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>No contacts yet</div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>Add the first coach or institution you plan to contact</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>No contacts yet</div>
+                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4 }}>Add the first coach or institution you plan to contact</div>
               </div>
             ) : (
               outreach.map((entry, i) => (
@@ -703,7 +703,7 @@ export default function PathwayPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{entry.institution_name}</div>
-                      <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: '#444', fontWeight: 600, marginTop: 2 }}>
                         {entry.country} · {entry.division} · {entry.sport}
                       </div>
                     </div>
@@ -735,7 +735,7 @@ export default function PathwayPage() {
                     {OUTREACH_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                   {entry.notes && (
-                    <div style={{ fontSize: 11, color: '#888', marginTop: 8, lineHeight: 1.5 }}>{entry.notes}</div>
+                    <div style={{ fontSize: 11, color: '#444', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>{entry.notes}</div>
                   )}
                 </div>
               ))
