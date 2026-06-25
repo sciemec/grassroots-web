@@ -26,6 +26,9 @@ export interface DrillData {
   muscles_targeted: string[];
   difficulty_level: 1 | 2 | 3;
   is_premium: boolean;
+  // Context fields
+  when_to_use: string;   // The game situation or phase of play where this skill is needed
+  where_on_pitch: string; // The pitch zone or positional context where this drill applies
   // Optional enhancement fields
   age_variants?: Partial<Record<AgeGroup, AgeVariant>>;
   gender_notes?: string;
@@ -69,6 +72,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Glutes", "Hip flexors", "Ankle stabilisers"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use when your team is building through a striker dropping deep to link play — especially when the opposition are pressing high and your midfield needs an outlet. Also crucial whenever you receive with a defender already on your back.",
+        where_on_pitch: "Between the opposition's midfield and defensive lines — the tight central corridor roughly 10–25 yards from goal. Any congested space where you must receive and turn under contact.",
         age_variants: {
           u13: {
             instructions: [
@@ -131,6 +136,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Hip flexors", "Glutes", "Calves"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use when your team regains possession deep and wants to launch a quick attack with a line-breaking pass behind the last defender. Train this during any shape that uses a striker as the furthest player up the pitch.",
+        where_on_pitch: "The space behind the opposition's last defensive line — roughly from the halfway mark through to the final third. The run starts in the central or inside-left/right channels and arrives in the shaded zone level with or beyond the last defender.",
         age_variants: {
           u13: {
             instructions: [
@@ -178,6 +185,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Hip flexors", "Core", "Ankle stabilisers"],
         difficulty_level: 1,
         is_premium: false,
+        when_to_use: "Use as the finishing component of any session — when players need to practice making fast decisions under a real competitive constraint. Replaces flat shooting practice with a format that mirrors actual match decision-making.",
+        where_on_pitch: "Inside and around the penalty box — anywhere a shooting opportunity arises in the final third. The three-goal layout recreates the split-second read of which target is available that strikers face on every chance.",
       },
       {
         id: "eng_st_04",
@@ -202,6 +211,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Hip flexors", "Core", "Calves"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use when working on striker combinations during counter-attack drills or when developing a two-forward partnership. Perfect for sessions focused on attacking transition — moments just after winning the ball in midfield.",
+        where_on_pitch: "The central corridor from the edge of the centre circle to the penalty spot — the attacking half of the pitch where two forwards can operate in tandem before defenders have time to recover.",
       },
       {
         id: "eng_st_05",
@@ -227,6 +238,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Hip flexors", "Core", "Glutes"],
         difficulty_level: 3,
         is_premium: false,
+        when_to_use: "Use when a striker needs to create their own chance in tight spaces without a wall pass or overlap available — the solo escape. Key in sessions where the opposition press aggressively and isolate the forward.",
+        where_on_pitch: "The half-space just outside the penalty area — the zone between the centre circle and the 18-yard box. Anywhere you face two defenders and must use deception alone to get through.",
       },
     ],
   },
@@ -259,6 +272,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Hip flexors", "Neck mobility", "Ankle stabilisers"],
         difficulty_level: 3,
         is_premium: false,
+        when_to_use: "Use in build-up play sessions — whenever your team starts from the back and needs midfielders to offer a reliable link between the defensive and attacking lines. Specifically in moments when the goalkeeper or centre-back has the ball.",
+        where_on_pitch: "The central midfield area — roughly between your own penalty area and the halfway line. The midfielder must constantly find pockets between the opposition's midfield and defensive lines, scanning across a 30-yard band.",
       },
       {
         id: "eng_md_02",
@@ -283,6 +298,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Hip flexors", "Ankle stabilisers"],
         difficulty_level: 1,
         is_premium: false,
+        when_to_use: "Use as a warm-up or technical sharpener at the start of any possession-based session. Also ideal mid-session when players need to refresh passing habits before a more complex tactical exercise.",
+        where_on_pitch: "The central third — anywhere tight passing triangles and circles naturally form in play. The rondo circle simulates the 5-10 yard passing lanes that appear constantly when a team holds possession in the middle of the pitch.",
       },
       {
         id: "eng_md_03",
@@ -307,6 +324,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Hip flexors", "Ankle stabilisers"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use when training against a deep-block defence that packs the central areas. Develops the horizontal circulation and patience needed to stretch a compact defence before playing the decisive vertical pass.",
+        where_on_pitch: "The central and wide midfield zone — from your own half through to the edge of the opposition's penalty area. The switches of play travel across the full width of the pitch, so the drill applies to every zone between the two touchlines.",
       },
       {
         id: "eng_md_04",
@@ -331,6 +350,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Ankle stabilisers", "Hip flexors"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use when developing midfielders' positional discipline in a structured formation — especially in sessions that work on the vertical shape between defenders, midfielders, and attackers. Shows clearly when midfielders drift out of their zone.",
+        where_on_pitch: "The middle third — locked between both penalty areas. The constraint forces midfielders to make every pass count within their zone rather than drifting freely, mirroring the positional demands of most tactical systems.",
       },
       {
         id: "eng_md_05",
@@ -355,6 +376,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Hip flexors", "Core", "Ankle stabilisers", "Calves"],
         difficulty_level: 3,
         is_premium: false,
+        when_to_use: "Use when opposition pressing forces the ball into the central corridor and the midfielder must turn quickly under heavy pressure. Key in any session where the team is working on how to break a press without going long.",
+        where_on_pitch: "The central channel of the pitch — the narrow lane between the two fullback positions, directly through the centre circle. This is the most congested zone in any compact defensive shape and where most ball losses occur.",
       },
     ],
   },
@@ -386,6 +409,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Glutes", "Core", "Ankle stabilisers"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use whenever an attacker receives a wide pass and turns to face your goal — the exact moment a defender must react. Key in sessions on high pressing or defensive organisation on the flanks.",
+        where_on_pitch: "Wide defensive channels — the 15-yard strip between the touchline and the edge of the penalty area on each flank. Particularly the transition zone from your own half into the attacking third where wingers and full-backs duel.",
       },
       {
         id: "eng_df_02",
@@ -410,6 +435,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Glutes", "Core", "Hip flexors"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use in sessions focused on defensive shape and communication — when your team is working on how the pressing player and the covering player coordinate rather than both pressing or both sitting. Most valuable early in a defensive organisation block.",
+        where_on_pitch: "The defensive half — from your own penalty area extending to the halfway line. Defenders operate in a horizontal band, shifting as one unit as the ball moves between the three attackers across the width of the pitch.",
       },
       {
         id: "eng_df_03",
@@ -434,6 +461,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Core", "Glutes", "Hip flexors"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use in sessions on defensive transition — specifically the moment a through-ball is played and two attackers are bearing down on two defenders. Also for counter-attack defence drills.",
+        where_on_pitch: "From the edge of your penalty area back to the goal line — the defensive third where 2v2 situations are most dangerous. One defender presses the ball while the other protects the space directly in front of goal.",
       },
       {
         id: "eng_df_04",
@@ -458,6 +487,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Glutes", "Core", "Ankle stabilisers"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use in 1v1 defending sessions — any time a defender must track an attacker who receives in open space behind the midfield. Especially important before matches against teams who play fast wingers or isolated strikers.",
+        where_on_pitch: "The defensive third and around the edge of the penalty area — from the 18-yard box out to about 30 yards from goal. The wide defensive channels on either flank where fullbacks most commonly face 1v1 situations.",
       },
       {
         id: "eng_df_05",
@@ -482,6 +513,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Glutes", "Quadriceps", "Ankle stabilisers"],
         difficulty_level: 3,
         is_premium: false,
+        when_to_use: "Use when training defensive shape against a possession-heavy team that circulates the ball patiently. Key in sessions that work on the collective defensive block — how all five defenders shift together as one unit.",
+        where_on_pitch: "A compact mid-block position — the five vertical sections span the full width of the pitch, roughly between your own penalty area edge and the halfway line. Defenders hold a narrow 30-yard deep defensive band and shift horizontally together.",
       },
     ],
   },
@@ -514,6 +547,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Shoulders", "Hip flexors", "Wrists"],
         difficulty_level: 1,
         is_premium: false,
+        when_to_use: "Use at the start of every goalkeeper session as fundamental technique work. Also essential before any match where the opposition are known to shoot low and hard from distance or inside the box.",
+        where_on_pitch: "Anywhere inside and around the six-yard box — low shots arrive here from close range drives, deflections, and penalty area scrambles. The technique applies to any shot beneath knee height regardless of distance.",
       },
       {
         id: "so_gk_02",
@@ -538,6 +573,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Wrists", "Forearms", "Shoulders", "Core"],
         difficulty_level: 1,
         is_premium: false,
+        when_to_use: "Use at the opening of every goalkeeper training session — this is the fundamental technical foundation before any other work. Especially important before matches featuring opponents known for varied delivery — high corners, driven shots, cutbacks.",
+        where_on_pitch: "Anywhere in and around the goalkeeper's reach — from the six-yard line to the penalty spot for high deliveries, to the edge of the area for long-range shots. The two hand positions apply to every aerial and ground ball the keeper faces.",
       },
       {
         id: "eng_gk_03",
@@ -562,6 +599,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Calves", "Ankle stabilisers", "Core", "Hip flexors"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use when the ball is moving quickly around the final third and the keeper must constantly reposition — for example, during wide ball circulation, crossing situations, or when attackers are playing one-twos around the penalty area.",
+        where_on_pitch: "The penalty area and the zone directly in front of goal — roughly a 20-yard arc from post to post. The keeper must stay on the correct line between the ball and the far post at all times as the ball rotates around the circle.",
       },
       {
         id: "eng_gk_04",
@@ -585,6 +624,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Core", "Shoulders", "Hip flexors", "Ankle stabilisers"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use in sessions focused on goalkeeping communication — specifically when the team is working on how the keeper and last defender coordinate under pressure. Key before matches against teams that use a target forward and feeder combination.",
+        where_on_pitch: "Inside the penalty box from the six-yard line out to the penalty spot — the killing zone where through-balls meet finishing runs. The keeper must read the feed, call the defender, and react to the 1v1 all within a 20×15 yard box.",
       },
       {
         id: "eng_gk_05",
@@ -609,6 +650,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Shoulders", "Core", "Calves", "Hip flexors"],
         difficulty_level: 3,
         is_premium: false,
+        when_to_use: "Use when training against wide teams that deliver many crosses per match — particularly before cup games or against opponents with pace on the flanks. Also great as the final block of any session to build aerial dominance habits.",
+        where_on_pitch: "The penalty area and six-yard box — the high-traffic aerial battleground. The keeper commands a zone stretching from post to post and out to approximately 12 yards, claiming anything that enters that space before attackers can reach it.",
       },
     ],
   },
@@ -640,6 +683,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Hip flexors", "Calves", "Core"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use when the team is working on wide attacking transitions — particularly in sessions on quick breaks and final-third delivery after winning the ball centrally. Also ideal when training the overlapping fullback to time their run into the channel.",
+        where_on_pitch: "The wide attacking channel — the 10-yard strip between the touchline and the edge of the penalty area on either flank, from the halfway line down to the byline. The delivery must come before the cone/defender at the penalty area edge.",
       },
       {
         id: "grs_wn_02",
@@ -664,6 +709,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Hip flexors", "Quadriceps", "Glutes", "Calves"],
         difficulty_level: 2,
         is_premium: false,
+        when_to_use: "Use as an isolation duel session — when the winger needs to improve their 1v1 ability without combining. Particularly valuable before matches where the opposition's fullback is physically strong and tends to double up with cover.",
+        where_on_pitch: "The wide attacking flank — from approximately 25 yards out to the byline on either wing, within 15 yards of the touchline. The duel plays out along the channel where wingers and fullbacks regularly face each other in live match situations.",
       },
       {
         id: "grs_wn_03",
@@ -688,6 +735,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Glutes", "Hip flexors", "Calves"],
         difficulty_level: 1,
         is_premium: false,
+        when_to_use: "Use immediately after any attacking action where possession is lost — teaches the instant mental switch from attack to defence. Especially powerful mid-session as a consequence drill: miss a cross, immediately sprint back.",
+        where_on_pitch: "Diagonally across the pitch — from the opponent's corner flag back to a goal-side position behind the ball, covering approximately 40 yards. The winger must track from the highest attacking position back to a central defensive shape.",
       },
       {
         id: "grs_wn_04",
@@ -712,6 +761,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Quadriceps", "Hip flexors", "Calves", "Core"],
         difficulty_level: 3,
         is_premium: false,
+        when_to_use: "Use in sessions building attacking width — when the fullback-winger-striker triangle is the main attacking pattern. Perfect for sessions where the team is learning to time overlapping runs and not just dribble wide.",
+        where_on_pitch: "The wide corridor from your own half through to the attacking third — spanning about 30 yards diagonally from the centre circle to the byline. All three players in the triangle operate in different vertical zones of this wide channel simultaneously.",
       },
       {
         id: "grs_wn_05",
@@ -736,6 +787,8 @@ export const FOOTBALL_POSITION_DRILLS: Record<PositionKey, PositionTrack> = {
         muscles_targeted: ["Hip flexors", "Quadriceps", "Core", "Ankle stabilisers"],
         difficulty_level: 3,
         is_premium: false,
+        when_to_use: "Use as the decision-making climax of any wide attacking session — after the winger has already worked on 1v1 isolation and crossing, add this to train the final read before the delivery. The payoff drill for any crossing session.",
+        where_on_pitch: "The byline area — the last 5 yards before the goal line, from the corner flag in to the near post. The delivery decision is made here: near-post cutback, penalty spot pullback, or driven far-post cross — each going to a different zone.",
       },
     ],
   },
