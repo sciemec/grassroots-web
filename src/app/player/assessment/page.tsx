@@ -289,7 +289,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           </Link>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "#f0b429" }}>Assessment</h1>
-            <p className="text-sm text-muted-foreground">Field tests + APK biomechanics coaching reports</p>
+            <p className="text-sm font-bold text-white">Field tests + APK biomechanics coaching reports</p>
           </div>
         </div>
 
@@ -348,7 +348,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
               <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-8 text-center backdrop-blur-sm">
                 <Target className="mx-auto mb-4 h-12 w-12 text-[#f0b429]" />
                 <h2 className="mb-2 text-xl font-bold" style={{ color: "#f0b429" }}>Position Assessment Hub</h2>
-                <p className="mb-6 text-sm text-muted-foreground">
+                <p className="mb-6 text-sm font-bold text-white">
                   Run field tests with a partner and enter your results. AI will generate a performance report and skill radar.
                 </p>
                 <div className="mb-6">
@@ -390,7 +390,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 </button>
               </div>
 
-              <p className="mb-5 rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 text-sm text-muted-foreground">
+              <p className="mb-5 rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 px-4 py-3 text-sm font-bold text-white">
                 Run each test on the field with a partner. Enter your result — green means you met the Zimbabwe benchmark.
               </p>
 
@@ -409,11 +409,11 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                     >
                       <div className="mb-2 flex items-start justify-between">
                         <h3 className="font-semibold text-[#f0b429]">{test.name}</h3>
-                        <span className="rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs text-muted-foreground">
+                        <span className="rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs font-bold text-white">
                           Benchmark: {test.benchmark}
                         </span>
                       </div>
-                      <p className="mb-3 text-sm text-muted-foreground">{test.desc}</p>
+                      <p className="mb-3 text-sm font-bold text-white">{test.desc}</p>
                       <div className="flex items-center gap-3">
                         <input
                           type="number"
@@ -465,7 +465,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                       />
                     </RadarChart>
                   </ResponsiveContainer>
-                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                  <p className="mt-2 text-center text-xs font-bold text-white">
                     % of Zimbabwe benchmark achieved per test
                   </p>
                 </div>
@@ -506,7 +506,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             {!selectedSession ? (
               <>
                 <div className="mb-4 rounded-xl border border-[#f0b429]/20 bg-[#f0b429]/5 px-4 py-3">
-                  <p className="text-xs text-[#f0b429]">
+                  <p className="text-xs font-bold text-white">
                     These are your real training sessions recorded in the GrassRoots APK. Each session includes biomechanics analysis from your phone camera.
                   </p>
                 </div>
@@ -518,8 +518,8 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 ) : sessions.length === 0 ? (
                   <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
                     <Activity className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
-                    <p className="text-[#f0b429]/70 text-sm">No APK sessions found yet.</p>
-                    <p className="mt-1 text-xs text-[#f0b429]/55">
+                    <p className="text-white font-bold text-sm">No APK sessions found yet.</p>
+                    <p className="mt-1 text-xs font-bold text-white">
                       Complete a training session in the GrassRoots mobile app to see your coaching reports here.
                     </p>
                   </div>
@@ -720,10 +720,10 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                      (sessionReport.drill_sets?.length ?? 0) === 0 && (
                       <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-6 text-center">
                         <Activity className="mx-auto mb-2 h-8 w-8 text-[#f0b429]/45" />
-                        <p className="text-sm text-[#f0b429]/70">
+                        <p className="text-sm font-bold text-white">
                           Coaching report not yet available for this session.
                         </p>
-                        <p className="mt-1 text-xs text-[#f0b429]/55">
+                        <p className="mt-1 text-xs font-bold text-white">
                           Reports are generated after session completion.
                         </p>
                       </div>
@@ -731,7 +731,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   </div>
                 ) : (
                   <div className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-6 text-center">
-                    <p className="text-sm text-[#f0b429]/70">Could not load report. Please try again.</p>
+                    <p className="text-sm font-bold text-white">Could not load report. Please try again.</p>
                   </div>
                 )}
               </div>
@@ -745,9 +745,9 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             {bioScans.length === 0 ? (
               <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
                 <Scan className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
-                <p className="text-[#f0b429]/70 text-sm">No biometric scans saved yet.</p>
-                <p className="mt-1 text-xs text-[#f0b429]/55">
-                  Run a body scan from the Player Hub or Analyst Hub, then tap "Save Scan" to track your progress here.
+                <p className="text-white font-bold text-sm">No biometric scans saved yet.</p>
+                <p className="mt-1 text-xs font-bold text-white">
+                  Run a body scan from the Player Hub or Analyst Hub, then tap &quot;Save Scan&quot; to track your progress here.
                 </p>
               </div>
             ) : (
@@ -906,8 +906,8 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
             ) : matchStats.length === 0 ? (
               <div className="rounded-2xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-8 text-center">
                 <Trophy className="mx-auto mb-3 h-10 w-10 text-[#f0b429]/45" />
-                <p className="text-[#f0b429]/70 text-sm">No match stats logged yet.</p>
-                <p className="mt-1 text-xs text-[#f0b429]/55 mb-4">
+                <p className="text-white font-bold text-sm">No match stats logged yet.</p>
+                <p className="mt-1 text-xs font-bold text-white mb-4">
                   Log your stats after a match or training session.
                 </p>
                 <Link
