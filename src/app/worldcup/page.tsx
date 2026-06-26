@@ -55,6 +55,25 @@ import { BlueprintPurchaseModal } from '@/lib/tactical-iq/BlueprintPurchaseModal
 const GRS_GREEN = '#1a5c2a';
 const GRS_GOLD  = '#f0b429';
 
+// Flag emoji map for World Cup 2026 nations
+const FLAG: Record<string, string> = {
+  'Argentina': '🇦🇷', 'France': '🇫🇷', 'Brazil': '🇧🇷', 'Germany': '🇩🇪',
+  'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Spain': '🇪🇸', 'Portugal': '🇵🇹', 'Netherlands': '🇳🇱',
+  'Italy': '🇮🇹', 'Belgium': '🇧🇪', 'Croatia': '🇭🇷', 'Morocco': '🇲🇦',
+  'USA': '🇺🇸', 'Mexico': '🇲🇽', 'Canada': '🇨🇦', 'Japan': '🇯🇵',
+  'South Korea': '🇰🇷', 'Australia': '🇦🇺', 'Senegal': '🇸🇳', 'Ecuador': '🇪🇨',
+  'Uruguay': '🇺🇾', 'Colombia': '🇨🇴', 'Chile': '🇨🇱', 'Poland': '🇵🇱',
+  'Switzerland': '🇨🇭', 'Denmark': '🇩🇰', 'Sweden': '🇸🇪', 'Austria': '🇦🇹',
+  'Ukraine': '🇺🇦', 'Turkey': '🇹🇷', 'Serbia': '🇷🇸', 'Czech Republic': '🇨🇿',
+  'Ghana': '🇬🇭', 'Nigeria': '🇳🇬', 'Cameroon': '🇨🇲', 'Tunisia': '🇹🇳',
+  'Egypt': '🇪🇬', 'Côte d\'Ivoire': '🇨🇮', "Ivory Coast": '🇨🇮', 'Algeria': '🇩🇿',
+  'Saudi Arabia': '🇸🇦', 'Iran': '🇮🇷', 'Qatar': '🇶🇦', 'Panama': '🇵🇦',
+  'Costa Rica': '🇨🇷', 'Honduras': '🇭🇳', 'Jamaica': '🇯🇲', 'Venezuela': '🇻🇪',
+  'Paraguay': '🇵🇾', 'Peru': '🇵🇪', 'Bolivia': '🇧🇴', 'New Zealand': '🇳🇿',
+  'Zimbabwe': '🇿🇼', 'South Africa': '🇿🇦', 'Zambia': '🇿🇲', 'Kenya': '🇰🇪',
+};
+const flag = (team: string) => FLAG[team] ?? '🏳️';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────────────────────────
@@ -357,40 +376,124 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MATCH CARD — re-purposed: shows "Report ready" instead of "LIVE" pulse
+// MATCH CARD — iSports-style: flags, centered score, FT badge
 // ─────────────────────────────────────────────────────────────────────────────
 function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
   match: Match; isSelected: boolean; onClick: () => void; isUnlocked: boolean; onUnlockClick: (m: Match) => void;
 }) {
+  const sel = isSelected;
   return (
-    <button onClick={onClick} className={`w-full text-left p-4 rounded-2xl transition-all duration-200 ${isSelected ? 'bg-[#1a5c2a] text-white shadow-lg border-l-4 border-[#f0b429]' : 'bg-white border border-gray-200 hover:shadow-md'}`}>
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-baseline gap-2">
-            <span className={`font-bold text-lg ${isSelected ? 'text-white' : 'text-gray-900'}`}>{match.homeTeam}</span>
-            {match.reportReady ? (
-              <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold">Report ready</span>
-            ) : match.status === 'completed' ? (
-              <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">Generating...</span>
-            ) : (
-              <span className="text-[9px] text-gray-400">{match.time}</span>
-            )}
-          </div>
-          <div className={`text-sm mt-1 ${isSelected ? 'text-white/70' : 'text-gray-600'}`}>{match.awayTeam}</div>
+    <button onClick={onClick} className={`w-full text-left rounded-2xl overflow-hidden transition-all duration-200 ${sel ? 'shadow-lg ring-2 ring-[#f0b429]' : 'shadow-sm hover:shadow-md'} border ${sel ? 'border-[#f0b429]' : 'border-gray-200'} bg-white`}>
+      {/* status bar */}
+      <div className={`px-3 py-1 flex items-center justify-between text-[10px] font-bold ${sel ? 'bg-[#1a5c2a] text-[#f0b429]' : 'bg-gray-50 text-gray-500'}`}>
+        <span>FIFA WORLD CUP 2026</span>
+        {match.reportReady ? (
+          <span className="bg-green-500 text-white px-1.5 py-0.5 rounded-full">REPORT READY</span>
+        ) : match.status === 'completed' ? (
+          <span className="bg-amber-500 text-white px-1.5 py-0.5 rounded-full">GENERATING…</span>
+        ) : (
+          <span>{match.time}</span>
+        )}
+      </div>
+
+      {/* score row */}
+      <div className="flex items-center justify-between px-3 py-2.5">
+        {/* home */}
+        <div className="flex-1 flex flex-col items-start gap-0.5">
+          <span className="text-xl leading-none">{flag(match.homeTeam)}</span>
+          <span className={`text-xs font-bold leading-tight ${sel ? 'text-[#1a5c2a]' : 'text-gray-800'} max-w-[70px] truncate`}>{match.homeTeam}</span>
         </div>
-        <div className="text-right">
-          {match.status === 'completed' && (
-            <div className={`text-2xl font-black ${isSelected ? 'text-[#f0b429]' : 'text-[#1a5c2a]'}`}>{match.homeScore} - {match.awayScore}</div>
+
+        {/* score */}
+        <div className="flex flex-col items-center px-2">
+          {match.status === 'completed' ? (
+            <>
+              <span className={`text-2xl font-black tabular-nums leading-none ${sel ? 'text-[#1a5c2a]' : 'text-gray-900'}`}>
+                {match.homeScore} <span className="text-gray-300">–</span> {match.awayScore}
+              </span>
+              <span className="text-[9px] font-bold text-gray-400 mt-0.5">FT</span>
+            </>
+          ) : (
+            <span className="text-xs text-gray-400">{match.time}</span>
           )}
-          <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><MapPin size={10} /> {match.city}</div>
+        </div>
+
+        {/* away */}
+        <div className="flex-1 flex flex-col items-end gap-0.5">
+          <span className="text-xl leading-none">{flag(match.awayTeam)}</span>
+          <span className={`text-xs font-bold leading-tight ${sel ? 'text-[#1a5c2a]' : 'text-gray-800'} max-w-[70px] truncate text-right`}>{match.awayTeam}</span>
         </div>
       </div>
+
+      {/* city footer */}
+      <div className={`px-3 pb-2 text-[9px] flex items-center gap-1 ${sel ? 'text-[#1a5c2a]/60' : 'text-gray-400'}`}>
+        <MapPin size={9} /> {match.city}
+      </div>
+
       {match.status === 'completed' && !isUnlocked && (
-        <div className="mt-2 pt-2 border-t border-gray-100">
+        <div className="px-3 pb-2 border-t border-gray-100 pt-1.5">
           <button onClick={(e) => { e.stopPropagation(); onUnlockClick(match); }} className="text-xs text-[#1a5c2a] font-bold flex items-center gap-1"><Unlock size={10} /> Register to study free</button>
         </div>
       )}
     </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIVE MATCH CARD — iSports-style in-progress scoreboard card
+// ─────────────────────────────────────────────────────────────────────────────
+function LiveMatchCard({ m }: { m: LiveScoreboardMatch }) {
+  return (
+    <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+      {/* header bar */}
+      <div className="bg-[#1a5c2a] px-3 py-1.5 flex items-center justify-between">
+        <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">FIFA World Cup 2026</span>
+        <span className="flex items-center gap-1 text-[10px] font-black text-white">
+          <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          LIVE · {m.minute}&apos;
+        </span>
+      </div>
+
+      {/* score row */}
+      <div className="flex items-center px-3 py-3 gap-2">
+        {/* home */}
+        <div className="flex-1 flex flex-col items-center gap-1">
+          <span className="text-3xl leading-none">{flag(m.homeTeam)}</span>
+          <span className="text-xs font-bold text-gray-800 text-center leading-tight max-w-[80px]">{m.homeTeam}</span>
+        </div>
+
+        {/* score */}
+        <div className="flex flex-col items-center px-3">
+          <span className="text-4xl font-black tabular-nums text-[#1a5c2a] leading-none">
+            {m.homeScore} <span className="text-gray-300 font-light">–</span> {m.awayScore}
+          </span>
+        </div>
+
+        {/* away */}
+        <div className="flex-1 flex flex-col items-center gap-1">
+          <span className="text-3xl leading-none">{flag(m.awayTeam)}</span>
+          <span className="text-xs font-bold text-gray-800 text-center leading-tight max-w-[80px]">{m.awayTeam}</span>
+        </div>
+      </div>
+
+      {/* possession bar with % labels */}
+      <div className="px-3 pb-3">
+        <div className="flex items-center justify-between text-[10px] font-bold mb-1">
+          <span className="text-[#1a5c2a]">{m.possessionHome}%</span>
+          <span className="text-gray-400 font-normal">possession</span>
+          <span className="text-gray-500">{m.possessionAway}%</span>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden flex bg-gray-100">
+          <div className="h-full bg-[#1a5c2a] transition-all duration-700" style={{ width: `${m.possessionHome}%` }} />
+          <div className="h-full bg-red-400 transition-all duration-700" style={{ width: `${m.possessionAway}%` }} />
+        </div>
+      </div>
+
+      {/* footer note */}
+      <div className="px-3 pb-2 text-[9px] text-gray-400 border-t border-gray-100 pt-1.5">
+        After-Match Class unlocks ~15 min after full-time
+      </div>
+    </div>
   );
 }
 
@@ -969,39 +1072,49 @@ export default function WorldCupTacticalLabPage() {
   }, [selectedMatch, authToken]);
 
   // ── Load completed matches ────────────────────────────────────────────────
-  // No 3-second polling, no live socket — fetched once, refreshed manually
-  useEffect(() => {
-    const loadMatches = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/world-cup/matches?status=completed');
-        if (!res.ok) throw new Error('Could not load matches');
-        const data = await res.json();
-        const transformed: Match[] = (data.matches ?? []).map((m: any) => ({
-          id:          String(m.id),
-          homeTeam:    m.home_team,
-          awayTeam:    m.away_team,
-          homeScore:   m.home_score ?? 0,
-          awayScore:   m.away_score ?? 0,
-          status:      'completed',
-          date:        m.date ?? '',
-          time:        m.time ?? '',
-          stadium:     m.stadium ?? 'TBD',
-          city:        m.city ?? 'TBD',
-          reportReady: !!m.tactical_report_generated,
-        }));
-        setMatches(transformed);
-        if (transformed.length > 0 && !hasSetInitial.current) {
-          setSelectedMatch(transformed[0]);
-          hasSetInitial.current = true;
-        }
-      } catch {
-        setError('Could not load match list. Please try again shortly.');
+  // Fetched on mount + whenever a live match disappears (Edit D — FT detection)
+  const loadMatches = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    try {
+      const res = await fetch('/api/world-cup/matches?status=completed');
+      if (!res.ok) throw new Error('Could not load matches');
+      const data = await res.json();
+      const transformed: Match[] = (data.matches ?? []).map((m: any) => ({
+        id:          String(m.id),
+        homeTeam:    m.home_team,
+        awayTeam:    m.away_team,
+        homeScore:   m.home_score ?? 0,
+        awayScore:   m.away_score ?? 0,
+        status:      'completed',
+        date:        m.date ?? '',
+        time:        m.time ?? '',
+        stadium:     m.stadium ?? 'TBD',
+        city:        m.city ?? 'TBD',
+        reportReady: !!m.tactical_report_generated,
+      }));
+      setMatches(transformed);
+      if (transformed.length > 0 && !hasSetInitial.current) {
+        setSelectedMatch(transformed[0]);
+        hasSetInitial.current = true;
       }
-      setIsLoading(false);
-    };
-    loadMatches();
-  }, []);
+    } catch {
+      if (!silent) setError('Could not load match list. Please try again shortly.');
+    }
+    if (!silent) setIsLoading(false);
+  };
+
+  useEffect(() => { loadMatches(); }, []);
+
+  // Edit D — when the live strip shrinks (a match went to FT), silently re-fetch
+  // completed list so the just-finished match appears without a page reload.
+  const prevLiveCount = useRef(0);
+  useEffect(() => {
+    if (prevLiveCount.current > liveMatches.length && liveMatches.length >= 0) {
+      // A match disappeared from the live strip — it may now be completed
+      setTimeout(() => loadMatches(true), 15_000); // wait 15s for report gate
+    }
+    prevLiveCount.current = liveMatches.length;
+  }, [liveMatches.length]);
 
   // ── Muted live scoreboard ────────────────────────────────────────────────
   // Deliberately the ONLY "live" surface on this page, and deliberately thin:
@@ -1136,30 +1249,11 @@ export default function WorldCupTacticalLabPage() {
             {/* LEFT — match list */}
             <div className="lg:col-span-3 space-y-4">
               {liveMatches.length > 0 && (
-                <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
-                    <Activity size={14} /> In progress
+                <div className="space-y-3">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2 px-1">
+                    <Activity size={13} className="text-red-500" /> In Progress
                   </h2>
-                  <div className="space-y-3">
-                    {liveMatches.map(m => (
-                      <div key={m.id} className="text-xs">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-gray-800 truncate">{m.homeTeam} v {m.awayTeam}</span>
-                          <span className="text-[10px] text-gray-400 font-mono">{m.minute}'</span>
-                        </div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-base font-black text-[#1a5c2a]">{m.homeScore} – {m.awayScore}</span>
-                        </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
-                          <div className="h-full bg-[#1a5c2a]" style={{ width: `${m.possessionHome}%` }} />
-                          <div className="h-full bg-red-400" style={{ width: `${m.possessionAway}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-[9px] text-gray-300 mt-3 pt-2 border-t border-gray-100">
-                    Class unlocks ~15 min after full-time
-                  </p>
+                  {liveMatches.map(m => <LiveMatchCard key={m.id} m={m} />)}
                 </div>
               )}
 
