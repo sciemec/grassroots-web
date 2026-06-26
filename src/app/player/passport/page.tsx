@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
+import { useSubscription } from "@/lib/use-subscription";
 import api from "@/lib/api";
 import ScholarshipReel, {
   REEL_STORAGE_KEY,
@@ -88,7 +89,7 @@ function RatingBar({ value, max = 10 }: { value: number; max?: number }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function PassportPage() {
   const user  = useAuthStore((s) => s.user);
-  const isPro = (user as { subscription_tier?: string } | null)?.subscription_tier === "pro";
+  const { isPro } = useSubscription();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [clips, setClips]     = useState<ShowcaseClip[]>([]);
   const [loading, setLoading] = useState(true);

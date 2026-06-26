@@ -15,6 +15,7 @@ import {
   Loader2, Star, Info, History, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
 import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
@@ -200,7 +201,7 @@ function ResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDr
 export default function GeminiDrillsPage() {
   const user      = useAuthStore((s) => s.user);
   const hydrated  = useAuthStore((s) => s._hasHydrated);
-  const isPro     = (user as { subscription_tier?: string } | null)?.subscription_tier === 'pro';
+  const { isPro } = useSubscription();
 
   const [sport, setSport]         = useState<string>('football');
 

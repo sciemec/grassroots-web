@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Save, Plus, Trash2, ExternalLink, CheckCircle2, Circle } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
 
 const G   = '#1a5c2a';
@@ -105,7 +106,7 @@ export default function PathwayPage() {
   const user     = useAuthStore(s => s.user);
   const token    = useAuthStore(s => s.token);
   const hydrated = useAuthStore(s => s._hasHydrated);
-  const isPro    = (user as { subscription_tier?: string } | null)?.subscription_tier === 'pro';
+  const { isPro } = useSubscription();
 
   const [profile,     setProfile]     = useState<Partial<PathwayProfile>>({});
   const [outreach,    setOutreach]    = useState<OutreachEntry[]>([]);

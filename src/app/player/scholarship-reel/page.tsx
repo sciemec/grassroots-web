@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Film, Upload, X, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { useSubscription } from "@/lib/use-subscription";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -40,7 +41,7 @@ export default function ScholarshipReelPage() {
   const user        = useAuthStore((s) => s.user);
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const isPro       = (user as { subscription_tier?: string } | null)?.subscription_tier === "pro";
+  const { isPro } = useSubscription();
 
   const [clips,       setClips]       = useState<ReelClip[]>([]);
   const [loading,     setLoading]     = useState(true);
