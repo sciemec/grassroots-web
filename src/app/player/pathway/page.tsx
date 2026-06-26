@@ -105,6 +105,7 @@ export default function PathwayPage() {
   const user     = useAuthStore(s => s.user);
   const token    = useAuthStore(s => s.token);
   const hydrated = useAuthStore(s => s._hasHydrated);
+  const isPro    = (user as { subscription_tier?: string } | null)?.subscription_tier === 'pro';
 
   const [profile,     setProfile]     = useState<Partial<PathwayProfile>>({});
   const [outreach,    setOutreach]    = useState<OutreachEntry[]>([]);
@@ -246,19 +247,25 @@ export default function PathwayPage() {
               {completedCount}/{CHECKPOINTS.length} steps complete · {progressPct}% ready
             </div>
           </div>
-          <button
-            onClick={saveProfile}
-            disabled={saving}
-            style={{
-              padding: '8px 16px', borderRadius: 20, border: 'none',
-              background: saved ? '#16a34a' : GO,
-              color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            <Save size={14} />
-            {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save'}
-          </button>
+          {isPro ? (
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              style={{
+                padding: '8px 16px', borderRadius: 20, border: 'none',
+                background: saved ? '#16a34a' : GO,
+                color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Save size={14} />
+              {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save'}
+            </button>
+          ) : (
+            <Link href="/player/subscription" style={{ padding: '8px 16px', borderRadius: 20, background: '#c8962a', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+              🔒 Unlock
+            </Link>
+          )}
         </div>
       </div>
 
@@ -617,22 +624,28 @@ export default function PathwayPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => setAddingEntry(!addingEntry)}
-              style={{
-                width: '100%', padding: '12px', borderRadius: 10,
-                background: addingEntry ? '#f5f5f5' : G,
-                color: addingEntry ? '#555' : '#fff',
-                border: `1.5px solid ${addingEntry ? '#ddd' : G}`,
-                fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-            >
-              <Plus size={16} />
-              {addingEntry ? 'Cancel' : 'Add coach / institution'}
-            </button>
+            {isPro ? (
+              <button
+                onClick={() => setAddingEntry(!addingEntry)}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 10,
+                  background: addingEntry ? '#f5f5f5' : G,
+                  color: addingEntry ? '#555' : '#fff',
+                  border: `1.5px solid ${addingEntry ? '#ddd' : G}`,
+                  fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Plus size={16} />
+                {addingEntry ? 'Cancel' : 'Add coach / institution'}
+              </button>
+            ) : (
+              <Link href="/player/subscription" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px', borderRadius: 10, background: '#c8962a', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                🔒 Unlock to track coach outreach
+              </Link>
+            )}
 
-            {addingEntry && (
+            {addingEntry && isPro && (
               <div style={{ background: '#fff', borderRadius: 10, padding: '14px', border: `1.5px solid ${G}` }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                   {[

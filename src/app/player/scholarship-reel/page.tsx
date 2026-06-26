@@ -40,6 +40,7 @@ export default function ScholarshipReelPage() {
   const user        = useAuthStore((s) => s.user);
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const isPro       = (user as { subscription_tier?: string } | null)?.subscription_tier === "pro";
 
   const [clips,       setClips]       = useState<ReelClip[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -205,11 +206,17 @@ export default function ScholarshipReelPage() {
           </div>
         </div>
         {!isFull && (
-          <button
-            onClick={() => { setShowForm(true); setFormError(""); }}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#1a5c2a", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            <Plus size={15} /> Add Clip
-          </button>
+          isPro ? (
+            <button
+              onClick={() => { setShowForm(true); setFormError(""); }}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#1a5c2a", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              <Plus size={15} /> Add Clip
+            </button>
+          ) : (
+            <Link href="/player/subscription" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "#c8962a", color: "#fff", textDecoration: "none", borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
+              🔒 Unlock
+            </Link>
+          )
         )}
       </div>
 
@@ -222,8 +229,20 @@ export default function ScholarshipReelPage() {
           </div>
         )}
 
+        {/* Premium unlock banner */}
+        {!isPro && (
+          <div style={{ background: "#fffbeb", border: "1px solid #f0b429", borderRadius: 10, padding: "12px 14px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ fontSize: 13, color: "#92400e", fontWeight: 600 }}>
+              🔒 Premium Feature — subscribe to add and manage your Scholarship Reel clips
+            </div>
+            <Link href="/player/subscription" style={{ fontSize: 12, fontWeight: 700, color: "#1a5c2a", textDecoration: "underline", whiteSpace: "nowrap" }}>
+              View plans →
+            </Link>
+          </div>
+        )}
+
         {/* Add form */}
-        {showForm && (
+        {showForm && isPro && (
           <div style={{ background: "#fff", borderRadius: 12, padding: "18px 16px", marginBottom: 16, border: "1px solid #e5e7eb", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a" }}>Add a clip</div>

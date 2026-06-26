@@ -1,7 +1,7 @@
 // src/app/api/world-cup/reports/[matchId]/route.ts
-// Generates a tactical report on-demand via Groq AI, with R2 as a write-through cache.
+// Generates a tactical report on-demand via Gemini AI, with R2 as a write-through cache.
 // If R2 is configured and a cached report exists, it is served immediately.
-// Otherwise, Groq generates it fresh (and caches it in R2 for next time if R2 is available).
+// Otherwise, Gemini generates it fresh (and caches it in R2 for next time if R2 is available).
 
 export const runtime = 'nodejs';
 
@@ -47,9 +47,9 @@ async function saveToR2(matchId: string, report: object) {
   } catch { /* non-critical — report still returned to user */ }
 }
 
-async function generateWithGroq(matchContext: string): Promise<object | null> {
-  const groqKey = process.env.GROQ_API_KEY;
-  if (!groqKey) return null;
+async function generateWithGemini(matchContext: string): Promise<object | null> {
+  const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_AI_API_KEY;
+  if (!geminiKey) return null;
 
   const prompt = `You are an expert football tactical analyst. Analyse this World Cup 2026 match and produce a structured tactical report.
 
@@ -99,23 +99,21 @@ Return ONLY valid JSON with this exact shape:
 Return only the JSON, no markdown.`;
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2000 },
+        }),
+      }
+    );
 
     if (!res.ok) return null;
-    const data = await res.json() as { choices: { message: { content: string } }[] };
-    const text = data.choices?.[0]?.message?.content ?? '';
+    const data = await res.json() as { candidates: { content: { parts: { text: string }[] } }[] };
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
     return JSON.parse(jsonMatch[0]);
@@ -148,10 +146,10 @@ export async function GET(
     return NextResponse.json(cached);
   }
 
-  // 3. Generate on-demand via Groq
+  // 3. Generate on-demand via Gemini
   const url = new URL(req.url);
   const matchContext = url.searchParams.get('context') ?? `World Cup 2026 match ${matchId}`;
-  const report = await generateWithGroq(matchContext);
+  const report = await generateWithGemini(matchContext);
 
   if (!report) {
     return NextResponse.json({ available: false, error: 'Could not generate report' });

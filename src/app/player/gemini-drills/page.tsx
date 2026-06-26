@@ -200,6 +200,7 @@ function ResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDr
 export default function GeminiDrillsPage() {
   const user      = useAuthStore((s) => s.user);
   const hydrated  = useAuthStore((s) => s._hasHydrated);
+  const isPro     = (user as { subscription_tier?: string } | null)?.subscription_tier === 'pro';
 
   const [sport, setSport]         = useState<string>('football');
 
@@ -511,6 +512,15 @@ export default function GeminiDrillsPage() {
             {/* Upload / analysis flow */}
             {upload.phase === 'idle' && (
               <>
+                {!isPro && (
+                  <div style={{ background: '#fffbeb', border: '1px solid #f0b429', borderRadius: 12, padding: '14px 16px', marginBottom: 4 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>🔒 Premium Feature</div>
+                    <div style={{ fontSize: 12, color: '#92400e', marginBottom: 10 }}>Subscribe to upload videos and get Gemini AI coaching scores.</div>
+                    <Link href="/player/subscription" style={{ display: 'inline-block', padding: '8px 18px', background: '#c8962a', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                      View plans →
+                    </Link>
+                  </div>
+                )}
                 <input
                   ref={fileRef}
                   type="file"
@@ -519,16 +529,18 @@ export default function GeminiDrillsPage() {
                   onChange={handleFileChange}
                 />
                 <button
-                  onClick={() => fileRef.current?.click()}
+                  onClick={() => isPro ? fileRef.current?.click() : undefined}
                   style={{
                     width: '100%', padding: '18px', borderRadius: 14,
-                    background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 15,
-                    border: 'none', cursor: 'pointer',
+                    background: isPro ? GRS_GREEN : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 15,
+                    border: 'none', cursor: isPro ? 'pointer' : 'not-allowed',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    opacity: isPro ? 1 : 0.6,
                   }}
+                  disabled={!isPro}
                 >
                   <Upload size={18} />
-                  Upload video for Gemini to analyse
+                  {isPro ? 'Upload video for Gemini to analyse' : '🔒 Unlock to analyse videos'}
                 </button>
                 <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
                   MP4, MOV or any phone video · Gemini processes at 1 frame/sec
