@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
 
     // Hash field order matches the official Paynow PHP SDK for remotetransaction:
     // id + reference + amount + additionalinfo + authemail + phone + method + returnurl + resulturl + status + integrationKey
+    // Paynow PHP SDK lowercases the integration key before hashing (see Hash::make + constructor)
     const hashInput = [
       integrationId,
       reference,
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
       returnUrl,
       resultUrl,
       status,
-      integrationKey,
+      integrationKey.toLowerCase(),
     ].join("");
     const hash = await sha512Hex(hashInput);
 
