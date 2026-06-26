@@ -10,10 +10,10 @@ const PLAN_AMOUNTS: Record<string, string> = {
 };
 
 const PLAN_LABELS: Record<string, string> = {
-  weekly:           "GrassRoots Sports — 1 Week",
-  monthly:          "GrassRoots Sports — Monthly",
-  "3-month":        "GrassRoots Sports — 3 Months",
-  world_cup_class:  "GrassRoots Sports — After-Match Class",
+  weekly:           "GrassRoots Sports - 1 Week",
+  monthly:          "GrassRoots Sports - Monthly",
+  "3-month":        "GrassRoots Sports - 3 Months",
+  world_cup_class:  "GrassRoots Sports - After-Match Class",
 };
 
 // Normalise Zimbabwean phone number to international format required by Paynow
@@ -36,8 +36,8 @@ async function sha512Hex(input: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
-  const integrationId  = process.env.PAYNOW_INTEGRATION_ID;
-  const integrationKey = process.env.PAYNOW_INTEGRATION_KEY;
+  const integrationId  = process.env.PAYNOW_INTEGRATION_ID?.trim();
+  const integrationKey = process.env.PAYNOW_INTEGRATION_KEY?.trim();
   const appUrl         = process.env.NEXT_PUBLIC_APP_URL ?? "https://grassrootssports.live";
 
   if (!integrationId || !integrationKey) {
