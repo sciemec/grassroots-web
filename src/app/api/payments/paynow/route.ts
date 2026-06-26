@@ -76,16 +76,19 @@ export async function POST(req: NextRequest) {
     const returnUrl   = `${appUrl}/player/subscription?paynow=1`;
     const resultUrl   = `${appUrl}/api/payments/paynow/webhook`;
     const status      = "Message";
-    const payMethod   = (method ?? "ecocash").toLowerCase();
+    const payMethod  = (method ?? "ecocash").toLowerCase();
+    // Test mode: authemail must be the merchant's registered address.
+    // Live mode: use the customer's email.
+    const authEmail  = process.env.PAYNOW_MERCHANT_EMAIL ?? email ?? "";
 
-    // Hash field order matches the official Paynow PHP SDK for remotetransaction.
-    // authemail is omitted — it is optional and test mode rejects it unless it
-    // exactly matches the merchant's registered address.
+    // Hash field order matches the official Paynow PHP SDK for remotetransaction:
+    // id + reference + amount + additionalinfo + authemail + phone + method + returnurl + resulturl + status + integrationKey
     const hashInput = [
       integrationId,
       reference,
       amount,
       additionalInfo,
+      authEmail,
       normalisedPhone,
       payMethod,
       returnUrl,
@@ -100,6 +103,7 @@ export async function POST(req: NextRequest) {
       reference,
       amount,
       additionalinfo: additionalInfo,
+      authemail:      authEmail,
       phone:          normalisedPhone,
       method:         payMethod,
       returnurl:      returnUrl,
