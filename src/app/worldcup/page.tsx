@@ -1153,7 +1153,12 @@ export default function WorldCupTacticalLabPage() {
   useEffect(() => {
     if (!selectedMatch || !selectedMatch.reportReady) { setReport(null); return; }
     setReportLoading(true);
-    fetch(`/api/world-cup/reports/${selectedMatch.id}`)
+    const ctx = encodeURIComponent(
+      `${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam} ` +
+      `(${selectedMatch.homeScore ?? 0}-${selectedMatch.awayScore ?? 0} FT, ` +
+      `${selectedMatch.round || 'Group Stage'})`
+    );
+    fetch(`/api/world-cup/reports/${selectedMatch.id}?context=${ctx}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => setReport(data?.available ? data : null))
       .catch(() => setReport(null))
