@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     const payMethod  = (method ?? "ecocash").toLowerCase();
     // Test mode: authemail must be the merchant's registered address.
     // Live mode: use the customer's email.
-    const authEmail  = process.env.PAYNOW_MERCHANT_EMAIL ?? email ?? "";
+    const authEmail  = process.env.PAYNOW_MERCHANT_EMAIL ?? "sciemeq@gmail.com";
 
     // Hash field order matches the official Paynow PHP SDK for remotetransaction:
     // id + reference + amount + additionalinfo + authemail + phone + method + returnurl + resulturl + status + integrationKey
