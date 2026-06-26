@@ -6,7 +6,8 @@ import Link from "next/link";
 import {
   Zap, BookOpen, Dumbbell, Activity, Award,
   Video, TrendingUp, ShieldCheck, GraduationCap,
-  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair, MapPin, CreditCard,
+  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair,
+  MapPin, Brain, BookMarked, Sparkles, Globe, CheckCircle2, ArrowRight,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -30,120 +31,23 @@ const WIRE = [
   "Teach for Zimbabwe Mobile Lab activated for Hwange District schools",
 ];
 
-const FEATURES = [
-  {
-    href: "/player/sessions/new",
-    icon: Activity,
-    iconBg: "#dcfce7", iconColor: "#16a34a",
-    label: "Train Now",
-    desc: "Log a session · track your progress",
-  },
-  {
-    href: "/player/drills",
-    icon: Dumbbell,
-    iconBg: "#dbeafe", iconColor: "#2563eb",
-    label: "Drills Library",
-    desc: "500+ drills for every position",
-  },
-  {
-    href: "/player/talent-id",
-    icon: Award,
-    iconBg: "#f3e8ff", iconColor: "#9333ea",
-    label: "Scout Profile",
-    desc: "Visibility · CV share · Plays Like",
-  },
-  {
-    href: "/player/success",
-    icon: Zap,
-    iconBg: "#fef3c7", iconColor: "#d97706",
-    label: "Success Engine",
-    desc: "Daily check-in · streak · goals",
-  },
-  {
-    href: "/player/vault",
-    icon: Video,
-    iconBg: "#fce7f3", iconColor: "#db2777",
-    label: "Highlight Vault",
-    desc: "Upload · reels · AI-generated clips",
-  },
-  {
-    href: "/player/passport",
-    icon: BookOpen,
-    iconBg: "#e0f2fe", iconColor: "#0284c7",
-    label: "Talent Passport",
-    desc: "Shareable profile · QR code",
-  },
-  {
-    href: "/player/scholarship-reel",
-    icon: Video,
-    iconBg: "#fdf4ff", iconColor: "#7c3aed",
-    label: "Scholarship Reel",
-    desc: "10 clips · scouts see this on your passport",
-  },
-  {
-    href: "/player/drills/guides",
-    icon: BookOpen,
-    iconBg: "#dbeafe", iconColor: "#1d4ed8",
-    label: "Drill Guides",
-    desc: "Age-group training blueprints · U13 → Senior",
-  },
-  {
-    href: "/player/nutrition",
-    icon: TrendingUp,
-    iconBg: "#f0fdf4", iconColor: "#15803d",
-    label: "Nutrition",
-    desc: "Meal logging · macros · recovery fuel",
-  },
-  {
-    href: "/player/nutrition/guides",
-    icon: MapPin,
-    iconBg: "#ecfdf5", iconColor: "#059669",
-    label: "Nutrition Guides",
-    desc: "Age-specific meal plans · AI feedback on your meals",
-  },
-  {
-    href: "/player/assessment",
-    icon: Star,
-    iconBg: "#fdf4ff", iconColor: "#a21caf",
-    label: "Assessment",
-    desc: "Field tests · APK session reports",
-  },
-  {
-    href: "/player/weekly-session",
-    icon: ClipboardList,
-    iconBg: "#fff7ed", iconColor: "#c2410c",
-    label: "Weekly Session",
-    desc: "6-test GRS · jump · sprint · balance · reaction · endurance · ball",
-  },
-  {
-    href: "/player/position-fit",
-    icon: Crosshair,
-    iconBg: "#ffe4e6", iconColor: "#dc2626",
-    label: "Position Finder",
-    desc: "Find your best football position · GRS Engine",
-  },
-  {
-    href: "/player/gemini-drills",
-    icon: Video,
-    iconBg: "#ede9fe", iconColor: "#7c3aed",
-    label: "Gemini Drills",
-    desc: "Upload video · AI analyses your technique",
-  },
-  {
-    href: "/player/pathway",
-    icon: GraduationCap,
-    iconBg: "#fef3c7", iconColor: "#c8962a",
-    label: "My Scholarship Pathway",
-    desc: "Academic profile · Coach outreach · NCAA & European pathway",
-  },
-  {
-    href: "/player/subscription",
-    icon: CreditCard,
-    iconBg: "#f0fdf4", iconColor: "#16a34a",
-    label: "Subscription",
-    desc: "Weekly · Monthly · 3-Month plans · EcoCash · Stripe",
-  },
+// Pathway stages — a player progresses through these over their career
+const PATHWAY_STAGES = [
+  { id: "primary",    label: "Primary",    sub: "U10–U12", ageGroups: ["u10", "u11", "u12"] },
+  { id: "secondary",  label: "Secondary",  sub: "U13–U16", ageGroups: ["u13", "u14", "u15", "u16"] },
+  { id: "junior_pro", label: "Junior Pro", sub: "U17–U19", ageGroups: ["u17", "u18", "u19"] },
+  { id: "senior",     label: "Senior",     sub: "20+",     ageGroups: ["senior", "open"] },
+  { id: "pro",        label: "Pro / Scholarship", sub: "Goal",  ageGroups: [] },
 ];
+
+function getPathwayStage(ageGroup?: string): number {
+  if (!ageGroup) return 1; // default Secondary
+  const ag = ageGroup.toLowerCase().replace(/\s/g, "");
+  for (let i = 0; i < PATHWAY_STAGES.length - 1; i++) {
+    if (PATHWAY_STAGES[i].ageGroups.some((a) => ag.includes(a))) return i;
+  }
+  return 1;
+}
 
 function LiveWireTicker() {
   const [wireIndex, setWireIndex] = useState(0);
@@ -158,6 +62,63 @@ function LiveWireTicker() {
   );
 }
 
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <p className="text-[9px] font-black uppercase tracking-[0.18em] mb-3 ml-0.5 flex items-center gap-2"
+      style={{ color: "#9ca3af" }}>
+      <span className="inline-block w-4 h-px bg-gray-300" />
+      {children}
+    </p>
+  );
+}
+
+function HubCard({
+  href, icon: Icon, iconBg, iconColor, label, desc, badge,
+}: {
+  href: string; icon: React.ElementType; iconBg: string; iconColor: string;
+  label: string; desc: string; badge?: string;
+}) {
+  return (
+    <Link href={href}
+      className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+      {badge && (
+        <span className="absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full text-white"
+          style={{ backgroundColor: "#1a5c2a" }}>{badge}</span>
+      )}
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: iconBg }}>
+        <Icon size={16} style={{ color: iconColor }} />
+      </div>
+      <div>
+        <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
+        <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
+      </div>
+      <ChevronRight size={12} className="absolute bottom-4 right-4 text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
+    </Link>
+  );
+}
+
+function DarkCTA({ href, icon: Icon, iconColor, title, sub }: {
+  href: string; icon: React.ElementType; iconColor: string; title: string; sub: string;
+}) {
+  return (
+    <Link href={href}
+      className="group rounded-2xl p-4 flex items-center justify-between transition-all hover:opacity-90"
+      style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(240,180,41,0.12)" }}>
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: "rgba(240,180,41,0.13)", border: "1px solid rgba(240,180,41,0.18)" }}>
+          <Icon size={15} style={{ color: iconColor }} />
+        </div>
+        <div>
+          <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>{title}</p>
+          <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.65)" }}>{sub}</p>
+        </div>
+      </div>
+      <ArrowRight size={13} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+    </Link>
+  );
+}
+
 export default function PlayerDashboardHome() {
   const router   = useRouter();
   const user     = useAuthStore((s) => s.user);
@@ -165,44 +126,43 @@ export default function PlayerDashboardHome() {
   const [sessionCount, setSessionCount] = useState<number | null>(null);
   const [streak,       setStreak]       = useState<number | null>(null);
   const [aqScore,      setAqScore]      = useState<number | null>(null);
+  const [todayDone,    setTodayDone]    = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
     if (!user) router.replace("/login");
   }, [hydrated, user, router]);
 
-  // Load stat tile data once hydrated
   useEffect(() => {
     if (!hydrated || !user) return;
 
-    // THUTO Score — read from completed weekly session in localStorage
+    // THUTO Score from localStorage
     try {
       const raw = localStorage.getItem("grs_active_session");
       if (raw) {
         const state = JSON.parse(raw);
         if (state?.result?.aq != null) setAqScore(Math.round(state.result.aq));
       }
+      // Check if today's check-in is done
+      const checkins = JSON.parse(localStorage.getItem("gs_goal_missions") || "[]");
+      const today = new Date().toISOString().slice(0, 10);
+      setTodayDone(checkins.some((c: { mission_date?: string; status?: string }) =>
+        c.mission_date === today && c.status === "done"));
     } catch { /* storage unavailable */ }
 
-    // Day Streak — uses the platform's canonical check-in streak calculator
     setStreak(getCurrentStreak());
 
-    // Sessions + latest AQ — fetch from backend, override localStorage value if present
     api.get("/sessions")
       .then((res) => {
         const data = res.data;
         const items: Array<{ aq_score?: number; overall_score?: number }> = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.data)
-          ? data.data
-          : [];
+          ? data : Array.isArray(data?.data) ? data.data : [];
         setSessionCount(items.length);
-        // Pull latest AQ from the most recent session if the backend stored it
         const latest = items[0];
-        if (latest?.aq_score     != null) setAqScore(Math.round(latest.aq_score));
+        if (latest?.aq_score != null) setAqScore(Math.round(latest.aq_score));
         else if (latest?.overall_score != null) setAqScore(Math.round(latest.overall_score));
       })
-      .catch(() => { /* network or auth error — leave "—" */ });
+      .catch(() => {});
   }, [hydrated, user]);
 
   if (!hydrated || !user) {
@@ -213,19 +173,20 @@ export default function PlayerDashboardHome() {
     );
   }
 
-  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "GR";
+  const initials    = user.name ? user.name.slice(0, 2).toUpperCase() : "GR";
+  const stageIndex  = getPathwayStage((user as Record<string, string>).age_group);
+  const currentStage = PATHWAY_STAGES[stageIndex];
+  const nextStage    = PATHWAY_STAGES[stageIndex + 1];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
 
       {/* ── Brand header ── */}
       <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
-              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
-              GRS
-            </div>
+              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>GRS</div>
             <div>
               <p className="font-black text-sm uppercase tracking-wider leading-none" style={{ color: "#f0b429" }}>GrassRoots Sports</p>
               <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>Player Hub</p>
@@ -233,7 +194,7 @@ export default function PlayerDashboardHome() {
           </div>
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
             style={{ backgroundColor: "rgba(240,180,41,0.1)", border: "1px solid rgba(240,180,41,0.15)" }}>
-            <GraduationCap size={14} style={{ color: "#f0b429" }} />
+            <GraduationCap size={13} style={{ color: "#f0b429" }} />
             <div>
               <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
               <p className="text-[10px] font-black uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</p>
@@ -244,43 +205,38 @@ export default function PlayerDashboardHome() {
 
       {/* ── Live wire ticker ── */}
       <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
           <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
             style={{ backgroundColor: "#dc2626" }}>
-            <Radio size={9} className="animate-pulse" /> Live Wire
+            <Radio size={9} className="animate-pulse" /> Live
           </span>
           <LiveWireTicker />
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-7">
 
         {/* ── Hero card ── */}
         <div className="rounded-2xl overflow-hidden shadow-sm">
-          {/* Top section — dark green with greeting */}
-          <div className="relative px-5 pt-6 pb-5"
-            style={{ background: "#1a5c2a" }}>
-            <div className="relative flex items-start justify-between gap-4">
+          <div className="relative px-5 pt-6 pb-5" style={{ background: "#1a5c2a" }}>
+            <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>{greeting()},</p>
                 <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user.name || "Athlete"}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <ShieldCheck size={9} /> Player · Active
+                    <ShieldCheck size={9} /> {currentStage.label} · {currentStage.sub}
                   </span>
-                  {user.province && (
+                  {(user as Record<string, string>).province && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      <MapPin size={9} /> {user.province}
+                      <MapPin size={9} /> {(user as Record<string, string>).province}
                     </span>
                   )}
                 </div>
               </div>
-              {/* Avatar */}
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
-                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
-                {initials}
-              </div>
+                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>{initials}</div>
             </div>
 
             {/* Stat tiles */}
@@ -299,95 +255,256 @@ export default function PlayerDashboardHome() {
               ))}
             </div>
           </div>
-
-          {/* Quick links strip */}
           <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
             style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
             {[
-              { href: "/player/profile",   label: "Edit Profile" },
-              { href: "/player/progress",  label: "My Progress" },
-              { href: "/player/talent-id", label: "Scout Profile" },
+              { href: "/player/profile",   label: "My Profile" },
+              { href: "/player/progress",  label: "Progress" },
+              { href: "/player/talent-id", label: "Scout CV" },
             ].map(({ href, label }) => (
               <Link key={href} href={href}
                 className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
-                style={{ color: "#6b7280" }}>
-                {label}
-              </Link>
+                style={{ color: "#6b7280" }}>{label}</Link>
             ))}
           </div>
         </div>
 
-        {/* ── World Cup live banner ── */}
         <LiveMatchBanner />
 
-        {/* ── Feature grid ── */}
+        {/* ══════════════════════════════════════════════
+            SECTION 1 — MY PATHWAY
+        ══════════════════════════════════════════════ */}
         <section>
-          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
-            Your Tools
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: iconBg }}>
-                    <Icon size={16} style={{ color: iconColor }} />
-                  </div>
-                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
-                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
-                </div>
+          <SectionLabel>1 · My Pathway</SectionLabel>
+          {/* Stage progress bar */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-black text-gray-900">Professional Football Pathway</h3>
+                <p className="text-[11px] text-gray-400 mt-0.5">From grassroots to professional club or college scholarship</p>
+              </div>
+              <Link href="/player/pathway"
+                className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors hover:bg-green-50"
+                style={{ color: "#1a5c2a", border: "1px solid #1a5c2a" }}>
+                Full Plan
               </Link>
-            ))}
+            </div>
+            {/* Progress steps */}
+            <div className="relative">
+              <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-100" />
+              <div className="absolute top-4 left-0 h-0.5 bg-[#1a5c2a] transition-all"
+                style={{ width: `${(stageIndex / (PATHWAY_STAGES.length - 1)) * 100}%` }} />
+              <div className="relative flex justify-between">
+                {PATHWAY_STAGES.map((stage, i) => {
+                  const done    = i < stageIndex;
+                  const current = i === stageIndex;
+                  const goal    = i === PATHWAY_STAGES.length - 1;
+                  return (
+                    <div key={stage.id} className="flex flex-col items-center gap-1.5" style={{ flex: 1 }}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] border-2 transition-all ${
+                        goal    ? "border-yellow-400 bg-yellow-50" :
+                        current ? "border-[#1a5c2a] bg-[#1a5c2a] text-white" :
+                        done    ? "border-[#1a5c2a] bg-[#1a5c2a]/10 text-[#1a5c2a]" :
+                                  "border-gray-200 bg-white text-gray-300"
+                      }`}>
+                        {goal ? <Trophy size={12} style={{ color: "#d97706" }} /> :
+                         done ? <CheckCircle2 size={12} /> :
+                         current ? <Star size={10} /> : i + 1}
+                      </div>
+                      <div className="text-center">
+                        <p className={`text-[9px] font-black uppercase tracking-wide leading-none ${current ? "text-[#1a5c2a]" : goal ? "text-yellow-600" : done ? "text-gray-500" : "text-gray-300"}`}>
+                          {stage.label.split(" ")[0]}
+                        </p>
+                        <p className={`text-[8px] mt-0.5 font-medium leading-none ${current ? "text-[#1a5c2a]/70" : "text-gray-300"}`}>{stage.sub}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {nextStage && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl p-3"
+                style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <ArrowRight size={13} style={{ color: "#1a5c2a" }} />
+                <p className="text-[11px] font-bold text-green-800">
+                  Next stage: <span className="font-black">{nextStage.label}</span> ({nextStage.sub}) — keep training and logging sessions to progress.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
-        {/* ── CTA row ── */}
-        <section className="grid sm:grid-cols-2 gap-3">
-          <Link
-            href="/talent-leaderboard"
-            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(240,180,41,0.1)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
-                <Trophy size={16} style={{ color: "#f0b429" }} />
+        {/* ══════════════════════════════════════════════
+            SECTION 2 — TODAY
+        ══════════════════════════════════════════════ */}
+        <section>
+          <SectionLabel>2 · Today</SectionLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Daily check-in status */}
+            <Link href="/player/success/checkin"
+              className="group bg-white rounded-2xl border shadow-sm p-4 flex flex-col gap-3 hover:border-[#1a5c2a] transition-all"
+              style={{ borderColor: todayDone ? "#bbf7d0" : "#e5e7eb", backgroundColor: todayDone ? "#f0fdf4" : "white" }}>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={15} style={{ color: todayDone ? "#16a34a" : "#d1d5db" }} />
+                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: todayDone ? "#16a34a" : "#9ca3af" }}>
+                  {todayDone ? "Day Complete" : "Today's Check-In"}
+                </span>
               </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>THUTO Leaderboard</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>See your national ranking</p>
+              <p className="text-xs text-gray-500 leading-snug">
+                {todayDone ? "Well done — you logged today." : "Tap to log your daily actions and mood."}
+              </p>
+            </Link>
+            {/* Start training */}
+            <Link href="/player/weekly-session"
+              className="group rounded-2xl p-4 flex flex-col gap-3 hover:opacity-90 transition-all shadow-sm"
+              style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(240,180,41,0.15)" }}>
+              <div className="flex items-center gap-2">
+                <ClipboardList size={15} style={{ color: "#f0b429" }} />
+                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>GRS Weekly Test</span>
               </div>
-            </div>
-            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-
-          <Link
-            href="/arena"
-            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(240,180,41,0.1)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
-                <Zap size={16} style={{ color: "#60a5fa" }} />
+              <p className="text-xs leading-snug" style={{ color: "rgba(240,180,41,0.7)" }}>6-test battery · sprint, jump, ball, reaction, balance, endurance</p>
+              <ArrowRight size={12} style={{ color: "#f0b429" }} className="mt-auto group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+            {/* THUTO AI tip */}
+            <Link href="/player/ai-coach"
+              className="group bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col gap-3 hover:border-purple-300 transition-all">
+              <div className="flex items-center gap-2">
+                <Brain size={15} style={{ color: "#7c3aed" }} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700">THUTO AI Coach</span>
               </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Connect · Post · Get discovered</p>
-              </div>
-            </div>
-            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+              <p className="text-xs text-gray-500 leading-snug">Ask THUTO anything — technique, tactics, nutrition, mental game.</p>
+              <ArrowRight size={12} className="text-purple-400 mt-auto group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
         </section>
 
-        {/* ── Weekly Challenges + School Leaderboard ── */}
+        {/* ══════════════════════════════════════════════
+            SECTION 3 — MY DRILLS
+        ══════════════════════════════════════════════ */}
+        <section>
+          <SectionLabel>3 · My Drills</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <HubCard href="/player/drills" icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb"
+              label="Drill Library" desc="500+ drills · age group · position-specific" />
+            <HubCard href="/player/sessions/new" icon={Activity} iconBg="#dcfce7" iconColor="#16a34a"
+              label="Log Session" desc="Record training · track load · save notes" />
+            <HubCard href="/player/position-fit" icon={Crosshair} iconBg="#ffe4e6" iconColor="#dc2626"
+              label="Position Finder" desc="GRS Engine finds your best position" />
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════
+            SECTION 4 — AI ANALYSIS
+        ══════════════════════════════════════════════ */}
+        <section>
+          <SectionLabel>4 · AI Analysis</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <HubCard href="/player/analyse" icon={Sparkles} iconBg="#f3e8ff" iconColor="#9333ea"
+              label="Drill Analysis" desc="Upload video · Gemini AI coaching feedback" badge="Free trial" />
+            <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
+              label="Assessment" desc="Field tests · APK session reports · radar chart" />
+            <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
+              label="Success Engine" desc="Daily check-in · streak · goal tracking" />
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════
+            SECTION 5 — MY ACADEMICS
+        ══════════════════════════════════════════════ */}
+        <section>
+          <SectionLabel>5 · My Academics</SectionLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Academic tracker card */}
+            <Link href="/player/academics"
+              className="group bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:border-[#1a5c2a] transition-all">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#fef3c7" }}>
+                    <BookMarked size={18} style={{ color: "#d97706" }} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900">Academic Tracker</h4>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Grades · school · scholarship score</p>
+                  </div>
+                </div>
+                <ChevronRight size={14} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all mt-1" />
+              </div>
+              <p className="text-xs text-gray-500 mt-4 leading-relaxed">
+                Scouts and colleges look at both your football ability <em>and</em> your grades.
+                Log your results term by term and track your scholarship readiness.
+              </p>
+              <div className="mt-4 flex items-center gap-2 rounded-lg px-3 py-2"
+                style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a" }}>
+                <GraduationCap size={12} style={{ color: "#d97706" }} />
+                <p className="text-[10px] font-bold text-amber-700">Two pillars to go pro: Athletics + Academics</p>
+              </div>
+            </Link>
+
+            {/* Scholarship pathway */}
+            <Link href="/player/pathway"
+              className="group rounded-2xl p-5 flex flex-col justify-between hover:opacity-90 transition-all shadow-sm"
+              style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(96,165,250,0.15)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(96,165,250,0.13)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                  <Globe size={17} style={{ color: "#60a5fa" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-black" style={{ color: "#f0b429" }}>Scholarship Pathway</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: "rgba(240,180,41,0.65)" }}>NCAA · European academies · local clubs</p>
+                </div>
+              </div>
+              <p className="text-xs mt-4 leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+                Map your route from Zimbabwe to a football scholarship or professional contract. Coach outreach templates included.
+              </p>
+              <div className="flex items-center gap-1.5 mt-4">
+                <ArrowRight size={12} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>View My Plan</span>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════
+            SECTION 6 — MY SHOWCASE
+        ══════════════════════════════════════════════ */}
+        <section>
+          <SectionLabel>6 · My Showcase</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <HubCard href="/player/talent-id" icon={Award} iconBg="#f3e8ff" iconColor="#9333ea"
+              label="Scout Profile" desc="Visibility · Plays Like · CV share" />
+            <HubCard href="/player/passport" icon={BookOpen} iconBg="#e0f2fe" iconColor="#0284c7"
+              label="Talent Passport" desc="Shareable QR profile for scouts" />
+            <HubCard href="/player/vault" icon={Video} iconBg="#fce7f3" iconColor="#db2777"
+              label="Highlight Vault" desc="Upload clips · reels · AI highlights" />
+            <HubCard href="/player/scholarship-reel" icon={TrendingUp} iconBg="#fdf4ff" iconColor="#7c3aed"
+              label="Scholarship Reel" desc="10 best clips · scouts see this first" />
+          </div>
+          {/* Leaderboard + Arena CTAs */}
+          <div className="grid sm:grid-cols-2 gap-3 mt-3">
+            <DarkCTA href="/talent-leaderboard" icon={Trophy} iconColor="#f0b429"
+              title="THUTO Leaderboard" sub="See your national ranking" />
+            <DarkCTA href="/arena" icon={Globe} iconColor="#60a5fa"
+              title="The Arena" sub="Post · connect · get discovered" />
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════
+            SECTION 7 — MY STORY
+        ══════════════════════════════════════════════ */}
+        <section>
+          <SectionLabel>7 · My Story</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <HubCard href="/player/story" icon={BookOpen} iconBg="#f0fdf4" iconColor="#15803d"
+              label="My Story" desc="Your personal journey in football" />
+            <HubCard href="/player/nutrition" icon={TrendingUp} iconBg="#f0fdf4" iconColor="#15803d"
+              label="Nutrition" desc="Meal logging · macros · recovery" />
+            <HubCard href="/player/subscription" icon={Star} iconBg="#fef3c7" iconColor="#d97706"
+              label="Upgrade" desc="EcoCash · Stripe · unlock all features" badge="Pro" />
+          </div>
+        </section>
+
+        {/* ── Weekly Challenges ── */}
         <WeeklyChallenges
           playerAqScore={aqScore ?? 0}
           playerSessionCount={sessionCount ?? 0}
@@ -397,13 +514,11 @@ export default function PlayerDashboardHome() {
         <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
-              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
-              {initials}
-            </div>
+              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>{initials}</div>
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {user.province || "Zimbabwe"} · Player
+                {(user as Record<string, string>).province || "Zimbabwe"} · {currentStage.label}
               </p>
             </div>
           </div>
