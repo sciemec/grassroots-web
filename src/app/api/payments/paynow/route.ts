@@ -73,24 +73,40 @@ export async function POST(req: NextRequest) {
     const reference = `grassroots_${plan}_${user_id ?? email ?? "unknown"}`;
 
     const additionalInfo = PLAN_LABELS[plan] ?? "GrassRoots Sports Subscription";
-    const returnUrl  = `${appUrl}/player/subscription?paynow=1`;
-    const resultUrl  = `${appUrl}/api/payments/paynow/webhook`;
-    const status     = "Message";
+    const returnUrl   = `${appUrl}/player/subscription?paynow=1`;
+    const resultUrl   = `${appUrl}/api/payments/paynow/webhook`;
+    const status      = "Message";
+    const authEmail   = email ?? "";
+    const payMethod   = (method ?? "ecocash").toLowerCase();
 
-    // Hash: id + reference + amount + additionalinfo + returnurl + resulturl + status + integrationKey
-    const hashInput = `${integrationId}${reference}${amount}${additionalInfo}${returnUrl}${resultUrl}${status}${integrationKey}`;
-    const hash      = await sha512Hex(hashInput);
+    // Hash field order matches the official Paynow PHP SDK for remotetransaction:
+    // id + reference + amount + additionalinfo + authemail + phone + method + returnurl + resulturl + status + integrationKey
+    const hashInput = [
+      integrationId,
+      reference,
+      amount,
+      additionalInfo,
+      authEmail,
+      normalisedPhone,
+      payMethod,
+      returnUrl,
+      resultUrl,
+      status,
+      integrationKey,
+    ].join("");
+    const hash = await sha512Hex(hashInput);
 
     const body = new URLSearchParams({
       id:             integrationId,
       reference,
       amount,
       additionalinfo: additionalInfo,
+      authemail:      authEmail,
+      phone:          normalisedPhone,
+      method:         payMethod,
       returnurl:      returnUrl,
       resulturl:      resultUrl,
       status,
-      phone:          normalisedPhone,
-      method:         method ?? "ecocash",
       hash,
     });
 
