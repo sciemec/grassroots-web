@@ -138,7 +138,7 @@ For formations: identify from player positioning throughout the full match.
 Be specific and professional. Base everything on what you observe in the video.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
