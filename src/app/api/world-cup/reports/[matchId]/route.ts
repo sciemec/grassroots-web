@@ -4,6 +4,7 @@
 // Otherwise, Gemini generates it fresh (and caches it in R2 for next time if R2 is available).
 
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -47,9 +48,9 @@ async function saveToR2(matchId: string, report: object) {
   } catch { /* non-critical — report still returned to user */ }
 }
 
-async function generateWithGemini(matchContext: string): Promise<object | null> {
+async function generateWithGemini(matchContext: string): Promise<{ report: object | null; debug?: string }> {
   const geminiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_AI_API_KEY;
-  if (!geminiKey) return null;
+  if (!geminiKey) return { report: null, debug: 'no_api_key' };
 
   const prompt = `You are an expert football tactical analyst. Analyse this World Cup 2026 match and produce a structured tactical report.
 
@@ -111,14 +112,18 @@ Return only the JSON, no markdown.`;
       }
     );
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      return { report: null, debug: `gemini_${res.status}: ${errBody.slice(0, 200)}` };
+    }
     const data = await res.json() as { candidates: { content: { parts: { text: string }[] } }[] };
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    return JSON.parse(jsonMatch[0]);
-  } catch {
-    return null;
+    if (!jsonMatch) return { report: null, debug: `no_json_in_response: ${text.slice(0, 100)}` };
+    const report = JSON.parse(jsonMatch[0]);
+    return { report };
+  } catch (e) {
+    return { report: null, debug: `exception: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
 
@@ -149,10 +154,10 @@ export async function GET(
   // 3. Generate on-demand via Gemini
   const url = new URL(req.url);
   const matchContext = url.searchParams.get('context') ?? `World Cup 2026 match ${matchId}`;
-  const report = await generateWithGemini(matchContext);
+  const { report, debug } = await generateWithGemini(matchContext);
 
   if (!report) {
-    return NextResponse.json({ available: false, error: 'Could not generate report' });
+    return NextResponse.json({ available: false, error: 'Could not generate report', debug });
   }
 
   // Write-through cache: save to R2 so future requests are instant
