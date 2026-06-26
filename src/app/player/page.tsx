@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Zap, BookOpen, Dumbbell, Activity, Award,
   Video, TrendingUp, ShieldCheck, GraduationCap,
-  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair, MapPin,
+  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair, MapPin, CreditCard,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -135,6 +135,13 @@ const FEATURES = [
     iconBg: "#fef3c7", iconColor: "#c8962a",
     label: "My Scholarship Pathway",
     desc: "Academic profile · Coach outreach · NCAA & European pathway",
+  },
+  {
+    href: "/player/subscription",
+    icon: CreditCard,
+    iconBg: "#f0fdf4", iconColor: "#16a34a",
+    label: "Subscription",
+    desc: "Weekly · Monthly · 3-Month plans · EcoCash · Stripe",
   },
 ];
 

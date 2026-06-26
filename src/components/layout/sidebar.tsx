@@ -9,7 +9,7 @@ import {
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Award, LogOut, Menu, X,
   BarChart3, Medal, Globe, Trophy, Briefcase,
-  Crosshair, GraduationCap
+  Crosshair, GraduationCap, CreditCard
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -54,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/position-fit",label:"Position Finder", icon: <Crosshair size={18} />,   roles: ["player"], feature: "biometrics" },
   { href: "/player/scholarship-reel", label: "Scholarship Reel", icon: <Video size={18} />, roles: ["player"], feature: "passport" },
   { href: "/player/pathway",     label: "My Pathway",    icon: <GraduationCap size={18} />, roles: ["player"] },
+  { href: "/player/subscription", label: "Subscription",  icon: <CreditCard size={18} />,    roles: ["player"] },
 
   // ── Athlete (multi-sport) ─────────────────────────────────────────────────
   { href: "/athlete/scan",      label: "Biometric Scan",  icon: <Activity size={18} />,    roles: ["athlete"], feature: "biometrics" },
