@@ -94,18 +94,13 @@ function SubscriptionContent() {
     if (!pollUrl) return;
     const interval = setInterval(async () => {
       try {
-        const res  = await fetch(`/api/payments/paynow/status?pollUrl=${encodeURIComponent(pollUrl)}`);
-        const data = await res.json() as { paid: boolean; status: string; paynow_ref?: string };
+        const res  = await api.post<{ paid: boolean; status: string }>("/subscription/poll-status", { poll_url: pollUrl });
+        const data = res.data;
         if (data.paid) {
           clearInterval(interval);
           setPollStatus("paid");
           setPollUrl(null);
-          // Activate on Laravel
-          await api.post("/subscription/subscribe", {
-            plan_type: selected,
-            payment_method: payMethod,
-            reference_number: data.paynow_ref ?? `WEB-${Date.now()}`,
-          }).catch(() => null);
+          // Laravel already activated the subscription inside poll-status
           const statusRes = await api.get("/subscription/status").catch(() => null);
           if (statusRes) setSub(statusRes.data);
           setPaying(false);
@@ -139,7 +134,7 @@ function SubscriptionContent() {
         return;
       }
 
-      // Mobile payments — real Paynow integration
+      // Mobile payments — call Laravel which uses the Paynow PHP SDK
       if (["ecocash", "innbucks", "onemoney"].includes(payMethod)) {
         const digits = phone.replace(/\D/g, "");
         if (digits.length < 9) {
@@ -147,14 +142,14 @@ function SubscriptionContent() {
           setPaying(false);
           return;
         }
-        const res  = await fetch("/api/payments/paynow", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: selected, phone, method: payMethod, email: user?.email }),
+        const res  = await api.post<{ poll_url?: string; message?: string }>("/subscription/subscribe", {
+          plan_type:           selected,
+          payment_method:      payMethod,
+          mobile_money_number: phone,
         });
-        const data = await res.json() as { poll_url?: string; error?: string };
-        if (!res.ok || !data.poll_url) throw new Error(data.error ?? "Could not initiate payment.");
-        setPollUrl(data.poll_url);
+        const pUrl = res.data.poll_url;
+        if (!pUrl) throw new Error(res.data.message ?? "Could not initiate payment. Check your phone number.");
+        setPollUrl(pUrl);
         setPollStatus("waiting");
         return; // keep paying=true while polling
       }
