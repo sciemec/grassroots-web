@@ -1,3 +1,4 @@
+'use client';
 // components/tests/SprintTestPage.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // T2 Sprint Test — 20m sprint (15m for age 10–12) with live timer.
@@ -12,8 +13,6 @@
 //
 // Design: dark theme matching AgeGroupGuide.tsx colour tokens.
 // ─────────────────────────────────────────────────────────────────────────────
-
-'use client';
 
 import { useState } from 'react';
 import { useSprintTimer } from '@/hooks/useSprintTimer';

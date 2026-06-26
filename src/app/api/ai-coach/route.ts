@@ -4,6 +4,32 @@ import { geminiText } from "@/lib/gemini";
 
 export const maxDuration = 60; // seconds — allow time for Render cold starts
 
+/** GET /api/ai-coach — engine health check (returns which engines are configured) */
+export async function GET() {
+  const status: Record<string, string> = {};
+
+  // Check DeepSeek
+  status.deepseek = process.env.DEEPSEEK_API_KEY ? "key_present" : "key_missing";
+
+  // Check Gemini
+  if (!process.env.GEMINI_API_KEY) {
+    status.gemini = "key_missing";
+  } else {
+    try {
+      const result = await geminiText(
+        "You are a test assistant. Reply with exactly: OK",
+        [{ role: "user", content: "ping" }],
+        { max_tokens: 10 }
+      );
+      status.gemini = result ? "ok" : "empty_response";
+    } catch (err) {
+      status.gemini = `error: ${err instanceof Error ? err.message.slice(0, 200) : String(err)}`;
+    }
+  }
+
+  return NextResponse.json(status);
+}
+
 /**
  * POST /api/ai-coach
  *

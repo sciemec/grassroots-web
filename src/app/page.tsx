@@ -197,7 +197,9 @@ function VideoUpload() {
         }),
       });
       if (!presignRes.ok) throw new Error("Could not get upload URL");
-      const { uploadUrl, key } = await presignRes.json() as { uploadUrl: string; key: string; publicUrl: string };
+      const presignData = await presignRes.json() as { uploadUrl: string; key: string; publicUrl?: string };
+      const { uploadUrl, key } = presignData;
+      const publicUrl = presignData.publicUrl ?? "";
 
       // Step 2 — PUT file directly to R2
       if (uploadUrl) {
@@ -422,7 +424,7 @@ function WorldCupBanner() {
     <section className="py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <Link
-          href="/worldcup"
+          href="/world-cup"
           className="block rounded-2xl overflow-hidden p-6 text-center transition-opacity hover:opacity-90"
           style={{
             background: "linear-gradient(135deg, #0a1a0f 0%, #1a3a20 60%, #f0b429 100%)",

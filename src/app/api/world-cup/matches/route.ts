@@ -75,7 +75,9 @@ function mapToPageMatch(m: iSportsMatch, manifest: Record<string, boolean> = {})
     minute,
     possession_home:           50,
     possession_away:           50,
-    tactical_report_generated: manifest[m.matchId] === true,
+    // Mark every finished match as ready — reports are generated on-demand by the reports route.
+    // The R2 manifest approach required a cron that never ran; on-demand is the correct model.
+    tactical_report_generated: m.status === -1 || manifest[m.matchId] === true,
     round:                     m.round ?? '',
     group:                     m.group ?? '',
     status:                    statusCode,

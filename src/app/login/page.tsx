@@ -48,7 +48,7 @@ function LoginForm() {
 
       if (!token || !user) throw new Error('Unexpected response from server.');
 
-      loginStore({ ...user, token });
+      loginStore({ ...user, token, is_pro: !!user.subscription && user.subscription !== "free" });
       router.push(roleHomePath(user.role));
     } catch (err: unknown) {
       const e = err as { code?: string; response?: { status?: number; data?: unknown } };

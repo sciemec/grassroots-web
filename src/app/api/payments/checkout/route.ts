@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const amountCents = Math.round((body.price ?? 4.99) * 100);
+    const amountCents = Math.round((body.price ?? 3.00) * 100);
     const metadata: Record<string, string> = {
       ...(body.metadata ?? {}),
       user_id: userId,
@@ -100,8 +100,8 @@ export async function POST(req: NextRequest) {
           },
         ],
         metadata,
-        success_url: body.successUrl ?? `${appUrl}/worldcup`,
-        cancel_url:  body.cancelUrl  ?? `${appUrl}/worldcup`,
+        success_url: body.successUrl ?? `${appUrl}/world-cup`,
+        cancel_url:  body.cancelUrl  ?? `${appUrl}/world-cup`,
       });
 
       return NextResponse.json({ url: session.url });

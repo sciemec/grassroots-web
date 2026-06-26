@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Zap, BookOpen, Dumbbell, Activity, Award,
-  Brain, Video, TrendingUp, ShieldCheck, GraduationCap,
-  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair, MapPin,
+  Video, TrendingUp, ShieldCheck, GraduationCap,
+  Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair, MapPin, CreditCard,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -74,18 +74,32 @@ const FEATURES = [
     desc: "Shareable profile · QR code",
   },
   {
-    href: "/player/training",
-    icon: Brain,
-    iconBg: "#ecfdf5", iconColor: "#059669",
-    label: "AI Training Lab",
-    desc: "Live camera scans · biomechanics",
+    href: "/player/scholarship-reel",
+    icon: Video,
+    iconBg: "#fdf4ff", iconColor: "#7c3aed",
+    label: "Scholarship Reel",
+    desc: "10 clips · scouts see this on your passport",
   },
   {
-    href: "/player/progress",
+    href: "/player/drills/guides",
+    icon: BookOpen,
+    iconBg: "#dbeafe", iconColor: "#1d4ed8",
+    label: "Drill Guides",
+    desc: "Age-group training blueprints · U13 → Senior",
+  },
+  {
+    href: "/player/nutrition",
     icon: TrendingUp,
     iconBg: "#f0fdf4", iconColor: "#15803d",
-    label: "My Progress",
-    desc: "Stats · milestones · form tracking",
+    label: "Nutrition",
+    desc: "Meal logging · macros · recovery fuel",
+  },
+  {
+    href: "/player/nutrition/guides",
+    icon: MapPin,
+    iconBg: "#ecfdf5", iconColor: "#059669",
+    label: "Nutrition Guides",
+    desc: "Age-specific meal plans · AI feedback on your meals",
   },
   {
     href: "/player/assessment",
@@ -121,6 +135,13 @@ const FEATURES = [
     iconBg: "#fef3c7", iconColor: "#c8962a",
     label: "My Scholarship Pathway",
     desc: "Academic profile · Coach outreach · NCAA & European pathway",
+  },
+  {
+    href: "/player/subscription",
+    icon: CreditCard,
+    iconBg: "#f0fdf4", iconColor: "#16a34a",
+    label: "Subscription",
+    desc: "Weekly · Monthly · 3-Month plans · EcoCash · Stripe",
   },
 ];
 

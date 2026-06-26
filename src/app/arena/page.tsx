@@ -8,9 +8,12 @@ import {
   Home, Users, Heart, MessageCircle, Share2, Image,
   Video, MapPin, Globe, LogIn, Plus, Send,
   Play, Eye, UserPlus, Filter, Briefcase, MessageSquare,
-  MoreVertical, Pencil, Trash2, X, Check,
+  MoreVertical, Pencil, Trash2, X, Check, GraduationCap,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { matchPrograms, type MatchResult, type PlayerMatchData } from "@/lib/scholarship-matcher";
+import ScholarshipAlertCard from "@/components/passport/ScholarshipAlertCard";
+import { REEL_STORAGE_KEY, type ReelState } from "@/components/passport/ScholarshipReel";
 
 const API       = process.env.NEXT_PUBLIC_API_URL;
 const GRS_GREEN = "#1a5c2a";
@@ -168,8 +171,11 @@ export default function ArenaPage() {
   const [savingEdit,     setSavingEdit]     = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
-  // ── Tab state — four tabs: For You / Following / Connections / Videos ──────
-  const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos">("for-you");
+  // ── Tab state ────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos" | "pathways">("for-you");
+
+  // ── Pathways tab state ────────────────────────────────────────────────────
+  const [scholarshipMatches, setScholarshipMatches] = useState<MatchResult[]>([]);
 
   // ── Activity filter chips (under social tabs, non-video tabs only) ─────────
   const [activityFilter, setActivityFilter] = useState<string>("all");
@@ -186,9 +192,35 @@ export default function ArenaPage() {
 
   const authToken = token ?? (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
 
-  // ── Fetch social feed (Document 15) ───────────────────────────────────────
+  // ── Build scholarship matches when pathways tab is opened ────────────────
+  useEffect(() => {
+    if (activeTab !== "pathways" || !user) return;
+    const reel = (() => {
+      try {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(REEL_STORAGE_KEY) : null;
+        return raw ? (JSON.parse(raw) as ReelState) : null;
+      } catch { return null; }
+    })();
+    const reelFilled = reel
+      ? Object.values(reel).filter(Boolean).length
+      : 0;
+    const u = user as unknown as Record<string, unknown>;
+    const data: PlayerMatchData = {
+      sport:               (u.sport       as string)  ?? "football",
+      position:            (u.position    as string)  ?? "",
+      thuto_score:         (u.thuto_score as number)  ?? 0,
+      target_pathway:      (u.target_pathway as string) ?? "",
+      school_year:         (u.school_year as string)  ?? "form5",
+      ncaa_registered:     !!(u.ncaa_registered),
+      english_proficiency: (u.english_proficiency as string) ?? "basic",
+      reel_complete:       reelFilled >= 4,
+    };
+    setScholarshipMatches(matchPrograms(data));
+  }, [activeTab, user]);
+
+  // ── Fetch social feed ─────────────────────────────────────────────────────
   const fetchPosts = useCallback(async () => {
-    if (activeTab === "videos") return;
+    if (activeTab === "videos" || activeTab === "pathways") return;
     setLoadingPosts(true);
     try {
       const urlMap: Record<string, string> = {
@@ -514,13 +546,14 @@ export default function ArenaPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-6">
 
-        {/* ── Tab navigation — four tabs ─────────────────────────────────── */}
+        {/* ── Tab navigation ───────────────────────────────────────────────── */}
         <div className="flex gap-2 mb-6 border-b border-gray-200 pb-2 overflow-x-auto">
           {([
             { key: "for-you",     label: "For You" },
             { key: "following",   label: "Following" },
             { key: "connections", label: "Connections" },
-            { key: "videos",      label: "🎥 Videos" },   // ← from Document 14
+            { key: "videos",      label: "🎥 Videos" },
+            { key: "pathways",    label: "🎓 Pathways" },
           ] as const).map(t => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap ${
@@ -670,8 +703,80 @@ export default function ArenaPage() {
           </div>
         )}
 
-        {/* ── SOCIAL FEED TABS (from Document 15) ───────────────────────── */}
-        {activeTab !== "videos" && (
+        {/* ── PATHWAYS TAB ─────────────────────────────────────────────────── */}
+        {activeTab === "pathways" && (
+          <div>
+            {!user ? (
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+                <GraduationCap size={40} className="mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-600 font-semibold mb-1">Sign in to see your scholarship matches</p>
+                <p className="text-gray-400 text-sm mb-4">We match your THUTO score, position, and reel against 25+ programs.</p>
+                <a href="/login" className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>
+                  Sign in →
+                </a>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#f0fdf4" }}>
+                      <GraduationCap size={20} color={GRS_GREEN} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-gray-900">Scholarship Pathways</p>
+                      <p className="text-xs text-gray-500">
+                        {scholarshipMatches.length > 0
+                          ? `${scholarshipMatches.length} programs matched · sorted by fit`
+                          : "Complete your profile and reel for more matches"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Match cards */}
+                {scholarshipMatches.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+                    <p className="text-gray-500 text-sm mb-2">No matches yet.</p>
+                    <p className="text-gray-400 text-xs mb-4">
+                      Build your Scholarship Reel and set a target pathway in your passport to unlock matches.
+                    </p>
+                    <a href="/player/passport" className="inline-block px-5 py-2 rounded-lg text-sm font-bold text-white" style={{ background: GRS_GREEN }}>
+                      Build My Passport →
+                    </a>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {scholarshipMatches.map((match) => (
+                      <ScholarshipAlertCard
+                        key={match.program.id}
+                        match={match}
+                        onAddToOutreach={(programId) => {
+                          window.location.href = `/player/pathway?program=${programId}`;
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* CTA to complete reel */}
+                {scholarshipMatches.length > 0 && (
+                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+                    <p className="text-xs text-amber-700 font-semibold mb-2">
+                      Complete your Scholarship Reel to improve your match scores
+                    </p>
+                    <a href="/player/passport" className="inline-block px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: GRS_GOLD }}>
+                      Edit Reel →
+                    </a>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── SOCIAL FEED TABS ───────────────────────────────────────────────── */}
+        {activeTab !== "videos" && activeTab !== "pathways" && (
           <>
             {/* Create post — logged-in users only */}
             {user && (

@@ -9,7 +9,7 @@ import {
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Award, LogOut, Menu, X,
   BarChart3, Medal, Globe, Trophy, Briefcase,
-  Crosshair, GraduationCap
+  Crosshair, GraduationCap, CreditCard
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -43,15 +43,18 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player",            label: "Player Hub",      icon: <Home size={18} />,        roles: ["player"],                   },
   { href: "/player/ai-coach",   label: "AI Coach",        icon: <BookOpen size={18} />,    roles: ["player"],                   },
   { href: "/player/showcase",   label: "My Showcase",     icon: <Award size={18} />,       roles: ["player"],                   },
-  { href: "/player/training",   label: "AI Training Lab", icon: <Target size={18} />,      roles: ["player"], feature: "biometrics" },
-  { href: "/player/drills",     label: "My Drills",       icon: <Dumbbell size={18} />,    roles: ["player"], feature: "drills"    },
-  { href: "/player/progress",   label: "My Progress",     icon: <TrendingUp size={18} />,  roles: ["player"], feature: "biometrics" },
+  { href: "/player/nutrition",         label: "Nutrition",       icon: <TrendingUp size={18} />, roles: ["player"] },
+  { href: "/player/nutrition/guides",  label: "Nutrition Guides",icon: <BookOpen size={18} />,   roles: ["player"] },
+  { href: "/player/drills",       label: "My Drills",       icon: <Dumbbell size={18} />,    roles: ["player"], feature: "drills"    },
+  { href: "/player/drills/guides", label: "Drill Guides",    icon: <BookOpen size={18} />,    roles: ["player"], feature: "drills"    },
   { href: "/player/talent-id",  label: "Talent ID",       icon: <Target size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/passport",   label: "Talent Passport", icon: <IdCard size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/vault",      label: "Highlight Vault", icon: <Video size={18} />,       roles: ["player"], feature: "passport"  },
   { href: "/player/media",      label: "Media Gallery",   icon: <Camera size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/position-fit",label:"Position Finder", icon: <Crosshair size={18} />,   roles: ["player"], feature: "biometrics" },
+  { href: "/player/scholarship-reel", label: "Scholarship Reel", icon: <Video size={18} />, roles: ["player"], feature: "passport" },
   { href: "/player/pathway",     label: "My Pathway",    icon: <GraduationCap size={18} />, roles: ["player"] },
+  { href: "/player/subscription", label: "Subscription",  icon: <CreditCard size={18} />,    roles: ["player"] },
 
   // ── Athlete (multi-sport) ─────────────────────────────────────────────────
   { href: "/athlete/scan",      label: "Biometric Scan",  icon: <Activity size={18} />,    roles: ["athlete"], feature: "biometrics" },

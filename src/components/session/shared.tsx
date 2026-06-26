@@ -1,8 +1,8 @@
+'use client';
 // components/session/shared.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared UI components used across all 6 test screens
 // ─────────────────────────────────────────────────────────────────────────────
-'use client';
 
 import { useState } from 'react';
 import { isPlausible } from '@/lib/grs-engine';

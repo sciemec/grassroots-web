@@ -196,7 +196,7 @@ export default function LiveMatchPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#f4f2ee]">
         <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center max-w-md">
           <p className="text-red-600">{error}</p>
-          <a href="/worldcup" className="mt-4 inline-block px-4 py-2 bg-[#1a5c2a] text-white rounded-lg hover:bg-[#0d3d1a] transition">
+          <a href="/world-cup" className="mt-4 inline-block px-4 py-2 bg-[#1a5c2a] text-white rounded-lg hover:bg-[#0d3d1a] transition">
             Back to World Cup
           </a>
         </div>
@@ -210,7 +210,7 @@ export default function LiveMatchPage() {
         <div className="bg-white p-8 rounded-2xl shadow-lg text-center max-w-md">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Match Not Found</h1>
           <p className="text-gray-500 mb-4">The match you're looking for doesn't exist or isn't available.</p>
-          <a href="/worldcup" className="inline-block px-4 py-2 bg-[#1a5c2a] text-white rounded-lg hover:bg-[#0d3d1a] transition">
+          <a href="/world-cup" className="inline-block px-4 py-2 bg-[#1a5c2a] text-white rounded-lg hover:bg-[#0d3d1a] transition">
             Back to World Cup
           </a>
         </div>
@@ -237,7 +237,7 @@ export default function LiveMatchPage() {
                 </span>
               )}
             </div>
-            <a href="/worldcup" className="text-white/70 hover:text-white text-sm">
+            <a href="/world-cup" className="text-white/70 hover:text-white text-sm">
               ← Back
             </a>
           </div>

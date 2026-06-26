@@ -1,3 +1,4 @@
+'use client';
 // src/app/player/weekly-session/page.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 // GRS Weekly Session Orchestrator
@@ -15,8 +16,6 @@
 //   - localStorage is auto-saved on every state change via saveSession()
 //   - Resuming: if saved session has config + currentTest !== 'setup', prompt user
 // ─────────────────────────────────────────────────────────────────────────────
-
-'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import {

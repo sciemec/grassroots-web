@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Play, Video, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, Play, Video, Lock, ChevronDown, ChevronUp, Clock, MapPin } from "lucide-react";
 import type { DrillData, AgeGroup } from "@/lib/drill-data";
 
 const DIFFICULTY_CONFIG = {
@@ -143,7 +143,33 @@ export default function DrillCard({
             <p className="text-sm text-gray-600 leading-relaxed">{drill.football_benefit}</p>
           </div>
 
-          {/* ② HOW TO DO IT */}
+          {/* ② WHEN TO USE */}
+          {drill.when_to_use && (
+            <div className="flex gap-3 items-start bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+              <Clock size={15} className="text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">
+                  When to use
+                </h4>
+                <p className="text-sm text-amber-900 leading-relaxed">{drill.when_to_use}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ③ WHERE ON THE PITCH */}
+          {drill.where_on_pitch && (
+            <div className="flex gap-3 items-start bg-sky-50 border border-sky-100 rounded-xl px-4 py-3">
+              <MapPin size={15} className="text-sky-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-sky-700 mb-1">
+                  Where on the pitch
+                </h4>
+                <p className="text-sm text-sky-900 leading-relaxed">{drill.where_on_pitch}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ④ HOW TO DO IT */}
           <div>
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1a5c2a] mb-2">
               How to do it
@@ -175,7 +201,7 @@ export default function DrillCard({
             )}
           </div>
 
-          {/* ③ WHAT GOOD FEELS LIKE */}
+          {/* ⑤ WHAT GOOD FEELS LIKE */}
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-1.5">
               What good feels like
@@ -185,7 +211,7 @@ export default function DrillCard({
             </p>
           </div>
 
-          {/* ④ GEMINI WILL SCORE */}
+          {/* ⑥ GEMINI WILL SCORE */}
           <div
             className="border rounded-xl p-4"
             style={{ background: isPremiumUser ? "#faf5ff" : "#f3f4f6", borderColor: isPremiumUser ? "#d8b4fe" : "#e5e7eb" }}
@@ -224,7 +250,7 @@ export default function DrillCard({
             )}
           </div>
 
-          {/* ⑤ META GRID */}
+          {/* ⑦ META GRID */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: "Equipment", value: equip.label },
@@ -239,7 +265,7 @@ export default function DrillCard({
             ))}
           </div>
 
-          {/* ⑥ ACTION BUTTONS */}
+          {/* ⑧ ACTION BUTTONS */}
           <div className="flex flex-wrap gap-2 pt-1">
             <Link
               href={`/player/analyse?drill=${drill.id}&name=${encodeURIComponent(drill.name)}`}
@@ -266,7 +292,7 @@ export default function DrillCard({
             </button>
           </div>
 
-          {/* ⑦ GEMINI CANNOT MEASURE DISCLAIMER */}
+          {/* ⑨ GEMINI CANNOT MEASURE DISCLAIMER */}
           <p className="text-[9px] text-gray-400 italic border-t border-gray-100 pt-3">
             Gemini cannot measure match intelligence, composure, or decision-making under pressure —
             those require a real coach watching you play. AI feedback scores technique only.

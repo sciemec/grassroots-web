@@ -18,7 +18,7 @@ export function PublicNavbar() {
     { href: "/coach", label: "Coach Hub" },
     { href: "/scout", label: "Scout Hub" },
     { href: "/arena", label: "The Arena" },
-    { href: "/worldcup", label: "🏆 World Cup", gold: true },
+    { href: "/world-cup", label: "🏆 World Cup", gold: true },
   ];
 
   return (

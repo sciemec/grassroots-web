@@ -202,7 +202,6 @@ export default async function PublicPlayerProfile({ params }: { params: { id: st
           <HighlightReel
             clips={showcaseClips}
             mode="public"
-            playerId={profile.id}
           />
         </div>
 

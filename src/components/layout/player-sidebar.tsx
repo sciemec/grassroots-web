@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
   { href: "/player/stats", label: "Stats", icon: BarChart2 },
   { href: "/arena", label: "Arena Feed", icon: Globe, badge: "Social" },
   { href: "/arena/network", label: "My Network", icon: Users },
-  { href: "/worldcup", label: "🏆 World Cup", icon: Award, badge: "Fan" },
+  { href: "/world-cup", label: "🏆 World Cup", icon: Award, badge: "Fan" },
   { href: "/player/brand", label: "Brand Studio", icon: Award, badge: "NEW" },
   { href: "/player/story", label: "My Story", icon: Mic, badge: "Tell it" },
   { href: "/settings", label: "Settings", icon: Settings },

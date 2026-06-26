@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Save, Plus, Trash2, ExternalLink, CheckCircle2, Circle } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { useSubscription } from '@/lib/use-subscription';
+import { postToArena } from '@/lib/arena-poster';
 
 const G   = '#1a5c2a';
 const GO  = '#c8962a';
@@ -104,6 +106,7 @@ export default function PathwayPage() {
   const user     = useAuthStore(s => s.user);
   const token    = useAuthStore(s => s.token);
   const hydrated = useAuthStore(s => s._hasHydrated);
+  const { isPro } = useSubscription();
 
   const [profile,     setProfile]     = useState<Partial<PathwayProfile>>({});
   const [outreach,    setOutreach]    = useState<OutreachEntry[]>([]);
@@ -190,14 +193,31 @@ export default function PathwayPage() {
     setOutreach(prev => prev.filter(e => e.id !== id));
   }, [token]);
 
+  // Milestones that trigger Arena auto-posts when first completed
+  const ARENA_MILESTONE_POSTS: Record<string, string> = {
+    scholarship_reel_complete: "Scholarship Reel complete — all 4 categories showcased for scouts.",
+    ncaa_registered:           "NCAA Eligibility Center registration complete.",
+    coach_outreach_started:    "Started reaching out to university coaches.",
+    scholarship_applied:       "Applied for a scholarship — pathway checkpoint reached.",
+  };
+
   const toggleCheckpoint = (key: string) => {
+    const wasDone = !!(profile.pathway_checkpoints?.[key]);
     setProfile(prev => ({
       ...prev,
       pathway_checkpoints: {
         ...(prev.pathway_checkpoints ?? {}),
-        [key]: !(prev.pathway_checkpoints?.[key]),
+        [key]: !wasDone,
       },
     }));
+    // Fire Arena auto-post only when marking done (not unmarking)
+    if (!wasDone && ARENA_MILESTONE_POSTS[key]) {
+      postToArena(ARENA_MILESTONE_POSTS[key], {
+        postType: "milestone",
+        activityType: "pathway_checkpoint",
+        activityData: { checkpoint: key },
+      });
+    }
   };
 
   const completedCount = CHECKPOINTS.filter(c => profile.pathway_checkpoints?.[c.key]).length;
@@ -208,7 +228,7 @@ export default function PathwayPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: OFF, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#aaa', fontSize: 14 }}>Loading pathway...</div>
+        <div style={{ color: '#333', fontSize: 14, fontWeight: 600 }}>Loading pathway...</div>
       </div>
     );
   }
@@ -228,19 +248,25 @@ export default function PathwayPage() {
               {completedCount}/{CHECKPOINTS.length} steps complete · {progressPct}% ready
             </div>
           </div>
-          <button
-            onClick={saveProfile}
-            disabled={saving}
-            style={{
-              padding: '8px 16px', borderRadius: 20, border: 'none',
-              background: saved ? '#16a34a' : GO,
-              color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            <Save size={14} />
-            {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save'}
-          </button>
+          {isPro ? (
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              style={{
+                padding: '8px 16px', borderRadius: 20, border: 'none',
+                background: saved ? '#16a34a' : GO,
+                color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Save size={14} />
+              {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save'}
+            </button>
+          ) : (
+            <Link href="/player/subscription" style={{ padding: '8px 16px', borderRadius: 20, background: '#c8962a', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+              🔒 Unlock
+            </Link>
+          )}
         </div>
       </div>
 
@@ -334,7 +360,7 @@ export default function PathwayPage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: G, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
                 Predicted / Achieved Grades
               </div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: '#333', fontWeight: 600, marginBottom: 10 }}>
                 US coaches need to verify academic eligibility. A-grades help scholarship applications.
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -345,7 +371,7 @@ export default function PathwayPage() {
                   { key: 'gpa_estimate', label: 'GPA estimate (0–4.0)' },
                 ].map(f => (
                   <div key={f.key}>
-                    <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{f.label}</div>
+                    <div style={{ fontSize: 11, color: '#333', fontWeight: 700, marginBottom: 4 }}>{f.label}</div>
                     <input
                       value={(profile.predicted_grades as Record<string, string>)?.[f.key] ?? ''}
                       onChange={e => setProfile(p => ({
@@ -382,7 +408,7 @@ export default function PathwayPage() {
                   </button>
                 ))}
               </div>
-              <div style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+              <div style={{ fontSize: 11, color: '#333', fontWeight: 600, marginTop: 8 }}>
                 Native/Fluent English is a major advantage for US and UK university applications.
               </div>
             </div>
@@ -448,7 +474,7 @@ export default function PathwayPage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: G, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
                 NCAA Eligibility Center / Pathway Registration
               </div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: '#333', fontWeight: 600, marginBottom: 10 }}>
                 If targeting US colleges: register at eligibilitycenter.org before Form 5. Coaches cannot offer a spot until you are registered.
               </div>
               <input
@@ -539,7 +565,7 @@ export default function PathwayPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: done ? G : '#333' }}>{cp.label}</div>
-                    <div style={{ fontSize: 11, color: '#888', marginTop: 3 }}>When: {cp.when}</div>
+                    <div style={{ fontSize: 11, color: '#444', fontWeight: 600, marginTop: 3 }}>When: {cp.when}</div>
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: done ? G : '#ccc', flexShrink: 0 }}>
                     {i + 1}/{CHECKPOINTS.length}
@@ -599,22 +625,28 @@ export default function PathwayPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => setAddingEntry(!addingEntry)}
-              style={{
-                width: '100%', padding: '12px', borderRadius: 10,
-                background: addingEntry ? '#f5f5f5' : G,
-                color: addingEntry ? '#555' : '#fff',
-                border: `1.5px solid ${addingEntry ? '#ddd' : G}`,
-                fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-            >
-              <Plus size={16} />
-              {addingEntry ? 'Cancel' : 'Add coach / institution'}
-            </button>
+            {isPro ? (
+              <button
+                onClick={() => setAddingEntry(!addingEntry)}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 10,
+                  background: addingEntry ? '#f5f5f5' : G,
+                  color: addingEntry ? '#555' : '#fff',
+                  border: `1.5px solid ${addingEntry ? '#ddd' : G}`,
+                  fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Plus size={16} />
+                {addingEntry ? 'Cancel' : 'Add coach / institution'}
+              </button>
+            ) : (
+              <Link href="/player/subscription" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px', borderRadius: 10, background: '#c8962a', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                🔒 Unlock to track coach outreach
+              </Link>
+            )}
 
-            {addingEntry && (
+            {addingEntry && isPro && (
               <div style={{ background: '#fff', borderRadius: 10, padding: '14px', border: `1.5px solid ${G}` }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                   {[
@@ -626,10 +658,10 @@ export default function PathwayPage() {
                     { key: 'contacted_date',    label: 'Date contacted', placeholder: '' },
                   ].map(f => (
                     <div key={f.key}>
-                      <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{f.label}</div>
+                      <div style={{ fontSize: 11, color: '#333', fontWeight: 700, marginBottom: 4 }}>{f.label}</div>
                       <input
                         type={f.key === 'contacted_date' ? 'date' : 'text'}
-                        value={(newEntry as Record<string, string>)[f.key] ?? ''}
+                        value={(newEntry as unknown as Record<string, string>)[f.key] ?? ''}
                         onChange={e => setNewEntry(p => ({ ...p, [f.key]: e.target.value }))}
                         placeholder={f.placeholder}
                         style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 12 }}
@@ -647,7 +679,7 @@ export default function PathwayPage() {
                     </select>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>Status</div>
+                    <div style={{ fontSize: 11, color: '#333', fontWeight: 700, marginBottom: 4 }}>Status</div>
                     <select
                       value={newEntry.status}
                       onChange={e => setNewEntry(p => ({ ...p, status: e.target.value }))}
@@ -674,10 +706,10 @@ export default function PathwayPage() {
             )}
 
             {outreach.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 16px', color: '#aaa' }}>
+              <div style={{ textAlign: 'center', padding: '32px 16px', color: '#333' }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>No contacts yet</div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>Add the first coach or institution you plan to contact</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>No contacts yet</div>
+                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4 }}>Add the first coach or institution you plan to contact</div>
               </div>
             ) : (
               outreach.map((entry, i) => (
@@ -685,7 +717,7 @@ export default function PathwayPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{entry.institution_name}</div>
-                      <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: '#444', fontWeight: 600, marginTop: 2 }}>
                         {entry.country} · {entry.division} · {entry.sport}
                       </div>
                     </div>
@@ -717,7 +749,7 @@ export default function PathwayPage() {
                     {OUTREACH_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
                   {entry.notes && (
-                    <div style={{ fontSize: 11, color: '#888', marginTop: 8, lineHeight: 1.5 }}>{entry.notes}</div>
+                    <div style={{ fontSize: 11, color: '#444', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>{entry.notes}</div>
                   )}
                 </div>
               ))

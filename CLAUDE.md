@@ -166,6 +166,45 @@ To disable THUTO temporarily: set `THUTO_ACTIVE = false` only if Nigel explicitl
 
 ---
 
+## 🏟️ ARENA & FEED PROTECTION RULE — MANDATORY (PERMANENT)
+
+This rule exists because Arena (feed, post card, composer, filters, media viewer) is a
+live social feature used by real players and coaches. Silent changes to existing Arena
+features break the product and destroy user trust.
+
+### THE RULE: Arena changes must be ADDITIVE ONLY. Nothing existing can be silently removed or altered.
+
+**Before changing ANY Arena file, Claude MUST:**
+1. List every existing feature in that component that the change could affect
+2. State explicitly: "I am NOT removing or altering: [list]"
+3. State explicitly: "I AM adding: [list]"
+4. Wait for Nigel to approve before writing code
+
+**Claude MUST NEVER:**
+- Remove a tab, filter, button, badge, or section from any Arena page without explicit approval
+- Change post card layout, like/comment behaviour, or feed ordering without approval
+- Alter the PostComposer fields, post types, or submission logic without approval
+- Disable or stub out any Arena API call without approval
+- Refactor an Arena component in a way that removes functionality as a side-effect
+
+**What counts as "Arena":**
+- `src/app/arena/page.tsx` — activity feed, composer, post cards, feed tabs, activity filters
+- `src/app/arena/network/page.tsx` — follow/connect/pending tabs
+- `src/app/arena/messages/page.tsx` — inbox, thread view, polling
+- `src/app/arena/discover/page.tsx` — athlete discovery, filters
+- `src/app/arena/clubs/` — club directory, detail, review form
+- `src/app/arena/recruitment/` — talent board, posting detail, create form
+- `src/components/` — any component whose name starts with Arena or is used exclusively in Arena
+
+**New additions are always welcome** — extra tabs, new badge types, richer post cards — as long as
+no existing feature is removed or broken in the process.
+
+**Why this rule exists:**
+The Arena feed is the platform's social spine. Every post, like, and connection represents a real
+Zimbabwean athlete's engagement. Silently breaking that erases their activity and destroys trust.
+
+---
+
 ## 🚫 NO GUESSWORK — MANDATORY RULE (PERMANENT)
 
 This is a real, live-changing project. Every solution must meet this standard:
@@ -9006,8 +9045,8 @@ private function sendWhatsAppReply(string $phone, string $message): void
 | bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
 | `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
-| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
-| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| `GEMINI_API_KEY` | ✅ SET in Vercel (confirmed 20 June 2026) | Also needed on Render for WhatsApp pipeline |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI chat broken |
 
 ---
 
@@ -9184,6 +9223,6 @@ Empty commit to bhora-ai master to force `start.sh` → `php artisan migrate --f
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT YET UPDATED | Replace Twilio HTTP client with Meta API call (from 23 June earlier session) |
 | bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
-| `GEMINI_API_KEY` | NOT set on Vercel/Render | `/player/analyse` + WhatsApp pipeline broken |
-| `GROQ_API_KEY` | NOT set on Vercel | THUTO AI chat broken |
+| `GEMINI_API_KEY` | ✅ SET in Vercel (confirmed 20 June 2026) | Also needed on Render for WhatsApp pipeline |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI chat broken |
 

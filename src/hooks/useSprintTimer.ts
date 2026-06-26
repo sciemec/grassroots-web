@@ -1,3 +1,4 @@
+'use client';
 // hooks/useSprintTimer.ts
 // ─────────────────────────────────────────────────────────────────────────────
 // Sprint timing hook for the T2 Sprint test (20m / 15m depending on age).
@@ -12,8 +13,6 @@
 // State machine:
 //   idle → (start()) → running → (stop()) → stopped → (reset()) → idle
 // ─────────────────────────────────────────────────────────────────────────────
-
-'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 

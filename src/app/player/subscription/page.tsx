@@ -20,10 +20,12 @@ interface SubStatus {
 const PLANS = [
   {
     id: "weekly",
-    label: "Weekly",
+    label: "Try It — 1 Week",
     price: "USD $1.50",
-    zim: "RTGS $500",
-    period: "per week",
+    dailyRate: "21¢ / day",
+    zim: "EcoCash $1.50",
+    period: "one week, cancel anytime",
+    badge: null,
     features: ["Full drill library", "AI Coach (unlimited)", "Session tracking", "Scout visibility"],
     popular: false,
   },
@@ -31,25 +33,29 @@ const PLANS = [
     id: "monthly",
     label: "Monthly",
     price: "USD $5",
-    zim: "RTGS $1,500",
+    dailyRate: "17¢ / day",
+    zim: "EcoCash $5",
     period: "per month",
-    features: ["Everything in Weekly", "Training plan generator", "Injury risk analysis", "Progress charts", "PDF reports"],
+    badge: "BEST VALUE",
+    features: ["Everything in Weekly", "Training plan generator", "Injury risk analysis", "Progress charts", "PDF reports", "Scholarship pathway tracker"],
     popular: true,
   },
   {
     id: "3-month",
     label: "3 Months",
     price: "USD $12",
-    zim: "RTGS $3,600",
-    period: "per 3 months",
-    features: ["Everything in Monthly", "Priority AI Coach", "Video technique review", "Scout reports"],
+    dailyRate: "13¢ / day",
+    zim: "EcoCash $12",
+    period: "3 months — save 20%",
+    badge: "SAVE 20%",
+    features: ["Everything in Monthly", "Priority AI Coach", "Video technique review", "Scout reports", "Commitment = results"],
     popular: false,
   },
 ];
 
 function SubscriptionContent() {
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const { requireAuth } = useGuestGate();
   const [sub, setSub] = useState<SubStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -224,6 +230,11 @@ function SubscriptionContent() {
           </div>
         )}
 
+        {/* Value anchor */}
+        <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
+          <strong>Wyscout (used by European clubs):</strong> $299/month. GrassRoots Sports: from $1.50/week. Same AI tools — built for Zimbabwe.
+        </div>
+
         {/* Plans */}
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {PLANS.map((plan) => (
@@ -231,14 +242,17 @@ function SubscriptionContent() {
               className={`relative rounded-2xl border-2 p-5 text-left transition-all ${
                 selected === plan.id ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground"
               }`}>
-              {plan.popular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-bold text-primary-foreground">
-                  Most popular
+              {plan.badge && (
+                <span className={`absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-bold text-white ${
+                  plan.badge === "SAVE 20%" ? "bg-amber-500" : "bg-primary"
+                }`}>
+                  {plan.badge}
                 </span>
               )}
               <h3 className="font-bold">{plan.label}</h3>
               <p className="mt-1 text-2xl font-bold">{plan.price}</p>
-              <p className="text-xs text-muted-foreground">{plan.zim} · {plan.period}</p>
+              <p className="text-sm font-semibold text-primary">{plan.dailyRate}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{plan.zim} · {plan.period}</p>
               <ul className="mt-4 space-y-1.5">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-xs">

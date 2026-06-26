@@ -15,6 +15,7 @@ import {
   Loader2, Star, Info, History, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
 import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
@@ -25,15 +26,15 @@ const GRS_GREEN  = '#1a5c2a';
 const GRS_GOLD   = '#c8962a';
 const SPORT_TABS = [
   { id: 'football',   label: 'Football',   emoji: '⚽' },
-  { id: 'rugby',      label: 'Rugby',      emoji: '🏉' },
-  { id: 'athletics',  label: 'Athletics',  emoji: '💨' },
-  { id: 'netball',    label: 'Netball',    emoji: '🏀' },
-  { id: 'basketball', label: 'Basketball', emoji: '🏀' },
-  { id: 'cricket',    label: 'Cricket',    emoji: '🏏' },
-  { id: 'swimming',   label: 'Swimming',   emoji: '🏊' },
-  { id: 'tennis',     label: 'Tennis',     emoji: '🎾' },
-  { id: 'volleyball', label: 'Volleyball', emoji: '🏐' },
-  { id: 'hockey',     label: 'Hockey',     emoji: '🏑' },
+  { id: 'rugby',      label: 'Rugby',       emoji: '🏉' },
+  { id: 'athletics',  label: 'Athletics',   emoji: '🏃' },
+  { id: 'netball',    label: 'Netball',     emoji: '🏐' },
+  { id: 'basketball', label: 'Basketball',  emoji: '🏀' },
+  { id: 'cricket',    label: 'Cricket',     emoji: '🏏' },
+  { id: 'swimming',   label: 'Swimming',    emoji: '🏊' },
+  { id: 'tennis',     label: 'Tennis',      emoji: '🎾' },
+  { id: 'volleyball', label: 'Volleyball',  emoji: '🏐' },
+  { id: 'hockey',     label: 'Hockey',      emoji: '🏑' },
 ] as const;
 
 type Phase =
@@ -200,8 +201,16 @@ function ResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDr
 export default function GeminiDrillsPage() {
   const user      = useAuthStore((s) => s.user);
   const hydrated  = useAuthStore((s) => s._hasHydrated);
+  const { isPro } = useSubscription();
 
   const [sport, setSport]         = useState<string>('football');
+
+  // Auto-detect user's sport on load
+  useEffect(() => {
+    if (!hydrated || !user) return;
+    const userSport = (user as unknown as Record<string, unknown>).sport as string | undefined;
+    if (userSport) setSport(userSport.toLowerCase());
+  }, [hydrated, user]);
   const [selected, setSelected]   = useState<GeminiDrill | null>(null);
   const [upload, setUpload]       = useState<UploadState>({
     phase: 'idle', progress: 0, result: null, error: null,
@@ -400,9 +409,6 @@ export default function GeminiDrillsPage() {
               {s.emoji} {s.label}
             </button>
           ))}
-          <div style={{ fontSize: 12, color: '#aaa', padding: '8px 4px', whiteSpace: 'nowrap', alignSelf: 'center' }}>
-            Rugby · Athletics · Netball — coming soon
-          </div>
         </div>
 
         {/* What Gemini can do — info banner */}
@@ -507,6 +513,15 @@ export default function GeminiDrillsPage() {
             {/* Upload / analysis flow */}
             {upload.phase === 'idle' && (
               <>
+                {!isPro && (
+                  <div style={{ background: '#fffbeb', border: '1px solid #f0b429', borderRadius: 12, padding: '14px 16px', marginBottom: 4 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>🔒 Premium Feature</div>
+                    <div style={{ fontSize: 12, color: '#92400e', marginBottom: 10 }}>Subscribe to upload videos and get Gemini AI coaching scores.</div>
+                    <Link href="/player/subscription" style={{ display: 'inline-block', padding: '8px 18px', background: '#c8962a', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                      View plans →
+                    </Link>
+                  </div>
+                )}
                 <input
                   ref={fileRef}
                   type="file"
@@ -515,16 +530,18 @@ export default function GeminiDrillsPage() {
                   onChange={handleFileChange}
                 />
                 <button
-                  onClick={() => fileRef.current?.click()}
+                  onClick={() => isPro ? fileRef.current?.click() : undefined}
                   style={{
                     width: '100%', padding: '18px', borderRadius: 14,
-                    background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 15,
-                    border: 'none', cursor: 'pointer',
+                    background: isPro ? GRS_GREEN : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 15,
+                    border: 'none', cursor: isPro ? 'pointer' : 'not-allowed',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    opacity: isPro ? 1 : 0.6,
                   }}
+                  disabled={!isPro}
                 >
                   <Upload size={18} />
-                  Upload video for Gemini to analyse
+                  {isPro ? 'Upload video for Gemini to analyse' : '🔒 Unlock to analyse videos'}
                 </button>
                 <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
                   MP4, MOV or any phone video · Gemini processes at 1 frame/sec

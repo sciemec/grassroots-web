@@ -1,3 +1,4 @@
+'use client';
 // hooks/usePoseDetector.ts
 // ─────────────────────────────────────────────────────────────────────────────
 // MediaPipe PoseLandmarker hook for automated GRS test measurement.
@@ -16,8 +17,6 @@
 //
 // Uses: src/lib/pose-scorer.ts for NormalizedLandmark type compatibility.
 // ─────────────────────────────────────────────────────────────────────────────
-
-'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { NormalizedLandmark } from '@/lib/pose-scorer';
