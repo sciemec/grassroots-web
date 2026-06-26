@@ -4,16 +4,18 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 
+// Shape returned by GET /subscription/status on bhora-ai
 interface SubStatus {
-  plan_type: string | null;
-  status:    string;
-  is_active: boolean;
+  is_premium:   boolean;
+  is_community: boolean;
+  subscription: string | null;
+  plan_prices:  Record<string, number>;
 }
 
 /**
  * Returns the user's live subscription state.
  *
- * - `isPro`    — true when the backend confirms an active subscription.
+ * - `isPro`    — true when the backend confirms an active premium subscription.
  *                Falls back to the cached `user.is_pro` value while loading
  *                so there is no UI flash on return visits.
  * - `loading`  — true only on the first fetch; false after that.
@@ -46,7 +48,8 @@ export function useSubscription() {
     api
       .get<SubStatus>("/subscription/status")
       .then((res) => {
-        const active = res.data?.is_active ?? false;
+        // Backend returns is_premium (not is_active)
+        const active = res.data?.is_premium ?? false;
         setIsPro(active);
         // Keep the auth store in sync so ProGate + sidebar reflect reality
         updateUser({ is_pro: active });
