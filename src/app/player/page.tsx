@@ -36,7 +36,7 @@ const FEATURES = [
     icon: Activity,
     iconBg: "#dcfce7", iconColor: "#16a34a",
     label: "Train Now",
-    desc: "Log a session · biometric calibration",
+    desc: "Log a session · track your progress",
   },
   {
     href: "/player/drills",
