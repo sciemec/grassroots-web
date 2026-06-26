@@ -81,35 +81,29 @@ export async function POST(req: NextRequest) {
     // Live mode: use the customer's email.
     const authEmail  = process.env.PAYNOW_MERCHANT_EMAIL ?? "sciemeq@gmail.com";
 
-    // Hash field order matches the official Paynow PHP SDK for remotetransaction:
-    // id + reference + amount + additionalinfo + authemail + phone + method + returnurl + resulturl + status + integrationKey
-    // Paynow PHP SDK lowercases the integration key before hashing (see Hash::make + constructor)
-    const hashInput = [
-      integrationId,
+    // Hash field order and URL-encoding matches the official Paynow Node.js SDK buildMobile():
+    // All field values are URL-encoded via encodeURI() BEFORE computing the hash.
+    // Field order: resulturl, returnurl, reference, amount, id, additionalinfo, authemail, phone, method, status
+    // Then append lowercased integrationKey and SHA-512 the whole string (uppercase hex).
+    const fields: Record<string, string> = {
+      resulturl:      resultUrl,
+      returnurl:      returnUrl,
       reference,
       amount,
-      additionalInfo,
-      authEmail,
-      normalisedPhone,
-      payMethod,
-      returnUrl,
-      resultUrl,
-      status,
-      integrationKey.toLowerCase(),
-    ].join("");
-    const hash = await sha512Hex(hashInput);
-
-    const body = new URLSearchParams({
       id:             integrationId,
-      reference,
-      amount,
       additionalinfo: additionalInfo,
       authemail:      authEmail,
       phone:          normalisedPhone,
       method:         payMethod,
-      returnurl:      returnUrl,
-      resulturl:      resultUrl,
       status,
+    };
+    const hashInput =
+      Object.values(fields).map((v) => encodeURI(v)).join("") +
+      integrationKey.toLowerCase();
+    const hash = await sha512Hex(hashInput);
+
+    const body = new URLSearchParams({
+      ...fields,
       hash,
     });
 
