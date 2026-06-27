@@ -16,8 +16,6 @@ import {
   MessageCircle,
   Send,
   CheckCircle2,
-  Activity,
-  AlertTriangle,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -46,13 +44,6 @@ const DEFAULT_SETUP: MatchSetup = {
   sport: "football",
   formation: "4-3-3",
 };
-
-interface FatiguePlayer {
-  id: string;
-  name: string;
-  fatigue: number;
-  position?: string;
-}
 
 /** Setup form before match starts. */
 function SetupForm({
@@ -218,56 +209,6 @@ function HalftimePanel({
   );
 }
 
-/** Live Fatigue Monitoring Panel */
-function FatigueMonitoringPanel({ fatiguedPlayers, injuryRisk }: { 
-  fatiguedPlayers: FatiguePlayer[]; 
-  injuryRisk: number;
-}) {
-  if (fatiguedPlayers.length === 0) {
-    return (
-      <div className="rounded-xl border border-emerald-800/30 bg-emerald-600/10 p-4">
-        <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-emerald-500" />
-          <p className="text-xs font-medium text-emerald-400">All players within normal fatigue levels</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl border border-red-800/30 bg-red-950/30 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-red-500 animate-pulse" />
-          <p className="text-xs font-bold text-white">⚠️ Fatigue Alert</p>
-        </div>
-        <span className="text-[9px] text-gray-500">Real-time monitoring</span>
-      </div>
-      <div className="space-y-2">
-        {fatiguedPlayers.map((player) => (
-          <div key={player.id} className="flex items-center justify-between p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-            <div>
-              <p className="text-sm font-medium text-white">{player.name}</p>
-              <p className="text-[10px] text-red-400">Fatigue: {player.fatigue}%</p>
-              {player.position && (
-                <p className="text-[9px] text-gray-500">{player.position}</p>
-              )}
-            </div>
-            <span className="text-[10px] font-bold text-red-500">⚠️ Consider Sub</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center justify-between text-[10px]">
-        <span className="text-gray-500">Injury risk increase</span>
-        <span className="font-bold text-red-500">+{injuryRisk}%</span>
-      </div>
-      <p className="mt-2 text-[9px] text-gray-600 text-center">
-        High fatigue players have significantly higher injury risk. Consider tactical substitutions.
-      </p>
-    </div>
-  );
-}
-
 export default function LiveMatchPage() {
   const router = useRouter();
   const user  = useAuthStore((s) => s.user);
@@ -279,11 +220,6 @@ export default function LiveMatchPage() {
   const [halftimeAnalysis, setHalftimeAnalysis] = useState("");
   const [halftimeLoading, setHalftimeLoading] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Fatigue monitoring state
-  const [fatiguedPlayers, setFatiguedPlayers] = useState<FatiguePlayer[]>([]);
-  const [injuryRisk, setInjuryRisk] = useState(0);
-  const [showFatiguePanel, setShowFatiguePanel] = useState(true);
 
   // WhatsApp report state
   const [waPhone, setWaPhone] = useState("");
@@ -310,40 +246,6 @@ export default function LiveMatchPage() {
     };
   }, [running]);
 
-  /** Simulate fatigue monitoring - runs every 30 seconds during live match */
-  useEffect(() => {
-    if (phase !== "live" || !running) return;
-
-    const fatigueInterval = setInterval(() => {
-      // In production, this would read actual biometric data from localStorage
-      // or from a WebSocket connected to player wearables
-      
-      // Simulated fatigue data based on match events and elapsed time
-      const matchIntensity = events.length / (elapsed / 60 + 1);
-      const baseFatigue = Math.min(80, Math.floor(elapsed / 90 * 60) + matchIntensity * 5);
-      
-      // Get players from squad (in production, from coach's squad list)
-      const mockPlayers: FatiguePlayer[] = [
-        { id: "p1", name: "Tendai Musona", position: "Winger", fatigue: Math.min(95, baseFatigue + 15) },
-        { id: "p2", name: "Blessing Moyo", position: "Striker", fatigue: Math.min(95, baseFatigue + 5) },
-        { id: "p3", name: "Knowledge Chikwanda", position: "Midfielder", fatigue: Math.min(95, baseFatigue + 10) },
-        { id: "p4", name: "Takudzwa Ngwenya", position: "Defender", fatigue: Math.min(95, baseFatigue) },
-        { id: "p5", name: "Tinashe Kamusoko", position: "Defender", fatigue: Math.min(95, baseFatigue - 5) },
-      ];
-      
-      // Filter players with fatigue > 65%
-      const highFatigue = mockPlayers.filter(p => p.fatigue > 65);
-      setFatiguedPlayers(highFatigue);
-      
-      // Calculate injury risk based on number of high-fatigue players
-      const risk = Math.min(45, highFatigue.length * 8);
-      setInjuryRisk(risk);
-      
-    }, 30000); // Update every 30 seconds
-    
-    return () => clearInterval(fatigueInterval);
-  }, [phase, running, events.length, elapsed]);
-
   const currentMinute = Math.floor(elapsed / 60) + 1;
 
   const homeScore = events.filter(
@@ -360,8 +262,6 @@ export default function LiveMatchPage() {
     setRunning(true);
     setElapsed(0);
     setEvents([]);
-    setFatiguedPlayers([]);
-    setInjuryRisk(0);
   };
 
   const handlePauseResume = () => setRunning((r) => !r);
@@ -376,16 +276,12 @@ export default function LiveMatchPage() {
       .map((e) => `${e.minute}' ${e.type} (${e.team})`)
       .join(", ");
 
-    const fatigueNote = fatiguedPlayers.length > 0 
-      ? ` Fatigue alert: ${fatiguedPlayers.length} players showing high fatigue levels. ` 
-      : "";
-
     const formationLine = setup.formation ? ` Formation: ${setup.formation}.` : "";
     const message =
       `Halftime analysis. Sport: ${setup.sport}. Match: ${setup.homeTeam} vs ${setup.awayTeam}. ` +
       `Score: ${homeScore}-${awayScore}.${formationLine} ` +
-      `Events so far: ${eventSummary || "none"}.${fatigueNote} ` +
-      `Give tactical adjustments for the second half in 3 bullet points, including substitution recommendations if players are fatigued.`;
+      `Events so far: ${eventSummary || "none"}. ` +
+      `Give tactical adjustments for the second half in 3 bullet points.`;
 
     try {
       const reply = await queryAI(message, "coach");
@@ -397,7 +293,7 @@ export default function LiveMatchPage() {
     } finally {
       setHalftimeLoading(false);
     }
-  }, [events, setup, homeScore, awayScore, fatiguedPlayers]);
+  }, [events, setup, homeScore, awayScore]);
 
   const handleResumeSecondHalf = () => {
     setPhase("live");
@@ -439,7 +335,7 @@ export default function LiveMatchPage() {
       red_cards: events.filter(
         (e) => e.type === "red_card" && e.team === "home"
       ).length,
-      notes: `Logged via Live Match. ${events.length} events recorded. Fatigue alert: ${fatiguedPlayers.length} players high fatigue.`,
+      notes: `Logged via Live Match. ${events.length} events recorded.`,
     };
 
     localStorage.setItem(
@@ -501,7 +397,7 @@ export default function LiveMatchPage() {
         { postType: "milestone", metadata: { home: setup.homeTeam, away: setup.awayTeam, home_score: homeScore, away_score: awayScore, sport: setup.sport, result } }
       );
     }
-  }, [events, setup, homeScore, awayScore, fatiguedPlayers, user]);
+  }, [events, setup, homeScore, awayScore, user]);
 
   const logEvent = (evt: Omit<MatchEvent, "id">) => {
     const event: MatchEvent = { ...evt, id: crypto.randomUUID() };
@@ -520,12 +416,6 @@ export default function LiveMatchPage() {
     if (goals.length) lines.push(`Goals: ${goals.map((g) => `${g.player || g.team} ${g.minute}ʼ`).join(", ")}`);
     if (yellows.length) lines.push(`Yellow cards: ${yellows.map((y) => `${y.player || y.team} ${y.minute}ʼ`).join(", ")}`);
     if (reds.length) lines.push(`Red cards: ${reds.map((r) => `${r.player || r.team} ${r.minute}ʼ`).join(", ")}`);
-    
-    // Add fatigue note if any players were fatigued
-    if (fatiguedPlayers.length > 0) {
-      lines.push(`⚠️ Fatigue alert: ${fatiguedPlayers.length} players showed high fatigue levels.`);
-    }
-    
     try {
       const res = await fetch("/api/whatsapp/report", {
         method: "POST",
@@ -548,7 +438,7 @@ export default function LiveMatchPage() {
     } finally {
       setWaSending(false);
     }
-  }, [waPhone, setup, homeScore, awayScore, events, fatiguedPlayers]);
+  }, [waPhone, setup, homeScore, awayScore, events]);
 
 
   return (
@@ -577,19 +467,6 @@ export default function LiveMatchPage() {
 
           {phase === "live" && (
             <div className="flex items-center gap-2">
-              {/* Toggle Fatigue Panel */}
-              <button
-                onClick={() => setShowFatiguePanel(!showFatiguePanel)}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
-                  showFatiguePanel
-                    ? "border-red-500/50 bg-red-500/10 text-red-400"
-                    : "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
-                }`}
-              >
-                <Activity className="h-3.5 w-3.5" />
-                Fatigue
-              </button>
-
               {/* AI Commentary toggle */}
               <button
                 onClick={commentary.toggle}
@@ -669,20 +546,6 @@ export default function LiveMatchPage() {
                 </Link>
               </div>
 
-              {/* Fatigue Summary in ended state */}
-              {fatiguedPlayers.length > 0 && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    <p className="text-xs font-semibold text-amber-400">Post-Match Fatigue Summary</p>
-                  </div>
-                  <p className="text-xs text-amber-300">
-                    {fatiguedPlayers.length} players showed elevated fatigue levels. 
-                    Recommended recovery: 48 hours light training.
-                  </p>
-                </div>
-              )}
-
               {/* WhatsApp Report */}
               <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-5 space-y-3">
                 <div className="flex items-center gap-2">
@@ -758,7 +621,7 @@ export default function LiveMatchPage() {
                 </div>
               </div>
 
-              {/* Right: live stats + fatigue panel */}
+              {/* Right: live stats */}
               <div className="space-y-4">
                 <LiveStatsSidebar
                   homeScore={homeScore}
@@ -768,14 +631,6 @@ export default function LiveMatchPage() {
                   events={events}
                   elapsedSeconds={elapsed}
                 />
-                
-                {/* FATIGUE MONITORING PANEL - NEW */}
-                {showFatiguePanel && (
-                  <FatigueMonitoringPanel 
-                    fatiguedPlayers={fatiguedPlayers} 
-                    injuryRisk={injuryRisk}
-                  />
-                )}
               </div>
             </div>
           )}

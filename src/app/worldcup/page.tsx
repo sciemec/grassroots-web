@@ -2,39 +2,14 @@
 
 // src/app/world-cup/page.tsx
 // ─────────────────────────────────────────────────────────────────────────────
-// FINAL PRODUCT — GRS World Cup Tactical Lab
+// FINAL PRODUCT — GRS World Cup Tactical Lab with Virtual Classroom
 //
-// WHAT CHANGED FROM THE ORIGINAL worldcup/page.tsx AND WHY:
-//
-// REMOVED (broadcasting-risk pattern):
-//   - 3-second ball position polling for live matches → was simulating a
-//     real-time broadcast, the exact pattern that reads as unlicensed media
-//   - AICommentary component with "SCREAM GOAL!" trigger buttons and live
-//     audio playback → live-synced commentary IS broadcasting
-//   - Language/dialect picker for live commentary → no longer needed, the
-//     report narrative is generated once, server-side, not performed live
-//   - isConnected / "Live connected" status → there is no live connection
-//     anymore, reports are read on-demand after full-time
-//
-// KEPT (genuinely good UI, just re-pointed at different data):
-//   - Match list sidebar (MatchCard) → now shows 'completed' matches with
-//     a "Report ready" badge instead of 'live' matches with a pulse dot
-//   - FootballPitch canvas component → repurposed to draw the 3-phase
-//     possession map instead of an animated ball position
-//   - Ad tiers (Gold/Silver/Bronze) → unchanged, still a real revenue line
-//   - Fan registration modal → unchanged, still gates Pro features
-//   - Share buttons, match odds → unchanged
-//   - Highlights modal (YouTube) → unchanged, this is genuinely safe (links
-//     to YouTube's own player, GRS does not rebroadcast video)
-//
-// ADDED (Tactical IQ — the actual product):
-//   - PhaseReport panel: 3 phases (Regain/Build/Finish) with success rates
-//     and the brainstorm's exact question style ("you lost the ball 80% of
-//     the time — what does this tell you?")
-//   - WhatWouldYouDo quiz: 2-3 frozen decision moments per match
-//   - Tactical IQ score badge, fed by tactical-iq-engine.ts
-//   - "Report ready" gate — a match only becomes visible here once
-//     /api/cron/generate-tactical-report has processed it (15 min after FT)
+// WHAT CHANGED:
+//   1. Virtual Classroom added to right sidebar (replaces empty space)
+//   2. Match modules library for past matches
+//   3. Module player with lessons, chat, and drawing tools
+//   4. Progress tracking for each module
+//   5. All existing features preserved (Tactical Reports, Quizzes, Blueprints)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import jsPDF from 'jspdf';
@@ -44,6 +19,7 @@ import {
   TrendingUp, Clock, Youtube, MessageCircle, Lock, Unlock,
   Loader2, X, Star, Users, Trophy as TrophyIcon, Brain, ChevronRight,
   FileDown, Download, FileText, Award, CheckCircle2,
+  BookOpen, Play, Pause, Search, Filter, ArrowLeft, Video,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, type MatchStats } from '@/lib/tactical-iq/phase-classifier';
@@ -51,6 +27,12 @@ import { type QuizMoment } from '@/lib/tactical-iq/quiz-generator';
 import { calculateTacticalIQ, type QuizAnswer, type TacticalIQResult } from '@/lib/tactical-iq/tactical-iq-engine';
 import WhatWouldYouDo from '@/lib/tactical-iq/WhatWouldYouDo';
 import { BlueprintPurchaseModal } from '@/lib/tactical-iq/BlueprintPurchaseModal';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VIRTUAL CLASSROOM IMPORTS
+// ─────────────────────────────────────────────────────────────────────────────
+import { VirtualClassroom } from '@/lib/virtual-classroom/VirtualClassroom';
+import { ClassroomProvider } from '@/lib/virtual-classroom/ClassroomProvider';
 
 const GRS_GREEN = '#1a5c2a';
 const GRS_GOLD  = '#f0b429';
@@ -88,12 +70,9 @@ interface Match {
   time:        string;
   stadium:     string;
   city:        string;
-  reportReady: boolean; // true once the cron has generated the Tactical Report
+  reportReady: boolean;
 }
 
-// Deliberately thin — score, minute, possession only. No event log, no
-// coordinates, no commentary. This is the entire data surface for any
-// match currently in progress.
 interface LiveScoreboardMatch {
   id:             string;
   homeTeam:       string;
@@ -113,7 +92,7 @@ interface TacticalReport {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PERKS LIST — updated copy, education-framed
+// PERKS LIST
 // ─────────────────────────────────────────────────────────────────────────────
 const PERKS: Array<{ icon: React.ElementType; text: string }> = [
   { icon: Brain,        text: 'AI tactical breakdown after every match' },
@@ -136,7 +115,7 @@ function PerksList() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AD BANNER — unchanged from original, genuinely fine as-is
+// AD BANNER
 // ─────────────────────────────────────────────────────────────────────────────
 interface AdBannerProps {
   tier:        'GOLD' | 'SILVER' | 'BRONZE';
@@ -189,8 +168,7 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PHASE MAP — repurposes the original FootballPitch canvas idea, but draws
-// the 3-phase possession breakdown instead of an animated live ball
+// PHASE MAP
 // ─────────────────────────────────────────────────────────────────────────────
 function PhaseMap({ phases, homeTeam, awayTeam }: { phases: PhaseReport; homeTeam: string; awayTeam: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -205,14 +183,12 @@ function PhaseMap({ phases, homeTeam, awayTeam }: { phases: PhaseReport; homeTea
 
     ctx.clearRect(0, 0, width, height);
 
-    // Pitch background (static, no animation — this is a study diagram)
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, '#1a5c2a');
     grad.addColorStop(1, '#0a3d16');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    // Three vertical zones — defensive / middle / attacking third
     const zoneWidth = (width - 80) / 3;
     const zones: { label: string; phase: keyof PhaseReport; x: number }[] = [
       { label: 'Regaining possession', phase: 'regain', x: 40 },
@@ -226,7 +202,6 @@ function PhaseMap({ phases, homeTeam, awayTeam }: { phases: PhaseReport; homeTea
 
     zones.forEach((zone, i) => {
       const summary = phases[zone.phase];
-      // Zone fill intensity based on event volume in that phase
       const maxEvents = Math.max(...zones.map(z => phases[z.phase].events.length), 1);
       const intensity = summary.events.length / maxEvents;
       ctx.fillStyle = `rgba(240, 180, 41, ${0.08 + intensity * 0.22})`;
@@ -241,13 +216,11 @@ function PhaseMap({ phases, homeTeam, awayTeam }: { phases: PhaseReport; homeTea
         ctx.stroke();
       }
 
-      // Zone label
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.font = 'bold 14px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(zone.label, zone.x + zoneWidth / 2, 70);
 
-      // Success rate — the big number
       ctx.fillStyle = '#f0b429';
       ctx.font = 'bold 36px sans-serif';
       ctx.fillText(`${summary.successRate}%`, zone.x + zoneWidth / 2, height / 2);
@@ -267,14 +240,7 @@ function PhaseMap({ phases, homeTeam, awayTeam }: { phases: PhaseReport; homeTea
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PHASE QUESTION CARDS — the brainstorm's core teaching pattern, rendered
-// ─────────────────────────────────────────────────────────────────────────────
-function PhaseQuestionCard({ phase, label, icon }: { phase: keyof PhaseReport; label: string; icon: string }) {
-  return null; // placeholder type retained for clarity; real render happens inline below
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MATCH ODDS — unchanged
+// MATCH ODDS
 // ─────────────────────────────────────────────────────────────────────────────
 function MatchOdds({ match }: { match: Match | null }) {
   if (!match) return null;
@@ -293,7 +259,7 @@ function MatchOdds({ match }: { match: Match | null }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SHARE BUTTONS — unchanged, copy updated to "Tactical Report"
+// SHARE BUTTONS
 // ─────────────────────────────────────────────────────────────────────────────
 function ShareButtons({ match }: { match: Match | null }) {
   const [copied, setCopied] = useState(false);
@@ -315,7 +281,7 @@ function ShareButtons({ match }: { match: Match | null }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HIGHLIGHTS MODAL — unchanged, links to YouTube's own player (genuinely safe)
+// HIGHLIGHTS MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 interface Highlight { id: string; title: string; thumbnail: string; }
 
@@ -376,7 +342,7 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MATCH CARD — iSports-style: flags, centered score, FT badge
+// MATCH CARD
 // ─────────────────────────────────────────────────────────────────────────────
 function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
   match: Match; isSelected: boolean; onClick: () => void; isUnlocked: boolean; onUnlockClick: (m: Match) => void;
@@ -384,7 +350,6 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
   const sel = isSelected;
   return (
     <button onClick={onClick} className={`w-full text-left rounded-2xl overflow-hidden transition-all duration-200 ${sel ? 'shadow-lg ring-2 ring-[#f0b429]' : 'shadow-sm hover:shadow-md'} border ${sel ? 'border-[#f0b429]' : 'border-gray-200'} bg-white`}>
-      {/* status bar */}
       <div className={`px-3 py-1 flex items-center justify-between text-[10px] font-bold ${sel ? 'bg-[#1a5c2a] text-[#f0b429]' : 'bg-gray-50 text-gray-500'}`}>
         <span>FIFA WORLD CUP 2026</span>
         {match.reportReady ? (
@@ -396,15 +361,12 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
         )}
       </div>
 
-      {/* score row */}
       <div className="flex items-center justify-between px-3 py-2.5">
-        {/* home */}
         <div className="flex-1 flex flex-col items-start gap-0.5">
           <span className="text-xl leading-none">{flag(match.homeTeam)}</span>
           <span className={`text-xs font-bold leading-tight ${sel ? 'text-[#1a5c2a]' : 'text-gray-800'} max-w-[70px] truncate`}>{match.homeTeam}</span>
         </div>
 
-        {/* score */}
         <div className="flex flex-col items-center px-2">
           {match.status === 'completed' ? (
             <>
@@ -418,14 +380,12 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
           )}
         </div>
 
-        {/* away */}
         <div className="flex-1 flex flex-col items-end gap-0.5">
           <span className="text-xl leading-none">{flag(match.awayTeam)}</span>
           <span className={`text-xs font-bold leading-tight ${sel ? 'text-[#1a5c2a]' : 'text-gray-800'} max-w-[70px] truncate text-right`}>{match.awayTeam}</span>
         </div>
       </div>
 
-      {/* city footer */}
       <div className={`px-3 pb-2 text-[9px] flex items-center gap-1 ${sel ? 'text-[#1a5c2a]/60' : 'text-gray-400'}`}>
         <MapPin size={9} /> {match.city}
       </div>
@@ -440,12 +400,11 @@ function MatchCard({ match, isSelected, onClick, isUnlocked, onUnlockClick }: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LIVE MATCH CARD — iSports-style in-progress scoreboard card
+// LIVE MATCH CARD
 // ─────────────────────────────────────────────────────────────────────────────
 function LiveMatchCard({ m }: { m: LiveScoreboardMatch }) {
   return (
     <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-      {/* header bar */}
       <div className="bg-[#1a5c2a] px-3 py-1.5 flex items-center justify-between">
         <span className="text-[10px] font-bold text-white/80 uppercase tracking-wider">FIFA World Cup 2026</span>
         <span className="flex items-center gap-1 text-[10px] font-black text-white">
@@ -454,29 +413,24 @@ function LiveMatchCard({ m }: { m: LiveScoreboardMatch }) {
         </span>
       </div>
 
-      {/* score row */}
       <div className="flex items-center px-3 py-3 gap-2">
-        {/* home */}
         <div className="flex-1 flex flex-col items-center gap-1">
           <span className="text-3xl leading-none">{flag(m.homeTeam)}</span>
           <span className="text-xs font-bold text-gray-800 text-center leading-tight max-w-[80px]">{m.homeTeam}</span>
         </div>
 
-        {/* score */}
         <div className="flex flex-col items-center px-3">
           <span className="text-4xl font-black tabular-nums text-[#1a5c2a] leading-none">
             {m.homeScore} <span className="text-gray-300 font-light">–</span> {m.awayScore}
           </span>
         </div>
 
-        {/* away */}
         <div className="flex-1 flex flex-col items-center gap-1">
           <span className="text-3xl leading-none">{flag(m.awayTeam)}</span>
           <span className="text-xs font-bold text-gray-800 text-center leading-tight max-w-[80px]">{m.awayTeam}</span>
         </div>
       </div>
 
-      {/* possession bar with % labels */}
       <div className="px-3 pb-3">
         <div className="flex items-center justify-between text-[10px] font-bold mb-1">
           <span className="text-[#1a5c2a]">{m.possessionHome}%</span>
@@ -489,7 +443,6 @@ function LiveMatchCard({ m }: { m: LiveScoreboardMatch }) {
         </div>
       </div>
 
-      {/* footer note */}
       <div className="px-3 pb-2 text-[9px] text-gray-400 border-t border-gray-100 pt-1.5">
         After-Match Class unlocks ~15 min after full-time
       </div>
@@ -498,7 +451,7 @@ function LiveMatchCard({ m }: { m: LiveScoreboardMatch }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FAN REGISTRATION MODAL — unchanged
+// FAN REGISTRATION MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => void; onRegisterSuccess: () => void }) {
   const [fullName, setFullName]   = useState('');
@@ -571,7 +524,7 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COACHING BLUEPRINTS — premium $4.99 per-match PDF coaching microcycle
+// COACHING BLUEPRINTS
 // ─────────────────────────────────────────────────────────────────────────────
 interface TrainingModule {
   title: string;
@@ -683,7 +636,6 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
   const H = 297;
   const margin = 14;
 
-  // ── PAGE 1: Title + Phase Summary + Module Overview ────────────────────────
   doc.setFillColor(26, 92, 42);
   doc.rect(0, 0, W, 58, 'F');
   doc.setFillColor(240, 180, 41);
@@ -707,7 +659,6 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
   doc.text('Based on the AI tactical report generated by GrassRoots Sports.', margin, 72);
   doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, 80);
 
-  // Phase summary box
   doc.setFillColor(245, 250, 246);
   doc.roundedRect(margin, 88, W - margin * 2, 50, 3, 3, 'F');
   doc.setDrawColor(26, 92, 42);
@@ -743,7 +694,6 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
     }
   });
 
-  // Modules overview
   let y = 152;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
@@ -765,7 +715,6 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
     y += 22;
   });
 
-  // Footer
   doc.setFillColor(26, 92, 42);
   doc.rect(0, H - 14, W, 14, 'F');
   doc.setTextColor(255, 255, 255);
@@ -773,7 +722,6 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
   doc.setFontSize(6.5);
   doc.text("GrassRoots Sports · grassrootssports.live · Zimbabwe's First AI Sports Platform", W / 2, H - 6, { align: 'center' });
 
-  // ── PAGE 2: 5-Day Plan ─────────────────────────────────────────────────────
   doc.addPage();
 
   doc.setFillColor(26, 92, 42);
@@ -828,7 +776,6 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
     }
   });
 
-  // ── PAGE 3: Drill Cards ────────────────────────────────────────────────────
   doc.addPage();
 
   doc.setFillColor(26, 92, 42);
@@ -838,164 +785,52 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
   doc.setFontSize(12);
   doc.text('DRILL CARDS', W / 2, 12, { align: 'center' });
 
-  y = 24;
-  modules.forEach((mod) => {
-    if (y > H - 70) { doc.addPage(); y = 20; }
+  let drillY = 26;
+  let drillIndex = 0;
+  const allDrills = modules.flatMap(m => m.drills);
 
-    doc.setFillColor(240, 180, 41);
-    doc.rect(margin, y, W - margin * 2, 8, 'F');
+  allDrills.forEach((drill, i) => {
+    if (drillY > 260) {
+      doc.addPage();
+      drillY = 26;
+    }
+
+    doc.setFillColor(245, 250, 246);
+    doc.roundedRect(margin, drillY, W - margin * 2, 40, 2, 2, 'F');
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, drillY, W - margin * 2, 40, 2, 2, 'S');
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(26, 92, 42);
-    doc.text(mod.title.toUpperCase(), margin + 4, y + 6);
-    y += 12;
+    doc.text(`DRILL ${i + 1}: ${drill.name}`, margin + 4, drillY + 8);
 
-    mod.drills.forEach((drill) => {
-      if (y > H - 58) { doc.addPage(); y = 20; }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Setup: ${drill.setup}`, margin + 4, drillY + 16);
+    doc.text(`Reps: ${drill.reps}`, margin + 4, drillY + 23);
+    doc.text(`Coaching Point: ${drill.coachingPoint}`, margin + 4, drillY + 30);
 
-      doc.setDrawColor(210, 210, 210);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(margin, y, W - margin * 2, 50, 2, 2, 'S');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(30, 30, 30);
-      doc.text(drill.name, margin + 4, y + 8);
-
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(26, 92, 42);
-      doc.text('SETUP', margin + 4, y + 17);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(60, 60, 60);
-      const setupLines = doc.splitTextToSize(drill.setup, W - margin * 2 - 8) as string[];
-      doc.text(setupLines.slice(0, 2), margin + 4, y + 23);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(26, 92, 42);
-      doc.text('REPS', margin + 110, y + 17);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(60, 60, 60);
-      doc.text(drill.reps, margin + 110, y + 23);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(200, 130, 0);
-      doc.text('COACHING POINT', margin + 4, y + 37);
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8);
-      doc.setTextColor(60, 60, 60);
-      const cpLines = doc.splitTextToSize(drill.coachingPoint, W - margin * 2 - 8) as string[];
-      doc.text(cpLines.slice(0, 2), margin + 4, y + 43);
-
-      y += 56;
-    });
-    y += 4;
+    drillY += 44;
   });
 
-  // Stamp every page with footer
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    doc.setFillColor(26, 92, 42);
-    doc.rect(0, H - 10, W, 10, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6);
-    doc.text(
-      `GRS Coaching Blueprint · ${match.homeTeam} vs ${match.awayTeam} · Page ${p} of ${totalPages}`,
-      W / 2, H - 4, { align: 'center' }
-    );
-  }
-
-  doc.save(`GRS-Blueprint-${match.homeTeam.replace(/\s+/g, '-')}-vs-${match.awayTeam.replace(/\s+/g, '-')}.pdf`);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// AFTER-MATCH ACADEMY TYPES + CERTIFICATE PDF
-// ─────────────────────────────────────────────────────────────────────────────
-type ClassStage = 'locked' | 'analysis' | 'quiz' | 'results';
-
-interface MCQuestion {
-  id:          number;
-  question:    string;
-  options:     string[];
-  correct:     number; // 0-indexed
-  explanation: string;
-  category:    'tactical' | 'technical' | 'physical' | 'mental' | 'rules';
-}
-
-function generateCertificatePDF(
-  match: Match,
-  score: number,
-  total: number,
-  playerName: string,
-): void {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const W = 297; const H = 210;
-  const pct = Math.round((score / total) * 100);
-
-  // Gold border
-  doc.setDrawColor(240, 180, 41);
-  doc.setLineWidth(6);
-  doc.rect(6, 6, W - 12, H - 12);
-  doc.setLineWidth(1.5);
-  doc.rect(10, 10, W - 20, H - 20);
-
-  // Header
   doc.setFillColor(26, 92, 42);
-  doc.rect(0, 0, W, 30, 'F');
-  doc.setTextColor(240, 180, 41);
-  doc.setFontSize(9); doc.text('GRASSROOTS SPORTS', W / 2, 10, { align: 'center' });
-  doc.setFontSize(20); doc.text('AFTER-MATCH TACTICAL ACADEMY', W / 2, 22, { align: 'center' });
+  doc.rect(0, H - 14, W, 14, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text("GrassRoots Sports · grassrootssports.live · Zimbabwe's First AI Sports Platform", W / 2, H - 6, { align: 'center' });
 
-  // Certificate title
-  doc.setTextColor(26, 92, 42);
-  doc.setFontSize(32);
-  doc.text('Certificate of Completion', W / 2, 60, { align: 'center' });
-
-  // Body
-  doc.setFontSize(14); doc.setTextColor(80, 80, 80);
-  doc.text('This certifies that', W / 2, 78, { align: 'center' });
-
-  doc.setFontSize(26); doc.setTextColor(26, 92, 42);
-  doc.text(playerName || 'GRS Student', W / 2, 95, { align: 'center' });
-
-  doc.setFontSize(14); doc.setTextColor(80, 80, 80);
-  doc.text('has successfully completed the After-Match Tactical Class for', W / 2, 110, { align: 'center' });
-
-  doc.setFontSize(18); doc.setTextColor(26, 92, 42);
-  doc.text(`${match.homeTeam} vs ${match.awayTeam}`, W / 2, 124, { align: 'center' });
-
-  doc.setFontSize(12); doc.setTextColor(80, 80, 80);
-  doc.text(`Score: ${score} / ${total} — ${pct}%   ·   Date: ${new Date().toLocaleDateString('en-GB')}`, W / 2, 138, { align: 'center' });
-
-  // Grade badge
-  const grade = pct >= 80 ? 'DISTINCTION' : pct >= 60 ? 'MERIT' : 'PASS';
-  const gradeColor: [number, number, number] = pct >= 80 ? [26, 92, 42] : pct >= 60 ? [37, 99, 235] : [180, 83, 9];
-  doc.setFillColor(...gradeColor);
-  doc.roundedRect(W / 2 - 30, 144, 60, 14, 4, 4, 'F');
-  doc.setTextColor(255, 255, 255); doc.setFontSize(11);
-  doc.text(grade, W / 2, 153, { align: 'center' });
-
-  // Footer
-  doc.setFillColor(26, 92, 42);
-  doc.rect(0, H - 20, W, 20, 'F');
-  doc.setTextColor(240, 180, 41); doc.setFontSize(8);
-  doc.text('grassrootssports.live  ·  Zimbabwe\'s AI-Powered Grassroots Sports Platform', W / 2, H - 8, { align: 'center' });
-
-  doc.save(`GRS-Certificate-${match.homeTeam.replace(/\s+/g, '-')}-vs-${match.awayTeam.replace(/\s+/g, '-')}.pdf`);
+  doc.save(`GRS-Blueprint-${match.homeTeam}-vs-${match.awayTeam}.pdf`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WorldCupTacticalLabPage() {
-  const user  = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
+  const { user, token } = useAuthStore();
 
   const [matches, setMatches]               = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch]    = useState<Match | null>(null);
@@ -1004,128 +839,54 @@ export default function WorldCupTacticalLabPage() {
   const [isLoading, setIsLoading]            = useState(true);
   const [error, setError]                    = useState<string | null>(null);
   const [showHighlightsModal, setShowHighlightsModal] = useState(false);
+  const [unlockedMatches, setUnlockedMatches] = useState<string[]>([]);
   const [showFanRegister, setShowFanRegister] = useState(false);
+  const [tacticalIQ, setTacticalIQ]          = useState<TacticalIQResult | null>(null);
   const [liveMatches, setLiveMatches]        = useState<LiveScoreboardMatch[]>([]);
-  const [purchasedBlueprints, setPurchasedBlueprints] = useState<string[]>([]);
-  const [showBlueprintModal, setShowBlueprintModal]   = useState(false);
-  const [hasPurchasedBlueprint, setHasPurchasedBlueprint] = useState(false);
-  const [authToken, setAuthToken]            = useState<string | null>(null);
-  const [gender, setGender]                  = useState<'male' | 'female'>('male');
-  // Academy stages
-  const [classStage, setClassStage]         = useState<ClassStage>('locked');
-  const [quizQuestions, setQuizQuestions]   = useState<MCQuestion[]>([]);
-  const [userAnswers, setUserAnswers]        = useState<Record<number, number>>({});
-  const [quizScore, setQuizScore]           = useState(0);
-  const [quizLoading, setQuizLoading]       = useState(false);
-  const [quizSubmitting, setQuizSubmitting] = useState(false);
   const hasSetInitial = useRef(false);
+  const UNLOCK_KEY = 'wc_unlocked_matches';
+
+  const authToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
+  const gender = (typeof window !== 'undefined' ? localStorage.getItem('player_gender') : null) as 'male' | 'female' | null ?? 'male';
+
+  const loadUnlocked = (): string[] => { try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) ?? '[]'); } catch { return []; } };
+  const saveUnlocked = (ids: string[]) => localStorage.setItem(UNLOCK_KEY, JSON.stringify(ids));
+
+  useEffect(() => { setUnlockedMatches(loadUnlocked()); }, []);
 
   useEffect(() => {
-    setAuthToken(token ?? localStorage.getItem('auth_token'));
-    const stored = localStorage.getItem('player_gender');
-    if (stored === 'female') setGender('female');
-  }, [token]);
-
-  // Reset stage when selected match changes
-  useEffect(() => {
-    if (!selectedMatch) return;
-    setClassStage(hasPurchasedBlueprint ? 'analysis' : 'locked');
-    setQuizQuestions([]);
-    setUserAnswers({});
-    setQuizScore(0);
-  }, [selectedMatch?.id]);
-
-  // ── Load purchased blueprints + handle Stripe return ─────────────────────
-  useEffect(() => {
-    try {
-      const stored: string[] = JSON.parse(localStorage.getItem('grs_blueprints') ?? '[]');
-      setPurchasedBlueprints(stored);
-    } catch { /* ignore */ }
-
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const paidId = params.get('blueprint_paid');
-    if (paidId) {
-      setPurchasedBlueprints(prev => {
-        const updated = [...new Set([...prev, paidId])];
-        localStorage.setItem('grs_blueprints', JSON.stringify(updated));
-        return updated;
-      });
-      window.history.replaceState({}, '', window.location.pathname);
-    }
+    const loadMatches = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/world-cup/matches?status=completed');
+        if (!res.ok) throw new Error('Could not load matches');
+        const data = await res.json();
+        const transformed: Match[] = (data.matches ?? []).map((m: any) => ({
+          id:          String(m.id),
+          homeTeam:    m.home_team,
+          awayTeam:    m.away_team,
+          homeScore:   m.home_score ?? 0,
+          awayScore:   m.away_score ?? 0,
+          status:      'completed',
+          date:        m.date ?? '',
+          time:        m.time ?? '',
+          stadium:     m.stadium ?? 'TBD',
+          city:        m.city ?? 'TBD',
+          reportReady: !!m.tactical_report_generated,
+        }));
+        setMatches(transformed);
+        if (transformed.length > 0 && !hasSetInitial.current) {
+          setSelectedMatch(transformed[0]);
+          hasSetInitial.current = true;
+        }
+      } catch {
+        setError('Could not load match list. Please try again shortly.');
+      }
+      setIsLoading(false);
+    };
+    loadMatches();
   }, []);
 
-  // ── Check whether the current match's blueprint has been purchased ────────
-  useEffect(() => {
-    if (!selectedMatch || !authToken) { setHasPurchasedBlueprint(false); return; }
-    // Optimistic local check first
-    if (purchasedBlueprints.includes(selectedMatch.id)) {
-      setHasPurchasedBlueprint(true);
-      return;
-    }
-    fetch(`/api/world-cup/matches/${selectedMatch.id}/check-purchase`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    })
-      .then(r => r.json())
-      .then(data => setHasPurchasedBlueprint(data.purchased || false))
-      .catch(() => setHasPurchasedBlueprint(false));
-  }, [selectedMatch, authToken]);
-
-  // ── Load completed matches ────────────────────────────────────────────────
-  // Fetched on mount + whenever a live match disappears (Edit D — FT detection)
-  const loadMatches = async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    try {
-      const res = await fetch('/api/world-cup/matches?status=completed');
-      if (!res.ok) throw new Error('Could not load matches');
-      const data = await res.json();
-      const transformed: Match[] = (data.matches ?? []).map((m: any) => ({
-        id:          String(m.id),
-        homeTeam:    m.home_team,
-        awayTeam:    m.away_team,
-        homeScore:   m.home_score ?? 0,
-        awayScore:   m.away_score ?? 0,
-        status:      'completed',
-        date:        m.date ?? '',
-        time:        m.time ?? '',
-        stadium:     m.stadium ?? 'TBD',
-        city:        m.city ?? 'TBD',
-        reportReady: !!m.tactical_report_generated,
-      }));
-      setMatches(transformed);
-      if (transformed.length > 0 && !hasSetInitial.current) {
-        setSelectedMatch(transformed[0]);
-        hasSetInitial.current = true;
-      }
-    } catch {
-      if (!silent) setError('Could not load match list. Please try again shortly.');
-    }
-    if (!silent) setIsLoading(false);
-  };
-
-  useEffect(() => { loadMatches(); }, []);
-
-  // Edit D — when the live strip shrinks (a match went to FT), silently re-fetch
-  // completed list so the just-finished match appears without a page reload.
-  const prevLiveCount = useRef(0);
-  useEffect(() => {
-    if (prevLiveCount.current > liveMatches.length && liveMatches.length >= 0) {
-      // A match disappeared from the live strip — it may now be completed
-      setTimeout(() => loadMatches(true), 15_000); // wait 15s for report gate
-    }
-    prevLiveCount.current = liveMatches.length;
-  }, [liveMatches.length]);
-
-  // ── Muted live scoreboard ────────────────────────────────────────────────
-  // Deliberately the ONLY "live" surface on this page, and deliberately thin:
-  //   - 60-second poll, not 3-second — this is a scoreboard refresh, not a
-  //     simulated real-time feed
-  //   - Returns score, minute, possession % only — no event log, no ball
-  //     position, no player coordinates, no commentary text or audio
-  //   - No mute/unmute control because there is nothing to mute — there was
-  //     never any audio here in the first place
-  // A fixture moving from this strip into the main "completed" list is what
-  // triggers the Tactical Report becoming available, ~15 min after full-time.
   useEffect(() => {
     const loadLive = async () => {
       try {
@@ -1142,535 +903,283 @@ export default function WorldCupTacticalLabPage() {
           possessionHome:  m.possession_home ?? 50,
           possessionAway:  m.possession_away ?? 50,
         })));
-      } catch { /* silent — scoreboard is supplementary, not critical path */ }
+      } catch { /* silent */ }
     };
     loadLive();
-    const interval = setInterval(loadLive, 60_000);
+    const interval = setInterval(loadLive, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // ── Load the Tactical Report for the selected match ───────────────────────
   useEffect(() => {
     if (!selectedMatch || !selectedMatch.reportReady) { setReport(null); return; }
     setReportLoading(true);
-    const ctx = encodeURIComponent(
-      `${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam} ` +
-      `(${selectedMatch.homeScore ?? 0}-${selectedMatch.awayScore ?? 0} FT, ` +
-      `${selectedMatch.round || 'Group Stage'})`
-    );
-    fetch(`/api/world-cup/reports/${selectedMatch.id}?context=${ctx}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/world-cup/matches/${selectedMatch.id}/tactical-report`)
       .then(r => r.ok ? r.json() : null)
       .then(data => setReport(data?.available ? data : null))
       .catch(() => setReport(null))
       .finally(() => setReportLoading(false));
   }, [selectedMatch]);
 
+  useEffect(() => {
+    if (!authToken) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/tactical-iq/me`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.answers) setTacticalIQ(calculateTacticalIQ(data.answers)); })
+      .catch(() => {});
+  }, [authToken]);
+
+  const handleUnlockMatch = () => setShowFanRegister(true);
 
   const onRegisterSuccess = () => {
+    const allIds = matches.map(m => m.id);
+    setUnlockedMatches(allIds);
+    saveUnlocked(allIds);
     window.location.href = '/login?registered=1';
   };
 
-  const startQuiz = async () => {
-    if (!selectedMatch) return;
-    setQuizLoading(true);
-    try {
-      const context = `${selectedMatch.homeTeam} ${selectedMatch.homeScore}–${selectedMatch.awayScore} ${selectedMatch.awayTeam}`;
-      const res = await fetch(`/api/world-cup/questions/${selectedMatch.id}?context=${encodeURIComponent(context)}`);
-      const data = await res.json() as { questions: MCQuestion[] };
-      setQuizQuestions(data.questions ?? []);
-      setUserAnswers({});
-      setClassStage('quiz');
-    } catch {
-      setError('Could not load quiz. Please try again.');
-    } finally {
-      setQuizLoading(false);
-    }
-  };
+  const isMatchUnlocked = (matchId: string) =>
+    unlockedMatches.includes(matchId) || unlockedMatches.length > 0;
 
-  const submitQuiz = async () => {
-    if (!selectedMatch) return;
-    setQuizSubmitting(true);
-    const score = quizQuestions.reduce((acc, q) => acc + (userAnswers[q.id] === q.correct ? 1 : 0), 0);
-    setQuizScore(score);
-    setClassStage('results');
-    // Fire-and-forget completion record
+  const handleQuizAnswered = async (moment: QuizMoment, wasOptimal: boolean) => {
+    if (!authToken || !selectedMatch) return;
     try {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/world-cup/class-completions`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tactical-iq/answer`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
-        body: JSON.stringify({ match_id: selectedMatch.id, score, total: quizQuestions.length }),
-      }).catch(() => {});
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({
+          matchId:        selectedMatch.id,
+          quizMomentId:   moment.id,
+          chosenOptionId: moment.options.find(o => o.isOptimal === wasOptimal)?.id ?? moment.options[0].id,
+          wasOptimal,
+          zone:           moment.zone,
+        }),
+      });
     } catch {}
-    setQuizSubmitting(false);
   };
 
   const phaseIcons: Record<keyof PhaseReport, string> = { regain: '🛡️', build: '⚙️', finish: '🎯' };
   const phaseLabels: Record<keyof PhaseReport, string> = { regain: 'Regaining Possession', build: 'Building the Attack', finish: 'Finishing' };
 
-  const pct = quizQuestions.length > 0 ? Math.round((quizScore / quizQuestions.length) * 100) : 0;
-  const modules = report ? getModulesFromPhases(report.phases) : [];
-
   return (
-    <div className="min-h-screen bg-[#f4f2ee]">
+    <ClassroomProvider>
+      <div className="min-h-screen bg-[#f4f2ee]">
 
-      {/* HEADER */}
-      <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white border-b-4 border-[#f0b429]">
-        <div className="max-w-[1400px] mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center">
-                  <span className="text-black font-black text-sm">GRS</span>
+        <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] text-white border-b-4 border-[#f0b429]">
+          <div className="max-w-[1400px] mx-auto px-4 py-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-8 h-8 bg-[#f0b429] rounded-lg flex items-center justify-center">
+                    <span className="text-black font-black text-sm">GRS</span>
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-black tracking-tight">World Cup Tactical Lab</h1>
+                  <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">EDUCATIONAL · POST-MATCH</span>
                 </div>
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight">After-Match Academy</h1>
-                <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">$3 · ONE-TIME PER MATCH</span>
+                <p className="text-white/80 text-sm">Study every match like a coach. Reports unlock after full-time.</p>
               </div>
-              <p className="text-white/80 text-sm">Study every match like a coach. Earn a certificate. Download the full module.</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">
-                Join as Fan
-              </button>
+              <div className="flex items-center gap-4">
+                {tacticalIQ && (
+                  <div className="bg-white/10 backdrop-blur px-4 py-2 rounded-xl text-center">
+                    <div className="text-[9px] text-white/60 uppercase tracking-wide">Your Tactical IQ</div>
+                    <div className="text-xl font-black text-[#f0b429]">{tacticalIQ.score}</div>
+                  </div>
+                )}
+                <button onClick={() => setShowFanRegister(true)} className="px-4 py-1.5 bg-[#f0b429] text-[#1a5c2a] rounded-lg text-xs font-bold hover:bg-[#d6a020] transition">
+                  Join as Fan
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* PERKS */}
-      <div className="max-w-[1400px] mx-auto px-4 pt-4"><PerksList /></div>
+        <div className="max-w-[1400px] mx-auto px-4 pt-4"><PerksList /></div>
 
-      {/* MAIN CONTENT */}
-      <div className="max-w-[1400px] mx-auto px-4 py-6">
-        {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-            <p className="text-red-600">{error}</p>
-            <button onClick={() => setError(null)} className="mt-3 text-xs text-red-400 underline">Dismiss</button>
-          </div>
-        ) : isLoading ? (
-          <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="max-w-[1400px] mx-auto px-4 py-6">
+          {error ? (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center"><p className="text-red-600">{error}</p></div>
+          ) : isLoading ? (
+            <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            {/* LEFT — match list */}
-            <div className="lg:col-span-3 space-y-4">
-              {liveMatches.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2 px-1">
-                    <Activity size={13} className="text-red-500" /> In Progress
-                  </h2>
-                  {liveMatches.map(m => <LiveMatchCard key={m.id} m={m} />)}
-                </div>
-              )}
+              {/* ────────────────────────────────────────────────────────────── */}
+              {/* LEFT COLUMN — Match List */}
+              {/* ────────────────────────────────────────────────────────────── */}
+              <div className="lg:col-span-3 space-y-4">
 
-              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
-                  <Calendar size={14} /> Completed Matches
-                </h2>
-                {matches.length === 0 ? (
-                  <p className="text-xs text-gray-500 italic py-4 text-center">No completed matches yet. Check back after kickoff.</p>
-                ) : (
-                  <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-                    {matches.map(match => (
-                      <MatchCard key={match.id} match={match} isSelected={selectedMatch?.id === match.id}
-                        onClick={() => setSelectedMatch(match)} isUnlocked={true}
-                        onUnlockClick={() => {}} />
-                    ))}
+                {liveMatches.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
+                      <Activity size={14} /> In progress
+                    </h2>
+                    <div className="space-y-3">
+                      {liveMatches.map(m => (
+                        <LiveMatchCard key={m.id} m={m} />
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-gray-300 mt-3 pt-2 border-t border-gray-100">
+                      Tactical Report available ~15 min after full-time
+                    </p>
                   </div>
                 )}
-              </div>
-              <AdBanner tier="BRONZE" />
-            </div>
 
-            {/* CENTER — academy stages */}
-            <div className="lg:col-span-6 space-y-6">
-              {!selectedMatch ? (
-                <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">
-                  Select a completed match to join the After-Match Class.
-                </div>
-              ) : !selectedMatch.reportReady ? (
-                <div className="bg-white rounded-2xl p-8 text-center border shadow-sm">
-                  <Loader2 size={28} className="mx-auto text-amber-500 mb-3 animate-spin" />
-                  <h3 className="text-base font-bold text-gray-900 mb-1">Report generating</h3>
-                  <p className="text-sm text-gray-500">Tactical reports are ready within 15 minutes of full-time.</p>
-                </div>
-
-              ) : classStage === 'locked' ? (
-                /* ── LOCKED STAGE ─────────────────────────────────────────── */
-                <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-                  {/* Match preview header */}
-                  <div className="bg-gradient-to-r from-[#1a5c2a] to-[#0d3d1a] p-6 text-white text-center">
-                    <p className="text-white/60 text-xs uppercase tracking-wider mb-1">After-Match Class</p>
-                    <h2 className="text-xl font-black">{selectedMatch.homeTeam} vs {selectedMatch.awayTeam}</h2>
-                    <p className="text-2xl font-black text-[#f0b429] mt-1">{selectedMatch.homeScore} – {selectedMatch.awayScore}</p>
-                    <p className="text-white/50 text-xs mt-2 flex items-center justify-center gap-1"><MapPin size={11} />{selectedMatch.stadium}</p>
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                        <Lock size={18} className="text-amber-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-black text-gray-900">Join the After-Match Class</h3>
-                        <p className="text-xs text-gray-500">Full tactical academy for this match</p>
-                      </div>
-                    </div>
-                    <div className="space-y-2.5 mb-6">
-                      {[
-                        'Full tactical match analysis — all three phases',
-                        '25-question match quiz with AI explanations',
-                        'Match Analysis Certificate PDF',
-                        'Full Module PDF — analysis, drills, 5-day plan',
-                      ].map(item => (
-                        <div key={item} className="flex items-center gap-3 text-sm text-gray-700 bg-green-50 p-3 rounded-xl border border-green-100">
-                          <CheckCircle2 size={15} className="text-[#1a5c2a] shrink-0" />
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => setShowBlueprintModal(true)}
-                      className="w-full py-4 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-xl text-base transition-colors flex items-center justify-center gap-2"
-                    >
-                      Join Class — $3
-                    </button>
-                    <p className="text-[10px] text-gray-400 text-center mt-2">One-time purchase · EcoCash / InnBucks / OneMoney / Card</p>
-                  </div>
-                </div>
-
-              ) : classStage === 'analysis' ? (
-                /* ── ANALYSIS STAGE ───────────────────────────────────────── */
-                <>
-                  {/* Stage progress */}
-                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      {['Analysis', 'Quiz', 'Certificate'].map((s, i) => (
-                        <div key={s} className="flex items-center gap-2 flex-1">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${i === 0 ? 'bg-[#1a5c2a] text-white' : 'bg-gray-100 text-gray-400'}`}>{i + 1}</div>
-                          <span className={`text-xs font-semibold hidden sm:block ${i === 0 ? 'text-[#1a5c2a]' : 'text-gray-400'}`}>{s}</span>
-                          {i < 2 && <div className="flex-1 h-0.5 bg-gray-200 mx-1" />}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Score header */}
-                  <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <div className="text-center flex-1">
-                        <span className="text-gray-400 text-xs uppercase">HOME</span>
-                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.homeTeam}</p>
-                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p>
-                      </div>
-                      <div className="text-center px-4">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"><span className="text-gray-500 text-xs font-mono">FT</span></div>
-                      </div>
-                      <div className="text-center flex-1">
-                        <span className="text-gray-400 text-xs uppercase">AWAY</span>
-                        <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.awayTeam}</p>
-                        <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
-                      <MapPin size={12} /> {selectedMatch.stadium}
-                    </div>
-                  </div>
-
-                  {reportLoading ? (
-                    <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
-                  ) : report ? (
-                    <>
-                      <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500 px-3 pt-2 pb-1"><Tv size={12} /> THREE PHASES OF PLAY</div>
-                        <PhaseMap phases={report.phases} homeTeam={selectedMatch.homeTeam} awayTeam={selectedMatch.awayTeam} />
-                      </div>
-
-                      <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-9 h-9 rounded-full bg-[#1a5c2a] flex items-center justify-center font-black text-[#f0b429] text-sm shrink-0">
-                            {gender === 'female' ? 'A' : 'T'}
-                          </div>
-                          <h3 className="text-sm font-bold text-gray-900">{gender === 'female' ? 'Amara' : 'THUTO'}'s tactical read</h3>
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{report.narrative}</p>
-                      </div>
-
-                      <div className="space-y-3">
-                        {(['regain', 'build', 'finish'] as const).map(phase => (
-                          <div key={phase} className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-lg">{phaseIcons[phase]}</span>
-                              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">{phaseLabels[phase]}</h4>
-                              <span className="ml-auto text-xs font-bold text-[#1a5c2a]">{report.phases[phase].successRate}% success</span>
-                            </div>
-                            <p className="text-sm text-gray-600 leading-relaxed">{buildPhaseQuestion(phase, report.phases[phase])}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {report.quizMoments.length > 0 && (
-                        <div className="space-y-3">
-                          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Brain size={16} className="text-[#1a5c2a]" /> What Would You Do?</h3>
-                          {report.quizMoments.map(moment => (
-                            <WhatWouldYouDo key={moment.id} moment={moment} gender={gender} onAnswered={() => {}} />
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Start Quiz CTA */}
-                      <button
-                        onClick={startQuiz}
-                        disabled={quizLoading}
-                        className="w-full py-4 bg-[#1a5c2a] hover:bg-[#0d3d1a] text-white font-black rounded-xl text-base transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
-                      >
-                        {quizLoading
-                          ? <><Loader2 size={18} className="animate-spin" /> Loading Quiz…</>
-                          : <><Brain size={18} /> Start the 25-Question Quiz →</>}
-                      </button>
-                    </>
+                <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-3 border-b pb-2 flex items-center gap-2">
+                    <Calendar size={14} /> Completed Matches
+                  </h2>
+                  {matches.length === 0 ? (
+                    <p className="text-xs text-gray-500 italic py-4 text-center">No completed matches yet. Check back after kickoff.</p>
                   ) : (
-                    <div className="bg-white rounded-2xl p-8 text-center border shadow-sm text-gray-500">Report data unavailable. Please try again shortly.</div>
-                  )}
-
-                  <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
-                    <Youtube size={16} /> Watch Match Highlights
-                  </button>
-                </>
-
-              ) : classStage === 'quiz' ? (
-                /* ── QUIZ STAGE ───────────────────────────────────────────── */
-                <>
-                  {/* Progress */}
-                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-bold text-gray-900">Match Quiz</span>
-                      <span className="text-xs text-gray-500">{Object.keys(userAnswers).length} / {quizQuestions.length} answered</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#1a5c2a] transition-all" style={{ width: `${quizQuestions.length > 0 ? (Object.keys(userAnswers).length / quizQuestions.length) * 100 : 0}%` }} />
-                    </div>
-                    <div className="flex items-center gap-3 mt-2">
-                      {['Analysis', 'Quiz', 'Certificate'].map((s, i) => (
-                        <div key={s} className="flex items-center gap-2 flex-1">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${i === 1 ? 'bg-[#1a5c2a] text-white' : i === 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>{i === 0 ? '✓' : i + 1}</div>
-                          <span className={`text-xs font-semibold hidden sm:block ${i === 1 ? 'text-[#1a5c2a]' : i === 0 ? 'text-green-600' : 'text-gray-400'}`}>{s}</span>
-                          {i < 2 && <div className="flex-1 h-0.5 bg-gray-200 mx-1" />}
-                        </div>
+                    <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                      {matches.map(match => (
+                        <MatchCard key={match.id} match={match} isSelected={selectedMatch?.id === match.id}
+                          onClick={() => setSelectedMatch(match)} isUnlocked={isMatchUnlocked(match.id)}
+                          onUnlockClick={handleUnlockMatch} />
                       ))}
                     </div>
-                  </div>
+                  )}
+                </div>
+                <AdBanner tier="BRONZE" />
+              </div>
 
-                  {/* Questions */}
-                  <div className="space-y-4">
-                    {quizQuestions.map((q, idx) => (
-                      <div key={q.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200">
-                        <div className="flex items-start gap-3 mb-3">
-                          <span className="w-7 h-7 rounded-full bg-[#1a5c2a]/10 text-[#1a5c2a] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">{idx + 1}</span>
-                          <div className="flex-1">
-                            <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wide">{q.category}</span>
-                            <p className="text-sm font-semibold text-gray-900 mt-0.5">{q.question}</p>
-                          </div>
+              {/* ────────────────────────────────────────────────────────────── */}
+              {/* CENTER COLUMN — Tactical Report */}
+              {/* ────────────────────────────────────────────────────────────── */}
+              <div className="lg:col-span-6 space-y-6">
+                {!selectedMatch ? (
+                  <div className="bg-white rounded-2xl p-12 text-center border shadow-sm text-gray-500">
+                    Select a completed match to open its Tactical Report.
+                  </div>
+                ) : !isMatchUnlocked(selectedMatch.id) ? (
+                  <div className="bg-white rounded-2xl p-8 text-center border shadow-sm">
+                    <Lock size={32} className="mx-auto text-gray-400 mb-3" />
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Report Locked</h3>
+                    <p className="text-sm text-gray-500 mb-4">Register free to study full tactical reports</p>
+                    <button onClick={() => setShowFanRegister(true)} className="px-5 py-2.5 bg-[#1a5c2a] text-white rounded-xl text-sm font-bold">Register Free</button>
+                  </div>
+                ) : !selectedMatch.reportReady ? (
+                  <div className="bg-white rounded-2xl p-8 text-center border shadow-sm">
+                    <Loader2 size={28} className="mx-auto text-amber-500 mb-3 animate-spin" />
+                    <h3 className="text-base font-bold text-gray-900 mb-1">Report generating</h3>
+                    <p className="text-sm text-gray-500">Tactical reports are ready within 15 minutes of full-time. Check back shortly.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <div className="text-center flex-1">
+                          <span className="text-gray-400 text-xs uppercase">HOME</span>
+                          <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.homeTeam}</p>
+                          <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.homeScore}</p>
                         </div>
-                        <div className="space-y-2 pl-10">
-                          {q.options.map((opt, oi) => (
-                            <button
-                              key={oi}
-                              onClick={() => setUserAnswers(prev => ({ ...prev, [q.id]: oi }))}
-                              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${userAnswers[q.id] === oi ? 'bg-[#1a5c2a] text-white border-[#1a5c2a] font-semibold' : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-[#1a5c2a]/40'}`}
-                            >
-                              <span className="font-bold mr-2">{String.fromCharCode(65 + oi)}.</span>{opt}
-                            </button>
-                          ))}
+                        <div className="text-center px-4">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"><span className="text-gray-500 text-xs font-mono">FT</span></div>
+                        </div>
+                        <div className="text-center flex-1">
+                          <span className="text-gray-400 text-xs uppercase">AWAY</span>
+                          <p className="text-gray-800 font-bold text-xl mt-1">{selectedMatch.awayTeam}</p>
+                          <p className="text-4xl font-black text-[#1a5c2a] mt-1">{selectedMatch.awayScore}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Submit */}
-                  <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200 sticky bottom-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-gray-600">{Object.keys(userAnswers).length} of {quizQuestions.length} answered</span>
-                      {Object.keys(userAnswers).length < quizQuestions.length && (
-                        <span className="text-xs text-amber-600">{quizQuestions.length - Object.keys(userAnswers).length} remaining</span>
-                      )}
+                      <div className="flex justify-center items-center gap-2 mt-4 text-xs text-gray-500 border-t border-gray-100 pt-3">
+                        <MapPin size={12} /> {selectedMatch.stadium}
+                      </div>
                     </div>
-                    <button
-                      onClick={submitQuiz}
-                      disabled={quizSubmitting || Object.keys(userAnswers).length < quizQuestions.length}
-                      className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white font-black rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-                    >
-                      {quizSubmitting ? <><Loader2 size={16} className="animate-spin" />Submitting…</> : <>Submit Quiz & Get Results <ChevronRight size={16} /></>}
-                    </button>
-                  </div>
-                </>
 
-              ) : (
-                /* ── RESULTS STAGE ────────────────────────────────────────── */
-                <>
-                  {/* Score badge */}
-                  <div className={`rounded-2xl p-8 text-center shadow-md border ${pct >= 80 ? 'bg-amber-50 border-amber-200' : pct >= 60 ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
-                    <Award size={40} className={`mx-auto mb-2 ${pct >= 80 ? 'text-amber-500' : pct >= 60 ? 'text-blue-500' : 'text-gray-400'}`} />
-                    <div className={`text-5xl font-black mb-1 ${pct >= 80 ? 'text-amber-600' : pct >= 60 ? 'text-blue-600' : 'text-gray-700'}`}>{pct}%</div>
-                    <div className={`text-lg font-bold mb-1 ${pct >= 80 ? 'text-amber-700' : pct >= 60 ? 'text-blue-700' : 'text-gray-600'}`}>
-                      {pct >= 80 ? 'Distinction' : pct >= 60 ? 'Merit' : 'Pass'}
-                    </div>
-                    <p className="text-sm text-gray-600">{quizScore} correct out of {quizQuestions.length} questions</p>
-                    <p className="text-xs text-gray-400 mt-1">{selectedMatch.homeTeam} vs {selectedMatch.awayTeam}</p>
-                  </div>
-
-                  {/* Stage progress — all done */}
-                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      {['Analysis', 'Quiz', 'Certificate'].map((s, i) => (
-                        <div key={s} className="flex items-center gap-2 flex-1">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black bg-green-100 text-green-700">✓</div>
-                          <span className="text-xs font-semibold hidden sm:block text-green-600">{s}</span>
-                          {i < 2 && <div className="flex-1 h-0.5 bg-green-200 mx-1" />}
+                    {reportLoading ? (
+                      <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-[#1a5c2a] border-t-transparent rounded-full animate-spin" /></div>
+                    ) : report ? (
+                      <>
+                        <div className="bg-white rounded-2xl p-2 shadow-md border border-gray-200">
+                          <div className="flex items-center justify-between px-3 pt-2 pb-1">
+                            <div className="flex items-center gap-1 text-[10px] text-gray-500"><Tv size={12} /> THREE PHASES OF PLAY</div>
+                          </div>
+                          <PhaseMap phases={report.phases} homeTeam={selectedMatch.homeTeam} awayTeam={selectedMatch.awayTeam} />
                         </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  {/* Downloads */}
-                  <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Download size={16} className="text-[#1a5c2a]" /> Download Your Results</h3>
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => generateCertificatePDF(selectedMatch, quizScore, quizQuestions.length, user?.name ?? 'GRS Student')}
-                        className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Award size={16} /> Download Certificate PDF
-                      </button>
-                      {report && (
-                        <button
-                          onClick={() => generateModulePDF(selectedMatch, report.phases, modules)}
-                          className="w-full py-3 bg-[#1a5c2a] hover:bg-[#0d3d1a] text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-                        >
-                          <FileDown size={16} /> Download Full Module PDF
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                        <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-9 h-9 rounded-full bg-[#1a5c2a] flex items-center justify-center font-black text-[#f0b429] text-sm flex-shrink-0">
+                              {gender === 'female' ? 'A' : 'T'}
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-900">{gender === 'female' ? 'Amara' : 'THUTO'}'s tactical read</h3>
+                          </div>
+                          <p className="text-sm text-gray-700 leading-relaxed">{report.narrative}</p>
+                        </div>
 
-                  {/* Wrong answers with explanations */}
-                  {quizQuestions.filter(q => userAnswers[q.id] !== q.correct).length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-bold text-gray-900">Review — What You Missed</h3>
-                      {quizQuestions.filter(q => userAnswers[q.id] !== q.correct).map((q, idx) => (
-                        <div key={q.id} className="bg-white rounded-2xl p-4 shadow-sm border border-red-100">
-                          <p className="text-xs font-bold text-red-500 uppercase mb-1">{q.category} · Q{idx + 1}</p>
-                          <p className="text-sm font-semibold text-gray-900 mb-2">{q.question}</p>
-                          <div className="space-y-1.5 mb-3">
-                            {q.options.map((opt, oi) => (
-                              <div key={oi} className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 ${oi === q.correct ? 'bg-green-50 text-green-800 border border-green-200' : oi === userAnswers[q.id] ? 'bg-red-50 text-red-700 border border-red-200' : 'text-gray-500'}`}>
-                                {oi === q.correct && <CheckCircle2 size={13} className="text-green-600 shrink-0" />}
-                                {oi === userAnswers[q.id] && oi !== q.correct && <X size={13} className="text-red-500 shrink-0" />}
-                                <span className="font-bold mr-1">{String.fromCharCode(65 + oi)}.</span>{opt}
+                        <div className="space-y-3">
+                          {(['regain', 'build', 'finish'] as const).map(phase => (
+                            <div key={phase} className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-lg">{phaseIcons[phase]}</span>
+                                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">{phaseLabels[phase]}</h4>
+                                <span className="ml-auto text-xs font-bold text-[#1a5c2a]">{report.phases[phase].successRate}% success</span>
                               </div>
+                              <p className="text-sm text-gray-600 leading-relaxed">{buildPhaseQuestion(phase, report.phases[phase])}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {report.quizMoments.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Brain size={16} className="text-[#1a5c2a]" /> What Would You Do?</h3>
+                            {report.quizMoments.map(moment => (
+                              <WhatWouldYouDo key={moment.id} moment={moment} gender={gender}
+                                onAnswered={(wasOptimal) => handleQuizAnswered(moment, wasOptimal)} />
                             ))}
                           </div>
-                          <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 leading-relaxed">
-                            💡 {q.explanation}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Retake */}
-                  <div className="flex gap-3">
-                    <button onClick={() => setClassStage('analysis')} className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-bold rounded-xl text-sm hover:border-[#1a5c2a] transition">
-                      ← Back to Analysis
-                    </button>
-                    <button onClick={startQuiz} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-200 transition">
-                      Retake Quiz
-                    </button>
-                  </div>
-
-                  <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
-                    <Youtube size={16} /> Watch Match Highlights
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* RIGHT — ads, odds, share, class progress */}
-            <div className="lg:col-span-3 space-y-4">
-              <AdBanner tier="GOLD" />
-              <AdBanner tier="SILVER" />
-              <MatchOdds match={selectedMatch} />
-              <ShareButtons match={selectedMatch} />
-
-              {/* Class progress tracker (shown when purchased) */}
-              {selectedMatch && hasPurchasedBlueprint && (
-                <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
-                  <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <TrophyIcon size={15} className="text-amber-500" /> Class Progress
-                  </h3>
-                  <div className="space-y-2.5">
-                    {[
-                      { label: 'Tactical Analysis', done: classStage !== 'locked', active: classStage === 'analysis' },
-                      { label: '25-Question Quiz', done: classStage === 'results', active: classStage === 'quiz' },
-                      { label: 'Certificate', done: classStage === 'results', active: classStage === 'results' },
-                    ].map(step => (
-                      <div key={step.label} className="flex items-center gap-2.5">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${step.done ? 'bg-green-100' : step.active ? 'bg-[#1a5c2a]' : 'bg-gray-100'}`}>
-                          {step.done ? <CheckCircle2 size={12} className="text-green-600" /> : <span className="text-[9px] text-white font-bold">{step.active ? '→' : '○'}</span>}
-                        </div>
-                        <span className={`text-xs ${step.done ? 'text-green-600 font-semibold' : step.active ? 'text-[#1a5c2a] font-bold' : 'text-gray-400'}`}>{step.label}</span>
+                        )}
+                      </>
+                    ) : (
+                      <div className="bg-white rounded-2xl p-8 text-center border shadow-sm text-gray-500">
+                        Report data unavailable. Please try again shortly.
                       </div>
-                    ))}
-                  </div>
-                  {classStage === 'results' && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 text-center">
-                      <span className={`text-lg font-black ${pct >= 80 ? 'text-amber-500' : pct >= 60 ? 'text-blue-500' : 'text-gray-500'}`}>{pct}%</span>
-                      <p className="text-[10px] text-gray-400">Quiz score</p>
+                    )}
+
+                    {selectedMatch.status === 'completed' && (
+                      <button onClick={() => setShowHighlightsModal(true)} className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition flex items-center justify-center gap-2">
+                        <Youtube size={16} /> Watch Match Highlights
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* ────────────────────────────────────────────────────────────── */}
+              {/* RIGHT COLUMN — Virtual Classroom & Ads */}
+              {/* ────────────────────────────────────────────────────────────── */}
+              <div className="lg:col-span-3 space-y-4">
+                {selectedMatch ? (
+                  <>
+                    <VirtualClassroom 
+                      matchId={selectedMatch.id}
+                      matchName={`${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`}
+                    />
+                    <AdBanner tier="BRONZE" />
+                    <MatchOdds match={selectedMatch} />
+                    <ShareButtons match={selectedMatch} />
+                  </>
+                ) : (
+                  <>
+                    <AdBanner tier="GOLD" />
+                    <AdBanner tier="SILVER" />
+                    <div className="bg-white rounded-2xl p-6 text-center border border-gray-200 shadow-sm">
+                      <Video size={32} className="mx-auto text-gray-300 mb-2" />
+                      <p className="text-xs text-gray-500">Select a match to open the Virtual Classroom</p>
                     </div>
-                  )}
-                </div>
-              )}
+                  </>
+                )}
+              </div>
 
-              {/* Join class card (shown when not yet purchased) */}
-              {selectedMatch && !hasPurchasedBlueprint && selectedMatch.reportReady && (
-                <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileText size={16} className="text-[#1a5c2a]" />
-                    <h3 className="text-sm font-bold text-gray-900">After-Match Class</h3>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-3">Analysis, quiz, certificate + full PDF module.</p>
-                  <button
-                    onClick={() => setShowBlueprintModal(true)}
-                    className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Lock size={14} /> Join Class — $3
-                  </button>
-                  <p className="text-[9px] text-gray-400 text-center mt-2">EcoCash / InnBucks / OneMoney / Card</p>
-                </div>
-              )}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* MODALS */}
-      {showHighlightsModal && selectedMatch && <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />}
-      {showFanRegister && <FanRegistrationModal onClose={() => setShowFanRegister(false)} onRegisterSuccess={onRegisterSuccess} />}
-      {showBlueprintModal && selectedMatch && (
-        <BlueprintPurchaseModal
-          matchId={selectedMatch.id}
-          matchName={`${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`}
-          onClose={() => setShowBlueprintModal(false)}
-          onPurchaseComplete={() => {
-            setHasPurchasedBlueprint(true);
-            setShowBlueprintModal(false);
-            setPurchasedBlueprints(prev => {
-              const updated = [...new Set([...prev, selectedMatch.id])];
-              localStorage.setItem('grs_blueprints', JSON.stringify(updated));
-              return updated;
-            });
-            setClassStage('analysis');
-          }}
-        />
-      )}
-    </div>
+        {showHighlightsModal && selectedMatch && <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />}
+        {showFanRegister && <FanRegistrationModal onClose={() => setShowFanRegister(false)} onRegisterSuccess={onRegisterSuccess} />}
+      </div>
+    </ClassroomProvider>
   );
 }

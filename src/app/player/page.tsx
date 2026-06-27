@@ -7,7 +7,7 @@ import {
   Zap, BookOpen, Dumbbell, Activity, Award,
   Video, TrendingUp, ShieldCheck, GraduationCap,
   Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair,
-  MapPin, Brain, BookMarked, Sparkles, Globe, CheckCircle2, ArrowRight,
+  MapPin, Brain, BookMarked, Sparkles, Globe, CheckCircle2, ArrowRight, Lock,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";

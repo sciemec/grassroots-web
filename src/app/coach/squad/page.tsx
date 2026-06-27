@@ -3,18 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, Users, Search, UserPlus, AlertTriangle, Activity } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, Search, UserPlus } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import type { SquadMember } from "@/types";
-
-// Extended SquadMember with biometric fields
-interface ExtendedSquadMember extends SquadMember {
-  formScore?: number;
-  fatigueLevel?: number;
-  lastBiometricScan?: string;
-}
 
 const POSITIONS = [
   "Goalkeeper", "Right Back", "Left Back", "Centre Back",
@@ -33,7 +26,7 @@ interface AddForm { player_email: string; shirt_no: string; position: string }
 export default function CoachSquadPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [squad, setSquad] = useState<ExtendedSquadMember[]>([]);
+  const [squad, setSquad] = useState<SquadMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -46,40 +39,13 @@ export default function CoachSquadPage() {
     fetchSquad();
   }, [user, router]);
 
-  // Load coach's squad biometric analytics overview parameters
-  const loadBiometricData = (playerId: string): { formScore?: number; fatigueLevel?: number } => {
-    try {
-      const sessionsKey = `training_sessions_${playerId}`;
-      const stored = localStorage.getItem(sessionsKey);
-      if (stored) {
-        const sessions = JSON.parse(stored);
-        if (sessions && sessions.length > 0) {
-          const latest = sessions[0];
-          return {
-            formScore: latest.overallForm || latest.metrics?.overallForm,
-            fatigueLevel: latest.fatigueIndex || latest.fatigue?.fatigueIndex
-          };
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load biometric data", e);
-    }
-    return {};
-  };
-
   const fetchSquad = () => {
     setLoading(true);
     api.get("/coach/squad")
       .then((res) => { 
         const _r = res.data?.data ?? res.data; 
         const rawSquad = Array.isArray(_r) ? _r : [];
-        
-        const enrichedSquad = rawSquad.map((member: SquadMember) => ({
-          ...member,
-          ...loadBiometricData(member.player?.id || member.player_id)
-        }));
-        
-        setSquad(enrichedSquad);
+        setSquad(rawSquad);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -119,22 +85,6 @@ export default function CoachSquadPage() {
     }
   };
 
-  const getFormScoreColor = (score: number): string => {
-    if (score >= 80) return "bg-emerald-500/20 text-emerald-500";
-    if (score >= 60) return "bg-amber-500/20 text-amber-500";
-    return "bg-red-500/20 text-red-500";
-  };
-
-  const getFatigueDisplay = (fatigue: number): { text: string; color: string; icon?: JSX.Element } => {
-    if (fatigue > 60) {
-      return { text: "High", color: "text-red-500", icon: <AlertTriangle className="h-3 w-3" /> };
-    }
-    if (fatigue > 30) {
-      return { text: "Moderate", color: "text-amber-500" };
-    }
-    return { text: "Low", color: "text-emerald-500" };
-  };
-
   const filtered = squad.filter((m) => {
     const matchSearch = !search ||
       m.player?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -142,12 +92,6 @@ export default function CoachSquadPage() {
     const matchStatus = statusFilter === "all" || m.status === statusFilter;
     return matchSearch && matchStatus;
   });
-
-  const avgForm = squad.length > 0 
-    ? Math.round(squad.reduce((sum, p) => sum + (p.formScore || 0), 0) / squad.length)
-    : 0;
-  
-  const highFatigueCount = squad.filter(p => (p.fatigueLevel || 0) > 60).length;
 
   return (
     <div className="flex h-screen bg-background">
@@ -171,43 +115,6 @@ export default function CoachSquadPage() {
             <Plus className="h-4 w-4" /> Add player
           </button>
         </div>
-
-        {/* Team Biometric Summary Cards */}
-        {squad.length > 0 && (
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Activity className="h-4 w-4 text-emerald-500" />
-                <p className="text-xs font-medium text-muted-foreground">Team Avg Form</p>
-              </div>
-              <p className={`text-2xl font-bold ${
-                avgForm >= 80 ? "text-emerald-500" : avgForm >= 60 ? "text-amber-500" : "text-red-500"
-              }`}>
-                {avgForm || "—"}
-              </p>
-              <p className="text-[10px] text-muted-foreground">Based on latest biometric scans</p>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                <p className="text-xs font-medium text-muted-foreground">High Fatigue</p>
-              </div>
-              <p className="text-2xl font-bold text-amber-500">{highFatigueCount}</p>
-              <p className="text-[10px] text-muted-foreground">Players need rest</p>
-            </div>
-            <Link href="/coach/team-prediction" className="rounded-xl border bg-card p-4 hover:bg-muted/20 transition-colors">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Performance Prediction</p>
-                  <p className="text-sm font-semibold text-primary mt-1">View Team Analysis →</p>
-                </div>
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Users className="h-4 w-4 text-primary" />
-                </div>
-              </div>
-            </Link>
-          </div>
-        )}
 
         {/* Add player form */}
         {showAdd && (
@@ -320,17 +227,13 @@ export default function CoachSquadPage() {
                     <th className="px-4 py-3 font-medium">#</th>
                     <th className="px-4 py-3 font-medium">Player</th>
                     <th className="px-4 py-3 font-medium">Position</th>
-                    <th className="px-4 py-3 font-medium">Form Score</th>
-                    <th className="px-4 py-3 font-medium">Fatigue</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Joined</th>
                     <th className="px-4 py-3 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filtered.map((m) => {
-                    const fatigueDisplay = getFatigueDisplay(m.fatigueLevel || 0);
-                    return (
+                  {filtered.map((m) => (
                       <tr key={m.id} className="hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3.5">
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
@@ -343,26 +246,6 @@ export default function CoachSquadPage() {
                           </Link>
                         </td>
                         <td className="px-4 py-3.5 capitalize text-muted-foreground">{m.position}</td>
-                        <td className="px-4 py-3.5">
-                          {m.formScore ? (
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${getFormScoreColor(m.formScore)}`}>
-                              <Activity className="h-3 w-3" />
-                              {m.formScore}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          {m.fatigueLevel ? (
-                            <span className={`flex items-center gap-1 text-xs font-medium ${fatigueDisplay.color}`}>
-                              {fatigueDisplay.icon}
-                              {fatigueDisplay.text}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </td>
                         <td className="px-4 py-3.5">
                           <select
                             value={m.status}
@@ -378,26 +261,16 @@ export default function CoachSquadPage() {
                           {new Date(m.joined_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
                         </td>
                         <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1">
-                            <Link
-                              href={`/coach/squad/${m.id}`}
-                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                              title="View biometric profile"
-                            >
-                              <Activity className="h-4 w-4" />
-                            </Link>
-                            <button
-                              onClick={() => remove(m.id)}
-                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors"
-                              title="Remove player"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => remove(m.id)}
+                            className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                            title="Remove player"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </td>
                       </tr>
-                    );
-                  })}
+                  ))}
                 </tbody>
               </table>
             </div>
