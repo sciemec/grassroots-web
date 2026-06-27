@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Play, Pause, CheckCircle, Lock, 
   Clock, BookOpen, ChevronRight, ChevronLeft,
-  X, Trophy, Star, Users
+  Trophy, MessageCircle, Users, BookMarked, PenTool
 } from 'lucide-react';
 import { MatchModule, ModuleLesson } from './types';
+import { useClassroom } from './ClassroomProvider';
 import { ClassroomChat } from './ClassroomChat';
 import { StudentRoster } from './StudentRoster';
+import { LessonPlan } from './LessonPlan';
 import { DrawingBoard } from './DrawingBoard';
-import { useClassroom } from './ClassroomProvider';
 
 interface ModulePlayerProps {
   module: MatchModule;
@@ -21,20 +22,51 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
   const [lessons, setLessons] = useState<ModuleLesson[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [showChat, setShowChat] = useState(true);
+  const [activeTab, setActiveTab] = useState<'chat' | 'roster' | 'lesson'>('chat');
   const [showDrawing, setShowDrawing] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const { state } = useClassroom();
+  const { state, toggleDrawing } = useClassroom();
 
-  // Fetch lessons for this module
   useEffect(() => {
     const fetchLessons = async () => {
       try {
         const response = await fetch(`/api/virtual-classroom/modules/${module.id}/lessons`);
         const data = await response.json();
-        setLessons(data.lessons || getMockLessons());
+        setLessons(data.lessons || []);
       } catch (error) {
-        setLessons(getMockLessons());
+        console.error('Failed to fetch lessons:', error);
+        // Fallback mock data
+        setLessons([
+          {
+            id: 'lesson-1',
+            moduleId: module.id,
+            title: 'Introduction: Tactical Analysis',
+            duration: '10 min',
+            content: 'Learn the fundamentals of tactical analysis and why it matters.',
+            keyPoints: ['Understanding team shape', 'Reading the game', 'Key decision moments'],
+            quizQuestions: [],
+            order: 1,
+          },
+          {
+            id: 'lesson-2',
+            moduleId: module.id,
+            title: 'Phase 1: Regaining Possession',
+            duration: '15 min',
+            content: 'How the winning team pressed and won the ball back effectively.',
+            keyPoints: ['Pressing triggers', 'Defensive organization', 'Transition moments'],
+            quizQuestions: [],
+            order: 2,
+          },
+          {
+            id: 'lesson-3',
+            moduleId: module.id,
+            title: 'Phase 2: Building the Attack',
+            duration: '15 min',
+            content: 'Building from the back and progressing through the thirds.',
+            keyPoints: ['Build-up patterns', 'Player rotation', 'Finding space between lines'],
+            quizQuestions: [],
+            order: 3,
+          },
+        ]);
       } finally {
         setLoading(false);
       }
@@ -47,19 +79,11 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
   const isLastLesson = currentLessonIndex === lessons.length - 1;
 
   const nextLesson = () => {
-    if (!isLastLesson) {
-      setCurrentLessonIndex(prev => prev + 1);
-    }
+    if (!isLastLesson) setCurrentLessonIndex(prev => prev + 1);
   };
 
   const prevLesson = () => {
-    if (!isFirstLesson) {
-      setCurrentLessonIndex(prev => prev - 1);
-    }
-  };
-
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+    if (!isFirstLesson) setCurrentLessonIndex(prev => prev - 1);
   };
 
   if (loading) {
@@ -74,7 +98,7 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
 
   return (
     <div className="space-y-4">
-      {/* Back Button & Header */}
+      {/* Back Button */}
       <button
         onClick={onBack}
         className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#1a5c2a] transition-colors"
@@ -98,7 +122,7 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
             <div className="text-xs text-white/50">{module.duration}</div>
             <div className="text-xs text-white/50">{module.lessonCount} lessons</div>
             {module.isCompleted && (
-              <div className="text-green-400 text-xs flex items-center gap-1">
+              <div className="text-green-400 text-xs flex items-center gap-1 mt-1">
                 <CheckCircle size={12} />
                 Completed
               </div>
@@ -106,7 +130,7 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
           </div>
         </div>
 
-        {/* Progress */}
+        {/* Progress Bar */}
         <div className="mt-3">
           <div className="flex justify-between text-xs text-white/60 mb-1">
             <span>Progress</span>
@@ -121,38 +145,18 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Lesson Player */}
         <div className="lg:col-span-2 space-y-3">
           {/* Video/Content Area */}
           <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="aspect-video bg-gray-900 flex items-center justify-center relative">
-              {currentLesson?.videoUrl ? (
-                <>
-                  <video 
-                    src={currentLesson.videoUrl}
-                    className="w-full h-full object-cover"
-                    poster="/images/lesson-placeholder.jpg"
-                  />
-                  <button
-                    onClick={togglePlay}
-                    className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
-                  >
-                    {isPlaying ? (
-                      <Pause size={40} className="text-white" />
-                    ) : (
-                      <Play size={40} className="text-white" />
-                    )}
-                  </button>
-                </>
-              ) : (
-                <div className="text-center text-white/60">
-                  <BookOpen size={48} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Lesson Content</p>
-                  <p className="text-xs opacity-50">Interactive tactical analysis</p>
-                </div>
-              )}
+              <div className="text-center text-white/60">
+                <BookOpen size={48} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium">{currentLesson?.title || 'Lesson Content'}</p>
+                <p className="text-xs opacity-50">Interactive tactical analysis</p>
+              </div>
             </div>
 
             {/* Lesson Controls */}
@@ -215,97 +219,79 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
 
         {/* Right: Classroom Tools */}
         <div className="space-y-3">
-          {/* Toggle buttons */}
+          {/* Tab Navigation */}
           <div className="flex gap-1 bg-white rounded-xl shadow-md border border-gray-200 p-1">
             <button
-              onClick={() => setShowChat(true)}
-              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-colors ${
-                showChat ? 'bg-[#1a5c2a] text-white' : 'text-gray-500 hover:bg-gray-100'
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
+                activeTab === 'chat' ? 'bg-[#1a5c2a] text-white' : 'text-gray-500 hover:bg-gray-100'
               }`}
             >
+              <MessageCircle size={12} />
               Chat
             </button>
             <button
-              onClick={() => setShowChat(false)}
-              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-colors ${
-                !showChat ? 'bg-[#1a5c2a] text-white' : 'text-gray-500 hover:bg-gray-100'
+              onClick={() => setActiveTab('roster')}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
+                activeTab === 'roster' ? 'bg-[#1a5c2a] text-white' : 'text-gray-500 hover:bg-gray-100'
               }`}
             >
+              <Users size={12} />
               Roster
+            </button>
+            <button
+              onClick={() => setActiveTab('lesson')}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
+                activeTab === 'lesson' ? 'bg-[#1a5c2a] text-white' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <BookMarked size={12} />
+              Plan
             </button>
           </div>
 
-          {showChat ? <ClassroomChat /> : <StudentRoster />}
+          {/* Active Tab Content */}
+          {activeTab === 'chat' && <ClassroomChat />}
+          {activeTab === 'roster' && <StudentRoster />}
+          {activeTab === 'lesson' && <LessonPlan />}
 
-          {/* Quick Actions */}
-          <div className="flex gap-1">
-            <button
-              onClick={() => setShowDrawing(true)}
-              className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
-            >
-              <BookOpen size={12} />
-              Draw & Annotate
-            </button>
-            <button
-              className="flex-1 py-1.5 bg-[#1a5c2a] hover:bg-[#0d3d1a] text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
-            >
-              <Users size={12} />
-              Share
-            </button>
+          {/* Drawing Tool Button */}
+          <button
+            onClick={() => {
+              if (!state.drawingMode) {
+                toggleDrawing();
+              }
+              setShowDrawing(true);
+            }}
+            className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            <PenTool size={14} />
+            {state.drawingMode ? 'Close Drawing Board' : 'Open Drawing Board'}
+          </button>
+
+          {/* Quick Stats */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-3">
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div>
+                <p className="text-[10px] text-gray-400">Students</p>
+                <p className="text-sm font-bold text-gray-800">{state.students.length}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-400">Messages</p>
+                <p className="text-sm font-bold text-gray-800">{state.messages.length}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Drawing Board Modal */}
-      {showDrawing && (
-        <DrawingBoard onClose={() => setShowDrawing(false)} />
+      {showDrawing && state.drawingMode && (
+        <DrawingBoard onClose={() => {
+          setShowDrawing(false);
+          toggleDrawing();
+        }} />
       )}
     </div>
   );
-}
-
-// Mock lessons
-function getMockLessons(): ModuleLesson[] {
-  return [
-    {
-      id: 'lesson-1',
-      moduleId: 'mod-1',
-      title: 'Introduction: Transition Football',
-      duration: '10 min',
-      content: 'Learn the fundamentals of transition play - why it wins games.',
-      keyPoints: ['Transition is the most dangerous phase', 'Speed of thought beats speed of feet', '5-second rule'],
-      quizQuestions: [],
-      order: 1,
-    },
-    {
-      id: 'lesson-2',
-      moduleId: 'mod-1',
-      title: 'Argentina\'s Transition Patterns',
-      duration: '15 min',
-      content: 'How Argentina exploited France\'s defensive organization.',
-      keyPoints: ['Messi dropping deep', 'Di Maria\'s wide runs', 'Quick vertical passes'],
-      quizQuestions: [],
-      order: 2,
-    },
-    {
-      id: 'lesson-3',
-      moduleId: 'mod-1',
-      title: 'Counter-Attack Execution',
-      duration: '10 min',
-      content: 'The mechanics of Argentina\'s counter-attacks.',
-      keyPoints: ['2-3-5 shape in transition', 'Overloads on the break', 'Finishing on the counter'],
-      quizQuestions: [],
-      order: 3,
-    },
-    {
-      id: 'lesson-4',
-      moduleId: 'mod-1',
-      title: 'Defensive Transition',
-      duration: '10 min',
-      content: 'How Argentina defended France\'s transitions.',
-      keyPoints: ['Immediate pressing on loss', 'Drop to defensive block', 'Ball recovery triggers'],
-      quizQuestions: [],
-      order: 4,
-    },
-  ];
 }
