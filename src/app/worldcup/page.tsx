@@ -26,7 +26,6 @@ import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, 
 import { type QuizMoment } from '@/lib/tactical-iq/quiz-generator';
 import { calculateTacticalIQ, type QuizAnswer, type TacticalIQResult } from '@/lib/tactical-iq/tactical-iq-engine';
 import WhatWouldYouDo from '@/lib/tactical-iq/WhatWouldYouDo';
-import { BlueprintPurchaseModal } from '@/lib/tactical-iq/BlueprintPurchaseModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VIRTUAL CLASSROOM IMPORTS
