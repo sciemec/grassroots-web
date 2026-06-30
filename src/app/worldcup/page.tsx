@@ -830,7 +830,8 @@ function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingM
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function WorldCupTacticalLabPage() {
-  const { user, token } = useAuthStore();
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
 
   const [matches, setMatches]               = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch]    = useState<Match | null>(null);
