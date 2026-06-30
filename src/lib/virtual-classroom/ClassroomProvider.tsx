@@ -45,7 +45,7 @@ interface ClassroomContextType {
 const ClassroomContext = createContext<ClassroomContextType | undefined>(undefined);
 
 export function ClassroomProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [state, setState] = useState<ClassroomState>({
     isActive: false,
     students: [],
