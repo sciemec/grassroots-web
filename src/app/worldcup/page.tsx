@@ -960,7 +960,7 @@ export default function WorldCupTacticalLabPage() {
   };
 
   const isMatchUnlocked = (matchId: string) =>
-    unlockedMatches.includes(matchId) || unlockedMatches.length > 0;
+    !!user || unlockedMatches.includes(matchId) || unlockedMatches.length > 0;
 
   const handleQuizAnswered = async (moment: QuizMoment, wasOptimal: boolean) => {
     if (!authToken || !selectedMatch) return;
