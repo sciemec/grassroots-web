@@ -19,7 +19,7 @@ export function ModuleLibrary({ onSelectModule }: { onSelectModule: (module: Mat
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const response = await fetch('/api/virtual-classroom/modules');
+        const response = await fetch('/api/worldcup/virtual-classroom/modules');
         const data = await response.json();
         setModules(data.modules || []);
       } catch (error) {

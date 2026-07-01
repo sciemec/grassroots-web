@@ -12,20 +12,16 @@
 //   5. All existing features preserved (Tactical Reports, Quizzes, Blueprints)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import jsPDF from 'jspdf';
 import { useState, useEffect, useRef } from 'react';
 import {
-  MapPin, Calendar, RefreshCw, Tv, Activity, Share2, Copy, Check,
-  TrendingUp, Clock, Youtube, MessageCircle, Lock, Unlock,
-  Loader2, X, Star, Users, Trophy as TrophyIcon, Brain, ChevronRight,
-  FileDown, Download, FileText, Award, CheckCircle2,
-  BookOpen, Play, Pause, Search, Filter, ArrowLeft, Video,
+  MapPin, Calendar, Tv, Activity, Copy, Check,
+  TrendingUp, Youtube, MessageCircle, Lock, Unlock,
+  Loader2, X, Star, Users, Trophy as TrophyIcon, Brain,
+  FileDown, Download,
+  Video,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
-import { classifyPhases, buildPhaseQuestion, type PhaseReport, type MatchEvent, type MatchStats } from '@/lib/tactical-iq/phase-classifier';
-import { type QuizMoment } from '@/lib/tactical-iq/quiz-generator';
-import { calculateTacticalIQ, type QuizAnswer, type TacticalIQResult } from '@/lib/tactical-iq/tactical-iq-engine';
-import WhatWouldYouDo from '@/lib/tactical-iq/WhatWouldYouDo';
+import { calculateTacticalIQ, type TacticalIQResult } from '@/lib/tactical-iq/tactical-iq-engine';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VIRTUAL CLASSROOM IMPORTS
@@ -84,11 +80,27 @@ interface LiveScoreboardMatch {
   possessionAway: number;
 }
 
+interface TacticalPhase {
+  id:             string;
+  title:          string;
+  minute_range:   string;
+  description:    string;
+  key_event:      string;
+  home_advantage: boolean;
+}
 interface TacticalReport {
-  phases:       PhaseReport;
-  quizMoments:  QuizMoment[];
-  narrative:    string;
-  generatedAt:  string;
+  available:         boolean;
+  summary:           string;
+  phases:            TacticalPhase[];
+  tactical_insights: string[];
+  what_would_you_do: {
+    scenario:    string;
+    options:     string[];
+    correct:     number;
+    explanation: string;
+  };
+  home_rating:  number;
+  away_rating:  number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -170,73 +182,47 @@ function AdBanner({ tier, targetUrl, sponsorName, imageUrl }: AdBannerProps) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PHASE MAP
 // ─────────────────────────────────────────────────────────────────────────────
-function PhaseMap({ phases, homeTeam, awayTeam }: { phases: PhaseReport; homeTeam: string; awayTeam: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const width = 900;
-  const height = 500;
+const PHASE_COLORS = [
+  'bg-blue-50 border-blue-200',
+  'bg-emerald-50 border-emerald-200',
+  'bg-amber-50 border-amber-200',
+  'bg-purple-50 border-purple-200',
+  'bg-rose-50 border-rose-200',
+];
+const PHASE_EMOJIS = ['🛡️', '⚙️', '🎯', '⚡', '🔄'];
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, width, height);
-
-    const grad = ctx.createLinearGradient(0, 0, 0, height);
-    grad.addColorStop(0, '#1a5c2a');
-    grad.addColorStop(1, '#0a3d16');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, width, height);
-
-    const zoneWidth = (width - 80) / 3;
-    const zones: { label: string; phase: keyof PhaseReport; x: number }[] = [
-      { label: 'Regaining possession', phase: 'regain', x: 40 },
-      { label: 'Building the attack',  phase: 'build',  x: 40 + zoneWidth },
-      { label: 'Finishing',            phase: 'finish', x: 40 + zoneWidth * 2 },
-    ];
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(40, 40, width - 80, height - 80);
-
-    zones.forEach((zone, i) => {
-      const summary = phases[zone.phase];
-      const maxEvents = Math.max(...zones.map(z => phases[z.phase].events.length), 1);
-      const intensity = summary.events.length / maxEvents;
-      ctx.fillStyle = `rgba(240, 180, 41, ${0.08 + intensity * 0.22})`;
-      ctx.fillRect(zone.x, 40, zoneWidth, height - 80);
-
-      if (i > 0) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(zone.x, 40);
-        ctx.lineTo(zone.x, height - 40);
-        ctx.stroke();
-      }
-
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(zone.label, zone.x + zoneWidth / 2, 70);
-
-      ctx.fillStyle = '#f0b429';
-      ctx.font = 'bold 36px sans-serif';
-      ctx.fillText(`${summary.successRate}%`, zone.x + zoneWidth / 2, height / 2);
-
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.font = '12px sans-serif';
-      ctx.fillText('success rate', zone.x + zoneWidth / 2, height / 2 + 24);
-      ctx.fillText(`${summary.events.length} events`, zone.x + zoneWidth / 2, height / 2 + 42);
-    });
-
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('GRS TACTICAL LAB', width / 2, height - 55);
-  }, [phases]);
-
-  return <canvas ref={canvasRef} width={width} height={height} className="w-full rounded-xl shadow-2xl border border-[#f0b429]/20" />;
+function PhaseMap({ phases, homeTeam }: { phases: TacticalPhase[]; homeTeam: string; awayTeam: string }) {
+  if (!phases || phases.length === 0) {
+    return <p className="text-center text-sm text-gray-400 py-6">No phase data available.</p>;
+  }
+  return (
+    <div className="space-y-3 p-3">
+      {phases.map((phase, i) => (
+        <div key={phase.id} className={`rounded-xl p-4 border ${PHASE_COLORS[i % PHASE_COLORS.length]}`}>
+          <div className="flex items-start gap-2 mb-2">
+            <span className="text-lg flex-shrink-0">{PHASE_EMOJIS[i % PHASE_EMOJIS.length]}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h4 className="text-xs font-bold text-gray-900">{phase.title}</h4>
+                <span className="text-[10px] text-gray-500 bg-white/80 px-2 py-0.5 rounded-full whitespace-nowrap">{phase.minute_range}</span>
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-gray-700 leading-relaxed">{phase.description}</p>
+          {phase.key_event && (
+            <div className="mt-2 text-[11px] font-medium text-gray-600 bg-white/70 rounded-lg px-3 py-1.5">
+              🔑 {phase.key_event}
+            </div>
+          )}
+          {phase.home_advantage && (
+            <span className="mt-2 inline-block text-[10px] font-bold text-[#1a5c2a] bg-green-100 px-2 py-0.5 rounded-full">
+              {homeTeam} advantage
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -524,23 +510,10 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COACHING BLUEPRINTS
+// INLINE QUIZ COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
-interface TrainingModule {
-  title: string;
-  focus: string;
-  drills: { name: string; setup: string; reps: string; coachingPoint: string }[];
-}
 
-const BLUEPRINT_DAY_PLAN = [
-  'Recovery + Tactical Video Review',
-  'Core Weakness Drill Session',
-  'Drill Progression + Small-Sided Game',
-  'Tactical Shape Training',
-  'Match Simulation — Apply the Blueprint',
-];
-
-function getModulesFromPhases(phases: PhaseReport): TrainingModule[] {
+function _deletedGetModulesFromPhases_placeholder(): void {
   const modules: TrainingModule[] = [];
 
   if (phases.regain.successRate < 40) {
@@ -889,6 +862,9 @@ export default function WorldCupTacticalLabPage() {
       setIsLoading(false);
     };
     loadMatches();
+    // Poll every 2 minutes so newly finished matches appear automatically
+    const interval = setInterval(loadMatches, 120_000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
