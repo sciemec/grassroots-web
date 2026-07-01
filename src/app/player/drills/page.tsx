@@ -759,7 +759,7 @@ export default function FootballDrillsLabPage() {
                       className="mt-2 text-xs font-bold text-[#1a5c2a] underline">Clear filters</button>
                   </div>
                 ) : (
-                  {(() => {
+                  (() => {
                     const freeDrills = filteredDrills.filter(d => !d.is_premium);
                     const proDrills  = filteredDrills.filter(d =>  d.is_premium);
                     const drillCard = (drill: typeof filteredDrills[0], i: number) => (
@@ -829,7 +829,7 @@ export default function FootballDrillsLabPage() {
                         )}
                       </>
                     );
-                  })()}
+                  })()
                 )}
               </div>
             </section>
