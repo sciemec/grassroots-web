@@ -20,6 +20,7 @@ import {
   type AgeGroup,
 } from "@/lib/drill-data";
 import { getSportDrills, SPORT_POSITION_MAP } from "@/lib/sport-drills";
+import FitnessTestTab from "@/components/drills/FitnessTestTab";
 
 const TIER_CONFIG: Record<number, { label: string; color: string; bg: string; source: string; flag: string }> = {
   1: { label: "Spark",   color: "#888780", bg: "#f1efe8", source: "GRS Original",             flag: "🇿🇼" },
@@ -68,7 +69,7 @@ export default function FootballDrillsLabPage() {
   const [completedDrills, setCompletedDrills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving,  setIsSaving]  = useState(false);
-  const [activeTab, setActiveTab] = useState<"drills" | "challenges" | "coach">("drills");
+  const [activeTab, setActiveTab] = useState<"drills" | "challenges" | "coach" | "fitness">("drills");
   const [tierProgress, setTierProgress] = useState<TierProgress | null>(null);
   const [expandedDrill, setExpandedDrill] = useState<string | null>(null);
   const [coachTip,   setCoachTip]   = useState<string>("");
@@ -497,17 +498,17 @@ export default function FootballDrillsLabPage() {
 
         {/* Tabs */}
         <div className="max-w-5xl mx-auto flex mt-3">
-          {(["drills", "challenges", "coach"] as const).map((tab, i) => (
+          {(["drills", "challenges", "coach", "fitness"] as const).map((tab, i) => (
             <button key={tab}
               onClick={() => { setActiveTab(tab); if (tab === "coach") fetchCoachTip(); }}
               className="flex-1 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
               style={{
-                borderRadius: i === 0 ? "8px 0 0 0" : i === 2 ? "0 8px 0 0" : 0,
+                borderRadius: i === 0 ? "8px 0 0 0" : i === 3 ? "0 8px 0 0" : 0,
                 background: activeTab === tab ? "#f4f2ee" : "transparent",
                 color: activeTab === tab ? "#1c3d22" : "rgba(255,255,255,0.6)",
                 border: "none", cursor: "pointer",
               }}>
-              {tab === "drills" ? "My drills" : tab === "challenges" ? "Challenges" : "My coach"}
+              {tab === "drills" ? "My drills" : tab === "challenges" ? "Challenges" : tab === "coach" ? "My coach" : "⚡ Fitness"}
             </button>
           ))}
         </div>
@@ -864,6 +865,11 @@ export default function FootballDrillsLabPage() {
         {/* ── TAB: CHALLENGES ── */}
         {activeTab === "challenges" && (
           <WeeklyChallenges playerSessionCount={tierProgress?.totalCompleted ?? 0} />
+        )}
+
+        {/* ── TAB: FITNESS TEST ── */}
+        {activeTab === "fitness" && (
+          <FitnessTestTab user={user} />
         )}
 
         {/* ── TAB: MY COACH ── */}
