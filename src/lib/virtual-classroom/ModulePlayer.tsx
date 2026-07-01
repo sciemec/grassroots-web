@@ -37,7 +37,7 @@ export function ModulePlayer({ module, onBack }: ModulePlayerProps) {
   useEffect(() => {
     const fetchLessons = async () => {
       try {
-        const response = await fetch(`/api/virtual-classroom/modules/${module.id}/lessons`);
+        const response = await fetch(`/api/worldcup/virtual-classroom/modules/${module.id}/lessons`);
         const data = await response.json();
         setLessons(data.lessons || []);
       } catch (error) {
