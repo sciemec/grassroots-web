@@ -38,3 +38,8 @@ next-env.d.ts
 .vercel
 .env*
 
+# local datasets
+exercises-dataset/
+exercises-dataset.zip
+database/
+
