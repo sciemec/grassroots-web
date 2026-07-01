@@ -135,6 +135,28 @@ export default function DrillCard({
       {isExpanded && (
         <div className="border-t border-gray-100 px-5 py-5 space-y-5">
 
+          {/* PAYWALL — Advanced drills locked for free users */}
+          {drill.is_premium && !isPremiumUser ? (
+            <div className="text-center space-y-3 py-4">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                <Lock size={22} className="text-gray-400" />
+              </div>
+              <p className="text-sm font-black text-gray-800">Pro Drill</p>
+              <p className="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
+                This Advanced drill is unlocked with a Pro subscription — along with Gemini AI video feedback.
+              </p>
+              <Link
+                href="/player/subscription"
+                className="inline-block text-xs font-black px-5 py-2.5 rounded-xl text-white"
+                style={{ background: "#1a5c2a" }}
+              >
+                Upgrade to Pro →
+              </Link>
+              <p className="text-[10px] text-gray-400">From $10/month · Cancel anytime</p>
+            </div>
+          ) : (
+          <>
+
           {/* ① WHY THIS DRILL */}
           <div>
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1a5c2a] mb-1.5">
@@ -267,18 +289,25 @@ export default function DrillCard({
 
           {/* ⑧ ACTION BUTTONS */}
           <div className="flex flex-wrap gap-2 pt-1">
-            <Link
-              href={`/player/analyse?drill=${drill.id}&name=${encodeURIComponent(drill.name)}`}
-              className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
-              style={
-                isPremiumUser
-                  ? { background: "#7e22ce", color: "#fff", border: "1px solid #7e22ce" }
-                  : { background: "#f3f4f6", color: "#9ca3af", border: "1px solid #e5e7eb" }
-              }
-            >
-              {isPremiumUser ? <Video size={13} /> : <Lock size={13} />}
-              Record &amp; Get AI Feedback
-            </Link>
+            {isPremiumUser ? (
+              <Link
+                href={`/player/analyse?drill=${drill.id}&name=${encodeURIComponent(drill.name)}`}
+                className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
+                style={{ background: "#7e22ce", color: "#fff", border: "1px solid #7e22ce" }}
+              >
+                <Video size={13} />
+                Record &amp; Get AI Feedback
+              </Link>
+            ) : (
+              <Link
+                href="/player/subscription"
+                className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
+                style={{ background: "#f3f4f6", color: "#9ca3af", border: "1px solid #e5e7eb" }}
+              >
+                <Lock size={13} />
+                Record &amp; Get AI Feedback
+              </Link>
+            )}
 
             <button
               onClick={() => onMarkDone(drill.id)}
@@ -297,6 +326,8 @@ export default function DrillCard({
             Gemini cannot measure match intelligence, composure, or decision-making under pressure —
             those require a real coach watching you play. AI feedback scores technique only.
           </p>
+          </>
+          )}
         </div>
       )}
     </div>
