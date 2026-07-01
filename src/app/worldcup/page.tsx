@@ -954,7 +954,7 @@ export default function WorldCupTacticalLabPage() {
     if (!hasPurchasedBlueprint) { setShowBlueprintModal(true); return; }
     setIsDownloadingBlueprint(true);
     try {
-      const res = await fetch(`/api/world-cup/matches/${selectedMatch.id}/generate-blueprint`, {
+      const res = await fetch(`/api/worldcup/matches/${selectedMatch.id}/generate-blueprint`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authToken ?? ''}` },
       });
