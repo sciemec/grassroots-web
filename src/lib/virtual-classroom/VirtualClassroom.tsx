@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ModuleLibrary } from './ModuleLibrary';
 import { ModulePlayer } from './ModulePlayer';
 import { MatchModule } from './types';
-import { ClassroomProvider } from './ClassroomProvider';
+// ClassroomProvider is already at the page level — no import needed here
 
 interface VirtualClassroomProps {
   matchId?: string;
@@ -26,19 +26,19 @@ export function VirtualClassroom({ matchId, matchName }: VirtualClassroomProps) 
   };
 
   return (
-    <ClassroomProvider>
-      <div className="space-y-4">
-        {view === 'library' ? (
-          <ModuleLibrary onSelectModule={handleSelectModule} />
-        ) : (
-          selectedModule && (
-            <ModulePlayer 
-              module={selectedModule} 
-              onBack={handleBack} 
-            />
-          )
-        )}
-      </div>
-    </ClassroomProvider>
+    // REMOVED: <ClassroomProvider> - The provider is already at the page level
+    <div className="space-y-4">
+      {view === 'library' ? (
+        <ModuleLibrary onSelectModule={handleSelectModule} />
+      ) : (
+        selectedModule && (
+          <ModulePlayer 
+            module={selectedModule} 
+            onBack={handleBack} 
+          />
+        )
+      )}
+    </div>
+    // REMOVED: </ClassroomProvider>
   );
 }

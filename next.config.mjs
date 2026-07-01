@@ -1,5 +1,3 @@
-import { withSentryConfig } from "@sentry/nextjs";
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -102,18 +100,5 @@ const nextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-
-  // ⚡ CRITICAL FIX: Tell Sentry to stop running custom asset/symlink sweeps on Windows
-  disableServerWebpackPlugin: true,
-  disableClientWebpackPlugin: true,
-
-  // Only upload source maps in CI/production builds
-  silent: true,
-  disableLogger: true,
-
-  // Automatically tree-shake Sentry logger statements
-  automaticVercelMonitors: false,
-});
+// ✅ REMOVED SENTRY - Export config directly
+export default nextConfig;
