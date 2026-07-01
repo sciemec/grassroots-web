@@ -32,6 +32,7 @@ import WhatWouldYouDo from '@/lib/tactical-iq/WhatWouldYouDo';
 // ─────────────────────────────────────────────────────────────────────────────
 import { VirtualClassroom } from '@/lib/virtual-classroom/VirtualClassroom';
 import { ClassroomProvider } from '@/lib/virtual-classroom/ClassroomProvider';
+import { BlueprintPurchaseModal } from '@/components/tactical-iq/BlueprintPurchaseModal';
 
 const GRS_GREEN = '#1a5c2a';
 const GRS_GOLD  = '#f0b429';
@@ -843,6 +844,9 @@ export default function WorldCupTacticalLabPage() {
   const [showFanRegister, setShowFanRegister] = useState(false);
   const [tacticalIQ, setTacticalIQ]          = useState<TacticalIQResult | null>(null);
   const [liveMatches, setLiveMatches]        = useState<LiveScoreboardMatch[]>([]);
+  const [showBlueprintModal, setShowBlueprintModal]         = useState(false);
+  const [isDownloadingBlueprint, setIsDownloadingBlueprint] = useState(false);
+  const [hasPurchasedBlueprint, setHasPurchasedBlueprint]   = useState(false);
   const hasSetInitial = useRef(false);
   const UNLOCK_KEY = 'wc_unlocked_matches';
 
@@ -929,6 +933,46 @@ export default function WorldCupTacticalLabPage() {
       .then(data => { if (data?.answers) setTacticalIQ(calculateTacticalIQ(data.answers)); })
       .catch(() => {});
   }, [authToken]);
+
+  useEffect(() => {
+    if (!selectedMatch || !authToken) { setHasPurchasedBlueprint(false); return; }
+    const cached = localStorage.getItem(`blueprint_purchased_${selectedMatch.id}`);
+    if (cached === '1') { setHasPurchasedBlueprint(true); return; }
+    fetch(`/api/world-cup/matches/${selectedMatch.id}/check-purchase`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+      .then(r => r.ok ? r.json() : { purchased: false })
+      .then(data => {
+        setHasPurchasedBlueprint(!!data.purchased);
+        if (data.purchased) localStorage.setItem(`blueprint_purchased_${selectedMatch.id}`, '1');
+      })
+      .catch(() => setHasPurchasedBlueprint(false));
+  }, [selectedMatch, authToken]);
+
+  const handleDownloadBlueprint = async () => {
+    if (!selectedMatch) return;
+    if (!hasPurchasedBlueprint) { setShowBlueprintModal(true); return; }
+    setIsDownloadingBlueprint(true);
+    try {
+      const res = await fetch(`/api/world-cup/matches/${selectedMatch.id}/generate-blueprint`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken ?? ''}` },
+      });
+      if (res.status === 402) { setShowBlueprintModal(true); return; }
+      if (!res.ok) throw new Error('Blueprint generation failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `GRS-Blueprint-${selectedMatch.homeTeam}-vs-${selectedMatch.awayTeam}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setShowBlueprintModal(true);
+    } finally {
+      setIsDownloadingBlueprint(false);
+    }
+  };
 
   const handleUnlockMatch = () => setShowFanRegister(true);
 
@@ -1160,6 +1204,25 @@ export default function WorldCupTacticalLabPage() {
                     <AdBanner tier="BRONZE" />
                     <MatchOdds match={selectedMatch} />
                     <ShareButtons match={selectedMatch} />
+                    {report && (
+                      <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+                        <p className="text-[10px] font-bold text-[#1a5c2a] uppercase tracking-widest mb-1">GRS Coaching Blueprint</p>
+                        <p className="text-xs text-gray-500 mb-3">5-day training microcycle built from this match's tactical data</p>
+                        <button
+                          onClick={handleDownloadBlueprint}
+                          disabled={isDownloadingBlueprint}
+                          className="w-full py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white"
+                        >
+                          {isDownloadingBlueprint ? (
+                            <><Loader2 size={14} className="animate-spin" />Generating…</>
+                          ) : hasPurchasedBlueprint ? (
+                            <><Download size={14} />Download Blueprint</>
+                          ) : (
+                            <><FileDown size={14} />Unlock for $4.99</>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
@@ -1179,6 +1242,18 @@ export default function WorldCupTacticalLabPage() {
 
         {showHighlightsModal && selectedMatch && <HighlightsModal match={selectedMatch} onClose={() => setShowHighlightsModal(false)} />}
         {showFanRegister && <FanRegistrationModal onClose={() => setShowFanRegister(false)} onRegisterSuccess={onRegisterSuccess} />}
+        {showBlueprintModal && selectedMatch && (
+          <BlueprintPurchaseModal
+            matchId={selectedMatch.id}
+            matchName={`${selectedMatch.homeTeam} vs ${selectedMatch.awayTeam}`}
+            onClose={() => setShowBlueprintModal(false)}
+            onPurchaseComplete={() => {
+              setHasPurchasedBlueprint(true);
+              localStorage.setItem(`blueprint_purchased_${selectedMatch.id}`, '1');
+              setShowBlueprintModal(false);
+            }}
+          />
+        )}
       </div>
     </ClassroomProvider>
   );

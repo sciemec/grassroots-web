@@ -17,7 +17,7 @@ export function BlueprintPurchaseModal({
   onClose,
   onPurchaseComplete,
 }: BlueprintPurchaseModalProps) {
-  const { token } = useAuthStore();
+  const token = useAuthStore((s) => s.token);
   const authToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -36,8 +36,8 @@ export function BlueprintPurchaseModal({
         body: JSON.stringify({
           planId:     'blueprint_single',
           price:      4.99,
-          successUrl: `${window.location.origin}/world-cup?blueprint_paid=${matchId}`,
-          cancelUrl:  `${window.location.origin}/world-cup`,
+          successUrl: `${window.location.origin}/worldcup?blueprint_paid=${matchId}`,
+          cancelUrl:  `${window.location.origin}/worldcup`,
           metadata:   { matchId, type: 'coaching_blueprint' },
         }),
       });
