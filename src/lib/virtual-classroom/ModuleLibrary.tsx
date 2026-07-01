@@ -142,15 +142,55 @@ export function ModuleLibrary({ onSelectModule }: { onSelectModule: (module: Mat
           <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center">
             <p className="text-sm text-gray-500">No modules found</p>
           </div>
-        ) : (
-          sortedModules.map(module => (
-            <ModuleCard 
-              key={module.id} 
-              module={module} 
-              onClick={() => onSelectModule(module)}
-            />
-          ))
-        )}
+        ) : (() => {
+          const freeModules   = sortedModules.filter(m => !m.isLocked);
+          const lockedModules = sortedModules.filter(m =>  m.isLocked);
+          return (
+            <>
+              {/* Free Modules */}
+              {freeModules.length > 0 && (
+                <>
+                  <p className="text-[10px] font-black uppercase tracking-widest px-1" style={{ color: '#1a5c2a' }}>
+                    ✅ Free Modules ({freeModules.length})
+                  </p>
+                  {freeModules.map(module => (
+                    <ModuleCard
+                      key={module.id}
+                      module={module}
+                      onClick={() => onSelectModule(module)}
+                    />
+                  ))}
+                </>
+              )}
+
+              {/* Pro Modules */}
+              {lockedModules.length > 0 && (
+                <>
+                  <p className="text-[10px] font-black uppercase tracking-widest px-1 mt-2" style={{ color: '#7c3aed' }}>
+                    🔒 Pro Modules ({lockedModules.length})
+                  </p>
+                  <div className="flex items-center justify-between px-4 py-3 rounded-xl border" style={{ background: '#faf7ff', borderColor: '#e9d5ff' }}>
+                    <p className="text-xs text-gray-600">Unlock all Advanced modules + AI analysis</p>
+                    <a
+                      href="/player/subscription"
+                      className="text-[10px] font-black px-3 py-1.5 rounded-lg text-white"
+                      style={{ background: '#7c3aed' }}
+                    >
+                      Upgrade →
+                    </a>
+                  </div>
+                  {lockedModules.map(module => (
+                    <ModuleCard
+                      key={module.id}
+                      module={module}
+                      onClick={() => { window.location.href = '/player/subscription'; }}
+                    />
+                  ))}
+                </>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
@@ -160,44 +200,24 @@ export function ModuleLibrary({ onSelectModule }: { onSelectModule: (module: Mat
 function getMockModules(): MatchModule[] {
   return [
     {
-      id: 'mod-1',
-      matchId: 'match-1',
-      title: 'Transition Masterclass',
-      subtitle: 'Argentina vs France - World Cup Final 2026',
-      homeTeam: 'Argentina',
-      awayTeam: 'France',
-      homeScore: 3,
-      awayScore: 2,
-      thumbnail: '/images/modules/final.jpg',
-      description: 'Study how Argentina exploited France\'s transitions to win the World Cup.',
-      tags: ['Transition', 'Counter-Attack', 'Final'],
-      difficulty: 'advanced',
-      duration: '45 min',
-      lessonCount: 5,
-      isLocked: false,
-      isCompleted: false,
-      progress: 30,
-      createdAt: '2026-06-20T10:00:00Z',
-    },
-    {
-      id: 'mod-2',
-      matchId: 'match-2',
-      title: 'Pressing & Counter-Pressing',
-      subtitle: 'Brazil vs Germany - Quarter-Final 2026',
-      homeTeam: 'Brazil',
-      awayTeam: 'Germany',
-      homeScore: 2,
-      awayScore: 1,
-      thumbnail: '/images/modules/brazil-germany.jpg',
-      description: 'Learn how Brazil\'s high press overwhelmed Germany\'s build-up.',
-      tags: ['Pressing', 'High Press', 'Build-up'],
-      difficulty: 'intermediate',
-      duration: '35 min',
-      lessonCount: 4,
+      id: 'mod-0',
+      matchId: 'match-0',
+      title: 'Basics of Build-Up Play',
+      subtitle: 'Zimbabwe vs Kenya - AFCON Qualifier 2026',
+      homeTeam: 'Zimbabwe',
+      awayTeam: 'Kenya',
+      homeScore: 1,
+      awayScore: 0,
+      thumbnail: '',
+      description: 'Learn the fundamentals of building out from the back.',
+      tags: ['Build-Up', 'Passing', 'Beginner'],
+      difficulty: 'beginner',
+      duration: '20 min',
+      lessonCount: 3,
       isLocked: false,
       isCompleted: false,
       progress: 0,
-      createdAt: '2026-06-18T10:00:00Z',
+      createdAt: '2026-06-22T10:00:00Z',
     },
     {
       id: 'mod-3',
@@ -218,6 +238,46 @@ function getMockModules(): MatchModule[] {
       isCompleted: true,
       progress: 100,
       createdAt: '2026-06-15T10:00:00Z',
+    },
+    {
+      id: 'mod-2',
+      matchId: 'match-2',
+      title: 'Pressing & Counter-Pressing',
+      subtitle: 'Brazil vs Germany - Quarter-Final 2026',
+      homeTeam: 'Brazil',
+      awayTeam: 'Germany',
+      homeScore: 2,
+      awayScore: 1,
+      thumbnail: '/images/modules/brazil-germany.jpg',
+      description: 'Learn how Brazil\'s high press overwhelmed Germany\'s build-up.',
+      tags: ['Pressing', 'High Press', 'Build-up'],
+      difficulty: 'intermediate',
+      duration: '35 min',
+      lessonCount: 4,
+      isLocked: true,
+      isCompleted: false,
+      progress: 0,
+      createdAt: '2026-06-18T10:00:00Z',
+    },
+    {
+      id: 'mod-1',
+      matchId: 'match-1',
+      title: 'Transition Masterclass',
+      subtitle: 'Argentina vs France - World Cup Final 2026',
+      homeTeam: 'Argentina',
+      awayTeam: 'France',
+      homeScore: 3,
+      awayScore: 2,
+      thumbnail: '/images/modules/final.jpg',
+      description: 'Study how Argentina exploited France\'s transitions to win the World Cup.',
+      tags: ['Transition', 'Counter-Attack', 'Final'],
+      difficulty: 'advanced',
+      duration: '45 min',
+      lessonCount: 5,
+      isLocked: true,
+      isCompleted: false,
+      progress: 0,
+      createdAt: '2026-06-20T10:00:00Z',
     },
   ];
 }

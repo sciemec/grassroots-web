@@ -22,13 +22,16 @@ export function ModuleCard({ module, onClick }: ModuleCardProps) {
   };
 
   return (
-    <div 
+    <div
       onClick={onClick}
-      className={`bg-white rounded-xl shadow-md border-2 transition-all cursor-pointer hover:shadow-lg hover:border-[#f0b429] ${
-        module.isCompleted ? 'border-green-300' : 
-        module.isLocked ? 'border-gray-200 opacity-70' : 
-        'border-gray-200'
-      }`}
+      className="rounded-xl shadow-sm border-2 transition-all cursor-pointer hover:shadow-md"
+      style={
+        module.isLocked
+          ? { background: '#faf7ff', borderColor: '#e9d5ff' }
+          : module.isCompleted
+          ? { background: 'rgba(240,253,244,0.5)', borderColor: '#bbf7d0' }
+          : { background: '#fff', borderColor: '#e5e7eb' }
+      }
     >
       <div className="flex items-start gap-3 p-3">
         {/* Thumbnail */}
@@ -54,10 +57,23 @@ export function ModuleCard({ module, onClick }: ModuleCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h4 className="text-sm font-bold text-gray-900 truncate">{module.title}</h4>
+              <h4
+                className="text-sm font-bold truncate"
+                style={{ color: module.isLocked ? '#6b7280' : '#111827' }}
+              >
+                {module.title}
+              </h4>
               <p className="text-[10px] text-gray-500 truncate">{module.subtitle}</p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              {module.isLocked && (
+                <span
+                  className="flex items-center gap-0.5 text-[8px] font-black px-1.5 py-0.5 rounded"
+                  style={{ background: '#7c3aed', color: '#fff' }}
+                >
+                  <Lock size={7} /> PRO
+                </span>
+              )}
               <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${difficultyColors[module.difficulty]}`}>
                 {difficultyLabels[module.difficulty]}
               </span>
@@ -110,7 +126,9 @@ export function ModuleCard({ module, onClick }: ModuleCardProps) {
           )}
         </div>
 
-        <ChevronRight size={16} className="text-gray-400 flex-shrink-0 mt-1" />
+        <span className="flex-shrink-0 mt-1" style={{ color: module.isLocked ? '#c4b5fd' : '#d1d5db' }}>
+          {module.isLocked ? <Lock size={14} /> : <ChevronRight size={16} />}
+        </span>
       </div>
     </div>
   );

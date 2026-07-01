@@ -60,7 +60,7 @@ export function ClassroomProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      setIsTeacher(user.role === 'coach' || user.role === 'teacher');
+      setIsTeacher(user.role === 'coach' || (user.role as string) === 'teacher');
     }
   }, [user]);
 
