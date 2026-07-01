@@ -1,14 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    // ESLint errors are caught in CI — don't block Vercel production builds
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // Vercel build cache occasionally serves stale source — ignore TS errors to unblock deploys
     ignoreBuildErrors: true,
   },
   transpilePackages: ["firebase"],
+
+  // Explicitly declare turbopack config so Next.js 16 doesn't error when
+  // Turbopack is the default and a webpack config is also present.
+  // The --webpack flag in build scripts takes precedence, but this acts
+  // as a safety net if Vercel invokes `next build` directly.
+  turbopack: {},
 
   webpack: (config, { dev }) => {
     // Force Webpack to drop path-guessing symlink sweeps to avoid Windows readlink EISDIR crashes
