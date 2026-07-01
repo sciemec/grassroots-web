@@ -1126,29 +1126,38 @@ export default function WorldCupTacticalLabPage() {
                             </div>
                             <h3 className="text-sm font-bold text-gray-900">{gender === 'female' ? 'Amara' : 'THUTO'}'s tactical read</h3>
                           </div>
-                          <p className="text-sm text-gray-700 leading-relaxed">{report.narrative}</p>
+                          <p className="text-sm text-gray-700 leading-relaxed">{report.summary}</p>
                         </div>
 
                         <div className="space-y-3">
-                          {(['regain', 'build', 'finish'] as const).map(phase => (
-                            <div key={phase} className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-lg">{phaseIcons[phase]}</span>
-                                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">{phaseLabels[phase]}</h4>
-                                <span className="ml-auto text-xs font-bold text-[#1a5c2a]">{report.phases[phase].successRate}% success</span>
+                          {report.phases.map((phase, i) => {
+                            const icons = ['🛡️', '⚙️', '🎯'];
+                            return (
+                              <div key={phase.id ?? i} className="bg-white rounded-2xl p-4 shadow-md border border-gray-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg">{icons[i] ?? '📋'}</span>
+                                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">{phase.title}</h4>
+                                  <span className="ml-auto text-xs font-bold text-[#1a5c2a]">{phase.minute_range}</span>
+                                </div>
+                                <p className="text-sm text-gray-600 leading-relaxed">{phase.description}</p>
+                                {phase.key_event && <p className="text-xs text-[#1a5c2a] font-semibold mt-2">⚡ {phase.key_event}</p>}
                               </div>
-                              <p className="text-sm text-gray-600 leading-relaxed">{buildPhaseQuestion(phase, report.phases[phase])}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
 
-                        {report.quizMoments.length > 0 && (
-                          <div className="space-y-3">
+                        {report.what_would_you_do?.scenario && (
+                          <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-200 space-y-3">
                             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Brain size={16} className="text-[#1a5c2a]" /> What Would You Do?</h3>
-                            {report.quizMoments.map(moment => (
-                              <WhatWouldYouDo key={moment.id} moment={moment} gender={gender}
-                                onAnswered={(wasOptimal) => handleQuizAnswered(moment, wasOptimal)} />
-                            ))}
+                            <p className="text-sm text-gray-700">{report.what_would_you_do.scenario}</p>
+                            <div className="space-y-2">
+                              {report.what_would_you_do.options.map((opt, idx) => (
+                                <div key={idx} className={`text-xs px-3 py-2 rounded-lg border ${idx === report.what_would_you_do!.correct ? 'bg-[#f0fdf4] border-[#1a5c2a] text-[#1a5c2a] font-bold' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+                                  {String.fromCharCode(65 + idx)}. {opt}
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-gray-500 italic">{report.what_would_you_do.explanation}</p>
                           </div>
                         )}
                       </>
