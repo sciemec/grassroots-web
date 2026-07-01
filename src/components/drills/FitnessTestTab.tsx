@@ -288,7 +288,9 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
   const [ageGroup,     setAgeGroup]     = useState<AgeGroup>("u17");
   const [currentTest,  setCurrentTest]  = useState(0);
   const [testStates,   setTestStates]   = useState<Record<TestId, TestState>>(
-    Object.fromEntries(TESTS.map(t => [t.id, { phase: "idle", score: null, error: "", progress: 0 }])) as Record<TestId, TestState>
+    () => Object.fromEntries(
+      TESTS.map(t => [t.id, { phase: "idle" as TestPhase, score: null, error: "", progress: 0 }])
+    ) as Record<TestId, TestState>
   );
   const [profile,      setProfile]      = useState<AthleticProfile | null>(null);
   const [positions,    setPositions]    = useState<typeof POSITIONS>([]);
@@ -492,10 +494,10 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
   }, [currentTest, updateTest, goNext]);
 
   const restartBattery = () => {
-    setTestStates(
-      Object.fromEntries(TESTS.map(t => [t.id, { phase: "idle", score: null, error: "", progress: 0 }]))
-      as Record<TestId, TestState>
-    );
+    const freshStates = Object.fromEntries(
+      TESTS.map(t => [t.id, { phase: "idle" as TestPhase, score: null, error: "", progress: 0 }])
+    ) as Record<TestId, TestState>;
+    setTestStates(freshStates);
     setCurrentTest(0);
     setProfile(null);
     setPositions([]);
