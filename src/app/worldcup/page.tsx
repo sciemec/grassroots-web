@@ -862,7 +862,7 @@ export default function WorldCupTacticalLabPage() {
     const loadMatches = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/world-cup/matches?status=completed');
+        const res = await fetch('/api/worldcup/matches?status=completed');
         if (!res.ok) throw new Error('Could not load matches');
         const data = await res.json();
         const transformed: Match[] = (data.matches ?? []).map((m: any) => ({
@@ -894,7 +894,7 @@ export default function WorldCupTacticalLabPage() {
   useEffect(() => {
     const loadLive = async () => {
       try {
-        const res = await fetch('/api/world-cup/matches?status=live');
+        const res = await fetch('/api/worldcup/matches?status=live');
         if (!res.ok) return;
         const data = await res.json();
         setLiveMatches((data.matches ?? []).map((m: any) => ({
@@ -938,7 +938,7 @@ export default function WorldCupTacticalLabPage() {
     if (!selectedMatch || !authToken) { setHasPurchasedBlueprint(false); return; }
     const cached = localStorage.getItem(`blueprint_purchased_${selectedMatch.id}`);
     if (cached === '1') { setHasPurchasedBlueprint(true); return; }
-    fetch(`/api/world-cup/matches/${selectedMatch.id}/check-purchase`, {
+    fetch(`/api/worldcup/matches/${selectedMatch.id}/check-purchase`, {
       headers: { Authorization: `Bearer ${authToken}` },
     })
       .then(r => r.ok ? r.json() : { purchased: false })

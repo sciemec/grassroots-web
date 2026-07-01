@@ -420,6 +420,24 @@ export default function FootballDrillsLabPage() {
   const todaysDrill = filteredDrills.find(d => !completedDrills.includes(d.id));
   const remainingDrills = filteredDrills.filter(d => d !== todaysDrill);
 
+  // Extracted from JSX IIFE — must live in component body, not inside JSX
+  const freeDrills = filteredDrills.filter(d => !d.is_premium);
+  const proDrills  = filteredDrills.filter(d =>  d.is_premium);
+  const drillCard = (drill: typeof filteredDrills[0], i: number) => (
+    <DrillCard
+      key={drill.id}
+      drill={drill}
+      index={i}
+      isDone={completedDrills.includes(drill.id)}
+      isExpanded={expandedDrill === drill.id}
+      isPremiumUser={isPremiumUser}
+      onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
+      onMarkDone={toggleDrillCompletion}
+      ageGroup={ageGroup}
+      masteryCount={masteryMap[drill.id] ?? 0}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-gray-900 font-sans antialiased">
 
@@ -759,25 +777,7 @@ export default function FootballDrillsLabPage() {
                       className="mt-2 text-xs font-bold text-[#1a5c2a] underline">Clear filters</button>
                   </div>
                 ) : (
-                  (() => {
-                    const freeDrills = filteredDrills.filter(d => !d.is_premium);
-                    const proDrills  = filteredDrills.filter(d =>  d.is_premium);
-                    const drillCard = (drill: typeof filteredDrills[0], i: number) => (
-                      <DrillCard
-                        key={drill.id}
-                        drill={drill}
-                        index={i}
-                        isDone={completedDrills.includes(drill.id)}
-                        isExpanded={expandedDrill === drill.id}
-                        isPremiumUser={isPremiumUser}
-                        onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
-                        onMarkDone={toggleDrillCompletion}
-                        ageGroup={ageGroup}
-                        masteryCount={masteryMap[drill.id] ?? 0}
-                      />
-                    );
-                    return (
-                      <>
+                  <>
                         {/* TODAY'S RECOMMENDED — always a free drill */}
                         {todaysDrill && !todaysDrill.is_premium && (
                           <div className="space-y-2">
@@ -827,9 +827,7 @@ export default function FootballDrillsLabPage() {
                             )}
                           </div>
                         )}
-                      </>
-                    );
-                  })()
+                  </>
                 )}
               </div>
             </section>
