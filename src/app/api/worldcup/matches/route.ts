@@ -103,22 +103,30 @@ export async function GET(req: NextRequest) {
     }
 
     if (status === 'completed') {
-      // iSports /results with no date only returns today's completed matches.
-      // Fetch every tournament day from the WC 2026 start through today.
-      const WC_START = new Date('2026-06-11');
-      const today    = new Date();
+      // Strategy: run a simple no-date call in parallel with per-date calls.
+      // The no-date /results endpoint returns recent completed matches and is
+      // the most reliable. The per-date loop fills in older results but can
+      // hit rate limits when 20+ calls fire at once — so we cap it to the
+      // last 7 days and rely on the simple call for anything older.
+      const WC_START  = new Date('2026-06-11');
+      const today     = new Date();
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      const rangeStart = sevenDaysAgo > WC_START ? sevenDaysAgo : WC_START;
+
       const dates: string[] = [];
-      for (let d = new Date(WC_START); d <= today; d.setDate(d.getDate() + 1)) {
+      for (let d = new Date(rangeStart); d <= today; d.setDate(d.getDate() + 1)) {
         dates.push(d.toISOString().split('T')[0]);
       }
 
-      const settled = await Promise.allSettled(
-        dates.map((date) => getCompletedMatches(lid, date))
-      );
+      const [simpleRes, ...dateResults] = await Promise.allSettled([
+        getCompletedMatches(lid),                            // no-date — most reliable
+        ...dates.map((date) => getCompletedMatches(lid, date)),
+      ]);
 
       const seen      = new Set<string>();
       const completed: iSportsMatch[] = [];
-      for (const r of settled) {
+      for (const r of [simpleRes, ...dateResults]) {
         if (r.status === 'fulfilled') {
           for (const m of r.value) {
             if (!seen.has(m.matchId)) {
