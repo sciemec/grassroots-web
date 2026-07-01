@@ -63,24 +63,36 @@ export default function DrillCard({
     masteryCount >= 1 ? "#fef3c7" :
     "#f3f4f6";
 
+  const isLocked = drill.is_premium && !isPremiumUser;
+
   return (
     <div
-      className={`bg-white border rounded-2xl overflow-hidden transition-all shadow-sm ${
-        isDone ? "border-emerald-200 bg-emerald-50/20" : "border-gray-200 hover:border-gray-300 hover:shadow-md"
-      }`}
+      className="border rounded-2xl overflow-hidden transition-all shadow-sm"
+      style={
+        isLocked
+          ? { background: "#faf7ff", borderColor: "#e9d5ff" }
+          : isDone
+          ? { background: "rgba(240,253,244,0.5)", borderColor: "#bbf7d0" }
+          : { background: "#fff", borderColor: "#e5e7eb" }
+      }
     >
       {/* ── COLLAPSED HEADER ── */}
       <button
         onClick={() => onToggleExpand(drill.id)}
         className="w-full flex items-center gap-3 px-5 py-4 text-left bg-transparent border-none cursor-pointer"
       >
-        {/* Circle number / done tick */}
+        {/* Circle number / done tick / lock */}
         <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${
-            isDone ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-700"
-          }`}
+          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black"
+          style={
+            isLocked
+              ? { background: "#ede9fe", color: "#7c3aed" }
+              : isDone
+              ? { background: "#059669", color: "#fff" }
+              : { background: "#f3f4f6", color: "#374151" }
+          }
         >
-          {isDone ? <CheckCircle2 size={14} /> : index + 1}
+          {isDone ? <CheckCircle2 size={14} /> : isLocked ? <Lock size={13} /> : index + 1}
         </div>
 
         <div className="flex-1 min-w-0 space-y-1">
@@ -89,7 +101,14 @@ export default function DrillCard({
             <span className="bg-gray-100 text-gray-700 font-mono font-bold text-[9px] px-1.5 py-0.5 rounded">
               {drill.duration}
             </span>
-            {masteryCount > 0 && (
+            {/* PRO badge — visible on collapsed header for locked drills */}
+            {isLocked && (
+              <span className="flex items-center gap-0.5 text-[9px] font-black px-2 py-0.5 rounded"
+                style={{ background: "#7c3aed", color: "#fff" }}>
+                <Lock size={8} /> PRO
+              </span>
+            )}
+            {masteryCount > 0 && !isLocked && (
               <span
                 className="text-[9px] font-black px-2 py-0.5 rounded"
                 style={{ color: masteryColor, background: masteryBg }}
@@ -118,15 +137,18 @@ export default function DrillCard({
           </div>
           {/* Name */}
           <h3
-            className={`text-sm font-black uppercase tracking-wide ${
-              isDone ? "text-emerald-700 line-through opacity-70" : "text-gray-900"
-            }`}
+            className="text-sm font-black uppercase tracking-wide"
+            style={
+              isLocked ? { color: "#6b7280" } :
+              isDone   ? { color: "#059669", textDecoration: "line-through", opacity: 0.7 } :
+              { color: "#111827" }
+            }
           >
             {drill.name}
           </h3>
         </div>
 
-        <span className="text-gray-300 flex-shrink-0">
+        <span className="flex-shrink-0" style={{ color: isLocked ? "#c4b5fd" : "#d1d5db" }}>
           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </span>
       </button>

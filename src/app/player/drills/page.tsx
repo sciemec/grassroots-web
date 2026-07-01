@@ -759,76 +759,77 @@ export default function FootballDrillsLabPage() {
                       className="mt-2 text-xs font-bold text-[#1a5c2a] underline">Clear filters</button>
                   </div>
                 ) : (
-                  <>
-                    {/* TODAY'S RECOMMENDED */}
-                    {todaysDrill && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-[#c8962a]">Today&rsquo;s Recommended</h4>
-                          <div className="flex-1 h-px bg-[#c8962a]/20" />
-                        </div>
-                        <DrillCard
-                          drill={todaysDrill}
-                          index={filteredDrills.indexOf(todaysDrill)}
-                          isDone={completedDrills.includes(todaysDrill.id)}
-                          isExpanded={expandedDrill === todaysDrill.id}
-                          isPremiumUser={isPremiumUser}
-                          onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
-                          onMarkDone={toggleDrillCompletion}
-                          ageGroup={ageGroup}
-                          masteryCount={masteryMap[todaysDrill.id] ?? 0}
-                        />
-                      </div>
-                    )}
+                  {(() => {
+                    const freeDrills = filteredDrills.filter(d => !d.is_premium);
+                    const proDrills  = filteredDrills.filter(d =>  d.is_premium);
+                    const drillCard = (drill: typeof filteredDrills[0], i: number) => (
+                      <DrillCard
+                        key={drill.id}
+                        drill={drill}
+                        index={i}
+                        isDone={completedDrills.includes(drill.id)}
+                        isExpanded={expandedDrill === drill.id}
+                        isPremiumUser={isPremiumUser}
+                        onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
+                        onMarkDone={toggleDrillCompletion}
+                        ageGroup={ageGroup}
+                        masteryCount={masteryMap[drill.id] ?? 0}
+                      />
+                    );
+                    return (
+                      <>
+                        {/* TODAY'S RECOMMENDED — always a free drill */}
+                        {todaysDrill && !todaysDrill.is_premium && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-[10px] font-black uppercase tracking-widest text-[#c8962a]">Today&rsquo;s Recommended</h4>
+                              <div className="flex-1 h-px bg-[#c8962a]/20" />
+                            </div>
+                            {drillCard(todaysDrill, filteredDrills.indexOf(todaysDrill))}
+                          </div>
+                        )}
 
-                    {/* ALL DRILLS */}
-                    {remainingDrills.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">All Drills</h4>
-                          <div className="flex-1 h-px bg-gray-200" />
-                        </div>
-                        {remainingDrills.map((drill, i) => (
-                          <DrillCard
-                            key={drill.id}
-                            drill={drill}
-                            index={filteredDrills.indexOf(drill)}
-                            isDone={completedDrills.includes(drill.id)}
-                            isExpanded={expandedDrill === drill.id}
-                            isPremiumUser={isPremiumUser}
-                            onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
-                            onMarkDone={toggleDrillCompletion}
-                            ageGroup={ageGroup}
-                            masteryCount={masteryMap[drill.id] ?? 0}
-                          />
-                        ))}
-                      </div>
-                    )}
+                        {/* FREE DRILLS */}
+                        {freeDrills.filter(d => d !== todaysDrill).length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-[#1a5c2a]">✅ Free Drills</span>
+                              <div className="flex-1 h-px bg-[#1a5c2a]/20" />
+                              <span className="text-[9px] text-gray-400">{freeDrills.filter(d => d !== todaysDrill).length} drills</span>
+                            </div>
+                            {freeDrills.filter(d => d !== todaysDrill).map((drill) =>
+                              drillCard(drill, filteredDrills.indexOf(drill))
+                            )}
+                          </div>
+                        )}
 
-                    {/* If all drills done, show just the list */}
-                    {!todaysDrill && filteredDrills.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">All Drills</h4>
-                          <div className="flex-1 h-px bg-gray-200" />
-                        </div>
-                        {filteredDrills.map((drill) => (
-                          <DrillCard
-                            key={drill.id}
-                            drill={drill}
-                            index={filteredDrills.indexOf(drill)}
-                            isDone={completedDrills.includes(drill.id)}
-                            isExpanded={expandedDrill === drill.id}
-                            isPremiumUser={isPremiumUser}
-                            onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
-                            onMarkDone={toggleDrillCompletion}
-                            ageGroup={ageGroup}
-                            masteryCount={masteryMap[drill.id] ?? 0}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </>
+                        {/* PRO DRILLS */}
+                        {proDrills.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#7c3aed" }}>🔒 Pro Drills</span>
+                              <div className="flex-1 h-px" style={{ background: "#ede9fe" }} />
+                              <span className="text-[9px]" style={{ color: "#7c3aed" }}>{proDrills.length} drills</span>
+                            </div>
+                            {!isPremiumUser && (
+                              <div className="flex items-center justify-between px-4 py-3 rounded-xl border"
+                                style={{ background: "#faf7ff", borderColor: "#e9d5ff" }}>
+                                <p className="text-xs text-gray-600">Unlock all Advanced drills + Gemini AI feedback</p>
+                                <Link href="/player/subscription"
+                                  className="text-[10px] font-black px-3 py-1.5 rounded-lg text-white flex-shrink-0 ml-3"
+                                  style={{ background: "#7c3aed" }}>
+                                  Upgrade →
+                                </Link>
+                              </div>
+                            )}
+                            {proDrills.map((drill) =>
+                              drillCard(drill, filteredDrills.indexOf(drill))
+                            )}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 )}
               </div>
             </section>
