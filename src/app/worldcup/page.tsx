@@ -279,12 +279,12 @@ function HighlightsModal({ match, onClose }: { match: Match | null; onClose: () 
   useEffect(() => {
     if (!match) return;
     setLoading(true);
-    fetch(`/api/youtube/search?q=${encodeURIComponent(`${match.homeTeam} vs ${match.awayTeam} world cup 2026 highlights`)}`)
+    fetch(`/api/worldcup/highlights?q=${encodeURIComponent(`${match.homeTeam} vs ${match.awayTeam} world cup 2026 highlights`)}`)
       .then(r => r.json())
       .then(data => {
-        if (data.items) {
-          setHighlights(data.items.map((item: any) => ({
-            id: item.id.videoId, title: item.snippet.title, thumbnail: item.snippet.thumbnails.medium.url,
+        if (data.videos) {
+          setHighlights(data.videos.map((v: any) => ({
+            id: v.id, title: v.title, thumbnail: v.thumbnail,
           })));
         }
       })
@@ -513,291 +513,6 @@ function FanRegistrationModal({ onClose, onRegisterSuccess }: { onClose: () => v
 // INLINE QUIZ COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
-function _deletedGetModulesFromPhases_placeholder(): void {
-  const modules: TrainingModule[] = [];
-
-  if (phases.regain.successRate < 40) {
-    modules.push({
-      title: 'Pressing Triggers',
-      focus: 'Win the ball back quicker in transition',
-      drills: [
-        {
-          name: 'Shadow Pressing',
-          setup: '8v8 + 2 neutrals in half pitch. GK plays short = press trigger. Force play wide, never inside.',
-          reps: '4 × 6-min rounds',
-          coachingPoint: 'Press in pairs — never solo. If the first presser gets beaten, the second must be there.',
-        },
-        {
-          name: 'Counter-Press Rondo',
-          setup: '5v5 in 20×20m. Team that loses possession has a 5-second window to win it back immediately.',
-          reps: '6 × 4-min rounds',
-          coachingPoint: 'First 3 seconds after losing the ball is the press window. After that — drop and organise.',
-        },
-      ],
-    });
-  }
-
-  if (phases.build.successRate < 40) {
-    modules.push({
-      title: 'Positional Play Under Pressure',
-      focus: 'Play through the midfield press with composure',
-      drills: [
-        {
-          name: '4v2 Positional Rondo',
-          setup: '4 attackers vs 2 defenders in 15×15m grid. 8 passes = 1 point. Rotate defenders every 2 min.',
-          reps: '5 × 5-min rounds',
-          coachingPoint: 'Move before receiving. Create a third-man option behind the press — never play into pressure.',
-        },
-        {
-          name: 'Build-Out Pattern 11v6',
-          setup: 'Full team vs 6-man high press. GK → CB → CM → wide player sequence. Restart on GK each time.',
-          reps: '3 × 10-min runs',
-          coachingPoint: 'Goalkeeper is a real passing option, not a last resort. No hoofing under pressure.',
-        },
-      ],
-    });
-  }
-
-  if (phases.finish.successRate < 40) {
-    modules.push({
-      title: 'Clinical Finishing',
-      focus: 'Convert chances in the final third',
-      drills: [
-        {
-          name: 'Combination Finishing 2v1',
-          setup: '2 attackers vs 1 defender, entering from midfield. Vary angle and distance of approach each rep.',
-          reps: '20 reps each side',
-          coachingPoint: 'Communicate before the box — "square it" or "shoot". Hesitation inside the area is fatal.',
-        },
-        {
-          name: 'Crossing & Arrival Timing',
-          setup: 'Winger crosses from 3 zones (byline, cut-back, early cross). 2 strikers attack near/far post on cue.',
-          reps: '25 crosses per winger',
-          coachingPoint: 'Late arrival into the box hits the ball harder than an early run that slows down.',
-        },
-      ],
-    });
-  }
-
-  if (modules.length === 0) {
-    modules.push({
-      title: 'Advanced Transition Play',
-      focus: 'Exploit both defensive and attacking transitions',
-      drills: [
-        {
-          name: 'Counter-Attack Burst 3v2',
-          setup: 'GK distributes to CM. Instant 3v2 fast break. Add a covering defender after every 5 reps.',
-          reps: '15 reps each way',
-          coachingPoint: '2 touches maximum in the break. First pass sets the angle, second pass or shot finishes.',
-        },
-        {
-          name: 'Transition Game 6v6',
-          setup: '6v6 on 40×50m. Goal only counts if scored within 6 seconds of winning possession.',
-          reps: '4 × 8-min rounds',
-          coachingPoint: 'Attack the space between defenders — not the man. Speed of decision beats speed of running.',
-        },
-      ],
-    });
-  }
-
-  return modules;
-}
-
-function generateModulePDF(match: Match, phases: PhaseReport, modules: TrainingModule[]): void {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210;
-  const H = 297;
-  const margin = 14;
-
-  doc.setFillColor(26, 92, 42);
-  doc.rect(0, 0, W, 58, 'F');
-  doc.setFillColor(240, 180, 41);
-  doc.rect(0, 58, W, 3, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(240, 180, 41);
-  doc.text('GRS COACHING BLUEPRINTS', W / 2, 18, { align: 'center' });
-
-  doc.setFontSize(19);
-  doc.setTextColor(255, 255, 255);
-  doc.text('5-Day Training Microcycle', W / 2, 34, { align: 'center' });
-
-  doc.setFontSize(11);
-  doc.text(`${match.homeTeam}  ${match.homeScore} – ${match.awayScore}  ${match.awayTeam}`, W / 2, 48, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  doc.text('Based on the AI tactical report generated by GrassRoots Sports.', margin, 72);
-  doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, 80);
-
-  doc.setFillColor(245, 250, 246);
-  doc.roundedRect(margin, 88, W - margin * 2, 50, 3, 3, 'F');
-  doc.setDrawColor(26, 92, 42);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(margin, 88, W - margin * 2, 50, 3, 3, 'S');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(26, 92, 42);
-  doc.text('MATCH PHASE ANALYSIS', margin + 4, 97);
-
-  const phaseRows = [
-    { label: 'Regaining Possession', rate: phases.regain.successRate },
-    { label: 'Building the Attack',  rate: phases.build.successRate },
-    { label: 'Finishing',            rate: phases.finish.successRate },
-  ];
-  phaseRows.forEach((p, i) => {
-    const y = 107 + i * 10;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(60, 60, 60);
-    doc.text(`${p.label}:`, margin + 4, y);
-
-    const col: [number, number, number] = p.rate < 40 ? [190, 40, 40] : p.rate < 60 ? [180, 120, 0] : [26, 92, 42];
-    doc.setTextColor(col[0], col[1], col[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${p.rate}% success`, 118, y);
-
-    if (p.rate < 40) {
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'italic');
-      doc.text('  ← focus area this week', 145, y);
-    }
-  });
-
-  let y = 152;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(26, 92, 42);
-  doc.text('TRAINING FOCUS THIS WEEK', margin, y);
-  y += 8;
-
-  modules.forEach((mod, i) => {
-    doc.setFillColor(240, 180, 41);
-    doc.rect(margin, y + 1, 2, 5, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(30, 30, 30);
-    doc.text(`${i + 1}. ${mod.title}`, margin + 6, y + 6);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(mod.focus, margin + 6, y + 13);
-    y += 22;
-  });
-
-  doc.setFillColor(26, 92, 42);
-  doc.rect(0, H - 14, W, 14, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.text("GrassRoots Sports · grassrootssports.live · Zimbabwe's First AI Sports Platform", W / 2, H - 6, { align: 'center' });
-
-  doc.addPage();
-
-  doc.setFillColor(26, 92, 42);
-  doc.rect(0, 0, W, 18, 'F');
-  doc.setTextColor(240, 180, 41);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('5-DAY MICROCYCLE PLAN', W / 2, 12, { align: 'center' });
-
-  y = 26;
-  BLUEPRINT_DAY_PLAN.forEach((dayLabel, dayIdx) => {
-    const isModuleDay = dayIdx >= 1 && dayIdx <= 3;
-    const mod = isModuleDay ? modules[dayIdx - 1] : null;
-    const boxH = mod ? 54 : 22;
-
-    doc.setFillColor(245, 250, 246);
-    doc.roundedRect(margin, y, W - margin * 2, boxH, 2, 2, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(26, 92, 42);
-    doc.text(`DAY ${dayIdx + 1}`, margin + 4, y + 7);
-
-    doc.setFontSize(10);
-    doc.setTextColor(30, 30, 30);
-    doc.text(mod ? mod.title : dayLabel, margin + 20, y + 7);
-
-    if (mod) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(80, 80, 80);
-      doc.text(`Focus: ${mod.focus}`, margin + 4, y + 16);
-
-      mod.drills.forEach((drill, di) => {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(50, 50, 50);
-        doc.text(`• ${drill.name}  (${drill.reps})`, margin + 4, y + 26 + di * 12);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(110, 110, 110);
-        const lines = doc.splitTextToSize(drill.setup, W - margin * 2 - 10) as string[];
-        doc.text(lines[0], margin + 8, y + 32 + di * 12);
-      });
-      y += boxH + 6;
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(80, 80, 80);
-      doc.text(dayLabel, margin + 4, y + 16);
-      y += boxH + 6;
-    }
-  });
-
-  doc.addPage();
-
-  doc.setFillColor(26, 92, 42);
-  doc.rect(0, 0, W, 18, 'F');
-  doc.setTextColor(240, 180, 41);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('DRILL CARDS', W / 2, 12, { align: 'center' });
-
-  let drillY = 26;
-  let drillIndex = 0;
-  const allDrills = modules.flatMap(m => m.drills);
-
-  allDrills.forEach((drill, i) => {
-    if (drillY > 260) {
-      doc.addPage();
-      drillY = 26;
-    }
-
-    doc.setFillColor(245, 250, 246);
-    doc.roundedRect(margin, drillY, W - margin * 2, 40, 2, 2, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(margin, drillY, W - margin * 2, 40, 2, 2, 'S');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(26, 92, 42);
-    doc.text(`DRILL ${i + 1}: ${drill.name}`, margin + 4, drillY + 8);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`Setup: ${drill.setup}`, margin + 4, drillY + 16);
-    doc.text(`Reps: ${drill.reps}`, margin + 4, drillY + 23);
-    doc.text(`Coaching Point: ${drill.coachingPoint}`, margin + 4, drillY + 30);
-
-    drillY += 44;
-  });
-
-  doc.setFillColor(26, 92, 42);
-  doc.rect(0, H - 14, W, 14, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.text("GrassRoots Sports · grassrootssports.live · Zimbabwe's First AI Sports Platform", W / 2, H - 6, { align: 'center' });
-
-  doc.save(`GRS-Blueprint-${match.homeTeam}-vs-${match.awayTeam}.pdf`);
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT
@@ -893,7 +608,7 @@ export default function WorldCupTacticalLabPage() {
   useEffect(() => {
     if (!selectedMatch || !selectedMatch.reportReady) { setReport(null); return; }
     setReportLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/world-cup/matches/${selectedMatch.id}/tactical-report`)
+    fetch(`/api/worldcup/reports/${selectedMatch.id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => setReport(data?.available ? data : null))
       .catch(() => setReport(null))
@@ -961,26 +676,6 @@ export default function WorldCupTacticalLabPage() {
 
   const isMatchUnlocked = (matchId: string) =>
     !!user || unlockedMatches.includes(matchId) || unlockedMatches.length > 0;
-
-  const handleQuizAnswered = async (moment: QuizMoment, wasOptimal: boolean) => {
-    if (!authToken || !selectedMatch) return;
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tactical-iq/answer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({
-          matchId:        selectedMatch.id,
-          quizMomentId:   moment.id,
-          chosenOptionId: moment.options.find(o => o.isOptimal === wasOptimal)?.id ?? moment.options[0].id,
-          wasOptimal,
-          zone:           moment.zone,
-        }),
-      });
-    } catch {}
-  };
-
-  const phaseIcons: Record<keyof PhaseReport, string> = { regain: '🛡️', build: '⚙️', finish: '🎯' };
-  const phaseLabels: Record<keyof PhaseReport, string> = { regain: 'Regaining Possession', build: 'Building the Attack', finish: 'Finishing' };
 
   return (
     <ClassroomProvider>

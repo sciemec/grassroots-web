@@ -5,15 +5,18 @@ import { getLiveMatches } from '@/lib/isports/client';
 export async function GET() {
   try {
     const matches = await getLiveMatches('1');
+    
     return NextResponse.json({ 
       success: true, 
-      count: matches.length,
+      count: Array.isArray(matches) ? matches.length : 0,
       matches: matches 
     });
   } catch (error) {
+    // Safely extract the error message
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
     return NextResponse.json({ 
       success: false, 
-      error: String(error) 
+      error: errorMessage 
     }, { status: 500 });
-  }
-}
+    

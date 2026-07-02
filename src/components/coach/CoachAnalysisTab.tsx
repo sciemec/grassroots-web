@@ -494,11 +494,20 @@ export default function CoachAnalysisTab({ token }: { token: string | null }) {
       if (res.ok) {
         const data = await res.json() as { data?: unknown[] } | unknown[];
         const list = Array.isArray(data) ? data : (data as { data?: unknown[] }).data ?? [];
-        setPlayers((list as Record<string, string>[]).map(p => ({
-          id:       String(p.id ?? ""),
-          name:     String(p.name ?? p.full_name ?? `${p.first_name ?? ""} ${p.surname ?? ""}`.trim() || "Player"),
-          position: String(p.position ?? p.position_primary ?? "—"),
-        })));
+        setPlayers((list as Record<string, unknown>[]).map(p => {
+          const first    = typeof p.first_name === "string" ? p.first_name : "";
+          const last     = typeof p.surname    === "string" ? p.surname    : "";
+          const fullName = `${first} ${last}`.trim();
+          return {
+            id:       typeof p.id       === "string" ? p.id       : String(p.id ?? ""),
+            name:     typeof p.name     === "string" ? p.name
+                    : typeof p.full_name=== "string" ? p.full_name
+                    : fullName || "Player",
+            position: typeof p.position === "string" ? p.position
+                    : typeof p.position_primary === "string" ? p.position_primary
+                    : "—",
+          };
+        }));
       }
     } catch { /* silent */ }
     setLoadingPlayers(false);
