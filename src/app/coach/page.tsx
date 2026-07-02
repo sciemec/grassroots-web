@@ -54,6 +54,7 @@ interface SquadMember {
   formScore: number;
   fatigue: number;
   status: "fit" | "caution" | "injured";
+  testScore?: number;
 }
 
 interface UpcomingMatch {
@@ -300,27 +301,43 @@ export default function CoachHubPage() {
     loadPlayerData();
   }, [selectedPlayerId, token]);
 
-  // Load biometric data (mock — replace with real API when endpoint is live)
-  const loadBiometricData = () => {
+  // Load biometric data — uses real API players when available, falls back to mock
+  const loadBiometricData = (realPlayers?: Record<string, unknown>[]) => {
     try {
-      const mockSquad: SquadMember[] = [
-        { id: "1", name: "Tendai Musona", position: "Winger", formScore: 84, fatigue: 45, status: "fit" },
-        { id: "2", name: "Blessing Moyo", position: "Striker", formScore: 92, fatigue: 28, status: "fit" },
-        { id: "3", name: "Knowledge Chikwanda", position: "Midfielder", formScore: 78, fatigue: 62, status: "caution" },
-        { id: "4", name: "Takudzwa Ngwenya", position: "Defender", formScore: 81, fatigue: 35, status: "fit" },
-        { id: "5", name: "Tinashe Kamusoko", position: "Defender", formScore: 76, fatigue: 71, status: "caution" },
-        { id: "6", name: "Edmore Sibanda", position: "Goalkeeper", formScore: 88, fatigue: 22, status: "fit" },
-        { id: "7", name: "Tanaka Chikuni", position: "Midfielder", formScore: 85, fatigue: 32, status: "fit" },
-        { id: "8", name: "Takunda Moyo", position: "Striker", formScore: 79, fatigue: 48, status: "fit" },
-      ];
-      setSquad(mockSquad);
+      let members: SquadMember[];
 
-      const avgForm = Math.round(mockSquad.reduce((sum, p) => sum + p.formScore, 0) / mockSquad.length);
-      const highFatigue = mockSquad.filter((p) => p.fatigue > 60).length;
+      if (realPlayers && realPlayers.length > 0) {
+        members = realPlayers.map((p, i) => ({
+          id:        String(p.id ?? i + 1),
+          name:      String(p.name ?? p.full_name ?? "Player"),
+          position:  String(p.position ?? p.position_primary ?? "—"),
+          formScore: Number(p.avg_form_score ?? p.form_score ?? p.overall_score ?? 75),
+          fatigue:   Number(p.fatigue ?? 40),
+          status:    (["fit", "caution", "injured"].includes(String(p.status)) ? p.status : "fit") as SquadMember["status"],
+          testScore: p.athletic_score != null ? Number(p.athletic_score) : undefined,
+        }));
+      } else {
+        // Fallback mock — shown until real players are synced
+        members = [
+          { id: "1", name: "Tendai Musona",     position: "Winger",     formScore: 84, fatigue: 45, status: "fit" },
+          { id: "2", name: "Blessing Moyo",     position: "Striker",    formScore: 92, fatigue: 28, status: "fit" },
+          { id: "3", name: "Knowledge Chikwanda", position: "Midfielder", formScore: 78, fatigue: 62, status: "caution" },
+          { id: "4", name: "Takudzwa Ngwenya",  position: "Defender",   formScore: 81, fatigue: 35, status: "fit" },
+          { id: "5", name: "Tinashe Kamusoko", position: "Defender",   formScore: 76, fatigue: 71, status: "caution" },
+          { id: "6", name: "Edmore Sibanda",    position: "Goalkeeper", formScore: 88, fatigue: 22, status: "fit" },
+          { id: "7", name: "Tanaka Chikuni",    position: "Midfielder", formScore: 85, fatigue: 32, status: "fit" },
+          { id: "8", name: "Takunda Moyo",      position: "Striker",    formScore: 79, fatigue: 48, status: "fit" },
+        ];
+      }
+
+      setSquad(members);
+
+      const avgForm    = Math.round(members.reduce((sum, p) => sum + p.formScore, 0) / members.length);
+      const highFatigue = members.filter((p) => p.fatigue > 60).length;
 
       setSquadStats((prev) => ({
         ...prev,
-        teamAvgForm: avgForm,
+        teamAvgForm:      avgForm,
         highFatigueCount: highFatigue,
       }));
     } catch {
@@ -344,7 +361,7 @@ export default function CoachHubPage() {
           total_players: Array.isArray(players) ? players.length : 0,
           active_injuries: Array.isArray(injuries) ? injuries.filter((i: { recovered_at: string | null }) => !i.recovered_at).length : 0,
         }));
-        loadBiometricData();
+        loadBiometricData(Array.isArray(players) ? players : []);
 
         setUpcomingMatches([
           { id: "1", opponent: "Dynamos FC", date: "2026-06-07", venue: "home", competition: "Premier League" },
@@ -546,6 +563,9 @@ export default function CoachHubPage() {
           <Link href="/coach/chemistry" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
             <Icons.Zap size={12} /> Squad Chemistry
           </Link>
+          <Link href="/coach/biometrics" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Activity size={12} /> Athletic Lab
+          </Link>
         </div>
       </aside>
 
@@ -642,6 +662,7 @@ export default function CoachHubPage() {
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Form</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Fatigue</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Lab</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Drills</th>
                   </tr>
                 </thead>
@@ -664,6 +685,11 @@ export default function CoachHubPage() {
                         <td className="px-4 py-3"><span className={`font-bold ${getFormColor(player.formScore)}`}>{player.formScore}</span></td>
                         <td className="px-4 py-3"><span className={`text-xs ${fatigueDisplay.color}`}>{fatigueDisplay.text}</span></td>
                         <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${player.status === "fit" ? "bg-green-100 text-green-700" : player.status === "caution" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{player.status}</span></td>
+                        <td className="px-4 py-3">
+                          {player.testScore != null
+                            ? <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${player.testScore >= 70 ? "bg-green-100 text-green-700" : player.testScore >= 50 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{player.testScore}</span>
+                            : <span className="text-[10px] text-gray-400">—</span>}
+                        </td>
                         <td className="px-4 py-3">{assignedCount > 0 ? <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">{assignedCount} drills</span> : <span className="text-[10px] text-gray-400">—</span>}</td>
                       </tr>
                     );

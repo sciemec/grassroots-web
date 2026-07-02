@@ -123,10 +123,12 @@ export default function PlayerDashboardHome() {
   const router   = useRouter();
   const user     = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s._hasHydrated);
-  const [sessionCount, setSessionCount] = useState<number | null>(null);
-  const [streak,       setStreak]       = useState<number | null>(null);
-  const [aqScore,      setAqScore]      = useState<number | null>(null);
-  const [todayDone,    setTodayDone]    = useState(false);
+  const [sessionCount,  setSessionCount]  = useState<number | null>(null);
+  const [streak,        setStreak]        = useState<number | null>(null);
+  const [aqScore,       setAqScore]       = useState<number | null>(null);
+  const [todayDone,     setTodayDone]     = useState(false);
+  const [athleticScore, setAthleteScore]  = useState<number | null>(null);
+  const [lastTestDays,  setLastTestDays]  = useState<number | null>(null);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -148,6 +150,22 @@ export default function PlayerDashboardHome() {
       const today = new Date().toISOString().slice(0, 10);
       setTodayDone(checkins.some((c: { mission_date?: string; status?: string }) =>
         c.mission_date === today && c.status === "done"));
+    } catch { /* storage unavailable */ }
+
+    // GRS Athletic Test Battery results
+    try {
+      const athleticRaw = localStorage.getItem("grs_athletic_results");
+      if (athleticRaw) {
+        const results = JSON.parse(athleticRaw);
+        if (Array.isArray(results) && results.length > 0) {
+          const latest = results[results.length - 1];
+          if (latest?.composite != null) setAthleteScore(Math.round(latest.composite));
+          if (latest?.date) {
+            const days = Math.floor((Date.now() - new Date(latest.date).getTime()) / 86_400_000);
+            setLastTestDays(days);
+          }
+        }
+      }
     } catch { /* storage unavailable */ }
 
     setStreak(getCurrentStreak());
@@ -358,11 +376,25 @@ export default function PlayerDashboardHome() {
             <Link href="/player/weekly-session"
               className="group rounded-2xl p-4 flex flex-col gap-3 hover:opacity-90 transition-all shadow-sm"
               style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(240,180,41,0.15)" }}>
-              <div className="flex items-center gap-2">
-                <ClipboardList size={15} style={{ color: "#f0b429" }} />
-                <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>GRS Weekly Test</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ClipboardList size={15} style={{ color: "#f0b429" }} />
+                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: "#f0b429" }}>GRS Weekly Test</span>
+                </div>
+                {athleticScore !== null && (
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(240,180,41,0.2)", color: "#f0b429" }}>
+                    {athleticScore}/100
+                  </span>
+                )}
               </div>
-              <p className="text-xs leading-snug" style={{ color: "rgba(240,180,41,0.7)" }}>6-test battery · sprint, jump, ball, reaction, balance, endurance</p>
+              <p className="text-xs leading-snug" style={{ color: "rgba(240,180,41,0.7)" }}>
+                {lastTestDays === null
+                  ? "6-test battery · sprint, jump, ball, reaction, balance, endurance"
+                  : lastTestDays === 0
+                  ? "Tested today · great work!"
+                  : `Last tested ${lastTestDays}d ago · ${lastTestDays >= 7 ? "test due!" : "keep it up"}`}
+              </p>
               <ArrowRight size={12} style={{ color: "#f0b429" }} className="mt-auto group-hover:translate-x-0.5 transition-transform" />
             </Link>
             {/* THUTO AI tip */}
@@ -402,7 +434,7 @@ export default function PlayerDashboardHome() {
             <HubCard href="/player/analyse" icon={Sparkles} iconBg="#f3e8ff" iconColor="#9333ea"
               label="Drill Analysis" desc="Upload video · Gemini AI coaching feedback" badge="Free trial" />
             <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
-              label="Assessment" desc="Field tests · APK session reports · radar chart" />
+              label="Athletic Profile" desc="6-test battery · jump · sprint · balance · drill analysis" />
             <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
               label="Success Engine" desc="Daily check-in · streak · goal tracking" />
           </div>
