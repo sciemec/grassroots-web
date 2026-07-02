@@ -16,6 +16,8 @@ import {
   Copy,
   Award,
   Target,
+  Users,
+  ChevronDown,
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
@@ -130,6 +132,15 @@ export default function PlayerProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  // Invite Parent state
+  const [showInvitePanel, setShowInvitePanel] = useState(false);
+  const [inviteAgeGroup, setInviteAgeGroup]   = useState<"u13" | "u17">("u17");
+  const [inviteCode, setInviteCode]           = useState<string | null>(null);
+  const [inviteExpiry, setInviteExpiry]       = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading]     = useState(false);
+  const [inviteError, setInviteError]         = useState("");
+  const [inviteCopied, setInviteCopied]       = useState(false);
+
   const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
@@ -231,6 +242,34 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     navigator.clipboard.writeText(`https://grassrootssports.live/player/public/${profile.id}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const generateInvite = async () => {
+    setInviteLoading(true);
+    setInviteError("");
+    try {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/guardian/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ age_group: inviteAgeGroup }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setInviteError(data.message ?? "Failed to generate code."); return; }
+      setInviteCode(data.invite_code);
+      setInviteExpiry(data.expires_at);
+    } catch {
+      setInviteError("Network error. Try again.");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const copyInviteCode = () => {
+    if (!inviteCode) return;
+    navigator.clipboard.writeText(inviteCode);
+    setInviteCopied(true);
+    setTimeout(() => setInviteCopied(false), 2500);
   };
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -672,6 +711,95 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 <Copy className="h-4 w-4" />
                 {copied ? "Copied!" : "Share"}
               </button>
+            )}
+          </div>
+
+          {/* Invite Parent */}
+          <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => { setShowInvitePanel((v) => !v); setInviteCode(null); setInviteError(""); }}
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-[#f0b429]" />
+                Invite Parent / Guardian
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${showInvitePanel ? "rotate-180" : ""}`} />
+            </button>
+
+            {showInvitePanel && (
+              <div className="border-t border-white/10 px-5 pb-5 pt-4">
+                <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
+                  Generate a 6-character code. Your parent enters it at{" "}
+                  <span className="text-[#f0b429]">grassrootssports.live/parent/link</span> to connect to your account.
+                  The code expires after 48 hours.
+                </p>
+
+                {/* Age group selector */}
+                <div className="mb-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Your Age Group</p>
+                  <div className="flex gap-2">
+                    {(["u13", "u17"] as const).map((ag) => (
+                      <button
+                        key={ag}
+                        type="button"
+                        onClick={() => setInviteAgeGroup(ag)}
+                        className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
+                          inviteAgeGroup === ag
+                            ? "bg-[#f0b429] text-[#1a3a1a]"
+                            : "border border-white/10 bg-white/5 text-white/60 hover:text-white"
+                        }`}
+                      >
+                        {ag.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {inviteError && (
+                  <p className="mb-3 rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">{inviteError}</p>
+                )}
+
+                {/* Generated code display */}
+                {inviteCode ? (
+                  <div className="rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4 text-center">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#f0b429]/70">Invite Code</p>
+                    <p className="mb-3 font-mono text-4xl font-black tracking-[0.3em] text-[#f0b429]">{inviteCode}</p>
+                    <p className="mb-4 text-xs text-muted-foreground">
+                      Expires {inviteExpiry ? new Date(inviteExpiry).toLocaleString() : "in 48 hours"}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={copyInviteCode}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#f0b429] px-4 py-2.5 text-sm font-bold text-[#1a3a1a] transition-opacity hover:opacity-90"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        {inviteCopied ? "Copied!" : "Copy Code"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={generateInvite}
+                        disabled={inviteLoading}
+                        className="rounded-lg border border-white/10 px-4 py-2.5 text-xs text-muted-foreground hover:text-white transition-colors"
+                      >
+                        New Code
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={generateInvite}
+                    disabled={inviteLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a5c2a] px-4 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {inviteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+                    {inviteLoading ? "Generating..." : "Generate Invite Code"}
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
