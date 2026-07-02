@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
+import CoachAnalysisTab from "@/components/coach/CoachAnalysisTab";
 import { loadKnowledgeForRole, type SessionPoint } from "@/lib/coaching-knowledge";
 import { getDrillsByDepartment, getDepartmentStats, type Drill } from "@/lib/department-drills";
 
@@ -223,6 +224,7 @@ export default function CoachHubPage() {
   const [loadingPlayerData, setLoadingPlayerData] = useState(false);
   const [showPlayerDrillsModal, setShowPlayerDrillsModal] = useState(false);
 
+  const [coachTab, setCoachTab] = useState<"squad" | "analysis">("squad");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const footballRoles = getFootballRoles();
 
@@ -361,7 +363,7 @@ export default function CoachHubPage() {
           total_players: Array.isArray(players) ? players.length : 0,
           active_injuries: Array.isArray(injuries) ? injuries.filter((i: { recovered_at: string | null }) => !i.recovered_at).length : 0,
         }));
-        loadBiometricData(Array.isArray(players) ? players : []);
+        loadBiometricData();
 
         setUpcomingMatches([
           { id: "1", opponent: "Dynamos FC", date: "2026-06-07", venue: "home", competition: "Premier League" },
@@ -563,14 +565,37 @@ export default function CoachHubPage() {
           <Link href="/coach/chemistry" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
             <Icons.Zap size={12} /> Squad Chemistry
           </Link>
-          <Link href="/coach/biometrics" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
-            <Icons.Activity size={12} /> Athletic Lab
-          </Link>
         </div>
       </aside>
 
       {/* Main Panel */}
-      <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto">
+        {/* Tab bar */}
+        <div className="flex border-b border-gray-200 bg-white sticky top-0 z-10 px-6">
+          <button
+            onClick={() => setCoachTab("squad")}
+            className={`py-4 px-6 text-sm font-black uppercase tracking-wide border-b-2 transition-colors ${coachTab === "squad" ? "border-[#1a5c2a] text-[#1a5c2a]" : "border-transparent text-gray-400 hover:text-gray-700"}`}
+          >
+            Squad Overview
+          </button>
+          <button
+            onClick={() => setCoachTab("analysis")}
+            className={`py-4 px-6 text-sm font-black uppercase tracking-wide border-b-2 transition-colors ${coachTab === "analysis" ? "border-[#1a5c2a] text-[#1a5c2a]" : "border-transparent text-gray-400 hover:text-gray-700"}`}
+          >
+            🔬 AI Analysis
+          </button>
+        </div>
+
+        {/* AI Analysis Tab */}
+        {coachTab === "analysis" && (
+          <div className="p-6">
+            <CoachAnalysisTab token={token ?? null} />
+          </div>
+        )}
+
+        {/* Squad Overview — all existing content wrapped */}
+        {coachTab === "squad" && (
+        <div className="p-6 space-y-6">
         {/* Metric Strip */}
         <section className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
@@ -662,7 +687,6 @@ export default function CoachHubPage() {
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Form</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Fatigue</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Lab</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase">Drills</th>
                   </tr>
                 </thead>
@@ -685,11 +709,6 @@ export default function CoachHubPage() {
                         <td className="px-4 py-3"><span className={`font-bold ${getFormColor(player.formScore)}`}>{player.formScore}</span></td>
                         <td className="px-4 py-3"><span className={`text-xs ${fatigueDisplay.color}`}>{fatigueDisplay.text}</span></td>
                         <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${player.status === "fit" ? "bg-green-100 text-green-700" : player.status === "caution" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{player.status}</span></td>
-                        <td className="px-4 py-3">
-                          {player.testScore != null
-                            ? <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${player.testScore >= 70 ? "bg-green-100 text-green-700" : player.testScore >= 50 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{player.testScore}</span>
-                            : <span className="text-[10px] text-gray-400">—</span>}
-                        </td>
                         <td className="px-4 py-3">{assignedCount > 0 ? <span className="text-[10px] bg-[#1a5c2a]/10 text-[#1a5c2a] px-2 py-0.5 rounded-full font-bold">{assignedCount} drills</span> : <span className="text-[10px] text-gray-400">—</span>}</td>
                       </tr>
                     );
@@ -769,6 +788,8 @@ export default function CoachHubPage() {
             </form>
           </div>
         </section>
+        </div>
+        )} {/* end squad tab */}
       </main>
 
       {/* Drill Detail Modal */}
