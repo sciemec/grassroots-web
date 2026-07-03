@@ -9,7 +9,7 @@ import {
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Award, LogOut, Menu, X,
   BarChart3, Medal, Globe, Trophy, Briefcase,
-  Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send
+  Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send, Shield
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -57,6 +57,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/first-touch", label: "First Touch",       icon: <Move size={18} />,         roles: ["player"]                     },
   { href: "/player/dribbling",   label: "Dribbling Analyzer",icon: <Shuffle size={18} />,      roles: ["player"]                     },
   { href: "/player/passing",     label: "Passing Analyzer",  icon: <Send size={18} />,         roles: ["player"]                     },
+  { href: "/player/tackling",   label: "Tackling Analyzer", icon: <Shield size={18} />,       roles: ["player"]                     },
   { href: "/player/scholarship-reel", label: "Scholarship Reel", icon: <Video size={18} />, roles: ["player"], feature: "passport" },
   { href: "/player/academics",   label: "My Academics",  icon: <BookOpen size={18} />,      roles: ["player"] },
   { href: "/player/pathway",     label: "My Pathway",    icon: <GraduationCap size={18} />, roles: ["player"] },
