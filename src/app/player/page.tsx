@@ -10,7 +10,7 @@ import {
   MapPin, Brain, BookMarked, Sparkles, Globe, CheckCircle2, ArrowRight, Lock,
   Layers, UserCircle, BarChart2, ListChecks, Milestone, BadgeCheck,
   Wind, Footprints, Target, Swords, Hand, Palette, Sprout, Dna,
-  Play, HeartPulse, ScanLine,
+  Play, HeartPulse, ScanLine, Camera, Wand2, ArrowUpRight,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -442,6 +442,10 @@ export default function PlayerDashboardHome() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <HubCard href="/player/analyse" icon={Sparkles} iconBg="#f3e8ff" iconColor="#9333ea"
               label="Drill Analysis" desc="Upload video · Gemini AI coaching feedback" badge="Free trial" />
+            <HubCard href="/player/gemini-drills" icon={Wand2} iconBg="#fdf4ff" iconColor="#7c3aed"
+              label="Gemini Drills" desc="AI drill coaching · 10 sports · guided sessions" />
+            <HubCard href="/player/capture" icon={Camera} iconBg="#f0fdf4" iconColor="#15803d"
+              label="Video Capture" desc="Record live · Claude vision · instant feedback" />
             <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
               label="Athletic Profile" desc="6-test battery · jump · sprint · balance · drill analysis" />
             <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
@@ -469,6 +473,8 @@ export default function PlayerDashboardHome() {
               label="Shooting" desc="Technique · power · placement · AI score" />
             <HubCard href="/player/sprint" icon={Footprints} iconBg="#fef3c7" iconColor="#d97706"
               label="Sprint" desc="Speed · acceleration · 20m benchmark" />
+            <HubCard href="/player/passing" icon={ArrowUpRight} iconBg="#dcfce7" iconColor="#059669"
+              label="Passing" desc="Self-assessment · vision · technique · AI score" />
             <HubCard href="/player/tackling" icon={Swords} iconBg="#ede9fe" iconColor="#7c3aed"
               label="Tackling" desc="Defensive technique · timing · body shape" />
             <HubCard href="/player/similar" icon={ScanLine} iconBg="#f0fdf4" iconColor="#15803d"

@@ -597,6 +597,9 @@ export default function CoachHubPage() {
           <Link href="/coach/talent-id" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
             <Icons.Users size={12} /> Talent ID
           </Link>
+          <Link href="/coach/gemini-drills" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Wand2 size={12} /> Gemini Drills
+          </Link>
         </div>
       </aside>
 
