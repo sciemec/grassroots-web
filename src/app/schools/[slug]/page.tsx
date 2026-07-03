@@ -95,12 +95,13 @@ async function getVideos(slug: string): Promise<SharedVideo[]> {
 export default async function OrgProfilePage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const [org, matches, videos] = await Promise.all([
-    getOrg(params.slug),
-    getMatches(params.slug),
-    getVideos(params.slug),
+    getOrg(slug),
+    getMatches(slug),
+    getVideos(slug),
   ]);
   if (!org) notFound();
 
@@ -338,8 +339,9 @@ export default async function OrgProfilePage({
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const org = await getOrg(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const org = await getOrg(slug);
   if (!org) return { title: "Organisation not found" };
   return {
     title: `${org.name} — GrassRoots Sport`,

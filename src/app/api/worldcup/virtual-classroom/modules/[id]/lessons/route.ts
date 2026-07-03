@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   // In production, fetch lessons for this module from database
   const lessons = [
     {
       id: 'lesson-1',
-      moduleId: params.id,
+      moduleId: id,
       title: 'Introduction: Transition Football',
       duration: '10 min',
       content: 'Learn the fundamentals of transition play.',

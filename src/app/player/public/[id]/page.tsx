@@ -64,10 +64,11 @@ async function getPublicProfile(id: string): Promise<PublicProfile | null> {
   }
 }
 
-export default async function PublicPlayerProfile({ params }: { params: { id: string } }) {
+export default async function PublicPlayerProfile({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const [profile, showcaseClips] = await Promise.all([
-    getPublicProfile(params.id),
-    getShowcaseClips(params.id),
+    getPublicProfile(id),
+    getShowcaseClips(id),
   ]);
 
   if (!profile) {

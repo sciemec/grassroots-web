@@ -8,11 +8,12 @@ import PassportClient from './PassportClient';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   try {
-    const res = await fetch(`${API}/player/public/${params.id}?by=passport_token`, { cache:'no-store' });
+    const res = await fetch(`${API}/player/public/${id}?by=passport_token`, { cache:'no-store' });
     if (!res.ok) return { title:'GRS Talent Passport' };
     const d = await res.json();
     const p = d.player ?? d.data ?? d;
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title: `${p.name ?? 'Athlete'} · GRS Talent Passport`,
         description: `Verified athletic profile · AQ ${aq ?? '—'} · ${p.position ?? ''} · ${p.province ?? 'Zimbabwe'}`,
-        url: `https://grassrootssports.live/passport/${params.id}`,
+        url: `https://grassrootssports.live/passport/${id}`,
         siteName: 'GrassRoots Sports',
       },
     };
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PassportPage({ params }: Props) {
-  const { id } = params;
+  const { id } = await params;
   if (!id || id.length < 10) notFound();
 
   const [playerRes, vaultRes, drillRes, reelRes] = await Promise.all([

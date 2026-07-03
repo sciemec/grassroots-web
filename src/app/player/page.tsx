@@ -195,7 +195,7 @@ export default function PlayerDashboardHome() {
   }
 
   const initials    = user.name ? user.name.slice(0, 2).toUpperCase() : "GR";
-  const stageIndex  = getPathwayStage((user as Record<string, string>).age_group);
+  const stageIndex  = getPathwayStage((user as unknown as Record<string, string>).age_group);
   const currentStage = PATHWAY_STAGES[stageIndex];
   const nextStage    = PATHWAY_STAGES[stageIndex + 1];
 
@@ -249,9 +249,9 @@ export default function PlayerDashboardHome() {
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
                     <ShieldCheck size={9} /> {currentStage.label} · {currentStage.sub}
                   </span>
-                  {(user as Record<string, string>).province && (
+                  {(user as unknown as Record<string, string>).province && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      <MapPin size={9} /> {(user as Record<string, string>).province}
+                      <MapPin size={9} /> {(user as unknown as Record<string, string>).province}
                     </span>
                   )}
                 </div>
@@ -610,7 +610,7 @@ export default function PlayerDashboardHome() {
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {(user as Record<string, string>).province || "Zimbabwe"} · {currentStage.label}
+                {(user as unknown as Record<string, string>).province || "Zimbabwe"} · {currentStage.label}
               </p>
             </div>
           </div>
