@@ -528,6 +528,34 @@ const PAGE_CONTEXT: Record<string, PageCtx> = {
     description: "Mission Mode — set a goal, THUTO builds a 3-phase plan with daily missions and tracks your adherence",
     suggested: ["Help me set a realistic goal", "How do I stay motivated when progress is slow?", "What should my daily mission be?", "How do I know if I'm on track?"],
   },
+  "/player/sprint": {
+    description: "Sprint Analyzer — record sprint times and get AI technique feedback on acceleration and top speed",
+    suggested: ["How do I improve my sprint speed?", "What does my sprint score mean?", "Best drills to improve acceleration?"],
+  },
+  "/player/shooting": {
+    description: "Shooting Analyzer — log shooting sessions and get AI feedback on technique, accuracy and power",
+    suggested: ["How do I improve my shooting technique?", "What is a good shooting score?", "Best drills to improve finishing?"],
+  },
+  "/player/first-touch": {
+    description: "First Touch Analyzer — assess ball control and touch quality under pressure",
+    suggested: ["How do I improve my first touch?", "Why is first touch important for scouts?", "Best drills for ball control?"],
+  },
+  "/player/dribbling": {
+    description: "Dribbling Analyzer — track dribbling success rate, speed and skill moves",
+    suggested: ["How do I improve my dribbling?", "What dribbling skills impress scouts?", "Best 1v1 drills?"],
+  },
+  "/player/passing": {
+    description: "Passing Analyzer — measure pass accuracy, range and decision-making",
+    suggested: ["How do I improve my passing accuracy?", "What passing range should I develop?", "Best drills for short and long passing?"],
+  },
+  "/player/tackling": {
+    description: "Tackling Analyzer — assess tackle success rate, positioning and timing",
+    suggested: ["How do I improve my tackling?", "How do I tackle without getting yellow cards?", "Best defensive drills?"],
+  },
+  "/player/passport": {
+    description: "Talent Passport — your complete player profile for scouts, scholarships and trials — includes skill readings, showcase clips and academic record",
+    suggested: ["How do I make my passport stand out to scouts?", "What should I complete first on my passport?", "Can I share my passport with a coach?"],
+  },
 };
 
 // ── Formation data (same coordinates as /coach/tactics) ──────────────────────

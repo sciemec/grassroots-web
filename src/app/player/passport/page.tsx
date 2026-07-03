@@ -105,6 +105,12 @@ export default function PassportPage() {
   const [aiSummary, setAiSummary] = useState("");
   const [reel, setReel] = useState<ReelState>(EMPTY_REEL);
 
+  type SkillReading = { score: number; grade: string; recorded_at?: string } | null;
+  const [skillReadings, setSkillReadings] = useState<Record<string, SkillReading>>({
+    sprint: null, shooting: null, "first-touch": null,
+    dribbling: null, passing: null, tackling: null,
+  });
+
   // ── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
     // Hydrate local fields first
@@ -118,6 +124,22 @@ export default function PassportPage() {
       const s = localStorage.getItem(LS_AI_SUMMARY);
       if (s) setAiSummary(s);
     } catch {}
+
+    // Fetch skill analyzer history in parallel — take latest entry from each
+    const SKILLS = ["sprint", "shooting", "first-touch", "dribbling", "passing", "tackling"] as const;
+    Promise.all(
+      SKILLS.map((s) => api.get(`/player/${s}`).catch(() => null))
+    ).then((results) => {
+      const readings: Record<string, SkillReading> = {};
+      SKILLS.forEach((s, i) => {
+        const rows = results[i]?.data?.data ?? results[i]?.data ?? [];
+        const latest = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+        readings[s] = latest
+          ? { score: latest.overall_score ?? latest.score ?? 0, grade: latest.grade ?? "", recorded_at: latest.created_at }
+          : null;
+      });
+      setSkillReadings(readings);
+    });
 
     Promise.all([
       api.get("/profile").catch(() => null),
@@ -725,6 +747,39 @@ Output exactly 3 sentences. No bullet points. No headers.`,
                 ))}
               </div>
             )}
+          </div>
+
+          {/* ── Skill Analyzer Readings ── */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1a5c2a]/40">
+                <span className="text-sm">⚡</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white">Skill Analyzer Readings</h3>
+                <p className="text-xs text-zinc-400">Latest scores from your technique sessions</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {(["sprint","shooting","first-touch","dribbling","passing","tackling"] as const).map((skill) => {
+                const reading = skillReadings[skill];
+                const label = skill.replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                const href = `/player/${skill}`;
+                return (
+                  <Link key={skill} href={href} className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2.5 hover:border-[#f0b429]/50 transition-colors">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+                    {reading ? (
+                      <>
+                        <p className="mt-0.5 text-lg font-bold text-white">{reading.score}<span className="text-xs text-zinc-500">/100</span></p>
+                        {reading.grade && <span className="inline-block rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#f0b429", color: "#1a1a1a" }}>{reading.grade}</span>}
+                      </>
+                    ) : (
+                      <p className="mt-1 text-xs text-zinc-500">Not tested yet →</p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           {/* ── Scholarship Reel ── */}
