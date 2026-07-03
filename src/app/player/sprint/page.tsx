@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Zap, ChevronDown, ChevronUp, RotateCcw, Clock } from "lucide-react";
+import { ArrowLeft, Zap, ChevronDown, ChevronUp, RotateCcw, Clock, History } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -27,6 +27,22 @@ interface AiFeedback {
   drill_2:                  { name: string; description: string };
   drill_3:                  { name: string; description: string };
   time_improvement_estimate: string;
+}
+
+interface HistoryEntry {
+  id:                  string;
+  sport:               string;
+  position:            string | null;
+  distance_metres:     number;
+  surface:             string;
+  time_achieved:       number | null;
+  arm_drive_score:     number;
+  forward_lean_score:  number;
+  knee_drive_score:    number;
+  stride_rhythm_score: number;
+  overall_score:       number;
+  ai_feedback:         AiFeedback | null;
+  created_at:          string;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -109,8 +125,31 @@ export default function SprintMechanicsPage() {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState("");
   const [openDrill,   setOpenDrill]   = useState<string | null>(null);
+  const [history,     setHistory]     = useState<HistoryEntry[]>([]);
+  const [histLoading, setHistLoading] = useState(false);
+  const [openHist,    setOpenHist]    = useState<string | null>(null);
 
   const allRated = MECHANICS.every((m) => ratings[m.key]);
+
+  // ── Fetch history ─────────────────────────────────────────────────────────
+
+  const fetchHistory = async () => {
+    if (!token) return;
+    setHistLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/player/sprint`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        const json = await r.json();
+        setHistory(Array.isArray(json.data) ? json.data : []);
+      }
+    } catch { /* silent */ } finally {
+      setHistLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchHistory(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Score calculations ────────────────────────────────────────────────────
 
@@ -329,6 +368,97 @@ Return this exact JSON structure:
           >
             Next: Rate Your Mechanics →
           </button>
+
+          {/* ── History ─────────────────────────────────────────────────── */}
+          <div style={{ marginTop: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <History size={16} color="#6b7280" />
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#111" }}>Past Assessments</h2>
+            </div>
+
+            {histLoading && (
+              <p style={{ fontSize: 14, color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>Loading history…</p>
+            )}
+
+            {!histLoading && history.length === 0 && (
+              <div style={{ ...card, textAlign: "center", padding: "28px 16px" }}>
+                <Zap size={28} color="#d1d5db" style={{ marginBottom: 8 }} />
+                <p style={{ margin: 0, fontSize: 14, color: "#9ca3af" }}>No sessions yet. Complete your first assessment above.</p>
+              </div>
+            )}
+
+            {!histLoading && history.map((entry) => {
+              const isOpen   = openHist === entry.id;
+              const clr      = barColor(entry.overall_score);
+              const date     = new Date(entry.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+              return (
+                <div key={entry.id} style={{ backgroundColor: "white", borderRadius: 12, border: "1px solid #e5e7eb", marginBottom: 10, overflow: "hidden" }}>
+                  {/* Row */}
+                  <button
+                    onClick={() => setOpenHist(isOpen ? null : entry.id)}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                  >
+                    {/* Score badge */}
+                    <div style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: clr, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "white" }}>{entry.overall_score}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 600, color: "#111" }}>
+                        {entry.sport} · {entry.distance_metres}m · {entry.surface}
+                        {entry.time_achieved ? ` · ${entry.time_achieved}s` : ""}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: "#9ca3af" }}>{date}{entry.position ? ` · ${entry.position}` : ""}</p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: clr }}>{barLabel(entry.overall_score)}</span>
+                      {isOpen ? <ChevronUp size={15} color="#9ca3af" /> : <ChevronDown size={15} color="#9ca3af" />}
+                    </div>
+                  </button>
+
+                  {/* Expanded detail */}
+                  {isOpen && (
+                    <div style={{ padding: "0 16px 16px", borderTop: "1px solid #f3f4f6" }}>
+                      {/* Mechanic bars */}
+                      <div style={{ paddingTop: 14 }}>
+                        {[
+                          { label: "Arm Drive",     score: entry.arm_drive_score,     color: "#2563eb" },
+                          { label: "Forward Lean",  score: entry.forward_lean_score,  color: "#1a5c2a" },
+                          { label: "Knee Drive",    score: entry.knee_drive_score,    color: "#c8962a" },
+                          { label: "Stride Rhythm", score: entry.stride_rhythm_score, color: "#7c3aed" },
+                        ].map((m) => {
+                          const pct = scoreToBar(m.score);
+                          return (
+                            <div key={m.label} style={{ marginBottom: 10 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                                <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{m.label}</span>
+                                <span style={{ fontSize: 12, color: barColor(pct), fontWeight: 600 }}>{pct}/100</span>
+                              </div>
+                              <div style={{ height: 6, backgroundColor: "#f3f4f6", borderRadius: 3, overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: `${pct}%`, backgroundColor: m.color, borderRadius: 3 }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* AI summary if available */}
+                      {entry.ai_feedback?.biggest_issue && (
+                        <div style={{ marginTop: 10, backgroundColor: "#fefce8", borderRadius: 8, padding: "10px 12px", border: "1px solid #fde68a" }}>
+                          <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 700, color: "#92400e", textTransform: "uppercase" }}>Priority Fix</p>
+                          <p style={{ margin: 0, fontSize: 13, color: "#111" }}>{entry.ai_feedback.biggest_issue}</p>
+                        </div>
+                      )}
+                      {entry.ai_feedback?.time_improvement_estimate && (
+                        <p style={{ margin: "10px 0 0", fontSize: 12, color: "#6b7280" }}>
+                          {entry.ai_feedback.time_improvement_estimate}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -525,7 +655,7 @@ Return this exact JSON structure:
         {error && <p style={{ color: "#dc2626", fontSize: 13, marginBottom: 16 }}>{error}</p>}
 
         <button
-          onClick={() => { setPhase("setup"); setRatings({}); setFeedback(null); setError(""); setOpenDrill(null); }}
+          onClick={() => { setPhase("setup"); setRatings({}); setFeedback(null); setError(""); setOpenDrill(null); fetchHistory(); }}
           style={{ width: "100%", padding: "14px", backgroundColor: "#1a5c2a", color: "white", border: "none", borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
         >
           <RotateCcw size={16} /> New Assessment
