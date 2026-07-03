@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Activity, UserSearch, Star, FileText, GitCompare,
   Radio, ChevronRight, Trophy, Zap, ShieldCheck,
-  GraduationCap, Flame, TrendingUp, Video, Users, Network,
+  GraduationCap, Flame, TrendingUp, Video, Users, Network, Kanban,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -83,6 +83,13 @@ const FEATURES = [
     iconBg: "#ede9fe", iconColor: "#7c3aed",
     label: "My Network",
     desc: "Connections · followers · messages",
+  },
+  {
+    href: "/scout/pipeline",
+    icon: Kanban,
+    iconBg: "#fff7ed", iconColor: "#ea580c",
+    label: "Scout Pipeline",
+    desc: "Track prospects through scouting stages",
   },
   {
     href: "/scout/profile",
