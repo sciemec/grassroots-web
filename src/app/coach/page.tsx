@@ -565,6 +565,38 @@ export default function CoachHubPage() {
           <Link href="/coach/chemistry" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
             <Icons.Zap size={12} /> Squad Chemistry
           </Link>
+          <Link href="/coach/patterns" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.TrendingUp size={12} /> Strategic Patterns
+          </Link>
+        </div>
+
+        {/* Analysis Tools */}
+        <div className="pt-4 border-t border-gray-200 space-y-1">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Analysis Tools</p>
+          <Link href="/coach/injury-hub" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.HeartPulse size={12} /> Injury Hub
+          </Link>
+          <Link href="/coach/fatigue" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Battery size={12} /> Fatigue Monitor
+          </Link>
+          <Link href="/coach/set-piece-lab" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Flag size={12} /> Set Piece Lab
+          </Link>
+          <Link href="/coach/biometrics" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.ScanLine size={12} /> Biometrics
+          </Link>
+          <Link href="/coach/tactical-analysis" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.BarChart2 size={12} /> Tactical Analysis
+          </Link>
+          <Link href="/coach/futurefit" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Star size={12} /> FutureFit
+          </Link>
+          <Link href="/coach/session-library" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.BookOpen size={12} /> Session Library
+          </Link>
+          <Link href="/coach/talent-id" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Users size={12} /> Talent ID
+          </Link>
         </div>
       </aside>
 
