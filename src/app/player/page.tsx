@@ -8,6 +8,9 @@ import {
   Video, TrendingUp, ShieldCheck, GraduationCap,
   Radio, ChevronRight, Trophy, Flame, Star, ClipboardList, Crosshair,
   MapPin, Brain, BookMarked, Sparkles, Globe, CheckCircle2, ArrowRight, Lock,
+  Layers, UserCircle, BarChart2, ListChecks, Milestone, BadgeCheck,
+  Wind, Footprints, Target, Swords, Hand, Palette, Sprout, Dna,
+  Play, HeartPulse, ScanLine,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { LiveMatchBanner } from "@/components/LiveMatchBanner";
@@ -422,6 +425,12 @@ export default function PlayerDashboardHome() {
               label="Log Session" desc="Record training · track load · save notes" />
             <HubCard href="/player/position-fit" icon={Crosshair} iconBg="#ffe4e6" iconColor="#dc2626"
               label="Position Finder" desc="GRS Engine finds your best position" />
+            <HubCard href="/player/pitch" icon={Play} iconBg="#dcfce7" iconColor="#15803d"
+              label="Train Now" desc="Pitch mode · live session · THUTO coaching" />
+            <HubCard href="/player/training-formats" icon={Layers} iconBg="#dbeafe" iconColor="#1d4ed8"
+              label="Training Formats" desc="Rondo · SSG · shooting · drills" />
+            <HubCard href="/player/conditioning" icon={HeartPulse} iconBg="#fee2e2" iconColor="#dc2626"
+              label="Conditioning" desc="Fitness plans · endurance · speed work" />
           </div>
         </section>
 
@@ -437,6 +446,33 @@ export default function PlayerDashboardHome() {
               label="Athletic Profile" desc="6-test battery · jump · sprint · balance · drill analysis" />
             <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
               label="Success Engine" desc="Daily check-in · streak · goal tracking" />
+            <HubCard href="/player/potential" icon={TrendingUp} iconBg="#dcfce7" iconColor="#16a34a"
+              label="My Potential" desc="THUTO score · peak level · comparable players" />
+            <HubCard href="/player/valuation" icon={BarChart2} iconBg="#fef3c7" iconColor="#b45309"
+              label="My Valuation" desc="Estimated market value · Zimbabwe percentile" />
+            <HubCard href="/player/dna" icon={Dna} iconBg="#ede9fe" iconColor="#7c3aed"
+              label="Player DNA" desc="Playing style fingerprint · traits" />
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════
+            SECTION 4b — SKILL LAB
+        ══════════════════════════════════════════════ */}
+        <section>
+          <SectionLabel>4b · Skill Lab</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <HubCard href="/player/dribbling" icon={Wind} iconBg="#dbeafe" iconColor="#2563eb"
+              label="Dribbling" desc="1v1 · close control · AI feedback" />
+            <HubCard href="/player/first-touch" icon={Hand} iconBg="#dcfce7" iconColor="#16a34a"
+              label="First Touch" desc="Receive · control · turn under pressure" />
+            <HubCard href="/player/shooting" icon={Target} iconBg="#fee2e2" iconColor="#dc2626"
+              label="Shooting" desc="Technique · power · placement · AI score" />
+            <HubCard href="/player/sprint" icon={Footprints} iconBg="#fef3c7" iconColor="#d97706"
+              label="Sprint" desc="Speed · acceleration · 20m benchmark" />
+            <HubCard href="/player/tackling" icon={Swords} iconBg="#ede9fe" iconColor="#7c3aed"
+              label="Tackling" desc="Defensive technique · timing · body shape" />
+            <HubCard href="/player/similar" icon={ScanLine} iconBg="#f0fdf4" iconColor="#15803d"
+              label="Players Like Me" desc="Find athletes with your style" />
           </div>
         </section>
 
@@ -511,6 +547,20 @@ export default function PlayerDashboardHome() {
               label="Highlight Vault" desc="Upload clips · reels · AI highlights" />
             <HubCard href="/player/scholarship-reel" icon={TrendingUp} iconBg="#fdf4ff" iconColor="#7c3aed"
               label="Scholarship Reel" desc="10 best clips · scouts see this first" />
+            <HubCard href="/player/showcase" icon={Radio} iconBg="#fce7f3" iconColor="#be185d"
+              label="Showcase Clips" desc="Skill videos · AI rating · open for scouting" />
+            <HubCard href="/player/media" icon={Layers} iconBg="#ede9fe" iconColor="#6d28d9"
+              label="Media Gallery" desc="Photos · videos · display order" />
+            <HubCard href="/player/profile" icon={UserCircle} iconBg="#f0fdf4" iconColor="#15803d"
+              label="My Profile" desc="Photo · bio · stats · club · school" />
+            <HubCard href="/player/verification" icon={BadgeCheck} iconBg="#dbeafe" iconColor="#1d4ed8"
+              label="Verification" desc="ID check · verified badge · QR card" />
+            <HubCard href="/player/stats" icon={BarChart2} iconBg="#fef3c7" iconColor="#b45309"
+              label="My Stats" desc="Match stats history · all sports" />
+            <HubCard href="/player/progress" icon={TrendingUp} iconBg="#dcfce7" iconColor="#15803d"
+              label="My Progress" desc="Form trends · improvement over time" />
+            <HubCard href="/player/milestones" icon={Milestone} iconBg="#fce7f3" iconColor="#db2777"
+              label="Milestones" desc="Achievements · goals reached · career wins" />
           </div>
           {/* Leaderboard + Arena CTAs */}
           <div className="grid sm:grid-cols-2 gap-3 mt-3">
@@ -533,6 +583,10 @@ export default function PlayerDashboardHome() {
               label="Nutrition" desc="Meal logging · macros · recovery" />
             <HubCard href="/player/subscription" icon={Star} iconBg="#fef3c7" iconColor="#d97706"
               label="Upgrade" desc="EcoCash · Stripe · unlock all features" badge="Pro" />
+            <HubCard href="/player/development" icon={Sprout} iconBg="#dcfce7" iconColor="#15803d"
+              label="Development" desc="Long-term tracking · growth plan" />
+            <HubCard href="/player/brand" icon={Palette} iconBg="#fce7f3" iconColor="#be185d"
+              label="Brand Studio" desc="Photo · profile enhancement · image" />
           </div>
         </section>
 
