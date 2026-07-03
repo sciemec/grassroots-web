@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Home, Target, Dumbbell, TrendingUp, IdCard,
+  Home, Target, Dumbbell, TrendingUp, TrendingDown, IdCard,
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Award, LogOut, Menu, X,
   BarChart3, Medal, Globe, Trophy, Briefcase,
@@ -68,6 +68,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/talent-id",   label: "Talent ID",       icon: <Target size={18} />,      roles: ["coach"], feature: "biometrics" },
   { href: "/coach/ai-insights", label: "THUTO AI",        icon: <BookOpen size={18} />,    roles: ["coach"]                     },
   { href: "/coach/injury-hub", label: "Injury Hub",      icon: <Activity size={18} />,    roles: ["coach"]                     },
+  { href: "/coach/fatigue",    label: "Fatigue Monitor", icon: <TrendingDown size={18} />, roles: ["coach"]                     },
 
   // ── Scout ─────────────────────────────────────────────────────────────────
   { href: "/scout/discover",    label: "Discover Talent", icon: <UserSearch size={18} />,  roles: ["scout"], feature: "passport"  },
