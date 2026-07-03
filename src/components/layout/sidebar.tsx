@@ -67,6 +67,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/squad",       label: "My Squad",        icon: <Users size={18} />,       roles: ["coach"], feature: "drills"    },
   { href: "/coach/talent-id",   label: "Talent ID",       icon: <Target size={18} />,      roles: ["coach"], feature: "biometrics" },
   { href: "/coach/ai-insights", label: "THUTO AI",        icon: <BookOpen size={18} />,    roles: ["coach"]                     },
+  { href: "/coach/injury-hub", label: "Injury Hub",      icon: <Activity size={18} />,    roles: ["coach"]                     },
 
   // ── Scout ─────────────────────────────────────────────────────────────────
   { href: "/scout/discover",    label: "Discover Talent", icon: <UserSearch size={18} />,  roles: ["scout"], feature: "passport"  },
