@@ -598,6 +598,17 @@ export default function PlayerDashboardHome() {
           </div>
         </section>
 
+        {/* ── 8 · Guardian Access ── */}
+        <section>
+          <SectionLabel>8 · Guardian</SectionLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <HubCard href="/parent/link" icon={ShieldCheck} iconBg="#dcfce7" iconColor="#15803d"
+              label="Invite Parent" desc="Share a code · give guardian access to your progress" />
+            <HubCard href="/parent" icon={UserCircle} iconBg="#eff6ff" iconColor="#2563eb"
+              label="Guardian Hub" desc="Parent dashboard · alerts · WhatsApp reports" />
+          </div>
+        </section>
+
         {/* ── Weekly Challenges ── */}
         <WeeklyChallenges
           playerAqScore={aqScore ?? 0}

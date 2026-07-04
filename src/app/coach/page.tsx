@@ -604,6 +604,17 @@ export default function CoachHubPage() {
             <Icons.Wand2 size={12} /> Gemini Drills
           </Link>
         </div>
+
+        {/* Guardian */}
+        <div className="pt-4 border-t border-gray-200 space-y-1">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Guardian</p>
+          <Link href="/parent" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Shield size={12} /> Guardian Dashboard
+          </Link>
+          <Link href="/parent/link" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Link2 size={12} /> Link Parent
+          </Link>
+        </div>
       </aside>
 
       {/* Main Panel */}
@@ -771,6 +782,27 @@ export default function CoachHubPage() {
             </div>
           </section>
         )}
+
+        {/* Guardian Dashboard Card */}
+        <section className="bg-white border border-gray-200 rounded-2xl p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "#dcfce7" }}>
+              <Icons.Shield size={18} color="#1a5c2a" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Guardian Dashboard</p>
+              <p className="text-xs text-gray-500">Share player progress with parents · WhatsApp alerts · $2/month addon</p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Link href="/parent/link" className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+              Link Parent
+            </Link>
+            <Link href="/parent" className="text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-colors" style={{ backgroundColor: "#1a5c2a" }}>
+              Open Hub
+            </Link>
+          </div>
+        </section>
 
         {/* THUTO Intelligence Suite - Chat */}
         <section className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm grid grid-cols-1 lg:grid-cols-5 gap-6">
