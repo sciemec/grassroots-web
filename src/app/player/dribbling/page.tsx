@@ -160,6 +160,24 @@ export default function DribblingAnalyzerPage() {
   const [histLoading, setHistLoading] = useState(false);
   const [openHist,    setOpenHist]    = useState<string | null>(null);
 
+  const fetchHistory = async () => {
+    if (!token) return;
+    setHistLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/player/dribbling`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        const json = await r.json();
+        const _r = json.data?.data ?? json.data;
+        setHistory(Array.isArray(_r) ? _r : []);
+      }
+    } catch { /* silent */ } finally {
+      setHistLoading(false);
+    }
+  };
+  useEffect(() => { fetchHistory(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const allRated = MECHANICS.every((m) => ratings[m.key]);
 
   const overallScore = feedback

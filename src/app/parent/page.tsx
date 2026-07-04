@@ -17,7 +17,7 @@ export default function ParentHubPage() {
   useEffect(() => {
     if (!hasHydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "guardian" && user.role !== "parent") {
+    if ((user.role as string) !== "guardian" && (user.role as string) !== "parent") {
       // Allow admins to preview
       if (user.role !== "admin") router.push("/");
     }

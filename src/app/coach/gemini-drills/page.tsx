@@ -448,7 +448,7 @@ export default function CoachGeminiDrillsPage() {
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: GRS_GREEN }}>{activeDrill.name}</div>
                     <div style={{ fontSize: 11, color: "#888" }}>
-                      {activeDrill.dimensions.join(" · ")}
+                      {activeDrill.dimensions.map((d: { label: string }) => d.label).join(" · ")}
                     </div>
                   </div>
                 </div>
