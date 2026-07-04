@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Shield, ChevronDown, ChevronUp, RotateCcw, History } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { postToArena } from "@/lib/arena-poster";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -214,7 +215,7 @@ Return this exact JSON structure:
 }`;
 
     try {
-      const r    = await fetch("/api/ai-coach", {
+      const r    = await fetch("/api/gemini-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -223,7 +224,7 @@ Return this exact JSON structure:
         }),
       });
       const data = await r.json();
-      const raw  = data.response || data.answer || "";
+      const raw  = data.response || "";
       const parsed = extractJson(raw);
       setFeedback(parsed ?? buildFallback());
     } catch {
@@ -249,6 +250,11 @@ Return this exact JSON structure:
       }).catch(() => {});
     }
 
+    postToArena(`Analysed ${tackleType} tackling — scored ${overallScore}/100`, {
+      postType: "milestone",
+      activityType: "skill_analysis",
+      activityData: { skill: "tackling", type: tackleType, score: overallScore, sport },
+    });
     setPhase("results");
     setLoading(false);
   };

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Zap, ChevronDown, ChevronUp, RotateCcw, Clock, History } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { postToArena } from "@/lib/arena-poster";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -195,13 +196,13 @@ Return this exact JSON structure:
 }`;
 
     try {
-      const r    = await fetch("/api/ai-coach", {
+      const r    = await fetch("/api/gemini-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: prompt, system_prompt: "You are a professional sprint mechanics coach. Always return only valid JSON." }),
       });
       const data = await r.json();
-      const raw  = data.response || data.answer || "";
+      const raw  = data.response || "";
       const parsed = extractJson(raw);
       if (parsed) {
         setFeedback(parsed);
@@ -243,6 +244,11 @@ Return this exact JSON structure:
       }).catch(() => {});
     }
 
+    postToArena(`Analysed ${distance}m sprint mechanics — scored ${overallScore}/100`, {
+      postType: "milestone",
+      activityType: "skill_analysis",
+      activityData: { skill: "sprint", distance, score: overallScore, sport },
+    });
     setPhase("results");
     setLoading(false);
   };

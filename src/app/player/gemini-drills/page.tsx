@@ -11,7 +11,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  ChevronLeft, Upload, Video, CheckCircle2, AlertCircle,
+  ChevronLeft, Camera, StopCircle, Video, CheckCircle2, AlertCircle,
   Loader2, Star, Info, History, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
@@ -219,8 +219,14 @@ export default function GeminiDrillsPage() {
   const [history, setHistory]       = useState<DrillResult[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  const fileRef = useRef<HTMLInputElement>(null);
-  const xhrRef  = useRef<XMLHttpRequest | null>(null);
+  const xhrRef            = useRef<XMLHttpRequest | null>(null);
+  const mediaRecorderRef  = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const streamRef         = useRef<MediaStream | null>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [recordingPhase, setRecordingPhase] = useState<'idle' | 'requesting' | 'recording' | 'preview'>('idle');
+  const [countdown, setCountdown]           = useState(30);
+  const [previewUrl, setPreviewUrl]         = useState<string | null>(null);
 
   // Load best scores from localStorage
   useEffect(() => {
@@ -299,11 +305,61 @@ export default function GeminiDrillsPage() {
     }
   }, [user]);
 
-  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selected) return;
-    e.target.value = ''; // reset so same file can be re-selected
+  const handleStartRecording = useCallback(async () => {
+    if (!isPro) return;
+    setRecordingPhase('requesting');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      streamRef.current = stream;
+      recordedChunksRef.current = [];
 
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : MediaRecorder.isTypeSupported('video/webm')
+        ? 'video/webm'
+        : 'video/mp4';
+
+      const mr = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mr;
+      mr.ondataavailable = (ev) => { if (ev.data.size > 0) recordedChunksRef.current.push(ev.data); };
+      mr.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        setPreviewUrl(url);
+        setRecordingPhase('preview');
+      };
+
+      mr.start(1000);
+      setRecordingPhase('recording');
+      setCountdown(30);
+      let secs = 30;
+      countdownTimerRef.current = setInterval(() => {
+        secs -= 1;
+        setCountdown(secs);
+        if (secs <= 0) {
+          clearInterval(countdownTimerRef.current!);
+          mr.stop();
+        }
+      }, 1000);
+    } catch {
+      setRecordingPhase('idle');
+      setUpload({ phase: 'error', progress: 0, result: null, error: 'Camera access denied. Please allow camera access and try again.' });
+    }
+  }, [isPro]);
+
+  const handleStopRecording = useCallback(() => {
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+  }, []);
+
+  const handleUploadRecording = useCallback(async () => {
+    if (!selected || recordedChunksRef.current.length === 0) return;
+    const mimeType = recordedChunksRef.current[0]?.type ?? 'video/webm';
+    const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+
+    setRecordingPhase('idle');
+    setPreviewUrl(null);
     setUpload({ phase: 'getting_url', progress: 0, result: null, error: null });
 
     try {
@@ -311,14 +367,14 @@ export default function GeminiDrillsPage() {
       const initRes = await fetch('/api/match-eye/upload', {
         method: 'POST',
         headers: {
-          'content-type': file.type || 'video/mp4',
-          'x-content-length': String(file.size),
+          'content-type': blob.type || 'video/webm',
+          'x-content-length': String(blob.size),
         },
       });
       if (!initRes.ok) throw new Error('Failed to get upload URL');
       const { uploadUrl } = await initRes.json() as { uploadUrl: string };
 
-      // Step 2: Upload video directly to Google via XHR (bypass Vercel 4MB limit)
+      // Step 2: Upload blob directly to Google via XHR (bypass Vercel 4MB limit)
       setUpload(prev => ({ ...prev, phase: 'uploading', progress: 0 }));
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -334,10 +390,10 @@ export default function GeminiDrillsPage() {
         };
         xhr.onerror = () => reject(new Error('Network error during upload'));
         xhr.open('PUT', uploadUrl);
-        xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+        xhr.setRequestHeader('Content-Type', blob.type || 'video/webm');
         xhr.setRequestHeader('X-Goog-Upload-Command', 'upload, finalize');
         xhr.setRequestHeader('X-Goog-Upload-Offset', '0');
-        xhr.send(file);
+        xhr.send(blob);
       });
 
       // Parse Google's response to get the file URI
@@ -345,7 +401,6 @@ export default function GeminiDrillsPage() {
       try { googleResponse = JSON.parse(xhrRef.current?.responseText ?? '{}'); } catch { /* ignore */ }
       const fileUri  = googleResponse.file?.uri  ?? '';
       const fileName = googleResponse.file?.name ?? '';
-
       if (!fileUri) throw new Error('Google did not return a file URI');
 
       // Step 3: Analyse with Gemini
@@ -371,7 +426,16 @@ export default function GeminiDrillsPage() {
     }
   }, [selected, saveDrillResult]);
 
-  const resetUpload = () => setUpload({ phase: 'idle', progress: 0, result: null, error: null });
+  const resetUpload = () => {
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    setRecordingPhase('idle');
+    setPreviewUrl(null);
+    setCountdown(30);
+    recordedChunksRef.current = [];
+    setUpload({ phase: 'idle', progress: 0, result: null, error: null });
+  };
 
   const drills = getDrillsForSport(sport);
 
@@ -510,27 +574,20 @@ export default function GeminiDrillsPage() {
               </div>
             </div>
 
-            {/* Upload / analysis flow */}
-            {upload.phase === 'idle' && (
+            {/* Record / analysis flow — idle */}
+            {upload.phase === 'idle' && recordingPhase === 'idle' && (
               <>
                 {!isPro && (
                   <div style={{ background: '#fffbeb', border: '1px solid #f0b429', borderRadius: 12, padding: '14px 16px', marginBottom: 4 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>🔒 Premium Feature</div>
-                    <div style={{ fontSize: 12, color: '#92400e', marginBottom: 10 }}>Subscribe to upload videos and get Gemini AI coaching scores.</div>
+                    <div style={{ fontSize: 12, color: '#92400e', marginBottom: 10 }}>Subscribe to record videos and get Gemini AI coaching scores.</div>
                     <Link href="/player/subscription" style={{ display: 'inline-block', padding: '8px 18px', background: '#c8962a', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
                       View plans →
                     </Link>
                   </div>
                 )}
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="video/*"
-                  style={{ display: 'none' }}
-                  onChange={handleFileChange}
-                />
                 <button
-                  onClick={() => isPro ? fileRef.current?.click() : undefined}
+                  onClick={handleStartRecording}
                   style={{
                     width: '100%', padding: '18px', borderRadius: 14,
                     background: isPro ? GRS_GREEN : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 15,
@@ -540,13 +597,68 @@ export default function GeminiDrillsPage() {
                   }}
                   disabled={!isPro}
                 >
-                  <Upload size={18} />
-                  {isPro ? 'Upload video for Gemini to analyse' : '🔒 Unlock to analyse videos'}
+                  <Camera size={18} />
+                  {isPro ? 'Record 30-second video for Gemini' : '🔒 Unlock to record videos'}
                 </button>
                 <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
-                  MP4, MOV or any phone video · Gemini processes at 1 frame/sec
+                  Records 30 seconds from your camera · Gemini analyses motion over time
                 </div>
               </>
+            )}
+
+            {/* Requesting camera access */}
+            {upload.phase === 'idle' && recordingPhase === 'requesting' && (
+              <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
+                <Loader2 size={28} color={GRS_GREEN} style={{ margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Requesting camera access…</div>
+                <div style={{ fontSize: 11, color: '#888', marginTop: 6 }}>Allow camera access when prompted by your browser</div>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            )}
+
+            {/* Recording countdown */}
+            {upload.phase === 'idle' && recordingPhase === 'recording' && (
+              <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: `2px solid ${GRS_GREEN}`, textAlign: 'center' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fef2f2', border: '3px solid #dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 28, fontWeight: 900, color: '#dc2626' }}>
+                  {countdown}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 4 }}>Recording…</div>
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 16 }}>{selected.whatToRecord}</div>
+                <button
+                  onClick={handleStopRecording}
+                  style={{ padding: '10px 24px', borderRadius: 10, background: '#dc2626', color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <StopCircle size={16} />
+                  Stop early
+                </button>
+              </div>
+            )}
+
+            {/* Preview before sending to Gemini */}
+            {upload.phase === 'idle' && recordingPhase === 'preview' && previewUrl && (
+              <div style={{ background: '#fff', borderRadius: 14, padding: '16px', border: '1px solid #e5e5e5' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 10 }}>Preview your clip</div>
+                <video
+                  src={previewUrl}
+                  controls
+                  style={{ width: '100%', borderRadius: 10, background: '#000', marginBottom: 12, maxHeight: 280, objectFit: 'contain' }}
+                />
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => { setRecordingPhase('idle'); setPreviewUrl(null); recordedChunksRef.current = []; }}
+                    style={{ flex: 1, padding: '12px', borderRadius: 10, background: '#fff', color: '#555', fontWeight: 600, fontSize: 13, border: '1px solid #d1d5db', cursor: 'pointer' }}
+                  >
+                    Retake
+                  </button>
+                  <button
+                    onClick={handleUploadRecording}
+                    style={{ flex: 2, padding: '12px', borderRadius: 10, background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                  >
+                    <Video size={16} />
+                    Send to Gemini
+                  </button>
+                </div>
+              </div>
             )}
 
             {(upload.phase === 'getting_url' || upload.phase === 'uploading') && (
