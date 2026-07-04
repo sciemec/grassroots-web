@@ -63,6 +63,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/academics",   label: "My Academics",  icon: <BookOpen size={18} />,      roles: ["player"] },
   { href: "/player/pathway",     label: "My Pathway",    icon: <GraduationCap size={18} />, roles: ["player"] },
   { href: "/player/subscription", label: "Subscription",  icon: <CreditCard size={18} />,    roles: ["player"] },
+  { href: "/parent/dashboard",   label: "Parent Hub",    icon: <Heart size={18} />,         roles: ["player"] },
 
   // ── Athlete (multi-sport) ─────────────────────────────────────────────────
   { href: "/athlete/scan",      label: "Biometric Scan",  icon: <Activity size={18} />,    roles: ["athlete"], feature: "biometrics" },
