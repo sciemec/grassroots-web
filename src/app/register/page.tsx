@@ -3,7 +3,7 @@
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Users, Dumbbell, Eye, Heart, Activity, Loader2 } from "lucide-react";
+import { Users, Dumbbell, Eye, Heart, Activity, Shield, Loader2 } from "lucide-react";
 
 const ROLES = [
   { 
@@ -38,13 +38,21 @@ const ROLES = [
     href: "/register/scout",
     color: "from-purple-600 to-indigo-700"
   },
-  { 
-    role: "fan", 
-    title: "Fan / Supporter", 
+  {
+    role: "fan",
+    title: "Fan / Supporter",
     description: "Discover local talent, share passports",
     icon: Heart,
     href: "/register/fan",
     color: "from-rose-600 to-pink-700"
+  },
+  {
+    role: "guardian",
+    title: "Parent / Guardian",
+    description: "Monitor your child's training, scores & alerts",
+    icon: Shield,
+    href: "/register/guardian",
+    color: "from-teal-600 to-green-800"
   },
 ];
 

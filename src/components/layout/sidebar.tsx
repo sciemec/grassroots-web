@@ -106,8 +106,13 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/arena",             label: "The Arena",       icon: <Globe size={18} />,       roles: ["player","athlete","coach","scout","fan"], feature: "arena"   },
   { href: "/world-cup",         label: "🏆 World Cup",    icon: <Trophy size={18} />,      roles: ["player","athlete","coach","scout","fan"], feature: "worldCup"},
 
+  // ── Guardian / Parent ─────────────────────────────────────────────────────
+  { href: "/parent",             label: "Guardian Hub",    icon: <Shield size={18} />,      roles: ["guardian","admin"] },
+  { href: "/parent/dashboard",   label: "Child Dashboard", icon: <BarChart3 size={18} />,   roles: ["guardian","admin"] },
+  { href: "/parent/link",        label: "Link a Child",    icon: <Home size={18} />,        roles: ["guardian","admin"] },
+
   // ── Utilities ─────────────────────────────────────────────────────────────
-  { href: "/settings",          label: "Settings",        icon: <Settings size={18} />,    roles: ["player","athlete","coach","scout","fan","admin"] },
+  { href: "/settings",          label: "Settings",        icon: <Settings size={18} />,    roles: ["player","athlete","coach","scout","fan","admin","guardian"] },
 ];
 
 const isFeatureEnabled = (feature?: keyof typeof FEATURES) =>
