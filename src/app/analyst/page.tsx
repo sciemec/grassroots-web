@@ -91,6 +91,13 @@ const FEATURES = [
     label: "Smart Touch Tracker",
     desc: "Tap touches · AI infers formation · zones",
   },
+  {
+    href: "/analyst/team-biomechanics",
+    icon: Zap,
+    iconBg: "#ecfdf5", iconColor: "#059669",
+    label: "Team Biomechanics",
+    desc: "YOLOv8 + MediaPipe · Performance Index · Resilience Index · PDF",
+  },
 ];
 
 export default function AnalystHubPage() {
@@ -107,7 +114,8 @@ export default function AnalystHubPage() {
   useEffect(() => {
     if (!hydrated) return;
     if (!user) { router.replace("/login"); return; }
-    if (user.role !== "analyst" && user.role !== "admin") router.replace("/arena");
+    const allowed = ["analyst", "admin", "coach"];
+    if (!allowed.includes(user.role)) router.replace("/arena");
   }, [hydrated, user, router]);
 
   if (!hydrated || !user) {

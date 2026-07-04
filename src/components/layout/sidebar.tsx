@@ -92,6 +92,15 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/users",       label: "Users",           icon: <Users size={18} />,       roles: ["admin"]                     },
   { href: "/admin/fan-hub",     label: "Fan Hub Mod",     icon: <Video size={18} />,       roles: ["admin"]                     },
 
+  // ── Analyst ───────────────────────────────────────────────────────────────
+  { href: "/analyst",                   label: "Analyst Hub",        icon: <BarChart3 size={18} />,   roles: ["analyst","admin","coach"] },
+  { href: "/analyst/live-match",        label: "Live Collector",     icon: <Activity size={18} />,    roles: ["analyst","admin","coach"] },
+  { href: "/analyst/team-biomechanics", label: "Team Biomechanics",  icon: <Zap size={18} />,         roles: ["analyst","admin","coach"] },
+  { href: "/analyst/match-eye",         label: "Match Eye",          icon: <Video size={18} />,       roles: ["analyst","admin","coach"] },
+  { href: "/analyst/xg-analysis",       label: "xG Analysis",        icon: <Target size={18} />,      roles: ["analyst","admin","coach"] },
+  { href: "/analyst/tactical-report",   label: "Tactical Report",    icon: <Crosshair size={18} />,   roles: ["analyst","admin","coach"] },
+  { href: "/analyst/season",            label: "Season Intelligence", icon: <TrendingUp size={18} />,  roles: ["analyst","admin","coach"] },
+
   // ── Shared: Arena + World Cup ─────────────────────────────────────────────
   { href: "/arena",             label: "The Arena",       icon: <Globe size={18} />,       roles: ["player","athlete","coach","scout","fan"], feature: "arena"   },
   { href: "/world-cup",         label: "🏆 World Cup",    icon: <Trophy size={18} />,      roles: ["player","athlete","coach","scout","fan"], feature: "worldCup"},
