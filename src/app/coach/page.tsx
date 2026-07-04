@@ -585,6 +585,9 @@ export default function CoachHubPage() {
           <Link href="/coach/biometrics" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
             <Icons.ScanLine size={12} /> Biometrics
           </Link>
+          <Link href="/coach/drill-analysis" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
+            <Icons.Video size={12} /> Drill Analysis
+          </Link>
           <Link href="/coach/tactical-analysis" className="flex items-center gap-2 text-xs text-gray-600 hover:text-[#1a5c2a] py-1.5">
             <Icons.BarChart2 size={12} /> Tactical Analysis
           </Link>

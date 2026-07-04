@@ -442,6 +442,8 @@ export default function PlayerDashboardHome() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <HubCard href="/player/analyse" icon={Sparkles} iconBg="#f3e8ff" iconColor="#9333ea"
               label="Drill Analysis" desc="Upload video · Gemini AI coaching feedback" badge="Free trial" />
+            <HubCard href="/player/biomechanics" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
+              label="Movement Check" desc="Film a drill · AI scores your movement · see your weak spots" />
             <HubCard href="/player/gemini-drills" icon={Wand2} iconBg="#fdf4ff" iconColor="#7c3aed"
               label="Gemini Drills" desc="AI drill coaching · 10 sports · guided sessions" />
             <HubCard href="/player/capture" icon={Camera} iconBg="#f0fdf4" iconColor="#15803d"

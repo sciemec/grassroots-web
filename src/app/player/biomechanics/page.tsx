@@ -1,478 +1,452 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Upload, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { getDrillsForFlags } from '@/lib/drill-data';
-import type { MediaPipeFlag } from '@/lib/drill-data';
+import { ArrowLeft, Camera, Upload, X, ChevronDown, ChevronUp, FileDown } from 'lucide-react';
+import { useAuthStore } from '@/lib/auth-store';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const AI_URL  = process.env.NEXT_PUBLIC_AI_URL  ?? 'https://ai.bhora-ai.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
-type Stage = 'select' | 'upload' | 'processing' | 'results';
-type DrillType = 'sprint' | 'jump_land' | 'touch_shot' | 'running' | 'full_scan';
-type ScoreFlag = 'good' | 'warning' | 'issue';
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-interface MetricResult {
-  score: number;
-  flag: ScoreFlag;
-  detail: string;
-  rawValue?: number;
-}
+type Stage = 'select' | 'guide' | 'upload' | 'processing' | 'results' | 'error';
 
-interface Landmark {
-  x: number;
-  y: number;
-  z: number;
-  visibility?: number;
-}
-
-// ── Drill definitions ─────────────────────────────────────────────────────────
-
-const DRILL_TYPES: {
-  id: DrillType;
-  label: string;
+interface Drill {
+  id: string;
+  name: string;
   emoji: string;
-  description: string;
-  metrics: string[];
-}[] = [
+  tagline: string;
+  cameraAngle: string;         // plain English
+  howToDo: string[];           // numbered steps, simple words
+  noEquipment: string;         // what to use if no gear
+  whatWeCheck: {
+    label: string;             // simplified metric name
+    simple: string;            // plain English explanation
+  }[];
+}
+
+interface PlayerResult {
+  id: string;
+  metrics: Record<string, number>;
+  performance_index: number;
+  resilience_index: number;
+  flags: string[];
+}
+
+// ── Drills ────────────────────────────────────────────────────────────────────
+
+const DRILLS: Drill[] = [
   {
-    id: 'sprint',
-    label: 'Sprint',
+    id: 'sprint_10m',
+    name: 'Short Sprint',
     emoji: '⚡',
-    description: 'Run at full speed past the camera',
-    metrics: ['trunk_lean', 'knee_drive', 'bilateral_asymmetry'],
+    tagline: 'Run as fast as you can for 10 steps',
+    cameraAngle: 'Side view — phone level with your hips, 4–5 metres away',
+    howToDo: [
+      'Put your phone on a water bottle, brick, or ask someone to hold it at hip height.',
+      'Stand side-on to the camera (your shoulder faces the lens).',
+      'Mark two points about 10 big steps apart.',
+      'Hit record, wait 2 seconds, then sprint as hard as you can from point A to point B.',
+      'Stop the recording. Upload the clip here.',
+    ],
+    noEquipment: 'You just need space — a road, field, or compound. No cones needed, use stones or sticks as markers.',
+    whatWeCheck: [
+      { label: 'Body lean', simple: 'Are you leaning forward at the right angle? Leaning too far back makes you slow.' },
+      { label: 'Knee lift', simple: 'How high does your knee come up? Higher knees = longer strides = more speed.' },
+      { label: 'Side difference', simple: 'Is your left leg moving the same as your right? Big differences can cause injuries.' },
+    ],
   },
   {
-    id: 'jump_land',
-    label: 'Jump & Land',
+    id: 'cut_505',
+    name: 'Quick Turn',
+    emoji: '↩️',
+    tagline: 'Sprint, plant your foot, and change direction fast',
+    cameraAngle: 'Front view — phone facing you straight on, 4 metres away at knee height',
+    howToDo: [
+      'Set up two points about 5 big steps apart.',
+      'Phone on the ground or a low surface, pointing at you.',
+      'Hit record, sprint to the far point, plant hard, turn, sprint back.',
+      'Do this 2–3 times in the same clip.',
+    ],
+    noEquipment: 'Use chalk lines, stones, or clothing as markers. Any firm surface works.',
+    whatWeCheck: [
+      { label: 'Knee cave risk', simple: 'Does your knee fall inward when you plant? That\'s a big injury warning sign.' },
+      { label: 'Body lean', simple: 'Are you low and leaning into the turn, or upright and losing speed?' },
+      { label: 'Side difference', simple: 'Is your left turn as sharp as your right? Weakness on one side matters.' },
+    ],
+  },
+  {
+    id: 'drop_jump',
+    name: 'Step-Off Jump',
     emoji: '🦘',
-    description: 'Jump and land on two feet, hold 2 seconds',
-    metrics: ['landing_stiffness', 'knee_valgus', 'bilateral_asymmetry'],
+    tagline: 'Step off a raised surface and jump straight up',
+    cameraAngle: 'Front view — phone facing you, 3–4 metres away at knee height',
+    howToDo: [
+      'Find a step, kerb, or low wall (about 20–30 cm high).',
+      'Set up the phone facing you straight on.',
+      'Step off — do NOT jump off. Just step, land with both feet, then immediately jump as high as you can.',
+      'Do this 3 times in the same clip.',
+    ],
+    noEquipment: 'No box? Use a dirt mound, low school step, or thick book stack. If you have nothing raised, do a normal standing jump from flat ground instead.',
+    whatWeCheck: [
+      { label: 'Knee cave risk', simple: 'Do your knees stay over your toes when you land? Caving inward = ACL risk.' },
+      { label: 'Landing softness', simple: 'Do you bend your knees to absorb the landing, or do you land stiff-legged? Stiff landings damage joints.' },
+      { label: 'Switch speed', simple: 'How fast do you go from landing to jumping? Faster = more explosive power.' },
+      { label: 'Side difference', simple: 'Does one leg do more work than the other on landing?' },
+    ],
   },
   {
-    id: 'touch_shot',
-    label: 'Touch / Shot',
-    emoji: '⚽',
-    description: 'Control the ball and strike or touch',
-    metrics: ['body_shape', 'trunk_lean', 'knee_valgus'],
-  },
-  {
-    id: 'running',
-    label: 'Running Drill',
+    id: 'dynamic_header',
+    name: 'Jump and Head',
     emoji: '🏃',
-    description: 'Jog or run with change of direction',
-    metrics: ['knee_drive', 'trunk_lean', 'ankle_dorsiflexion', 'bilateral_asymmetry'],
+    tagline: 'Run two steps, jump, and head the ball',
+    cameraAngle: 'Front view — phone facing you, 4 metres away at chest height',
+    howToDo: [
+      'Ask a friend to hold the ball up, or tie a ball in a net/bag at head height.',
+      'Take two running steps, jump, and head the ball.',
+      'The camera should capture your whole body from feet to head.',
+      'Do this 3 times in the same clip.',
+    ],
+    noEquipment: 'No ball? Use a mango, balled-up cloth, or plastic bag stuffed with rags. Hang it from a tree branch or have someone hold it up.',
+    whatWeCheck: [
+      { label: 'Knee cave risk', simple: 'Do your knees stay in line when you land after heading?' },
+      { label: 'Landing softness', simple: 'Do you land softly, or do you crash down hard?' },
+      { label: 'Body lean', simple: 'Is your trunk upright as you jump, giving you good jump height?' },
+    ],
   },
   {
-    id: 'full_scan',
-    label: 'Full Scan',
-    emoji: '🔬',
-    description: 'Any movement — all 6 metrics measured',
-    metrics: ['trunk_lean', 'knee_drive', 'knee_valgus', 'bilateral_asymmetry', 'landing_stiffness', 'ankle_dorsiflexion'],
+    id: 'lateral_shuffle',
+    name: 'Side-Step Speed',
+    emoji: '↔️',
+    tagline: 'Shuffle sideways as fast as possible',
+    cameraAngle: 'Front view — phone facing you, 4 metres away at hip height',
+    howToDo: [
+      'Mark two points about 4 big steps apart (sideways).',
+      'Phone in front of you, pointing at your face/chest.',
+      'Shuffle side to side between the two points as fast as you can.',
+      'Do NOT cross your feet. Stay low. Keep going for about 10 seconds.',
+    ],
+    noEquipment: 'Any flat surface works. Mark with stones, sticks, or chalk.',
+    whatWeCheck: [
+      { label: 'Body lean', simple: 'Are you staying low and leaning slightly? Standing tall loses speed.' },
+      { label: 'Knee cave risk', simple: 'Are your knees staying strong and over your toes as you push sideways?' },
+      { label: 'Side difference', simple: 'Are you as fast going left as going right?' },
+    ],
+  },
+  {
+    id: 'dribble_sprint',
+    name: 'Sprint Dribble',
+    emoji: '⚽',
+    tagline: 'Dribble at full speed for 10 metres',
+    cameraAngle: 'Side view — phone level with your hips, 4–5 metres away',
+    howToDo: [
+      'Place the phone to your side at hip height.',
+      'Dribble at full speed in a straight line past the camera.',
+      'Push the ball out ahead, sprint to it, touch again. Full pace!',
+      'Do this 2 times in the same clip.',
+    ],
+    noEquipment: 'No football? Use a tennis ball, plastic bottle, or anything round you can push. Any firm ground works.',
+    whatWeCheck: [
+      { label: 'Body lean', simple: 'Are you leaning forward into the sprint, or sitting upright and slow?' },
+      { label: 'Knee lift', simple: 'Are your knees driving up, giving you a long powerful stride?' },
+      { label: 'Side difference', simple: 'Is your running action balanced on both sides?' },
+    ],
   },
 ];
 
-const METRIC_LABELS: Record<string, string> = {
-  trunk_lean:          'Trunk Lean',
-  knee_drive:          'Knee Drive',
-  knee_valgus:         'Knee Valgus',
-  bilateral_asymmetry: 'Bilateral Symmetry',
-  landing_stiffness:   'Landing Stiffness',
-  ankle_dorsiflexion:  'Ankle Dorsiflexion',
-  body_shape:          'Body Shape at Contact',
-};
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// Metric key → MediaPipe flag for drill prescription
-const METRIC_TO_FLAG: Record<string, MediaPipeFlag> = {
-  knee_valgus:         'knee_valgus',
-  bilateral_asymmetry: 'bilateral_asymmetry',
-  landing_stiffness:   'landing_stiffness',
-  trunk_lean:          'trunk_lean_deficit',
-  knee_drive:          'knee_drive',
-  ankle_dorsiflexion:  'ankle_dorsiflexion',
-  body_shape:          'hip_rotation_deficit',
-};
-
-const DRILL_METRICS: Record<DrillType, string[]> = {
-  sprint:     ['trunk_lean', 'knee_drive', 'bilateral_asymmetry'],
-  jump_land:  ['landing_stiffness', 'knee_valgus', 'bilateral_asymmetry'],
-  touch_shot: ['body_shape', 'trunk_lean', 'knee_valgus'],
-  running:    ['knee_drive', 'trunk_lean', 'ankle_dorsiflexion', 'bilateral_asymmetry'],
-  full_scan:  ['trunk_lean', 'knee_drive', 'knee_valgus', 'bilateral_asymmetry', 'landing_stiffness', 'ankle_dorsiflexion'],
-};
-
-// ── Math helpers ──────────────────────────────────────────────────────────────
-
-function angle3(a: Landmark, b: Landmark, c: Landmark): number {
-  const ba = { x: a.x - b.x, y: a.y - b.y };
-  const bc = { x: c.x - b.x, y: c.y - b.y };
-  const dot = ba.x * bc.x + ba.y * bc.y;
-  const mag = Math.sqrt((ba.x ** 2 + ba.y ** 2) * (bc.x ** 2 + bc.y ** 2));
-  if (mag === 0) return 180;
-  return (Math.acos(Math.max(-1, Math.min(1, dot / mag))) * 180) / Math.PI;
+function scoreColor(s: number) {
+  if (s >= 75) return '#16a34a';
+  if (s >= 55) return '#d97706';
+  return '#dc2626';
 }
 
-function scoreFlag(s: number): ScoreFlag {
-  if (s >= 75) return 'good';
-  if (s >= 55) return 'warning';
-  return 'issue';
+function scoreLabel(s: number) {
+  if (s >= 75) return 'Great';
+  if (s >= 55) return 'OK — room to improve';
+  return 'Needs work';
 }
 
-// ── Per-metric calculators ────────────────────────────────────────────────────
-
-function calcTrunkLean(frames: Landmark[][]): MetricResult {
-  const leans: number[] = [];
-  for (const lm of frames) {
-    const ls = lm[11], rs = lm[12], lh = lm[23], rh = lm[24];
-    if (!ls || !rs || !lh || !rh) continue;
-    const sx = (ls.x + rs.x) / 2, sy = (ls.y + rs.y) / 2;
-    const hx = (lh.x + rh.x) / 2, hy = (lh.y + rh.y) / 2;
-    leans.push(Math.atan2(Math.abs(sx - hx), Math.abs(sy - hy)) * (180 / Math.PI));
-  }
-  if (!leans.length) return { score: 50, flag: 'warning', detail: 'Insufficient pose data' };
-  const avg = leans.reduce((a, b) => a + b, 0) / leans.length;
-  // Ideal forward lean: 5–15°
-  const score = Math.round(Math.min(100, Math.max(0, 100 - Math.abs(avg - 10) * 4)));
-  const detail = score >= 75
-    ? 'Good forward lean — efficient power transfer'
-    : score >= 55
-    ? 'Slight excess lean — check hip flexor tightness'
-    : `Trunk at ${avg.toFixed(1)}° — adjust for better efficiency`;
-  return { score, flag: scoreFlag(score), detail, rawValue: avg };
-}
-
-function calcKneeDrive(frames: Landmark[][]): MetricResult {
-  const angles: number[] = [];
-  for (const lm of frames) {
-    const ls = lm[11], rs = lm[12], lh = lm[23], rh = lm[24], lk = lm[25], rk = lm[26];
-    if (!ls || !rs || !lh || !rh || !lk || !rk) continue;
-    const sh  = { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2, z: 0 };
-    const hip = { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2, z: 0 };
-    const kn  = { x: (lk.x + rk.x) / 2, y: (lk.y + rk.y) / 2, z: 0 };
-    angles.push(angle3(sh, hip, kn));
-  }
-  if (!angles.length) return { score: 50, flag: 'warning', detail: 'Insufficient pose data' };
-  const minAngle = Math.min(...angles);
-  // Peak drive = minimum hip–knee angle. Ideal peak: <90°
-  const score = Math.round(Math.min(100, Math.max(0, 100 - Math.max(0, minAngle - 70) * 2)));
-  const detail = score >= 75
-    ? 'Strong knee lift — good stride mechanics'
-    : score >= 55
-    ? 'Moderate knee drive — work on hip flexor power'
-    : 'Low knee drive — limits stride length and speed';
-  return { score, flag: scoreFlag(score), detail, rawValue: minAngle };
-}
-
-function calcKneeValgus(frames: Landmark[][]): MetricResult {
-  const deviations: number[] = [];
-  for (const lm of frames) {
-    const lh = lm[23], rh = lm[24], lk = lm[25], rk = lm[26], la = lm[27], ra = lm[28];
-    if (!lh || !rh || !lk || !rk || !la || !ra) continue;
-    const left  = Math.abs(180 - angle3(lh, lk, la));
-    const right = Math.abs(180 - angle3(rh, rk, ra));
-    deviations.push((left + right) / 2);
-  }
-  if (!deviations.length) return { score: 50, flag: 'warning', detail: 'Insufficient pose data' };
-  const maxDev = Math.max(...deviations);
-  // 0° deviation = knees track straight (100), 30°+ = severe collapse (0)
-  const score = Math.round(Math.min(100, Math.max(0, 100 - maxDev * 3.3)));
-  const detail = score >= 75
-    ? 'Knees tracking well over toes'
-    : score >= 55
-    ? 'Mild inward knee collapse — strengthen glutes'
-    : 'Knee valgus detected — injury risk. See prescriptions below.';
-  return { score, flag: scoreFlag(score), detail };
-}
-
-function calcBilateralAsymmetry(frames: Landmark[][]): MetricResult {
-  const diffs: number[] = [];
-  for (const lm of frames) {
-    const lh = lm[23], rh = lm[24], lk = lm[25], rk = lm[26], la = lm[27], ra = lm[28];
-    if (!lh || !rh || !lk || !rk || !la || !ra) continue;
-    diffs.push(Math.abs(angle3(lh, lk, la) - angle3(rh, rk, ra)));
-  }
-  if (!diffs.length) return { score: 50, flag: 'warning', detail: 'Insufficient pose data' };
-  const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
-  // 0° = perfect symmetry (100), 20°+ = severe (0)
-  const score = Math.round(Math.min(100, Math.max(0, 100 - avg * 5)));
-  const detail = score >= 75
-    ? 'Both sides balanced — symmetrical movement'
-    : score >= 55
-    ? `${avg.toFixed(1)}° average side difference — monitor weaker limb`
-    : `${avg.toFixed(1)}° asymmetry — overloading dominant side, injury risk`;
-  return { score, flag: scoreFlag(score), detail, rawValue: avg };
-}
-
-function calcLandingStiffness(frames: Landmark[][]): MetricResult {
-  if (frames.length < 5) return { score: 50, flag: 'warning', detail: 'Insufficient pose data' };
-  // Detect landing frame: hip Y at maximum (lowest physical position)
-  let maxHipY = -Infinity, landIdx = Math.floor(frames.length / 2);
-  frames.forEach((lm, i) => {
-    const lh = lm[23], rh = lm[24];
-    if (!lh || !rh) return;
-    const hy = (lh.y + rh.y) / 2;
-    if (hy > maxHipY) { maxHipY = hy; landIdx = i; }
-  });
-  const atLanding = frames[landIdx];
-  const lh = atLanding[23], lk = atLanding[25], la = atLanding[27];
-  const kneeAngle = (lh && lk && la) ? angle3(lh, lk, la) : 170;
-  // More knee flexion at landing = softer = better
-  const flexion = Math.max(0, 170 - kneeAngle);
-  const score = Math.round(Math.min(100, flexion * 3));
-  const detail = score >= 75
-    ? 'Soft landing — good energy absorption through the knee'
-    : score >= 55
-    ? 'Moderate stiffness — practise softer landings'
-    : 'Stiff-legged landing — high ACL stress. See prescriptions below.';
-  return { score, flag: scoreFlag(score), detail, rawValue: kneeAngle };
-}
-
-function calcAnkleDorsiflexion(frames: Landmark[][]): MetricResult {
-  const angles: number[] = [];
-  for (const lm of frames) {
-    const lk = lm[25], rk = lm[26], la = lm[27], ra = lm[28], lf = lm[31], rf = lm[32];
-    if (!lk || !rk || !la || !ra || !lf || !rf) continue;
-    angles.push((angle3(lk, la, lf) + angle3(rk, ra, rf)) / 2);
-  }
-  if (!angles.length) return { score: 50, flag: 'warning', detail: 'Insufficient pose data' };
-  const minAngle = Math.min(...angles); // peak dorsiflexion = smallest angle
-  // Ideal min 65–80°; above 90° = restricted range
-  const score = Math.round(Math.min(100, Math.max(0, 100 - Math.max(0, minAngle - 75) * 3)));
-  const detail = score >= 75
-    ? 'Good ankle range — supports deep knee bend'
-    : score >= 55
-    ? 'Moderate restriction — stretch calves daily'
-    : 'Limited dorsiflexion — restricts deep knee bend and landing mechanics';
-  return { score, flag: scoreFlag(score), detail, rawValue: minAngle };
-}
-
-function calcBodyShape(frames: Landmark[][]): MetricResult {
-  const tilts: number[] = [];
-  for (const lm of frames) {
-    const ls = lm[11], rs = lm[12], lh = lm[23], rh = lm[24];
-    if (!ls || !rs || !lh || !rh) continue;
-    const sTilt = Math.abs(ls.y - rs.y) * 100;
-    const hTilt = Math.abs(lh.y - rh.y) * 100;
-    tilts.push((sTilt + hTilt) / 2);
-  }
-  if (!tilts.length) return { score: 50, flag: 'warning', detail: 'Insufficient pose data' };
-  const avg = tilts.reduce((a, b) => a + b, 0) / tilts.length;
-  const score = Math.round(Math.min(100, Math.max(0, 100 - avg * 10)));
-  const detail = score >= 75
-    ? 'Balanced body position at contact'
-    : score >= 55
-    ? 'Slight lateral tilt — adjust standing foot position'
-    : 'Poor body shape — affects both accuracy and power generation';
-  return { score, flag: scoreFlag(score), detail, rawValue: avg };
-}
-
-function calculateScores(frames: Landmark[][], drill: DrillType): Record<string, MetricResult> {
-  const all: Record<string, () => MetricResult> = {
-    trunk_lean:          () => calcTrunkLean(frames),
-    knee_drive:          () => calcKneeDrive(frames),
-    knee_valgus:         () => calcKneeValgus(frames),
-    bilateral_asymmetry: () => calcBilateralAsymmetry(frames),
-    landing_stiffness:   () => calcLandingStiffness(frames),
-    ankle_dorsiflexion:  () => calcAnkleDorsiflexion(frames),
-    body_shape:          () => calcBodyShape(frames),
-  };
-  const result: Record<string, MetricResult> = {};
-  for (const key of DRILL_METRICS[drill]) {
-    result[key] = all[key]?.() ?? { score: 50, flag: 'warning', detail: 'Not calculated' };
-  }
-  return result;
-}
-
-// ── Page component ────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function BiometricsPage() {
-  const [stage, setStage]         = useState<Stage>('select');
-  const [drillType, setDrillType] = useState<DrillType | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [duration, setDuration]   = useState(0);
-  const [progress, setProgress]   = useState(0);
-  const [frameCount, setFrameCount]   = useState(0);
-  const [totalFrames, setTotalFrames] = useState(0);
-  const [scores, setScores]       = useState<Record<string, MetricResult>>({});
-  const [error, setError]         = useState<string | null>(null);
-  const [mpLoaded, setMpLoaded]   = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const user        = useAuthStore((s) => s.user);
+  const token       = useAuthStore((s) => s.token);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
 
-  // Load MediaPipe via CDN — no npm install required
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (document.getElementById('mp-tasks-vision')) { setMpLoaded(true); return; }
-    const script = document.createElement('script');
-    script.id = 'mp-tasks-vision';
-    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.js';
-    script.crossOrigin = 'anonymous';
-    script.onload = () => setMpLoaded(true);
-    script.onerror = () => setError('Failed to load MediaPipe — check your internet connection.');
-    document.head.appendChild(script);
+  const [stage,          setStage]         = useState<Stage>('select');
+  const [drill,          setDrill]         = useState<Drill | null>(null);
+  const [videoFile,      setVideoFile]     = useState<File | null>(null);
+  const [uploadPct,      setUploadPct]     = useState(0);
+  const [jobId,          setJobId]         = useState<string | null>(null);
+  const [results,        setResults]       = useState<PlayerResult[]>([]);
+  const [thutoNote,      setThutoNote]     = useState<string | null>(null);
+  const [expandMetrics,  setExpandMetrics] = useState(false);
+  const [errorMsg,       setErrorMsg]      = useState('');
+  const [useCamera,      setUseCamera]     = useState(false);
+  const [recording,      setRecording]     = useState(false);
+  const [countdown,      setCountdown]     = useState(60);
+  const [passportSaved,  setPassportSaved] = useState(false);
+
+  const videoRef    = useRef<HTMLVideoElement>(null);
+  const mediaRef    = useRef<MediaRecorder | null>(null);
+  const chunksRef   = useRef<Blob[]>([]);
+  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef   = useRef<MediaStream | null>(null);
+
+  // ── Camera helpers ────────────────────────────────────────────────────────
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    if (timerRef.current) clearInterval(timerRef.current);
   }, []);
 
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith('video/')) { setError('Please upload a video file (MP4, MOV, WebM).'); return; }
-    setError(null);
-    const vid = document.createElement('video');
-    vid.preload = 'metadata';
-    vid.onloadedmetadata = () => { setDuration(vid.duration); setVideoFile(file); };
-    vid.src = URL.createObjectURL(file);
-  };
-
-  const runAnalysis = async () => {
-    if (!videoFile || !drillType || !canvasRef.current) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const w = window as any;
-    if (!w.PoseLandmarker || !w.FilesetResolver) {
-      setError('MediaPipe is still loading — please wait a moment then try again.');
-      return;
-    }
-    setStage('processing');
-    setError(null);
+  const startCamera = useCallback(async () => {
     try {
-      const vision = await w.FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
-      );
-      const landmarker = await w.PoseLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath:
-            'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
-          delegate: 'GPU',
-        },
-        runningMode: 'VIDEO',
-        numPoses: 1,
-      });
-
-      const video = document.createElement('video');
-      video.src = URL.createObjectURL(videoFile);
-      video.muted = true;
-      video.playsInline = true;
-      await new Promise<void>((res, rej) => { video.onloadedmetadata = () => res(); video.onerror = () => rej(); });
-
-      const clipDuration = Math.min(video.duration, 30);
-      const FPS = 10;
-      const total = Math.floor(clipDuration * FPS);
-      setTotalFrames(total);
-
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d')!;
-      canvas.width = 256;
-      canvas.height = 256;
-
-      const allFrames: Landmark[][] = [];
-      let ts = 1; // strictly monotonically increasing timestamps required by MediaPipe VIDEO mode
-
-      for (let i = 0; i < total; i++) {
-        video.currentTime = i / FPS;
-        await new Promise<void>((res) => {
-          const onSeeked = () => { video.removeEventListener('seeked', onSeeked); res(); };
-          video.addEventListener('seeked', onSeeked);
-          setTimeout(res, 250); // fallback if seeked never fires
-        });
-        ctx.drawImage(video, 0, 0, 256, 256);
-        const result = landmarker.detectForVideo(canvas, ts);
-        ts += 100;
-        if (result.landmarks?.[0]) allFrames.push(result.landmarks[0] as Landmark[]);
-        setFrameCount(i + 1);
-        setProgress(Math.round(((i + 1) / total) * 100));
-      }
-
-      landmarker.close();
-
-      if (allFrames.length < 5) {
-        throw new Error('Not enough pose data. Make sure your full body is visible, well-lit, and the camera is steady.');
-      }
-
-      setScores(calculateScores(allFrames, drillType));
-      setStage('results');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analysis failed — please try again.');
-      setStage('upload');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch {
+      setErrorMsg('Camera not accessible. Use the Upload option instead.');
+      setUseCamera(false);
     }
+  }, []);
+
+  const startRecording = useCallback(() => {
+    if (!streamRef.current) return;
+    chunksRef.current = [];
+    const mr = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+    mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    mr.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      setVideoFile(new File([blob], 'recording.webm', { type: 'video/webm' }));
+      stopCamera();
+      setUseCamera(false);
+    };
+    mr.start(500);
+    mediaRef.current = mr;
+    setRecording(true);
+    setCountdown(60);
+    timerRef.current = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) { stopRecording(); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+  }, [stopCamera]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const stopRecording = useCallback(() => {
+    mediaRef.current?.stop();
+    mediaRef.current = null;
+    setRecording(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (useCamera) startCamera();
+    else stopCamera();
+    return stopCamera;
+  }, [useCamera, startCamera, stopCamera]);
+
+  // ── Upload & poll ─────────────────────────────────────────────────────────
+
+  const upload = () => {
+    if (!videoFile || !drill) return;
+    setStage('processing');
+    setUploadPct(0);
+
+    const fd = new FormData();
+    fd.append('video', videoFile);
+    fd.append('drill', drill.id);
+    fd.append('player_count', '1');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${AI_URL}/analyse-team-biomechanics`);
+    if (token && token !== 'dev-token') xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && data.job_id) {
+          setJobId(data.job_id);
+          startPolling(data.job_id);
+        } else {
+          setErrorMsg(data.error ?? 'Upload failed. Try again.');
+          setStage('error');
+        }
+      } catch {
+        setErrorMsg('Unexpected response. Try again.');
+        setStage('error');
+      }
+    };
+    xhr.onerror = () => { setErrorMsg('Network error. Check your connection.'); setStage('error'); };
+    xhr.send(fd);
   };
 
-  const reset = () => {
-    setStage('select'); setDrillType(null); setVideoFile(null);
-    setDuration(0); setProgress(0); setFrameCount(0); setTotalFrames(0);
-    setScores({}); setError(null);
+  const startPolling = (id: string) => {
+    pollRef.current = setInterval(async () => {
+      try {
+        const res  = await fetch(`${AI_URL}/job/${id}`);
+        const data = await res.json();
+        if (data.status === 'complete') {
+          clearInterval(pollRef.current!);
+          const players: PlayerResult[] = Array.isArray(data.players) ? data.players : [];
+          setResults(players);
+          setStage('results');
+          fetchThutoNote(players);
+          saveToPassport(players);
+        } else if (data.status === 'failed') {
+          clearInterval(pollRef.current!);
+          setErrorMsg(data.error ?? 'Analysis failed. Try again.');
+          setStage('error');
+        }
+      } catch { /* retry next tick */ }
+    }, 5000);
   };
 
-  const overallScore = Object.keys(scores).length
-    ? Math.round(Object.values(scores).reduce((s, r) => s + r.score, 0) / Object.values(scores).length)
-    : 0;
+  useEffect(() => () => { clearInterval(pollRef.current!); }, []);
 
-  const flaggedFlags = Object.entries(scores)
-    .filter(([, r]) => r.flag !== 'good')
-    .map(([key]) => METRIC_TO_FLAG[key])
-    .filter(Boolean) as MediaPipeFlag[];
-  const prescriptions = getDrillsForFlags(flaggedFlags);
+  // ── THUTO coaching note ───────────────────────────────────────────────────
 
-  const durationBarColor = duration === 0 ? '#6b7280'
-    : duration <= 20 ? '#16a34a'
-    : duration <= 30 ? '#d97706'
-    : '#dc2626';
+  const fetchThutoNote = async (players: PlayerResult[]) => {
+    if (!players[0]) return;
+    const p = players[0];
+    const summary = `Drill: ${drill?.name}. Performance score: ${p.performance_index}. Body Safety score: ${p.resilience_index}. Flags: ${p.flags.join(', ') || 'none'}.`;
+    try {
+      const res = await fetch('/api/ai-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `A 14-year-old Zimbabwean footballer just got these movement scan results. ${summary} Write exactly 3 short sentences in very simple English. Sentence 1: tell them one thing they did well. Sentence 2: explain one thing to work on, using simple words (no jargon). Sentence 3: one easy thing they can do this week to improve.`,
+          system_prompt: 'You are THUTO, a friendly AI coach for young Zimbabwean athletes. Use simple English only. No technical terms. Keep each sentence under 20 words.',
+        }),
+      });
+      const data = await res.json();
+      setThutoNote(data.response ?? data.answer ?? null);
+    } catch { /* silent */ }
+  };
 
-  const currentDrill = DRILL_TYPES.find(d => d.id === drillType);
+  // ── Passport write-back ───────────────────────────────────────────────────
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  const saveToPassport = (players: PlayerResult[]) => {
+    const p = players[0];
+    if (!p || !token || token === 'dev-token') return;
+    fetch(`${API_URL}/player/biometric-scores`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        drill:             drill?.id,
+        performance_index: p.performance_index,
+        resilience_index:  p.resilience_index,
+        flags:             p.flags,
+      }),
+    })
+      .then(() => setPassportSaved(true))
+      .catch(() => { /* silent — passport update is non-blocking */ });
+  };
+
+  // ── PDF export ────────────────────────────────────────────────────────────
+
+  const exportPDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const p = results[0];
+    if (!p) return;
+
+    // Header
+    doc.setFillColor(26, 92, 42);
+    doc.rect(0, 0, 210, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text('GrassRoots Sports — Movement Scan', 14, 11);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text(`Drill: ${drill?.name}   Player: ${user?.name ?? 'Unknown'}`, 14, 20);
+
+    // Scores
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.text('Your Scores', 14, 40);
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+    doc.text(`Performance: ${p.performance_index} / 100`, 14, 50);
+    doc.text(`Body Safety:  ${p.resilience_index} / 100`, 14, 58);
+
+    // Flags
+    if (p.flags.length) {
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      doc.text('Areas to check with your coach:', 14, 72);
+      doc.setFont('helvetica', 'normal');
+      p.flags.forEach((f, i) => doc.text(`• ${f.replace(/_/g, ' ')}`, 18, 80 + i * 7));
+    }
+
+    // THUTO note
+    if (thutoNote) {
+      const y = 80 + (p.flags.length || 1) * 7 + 12;
+      doc.setFont('helvetica', 'bold');
+      doc.text('THUTO says:', 14, y);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(thutoNote, 180);
+      doc.text(lines, 14, y + 8);
+    }
+
+    doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+    doc.text('grassrootssports.live', 14, 285);
+    doc.save(`movement-scan-${drill?.id ?? 'result'}.pdf`);
+  };
+
+  // ── Auth guard ────────────────────────────────────────────────────────────
+
+  if (!hasHydrated) return null;
+
+  const result = results[0] ?? null;
+
+  // ── UI ────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0d1f12' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f4f2ee' }}>
 
-      {/* Sticky nav */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid rgba(240,180,41,0.1)', background: 'rgba(13,31,18,0.95)', backdropFilter: 'blur(8px)' }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', padding: '0 1rem', height: 52, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Link href="/player" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'rgba(255,255,255,0.45)', fontSize: 13, textDecoration: 'none' }}>
-            <ChevronLeft size={15} /> Player Hub
+      {/* Nav */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 1rem' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', height: 52, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link href="/player" style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', textDecoration: 'none', fontSize: 14 }}>
+            <ArrowLeft size={16} /> Player Hub
           </Link>
-          <span style={{ color: 'rgba(255,255,255,0.2)' }}>/</span>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Biomechanics Scan</span>
-          {!mpLoaded && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#f0b429' }}>⏳ Loading AI…</span>}
+          <span style={{ color: '#d1d5db' }}>/</span>
+          <span style={{ fontSize: 14, color: '#111827', fontWeight: 600 }}>Movement Check</span>
         </div>
       </div>
 
-      {/* Hidden canvas used for frame capture */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '1.5rem 1rem 4rem' }}>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '1.75rem 1rem 3rem' }}>
-
-        {/* ══ STAGE: SELECT ══════════════════════════════════════════════════════ */}
+        {/* ── SELECT ─────────────────────────────────────────────────────────── */}
         {stage === 'select' && (
           <>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 8 }}>Biomechanics Scan</h1>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
-                Upload a short video (≤30s). MediaPipe analyses your movement frame-by-frame — <em>nothing is uploaded to any server.</em>
+            <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#111827', marginBottom: 8 }}>Movement Check</h1>
+              <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>
+                Pick a drill, film yourself (or get a friend to film you), upload the clip, and get your AI score in about a minute.
               </p>
             </div>
 
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(240,180,41,0.6)', marginBottom: 12 }}>
-              Pick your drill type
-            </p>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {DRILL_TYPES.map((dt) => (
+              {DRILLS.map(d => (
                 <button
-                  key={dt.id}
-                  onClick={() => { setDrillType(dt.id); setStage('upload'); }}
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(240,180,41,0.12)', borderRadius: 16, padding: '1rem 1.25rem', cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(240,180,41,0.35)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(240,180,41,0.12)')}
+                  key={d.id}
+                  onClick={() => { setDrill(d); setStage('guide'); }}
+                  style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1rem 1.125rem', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#1a5c2a')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e7eb')}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                    <span style={{ fontSize: 22 }}>{dt.emoji}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 26 }}>{d.emoji}</span>
                     <div>
-                      <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>{dt.label}</p>
-                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{dt.description}</p>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>{d.name}</p>
+                      <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>{d.tagline}</p>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {dt.metrics.map(m => (
-                      <span key={m} style={{ fontSize: 11, padding: '2px 9px', borderRadius: 20, background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.18)', color: '#f0b429' }}>
-                        {METRIC_LABELS[m]}
-                      </span>
-                    ))}
+                    <span style={{ marginLeft: 'auto', color: '#9ca3af', fontSize: 18 }}>›</span>
                   </div>
                 </button>
               ))}
@@ -480,176 +454,290 @@ export default function BiometricsPage() {
           </>
         )}
 
-        {/* ══ STAGE: UPLOAD ══════════════════════════════════════════════════════ */}
-        {stage === 'upload' && currentDrill && (
+        {/* ── GUIDE ──────────────────────────────────────────────────────────── */}
+        {stage === 'guide' && drill && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.5rem' }}>
-              <button onClick={() => setStage('select')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, padding: 0 }}>
-                <ChevronLeft size={14} /> Back
-              </button>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#fff' }}>{currentDrill.emoji} {currentDrill.label}</h2>
-                <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{currentDrill.description}</p>
+            <button onClick={() => setStage('select')} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, marginBottom: '1.25rem', padding: 0 }}>
+              <ArrowLeft size={15} /> Back
+            </button>
+
+            <div style={{ backgroundColor: '#fff', borderRadius: 18, padding: '1.25rem', marginBottom: '1rem', border: '1px solid #e5e7eb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1rem' }}>
+                <span style={{ fontSize: 30 }}>{drill.emoji}</span>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#111827' }}>{drill.name}</h2>
+                  <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>{drill.tagline}</p>
+                </div>
+              </div>
+
+              {/* Camera position */}
+              <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '0.75rem', marginBottom: '1rem' }}>
+                <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>📱 Where to put the phone</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#166534' }}>{drill.cameraAngle}</p>
+              </div>
+
+              {/* Steps */}
+              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>How to do it</p>
+              <ol style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {drill.howToDo.map((step, i) => (
+                  <li key={i} style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{step}</li>
+                ))}
+              </ol>
+
+              {/* No equipment */}
+              <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '0.75rem', marginTop: '1rem' }}>
+                <p style={{ margin: '0 0 3px', fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>No kit? No problem</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#78350f' }}>{drill.noEquipment}</p>
               </div>
             </div>
 
-            {/* Drop zone */}
-            <div
-              onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-              onDragOver={e => e.preventDefault()}
-              onClick={() => document.getElementById('bio-video-input')?.click()}
-              style={{ border: '2px dashed rgba(240,180,41,0.25)', borderRadius: 18, padding: '2.5rem 1.5rem', textAlign: 'center', cursor: 'pointer', marginBottom: '1.25rem', transition: 'border-color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(240,180,41,0.5)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(240,180,41,0.25)')}
-            >
-              <Upload size={36} color="#f0b429" style={{ margin: '0 auto 14px' }} />
-              <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 600, color: '#fff' }}>
-                {videoFile ? videoFile.name : 'Tap or drag your video here'}
-              </p>
-              <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
-                MP4, MOV, WebM · Max 30 seconds · Full body must be in frame
-              </p>
-              <input id="bio-video-input" type="file" accept="video/*" style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+            {/* What AI checks */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 18, padding: '1.25rem', marginBottom: '1.25rem', border: '1px solid #e5e7eb' }}>
+              <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>What the AI looks for</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {drill.whatWeCheck.map((w, i) => (
+                  <div key={i} style={{ borderLeft: '3px solid #1a5c2a', paddingLeft: 10 }}>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: '#111827' }}>{w.label}</p>
+                    <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>{w.simple}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Duration bar */}
-            {duration > 0 && (
-              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '0.875rem 1rem', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Video duration</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: durationBarColor }}>
-                    {duration.toFixed(1)}s / 30s{duration > 30 ? ' — will analyse first 30s' : ''}
-                  </span>
-                </div>
-                <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ height: 5, borderRadius: 3, backgroundColor: durationBarColor, width: `${Math.min(100, (duration / 30) * 100)}%`, transition: 'width 0.3s' }} />
-                </div>
+            <button
+              onClick={() => setStage('upload')}
+              style={{ width: '100%', backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 14, padding: '0.875rem', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Ready — upload or record my clip →
+            </button>
+          </>
+        )}
+
+        {/* ── UPLOAD ─────────────────────────────────────────────────────────── */}
+        {stage === 'upload' && drill && (
+          <>
+            <button onClick={() => { setStage('guide'); setVideoFile(null); setUseCamera(false); stopCamera(); }} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, marginBottom: '1.25rem', padding: 0 }}>
+              <ArrowLeft size={15} /> Guide
+            </button>
+
+            <h2 style={{ margin: '0 0 1.25rem', fontSize: 18, fontWeight: 800, color: '#111827' }}>{drill.emoji} Upload Your Clip</h2>
+
+            {/* Toggle */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: '1.25rem' }}>
+              {[false, true].map(cam => (
+                <button
+                  key={String(cam)}
+                  onClick={() => { setUseCamera(cam); setVideoFile(null); }}
+                  style={{ flex: 1, padding: '0.625rem', borderRadius: 12, border: `2px solid ${useCamera === cam ? '#1a5c2a' : '#e5e7eb'}`, background: useCamera === cam ? '#f0fdf4' : '#fff', color: useCamera === cam ? '#1a5c2a' : '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                >
+                  {cam ? <Camera size={15} /> : <Upload size={15} />}
+                  {cam ? 'Use Camera' : 'Upload File'}
+                </button>
+              ))}
+            </div>
+
+            {/* Camera mode */}
+            {useCamera && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: 14, background: '#000', maxHeight: 260 }} />
+                {!recording ? (
+                  <button onClick={startRecording} style={{ marginTop: 10, width: '100%', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: 12, padding: '0.75rem', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                    ⏺ Start Recording
+                  </button>
+                ) : (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, marginTop: 10 }}>
+                      <span style={{ fontSize: 13, color: '#dc2626', fontWeight: 600 }}>● Recording…</span>
+                      <span style={{ fontSize: 13, color: '#374151' }}>{countdown}s left</span>
+                    </div>
+                    <button onClick={stopRecording} style={{ width: '100%', backgroundColor: '#374151', color: '#fff', border: 'none', borderRadius: 12, padding: '0.75rem', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                      ⬛ Stop Recording
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
-            {error && (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', borderRadius: 10, padding: '0.75rem', marginBottom: '1rem' }}>
-                <XCircle size={15} color="#f87171" style={{ flexShrink: 0, marginTop: 1 }} />
-                <span style={{ fontSize: 13, color: '#f87171' }}>{error}</span>
+            {/* File upload */}
+            {!useCamera && (
+              <div
+                onClick={() => document.getElementById('bio-file')?.click()}
+                onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setVideoFile(f); }}
+                onDragOver={e => e.preventDefault()}
+                style={{ border: `2px dashed ${videoFile ? '#1a5c2a' : '#d1d5db'}`, borderRadius: 16, padding: '2rem 1.5rem', textAlign: 'center', cursor: 'pointer', backgroundColor: videoFile ? '#f0fdf4' : '#fff', marginBottom: '1.25rem' }}
+              >
+                <Upload size={32} color={videoFile ? '#1a5c2a' : '#9ca3af'} style={{ margin: '0 auto 10px' }} />
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: videoFile ? '#15803d' : '#374151' }}>
+                  {videoFile ? `✓ ${videoFile.name}` : 'Tap to choose a video'}
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9ca3af' }}>MP4, MOV, WebM</p>
+                <input id="bio-file" type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) setVideoFile(f); }} />
+              </div>
+            )}
+
+            {videoFile && (
+              <div style={{ marginBottom: '1rem', padding: '0.625rem 1rem', backgroundColor: '#f0fdf4', borderRadius: 12, border: '1px solid #bbf7d0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: '#15803d' }}>✓ Clip ready</span>
+                <button onClick={() => setVideoFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}><X size={15} /></button>
               </div>
             )}
 
             <button
-              onClick={runAnalysis}
-              disabled={!videoFile || !mpLoaded}
-              style={{ width: '100%', borderRadius: 14, padding: '0.875rem', fontSize: 15, fontWeight: 700, border: 'none', cursor: videoFile && mpLoaded ? 'pointer' : 'not-allowed', background: videoFile && mpLoaded ? '#f0b429' : 'rgba(255,255,255,0.08)', color: videoFile && mpLoaded ? '#0d1f12' : 'rgba(255,255,255,0.25)' }}
+              onClick={upload}
+              disabled={!videoFile}
+              style={{ width: '100%', backgroundColor: videoFile ? '#1a5c2a' : '#d1d5db', color: videoFile ? '#fff' : '#9ca3af', border: 'none', borderRadius: 14, padding: '0.875rem', fontSize: 15, fontWeight: 700, cursor: videoFile ? 'pointer' : 'not-allowed' }}
             >
-              {!mpLoaded ? '⏳ Loading MediaPipe…' : !videoFile ? 'Upload a video first' : '🔬 Analyse with MediaPipe'}
+              {videoFile ? 'Analyse My Movement →' : 'Upload a clip first'}
             </button>
 
-            <p style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>
-              All processing happens in your browser — no video data leaves your device.
+            <p style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: '#9ca3af' }}>
+              Your clip is sent securely to the GrassRoots AI and deleted after analysis.
             </p>
           </>
         )}
 
-        {/* ══ STAGE: PROCESSING ══════════════════════════════════════════════════ */}
+        {/* ── PROCESSING ─────────────────────────────────────────────────────── */}
         {stage === 'processing' && (
           <>
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            <div style={{ textAlign: 'center', padding: '2.5rem 0 1.5rem' }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', border: '3px solid rgba(240,180,41,0.15)', borderTop: '3px solid #f0b429', animation: 'spin 0.9s linear infinite', margin: '0 auto 1.5rem' }} />
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Scanning your movement…</h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
-                Frame {frameCount} of {totalFrames}
-              </p>
-              <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, marginBottom: '2rem', overflow: 'hidden' }}>
-                <div style={{ height: 6, borderRadius: 3, backgroundColor: '#f0b429', width: `${progress}%`, transition: 'width 0.2s' }} />
-              </div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 14, padding: '0.75rem 1rem' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(240,180,41,0.5)', marginBottom: 10 }}>
-                Measuring
-              </p>
-              {currentDrill?.metrics.map(m => (
-                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#f0b429', flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{METRIC_LABELS[m]}</span>
+            <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', border: '4px solid #e5e7eb', borderTop: '4px solid #1a5c2a', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }} />
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Analysing your movement…</h2>
+              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>This takes about 30–60 seconds. Don't close the page.</p>
+
+              {uploadPct < 100 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, color: '#6b7280' }}>Uploading…</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#1a5c2a' }}>{uploadPct}%</span>
+                  </div>
+                  <div style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: 6, backgroundColor: '#1a5c2a', width: `${uploadPct}%`, borderRadius: 3, transition: 'width 0.3s' }} />
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {uploadPct === 100 && (
+                <p style={{ fontSize: 13, color: '#1a5c2a', fontWeight: 600 }}>Upload done — AI is checking your movement now…</p>
+              )}
             </div>
           </>
         )}
 
-        {/* ══ STAGE: RESULTS ═════════════════════════════════════════════════════ */}
-        {stage === 'results' && (
+        {/* ── RESULTS ────────────────────────────────────────────────────────── */}
+        {stage === 'results' && result && (
           <>
-            {/* Overall score card */}
-            <div style={{ background: overallScore >= 75 ? 'rgba(74,222,128,0.06)' : overallScore >= 55 ? 'rgba(240,180,41,0.06)' : 'rgba(248,113,113,0.06)', border: `1px solid ${overallScore >= 75 ? 'rgba(74,222,128,0.2)' : overallScore >= 55 ? 'rgba(240,180,41,0.2)' : 'rgba(248,113,113,0.2)'}`, borderRadius: 20, padding: '1.5rem', textAlign: 'center', marginBottom: '1.5rem' }}>
-              <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)' }}>
-                {currentDrill?.emoji} {currentDrill?.label} · Overall Score
-              </p>
-              <p style={{ margin: '0 0 4px', fontSize: 60, fontWeight: 900, lineHeight: 1, color: overallScore >= 75 ? '#4ade80' : overallScore >= 55 ? '#f0b429' : '#f87171' }}>
-                {overallScore}
-              </p>
-              <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-                {overallScore >= 75 ? 'Strong movement quality' : overallScore >= 55 ? 'Some areas to address' : 'Needs focused work'}
-              </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#111827' }}>{drill?.emoji} Your Results</h2>
+              <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: 5, backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 10, padding: '0.5rem 0.875rem', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                <FileDown size={14} /> Save PDF
+              </button>
             </div>
 
-            {/* Per-metric cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: '1.5rem' }}>
-              {Object.entries(scores).map(([key, result]) => {
-                const colour = result.flag === 'good' ? '#4ade80' : result.flag === 'warning' ? '#f0b429' : '#f87171';
-                const Icon   = result.flag === 'good' ? CheckCircle : result.flag === 'warning' ? AlertTriangle : XCircle;
-                return (
-                  <div key={key} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '1rem 1.125rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <Icon size={15} color={colour} />
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{METRIC_LABELS[key]}</span>
-                      </div>
-                      <span style={{ fontSize: 22, fontWeight: 800, color: colour }}>{result.score}</span>
-                    </div>
-                    <div style={{ height: 5, background: 'rgba(255,255,255,0.07)', borderRadius: 3, marginBottom: 8, overflow: 'hidden' }}>
-                      <div style={{ height: 5, borderRadius: 3, backgroundColor: colour, width: `${result.score}%`, transition: 'width 0.6s ease' }} />
-                    </div>
-                    <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>{result.detail}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Drill prescriptions */}
-            {prescriptions.length > 0 && (
-              <div style={{ background: 'rgba(217,119,6,0.07)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 18, padding: '1.25rem', marginBottom: '1.5rem' }}>
-                <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#f0b429' }}>
-                  Prescribed Remediation Drills
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {prescriptions.slice(0, 4).map(d => (
-                    <div key={d.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 11, padding: '0.75rem 1rem' }}>
-                      <p style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 600, color: '#fff' }}>{d.name}</p>
-                      <p style={{ margin: '0 0 4px', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{d.why_it_matters}</p>
-                      <p style={{ margin: 0, fontSize: 11, color: 'rgba(240,180,41,0.5)' }}>
-                        {d.sets_reps} · {d.frequency}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <Link href="/player/drills" style={{ display: 'block', textAlign: 'center', marginTop: 12, fontSize: 12, color: '#f0b429', textDecoration: 'none' }}>
-                  View full drill library →
-                </Link>
+            {passportSaved && (
+              <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '0.5rem 0.875rem', marginBottom: '1rem', fontSize: 13, color: '#15803d' }}>
+                ✓ Scores saved to your Talent Passport
               </div>
             )}
 
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={reset} style={{ flex: 1, background: 'rgba(255,255,255,0.07)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                New Scan
+            {/* Two big scores */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.25rem' }}>
+              {[
+                { label: 'Performance', value: result.performance_index, hint: 'Speed, power, and movement quality' },
+                { label: 'Body Safety', value: result.resilience_index, hint: 'How safe your movement is on your joints' },
+              ].map(({ label, value, hint }) => (
+                <div key={label} style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 18, padding: '1.25rem', textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
+                  <p style={{ margin: '0 0 4px', fontSize: 52, fontWeight: 900, lineHeight: 1, color: scoreColor(value) }}>{value}</p>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: scoreColor(value) }}>{scoreLabel(value)}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>{hint}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Flags */}
+            {result.flags.length > 0 && (
+              <div style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 16, padding: '1rem', marginBottom: '1.25rem' }}>
+                <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Show these to your coach</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {result.flags.map(f => (
+                    <span key={f} style={{ backgroundColor: '#fed7aa', color: '#9a3412', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
+                      {f.replace(/_/g, ' ')}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* THUTO note */}
+            {thutoNote && (
+              <div style={{ backgroundColor: '#fff', border: '2px solid #1a5c2a', borderRadius: 16, padding: '1.125rem', marginBottom: '1.25rem' }}>
+                <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#1a5c2a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>THUTO says</p>
+                <p style={{ margin: 0, fontSize: 14, color: '#111827', lineHeight: 1.65 }}>{thutoNote}</p>
+              </div>
+            )}
+            {!thutoNote && (
+              <div style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.125rem', marginBottom: '1.25rem', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: 13, color: '#9ca3af' }}>THUTO is thinking… (may take a moment)</p>
+              </div>
+            )}
+
+            {/* Metric breakdown */}
+            <div style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', marginBottom: '1.25rem' }}>
+              <button
+                onClick={() => setExpandMetrics(v => !v)}
+                style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.875rem 1.125rem', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#374151' }}>Detailed breakdown</span>
+                {expandMetrics ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
               </button>
-              <Link href="/player/drills" style={{ flex: 1, background: '#f0b429', color: '#0d1f12', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                Go to Drills →
+              {expandMetrics && (
+                <div style={{ padding: '0 1.125rem 1rem', borderTop: '1px solid #f3f4f6' }}>
+                  {Object.entries(result.metrics).map(([key, val]) => {
+                    const score = typeof val === 'number' ? Math.round(val) : 0;
+                    return (
+                      <div key={key} style={{ marginTop: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, color: '#374151' }}>{key.replace(/_/g, ' ')}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor(score) }}>{score}</span>
+                        </div>
+                        <div style={{ height: 5, backgroundColor: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: 5, backgroundColor: scoreColor(score), width: `${score}%`, borderRadius: 3, transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => { setStage('select'); setDrill(null); setVideoFile(null); setResults([]); setThutoNote(null); setPassportSaved(false); setJobId(null); }}
+                style={{ flex: 1, backgroundColor: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                New scan
+              </button>
+              <Link href="/player/passport" style={{ flex: 1, backgroundColor: '#1a5c2a', color: '#fff', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 700, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                View Passport →
               </Link>
             </div>
           </>
         )}
+
+        {/* ── ERROR ──────────────────────────────────────────────────────────── */}
+        {stage === 'error' && (
+          <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+            <div style={{ fontSize: 40, marginBottom: '1rem' }}>😔</div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Something went wrong</h2>
+            <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>{errorMsg || 'The analysis failed. Try again with a shorter, clearer clip.'}</p>
+            <button onClick={() => { setStage('upload'); setVideoFile(null); }} style={{ backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 12, padding: '0.75rem 1.5rem', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+              Try Again
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );

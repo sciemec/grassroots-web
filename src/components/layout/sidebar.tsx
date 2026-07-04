@@ -77,6 +77,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/injury-hub", label: "Injury Hub",      icon: <Activity size={18} />,    roles: ["coach"]                     },
   { href: "/coach/fatigue",        label: "Fatigue Monitor", icon: <TrendingDown size={18} />, roles: ["coach"]                     },
   { href: "/coach/set-piece-lab",  label: "Set Piece Lab",   icon: <Flag size={18} />,         roles: ["coach"]                     },
+  { href: "/coach/drill-analysis", label: "Drill Analysis",  icon: <Video size={18} />,        roles: ["coach"]                     },
 
   // ── Scout ─────────────────────────────────────────────────────────────────
   { href: "/scout/discover",    label: "Discover Talent", icon: <UserSearch size={18} />,  roles: ["scout"], feature: "passport"  },
