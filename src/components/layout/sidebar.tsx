@@ -43,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player",            label: "Player Hub",      icon: <Home size={18} />,        roles: ["player"],                   },
   { href: "/player/ai-coach",   label: "AI Coach",        icon: <BookOpen size={18} />,    roles: ["player"],                   },
   { href: "/player/showcase",   label: "My Showcase",     icon: <Award size={18} />,       roles: ["player"],                   },
+  { href: "/player/biomechanics", label: "Movement Scan",  icon: <Activity size={18} />,    roles: ["player"],                   },
   { href: "/player/nutrition",         label: "Nutrition",       icon: <TrendingUp size={18} />, roles: ["player"] },
   { href: "/player/nutrition/guides",  label: "Nutrition Guides",icon: <BookOpen size={18} />,   roles: ["player"] },
   { href: "/player/drills",       label: "My Drills",       icon: <Dumbbell size={18} />,    roles: ["player"], feature: "drills"    },

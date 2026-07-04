@@ -210,7 +210,7 @@ export default function TalentIDPage() {
               </p>
             </div>
             <p className="text-[10px] text-gray-500 mt-1">
-              Ask the player to complete a training assessment at /player/training/scan
+              Ask the player to complete a movement scan at /player/biomechanics
             </p>
           </div>
         )}
