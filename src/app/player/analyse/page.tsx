@@ -81,7 +81,8 @@ export default function AnalysePage() {
   const [phase,     setPhase]     = useState<"idle" | "uploading" | "done" | "error" | "paywall">("idle");
   const [feedback,  setFeedback]  = useState("");
   const [errorMsg,  setErrorMsg]  = useState("");
-  const [inputMode, setInputMode] = useState<"upload" | "camera">("upload");
+  const [inputMode,       setInputMode]       = useState<"upload" | "camera">("upload");
+  const [uploadProgress,  setUploadProgress]  = useState(0);
 
   // Camera state
   const [camReady,    setCamReady]    = useState(false);
@@ -261,22 +262,96 @@ export default function AnalysePage() {
   };
 
   // ── Run analysis ──────────────────────────────────────────────────────────
+  // Uses direct-to-Google browser XHR upload so no video bytes pass through
+  // Vercel (which has a ~4.5 MB body limit that blocks most real phone videos).
   const runAnalysis = async () => {
     if (!video) return;
     setPhase("uploading");
+    setUploadProgress(0);
     setFeedback("");
     setErrorMsg("");
     setArenaPosted(false);
 
-    const form = new FormData();
-    form.append("video",    video);
-    form.append("sport",    sport.id);
-    form.append("drill",    drill);
-    form.append("position", position);
-    form.append("token",    token ?? "");
-
     try {
-      const res  = await fetch("/api/analyse", { method: "POST", body: form });
+      // Step 1 — Get a Gemini resumable upload URL (tiny metadata request through Vercel)
+      const sessionRes = await fetch("/api/match-eye/upload", {
+        method:  "POST",
+        headers: {
+          "content-type":     video.type || "video/mp4",
+          "x-content-length": String(video.size),
+        },
+      });
+
+      if (!sessionRes.ok) {
+        const err = await sessionRes.json().catch(() => ({} as Record<string, string>));
+        setErrorMsg((err as { error?: string }).error ?? "Could not start upload. Please try again.");
+        setPhase("error");
+        return;
+      }
+
+      const { uploadUrl } = await sessionRes.json() as { uploadUrl: string };
+
+      // Step 2 — XHR PUT the video bytes DIRECTLY to Google (bypasses Vercel completely)
+      const fileData = await new Promise<{ uri: string; name: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            // Map 0-100 of the upload to 0-80% of the progress bar
+            setUploadProgress(Math.round((e.loaded / e.total) * 80));
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText) as { file?: { uri?: string; name?: string } };
+              const uri  = data.file?.uri;
+              const name = data.file?.name;
+              if (!uri || !name) {
+                reject(new Error("Google did not return file URI. Please try again."));
+              } else {
+                resolve({ uri, name });
+              }
+            } catch {
+              reject(new Error("Unexpected upload response. Please try again."));
+            }
+          } else {
+            reject(new Error(`Video upload failed (${xhr.status}). Try a shorter clip.`));
+          }
+        };
+
+        xhr.onerror   = () => reject(new Error("Upload failed. Check your internet connection."));
+        xhr.ontimeout = () => reject(new Error("Upload timed out. Try a shorter clip."));
+        xhr.timeout   = 120_000; // 2-minute upload timeout
+
+        xhr.open("POST", uploadUrl);
+        xhr.setRequestHeader("Content-Length",        String(video.size));
+        xhr.setRequestHeader("X-Goog-Upload-Offset",  "0");
+        xhr.setRequestHeader("X-Goog-Upload-Command", "upload, finalize");
+        xhr.setRequestHeader("Content-Type",          video.type || "video/mp4");
+        xhr.send(video);
+      });
+
+      setUploadProgress(85);
+
+      // Step 3 — Send only the file URI to the analysis route (no video through Vercel)
+      const res  = await fetch("/api/analyse-from-uri", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileUri:  fileData.uri,
+          fileName: fileData.name,
+          mimeType: video.type || "video/mp4",
+          sport:    sport.id,
+          drill,
+          position,
+          token:    token ?? "",
+        }),
+      });
+
+      setUploadProgress(100);
+
       const data = await res.json() as {
         feedback?: string;
         error?: string;
@@ -297,8 +372,10 @@ export default function AnalysePage() {
 
       // Auto-post to Arena (non-blocking, best-effort)
       if (fbText && user) void postToArena(fbText);
-    } catch {
-      setErrorMsg("Connection error. Please check your internet and try again.");
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      setErrorMsg(msg || "Connection error. Please check your internet and try again.");
       setPhase("error");
     }
   };
@@ -310,6 +387,7 @@ export default function AnalysePage() {
     setFeedback("");
     setErrorMsg("");
     setArenaPosted(false);
+    setUploadProgress(0);
     stopCamera();
   };
 
@@ -621,24 +699,36 @@ export default function AnalysePage() {
 
         {/* ── Analyse button ── */}
         {phase !== "done" && phase !== "paywall" && (
-          <button
-            onClick={runAnalysis}
-            disabled={!video || phase === "uploading"}
-            className="w-full py-3 rounded-xl text-sm font-black text-white flex items-center justify-center gap-2 transition disabled:opacity-40"
-            style={{ background: "#1c3d22" }}
-          >
-            {phase === "uploading" ? (
-              <>
-                <RefreshCw size={15} className="animate-spin" />
-                Uploading &amp; analysing... (30–60 seconds)
-              </>
-            ) : (
-              <>
-                <Zap size={15} />
-                Analyse with Gemini AI
-              </>
+          <div className="space-y-2">
+            <button
+              onClick={runAnalysis}
+              disabled={!video || phase === "uploading"}
+              className="w-full py-3 rounded-xl text-sm font-black text-white flex items-center justify-center gap-2 transition disabled:opacity-40"
+              style={{ background: "#1c3d22" }}
+            >
+              {phase === "uploading" ? (
+                <>
+                  <RefreshCw size={15} className="animate-spin" />
+                  {uploadProgress < 85 ? `Uploading… ${uploadProgress}%` : "Analysing with Gemini…"}
+                </>
+              ) : (
+                <>
+                  <Zap size={15} />
+                  Analyse with Gemini AI
+                </>
+              )}
+            </button>
+
+            {/* Upload progress bar */}
+            {phase === "uploading" && (
+              <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%`, background: "#1c3d22" }}
+                />
+              </div>
             )}
-          </button>
+          </div>
         )}
 
         {/* ── Tips ── */}
