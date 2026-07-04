@@ -393,7 +393,7 @@ export default function FootballDrillsLabPage() {
   const tierCfg        = TIER_CONFIG[tierProgress?.currentTier ?? 1];
   const gender         = typeof window !== "undefined" ? localStorage.getItem("player_gender") ?? "male" : "male";
   const coachName      = gender === "female" ? "Amara" : "THUTO";
-  const isPremiumUser  = (user as { subscription_tier?: string } | null)?.subscription_tier === "pro";
+  const isPremiumUser  = user?.role === "admin" || (user as { subscription_tier?: string } | null)?.subscription_tier === "pro";
   const activeFilterCount = (filterCategory !== "all" ? 1 : 0) + (filterEquipment !== "all" ? 1 : 0) + (filterDifficulty !== "all" ? 1 : 0);
 
   // useMemo MUST be before any early return (Rules of Hooks)
