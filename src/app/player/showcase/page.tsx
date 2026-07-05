@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { postToArena } from "@/lib/arena-poster";
 import { extractFrames } from "@/lib/extract-frames";
 import api from "@/lib/api";
 
@@ -276,6 +277,12 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
       saveLocalClips(updated);
       setProgress(100);
       setPhase("done");
+
+      // Post to Arena feed (fire-and-forget)
+      postToArena(
+        `Uploaded a ${selectedSkill} showcase clip. ${analysis.top_strength}`,
+        { postType: "milestone", activityType: "showcase_upload", activityData: { skill_type: selectedSkill, ai_rating: analysis.skill_rating } },
+      );
 
     } catch (err) {
       setErrorMsg(

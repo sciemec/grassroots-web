@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
+import { postToArena } from "@/lib/arena-poster";
 import api from "@/lib/api";
 
 function round1(n: number) { return Math.round(n * 10) / 10; }
@@ -192,6 +193,11 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         size_mb:     sizeMb,
       });
       onUploaded(res.data.video);
+      // Post to Arena feed (fire-and-forget)
+      postToArena(
+        `Added "${state.title}" to my Highlight Vault.`,
+        { postType: "standard", activityType: "vault_upload", activityData: { tag: state.tag } },
+      );
       set({ file: null, title: "", tag: "Skills", description: "", progress: 0, uploading: false, error: "" });
       if (inputRef.current) inputRef.current.value = "";
 

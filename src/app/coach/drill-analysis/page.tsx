@@ -10,8 +10,9 @@ import {
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 
-const AI_URL = process.env.NEXT_PUBLIC_AI_URL ?? "https://ai.bhora-ai.onrender.com";
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+const AI_URL  = process.env.NEXT_PUBLIC_AI_URL  ?? "https://ai.bhora-ai.onrender.com";
+const API_URL  = process.env.NEXT_PUBLIC_API_URL  ?? "https://bhora-ai.onrender.com/api/v1";
+const APP_URL  = process.env.NEXT_PUBLIC_APP_URL  ?? "";
 
 // ── 6 drills — simple English throughout ──────────────────────────────────
 
@@ -225,6 +226,7 @@ export default function CoachDrillAnalysisPage() {
   const [thutoLoading,setThutoLoading] = useState(false);
   const [arenaPosted, setArenaPosted] = useState(false);
   const [expandedTips,setExpandedTips] = useState(false);
+  const [r2VideoUrl,  setR2VideoUrl]   = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -246,6 +248,34 @@ export default function CoachDrillAnalysisPage() {
     setResult(null);
     setThutoNote("");
     setArenaPosted(false);
+    setR2VideoUrl("");
+
+    // ── Upload to Cloudflare R2 in background (for playback + storage) ─────
+    const uploadToR2 = async () => {
+      try {
+        const presignRes = await fetch(`${APP_URL}/api/upload/presigned`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body:    JSON.stringify({
+            filename:     `coach-drills/${drillId}/${Date.now()}.${file.name.split(".").pop() ?? "mp4"}`,
+            content_type: file.type,
+          }),
+        });
+        if (!presignRes.ok) return;
+        const { upload_url, public_url } = await presignRes.json() as { upload_url: string; public_url: string };
+        await new Promise<void>((resolve) => {
+          const r2xhr = new XMLHttpRequest();
+          r2xhr.open("PUT", upload_url);
+          r2xhr.setRequestHeader("Content-Type", file.type);
+          r2xhr.onload  = () => resolve();
+          r2xhr.onerror = () => resolve(); // never block the AI analysis
+          r2xhr.send(file);
+        });
+        setR2VideoUrl(public_url);
+      } catch { /* R2 upload is best-effort — AI analysis proceeds regardless */ }
+    };
+    uploadToR2();
+    // ─────────────────────────────────────────────────────────────────────────
 
     const form = new FormData();
     form.append("video", file);
@@ -364,11 +394,16 @@ export default function CoachDrillAnalysisPage() {
       await fetch(`${API_URL}/arena/posts`, {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body:    JSON.stringify({ body, post_type: "milestone", activity_type: "drill_completion" }),
+        body:    JSON.stringify({
+          body,
+          post_type:     "milestone",
+          activity_type: "drill_completion",
+          ...(r2VideoUrl ? { video_url: r2VideoUrl } : {}),
+        }),
       });
       setArenaPosted(true);
     } catch { /* silent fail */ }
-  }, [token, drill.name, playerName, arenaPosted]);
+  }, [token, drill.name, playerName, arenaPosted, r2VideoUrl]);
 
   // ── PDF export ─────────────────────────────────────────────────────────────
 

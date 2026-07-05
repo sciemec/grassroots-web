@@ -14,6 +14,7 @@ import {
   CheckCircle2, AlertCircle, Loader2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { ALL_GEMINI_DRILLS, getDrillsBySport, getDrillById, DrillResult } from "@/config/gemini-drills";
+import { postToArena } from "@/lib/arena-poster";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -296,6 +297,13 @@ export default function CoachGeminiDrillsPage() {
 
       setDrillResult(result);
       setUploadPhase("done");
+
+      // Post to Arena feed (fire-and-forget)
+      const drill = getDrillById(activeDrillId);
+      postToArena(
+        `Analysed "${drill?.name ?? activeDrillId}" drill for ${selectedName} using Gemini AI.`,
+        { postType: "milestone", activityType: "drill_completion", activityData: { drillId: activeDrillId, playerName: selectedName } },
+      );
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Unknown error");
       setUploadPhase("error");
