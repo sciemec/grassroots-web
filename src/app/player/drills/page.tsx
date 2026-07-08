@@ -21,6 +21,7 @@ import {
 } from "@/lib/drill-data";
 import { getSportDrills, SPORT_POSITION_MAP } from "@/lib/sport-drills";
 import FitnessTestTab from "@/components/drills/FitnessTestTab";
+import SportSwitcher from "@/components/ui/SportSwitcher";
 
 const TIER_CONFIG: Record<number, { label: string; color: string; bg: string; source: string; flag: string }> = {
   1: { label: "Spark",   color: "#888780", bg: "#f1efe8", source: "GRS Original",             flag: "🇿🇼" },
@@ -557,6 +558,25 @@ export default function FootballDrillsLabPage() {
                 )}
               </div>
             </div>
+
+            {/* Sport switcher */}
+            <section className="space-y-2">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Your sport</h4>
+              <SportSwitcher
+                activeSport={playerSport}
+                onSelect={(sport) => {
+                  setPlayerSport(sport);
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("grs_active_sport", sport);
+                    localStorage.setItem("player_sport", sport);
+                  }
+                  const positions = SPORT_POSITION_MAP[sport] ?? [];
+                  setActivePosition(positions[0] ?? "striker");
+                  setExpandedDrill(null);
+                }}
+                size="sm"
+              />
+            </section>
 
             {/* Position selector */}
             <section className="space-y-2">

@@ -8,10 +8,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
+import { getRoleConfig, getRolesForSport } from "@/config/coaching-staff";
 import CoachAnalysisTab from "@/components/coach/CoachAnalysisTab";
 import { loadKnowledgeForRole, type SessionPoint } from "@/lib/coaching-knowledge";
 import { getDrillsByDepartment, getDepartmentStats, type Drill } from "@/lib/department-drills";
+import { useSport } from "@/lib/use-sport";
+import SportSwitcher from "@/components/ui/SportSwitcher";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com";
 
@@ -180,12 +182,6 @@ function PlayerDrillsModal({ player, drills, gamification, onClose }: {
   );
 }
 
-// Get all football roles from config
-const getFootballRoles = (): StaffRoleConfig[] => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { COACHING_STAFF_ROLES } = require("@/config/coaching-staff");
-  return COACHING_STAFF_ROLES.football || [];
-};
 
 export default function CoachHubPage() {
   const user = useAuthStore((s) => s.user);
@@ -226,7 +222,8 @@ export default function CoachHubPage() {
 
   const [coachTab, setCoachTab] = useState<"squad" | "analysis">("squad");
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const footballRoles = getFootballRoles();
+  const { activeSport, setActiveSport } = useSport();
+  const footballRoles = getRolesForSport(activeSport);
 
   // Suppress unused variable warnings for state setters used only via side effects
   void knowledge;
@@ -470,6 +467,12 @@ export default function CoachHubPage() {
           </div>
           <h1 className="text-xl font-black text-gray-900 mt-1">CoachHub Engine</h1>
           <p className="text-xs font-bold text-gray-400 mt-0.5">Zimbabwe Grassroots Framework</p>
+        </div>
+
+        {/* Sport switcher */}
+        <div className="space-y-1.5">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Your Sport</p>
+          <SportSwitcher activeSport={activeSport} onSelect={(s) => { setActiveSport(s); setActiveRole("head_coach"); }} size="sm" />
         </div>
 
         {/* Biometric Summary Cards */}

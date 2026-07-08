@@ -17,6 +17,8 @@ import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 import { getCurrentStreak } from "@/lib/success/streak";
 import api from "@/lib/api";
 import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
+import { useSport } from "@/lib/use-sport";
+import SportSwitcher from "@/components/ui/SportSwitcher";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -122,10 +124,91 @@ function DarkCTA({ href, icon: Icon, iconColor, title, sub }: {
   );
 }
 
+// Sport-specific Skill Lab cards
+const SPORT_SKILL_CARDS: Record<string, { href: string; icon: React.ElementType; iconBg: string; iconColor: string; label: string; desc: string }[]> = {
+  football:   [
+    { href: "/player/dribbling",   icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Dribbling",      desc: "1v1 · close control · AI feedback" },
+    { href: "/player/first-touch", icon: Hand,        iconBg: "#dcfce7", iconColor: "#16a34a", label: "First Touch",    desc: "Receive · control · turn under pressure" },
+    { href: "/player/shooting",    icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Technique · power · placement · AI score" },
+    { href: "/player/sprint",      icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Sprint",         desc: "Speed · acceleration · 20m benchmark" },
+    { href: "/player/passing",     icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Vision · technique · AI score" },
+    { href: "/player/tackling",    icon: Swords,      iconBg: "#ede9fe", iconColor: "#7c3aed", label: "Tackling",       desc: "Timing · body shape · defensive skills" },
+    { href: "/player/similar",     icon: ScanLine,    iconBg: "#f0fdf4", iconColor: "#15803d", label: "Players Like Me",desc: "Find athletes with your style" },
+  ],
+  rugby: [
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Speed & Evasion",desc: "Acceleration · side-step · line breaks" },
+    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Offloads · spiral pass · quick ball" },
+    { href: "/player/tackling", icon: Swords,      iconBg: "#ede9fe", iconColor: "#7c3aed", label: "Tackling",       desc: "Low body position · wrap · drive" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Rugby Drills",   desc: "Lineout · scrum · contact drills" },
+  ],
+  netball: [
+    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Chest pass · lob · shoulder pass" },
+    { href: "/player/shooting", icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Goal circle · angles · under pressure" },
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Footwork",       desc: "Pivoting · landing · court movement" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Netball Drills", desc: "Intercepts · feeds · defending" },
+  ],
+  athletics: [
+    { href: "/player/sprint",        icon: Footprints,iconBg: "#fef3c7", iconColor: "#d97706", label: "Sprint",           desc: "Reaction · acceleration · finish" },
+    { href: "/player/biomechanics",  icon: Activity,  iconBg: "#dcfce7", iconColor: "#15803d", label: "Movement Check",   desc: "Stride · arm mechanics · technique AI" },
+    { href: "/player/drills",        icon: Dumbbell,  iconBg: "#dbeafe", iconColor: "#2563eb", label: "Athletics Drills", desc: "Bounding · hurdles · plyometrics" },
+    { href: "/player/assessment",    icon: Star,      iconBg: "#fdf4ff", iconColor: "#a21caf", label: "Athletic Profile", desc: "6-test battery · speed · jump · balance" },
+  ],
+  basketball: [
+    { href: "/player/dribbling", icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Ball Handling",     desc: "Crossover · hesitation · tight control" },
+    { href: "/player/shooting",  icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",          desc: "Form · mid-range · three-point AI score" },
+    { href: "/player/passing",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",           desc: "Bounce pass · assist vision · timing" },
+    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Basketball Drills", desc: "Pick & roll · layup · defensive slides" },
+  ],
+  cricket: [
+    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Batting Drills",    desc: "Stance · shot selection · footwork" },
+    { href: "/player/drills",    icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Bowling Drills",    desc: "Run-up · release · swing / seam" },
+    { href: "/player/sprint",    icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Running",           desc: "Between wickets · acceleration" },
+    { href: "/player/drills",    icon: Star,        iconBg: "#fdf4ff", iconColor: "#a21caf", label: "Cricket Drills",    desc: "Fielding · catching · throwing" },
+  ],
+  swimming: [
+    { href: "/player/sprint",       icon: Footprints,iconBg: "#fef3c7", iconColor: "#d97706", label: "Speed Sets",      desc: "Sprint intervals · turn training" },
+    { href: "/player/biomechanics", icon: Activity,  iconBg: "#dcfce7", iconColor: "#15803d", label: "Stroke Check",    desc: "Technique analysis · AI feedback" },
+    { href: "/player/drills",       icon: Dumbbell,  iconBg: "#dbeafe", iconColor: "#2563eb", label: "Swimming Drills", desc: "Catch · pull · kick patterns" },
+    { href: "/player/drills",       icon: TrendingUp,iconBg: "#dcfce7", iconColor: "#16a34a", label: "Endurance",       desc: "Distance sets · pace control" },
+  ],
+  tennis: [
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Footwork",       desc: "Split step · recovery · court coverage" },
+    { href: "/player/drills",   icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Groundstrokes",  desc: "Forehand · backhand · consistency" },
+    { href: "/player/drills",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Serve",          desc: "Toss · contact · spin variation" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Tennis Drills",  desc: "Net play · approach · volleys" },
+  ],
+  volleyball: [
+    { href: "/player/passing",  icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Setting",           desc: "Hand position · tempo · vision" },
+    { href: "/player/sprint",   icon: Footprints,  iconBg: "#fef3c7", iconColor: "#d97706", label: "Court Movement",    desc: "Dig · chase · dive technique" },
+    { href: "/player/drills",   icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Attacking",         desc: "Approach · arm swing · block" },
+    { href: "/player/drills",   icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Volleyball Drills", desc: "Serve · receive · transition" },
+  ],
+  hockey: [
+    { href: "/player/dribbling", icon: Wind,        iconBg: "#dbeafe", iconColor: "#2563eb", label: "Stick Skills",   desc: "Close control · 3D skills · evasion" },
+    { href: "/player/passing",   icon: ArrowUpRight,iconBg: "#dcfce7", iconColor: "#059669", label: "Passing",        desc: "Flat · hit · aerial · self-pass" },
+    { href: "/player/shooting",  icon: Target,      iconBg: "#fee2e2", iconColor: "#dc2626", label: "Shooting",       desc: "Drag flick · slap · deflection" },
+    { href: "/player/drills",    icon: Dumbbell,    iconBg: "#dbeafe", iconColor: "#2563eb", label: "Hockey Drills",  desc: "Press · defence · penalty corners" },
+  ],
+};
+
+const SPORT_PATHWAY_LABEL: Record<string, string> = {
+  football:   "Professional Football Pathway",
+  rugby:      "Rugby Development Pathway",
+  netball:    "Netball Excellence Pathway",
+  athletics:  "Athletics Career Pathway",
+  basketball: "Basketball Development Pathway",
+  cricket:    "Cricket Career Pathway",
+  swimming:   "Swimming Development Pathway",
+  tennis:     "Tennis Career Pathway",
+  volleyball: "Volleyball Development Pathway",
+  hockey:     "Hockey Development Pathway",
+};
+
 export default function PlayerDashboardHome() {
   const router   = useRouter();
   const user     = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s._hasHydrated);
+  const { activeSport, setActiveSport } = useSport();
   const [sessionCount,  setSessionCount]  = useState<number | null>(null);
   const [streak,        setStreak]        = useState<number | null>(null);
   const [aqScore,       setAqScore]       = useState<number | null>(null);
@@ -235,6 +318,13 @@ export default function PlayerDashboardHome() {
         </div>
       </div>
 
+      {/* ── Sport switcher bar ── */}
+      <div style={{ backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5">
+          <SportSwitcher activeSport={activeSport} onSelect={setActiveSport} size="sm" />
+        </div>
+      </div>
+
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-7">
 
         {/* ── Hero card ── */}
@@ -301,7 +391,7 @@ export default function PlayerDashboardHome() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-black text-gray-900">Professional Football Pathway</h3>
+                <h3 className="text-sm font-black text-gray-900">{SPORT_PATHWAY_LABEL[activeSport] ?? "My Sports Pathway"}</h3>
                 <p className="text-[11px] text-gray-400 mt-0.5">From grassroots to professional club or college scholarship</p>
               </div>
               <Link href="/player/pathway"
@@ -462,25 +552,16 @@ export default function PlayerDashboardHome() {
         </section>
 
         {/* ══════════════════════════════════════════════
-            SECTION 4b — SKILL LAB
+            SECTION 4b — SKILL LAB (sport-specific)
         ══════════════════════════════════════════════ */}
         <section>
           <SectionLabel>4b · Skill Lab</SectionLabel>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <HubCard href="/player/dribbling" icon={Wind} iconBg="#dbeafe" iconColor="#2563eb"
-              label="Dribbling" desc="1v1 · close control · AI feedback" />
-            <HubCard href="/player/first-touch" icon={Hand} iconBg="#dcfce7" iconColor="#16a34a"
-              label="First Touch" desc="Receive · control · turn under pressure" />
-            <HubCard href="/player/shooting" icon={Target} iconBg="#fee2e2" iconColor="#dc2626"
-              label="Shooting" desc="Technique · power · placement · AI score" />
-            <HubCard href="/player/sprint" icon={Footprints} iconBg="#fef3c7" iconColor="#d97706"
-              label="Sprint" desc="Speed · acceleration · 20m benchmark" />
-            <HubCard href="/player/passing" icon={ArrowUpRight} iconBg="#dcfce7" iconColor="#059669"
-              label="Passing" desc="Self-assessment · vision · technique · AI score" />
-            <HubCard href="/player/tackling" icon={Swords} iconBg="#ede9fe" iconColor="#7c3aed"
-              label="Tackling" desc="Defensive technique · timing · body shape" />
-            <HubCard href="/player/similar" icon={ScanLine} iconBg="#f0fdf4" iconColor="#15803d"
-              label="Players Like Me" desc="Find athletes with your style" />
+            {(SPORT_SKILL_CARDS[activeSport] ?? SPORT_SKILL_CARDS.football).map((card) => (
+              <HubCard key={card.label} href={card.href} icon={card.icon}
+                iconBg={card.iconBg} iconColor={card.iconColor}
+                label={card.label} desc={card.desc} />
+            ))}
           </div>
         </section>
 
@@ -506,7 +587,7 @@ export default function PlayerDashboardHome() {
                 <ChevronRight size={14} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all mt-1" />
               </div>
               <p className="text-xs text-gray-500 mt-4 leading-relaxed">
-                Scouts and colleges look at both your football ability <em>and</em> your grades.
+                Scouts and colleges look at both your sports ability <em>and</em> your grades.
                 Log your results term by term and track your scholarship readiness.
               </p>
               <div className="mt-4 flex items-center gap-2 rounded-lg px-3 py-2"
