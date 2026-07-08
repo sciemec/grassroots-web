@@ -9226,3 +9226,518 @@ Empty commit to bhora-ai master to force `start.sh` → `php artisan migrate --f
 | `GEMINI_API_KEY` | ✅ SET in Vercel (confirmed 20 June 2026) | Also needed on Render for WhatsApp pipeline |
 | `GROQ_API_KEY` | NOT set in Vercel | THUTO AI chat broken |
 
+---
+
+## SESSION LOG — 8 July 2026
+
+### Theme — Video Upload Fix (Vercel 4.5MB Limit) + R2 Storage + Arena Feed Integration for All Video Pages
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `/player/analyse` — Vercel Body Limit Fix (Network Error) ✅
+
+**Root cause:** Vercel serverless functions reject request bodies larger than ~4.5MB before the
+function code runs. Even a 10-second phone video exceeds this limit, causing a network error.
+
+**Fix — 3-step direct-to-Google XHR pattern (no video bytes through Vercel):**
+
+**Step 1:** Browser calls `POST /api/match-eye/upload` (headers only, no body) → gets `{ uploadUrl }`
+- Edge function calls Gemini Files API resumable session init
+- Returns Google's self-authenticating upload URL to the browser
+
+**Step 2:** Browser XHRs video bytes directly to Google's `uploadUrl`
+- Uses `XMLHttpRequest` for upload progress events (0–80%)
+- Video bytes bypass Vercel entirely — no 4.5MB limit
+
+**Step 3:** Browser calls `POST /api/analyse-from-uri` with JSON `{ fileUri, fileName, mimeType, sport, drill, position, token }`
+- Only tiny JSON metadata — never exceeds limits
+
+**New file: `src/app/api/analyse-from-uri/route.ts`**
+- `export const maxDuration = 300` (5-minute Vercel function timeout)
+- Checks credits: `GET {API_URL}/video-analysis/credits`
+- Returns 402 with `{ error: "free_trial_used" }` if `can_analyse = false`
+- Polls Gemini file state: `GET generativelanguage.googleapis.com/v1beta/{fileName}` every 5s until `state === 'ACTIVE'` (max 3 min)
+- Calls `gemini-2.5-flash` `generateContent` with `file_data: { mime_type, file_uri }`
+- Records usage: `POST {API_URL}/video-analysis/record`
+- Returns `{ feedback, free_trial, is_pro }`
+
+**Modified: `src/app/player/analyse/page.tsx`**
+- Replaced: single `FormData` POST to `/api/analyse`
+- With: 3-step XHR pattern described above
+- Progress bar: 0–80% during Google XHR upload, 80–100% during analysis polling
+- Commit: `201cd63`
+
+---
+
+#### 2. Video Upload Audit — All 7 Pages Assessed ✅
+
+Full matrix of every video-upload surface on the platform:
+
+| Page | Upload target | R2 stored | Arena post |
+|---|---|---|---|
+| `/player/analyse` | Google Gemini File API (direct XHR) | ✗ (Gemini handles storage) | ✗ |
+| `/player/showcase` | R2 via presigned PUT | ✅ | ✅ ADDED |
+| `/player/vault` | R2 via presigned PUT | ✅ | ✅ ADDED |
+| `/fan-hub` | R2 via presigned PUT | ✅ | ✅ (existing) |
+| `/coach/gemini-drills` | Google Gemini File API (XHR) | ✗ | ✅ ADDED |
+| `/coach/drill-analysis` | Python AI service (XHR) | ✅ ADDED | ✅ ADDED |
+| `/analyst/match-eye` | Google Gemini File API (XHR) | ✗ | ✗ |
+
+---
+
+#### 3. `/player/showcase` — Arena Post After Upload ✅
+
+**File:** `src/app/player/showcase/page.tsx`
+
+Added after `setPhase("done")`:
+```typescript
+import { postToArena } from "@/lib/arena-poster";
+
+postToArena(
+  `Uploaded a ${selectedSkill} showcase clip. ${analysis.top_strength}`,
+  {
+    postType: "milestone",
+    activityType: "showcase_upload",
+    activityData: { skill_type: selectedSkill, ai_rating: analysis.skill_rating },
+  },
+);
+```
+
+---
+
+#### 4. `/player/vault` — Arena Post After Upload ✅
+
+**File:** `src/app/player/vault/page.tsx`
+
+Added after `onUploaded(res.data.video)` (API success path only, not localStorage fallback):
+```typescript
+import { postToArena } from "@/lib/arena-poster";
+
+postToArena(
+  `Added "${state.title}" to my Highlight Vault.`,
+  {
+    postType: "standard",
+    activityType: "vault_upload",
+    activityData: { tag: state.tag },
+  },
+);
+```
+
+---
+
+#### 5. `/coach/gemini-drills` — Arena Post After Analysis ✅
+
+**File:** `src/app/coach/gemini-drills/page.tsx`
+
+Added after `setUploadPhase("done")`:
+```typescript
+import { postToArena } from "@/lib/arena-poster";
+
+const drill = getDrillById(activeDrillId);
+postToArena(
+  `Analysed "${drill?.name ?? activeDrillId}" drill for ${selectedName} using Gemini AI.`,
+  {
+    postType: "milestone",
+    activityType: "drill_completion",
+    activityData: { drillId: activeDrillId, playerName: selectedName },
+  },
+);
+```
+
+---
+
+#### 6. `/coach/drill-analysis` — R2 Parallel Upload + Arena Post ✅
+
+**File:** `src/app/coach/drill-analysis/page.tsx`
+
+**Problem:** Videos went only to Python AI service and were never stored to R2.
+
+**Fix — parallel R2 upload (non-blocking):**
+- `uploadToR2()` fires immediately in `handleFile()`, parallel to the Python AI XHR
+- Uses `POST /api/upload/presigned` → XHR PUT directly to R2 presigned URL
+- Sets `r2VideoUrl` state on success; stores nothing on failure (best-effort)
+- Does NOT block or affect the AI analysis flow
+
+**Arena post** after AI analysis completes, includes `video_url` when R2 upload succeeded:
+```typescript
+body: JSON.stringify({
+  body: `Analysed "${drillId}" drill using AI.`,
+  post_type: "milestone",
+  activity_type: "drill_completion",
+  ...(r2VideoUrl ? { video_url: r2VideoUrl } : {}),
+}),
+```
+
+**R2 key format:** `coach-drills/{drillId}/{timestamp}.{ext}`
+
+---
+
+#### 7. TypeScript Audit ✅
+
+`npx tsc --noEmit` — exit code 0. No type errors introduced by any of the above changes.
+
+---
+
+### FILES CHANGED (8 July 2026)
+
+```
+src/app/api/analyse-from-uri/route.ts    — NEW: lightweight URI-only analysis endpoint
+src/app/player/analyse/page.tsx          — CHANGED: 3-step XHR upload pattern
+src/app/player/showcase/page.tsx         — CHANGED: postToArena() on upload success
+src/app/player/vault/page.tsx            — CHANGED: postToArena() on upload success
+src/app/coach/gemini-drills/page.tsx     — CHANGED: postToArena() on analysis complete
+src/app/coach/drill-analysis/page.tsx    — CHANGED: parallel R2 upload + postToArena()
+```
+
+**Commit:** `201cd63` + subsequent changes
+
+---
+
+### PERMANENT RULE — VERCEL VIDEO UPLOAD PATTERN
+
+**NEVER POST video bytes to a Vercel serverless function.**
+Vercel rejects bodies > ~4.5MB before function code runs.
+
+**ALWAYS use one of these patterns:**
+
+| Destination | Pattern |
+|---|---|
+| Google Gemini | Edge route gets resumable `uploadUrl` → browser XHRs directly to Google |
+| Cloudflare R2 | `POST /api/upload/presigned` → browser XHRs directly to R2 presigned URL |
+| Python AI service | Browser XHRs `FormData` directly to `NEXT_PUBLIC_TRACKER_URL` |
+
+---
+
+### WHAT STILL NEEDS DOING (8 July 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `blueprint_purchases` migration | Auto-ran on Render | Confirm table exists in Render logs |
+| `STRIPE_WEBHOOK_SECRET` | Must be set in Vercel | Required for webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT YET UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
+| bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
+| Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
+| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI chat broken without this |
+| `arena_posts` activity migration | NOT YET ON RENDER | From 22 June session |
+
+---
+
+## SESSION LOG — 24 June – 8 July 2026
+
+### Theme — Full Frontend Audit: All Routes, Components, Lib Files Built to Date
+
+This entry documents everything built between 24 June and 8 July 2026 that was not yet recorded in CLAUDE.md. Based on full `find src/app -name "page.tsx"` audit plus `git log --oneline` review of ~70 commits.
+
+---
+
+### GUARDIAN / PARENT HUB
+
+```
+/parent                 Guardian hub landing — links to dashboard, link, subscribe
+/parent/dashboard       Parent dashboard — linked player cards, session summary
+/parent/link            Link a player to parent account (invite code flow)
+/parent/subscribe       Add-on payment page — guardian subscription
+/register/guardian      Guardian registration wizard (3-step)
+```
+
+**Architecture:** "Guardian" is NOT a separate Zustand role. Parents register as `coach` or `player` and a `parent_links` relationship is established via `/parent/link`. Auth guard uses `coach` + `player` roles (commit `8f25392` fixed incorrect `guardian` role check).
+
+**Hub card additions:**
+- Player hub — "Invite Parent" panel + "Guardian Dashboard" card (commit `275d100`)
+- Coach hub — Guardian Dashboard card
+
+---
+
+### PLAYER SKILL ANALYZERS (7 pages)
+
+```
+/player/sprint          Sprint Mechanics Analyzer — 3-phase, session history
+/player/shooting        Shooting Technique Analyzer — 3-phase, session history
+/player/biomechanics    Biomechanics Movement Scan — MediaPipe Pose live camera
+/player/dribbling       Dribbling Self-Assessment — 3-phase, session history
+/player/tackling        Tackling Analyzer — 3-phase, session history
+/player/first-touch     First Touch Analyzer — 3-phase, session history
+/player/passing         Passing Analyzer — 3-phase, session history
+```
+
+**Shared pattern (all 7):**
+- 3-phase flow: Setup → Capture / Assessment → AI Feedback
+- History section reads from `gs_{skill}_history` localStorage
+- Calls `POST /api/ai-coach` for AI feedback
+- `postToArena()` fire-and-forget after feedback received
+- Connected to THUTO + Talent Passport (commit `a04ef89`)
+
+---
+
+### COACH AI ANALYSIS TOOLKIT (5 pages)
+
+```
+/coach/drill-analysis   Coach drill video analysis — XHR to Python AI + R2 parallel upload
+/coach/gemini-drills    Gemini AI drill scoring — 30s MediaRecorder capture per player
+/coach/fatigue          Fatigue Monitor — RPE scores, risk alerts, squad overview
+/coach/injury-hub       Injury Hub — injury log, return-to-play, AI risk assessment
+/coach/set-piece-lab    Set Piece Lab — 3-phase corner/free-kick analysis
+```
+
+**`/coach/drill-analysis`:** Video goes via XHR directly to Python AI service. Non-blocking parallel R2 upload (`POST /api/upload/presigned` → XHR PUT). `postToArena()` on completion with `video_url` from R2.
+
+**`/coach/gemini-drills`:** 30-second MediaRecorder replaces file upload (commit `1424844`). Sends to `POST /api/analyse-from-uri`.
+
+**Analysis Tools section** added to coach sidebar nav (commit `fd393e0`).
+
+---
+
+### ANALYST HUB EXTENSIONS (5 pages)
+
+```
+/analyst/team-biomechanics  Squad-wide form score overview (commit 0e829f7)
+/analyst/touch-tracker      Manual ball-touch logging per player per zone
+/analyst/match-brain        AI tactical decision support (live match)
+/analyst/match-map          Post-match click-to-place event map
+/analyst/match-eye          Gemini File API full-match video + YOLOv8 tracking tab
+```
+
+**`/analyst/touch-tracker`:** Writes to `gs_touch_tracker_history` localStorage (read by `/analyst/season` xG chart).
+
+**`/analyst/match-eye`** (full rebuild): 3-step direct-to-Google upload, async job polling (`GET /job/{jobId}` every 5s), `TrackingDashboard` component for YOLOv8 output.
+
+---
+
+### PROVINCE ADMIN HUB (11 pages)
+
+```
+/province-admin                  Province Admin home
+/province-admin/announcements    Province announcements
+/province-admin/clubs            Clubs in province
+/province-admin/fixtures         Province fixture schedule
+/province-admin/leagues          Province leagues list
+/province-admin/leagues/[id]     League detail + standings
+/province-admin/leagues/new      Create province league
+/province-admin/players          Players in province — filter, shortlist
+/province-admin/reports          Province stats report
+/province-admin/safeguarding     Safeguarding register — at-risk flags
+/province-admin/shortlist        Province shortlist
+/province-admin/zones            Zone / district management
+```
+
+**Role:** `province_admin` — separate from `admin`. Uses string cast in TypeScript (commit `588c80f`).
+
+---
+
+### WORLD CUP / SCHOOLS / TOURNAMENTS
+
+```
+/worldcup                                   Tactical IQ Lab (rebuilt multiple times)
+/worldcup/live/[id]                         Live World Cup match page
+/schools                                    Schools directory (NASH/NAPH)
+/schools/[slug]                             School detail + teams + achievements
+/tournaments/munhumutapa-2026               Tournament bracket + groups
+/tournaments/munhumutapa-2026/fixtures      All fixtures by date
+/tournaments/munhumutapa-2026/players/[id]  Player tournament stats
+/admin/tournaments/munhumutapa-2026         Admin management
+/admin/tournaments/munhumutapa-2026/fixtures  Admin fixture entry
+```
+
+**World Cup notable fixes:** Zustand selector split (commit `d65c422`), API paths `/api/worldcup/` (commit `adf5ac9`), auto-unlock for registered users (commit `e9f2495`), Blueprint purchase UI wired (commit `8697054`).
+
+---
+
+### VIRTUAL CLASSROOM SYSTEM
+
+**Location:** `src/lib/virtual-classroom/`
+
+Complete live classroom for coach-led online training sessions.
+
+| File | Purpose |
+|---|---|
+| `VirtualClassroom.tsx` | Root component — room join, layout router |
+| `ClassroomProvider.tsx` | React context — session state, participant list |
+| `ModulePlayer.tsx` | Video/drill module player with progress tracking |
+| `ModuleLibrary.tsx` | Browse modules — filter by sport/level |
+| `ModuleCard.tsx` | Module card — thumbnail, duration, locked state |
+| `ClassroomChat.tsx` | Live text chat |
+| `DrawingBoard.tsx` | Collaborative SVG tactical drawing board |
+| `LessonPlan.tsx` | Lesson plan viewer/editor for coaches |
+| `StudentRoster.tsx` | Participant management |
+| `types.ts` | `ClassroomSession`, `Module`, `Participant` interfaces |
+
+**Module locking (commit `9099611`):** Free users: first 2 modules unlocked. Pro: all unlocked.
+**Bug fixed (commit `ab3a57c`):** `ModulePlayer.tsx` API path corrected to `/api/v1/classroom/modules/{id}/lessons`.
+
+---
+
+### GRS ATHLETIC TEST BATTERY
+
+**Component:** `src/components/drills/FitnessTestTab.tsx`
+
+6-test battery embedded in `/player/drills` and surfaced on player/coach hubs.
+
+Tests: 10m sprint → Illinois agility → Vertical jump → Reaction catch (`ReactionTest.tsx`) → Yo-Yo endurance → Ball juggling.
+
+**`RestScreen.tsx`** (`src/components/session/RestScreen.tsx`) — 60s countdown SVG ring between tests.
+
+**Storage:** `gs_grs_test_results` localStorage + `POST /api/v1/sessions/grs-test` (table: `grs_test_sessions`). Bug fixed (commit `e9f2495`): wrong `TestPhase` values + 8 wrong field names corrected.
+
+---
+
+### NEW LIB FILES
+
+| File | Purpose |
+|---|---|
+| `src/lib/sport-drills.ts` | 9-sport drill data (81 drills: Rugby/Athletics/Netball/Basketball/Cricket/Swimming/Tennis/Volleyball/Hockey). `SPORT_DRILLS`, `SPORT_POSITION_MAP`, `getSportDrills(sport)` |
+| `src/lib/arena-poster.ts` | Fire-and-forget Arena post. `postToArena(body, options?)`. Skips dev-token. Never throws. |
+| `src/lib/r2.ts` | R2 `S3Client` + `R2_BUCKET`. Throws on import if env vars missing. |
+| `src/lib/gemini.ts` | Gemini helper — upload, generate, poll ACTIVE state |
+| `src/lib/groq.ts` | Groq client wrapper. Uses `GROQ_API_KEY`. |
+| `src/lib/grs-engine.ts` | GRS scoring — `calculateAQScore()`, `classifyPerformance()`, `generateBenchmarks()` |
+| `src/lib/performance-tracker.ts` | Session storage + trend computation for biometric scans |
+| `src/lib/ai-routing.ts` | AI provider routing — Groq → Gemini → DeepSeek fallback chain |
+| `src/lib/pose-scorer.ts` | Pose scoring from MediaPipe landmarks |
+| `src/lib/holistic-engine.ts` | MediaPipe Holistic analysis (543-point full-body) |
+| `src/lib/skill-scoring.ts` | Position-weighted skill scoring |
+| `src/lib/player-predictions.ts` | Fetch + cache player prediction by UUID |
+| `src/lib/scholarship-matcher.ts` | Match player profile to scholarship opportunities |
+| `src/lib/tactical-iq/` | Blueprint generator, PDF generator, phase classifier, quiz generator, tactical IQ engine |
+| `src/lib/conditioning/` | `seed-cards.ts`, `storage.ts`, `types.ts` |
+| `src/lib/commentary/` | Live match commentary — `broadcaster.ts`, `engine.ts`, `poller.ts`, `tts.ts` |
+| `src/lib/success/coach-actions.ts` | Coach success engine actions |
+| `src/lib/sync-manager.ts` | Offline → online sync manager |
+
+---
+
+### NEW COMPONENTS
+
+| Component | Purpose |
+|---|---|
+| `src/components/BiometricScanner.tsx` | TypeScript rewrite — MediaPipe Pose, 2 modes, canvas overlay |
+| `src/components/drills/DrillCard.tsx` | Collapsible card — age variants, mastery, Gemini score gate |
+| `src/components/drills/FitnessTestTab.tsx` | GRS 6-test battery |
+| `src/components/drills/ReactionTest.tsx` | Visual reaction time stimulus |
+| `src/components/session/RestScreen.tsx` | 60s countdown ring between test phases |
+| `src/components/thuto/BeautifulMoment.tsx` | THUTO celebration overlay |
+| `src/components/coach/CoachAnalysisTab.tsx` | Reusable analysis tab |
+| `src/components/arena/ArenaVideoCard.tsx` | Video card for Arena feed |
+| `src/components/biometrics/RealCameraCapture.tsx` | MediaRecorder camera capture, 30s limit |
+| `src/components/passport/ScholarshipAlertCard.tsx` | Scholarship alert on passport |
+| `src/components/passport/ScholarshipReel.tsx` | Scholarship application reel |
+| `src/components/pro-gate.tsx` | Reusable Pro gate (blur + unlock CTA) |
+| `src/components/tactics/ProTacticsLab.tsx` | Pro tactical simulation lab |
+| `src/components/layout/PlayerBottomNav.tsx` | Mobile bottom nav for player hub |
+| `src/components/layout/CoachSidebar.tsx` | Coach hub dedicated sidebar |
+| `src/components/layout/AdminSidebar.tsx` | Admin hub dedicated sidebar |
+
+---
+
+### VIDEO UPLOAD ARCHITECTURE — PERMANENT RULE
+
+**NEVER POST video bytes to a Vercel serverless function.** Vercel rejects bodies > ~4.5MB.
+
+| Destination | Pattern |
+|---|---|
+| Google Gemini | Edge route returns `uploadUrl` only → browser XHR `PUT` directly to Google |
+| Cloudflare R2 | `POST /api/upload/presigned` → browser XHR `PUT` to R2 presigned URL |
+| Python AI service | Browser sends `FormData` XHR directly to `NEXT_PUBLIC_TRACKER_URL` |
+
+**`/api/analyse-from-uri`** — the correct drill analysis endpoint: receives `{ fileUri, fileName, mimeType, sport, drill, position, token }` (no video bytes). Polls Gemini, calls `gemini-2.5-flash`, records usage, returns `{ feedback, free_trial, is_pro }`.
+
+---
+
+### KEY BUG FIXES (24 June – 8 July 2026)
+
+| Commit | Fix |
+|---|---|
+| `588c80f` | Next.js 15 async params + AuthUser casts — all pre-existing TS errors resolved |
+| `f0fddbe` | `fetchHistory` missing in skill analyzers, optional chaining on `result.players`, `UserRole` cast |
+| `8f25392` | Parent auth guard — use `coach`/`player` roles (not `guardian` which doesn't exist) |
+| `e9f2495` | `FitnessTestTab` lazy initializer + explicit `TestPhase` cast |
+| `89297a7` | Missing brace in `test-isports/route.ts` — build failure fixed |
+| `08fc254` | `ModulePlayer` missing render block + Zustand selector fixed |
+| `1512d30` | Missing `performance-tracker` module + `BiometricScanner` default export — build unblocked |
+| `c2b8f39` | Remove Sentry wrapper + unused import — Vercel build unblocked |
+| `adf5ac9` | worldcup API paths `/api/world-cup` → `/api/worldcup/` |
+| `201cd63` | `player/analyse` 3-step XHR pattern — video no longer passes through Vercel (4.5MB fix) |
+
+---
+
+### ADDITIONAL UNDOCUMENTED PAGES (confirmed built)
+
+```
+/athlete                    Athlete discovery landing
+/athlete/passport           Athlete passport (external share URL)
+/athlete/scan               Quick biometric scan (standalone)
+/athlete/vault              Public athlete video vault
+/reel/[token]               Public shareable reel (no auth)
+/player/my-card             Digital player card
+/player/academics           Academic profile
+/player/position-fit        AI position fit analysis
+/player/pathway             Development pathway map
+/player/weekly-session      Weekly session planner
+/player/ubuntu              Ubuntu collaborative session hub
+/player/ubuntu/live/[sessionId]  Live Ubuntu peer-training session
+/player/potm-vote/[matchId] Player of the Match voting
+/player/scholarship-reel    Scholarship reel
+/player/gemini-drills       Player Gemini drill scoring
+/player/capture             Quick 30s video capture
+/player/dna                 Player DNA heatmap
+/player/conditioning        Conditioning programme hub
+/player/conditioning/[id]   Conditioning session detail
+/player/conditioning/session  Active conditioning session
+/player/train               Train mode (simplified pitch mode)
+/player/story               My Story narrative
+/player/brand               Brand Studio
+/player/session-tracker     Session tracker dashboard
+/coach/drills               Coach drill library
+/coach/futurefit            FutureFit planner
+/coach/conditioning         Conditioning manager
+/coach/session-library      Saved session library
+/coach/organisation         Organisation profile
+/coach/technical-staff      Technical staff directory
+/coach/technical-staff/[roleId]  Staff member detail
+/coach/scouting             External scouting feed
+/coach/talent-id            Talent identification dashboard
+/coach/training-plans/new   New training plan wizard
+/coach/success              Coach success engine
+/coach/success/checkin      Coach daily check-in
+/admin/health               Platform health monitor
+/admin/player-preview       Admin player profile preview
+/admin/pwa                  PWA management
+/admin/stream               Admin live stream control
+/admin/whatsapp             WhatsApp broadcast dashboard
+/admin/community            Community moderation
+/fan/live-commentary        Live commentary feed
+/fan/profile                Fan profile
+/match/[id]                 Public match detail
+/club/match-report          Club match report
+/feed                       Public activity feed
+/onboarding                 Post-registration onboarding
+/talent-id                  Public talent identification entry
+/talent-testing/session     GRS talent testing session
+/team-of-the-week           Team of the Week
+/business-directory         Business directory
+/school-curriculum          School sports curriculum guide
+/sports/netball             Netball sport landing
+/knowledge                  Knowledge base / help articles
+/grassroots-united          Special event page
+/verify-email               Email verification
+/verify-email/confirm       Email verification confirm
+/verify-otp                 OTP verification
+/verify-phone               Phone verification
+/(dashboard)/pipeline       Scout pipeline (dashboard group)
+```
+
+---
+
+### WHAT STILL NEEDS DOING (8 July 2026 — post-audit)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
