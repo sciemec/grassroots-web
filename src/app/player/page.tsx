@@ -540,7 +540,7 @@ export default function PlayerDashboardHome() {
               label="Video Capture" desc="Record live · Claude vision · instant feedback" />
             <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
               label="Athletic Profile" desc="6-test battery · jump · sprint · balance · drill analysis" />
-            <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
+            <HubCard href="/player/goal" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
               label="Success Engine" desc="Daily check-in · streak · goal tracking" />
             <HubCard href="/player/potential" icon={TrendingUp} iconBg="#dcfce7" iconColor="#16a34a"
               label="My Potential" desc="THUTO score · peak level · comparable players" />
