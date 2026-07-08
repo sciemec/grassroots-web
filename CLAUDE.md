@@ -9741,3 +9741,84 @@ Tests: 10m sprint → Illinois agility → Vertical jump → Reaction catch (`Re
 | Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
 | `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 9 July 2026
+
+### Theme — Coach Hub Video Upload Fix: `/coach/drill-analysis`
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `/coach/drill-analysis` — Non-Existent Python Endpoint Fixed ✅
+
+**Commit:** `445851c` — pushed to `sciemec/grassroots-web` main → Vercel auto-deployed
+
+**Root cause:**
+`src/app/coach/drill-analysis/page.tsx` line 308 was calling:
+```
+xhr.open("POST", `${AI_URL}/analyse-team-biomechanics`)
+```
+The Python AI service (`D:/bhora-ai/ai-service/main.py`) has NO `/analyse-team-biomechanics` endpoint.
+Confirmed via grep — no such route exists. Every video upload on this page silently failed.
+
+**Fix applied:**
+Replaced the broken Python XHR + polling flow with the same 3-step Gemini File API pattern
+already used by `/coach/gemini-drills` (which was working correctly).
+
+**New file: `src/app/api/coach-drill-analysis/route.ts`**
+- `export const maxDuration = 120`
+- `GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY ?? process.env.GEMINI_API_KEY`
+- `DRILLS` record — 6 drills: `sprint_10m`, `cut_505`, `drop_jump`, `header`, `lateral_shuffle`, `dribble_sprint`
+- `METRIC_LABELS` — human-readable descriptions + direction (higher/lower is better) per metric
+- `waitForFileActive(fileName)` — polls Gemini File API every 5s, max 24 attempts (2 min)
+- `POST` handler: receives `{ fileUri, fileName, mimeType, drillId }`, waits for ACTIVE, sends drill-specific metric-scoring prompt to `gemini-2.5-flash`
+- Returns `{ id: 1, metrics, performance_index, resilience_index, flags }` — compatible with existing `PlayerResult` interface
+
+**Modified: `src/app/coach/drill-analysis/page.tsx`**
+- Removed: `AI_URL` constant, `jobId` state, `pollRef` ref, `startPolling()`, `JobResult` interface
+- Added: async `handleFile()` using the 3-step Gemini flow:
+  1. `POST /api/match-eye/upload` (headers only) → `{ uploadUrl, mimeType }`
+  2. Browser XHR PUT directly to Google's `uploadUrl` (bypasses Vercel 4.5MB limit)
+  3. `POST /api/coach-drill-analysis` with `{ fileUri, fileName, mimeType, drillId }`
+- `AnalysisResult { players: PlayerResult[] }` replaces `JobResult`
+- `setResult({ players: [data] })` maintains compatibility with all existing render logic
+
+#### 2. `/coach/gemini-drills` — Confirmed Already Correct ✅
+
+Audited via grep — already uses the correct 3-step Gemini pattern. No changes needed.
+
+---
+
+### COACH HUB VIDEO UPLOAD STATUS (9 July 2026)
+
+| Page | Status | Pattern |
+|---|---|---|
+| `/coach/drill-analysis` | ✅ FIXED | 3-step Gemini File API (Edge init → browser XHR PUT → `/api/coach-drill-analysis`) |
+| `/coach/gemini-drills` | ✅ Already working | 3-step Gemini File API → `/api/gemini-drill-analysis` |
+
+---
+
+### FILES CHANGED (9 July 2026)
+
+```
+src/app/api/coach-drill-analysis/route.ts   — NEW: drill-specific Gemini analysis endpoint
+src/app/coach/drill-analysis/page.tsx       — FIXED: replaced broken Python XHR with Gemini 3-step flow
+```
+
+---
+
+### WHAT STILL NEEDS DOING (9 July 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
