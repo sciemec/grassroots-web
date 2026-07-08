@@ -10,9 +10,8 @@ import {
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 
-const AI_URL  = process.env.NEXT_PUBLIC_AI_URL  ?? "https://ai.bhora-ai.onrender.com";
-const API_URL  = process.env.NEXT_PUBLIC_API_URL  ?? "https://bhora-ai.onrender.com/api/v1";
-const APP_URL  = process.env.NEXT_PUBLIC_APP_URL  ?? "";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
 // ── 6 drills — simple English throughout ──────────────────────────────────
 
@@ -184,12 +183,8 @@ interface PlayerResult {
   flags: string[];
 }
 
-interface JobResult {
-  status: "pending" | "running" | "complete" | "failed";
-  error?: string;
-  players?: PlayerResult[];
-  frames_processed?: number;
-  duration_seconds?: number;
+interface AnalysisResult {
+  players: PlayerResult[];
 }
 
 type Stage = "select" | "upload" | "processing" | "results" | "error";
@@ -214,30 +209,28 @@ export default function CoachDrillAnalysisPage() {
   const user  = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
 
-  const [stage,       setStage]       = useState<Stage>("select");
-  const [drillId,     setDrillId]     = useState("sprint_10m");
-  const [playerName,  setPlayerName]  = useState("");
-  const [uploadPct,   setUploadPct]   = useState(0);
-  const [jobId,       setJobId]       = useState<string | null>(null);
-  const [result,      setResult]      = useState<JobResult | null>(null);
-  const [errMsg,      setErrMsg]      = useState("");
-  const [showGuide,   setShowGuide]   = useState(false);
-  const [thutoNote,   setThutoNote]   = useState("");
-  const [thutoLoading,setThutoLoading] = useState(false);
-  const [arenaPosted, setArenaPosted] = useState(false);
-  const [expandedTips,setExpandedTips] = useState(false);
-  const [r2VideoUrl,  setR2VideoUrl]   = useState("");
+  const [stage,        setStage]        = useState<Stage>("select");
+  const [drillId,      setDrillId]      = useState("sprint_10m");
+  const [playerName,   setPlayerName]   = useState("");
+  const [uploadPct,    setUploadPct]    = useState(0);
+  const [result,       setResult]       = useState<AnalysisResult | null>(null);
+  const [errMsg,       setErrMsg]       = useState("");
+  const [showGuide,    setShowGuide]    = useState(false);
+  const [thutoNote,    setThutoNote]    = useState("");
+  const [thutoLoading, setThutoLoading] = useState(false);
+  const [arenaPosted,  setArenaPosted]  = useState(false);
+  const [expandedTips, setExpandedTips] = useState(false);
+  const [r2VideoUrl,   setR2VideoUrl]   = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const drill = DRILLS.find((d) => d.id === drillId) ?? DRILLS[0];
+  const drill   = DRILLS.find((d) => d.id === drillId) ?? DRILLS[0];
   const players = result?.players ?? [];
   const primary = players[0] ?? null;
 
-  // ── Upload via XHR ────────────────────────────────────────────────────────
+  // ── Upload + Analyse (3-step Gemini flow) ────────────────────────────────
 
-  const handleFile = useCallback((file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("video/")) {
       setErrMsg("Please choose a video file (mp4 or mov).");
       setStage("error");
@@ -250,7 +243,7 @@ export default function CoachDrillAnalysisPage() {
     setArenaPosted(false);
     setR2VideoUrl("");
 
-    // ── Upload to Cloudflare R2 in background (for playback + storage) ─────
+    // ── Background: upload a copy to R2 for storage ───────────────────────
     const uploadToR2 = async () => {
       try {
         const presignRes = await fetch(`${APP_URL}/api/upload/presigned`, {
@@ -268,70 +261,82 @@ export default function CoachDrillAnalysisPage() {
           r2xhr.open("PUT", upload_url);
           r2xhr.setRequestHeader("Content-Type", file.type);
           r2xhr.onload  = () => resolve();
-          r2xhr.onerror = () => resolve(); // never block the AI analysis
+          r2xhr.onerror = () => resolve();
           r2xhr.send(file);
         });
         setR2VideoUrl(public_url);
-      } catch { /* R2 upload is best-effort — AI analysis proceeds regardless */ }
+      } catch { /* best-effort — never blocks analysis */ }
     };
     uploadToR2();
-    // ─────────────────────────────────────────────────────────────────────────
 
-    const form = new FormData();
-    form.append("video", file);
-    form.append("drill_type", drillId);
-
-    const xhr = new XMLHttpRequest();
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const { job_id } = JSON.parse(xhr.responseText) as { job_id: string };
-          setJobId(job_id);
-          setStage("processing");
-          startPolling(job_id);
-        } catch {
-          setErrMsg("Something went wrong reading the response. Please try again.");
-          setStage("error");
-        }
-      } else {
-        setErrMsg(`Upload did not work (error ${xhr.status}). Make sure you have internet and try again.`);
-        setStage("error");
-      }
-    };
-    xhr.onerror = () => {
-      setErrMsg("Could not connect to the AI service. Check your internet connection and try again.");
+    // ── Step 1: Get Google resumable upload session URL ───────────────────
+    let uploadUrl: string;
+    let mimeType: string;
+    try {
+      const initRes = await fetch("/api/match-eye/upload", {
+        method:  "POST",
+        headers: { "content-type": file.type, "x-content-length": String(file.size) },
+      });
+      if (!initRes.ok) throw new Error(`Init failed: ${initRes.status}`);
+      const init = await initRes.json() as { uploadUrl: string; mimeType: string };
+      uploadUrl = init.uploadUrl;
+      mimeType  = init.mimeType;
+    } catch {
+      setErrMsg("Could not start upload. Check your internet and try again.");
       setStage("error");
-    };
-    xhr.open("POST", `${AI_URL}/analyse-team-biomechanics`);
-    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-    xhr.send(form);
+      return;
+    }
+
+    // ── Step 2: Upload video directly to Google (no Vercel limit) ─────────
+    let fileUri: string;
+    let fileName: string;
+    try {
+      const googleRes = await new Promise<{ file: { uri: string; name: string; mimeType: string } }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText)); }
+            catch { reject(new Error("Unexpected response from upload server.")); }
+          } else {
+            reject(new Error(`Upload failed (${xhr.status}). Try a shorter clip.`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload. Check your connection."));
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", mimeType);
+        xhr.send(file);
+      });
+      fileUri  = googleRes.file.uri;
+      fileName = googleRes.file.name;
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : "Upload failed. Please try again.");
+      setStage("error");
+      return;
+    }
+
+    // ── Step 3: Analyse with Gemini ───────────────────────────────────────
+    setStage("processing");
+    try {
+      const analysisRes = await fetch("/api/coach-drill-analysis", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ fileUri, fileName, mimeType, drillId }),
+      });
+      if (!analysisRes.ok) {
+        const errData = await analysisRes.json().catch(() => ({})) as { error?: string };
+        throw new Error(errData.error ?? `Analysis failed (${analysisRes.status}).`);
+      }
+      const data = await analysisRes.json() as PlayerResult;
+      setResult({ players: [data] });
+      setStage("results");
+    } catch (err) {
+      setErrMsg(err instanceof Error ? err.message : "AI could not process the video. Try a clearer, shorter clip.");
+      setStage("error");
+    }
   }, [drillId, token]);
-
-  // ── Poll job ──────────────────────────────────────────────────────────────
-
-  const startPolling = useCallback((id: string) => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      try {
-        const res  = await fetch(`${AI_URL}/job/${id}`);
-        const data = await res.json() as JobResult;
-        if (data.status === "complete") {
-          clearInterval(pollRef.current!);
-          setResult(data);
-          setStage("results");
-        } else if (data.status === "failed") {
-          clearInterval(pollRef.current!);
-          setErrMsg(data.error ?? "The analysis did not finish. Please try again with a shorter video.");
-          setStage("error");
-        }
-      } catch { /* keep polling */ }
-    }, 5000);
-  }, []);
-
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
   // ── THUTO coaching note ───────────────────────────────────────────────────
 
@@ -500,12 +505,10 @@ export default function CoachDrillAnalysisPage() {
   const reset = () => {
     setStage("select");
     setResult(null);
-    setJobId(null);
     setThutoNote("");
     setArenaPosted(false);
     setErrMsg("");
     setUploadPct(0);
-    if (pollRef.current) clearInterval(pollRef.current);
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -675,7 +678,6 @@ export default function CoachDrillAnalysisPage() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-[#1a5c2a] border-t-[#f0b429] animate-spin" />
             <h2 className="text-lg font-bold text-white mb-2">AI is analysing the video...</h2>
             <p className="text-sm text-white/50">This takes 30–90 seconds. Don&apos;t close the page.</p>
-            {jobId && <p className="text-[10px] text-white/20 mt-3">Job: {jobId}</p>}
           </div>
         )}
 
