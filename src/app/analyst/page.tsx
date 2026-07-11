@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,6 @@ import {
   ShieldCheck, GraduationCap, Zap, Trophy,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -19,9 +18,9 @@ function greeting(): string {
 }
 
 const WIRE = [
-  "Match Eye: Gemini 1.5 Pro + Claude tactical narrative — live",
-  "xG data updated — Dynamos FC vs Highlanders (90 min logged)",
-  "AI Tactical Report generated for Zvishavane City FC — 94% accuracy",
+  "Match Eye: Gemini 1.5 Pro + Claude tactical narrative â€” live",
+  "xG data updated â€” Dynamos FC vs Highlanders (90 min logged)",
+  "AI Tactical Report generated for Zvishavane City FC â€” 94% accuracy",
   "Touch Tracker: 847 touches logged across 3 matches today",
   "Pass Map: S.G. (Wingback) leads with 67 forward passes this week",
   "Season Intelligence: 5 squad xG trends flagged for review",
@@ -33,70 +32,70 @@ const FEATURES = [
     icon: Camera,
     iconBg: "#fef3c7", iconColor: "#d97706",
     label: "Match Eye",
-    desc: "Upload video · Gemini watches · Claude reports",
+    desc: "Upload video Â· Gemini watches Â· Claude reports",
   },
   {
     href: "/analyst/match-brain",
     icon: Brain,
     iconBg: "#f3e8ff", iconColor: "#9333ea",
     label: "Match Brain",
-    desc: "6 outputs from one session · xG + passes + zones",
+    desc: "6 outputs from one session Â· xG + passes + zones",
   },
   {
     href: "/analyst/live-match",
     icon: Target,
     iconBg: "#dcfce7", iconColor: "#16a34a",
     label: "Live Match Collector",
-    desc: "Log events · xG auto-calculated from coordinates",
+    desc: "Log events Â· xG auto-calculated from coordinates",
   },
   {
     href: "/analyst/xg-analysis",
     icon: BarChart2,
     iconBg: "#dbeafe", iconColor: "#2563eb",
     label: "xG & Shot Analysis",
-    desc: "Shot map · expected goals · rolling timeline",
+    desc: "Shot map Â· expected goals Â· rolling timeline",
   },
   {
     href: "/analyst/tactical-report",
     icon: FileText,
     iconBg: "#fce7f3", iconColor: "#db2777",
     label: "AI Tactical Report",
-    desc: "5-section match report · PDF export",
+    desc: "5-section match report Â· PDF export",
   },
   {
     href: "/analyst/pass-map",
     icon: Network,
     iconBg: "#e0f2fe", iconColor: "#0284c7",
     label: "Pass Map Network",
-    desc: "Who played to who · spatial zone overlay",
+    desc: "Who played to who Â· spatial zone overlay",
   },
   {
     href: "/analyst/heatmaps",
     icon: Map,
     iconBg: "#ecfdf5", iconColor: "#059669",
     label: "Player Heatmaps",
-    desc: "Per-player high-intensity pitch zones · PDF",
+    desc: "Per-player high-intensity pitch zones Â· PDF",
   },
   {
     href: "/analyst/season",
     icon: TrendingUp,
     iconBg: "#ede9fe", iconColor: "#7c3aed",
     label: "Season Intelligence",
-    desc: "Rolling xG charts · form guides · depth trends",
+    desc: "Rolling xG charts Â· form guides Â· depth trends",
   },
   {
     href: "/analyst/touch-tracker",
     icon: Activity,
     iconBg: "#f0fdf4", iconColor: "#15803d",
     label: "Smart Touch Tracker",
-    desc: "Tap touches · AI infers formation · zones",
+    desc: "Tap touches Â· AI infers formation Â· zones",
   },
   {
     href: "/analyst/team-biomechanics",
     icon: Zap,
     iconBg: "#ecfdf5", iconColor: "#059669",
     label: "Team Biomechanics",
-    desc: "YOLOv8 + MediaPipe · Performance Index · Resilience Index · PDF",
+    desc: "YOLOv8 + MediaPipe Â· Performance Index Â· Resilience Index Â· PDF",
   },
 ];
 
@@ -182,11 +181,11 @@ export default function AnalystHubPage() {
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <ShieldCheck size={9} /> Analyst · Active
+                    <ShieldCheck size={9} /> Analyst Â· Active
                   </span>
                   {user.province && (
                     <span className="text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      📍 {user.province}
+                      ðŸ“ {user.province}
                     </span>
                   )}
                 </div>
@@ -201,9 +200,9 @@ export default function AnalystHubPage() {
             {/* Stat tiles */}
             <div className="grid grid-cols-3 gap-2.5 mt-5">
               {[
-                { label: "Matches", value: "—", Icon: Activity },
-                { label: "Reports", value: "—", Icon: FileText },
-                { label: "xG Sessions", value: "—", Icon: BarChart2 },
+                { label: "Matches", value: "â€”", Icon: Activity },
+                { label: "Reports", value: "â€”", Icon: FileText },
+                { label: "xG Sessions", value: "â€”", Icon: BarChart2 },
               ].map(({ label, value, Icon }) => (
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
                   style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -233,8 +232,6 @@ export default function AnalystHubPage() {
         </div>
 
         {/* World Cup live banner */}
-        <LiveMatchBanner />
-
         {/* Feature grid */}
         <section>
           <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
@@ -261,7 +258,7 @@ export default function AnalystHubPage() {
               </Link>
             ))}
 
-            {/* Biometric Scan — extra card linking to coach biometrics */}
+            {/* Biometric Scan â€” extra card linking to coach biometrics */}
             <Link
               href="/coach/biometrics"
               className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
@@ -275,7 +272,7 @@ export default function AnalystHubPage() {
               </div>
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">Biometric Scan</h4>
-                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">MediaPipe skeleton · technique score</p>
+                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">MediaPipe skeleton Â· technique score</p>
               </div>
             </Link>
 
@@ -293,7 +290,7 @@ export default function AnalystHubPage() {
               </div>
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">Match Map</h4>
-                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">Tap canvas · shots + passes · live</p>
+                <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">Tap canvas Â· shots + passes Â· live</p>
               </div>
             </Link>
           </div>
@@ -313,7 +310,7 @@ export default function AnalystHubPage() {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>Match Eye</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Gemini video analysis · Claude report</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Gemini video analysis Â· Claude report</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
@@ -331,7 +328,7 @@ export default function AnalystHubPage() {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Post insights · discuss · connect</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Post insights Â· discuss Â· connect</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
@@ -348,7 +345,7 @@ export default function AnalystHubPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {user.province || "Zimbabwe"} · Analyst
+                {user.province || "Zimbabwe"} Â· Analyst
               </p>
             </div>
           </div>

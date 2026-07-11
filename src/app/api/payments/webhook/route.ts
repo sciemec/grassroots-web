@@ -1,6 +1,7 @@
 /**
  * POST /api/payments/webhook
  * Stripe sends payment events here. We notify the Laravel backend to activate/cancel subscriptions.
+ * Uses Web Crypto for signature verification (no Stripe SDK) to keep the CF Workers bundle small.
  *
  * Required env vars:
  *   STRIPE_SECRET_KEY
@@ -9,32 +10,81 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+
+/** Verify Stripe-Signature header using Web Crypto HMAC-SHA256. */
+async function verifyStripeSignature(
+  rawBody: string,
+  sigHeader: string,
+  secret: string,
+): Promise<boolean> {
+  // sig header format: "t=1614556800,v1=abc123,v1=def456"
+  const parts = sigHeader.split(",");
+  const tPart = parts.find((p) => p.startsWith("t="));
+  const vParts = parts.filter((p) => p.startsWith("v1="));
+  if (!tPart || vParts.length === 0) return false;
+
+  const timestamp = tPart.slice(2);
+  const payload = `${timestamp}.${rawBody}`;
+
+  let key: CryptoKey;
+  try {
+    key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+  } catch {
+    return false;
+  }
+
+  const sigBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  const computed = Array.from(new Uint8Array(sigBytes))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return vParts.some((v) => v.slice(3) === computed);
+}
+
+interface StripeEvent {
+  type: string;
+  data: {
+    object: Record<string, unknown>;
+  };
+}
 
 export async function POST(req: NextRequest) {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!secretKey || !webhookSecret) {
+  if (!webhookSecret) {
     return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
   }
 
-  const stripe = new Stripe(secretKey, { apiVersion: "2026-05-27.dahlia" });
   const sig = req.headers.get("stripe-signature") ?? "";
   const rawBody = await req.text();
 
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-  } catch {
+  const valid = await verifyStripeSignature(rawBody, sig, webhookSecret);
+  if (!valid) {
     return NextResponse.json({ error: "Webhook signature invalid" }, { status: 400 });
+  }
+
+  let event: StripeEvent;
+  try {
+    event = JSON.parse(rawBody) as StripeEvent;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
   // ── Blueprint one-time purchase ─────────────────────────────────────────────
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
+    const session = event.data.object as {
+      metadata?: Record<string, string>;
+      payment_intent?: string | null;
+      amount_total?: number | null;
+    };
 
     if (session.metadata?.type === "coaching_blueprint") {
       const userId  = session.metadata.user_id;
@@ -57,7 +107,6 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Blueprint purchase handled — do not forward to the subscription webhook
       return NextResponse.json({ received: true });
     }
   }

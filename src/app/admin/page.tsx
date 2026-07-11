@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,14 +9,13 @@ import {
   GraduationCap, Database, Lock,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
 const WIRE = [
-  "Platform running normally — all services operational",
+  "Platform running normally â€” all services operational",
   "3 new scout verification requests pending review",
   "12 new player registrations this week across 4 provinces",
   "Fan Hub: 2 videos flagged for moderation review",
-  "Subscription revenue up 18% — 7 new Pro accounts",
+  "Subscription revenue up 18% â€” 7 new Pro accounts",
   "THUTO AI processed 94 biometric scans today",
 ];
 
@@ -26,49 +25,49 @@ const FEATURES = [
     icon: Users,
     iconBg: "#dbeafe", iconColor: "#2563eb",
     label: "Users",
-    desc: "Manage all accounts · roles · access",
+    desc: "Manage all accounts Â· roles Â· access",
   },
   {
     href: "/admin/verifications",
     icon: ShieldCheck,
     iconBg: "#dcfce7", iconColor: "#16a34a",
     label: "Verifications",
-    desc: "Document review · identity queue",
+    desc: "Document review Â· identity queue",
   },
   {
     href: "/admin/scout-requests",
     icon: Search,
     iconBg: "#f3e8ff", iconColor: "#9333ea",
     label: "Scout Requests",
-    desc: "Contact approvals · accreditation",
+    desc: "Contact approvals Â· accreditation",
   },
   {
     href: "/admin/subscriptions",
     icon: CreditCard,
     iconBg: "#fef3c7", iconColor: "#d97706",
     label: "Subscriptions",
-    desc: "Billing · plans · Stripe dashboard",
+    desc: "Billing Â· plans Â· Stripe dashboard",
   },
   {
     href: "/admin/stats",
     icon: BarChart3,
     iconBg: "#fce7f3", iconColor: "#db2777",
     label: "Platform Stats",
-    desc: "Users · sessions · engagement",
+    desc: "Users Â· sessions Â· engagement",
   },
   {
     href: "/admin/announcements",
     icon: Megaphone,
     iconBg: "#e0f2fe", iconColor: "#0284c7",
     label: "Announcements",
-    desc: "Platform notices · broadcasts",
+    desc: "Platform notices Â· broadcasts",
   },
   {
     href: "/admin/fan-hub",
     icon: Film,
     iconBg: "#ede9fe", iconColor: "#7c3aed",
     label: "Fan Hub Mod",
-    desc: "Pending videos · approve · remove",
+    desc: "Pending videos Â· approve Â· remove",
   },
   {
     href: "/notifications",
@@ -82,7 +81,7 @@ const FEATURES = [
     icon: Database,
     iconBg: "#ecfdf5", iconColor: "#059669",
     label: "Talent Database",
-    desc: "National rankings · THUTO scores",
+    desc: "National rankings Â· THUTO scores",
   },
 ];
 
@@ -167,7 +166,7 @@ export default function AdminDashboardPage() {
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <Lock size={9} /> Admin · Root Access
+                    <Lock size={9} /> Admin Â· Root Access
                   </span>
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(34,197,94,0.15)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.2)" }}>
@@ -185,9 +184,9 @@ export default function AdminDashboardPage() {
             {/* Stat tiles */}
             <div className="grid grid-cols-3 gap-2.5 mt-5">
               {[
-                { label: "Total Users", value: "—", Icon: Users },
-                { label: "Pending", value: "—", Icon: ShieldCheck },
-                { label: "Pro Plans", value: "—", Icon: CreditCard },
+                { label: "Total Users", value: "â€”", Icon: Users },
+                { label: "Pending", value: "â€”", Icon: ShieldCheck },
+                { label: "Pro Plans", value: "â€”", Icon: CreditCard },
               ].map(({ label, value, Icon }) => (
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
                   style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -217,8 +216,6 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* World Cup live banner */}
-        <LiveMatchBanner />
-
         {/* Feature grid */}
         <section>
           <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
@@ -261,7 +258,7 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>Platform Analytics</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Users · sessions · revenue</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Users Â· sessions Â· revenue</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
@@ -279,7 +276,7 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>View as user · monitor feed</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>View as user Â· monitor feed</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
@@ -296,7 +293,7 @@ export default function AdminDashboardPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Admin"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                Root Access · Administrator
+                Root Access Â· Administrator
               </p>
             </div>
           </div>

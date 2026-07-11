@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,6 @@ import {
   GraduationCap, Flame, TrendingUp, Video, Users, Network, Kanban,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -19,12 +18,12 @@ function greeting(): string {
 }
 
 const WIRE = [
-  "K.M. (U17 Striker, Harare) clocked 2.84s sprint · open for scouting",
+  "K.M. (U17 Striker, Harare) clocked 2.84s sprint Â· open for scouting",
   "3 new Rising Stars detected in Bulawayo province this week",
-  "T.N. (U13 Midfielder, Masvingo) cleared 45cm vertical leap — high potential flag",
+  "T.N. (U13 Midfielder, Masvingo) cleared 45cm vertical leap â€” high potential flag",
   "Showcase clip by S.G. (Wingback, Manicaland) now has 24 scout views",
-  "Munhumutapa 2026 — 47 players registered across U14 & U16 categories",
-  "THUTO Talent Engine updated rankings — 5 new continental-level prospects",
+  "Munhumutapa 2026 â€” 47 players registered across U14 & U16 categories",
+  "THUTO Talent Engine updated rankings â€” 5 new continental-level prospects",
 ];
 
 const FEATURES = [
@@ -33,21 +32,21 @@ const FEATURES = [
     icon: UserSearch,
     iconBg: "#dcfce7", iconColor: "#16a34a",
     label: "Discover Players",
-    desc: "Search · filter · follow talent",
+    desc: "Search Â· filter Â· follow talent",
   },
   {
     href: "/scout/shortlist",
     icon: Star,
     iconBg: "#fef3c7", iconColor: "#d97706",
     label: "My Shortlist",
-    desc: "Saved players · watchlist",
+    desc: "Saved players Â· watchlist",
   },
   {
     href: "/scout/reports",
     icon: FileText,
     iconBg: "#f3e8ff", iconColor: "#9333ea",
     label: "PDF Reports",
-    desc: "AI scouting reports · Claude analysis",
+    desc: "AI scouting reports Â· Claude analysis",
   },
   {
     href: "/scout/compare",
@@ -61,28 +60,28 @@ const FEATURES = [
     icon: TrendingUp,
     iconBg: "#fce7f3", iconColor: "#db2777",
     label: "Rising Stars",
-    desc: "THUTO rankings · top-rated talent",
+    desc: "THUTO rankings Â· top-rated talent",
   },
   {
     href: "/arena/recruitment",
     icon: Users,
     iconBg: "#e0f2fe", iconColor: "#0284c7",
     label: "Recruitment Board",
-    desc: "Talent-wanted postings · applicants",
+    desc: "Talent-wanted postings Â· applicants",
   },
   {
     href: "/fan-hub",
     icon: Video,
     iconBg: "#ecfdf5", iconColor: "#059669",
     label: "Showcase Clips",
-    desc: "AI-rated skill videos · highlights",
+    desc: "AI-rated skill videos Â· highlights",
   },
   {
     href: "/arena/network",
     icon: Network,
     iconBg: "#ede9fe", iconColor: "#7c3aed",
     label: "My Network",
-    desc: "Connections · followers · messages",
+    desc: "Connections Â· followers Â· messages",
   },
   {
     href: "/scout/pipeline",
@@ -96,7 +95,7 @@ const FEATURES = [
     icon: ShieldCheck,
     iconBg: "#f0fdf4", iconColor: "#15803d",
     label: "Scout Profile",
-    desc: "Credentials · accreditation · bio",
+    desc: "Credentials Â· accreditation Â· bio",
   },
 ];
 
@@ -181,11 +180,11 @@ export default function ScoutHubPage() {
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <ShieldCheck size={9} /> Scout · Active
+                    <ShieldCheck size={9} /> Scout Â· Active
                   </span>
                   {user.province && (
                     <span className="text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      📍 {user.province}
+                      ðŸ“ {user.province}
                     </span>
                   )}
                 </div>
@@ -200,9 +199,9 @@ export default function ScoutHubPage() {
             {/* Stat tiles */}
             <div className="grid grid-cols-3 gap-2.5 mt-5">
               {[
-                { label: "Viewed", value: "—", Icon: UserSearch },
-                { label: "Shortlisted", value: "—", Icon: Star },
-                { label: "Reports", value: "—", Icon: Flame },
+                { label: "Viewed", value: "â€”", Icon: UserSearch },
+                { label: "Shortlisted", value: "â€”", Icon: Star },
+                { label: "Reports", value: "â€”", Icon: Flame },
               ].map(({ label, value, Icon }) => (
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
                   style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -232,8 +231,6 @@ export default function ScoutHubPage() {
         </div>
 
         {/* World Cup live banner */}
-        <LiveMatchBanner />
-
         {/* Feature grid */}
         <section>
           <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
@@ -294,7 +291,7 @@ export default function ScoutHubPage() {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Network · Post · Get discovered</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Network Â· Post Â· Get discovered</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
@@ -311,7 +308,7 @@ export default function ScoutHubPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {user.province || "Zimbabwe"} · Scout
+                {user.province || "Zimbabwe"} Â· Scout
               </p>
             </div>
           </div>

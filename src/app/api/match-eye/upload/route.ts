@@ -1,9 +1,4 @@
-// Edge Runtime — returns a Google resumable upload URL.
-// The browser then PUTs the video bytes directly to that URL (no body through Vercel).
-// Vercel has a 4 MB body limit on all runtimes — video must bypass it entirely.
-export const runtime = "edge";
-
-export async function POST(req: Request) {
+﻿export async function POST(req: Request) {
   try {
     const googleKey = process.env.GOOGLE_AI_API_KEY;
     if (!googleKey) {
@@ -13,7 +8,6 @@ export async function POST(req: Request) {
     const contentType = req.headers.get("content-type") || "video/mp4";
     const contentLength = req.headers.get("x-content-length") || "0";
 
-    // Initiate a resumable upload session — tiny metadata-only request, no video body
     const initRes = await fetch(
       `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${googleKey}`,
       {
@@ -42,7 +36,6 @@ export async function POST(req: Request) {
       return Response.json({ error: "Google did not return an upload URL" }, { status: 502 });
     }
 
-    // Return the self-authenticating URL — browser PUTs the video directly to Google
     return Response.json({ uploadUrl, mimeType: contentType });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

@@ -11,7 +11,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 
 const EMAIL_TEMPLATES: Record<string, { subject: string; html: (data: Record<string, string>) => string }> = {
   welcome: {
@@ -101,17 +100,18 @@ export async function POST(req: NextRequest) {
 
   const from = process.env.EMAIL_FROM ?? "Grassroots Sport <noreply@grassrootssports.live>";
 
-  const resend = new Resend(apiKey);
-
   try {
-    const result = await resend.emails.send({
-      from,
-      to,
-      subject: finalSubject,
-      html: finalHtml,
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from, to, subject: finalSubject, html: finalHtml }),
     });
-
-    return NextResponse.json({ ok: true, id: result.data?.id });
+    const result = await res.json() as { id?: string; message?: string };
+    if (!res.ok) throw new Error(result.message ?? `Resend error ${res.status}`);
+    return NextResponse.json({ ok: true, id: result.id });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Email send failed";
     return NextResponse.json({ error: msg }, { status: 500 });

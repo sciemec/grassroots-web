@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,6 @@ import {
   Globe, MessageCircle,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { LiveMatchBanner } from "@/components/LiveMatchBanner";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -19,11 +18,11 @@ function greeting(): string {
 }
 
 const WIRE = [
-  "Dynamos FC 2–1 Highlanders · 67' — NSS is electric tonight",
-  "FC Platinum beat Chicken Inn 3–0 at Mandava Stadium",
-  "K.M. (Harare) clocked a 2.84s 20m sprint — rising star alert",
+  "Dynamos FC 2â€“1 Highlanders Â· 67' â€” NSS is electric tonight",
+  "FC Platinum beat Chicken Inn 3â€“0 at Mandava Stadium",
+  "K.M. (Harare) clocked a 2.84s 20m sprint â€” rising star alert",
   "T.N. (Bulawayo) earned the Rising Star badge this week",
-  "Munhumutapa Challenge Cup 2026 — registration open for U14 & U16",
+  "Munhumutapa Challenge Cup 2026 â€” registration open for U14 & U16",
   "Zimbabwe U20 squad announced for COSAFA Cup qualifiers",
 ];
 
@@ -33,63 +32,56 @@ const FEATURES = [
     icon: Star,
     iconBg: "#fef3c7", iconColor: "#d97706",
     label: "Discover Talent",
-    desc: "Find players · positions · provinces",
+    desc: "Find players Â· positions Â· provinces",
   },
   {
     href: "/fan/following",
     icon: Heart,
     iconBg: "#fce7f3", iconColor: "#db2777",
     label: "Following",
-    desc: "Players you support · updates",
+    desc: "Players you support Â· updates",
   },
   {
     href: "/fan/leaderboard",
     icon: Trophy,
     iconBg: "#dcfce7", iconColor: "#16a34a",
     label: "Leaderboard",
-    desc: "Top-rated players · THUTO scores",
+    desc: "Top-rated players Â· THUTO scores",
   },
   {
     href: "/fan-hub",
     icon: Video,
     iconBg: "#dbeafe", iconColor: "#2563eb",
     label: "Fan Hub Videos",
-    desc: "Highlights · skill clips · AI reels",
-  },
-  {
-    href: "/world-cup",
-    icon: Globe,
-    iconBg: "#f0fdf4", iconColor: "#059669",
-    label: "World Cup",
-    desc: "FIFA 2026 · live scores · AI commentary",
+    desc: "Highlights Â· skill clips Â· AI reels",
   },
   {
     href: "/streaming",
     icon: Radio,
     iconBg: "#ede9fe", iconColor: "#7c3aed",
     label: "Live Matches",
-    desc: "Watch live · broadcast mode",
+    desc: "Watch live Â· broadcast mode",
   },
   {
     href: "/arena/clubs",
     icon: Building2,
     iconBg: "#fef3c7", iconColor: "#b45309",
     label: "Schools & Clubs",
-    desc: "Find your team · follow a club",
+    desc: "Find your team Â· follow a club",
   },
   {
     href: "/arena",
     icon: MessageCircle,
     iconBg: "#e0f2fe", iconColor: "#0284c7",
     label: "The Arena",
-    desc: "Posts · discuss · get involved",
+    desc: "Posts Â· discuss Â· get involved",
   },
   {
     href: "/talent-leaderboard",
     icon: Users,
     iconBg: "#ecfdf5", iconColor: "#15803d",
     label: "Rising Stars",
-    desc: "National talent rankings · THUTO AI",
+    desc: "National talent rankings Â· THUTO AI",
   },
 ];
 
@@ -174,11 +166,11 @@ export default function FanHubPage() {
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <ShieldCheck size={9} /> Fan · Active
+                    <ShieldCheck size={9} /> Fan Â· Active
                   </span>
                   {user.province && (
                     <span className="text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      📍 {user.province}
+                      ðŸ“ {user.province}
                     </span>
                   )}
                 </div>
@@ -193,9 +185,9 @@ export default function FanHubPage() {
             {/* Stat tiles */}
             <div className="grid grid-cols-3 gap-2.5 mt-5">
               {[
-                { label: "Following", value: "—", Icon: Heart },
-                { label: "Favourites", value: "—", Icon: Star },
-                { label: "Live Now", value: "—", Icon: Flame },
+                { label: "Following", value: "â€”", Icon: Heart },
+                { label: "Favourites", value: "â€”", Icon: Star },
+                { label: "Live Now", value: "â€”", Icon: Flame },
               ].map(({ label, value, Icon }) => (
                 <div key={label} className="rounded-xl px-3 py-2.5 text-center"
                   style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -225,8 +217,6 @@ export default function FanHubPage() {
         </div>
 
         {/* World Cup live banner */}
-        <LiveMatchBanner />
-
         {/* Feature grid */}
         <section>
           <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
@@ -258,24 +248,6 @@ export default function FanHubPage() {
         {/* CTA row */}
         <section className="grid sm:grid-cols-2 gap-3">
           <Link
-            href="/world-cup"
-            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
-                <Globe size={16} style={{ color: "#f0b429" }} />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>FIFA World Cup 2026</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Live scores · AI commentary</p>
-              </div>
-            </div>
-            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-
-          <Link
             href="/arena"
             className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
             style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
@@ -287,7 +259,7 @@ export default function FanHubPage() {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Post · discuss · connect</p>
+                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Post Â· discuss Â· connect</p>
               </div>
             </div>
             <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
@@ -304,7 +276,7 @@ export default function FanHubPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {user.province || "Zimbabwe"} · Fan
+                {user.province || "Zimbabwe"} Â· Fan
               </p>
             </div>
           </div>

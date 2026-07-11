@@ -1,19 +1,5 @@
-import * as Sentry from "@sentry/nextjs";
-
+// Sentry removed to keep the Cloudflare Workers bundle under 10 MB.
+// Re-enable by installing @sentry/nextjs and restoring Sentry.init() calls here.
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-      enabled: process.env.NODE_ENV === "production",
-    });
-  }
-
-  if (process.env.NEXT_RUNTIME === "edge") {
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-      enabled: process.env.NODE_ENV === "production",
-    });
-  }
+  // no-op
 }

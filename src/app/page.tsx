@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -13,9 +13,9 @@ import {
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { useAuthStore } from "@/lib/auth-store";
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Types
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface LeaderboardAthlete {
   id:       string;
   name:     string;
@@ -24,15 +24,15 @@ interface LeaderboardAthlete {
   score:    number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Constants
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const GRS_GREEN = "#1c3d22";
 const GRS_GOLD  = "#c8962a";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CoreGoals — Identify · Nurture · Market (with WORKING links)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// CoreGoals â€” Identify Â· Nurture Â· Market (with WORKING links)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CoreGoals() {
   return (
     <section className="py-16 px-4" style={{ background: GRS_GREEN }}>
@@ -59,7 +59,7 @@ function CoreGoals() {
               number:  "01",
               title:   "Identify",
               color:   GRS_GOLD,
-              desc:    "Six athletic tests run with a single phone — no equipment, no timing gates. AI-powered AQ scoring benchmarks every player against Zimbabwe-calibrated norms.",
+              desc:    "Six athletic tests run with a single phone â€” no equipment, no timing gates. AI-powered AQ scoring benchmarks every player against Zimbabwe-calibrated norms.",
               bullets: [
                 "Jump, sprint, balance, reaction, endurance, ball mastery",
                 "AQ score vs age-group norms",
@@ -67,7 +67,7 @@ function CoreGoals() {
               ],
               link: "/player/talent-id",
               icon: <Camera size={20} />,
-              cta:  "Take your test →",
+              cta:  "Take your test â†’",
             },
             {
               number:  "02",
@@ -81,7 +81,7 @@ function CoreGoals() {
               ],
               link: "/player/drills",
               icon: <Dumbbell size={20} />,
-              cta:  "See your drills →",
+              cta:  "See your drills â†’",
             },
             {
               number:  "03",
@@ -89,9 +89,9 @@ function CoreGoals() {
               color:   "#60a5fa",
               desc:    "Two ways to get discovered: Your personal Talent Passport and the Arena social network. Share videos, connect with scouts, and build your brand.",
               bullets: [
-                "🎫 Talent Passport — Verified profile with QR code",
-                "📹 Arena — Post videos, get noticed by scouts",
-                "🤝 Connect directly with clubs and academies",
+                "ðŸŽ« Talent Passport â€” Verified profile with QR code",
+                "ðŸ“¹ Arena â€” Post videos, get noticed by scouts",
+                "ðŸ¤ Connect directly with clubs and academies",
               ],
               links: [
                 { href: "/player/talent-id", label: "Talent Passport", icon: <IdCard size={14} />, color: "#60a5fa" },
@@ -125,7 +125,7 @@ function CoreGoals() {
               <ul className="space-y-1.5 mb-5">
                 {g.bullets.map((b) => (
                   <li key={b} className="flex items-start gap-2 text-xs text-white/70">
-                    <span style={{ color: g.color }} className="mt-0.5">✓</span>
+                    <span style={{ color: g.color }} className="mt-0.5">âœ“</span>
                     <span>{b}</span>
                   </li>
                 ))}
@@ -164,9 +164,9 @@ function CoreGoals() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VideoUpload — R2 upload → Vault + Arena Feed (IDENTIFY → MARKET)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// VideoUpload â€” R2 upload â†’ Vault + Arena Feed (IDENTIFY â†’ MARKET)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function VideoUpload() {
   const user  = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -186,7 +186,7 @@ function VideoUpload() {
     try {
       const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-      // Step 1 — get presigned R2 URL
+      // Step 1 â€” get presigned R2 URL
       const presignRes = await fetch("/api/upload/presigned", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,7 +201,7 @@ function VideoUpload() {
       const { uploadUrl, key } = presignData;
       const publicUrl = presignData.publicUrl ?? "";
 
-      // Step 2 — PUT file directly to R2
+      // Step 2 â€” PUT file directly to R2
       if (uploadUrl) {
         const uploadRes = await fetch(uploadUrl, {
           method:  "PUT",
@@ -211,7 +211,7 @@ function VideoUpload() {
         if (!uploadRes.ok) throw new Error("Upload failed");
       }
 
-      // Step 3 — if logged in, save metadata to player vault
+      // Step 3 â€” if logged in, save metadata to player vault
       let vaultSaved = false;
       if (user && token && key) {
         const vaultRes = await fetch(`${API}/player/vault/metadata`, {
@@ -230,7 +230,7 @@ function VideoUpload() {
         vaultSaved = vaultRes.ok;
         setSavedToVault(vaultSaved);
 
-        // ✅ NEW: Step 4 — Auto-post to Arena Feed (MARKET pillar)
+        // âœ… NEW: Step 4 â€” Auto-post to Arena Feed (MARKET pillar)
         if (vaultSaved) {
           const arenaPost = await fetch(`${API}/arena/posts`, {
             method: "POST",
@@ -239,7 +239,7 @@ function VideoUpload() {
               "Authorization": `Bearer ${token}`,
             },
             body: JSON.stringify({
-              body: `🎥 New training video: ${label || file.name}`,
+              body: `ðŸŽ¥ New training video: ${label || file.name}`,
               video_url: publicUrl,
               post_type: "achievement",
               metadata: {
@@ -270,7 +270,7 @@ function VideoUpload() {
           Upload your training footage
         </div>
         <h2 className="text-2xl font-black mb-3" style={{ color: GRS_GREEN }}>
-          Share your video — get seen
+          Share your video â€” get seen
         </h2>
         <p className="text-sm text-gray-500 mb-8 max-w-md mx-auto">
           Upload a training clip or match highlight. It goes straight to your
@@ -284,7 +284,7 @@ function VideoUpload() {
         >
           {file ? (
             <div>
-              <div className="text-2xl mb-2">🎥</div>
+              <div className="text-2xl mb-2">ðŸŽ¥</div>
               <div className="text-sm font-medium text-gray-900">{file.name}</div>
               <div className="text-xs text-gray-400 mt-1">
                 {(file.size / 1024 / 1024).toFixed(1)} MB
@@ -292,9 +292,9 @@ function VideoUpload() {
             </div>
           ) : (
             <div>
-              <div className="text-3xl mb-3 text-gray-300">📤</div>
+              <div className="text-3xl mb-3 text-gray-300">ðŸ“¤</div>
               <div className="text-sm font-medium text-gray-600">Tap to choose a video</div>
-              <div className="text-xs text-gray-400 mt-1">MP4, MOV · max 100MB</div>
+              <div className="text-xs text-gray-400 mt-1">MP4, MOV Â· max 100MB</div>
             </div>
           )}
           <input
@@ -348,7 +348,7 @@ function VideoUpload() {
             {savedToVault && postedToArena ? (
               <>
                 <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
-                  ✓ Saved to vault & posted to Arena!
+                  âœ“ Saved to vault & posted to Arena!
                 </div>
                 <p className="text-xs text-gray-500">
                   Your video is now visible to scouts on the Arena feed.
@@ -359,37 +359,37 @@ function VideoUpload() {
                     className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
                     style={{ background: GRS_GREEN }}
                   >
-                    View in vault →
+                    View in vault â†’
                   </Link>
                   <Link
                     href="/arena"
                     className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
                     style={{ background: "#c8962a" }}
                   >
-                    View on Arena →
+                    View on Arena â†’
                   </Link>
                 </div>
               </>
             ) : savedToVault ? (
               <>
                 <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
-                  ✓ Saved to your vault
+                  âœ“ Saved to your vault
                 </div>
                 <p className="text-xs text-gray-500">
-                  (Arena post skipped — you can post manually from the Arena page)
+                  (Arena post skipped â€” you can post manually from the Arena page)
                 </p>
                 <Link
                   href="/player/vault"
                   className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
                   style={{ background: GRS_GREEN }}
                 >
-                  View in vault →
+                  View in vault â†’
                 </Link>
               </>
             ) : (
               <>
                 <div className="text-sm font-bold" style={{ color: GRS_GREEN }}>
-                  ✓ Video uploaded
+                  âœ“ Video uploaded
                 </div>
                 <p className="text-xs text-gray-500">
                   Create an account to save this to your vault and share with scouts.
@@ -399,7 +399,7 @@ function VideoUpload() {
                   className="inline-block text-sm font-medium px-5 py-2 rounded-full text-white"
                   style={{ background: GRS_GREEN }}
                 >
-                  Create free account →
+                  Create free account â†’
                 </Link>
               </>
             )}
@@ -416,41 +416,10 @@ function VideoUpload() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// WorldCupBanner — links to /worldcup
-// ─────────────────────────────────────────────────────────────────────────────
-function WorldCupBanner() {
-  return (
-    <section className="py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <Link
-          href="/world-cup"
-          className="block rounded-2xl overflow-hidden p-6 text-center transition-opacity hover:opacity-90"
-          style={{
-            background: "linear-gradient(135deg, #0a1a0f 0%, #1a3a20 60%, #f0b429 100%)",
-          }}
-        >
-          <div
-            className="text-xs font-medium tracking-widest uppercase mb-1"
-            style={{ color: "rgba(240,180,41,0.8)" }}
-          >
-            GRS World Cup
-          </div>
-          <div className="text-xl font-black text-white">
-            🏆 Join as a Fan — Follow Every Match →
-          </div>
-          <div className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Vote for Player of the Tournament · Live WhatsApp updates · Discover local talent
-          </div>
-        </Link>
-      </div>
-    </section>
-  );
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Main page component
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function GrassrootsSportsLanding() {
   const [activityWire,   setActivityWire]   = useState<string[]>([]);
   const [wireIndex,      setWireIndex]      = useState(0);
@@ -503,10 +472,10 @@ export default function GrassrootsSportsLanding() {
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c3d22] selection:bg-[#f0b429]/30 antialiased font-sans">
 
-      {/* ── Navigation ── */}
+      {/* â”€â”€ Navigation â”€â”€ */}
       <PublicNavbar />
 
-      {/* ── Live activity wire ── */}
+      {/* â”€â”€ Live activity wire â”€â”€ */}
       {activityWire.length > 0 && (
         <div className="bg-[#fffbeb] border-b border-amber-200 py-2.5 px-4 overflow-hidden">
           <div className="max-w-6xl mx-auto flex items-center gap-2">
@@ -520,7 +489,7 @@ export default function GrassrootsSportsLanding() {
         </div>
       )}
 
-      {/* ── Hero ── */}
+      {/* â”€â”€ Hero â”€â”€ */}
       <header className="relative overflow-hidden bg-gradient-to-br from-[#e2f0d9] via-[#f0f9e8] to-[#f4f2ee] border-b border-[#1c3d22]/10 py-16 lg:py-20 px-6 text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 bg-white/80 border border-[#1c3d22]/10 rounded-full px-4 py-1.5 mb-2 shadow-3xs">
@@ -536,7 +505,7 @@ export default function GrassrootsSportsLanding() {
           <p className="text-sm sm:text-base font-semibold text-zinc-600 max-w-2xl mx-auto leading-relaxed">
             AI-powered athletic scoring, personalised training curricula, and a
             digital Talent Passport built to get African grassroots athletes
-            discovered by scouts — with nothing but a smartphone.
+            discovered by scouts â€” with nothing but a smartphone.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
             <Link
@@ -555,15 +524,15 @@ export default function GrassrootsSportsLanding() {
         </div>
       </header>
 
-      {/* ── Core goals ── */}
+      {/* â”€â”€ Core goals â”€â”€ */}
       <CoreGoals />
 
-      {/* ── Video upload ── */}
+      {/* â”€â”€ Video upload â”€â”€ */}
       <VideoUpload />
 
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-12">
 
-        {/* ── Platform quick-links ── */}
+        {/* â”€â”€ Platform quick-links â”€â”€ */}
         <section className="space-y-2">
           <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
             Platform quick-links
@@ -582,7 +551,7 @@ export default function GrassrootsSportsLanding() {
                     Biometric Testing
                   </h4>
                   <p className="text-[11px] text-gray-400 font-semibold truncate">
-                    6 tests · AQ score · position profile
+                    6 tests Â· AQ score Â· position profile
                   </p>
                 </div>
               </div>
@@ -602,7 +571,7 @@ export default function GrassrootsSportsLanding() {
                     Drill Library
                   </h4>
                   <p className="text-[11px] text-gray-400 font-semibold truncate">
-                    125 drills · unlocks as you improve
+                    125 drills Â· unlocks as you improve
                   </p>
                 </div>
               </div>
@@ -642,7 +611,7 @@ export default function GrassrootsSportsLanding() {
           </div>
         </section>
 
-        {/* ── Sport grid ── */}
+        {/* â”€â”€ Sport grid â”€â”€ */}
         <section className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 space-y-6 shadow-3xs">
           <div className="text-center max-w-md mx-auto space-y-1">
             <Globe size={28} className="mx-auto text-[#1c3d22]" />
@@ -667,7 +636,7 @@ export default function GrassrootsSportsLanding() {
           </div>
         </section>
 
-        {/* ── Leaderboard ── */}
+        {/* â”€â”€ Leaderboard â”€â”€ */}
         <section className="space-y-4">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <div>
@@ -713,7 +682,7 @@ export default function GrassrootsSportsLanding() {
                       </h3>
                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase mt-0.5">
                         <span>{athlete.sport}</span>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <MapPin size={10} className="text-gray-300" />
                         <span>{athlete.province}</span>
                       </div>
@@ -735,7 +704,7 @@ export default function GrassrootsSportsLanding() {
 
       </div>
 
-      {/* ── AI Drill Analysis section ── */}
+      {/* â”€â”€ AI Drill Analysis section â”€â”€ */}
       <section className="bg-white border-t border-gray-100 py-14 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
@@ -743,29 +712,29 @@ export default function GrassrootsSportsLanding() {
               className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 inline-block"
               style={{ background: "#f0fdf4", color: "#1c3d22" }}
             >
-              Pro Feature · 1 Free Trial
+              Pro Feature Â· 1 Free Trial
             </span>
             <h2 className="text-2xl font-black text-gray-900 mt-2 mb-2">
-              AI Drill Analysis — All 10 Sports
+              AI Drill Analysis â€” All 10 Sports
             </h2>
             <p className="text-sm text-gray-500 max-w-xl mx-auto">
               Upload a short drill video. Gemini AI watches the full clip and gives you
-              professional coaching feedback in seconds — technique, posture, timing.
+              professional coaching feedback in seconds â€” technique, posture, timing.
             </p>
           </div>
 
           <div className="grid grid-cols-5 gap-3 mb-8">
             {[
-              { emoji: "⚽", label: "Football"   },
-              { emoji: "🏉", label: "Rugby"      },
-              { emoji: "🏃", label: "Athletics"  },
-              { emoji: "🏐", label: "Netball"    },
-              { emoji: "🏀", label: "Basketball" },
-              { emoji: "🏏", label: "Cricket"    },
-              { emoji: "🏊", label: "Swimming"   },
-              { emoji: "🎾", label: "Tennis"     },
-              { emoji: "🏐", label: "Volleyball" },
-              { emoji: "🏑", label: "Hockey"     },
+              { emoji: "âš½", label: "Football"   },
+              { emoji: "ðŸ‰", label: "Rugby"      },
+              { emoji: "ðŸƒ", label: "Athletics"  },
+              { emoji: "ðŸ", label: "Netball"    },
+              { emoji: "ðŸ€", label: "Basketball" },
+              { emoji: "ðŸ", label: "Cricket"    },
+              { emoji: "ðŸŠ", label: "Swimming"   },
+              { emoji: "ðŸŽ¾", label: "Tennis"     },
+              { emoji: "ðŸ", label: "Volleyball" },
+              { emoji: "ðŸ‘", label: "Hockey"     },
             ].map((s) => (
               <a
                 key={s.label}
@@ -783,7 +752,7 @@ export default function GrassrootsSportsLanding() {
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
               { step: "1", label: "Select Sport & Drill", desc: "Pick from 10 sports and your specific drill type" },
-              { step: "2", label: "Upload Short Video",   desc: "Film yourself doing the drill — under 60 seconds" },
+              { step: "2", label: "Upload Short Video",   desc: "Film yourself doing the drill â€” under 60 seconds" },
               { step: "3", label: "Get AI Coaching",      desc: "Gemini watches the full clip and coaches you instantly" },
             ].map((item) => (
               <div key={item.step} className="text-center p-4 rounded-2xl bg-gray-50">
@@ -805,23 +774,21 @@ export default function GrassrootsSportsLanding() {
               className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90"
               style={{ background: "#1c3d22" }}
             >
-              ⚡ Try AI Drill Analysis Free
+              âš¡ Try AI Drill Analysis Free
             </a>
             <p className="text-[11px] text-gray-400 mt-2">
-              1 free analysis included · No credit card required
+              1 free analysis included Â· No credit card required
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── World Cup banner ── */}
-      <WorldCupBanner />
 
-      {/* ── Footer ── */}
+      {/* â”€â”€ Footer â”€â”€ */}
       <footer className="border-t border-gray-200 bg-white py-8 text-center px-4">
         <Award size={32} className="mx-auto text-[#1c3d22] mb-2" />
         <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest">
-          Grassroots Sports Development Network © 2026 · Identify, Nurture, and Market Talent
+          Grassroots Sports Development Network Â© 2026 Â· Identify, Nurture, and Market Talent
         </p>
         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1">
           Zimbabwe&apos;s First AI-Powered Multi-Sport Talent Discovery Platform

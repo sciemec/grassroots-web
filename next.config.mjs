@@ -1,85 +1,72 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Vercel build cache occasionally serves stale source — ignore TS errors to unblock deploys
     ignoreBuildErrors: true,
   },
-  transpilePackages: ["firebase"],
 
-  // Explicitly declare turbopack config so Next.js 16 doesn't error when
-  // Turbopack is the default and a webpack config is also present.
-  // The --webpack flag in build scripts takes precedence, but this acts
-  // as a safety net if Vercel invokes `next build` directly.
+  images: {
+    unoptimized: true,
+  },
+
   turbopack: {},
 
-  webpack: (config, { dev }) => {
-    // Force Webpack to drop path-guessing symlink sweeps to avoid Windows readlink EISDIR crashes
+  webpack: (config, { dev, isServer }) => {
     config.resolve.symlinks = false;
-    
-    // Explicitly inject path context survival overrides into the root configuration schema
+
     if (config.infrastructureLogging) {
       config.infrastructureLogging.appendOnly = true;
     }
 
-    // Force webpack to drop corrupt file caches on Windows environments during production builds
     if (!dev) {
       config.cache = false;
     }
-    
-    // @sentry/node bundles auto-instrumentation for @google/genai even when
-    // the package is not installed. Resolve it to false so webpack treats it
-    // as an empty module and the build does not fail.
+
     config.resolve.alias['@google/genai'] = false;
     config.resolve.alias['@anthropic-ai/sdk'] = false;
-    
-    // Vercel build cache keeps restoring a stale coach/page.jsx that has
-    // invalid TypeScript type-import syntax (invalid in .jsx files).
-    // The file no longer exists in git (renamed to page.tsx) but Vercel
-    // persists it across builds. Map its absolute path to false so webpack
-    // treats it as an empty module and never tries to compile it.
+
     config.resolve.alias[`${process.cwd()}/src/app/coach/page.jsx`] = false;
 
-    // Vercel build cache may restore a stale worldcup/page.tsx that still
-    // imports WhatWouldYouDo from @/components/tactical-iq/ (wrong path).
-    // The component actually lives in @/lib/tactical-iq/. This alias redirects
-    // the stale path to the correct file so the build never fails on it.
     config.resolve.alias[`${process.cwd()}/src/components/tactical-iq/WhatWouldYouDo`] =
       `${process.cwd()}/src/lib/tactical-iq/WhatWouldYouDo.tsx`;
 
-    // Vercel build cache may restore the old world-cup directory (before it was
-    // renamed back to worldcup in commit f7980ed). These aliases ensure webpack
-    // resolves any stale cached files to the correct current paths rather than
-    // failing the build — which would cause /worldcup to 404 in production.
-    config.resolve.alias[`${process.cwd()}/src/app/world-cup/page`] =
-      `${process.cwd()}/src/app/worldcup/page.tsx`;
-    config.resolve.alias[`${process.cwd()}/src/app/world-cup/live`] =
-      `${process.cwd()}/src/app/worldcup/live`;
+    // Alias browser-only / heavy packages out of the server bundle.
+    // This keeps the Cloudflare Workers handler.mjs within the 10 MB limit.
+    if (isServer) {
+      // Packages that are simply unused on the server — stub with empty module.
+      const emptyStubs = [
+        'jspdf',
+        'jspdf-autotable',
+        'html2canvas',
+        'recharts',
+        'hls.js',
+        '@ffmpeg/ffmpeg',
+        '@ffmpeg/util',
+        '@sentry/nextjs',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/messaging',
+        'firebase/firestore',
+        'firebase/analytics',
+        'firebase/storage',
+        'firebase/compat/app',
+        'firebase/compat/auth',
+      ];
+      for (const pkg of emptyStubs) {
+        config.resolve.alias[pkg] = false;
+      }
+
+      // Dexie is used with class inheritance (class GrassrootsDB extends Dexie).
+      // Stubbing with `false` gives an empty object which breaks class extension.
+      // Use a real stub class that satisfies the inheritance without IndexedDB.
+      config.resolve.alias['dexie'] = `${process.cwd()}/src/stubs/dexie.js`;
+    }
 
     return config;
-  },
-
-  /**
-   * FFmpeg.wasm requires SharedArrayBuffer which requires:
-   * Cross-Origin-Opener-Policy: same-origin
-   * Cross-Origin-Embedder-Policy: require-corp
-   *
-   * These headers are applied to all routes. Without them the FFmpeg WASM
-   * module will throw "SharedArrayBuffer is not defined" at runtime.
-   *
-   * NOTE: These headers also affect HLS.js and any third-party iframes.
-   * If embedding external content breaks, scope the headers to only
-   * the /video-studio and /streaming/broadcast paths.
-   */
-  async redirects() {
-    return [
-      { source: "/world-cup", destination: "/worldcup", permanent: true },
-    ];
   },
 
   async headers() {
     return [
       {
-        // Security headers — applied to every page
         source: "/(.*)",
         headers: [
           { key: "X-Content-Type-Options",  value: "nosniff" },
@@ -90,8 +77,6 @@ const nextConfig = {
         ],
       },
       {
-        // COOP + COEP only where SharedArrayBuffer (FFmpeg WASM) is needed.
-        // Applying these to all pages breaks login, registration, and hub pages.
         source: "/(video-studio|streaming/broadcast)(.*)",
         headers: [
           { key: "Cross-Origin-Opener-Policy",   value: "same-origin" },
@@ -102,5 +87,4 @@ const nextConfig = {
   },
 };
 
-// ✅ REMOVED SENTRY - Export config directly
 export default nextConfig;

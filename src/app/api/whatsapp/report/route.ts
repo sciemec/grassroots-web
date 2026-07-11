@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/whatsapp/report
@@ -6,8 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
  * Called after a match is logged in the coach match dashboard.
  *
  * Required env vars:
- *   WHATSAPP_PHONE_NUMBER_ID  — from Meta Developer Console
- *   WHATSAPP_ACCESS_TOKEN     — System User token or Temporary Token
+ *   WHATSAPP_PHONE_NUMBER_ID  â€” from Meta Developer Console
+ *   WHATSAPP_ACCESS_TOKEN     â€” System User token or Temporary Token
  *
  * Body: { to, home_team, away_team, home_score, away_score, summary?, match_url? }
  */
@@ -27,7 +27,7 @@ interface ReportBody {
 function sanitize(input: string, maxLen = 200): string {
   return String(input)
     .replace(/<[^>]*>/g, "")
-    .replace(/[^\w\s.,!?'"\\-:@#()\\/]/g, "")
+    .replace(/[^\w\s.,!?'"\-:@#()\/]/g, "")
     .trim()
     .slice(0, maxLen);
 }
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     .join("\n")
     .replace(/\n{3,}/g, "\n\n");
 
-  // Meta takes bare E.164 digits — strip the leading +
+  // Meta takes bare E.164 digits â€” strip the leading +
   const recipient = cleanTo.replace(/^\+/, "");
 
   try {
@@ -130,3 +130,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
