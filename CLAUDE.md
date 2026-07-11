@@ -9822,3 +9822,131 @@ src/app/coach/drill-analysis/page.tsx       — FIXED: replaced broken Python XH
 | Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
 | `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 11 July 2026
+
+### Theme — WhatsApp Full Migration: Twilio → Meta Cloud API (complete)
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `src/lib/whatsapp-service.ts` — Migrated to Meta Cloud API ✅
+
+**Commits:** `2811b82`
+
+**Removed:** `const twilio = require('twilio')`, `accountSid`, `authToken`, `fromNumber`, `const client = twilio(...)`
+
+**Added:**
+- `GRAPH_URL = 'https://graph.facebook.com/v19.0'`
+- `getCredentials()` — reads `WHATSAPP_PHONE_NUMBER_ID` + `WHATSAPP_ACCESS_TOKEN` from env; returns null + logs error if missing
+- `normaliseRecipient(to)` — strips `whatsapp:` prefix and leading `+`; Meta takes bare E.164 digits
+
+**`sendWhatsAppMessage(to, body)`:** `fetch` POST to Meta API with JSON `{ messaging_product, to, type: 'text', text: { body } }`
+
+**`sendWhatsAppVideo(to, videoUrl, caption?)`:** `fetch` POST to Meta API with `{ type: 'video', video: { link, caption } }`
+
+**Preserved unchanged:** `Subscriber` interface, in-memory `subscribers` Map, `subscribeUser`, `sendMatchHighlight`, `broadcastToAll`, `broadcastToSubscribers`
+
+---
+
+#### 2. `src/app/api/whatsapp/report/route.ts` — Migrated to Meta Cloud API ✅
+
+**Removed:** `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` env var reads + 503 check; `const toNumber`; `URLSearchParams`; Twilio REST URL; Basic Auth header; `application/x-www-form-urlencoded`
+
+**Added:**
+- `GRAPH_URL = 'https://graph.facebook.com/v19.0'`
+- 503 check for `WHATSAPP_PHONE_NUMBER_ID` + `WHATSAPP_ACCESS_TOKEN`
+- `recipient = cleanTo.replace(/^\+/, '')` — strip `+` for Meta
+- `fetch` POST to `${GRAPH_URL}/${phoneNumberId}/messages` with Bearer token + JSON body
+- Response: `{ ok: true, message_id: data.messages?.[0]?.id }` (was `{ ok: true, sid: data.sid }`)
+
+**Preserved unchanged:** `ReportBody` interface, `sanitize()`, `isValidPhone()`, all validation, `messageBody` construction
+
+---
+
+#### 3. `twilio` npm package — REMOVED ✅
+
+**Commit:** `1f14523`
+
+```
+npm uninstall twilio  → removed 13 packages
+```
+
+No file imports or calls the Twilio SDK. Remaining `TWILIO_*` references in the codebase are comments only (no code): `src/lib/phone-normalize.ts`, `src/app/coach/live-match/page.tsx`. Both harmless.
+
+---
+
+### WHAT STILL NEEDS DOING — bhora-ai (Laravel)
+
+Next.js is 100% on Meta Cloud API. Two Laravel files still use Twilio for the `AnalyseWhatsappVideoJob` reply:
+
+**`app/Jobs/AnalyseWhatsappVideoJob.php`** — replace the Twilio send block with:
+```php
+private function sendWhatsAppReply(string $phone, string $message): void
+{
+    Http::withHeaders([
+        'Authorization' => 'Bearer ' . config('services.whatsapp.access_token'),
+        'Content-Type'  => 'application/json',
+    ])->post(
+        'https://graph.facebook.com/v19.0/' . config('services.whatsapp.phone_number_id') . '/messages',
+        [
+            'messaging_product' => 'whatsapp',
+            'to'   => ltrim($phone, '+'),
+            'type' => 'text',
+            'text' => ['body' => $message],
+        ]
+    );
+}
+```
+
+**`config/services.php`** — replace `twilio` block with:
+```php
+'whatsapp' => [
+    'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+    'access_token'    => env('WHATSAPP_ACCESS_TOKEN'),
+],
+```
+
+---
+
+### WHATSAPP INTEGRATION STATUS (11 July 2026)
+
+| File | Provider | Status |
+|---|---|---|
+| `src/app/api/whatsapp/route.ts` | Meta Cloud API | ✅ DONE (prior session `4f5514c`) |
+| `src/lib/whatsapp-service.ts` | Meta Cloud API | ✅ DONE (`2811b82`) |
+| `src/app/api/whatsapp/report/route.ts` | Meta Cloud API | ✅ DONE (`2811b82`) |
+| `app/Jobs/AnalyseWhatsappVideoJob.php` (bhora-ai) | Twilio | ❌ NOT YET UPDATED |
+| `config/services.php` (bhora-ai) | Twilio config | ❌ NOT YET UPDATED |
+| `twilio` npm package | — | ✅ REMOVED (`1f14523`) |
+
+---
+
+### ENVIRONMENT VARIABLES (11 July 2026)
+
+**Meta Cloud API — CONFIRMED SET:**
+```
+WHATSAPP_PHONE_NUMBER_ID  — Vercel ✅  Render ✅
+WHATSAPP_ACCESS_TOKEN     — Vercel ✅  Render ✅
+WHATSAPP_VERIFY_TOKEN     — Vercel ✅
+```
+
+**Twilio vars — no longer needed on Vercel (Next.js). Still needed on Render until bhora-ai is updated.**
+
+---
+
+### WHAT STILL NEEDS DOING (11 July 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP client with Meta API (copy-paste above) |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block (copy-paste above) |
+| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
