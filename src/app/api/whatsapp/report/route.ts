@@ -2,16 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/whatsapp/report
- * Sends a match report via WhatsApp Business API (Twilio).
+ * Sends a match report via WhatsApp Business API (Meta Cloud API).
  * Called after a match is logged in the coach match dashboard.
  *
  * Required env vars:
- *   TWILIO_ACCOUNT_SID
- *   TWILIO_AUTH_TOKEN
- *   TWILIO_WHATSAPP_FROM  — e.g. whatsapp:+14155238886
+ *   WHATSAPP_PHONE_NUMBER_ID  — from Meta Developer Console
+ *   WHATSAPP_ACCESS_TOKEN     — System User token or Temporary Token
  *
  * Body: { to, home_team, away_team, home_score, away_score, summary?, match_url? }
  */
+
+const GRAPH_URL = "https://graph.facebook.com/v19.0";
 
 interface ReportBody {
   to?: string;
@@ -26,7 +27,7 @@ interface ReportBody {
 function sanitize(input: string, maxLen = 200): string {
   return String(input)
     .replace(/<[^>]*>/g, "")
-    .replace(/[^\w\s.,!?'"\-:@#()\/]/g, "")
+    .replace(/[^\w\s.,!?'"\\-:@#()\\/]/g, "")
     .trim()
     .slice(0, maxLen);
 }
@@ -36,13 +37,12 @@ function isValidPhone(phone: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_WHATSAPP_FROM;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken   = process.env.WHATSAPP_ACCESS_TOKEN;
 
-  if (!accountSid || !authToken || !fromNumber) {
+  if (!phoneNumberId || !accessToken) {
     return NextResponse.json(
-      { error: "WhatsApp service not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_FROM." },
+      { error: "WhatsApp service not configured. Set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN." },
       { status: 503 }
     );
   }
@@ -71,64 +71,62 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const safeHome = sanitize(String(home_team));
-  const safeAway = sanitize(String(away_team));
+  const safeHome      = sanitize(String(home_team));
+  const safeAway      = sanitize(String(away_team));
   const safeHomeScore = String(home_score).replace(/\D/g, "").slice(0, 3);
   const safeAwayScore = String(away_score).replace(/\D/g, "").slice(0, 3);
-  const safeSummary = summary ? sanitize(String(summary), 200) : "";
-  const safeUrl = match_url
+  const safeSummary   = summary ? sanitize(String(summary), 200) : "";
+  const safeUrl       = match_url
     ? sanitize(String(match_url), 200)
     : "https://grassrootssports.live";
 
   const messageBody = [
-    `⚽ MATCH REPORT — ${safeHome} vs ${safeAway}`,
+    `\u26BD MATCH REPORT \u2014 ${safeHome} vs ${safeAway}`,
     `Final Score: ${safeHomeScore} - ${safeAwayScore}`,
     "",
     safeSummary || "",
     "",
-    `📊 Full analysis: ${safeUrl}`,
+    `\uD83D\uDCCA Full analysis: ${safeUrl}`,
     "",
-    "Powered by Grassroots Sport 🇿🇼",
+    "Powered by Grassroots Sport \uD83C\uDDF5\uD83C\uDDFC",
     "grassrootssports.live",
   ]
     .filter((line, i) => !(i === 3 && !safeSummary))
     .join("\n")
     .replace(/\n{3,}/g, "\n\n");
 
-  const toNumber = `whatsapp:${cleanTo}`;
-
-  const formData = new URLSearchParams();
-  formData.append("From", fromNumber);
-  formData.append("To", toNumber);
-  formData.append("Body", messageBody);
+  // Meta takes bare E.164 digits — strip the leading +
+  const recipient = cleanTo.replace(/^\+/, "");
 
   try {
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-
-    const res = await fetch(twilioUrl, {
+    const res = await fetch(`${GRAPH_URL}/${phoneNumberId}/messages`, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-      body: formData.toString(),
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to:   recipient,
+        type: "text",
+        text: { body: messageBody },
+      }),
     });
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error("Twilio error", res.status, errBody);
+      console.error("WhatsApp Meta API error", res.status, errBody);
       return NextResponse.json(
-        { error: `WhatsApp send failed (${res.status}). Check Twilio credentials.` },
+        { error: `WhatsApp send failed (${res.status}). Check Meta credentials.` },
         { status: res.status }
       );
     }
 
-    const data = await res.json();
-    return NextResponse.json({ ok: true, sid: data.sid });
+    const data = await res.json() as { messages?: { id: string }[] };
+    return NextResponse.json({ ok: true, message_id: data.messages?.[0]?.id });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "WhatsApp send failed";
-    console.error("Twilio fetch exception", msg);
+    console.error("WhatsApp fetch exception", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
