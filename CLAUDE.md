@@ -2,6 +2,25 @@
 
 ---
 
+## 🚫 HOSTING — RENDER ONLY (NOT VERCEL) — PERMANENT
+
+This project is hosted on **Render**, NOT Vercel. The web app migrated from Vercel to
+Render on 11 July 2026 because Vercel billing was suspended.
+
+### RULES:
+- **Do NOT run any `vercel` CLI commands** — `vercel env ls`, `vercel deploy`, etc.
+  They check a platform we no longer use and will return stale or wrong information.
+- **Environment variables live in the Render dashboard** (grassroots-web service →
+  Environment tab). They are NOT accessible via Vercel CLI or the Vercel dashboard.
+- **Deployment** is triggered by pushing to GitHub. Render auto-deploys from the
+  master branch — pushing to GitHub IS the deployment (same as before, just Render
+  instead of Vercel).
+- **To check env vars:** Log into render.com → grassroots-web service → Environment tab.
+- **WhatsApp webhook verify_token mismatch** was fixed manually in the Render dashboard
+  on 11 July 2026. Webhook is confirmed working (Render logs: "[WhatsApp] Webhook verified").
+
+---
+
 ## 🛑 FOLLOW NIGEL'S EXACT INSTRUCTIONS — MANDATORY (PERMANENT)
 
 This rule exists because Claude made unsanctioned design decisions on the Arena feed page in May 2026,
@@ -9129,29 +9148,7 @@ Stripe $4.99 checkout modal.
 
 ---
 
-#### Stripe Checkout — `src/app/api/payments/checkout/route.ts` (UPDATED)
 
-Added `blueprint_single` branch (one-time payment, not subscription):
-- Accepts `planId`, `price`, `successUrl`, `cancelUrl`, `metadata` from body
-- Calls `GET /auth/user` with bearer token → resolves `user_id` server-side
-- Returns 401 if user not authenticated
-- Creates Stripe Checkout session with `mode: "payment"` (not subscription)
-- Injects `user_id` into Stripe metadata so webhook can record the purchase
-- Existing subscription flow (`body.plan`) unchanged
-
----
-
-#### Stripe Webhook — `src/app/api/payments/webhook/route.ts` (UPDATED)
-
-Added blueprint purchase recording before the subscription handler:
-```typescript
-if (event.type === "checkout.session.completed") {
-  const session = event.data.object as Stripe.Checkout.Session;
-  if (session.metadata?.type === "coaching_blueprint") {
-    // POST to /world-cup/blueprints/confirm
-    // then return early — never reaches subscription handler
-  }
-}
 ```
 - Calls `POST ${apiUrl}/world-cup/blueprints/confirm` with `{ user_id, match_id, stripe_payment_intent, amount_cents }`
 - Returns `{ received: true }` immediately — blueprint events never reach the subscription webhook
@@ -9224,7 +9221,7 @@ Empty commit to bhora-ai master to force `start.sh` → `php artisan migrate --f
 | bhora-ai `config/services.php` | NOT YET UPDATED | Replace `twilio` block with `whatsapp` block |
 | Chemistry migrations (7 May) | NOT YET RUN | 5 chemistry tables still pending |
 | `GEMINI_API_KEY` | ✅ SET in Vercel (confirmed 20 June 2026) | Also needed on Render for WhatsApp pipeline |
-| `GROQ_API_KEY` | NOT set in Vercel | THUTO AI chat broken |
+
 
 ---
 
