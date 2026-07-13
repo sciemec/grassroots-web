@@ -12,7 +12,10 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "postinstall": "patch-package",
-    "deploy": "git add -u && git add src public && git commit -m \"deploy: update assets and features\" && git push"
+    "deploy": "git add -u && git add src public && git commit -m \"deploy: update assets and features\" && git push",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

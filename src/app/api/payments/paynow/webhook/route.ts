@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subscription/paynow-confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reference, paynow_ref: paynowRef, amount, status }),
+        body: JSON.stringify({ reference, paynow_ref: paynowRef, amount, status, hash: params.get("hash") ?? "" }),
       });
     } catch {
       // Log to monitoring — do not fail the webhook response
