@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Brain, Save, TrendingUp, Target, Dumbbell } from "lucide-react";
+import { ArrowLeft, Loader2, Brain, Save, TrendingUp, Target, Dumbbell, Video, Upload } from "lucide-react";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SPORT_MAP, SPORT_STATS, getSportAnalysisPrompt, SportKey } from "@/config/sports";
@@ -277,6 +277,156 @@ function SportDiagram({ sportKey, roleKey }: { sportKey: SportKey; roleKey: stri
     <div className="rounded-xl border bg-card p-5">
       <p className="mb-3 text-sm font-semibold">{label}</p>
       {renderDiagram()}
+    </div>
+  );
+}
+
+function VideoTalentSection({
+  sportKey,
+  roleKey,
+  accentColor,
+}: {
+  sportKey: SportKey;
+  roleKey: string;
+  accentColor: string;
+}) {
+  const token = useAuthStore((s) => s.token);
+  const cfg = SPORT_MAP[sportKey];
+  const drill = cfg?.drills?.[0]?.title ?? sportKey;
+
+  const [file, setFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [stage, setStage] = useState<"idle" | "uploading" | "analysing" | "done" | "error">("idle");
+  const [progress, setProgress] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [savedToShowcase, setSavedToShowcase] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 200 * 1024 * 1024) { setErrorMsg("Video must be under 200MB."); return; }
+    setFile(f);
+    setVideoUrl(URL.createObjectURL(f));
+    setFeedback(""); setSavedToShowcase(false); setErrorMsg(""); setStage("idle");
+  };
+
+  const analyse = async () => {
+    if (!file) return;
+    setStage("uploading"); setProgress(0); setErrorMsg("");
+    try {
+      // Step 1 — get Gemini resumable upload session
+      const initRes = await fetch("/api/match-eye/upload", {
+        method: "POST",
+        headers: {
+          "content-type": file.type || "video/mp4",
+          "x-content-length": String(file.size),
+        },
+      });
+      if (!initRes.ok) throw new Error("Failed to start upload session");
+      const { uploadUrl, mimeType } = await initRes.json();
+
+      // Step 2 — XHR PUT directly to Google (real progress, no body size limit)
+      const fileUri = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", mimeType);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 80));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText)?.file?.uri ?? ""); }
+            catch { resolve(xhr.getResponseHeader("Location") ?? ""); }
+          } else { reject(new Error(`Upload failed: ${xhr.status}`)); }
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(file);
+      });
+
+      setProgress(85); setStage("analysing");
+
+      // Step 3 — Gemini analysis
+      const res = await fetch("/api/analyse-from-uri", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileUri, fileName: file.name, mimeType, sport: sportKey, drill, position: roleKey, token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Analysis failed");
+
+      setFeedback(data.feedback ?? ""); setSavedToShowcase(true); setProgress(100); setStage("done");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Analysis failed");
+      setStage("error");
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-xl border bg-card p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <Video className="h-4 w-4" style={{ color: accentColor }} />
+        <h2 className="text-sm font-semibold">Video Talent Analysis</h2>
+        <span className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ backgroundColor: accentColor }}>
+          AI
+        </span>
+      </div>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Upload a short clip of your {cfg?.label.toLowerCase()} skills. Gemini AI will analyse your technique and save the result to your scout showcase.
+      </p>
+
+      <label className="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 transition-colors hover:border-primary/50">
+        <input type="file" accept="video/*" className="hidden" onChange={onFileChange} />
+        <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+        <span className="text-xs font-medium text-muted-foreground">
+          {file ? file.name : "Tap to choose a video (max 200MB)"}
+        </span>
+      </label>
+
+      {videoUrl && (
+        <video src={videoUrl} className="mt-4 w-full rounded-xl" controls playsInline style={{ maxHeight: 240 }} />
+      )}
+
+      {(stage === "uploading" || stage === "analysing") && (
+        <div className="mt-4">
+          <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+            <span>{stage === "uploading" ? "Uploading…" : "AI analysing…"}</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, backgroundColor: accentColor }} />
+          </div>
+        </div>
+      )}
+
+      {file && stage !== "uploading" && stage !== "analysing" && (
+        <button
+          onClick={analyse}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition-colors"
+          style={{ backgroundColor: accentColor }}
+        >
+          <Brain className="h-4 w-4" />
+          Analyse with AI
+        </button>
+      )}
+
+      {errorMsg && <p className="mt-3 text-xs text-destructive">{errorMsg}</p>}
+
+      {stage === "done" && feedback && (
+        <div className="mt-4 space-y-3">
+          <div
+            className="rounded-xl p-4 text-sm leading-relaxed"
+            style={{ backgroundColor: `${accentColor}15`, borderLeft: `3px solid ${accentColor}` }}
+          >
+            {feedback}
+          </div>
+          {savedToShowcase && (
+            <p className="text-center text-xs text-muted-foreground">
+              ✓ Saved to your showcase — scouts can now discover this clip
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -593,6 +743,9 @@ export default function SportStatsPage() {
               </div>
             </div>
           )}
+
+          {/* Video Talent Analysis — Gemini AI pipeline */}
+          <VideoTalentSection sportKey={sportKey} roleKey={roleKey} accentColor={accentColor} />
 
         </div>
       </main>
