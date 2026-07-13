@@ -52,9 +52,9 @@ void fetch(`${API_URL}/player/showcase`, {
 |---|---|---|
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 11 July session) |
 | bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
-| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
 | `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
-| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
 | Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
 | `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
@@ -351,7 +351,7 @@ EOF
 ```
 
 Render auto-deploys from the master branch — pushing to GitHub IS the deployment.
-No need to run `vercel` CLI. Just `git push origin main:master`.
+No need to run any CLI. Just `git push origin main:master`.
 
 ---
 
@@ -584,7 +584,7 @@ clubs could previously afford.
 - **Mobile:**      Flutter (Android APK — Beta)
 - **Backend API:** Laravel PHP — bhora-ai.onrender.com
 - **Database:**    PostgreSQL (Render)
-- **Hosting:**     Vercel (web) + Render (API)
+- **Hosting:**     Render (web + API)
 - **Auth:**        JWT tokens
 - **Payments:**    Stripe / PayFast (Zimbabwe-friendly)
 
@@ -1186,7 +1186,7 @@ const apiCall = async <T>(
 - [ ] All new pages protected by middleware
 - [ ] CORS updated on Render for any new domains
 
-### Environment Variables (set in Vercel dashboard):
+### Environment Variables (set in Render dashboard — grassroots-web service → Environment tab):
 ```
 NEXT_PUBLIC_API_URL = https://bhora-ai.onrender.com/api/v1
 ```
@@ -9803,9 +9803,9 @@ Tests: 10m sprint → Illinois agility → Vertical jump → Reaction catch (`Re
 
 | Item | Status | Action Required |
 |---|---|---|
-| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
 | `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
-| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API |
 | bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
 | Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
@@ -9884,9 +9884,9 @@ src/app/coach/drill-analysis/page.tsx       — FIXED: replaced broken Python XH
 
 | Item | Status | Action Required |
 |---|---|---|
-| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
 | `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
-| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API |
 | bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
 | Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
@@ -10014,9 +10014,9 @@ WHATSAPP_VERIFY_TOKEN     — Vercel ✅
 |---|---|---|
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP client with Meta API (copy-paste above) |
 | bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block (copy-paste above) |
-| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
 | `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
-| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
 | Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
 | `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
