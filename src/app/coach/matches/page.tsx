@@ -101,13 +101,13 @@ export default function CoachMatchesPage() {
       setUploadProgress("Getting secure upload link...");
 
       // Step 1: Call your backend API endpoint to create a temporary secure Presigned ticket URL
-      const response = await fetch("/api/upload-url", {
+      const response = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: file.name, contentType: file.type }),
       });
-      
-      const { uploadUrl, fileKey } = await response.json();
+
+      const { uploadUrl, key } = await response.json();
       if (!uploadUrl) throw new Error("Unauthorized storage payload configuration");
 
       setUploadProgress("Streaming match film to storage bucket...");
@@ -124,7 +124,7 @@ export default function CoachMatchesPage() {
       setUploadProgress("Saving link reference to system database...");
 
       // Step 3: Mutate your match log record with the final relative file path url key string
-      updateMatchVideo.mutate({ matchId, videoUrl: fileKey });
+      updateMatchVideo.mutate({ matchId, videoUrl: key });
 
     } catch (err) {
       console.error(err);

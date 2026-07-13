@@ -88,13 +88,13 @@ export default function SocialUploader({ onUploadComplete }: SocialUploaderProps
       setStatusText("Acquiring secure upload token tickets...");
 
       // Step 3: Fetch secure direct-to-bucket single-use Presigned upload link
-      const response = await fetch("/api/upload-url", {
+      const response = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename: file.name, contentType: file.type }),
       });
 
-      const { uploadUrl, fileKey } = await response.json();
+      const { uploadUrl, key } = await response.json();
       if (!uploadUrl) throw new Error("Storage pathway permission validation denied");
 
       setStatusText("Streaming compressed package direct to storage...");
@@ -109,7 +109,7 @@ export default function SocialUploader({ onUploadComplete }: SocialUploaderProps
       if (!uploadResult.ok) throw new Error("File stream sync connection dropped");
 
       setStatusText("Media successfully published! 🎉");
-      onUploadComplete(fileKey, mediaType);
+      onUploadComplete(key, mediaType);
 
       // Clear the file window path safely
       if (fileInputRef.current) fileInputRef.current.value = "";
