@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as Icons from "lucide-react";
-import { FORMATIONS, TacticsSimulator as TacticsSimulatorEngine } from "@/lib/tactics-engine";
+import { TacticsSimulator as TacticsSimulatorEngine } from "@/lib/tactics-engine";
 import { Formation, SimulationState, ChemistryIntegration, SimulationResult } from "@/types/tactics";
 import PitchView from "./PitchView";
 import SimulationControls from "./SimulationControls";
@@ -20,7 +20,6 @@ interface TacticsSimulatorProps {
 
 export default function TacticsSimulator({
   mode,
-  userId,
   position,
   chemistryData,
   onSimulationComplete,
@@ -75,7 +74,7 @@ export default function TacticsSimulator({
         break;
     }
 
-    if (onSimulationComplete) {
+    if (result && onSimulationComplete) {
       onSimulationComplete(result);
     }
   }, [phase, simulator, onSimulationComplete]);
