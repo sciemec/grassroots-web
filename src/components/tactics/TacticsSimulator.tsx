@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as Icons from "lucide-react";
-import { FORMATIONS, TacticsSimulator } from "@/lib/tactics-engine";
-import { Formation, SimulationState } from "@/types/tactics";
+import { FORMATIONS, TacticsSimulator as TacticsSimulatorEngine } from "@/lib/tactics-engine";
+import { Formation, SimulationState, ChemistryIntegration, SimulationResult } from "@/types/tactics";
 import PitchView from "./PitchView";
 import SimulationControls from "./SimulationControls";
 import TacticalOverlay from "./TacticalOverlay";
@@ -14,8 +14,8 @@ interface TacticsSimulatorProps {
   mode: "player" | "coach";
   userId?: string;
   position?: string;
-  chemistryData?: any;
-  onSimulationComplete?: (result: any) => void;
+  chemistryData?: ChemistryIntegration;
+  onSimulationComplete?: (result: SimulationResult) => void;
 }
 
 export default function TacticsSimulator({
@@ -27,9 +27,9 @@ export default function TacticsSimulator({
 }: TacticsSimulatorProps) {
   const [formation, setFormation] = useState<Formation>("4-3-3");
   const [phase, setPhase] = useState<"attacking" | "defending" | "transition" | "set_piece">("attacking");
-  const [simulator] = useState(() => new TacticsSimulator(formation));
+  const [simulator] = useState(() => new TacticsSimulatorEngine(formation));
   const [state, setState] = useState<SimulationState>(simulator.getState());
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<(SimulationResult & { type: string; recommendation: string }) | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<string | null>(position || null);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPassingLanes, setShowPassingLanes] = useState(true);
@@ -37,10 +37,10 @@ export default function TacticsSimulator({
   const animationRef = useRef<number | null>(null);
 
   // Run simulation
-  const runSimulation = useCallback(() => {
+  const runSimulation = useCallback((activePhase: "attacking" | "defending" | "transition" | "set_piece" = phase) => {
     let result;
 
-    switch (phase) {
+    switch (activePhase) {
       case "attacking":
         result = simulator.simulateAttack("build_up");
         setAnalysis({
@@ -92,7 +92,7 @@ export default function TacticsSimulator({
 
     const animate = () => {
       const updated = simulator.getState();
-      setState(prev => ({ ...prev, time: prev.time + 0.016 * prev.speed }));
+      setState(prev => ({ ...updated, time: prev.time + 0.016 * prev.speed }));
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -179,7 +179,7 @@ export default function TacticsSimulator({
               setPhase(newPhase);
               simulator.setPhase(newPhase);
               setState(simulator.getState());
-              runSimulation();
+              runSimulation(newPhase);
             }}
             phase={phase}
             onRunSimulation={runSimulation}
