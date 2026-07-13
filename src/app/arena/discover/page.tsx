@@ -239,19 +239,19 @@ export default function DiscoverPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {players.map((player) => {
-              const initials = player.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+              const initials = (player.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
               return (
                 <div key={player.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-3 mb-3">
                     {player.avatar_url ? (
-                      <img src={player.avatar_url} alt={player.name} className="w-12 h-12 rounded-full object-cover" />
+                      <img src={player.avatar_url} alt={player.name ?? "Player"} className="w-12 h-12 rounded-full object-cover" />
                     ) : (
                       <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                         style={{ background: GRS_GREEN }}>{initials}</div>
                     )}
                     <div className="flex-1 min-w-0">
                       <Link href={`/arena/profile/${player.id}`} className="font-semibold text-gray-900 hover:underline truncate block">
-                        {player.name}
+                        {player.name ?? "Unknown Player"}
                       </Link>
                       <p className="text-xs text-gray-500 truncate">{player.position || player.role} · {player.sport}</p>
                     </div>
