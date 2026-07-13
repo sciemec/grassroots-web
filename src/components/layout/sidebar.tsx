@@ -27,36 +27,6 @@ const FEATURES = {
   businessHub:  false,
 };
 
-// Coach section
-{
-  href: "/coach/tactical-room",
-  label: "🎯 Tactical Room",
-  icon: Icons.Brain,
-  roles: ["coach", "admin"],
-},
-
-// Player section
-{
-  href: "/player/tactical-lessons",
-  label: "📚 Tactical Lessons",
-  icon: Icons.BookOpen,
-  roles: ["player"],
-},
-// Player section
-{
-  href: "/tactics/simulator",
-  label: "⚡ Tactics Simulator",
-  icon: Icons.Brain,
-  roles: ["player", "coach", "scout", "admin"],
-},
-
-// Coach section - also add to coach tools
-{
-  href: "/tactics/simulator",
-  label: "⚡ Tactics Simulator",
-  icon: Icons.Brain,
-  roles: ["coach", "admin"],
-},
 interface NavItem {
   href:    string;
   label:   string;
@@ -213,61 +183,6 @@ export function Sidebar() {
             </p>
           </Link>
         </div>
-// src/components/layout/sidebar.tsx - Add to coach section
-
-// Chemistry section
-{
-  label: "Chemistry",
-  items: [
-    { href: "/coach/chemistry", label: "Squad Matrix", icon: Icons.Grid },
-    { href: "/coach/chemistry/lineup-builder", label: "Lineup Builder", icon: Icons.Users },
-    { href: "/coach/chemistry/position-groups", label: "Position Groups", icon: Icons.PieChart },
-    { href: "/coach/chemistry/transfers", label: "Transfer Targets", icon: Icons.UsersPlus },
-    { href: "/coach/chemistry/history", label: "History", icon: Icons.Clock },
-  ],
-},
-
-// Coach section
-{
-  href: "/coach/marketplace",
-  label: "💰 Marketplace",
-  icon: Icons.Store,
-  roles: ["coach", "admin"],
-},
-
-// Player section
-{
-  href: "/player/coaching/browse",
-  label: "🎯 Find a Coach",
-  icon: Icons.Target,
-  roles: ["player"],
-},// src/components/layout/sidebar.tsx
-
-// In the Analysis Tools section (Coach)
-{
-  href: "/coach/tactics/attack",
-  label: "🔥 Attack Tactics",
-  icon: Icons.Flame,
-  roles: ["coach", "admin"],
-},
-{
-  href: "/coach/tactics/defence",
-  label: "🛡️ Defence Tactics",
-  icon: Icons.Shield,
-  roles: ["coach", "admin"],
-},
-{
-  href: "/coach/tactics/midfield",
-  label: "⚡ Midfield Tactics",
-  icon: Icons.Zap,
-  roles: ["coach", "admin"],
-},
-{
-  href: "/coach/tactics/goalkeeper",
-  label: "🥅 GK Tactics",
-  icon: Icons.Hand,
-  roles: ["coach", "admin"],
-},
 
         {/* User info — mobile only */}
         {user && (
@@ -285,85 +200,7 @@ export function Sidebar() {
             </div>
           </div>
         )}
-        // src/components/layout/sidebar.tsx
-// src/components/layout/sidebar.tsx
 
-// Add these to the Coach section
-{
-  href: "/analytics/dashboard",
-  label: "📊 Analytics",
-  icon: Icons.BarChart3,
-  roles: ["coach", "admin"],
-},
-{
-  href: "/calendar",
-  label: "📅 Calendar",
-  icon: Icons.Calendar,
-  roles: ["coach", "admin", "player"],
-},
-{
-  href: "/team/communication",
-  label: "💬 Team Chat",
-  icon: Icons.MessageSquare,
-  roles: ["coach", "admin", "player"],
-},
-{
-  href: "/achievements",
-  label: "🏆 Achievements",
-  icon: Icons.Trophy,
-  roles: ["coach", "admin", "player"],
-},
-{
-  href: "/progress",
-  label: "📈 Progress",
-  icon: Icons.TrendingUp,
-  roles: ["coach", "admin", "player"],
-},
-{
-  href: "/video/analysis",
-  label: "📹 Video Analysis",
-  icon: Icons.Video,
-  roles: ["coach", "admin"],
-},
-
-
-// In the Admin section
-{
-  href: "/admin/progress",
-  label: "📊 Platform Progress",
-  icon: Icons.BarChart3,
-  roles: ["admin"],
-},
-// Player section
-{
-  href: "/player/tactics",
-  label: "Tactics Learning",
-  icon: Icons.Brain,
-  roles: ["player"],
-},
-
-// Coach section
-{
-  href: "/coach/tactics/simulator",
-  label: "Tactics Simulator",
-  icon: Icons.Brain,
-  roles: ["coach", "admin"],
-},
-// In the Analysis Tools section of coach sidebar
-{
-  href: "/coach/ai-analysis-lab",
-  label: "AI Analysis Lab",
-  icon: Icons.Microscope,
-  roles: ["coach", "admin"],
-}
-// src/components/layout/sidebar.tsx
-
-{
-  href: "/coach/set-piece-video",
-  label: "Video Set Piece Lab",
-  icon: Icons.Flag,
-  roles: ["coach", "admin"],
-}
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="space-y-0.5 px-3">
