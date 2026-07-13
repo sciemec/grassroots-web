@@ -131,7 +131,7 @@ const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(ma
 
 export default function TacticsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [squad, setSquad] = useState<SquadMember[]>([]);
   const [formation, setFormation] = useState("4-3-3");
   const [lineup, setLineup] = useState<Record<string, string>>({});
