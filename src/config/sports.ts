@@ -14,6 +14,9 @@ export interface SportConfig {
   governingBody: string;
   competitions: string[];
   positions?: string[];
+  color?: string;
+  keyFocus?: string[];
+  drills?: { title: string; desc: string; duration: string }[];
 }
 
 export const SPORTS: SportConfig[] = [
@@ -24,6 +27,18 @@ export const SPORTS: SportConfig[] = [
     governingBody: "ZIFA",
     competitions: ["Premier League", "Division One", "Division Two", "Chibuku Super Cup"],
     positions: ["GK", "CB", "LB", "RB", "CDM", "CM", "CAM", "LW", "RW", "ST"],
+    color: "#1d7a34",
+    keyFocus: [
+      "Pressing triggers and defensive shape",
+      "Movement off the ball to create space",
+      "Transition — attack to defence and back",
+      "Set piece delivery and positioning",
+    ],
+    drills: [
+      { title: "Rondo (5v2)", desc: "Keep possession in a small circle. Improves passing, movement, and pressing.", duration: "10 min" },
+      { title: "Shadow Play", desc: "Move through your team shape without opponents. Rehearses patterns of play.", duration: "15 min" },
+      { title: "Finishing on Goal", desc: "Strike from different angles and distances with both feet.", duration: "10 min" },
+    ],
   },
   {
     key: "rugby",
@@ -32,6 +47,18 @@ export const SPORTS: SportConfig[] = [
     governingBody: "ZRU",
     competitions: ["Zimbabwe Rugby Union League", "Schools Cup"],
     positions: ["Prop", "Hooker", "Lock", "Flanker", "No. 8", "Scrum-half", "Fly-half", "Centre", "Wing", "Fullback"],
+    color: "#8B4513",
+    keyFocus: [
+      "Tackle technique — low body position, cheek to cheek",
+      "Ruck body position and cleanout",
+      "Set piece — lineout lifting and scrum binding",
+      "Support lines — stay close to the ball carrier",
+    ],
+    drills: [
+      { title: "Tackle Shield Circuit", desc: "Low entries, side entry, scramble tackle. Technique over power.", duration: "15 min" },
+      { title: "Lineout Calls", desc: "Practice 3 lineout variations with lifting pods under pressure.", duration: "10 min" },
+      { title: "Offload Drill", desc: "2v1 attack — draw the defender and offload to the support runner.", duration: "10 min" },
+    ],
   },
   {
     key: "athletics",
@@ -39,6 +66,18 @@ export const SPORTS: SportConfig[] = [
     emoji: "🏃",
     governingBody: "AAZ",
     competitions: ["NASH Athletics", "ZAC Championships"],
+    color: "#cc3300",
+    keyFocus: [
+      "Drive phase — push, don't pull, out of the blocks",
+      "Arm mechanics — drive elbows back, hold 90°",
+      "Stride frequency vs stride length balance",
+      "Breathing rhythm and race distribution",
+    ],
+    drills: [
+      { title: "Acceleration Runs", desc: "10m–20m–30m build-ups. Progressive acceleration, not top speed.", duration: "15 min" },
+      { title: "High Knees", desc: "Drive knees to hip height with fast arm drive. Develops stride mechanics.", duration: "8 min" },
+      { title: "Bounds", desc: "Exaggerated strides with maximum push-off. Builds power and stride length.", duration: "10 min" },
+    ],
   },
   {
     key: "netball",
@@ -47,6 +86,18 @@ export const SPORTS: SportConfig[] = [
     governingBody: "ZNA",
     competitions: ["NASH Netball", "National League"],
     positions: ["GS", "GA", "WA", "C", "WD", "GD", "GK"],
+    color: "#9b1b30",
+    keyFocus: [
+      "0.9m defensive discipline — hold your distance",
+      "Centre pass patterns — create options from tip-off",
+      "Circle feeding — timing and accuracy into the circle",
+      "Footwork — land correctly, pivot cleanly",
+    ],
+    drills: [
+      { title: "Lead and Catch", desc: "Change of direction leads to receive ball. Focus on explosive movement.", duration: "10 min" },
+      { title: "1v1 Circle Work", desc: "GS vs GD in the goal circle. Create space and passing options.", duration: "10 min" },
+      { title: "Centre Pass Patterns", desc: "Walk through 3 set plays from the centre circle.", duration: "12 min" },
+    ],
   },
   {
     key: "basketball",
@@ -55,6 +106,18 @@ export const SPORTS: SportConfig[] = [
     governingBody: "ZBFA",
     competitions: ["National Basketball League"],
     positions: ["PG", "SG", "SF", "PF", "C"],
+    color: "#E55C17",
+    keyFocus: [
+      "Spacing — keep the floor spread to create driving lanes",
+      "Pick and roll execution — timing of the screen",
+      "Transition defence — get back before the offence",
+      "Shot selection — take what the defence gives you",
+    ],
+    drills: [
+      { title: "Mikan Drill", desc: "Alternating layups both sides without the ball touching the floor.", duration: "8 min" },
+      { title: "3-Man Weave", desc: "Three players weave up the court passing until a layup. Builds passing rhythm.", duration: "10 min" },
+      { title: "Free Throw Ritual", desc: "20 free throws with a consistent pre-shot routine. Build muscle memory.", duration: "10 min" },
+    ],
   },
   {
     key: "cricket",
@@ -63,6 +126,18 @@ export const SPORTS: SportConfig[] = [
     governingBody: "ZC",
     competitions: ["Logan Cup", "Metbank T20"],
     positions: ["Batter", "Bowler", "All-rounder", "Wicket-keeper"],
+    color: "#1a3d6b",
+    keyFocus: [
+      "Batting stance — balanced, side-on, eyes level",
+      "Weight transfer — move into the ball when driving",
+      "Bowling action — sideways-on, high release point",
+      "Reading the ball — watch the seam out of the hand",
+    ],
+    drills: [
+      { title: "Catching Square", desc: "Four players throwing at different heights. Builds soft hands.", duration: "10 min" },
+      { title: "Short Pitch Defence", desc: "Practice leaving and ducking balls outside off stump.", duration: "10 min" },
+      { title: "Run-Up Rhythm", desc: "Bowl without a batsman — consistent run-up, gather, and release.", duration: "15 min" },
+    ],
   },
   {
     key: "swimming",
@@ -70,6 +145,18 @@ export const SPORTS: SportConfig[] = [
     emoji: "🏊",
     governingBody: "ZSWF",
     competitions: ["National Championships", "NASH Swimming"],
+    color: "#0077cc",
+    keyFocus: [
+      "Body position — keep hips high and streamlined",
+      "Breathing — bilateral breathing for balance",
+      "Turn efficiency — flip at the wall, streamline off",
+      "Stroke count — fewer strokes = better efficiency",
+    ],
+    drills: [
+      { title: "Catch-Up Drill", desc: "One arm waits at the front while the other completes a full stroke cycle.", duration: "8 min" },
+      { title: "Kick Sets", desc: "Kick only with a board. Focus on ankle flexibility and steady rhythm.", duration: "10 min" },
+      { title: "Race Pace Repeats", desc: "Short bursts at race speed with full rest recovery between reps.", duration: "15 min" },
+    ],
   },
   {
     key: "tennis",
@@ -77,6 +164,18 @@ export const SPORTS: SportConfig[] = [
     emoji: "🎾",
     governingBody: "ZTA",
     competitions: ["National League", "Schools Championships"],
+    color: "#c8a400",
+    keyFocus: [
+      "Serve toss — consistent height and placement",
+      "Footwork — split step on every opponent shot",
+      "Court position — recover to the baseline T after each shot",
+      "Margin over the net — aim 0.5m over, not the line",
+    ],
+    drills: [
+      { title: "Serve and Volley", desc: "Serve then rush the net. Practise approach shot and first volley.", duration: "10 min" },
+      { title: "Crosscourt Rally", desc: "Sustained crosscourt groundstroke rally. Build consistency.", duration: "12 min" },
+      { title: "Footwork Ladder", desc: "Agility ladder for split-step timing and lateral movement.", duration: "8 min" },
+    ],
   },
   {
     key: "volleyball",
@@ -85,6 +184,18 @@ export const SPORTS: SportConfig[] = [
     governingBody: "ZVBF",
     competitions: ["National League", "NASH Volleyball"],
     positions: ["Setter", "Outside Hitter", "Middle Blocker", "Opposite", "Libero"],
+    color: "#0055aa",
+    keyFocus: [
+      "Ready position — knees bent, weight forward before every serve",
+      "Platform passing — flat arms, contact below the wrist",
+      "Approach timing — take off on the penultimate step",
+      "Communication — call the ball before it arrives",
+    ],
+    drills: [
+      { title: "Pepper Drill", desc: "Pass → set → attack → catch, repeat. Continuous ball control.", duration: "10 min" },
+      { title: "Serving Targets", desc: "Serve to marked zones opposite. Accuracy before power.", duration: "10 min" },
+      { title: "Block and Dig", desc: "One player attacks, one blocks, libero digs. Rotate after 5 reps.", duration: "12 min" },
+    ],
   },
   {
     key: "hockey",
@@ -93,6 +204,18 @@ export const SPORTS: SportConfig[] = [
     governingBody: "ZHF",
     competitions: ["National League", "Schools Hockey"],
     positions: ["GK", "Defender", "Midfielder", "Forward"],
+    color: "#006600",
+    keyFocus: [
+      "Indian dribble — change ball side for evasion",
+      "Press triggers — apply pressure on the back pass",
+      "Receiving — get low, soft hands, absorb the ball",
+      "D-zone positioning — cover the angles on the shooter",
+    ],
+    drills: [
+      { title: "Slalom Dribble", desc: "Dribble through cones changing hands at each gate. Builds close control.", duration: "10 min" },
+      { title: "Penalty Corner Routine", desc: "Rehearse set play: injector, stopper, drag-flick, deflection.", duration: "15 min" },
+      { title: "1v1 to Goal", desc: "Attacker vs defender into the D. Focus on creating angle.", duration: "10 min" },
+    ],
   },
 ];
 
