@@ -23,7 +23,7 @@ interface ShortlistPlayer {
 
 export default function ScoutShortlistPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [shortlist, setShortlist] = useState<ShortlistPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [comparing, setComparing] = useState<string[]>([]);
@@ -33,7 +33,7 @@ export default function ScoutShortlistPage() {
   useEffect(() => {
     // guests allowed — no login redirect
     // Attempt to load shortlist from scout API
-    api.get("/scout/contact-requests")
+    api.get("/scout/shortlist")
       .then((res) => {
         // Map contact request data to shortlist format
         const rawData = res.data?.data ?? res.data ?? [];
@@ -57,6 +57,11 @@ export default function ScoutShortlistPage() {
     setComparing((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : prev.length < 3 ? [...prev, id] : prev
     );
+  };
+
+  const removeFromShortlist = async (playerId: string) => {
+    setShortlist((prev) => prev.filter((p) => p.id !== playerId));
+    api.delete(`/scout/shortlist/${playerId}`).catch(() => {});
   };
 
   const generateComparison = async () => {
@@ -141,7 +146,7 @@ export default function ScoutShortlistPage() {
                     }`}>
                     {comparing.includes(player.id) ? "✓ Compare" : "Compare"}
                   </button>
-                  <button className="rounded-lg p-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                  <button onClick={() => removeFromShortlist(player.id)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>

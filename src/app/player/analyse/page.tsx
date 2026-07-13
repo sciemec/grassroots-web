@@ -373,6 +373,28 @@ export default function AnalysePage() {
       // Auto-post to Arena (non-blocking, best-effort)
       if (fbText && user) void postToArena(fbText);
 
+      // Save as discoverable showcase record so scouts can find this analysis
+      if (fbText && token && token !== "dev-token") {
+        const sentences = fbText.split(/[.!?]/).map((s: string) => s.trim()).filter(Boolean);
+        void fetch(`${API_URL}/player/showcase`, {
+          method:  "POST",
+          headers: {
+            "Content-Type":  "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            skill_type:       drill,
+            video_url:        "",
+            ai_rating:        7,
+            top_strength:     sentences[0] ?? fbText.slice(0, 120),
+            position_fit:     [position],
+            scout_note:       fbText.slice(0, 280),
+            development_flag: sentences[sentences.length - 1] ?? "",
+            open_for_scouting: true,
+          }),
+        }).catch(() => { /* best-effort */ });
+      }
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       setErrorMsg(msg || "Connection error. Please check your internet and try again.");

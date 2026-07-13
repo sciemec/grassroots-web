@@ -198,10 +198,103 @@ export default function ShowcasePage() {
       } catch { /* no storage configured — continue */ }
       setProgress(60);
 
-      // 3 — AI analysis via Claude vision proxy
+      // 3 — AI analysis: Gemini vision (3-step) → text-only fallback
       setPhase("analysing");
 
-      const PROMPT = `You are a FIFA-licensed talent scout reviewing a short skill clip from a Zimbabwean grassroots player.
+      const token = typeof window !== "undefined"
+        ? localStorage.getItem("auth_token") ?? ""
+        : "";
+
+      let analysis: AIAnalysis = { ...FALLBACK };
+      let geminiSucceeded = false;
+
+      // 3a: Try Gemini video analysis — no video bytes through Vercel
+      try {
+        const initRes = await fetch("/api/match-eye/upload", {
+          method:  "POST",
+          headers: {
+            "x-upload-content-type":   videoFile.type,
+            "x-upload-content-length": String(videoFile.size),
+          },
+        });
+
+        if (initRes.ok) {
+          const { uploadUrl } = await initRes.json() as { uploadUrl: string };
+
+          // XHR PUT directly to Google's self-authenticating URL
+          const geminiResp = await new Promise<{ file: { uri: string; name: string; mimeType: string } }>(
+            (resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              xhr.open("PUT", uploadUrl);
+              xhr.setRequestHeader("Content-Type", videoFile.type);
+              xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable)
+                  setProgress(60 + Math.round((e.loaded / e.total) * 18));
+              };
+              xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  try { resolve(JSON.parse(xhr.responseText)); }
+                  catch { reject(new Error("parse")); }
+                } else {
+                  reject(new Error(String(xhr.status)));
+                }
+              };
+              xhr.onerror = () => reject(new Error("network"));
+              xhr.send(videoFile);
+            },
+          );
+
+          const { uri: fileUri, name: fileName, mimeType } = geminiResp.file;
+          setProgress(80);
+
+          // 3b: Analyse the uploaded file (lightweight JSON payload — no size limit)
+          const analyseRes = await fetch("/api/analyse-from-uri", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileUri, fileName, mimeType,
+              sport:    "football",
+              drill:    selectedSkill,
+              position: "player",
+              token,
+            }),
+          });
+
+          if (analyseRes.ok) {
+            const { feedback } = await analyseRes.json() as { feedback?: string };
+            if (feedback) {
+              const jsonMatch = feedback.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                try {
+                  const parsed = JSON.parse(jsonMatch[0]) as Partial<AIAnalysis>;
+                  analysis = {
+                    skill_rating:     Number(parsed.skill_rating) || FALLBACK.skill_rating,
+                    top_strength:     parsed.top_strength     || FALLBACK.top_strength,
+                    position_fit:     parsed.position_fit     || FALLBACK.position_fit,
+                    scout_note:       parsed.scout_note       || FALLBACK.scout_note,
+                    development_flag: parsed.development_flag || FALLBACK.development_flag,
+                  };
+                  geminiSucceeded = true;
+                } catch { /* fall through to text path */ }
+              }
+              if (!geminiSucceeded) {
+                // Plain-text response — map first 2 sentences to scout fields
+                const sentences = feedback.split(/[.!?]/).map(s => s.trim()).filter(Boolean);
+                analysis = {
+                  ...FALLBACK,
+                  top_strength: sentences[0] ?? FALLBACK.top_strength,
+                  scout_note:   sentences.slice(0, 2).join(". ") || FALLBACK.scout_note,
+                };
+                geminiSucceeded = true;
+              }
+            }
+          }
+        }
+      } catch { /* fall through to text-only */ }
+
+      // 3b-fallback: text-only AI when Gemini unavailable
+      if (!geminiSucceeded) {
+        const PROMPT = `You are a FIFA-licensed talent scout reviewing a short skill clip from a Zimbabwean grassroots player.
 Skill being demonstrated: ${selectedSkill}.
 Assess the player and return ONLY a valid JSON object — no extra text, no markdown:
 {
@@ -212,40 +305,36 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
   "development_flag": "<one key area to improve>"
 }`;
 
-      let analysis: AIAnalysis = { ...FALLBACK };
+        try {
+          const aiRes = await fetch("/api/ai-coach", {
+            method:  "POST",
+            headers: {
+              "Content-Type":  "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              message:       PROMPT,
+              system_prompt: "You are a FIFA talent scout. Respond with valid JSON only.",
+            }),
+          });
 
-      try {
-        const token = typeof window !== "undefined"
-          ? localStorage.getItem("auth_token") ?? ""
-          : "";
-        const aiRes = await fetch("/api/ai-coach", {
-          method:  "POST",
-          headers: {
-            "Content-Type":  "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body:    JSON.stringify({
-            message:       PROMPT,
-            system_prompt: "You are a FIFA talent scout. Respond with valid JSON only.",
-          }),
-        });
-
-        if (aiRes.ok) {
-          const aiData = await aiRes.json();
-          const raw    = aiData.response ?? "";
-          const match  = raw.match(/\{[\s\S]*\}/);
-          if (match) {
-            const parsed = JSON.parse(match[0]) as Partial<AIAnalysis>;
-            analysis = {
-              skill_rating:     Number(parsed.skill_rating) || FALLBACK.skill_rating,
-              top_strength:     parsed.top_strength     || FALLBACK.top_strength,
-              position_fit:     parsed.position_fit     || FALLBACK.position_fit,
-              scout_note:       parsed.scout_note       || FALLBACK.scout_note,
-              development_flag: parsed.development_flag || FALLBACK.development_flag,
-            };
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            const raw    = aiData.response ?? "";
+            const match  = raw.match(/\{[\s\S]*\}/);
+            if (match) {
+              const parsed = JSON.parse(match[0]) as Partial<AIAnalysis>;
+              analysis = {
+                skill_rating:     Number(parsed.skill_rating) || FALLBACK.skill_rating,
+                top_strength:     parsed.top_strength     || FALLBACK.top_strength,
+                position_fit:     parsed.position_fit     || FALLBACK.position_fit,
+                scout_note:       parsed.scout_note       || FALLBACK.scout_note,
+                development_flag: parsed.development_flag || FALLBACK.development_flag,
+              };
+            }
           }
-        }
-      } catch { /* use fallback */ }
+        } catch { /* use fallback */ }
+      }
 
       setProgress(90);
 

@@ -128,7 +128,7 @@ type Step = "sport" | "details" | "stats";
 
 export default function LogStatsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const { requireAuth } = useGuestGate();
 
   const [step, setStep]             = useState<Step>("sport");
@@ -181,6 +181,11 @@ export default function LogStatsPage() {
         `Logged ${sport} stats${opponent ? ` vs ${opponent}` : ""}${resultLabel}.`,
         { postType: "milestone", metadata: { sport, role, match_type: matchType, result } }
       );
+
+      // Refresh prediction so THUTO leaderboard stays current after new stats
+      if (user?.id) {
+        void api.post(`/players/${user.id}/prediction/refresh`).catch(() => {});
+      }
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setSaveError(msg ?? "Failed to save. Please try again.");

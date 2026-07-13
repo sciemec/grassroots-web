@@ -25,6 +25,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/auth-store';
 
 const GRS_GREEN = '#1c3d22';
 const GRS_GOLD  = '#c8962a';
@@ -72,6 +73,7 @@ function savePipeline(entries: PipelineEntry[]) {
 }
 
 export default function ScoutPipelinePage() {
+  const token = useAuthStore((s) => s.token);
   const [pipeline,    setPipeline]    = useState<PipelineEntry[]>([]);
   const [activeStage, setActiveStage] = useState<Stage | 'all'>('all');
   const [selected,    setSelected]    = useState<PipelineEntry | null>(null);
@@ -82,9 +84,32 @@ export default function ScoutPipelinePage() {
   const [newPlayerId, setNewPlayerId] = useState('');
   const [loading,     setLoading]     = useState(false);
 
+  const syncToBackend = (entries: PipelineEntry[]) => {
+    if (!token || token === 'dev-token') return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/scout/pipeline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ pipeline: entries }),
+    }).catch(() => {});
+  };
+
   useEffect(() => {
-    setPipeline(loadPipeline());
-  }, []);
+    const local = loadPipeline();
+    setPipeline(local);
+    if (!token || token === 'dev-token') return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/scout/pipeline`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        const remote: PipelineEntry[] = Array.isArray(data?.pipeline) ? data.pipeline : [];
+        if (remote.length > 0) {
+          setPipeline(remote);
+          savePipeline(remote);
+        }
+      })
+      .catch(() => {});
+  }, [token]);
 
   // Filtered pipeline
   const filtered = pipeline.filter(e => {
@@ -106,7 +131,7 @@ export default function ScoutPipelinePage() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/scout/players/${newPlayerId.trim()}`,
-        { headers: { 'Accept': 'application/json' } }
+        { headers: { 'Accept': 'application/json', ...(token && token !== 'dev-token' ? { 'Authorization': `Bearer ${token}` } : {}) } }
       );
       const data = res.ok ? await res.json() : null;
 
@@ -135,6 +160,7 @@ export default function ScoutPipelinePage() {
       const updated = [entry, ...pipeline];
       setPipeline(updated);
       savePipeline(updated);
+      syncToBackend(updated);
       setNewPlayerId('');
       setAddOpen(false);
     } catch (err) {
@@ -151,6 +177,7 @@ export default function ScoutPipelinePage() {
       const updated = [entry, ...pipeline];
       setPipeline(updated);
       savePipeline(updated);
+      syncToBackend(updated);
       setNewPlayerId('');
       setAddOpen(false);
     } finally {
@@ -162,6 +189,7 @@ export default function ScoutPipelinePage() {
     const updated = pipeline.map(e => e.id === id ? { ...e, stage, lastUpdated: new Date().toISOString() } : e);
     setPipeline(updated);
     savePipeline(updated);
+    syncToBackend(updated);
     if (selected?.id === id) setSelected({ ...selected, stage });
   };
 
@@ -169,6 +197,7 @@ export default function ScoutPipelinePage() {
     const updated = pipeline.map(e => e.id === id ? { ...e, notes, lastUpdated: new Date().toISOString() } : e);
     setPipeline(updated);
     savePipeline(updated);
+    syncToBackend(updated);
     if (selected?.id === id) setSelected({ ...selected, notes });
   };
 
@@ -177,6 +206,7 @@ export default function ScoutPipelinePage() {
     const updated = pipeline.filter(e => e.id !== id);
     setPipeline(updated);
     savePipeline(updated);
+    syncToBackend(updated);
     if (selected?.id === id) setSelected(null);
   };
 
