@@ -2,6 +2,65 @@
 
 ---
 
+## SESSION LOG — 13 July 2026
+
+### Theme — Player→Scout Discovery Loop: 5 Marketing Audit Fixes
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### All 5 Discovery Loop Fixes ✅
+
+**Commit:** `2ee8d71` — pushed to `sciemec/grassroots-web` master → Render auto-deployed
+
+| Fix | File | What was broken | What was fixed |
+|---|---|---|---|
+| 1 | `src/app/player/showcase/page.tsx` | Text-only `/api/ai-coach` call — no actual video analysis | 3-step Gemini File API pattern: Edge init → browser XHR PUT → `/api/analyse-from-uri` |
+| 2 | `src/app/player/analyse/page.tsx` | Drill analyses never saved to showcase; scouts couldn't discover them | Fire-and-forget `POST /player/showcase` after Gemini feedback — drill results now surface in scout discovery feed |
+| 3 | `src/app/scout/shortlist/page.tsx` | React #185 Zustand object selector; wrong `/scout/shortlist` endpoint mapping; missing delete handler | Individual Zustand selectors; corrected endpoint; `removeFromShortlist()` calls `DELETE /scout/shortlist/{id}` |
+| 4 | `src/app/scout/pipeline/page.tsx` | No auth header on API calls; no backend fetch on mount; mutations only saved to localStorage | Added Bearer token header; `fetchFromBackend()` on mount; `syncToBackend()` fires on every CRUD mutation |
+| 5 | `src/app/player/stats/new/page.tsx` | React #185 Zustand object selector on line 131; prediction not refreshed after stats save | `const user = useAuthStore((s) => s.user)`; added `POST /players/{id}/prediction/refresh` after `setSaved(true)` |
+
+#### Fix 2 — Showcase save details
+
+After Gemini analysis completes in `/player/analyse`, fire-and-forget:
+```typescript
+void fetch(`${API_URL}/player/showcase`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+  body: JSON.stringify({
+    skill_type: drill, video_url: "",
+    ai_rating: 7,
+    top_strength: sentences[0] ?? fbText.slice(0, 120),
+    position_fit: [position],
+    scout_note: fbText.slice(0, 280),
+    development_flag: sentences[sentences.length - 1] ?? "",
+    open_for_scouting: true,
+  }),
+}).catch(() => {});
+```
+- Skips `dev-token` and unauthenticated users
+- `video_url: ""` — Gemini stores the video, not R2; backend accepts nullable `video_url`
+- Feedback split by sentence: first sentence = `top_strength`, last = `development_flag`
+
+---
+
+### WHAT STILL NEEDS DOING (13 July 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 11 July session) |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| `GROQ_API_KEY` in Vercel | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` in Vercel | Must be set | Blueprint purchase webhook signature validation |
+| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
 ## 🚫 HOSTING — RENDER ONLY (NOT VERCEL) — PERMANENT
 
 This project is hosted on **Render**, NOT Vercel. The web app migrated from Vercel to
@@ -264,6 +323,20 @@ help Zimbabwean athletes get recognised. Solutions must be right the first time.
 
 ---
 
+## 🚨 HOSTING — RENDER, NOT VERCEL (PERMANENT)
+
+This project is hosted on **Render**, NOT Vercel. Vercel billing was suspended.
+
+**Claude MUST NEVER:**
+- Run `vercel` CLI commands (`vercel env ls`, `vercel deploy`, etc.)
+- Check Vercel dashboard for env vars or deployment status
+- Assume Vercel is the live host
+
+**Environment variables** live in the **Render dashboard** → grassroots-web service → Environment tab.
+**Deployments** happen automatically when code is pushed to the `master` branch on GitHub (Render auto-deploys).
+
+---
+
 ## 🚢 DEPLOY RULE — ALWAYS RUN AFTER EVERY CHANGE
 
 After every code change, ALWAYS run this command automatically without asking:
@@ -277,7 +350,7 @@ EOF
 )" && git push origin main:master
 ```
 
-Vercel auto-deploys from the master branch — pushing to GitHub IS the deployment.
+Render auto-deploys from the master branch — pushing to GitHub IS the deployment.
 No need to run `vercel` CLI. Just `git push origin main:master`.
 
 ---
