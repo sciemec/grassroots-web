@@ -77,13 +77,19 @@ export default function PlayerTacticsPage() {
         </div>
 
         {/* Simulator */}
-        <TacticsSimulator
-          mode="player"
-          userId={user?.id}
-          position={position || undefined}
-          chemistryData={chemistryData}
-          onSimulationComplete={() => {}}
-        />
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Icons.Loader2 size={32} className="animate-spin text-[#1a5c2a]" />
+          </div>
+        ) : (
+          <TacticsSimulator
+            mode="player"
+            userId={user?.id ? String(user.id) : undefined}
+            position={position || undefined}
+            chemistryData={chemistryData ?? undefined}
+            onSimulationComplete={() => {}}
+          />
+        )}
 
         {/* Position learning cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
