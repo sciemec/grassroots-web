@@ -120,3 +120,53 @@ export interface DashboardStats {
   pending_scout_requests: number;
   new_users_this_week: number;
 }
+
+// types/index.ts
+export type PositionType = "FW" | "MID" | "DEF" | "GK";
+
+export interface AttributeScore {
+  pace: number;
+  technical: number;
+  tactical: number;
+  physical: number;
+  scanning: number;
+}
+
+export interface BiometricData {
+  overallForm: number;
+  explosivePower: number;
+  symmetryScore: number;
+  fatigueIndex: number;
+  hasData: boolean;
+  lastScanDate: string | null;
+  movementEfficiency?: number;
+  injuryRisk?: number;
+}
+
+export interface ScoutingProfile {
+  id?: string;
+  playerId: string;
+  coachId: string;
+  position: PositionType;
+  attributes: AttributeScore;
+  overallScore: number;
+  biometricData?: BiometricData;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

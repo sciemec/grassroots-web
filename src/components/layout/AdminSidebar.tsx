@@ -31,7 +31,6 @@ const HUB_LINKS = [
   { href: '/player',    label: 'Player Hub', icon: <UserCircle size={16} /> },
   { href: '/coach',     label: 'Coach Hub',  icon: <Users size={16} /> },
   { href: '/scout',     label: 'Scout Hub',  icon: <Target size={16} /> },
-  { href: '/world-cup', label: 'World Cup',  icon: <Trophy size={16} /> },
   { href: '/arena',     label: 'The Arena',  icon: <Globe size={16} /> },
 ];
 

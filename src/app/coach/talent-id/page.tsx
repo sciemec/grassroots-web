@@ -1,135 +1,119 @@
+// app/coach/talent-id/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Award, Shield, UserCheck, Zap, Crosshair, Dumbbell, Activity } from "lucide-react";
-
-// Mock template structure for player positions
-type PositionType = "FW" | "MID" | "DEF" | "GK";
-
-interface AttributeScore {
-  label: string;
-  value: number;
-  icon: any;
-}
-
-interface BiometricData {
-  overallForm: number;
-  explosivePower: number;
-  symmetryScore: number;
-  fatigueIndex: number;
-  hasData: boolean;
-  lastScanDate: string | null;
-}
-
-function loadBiometricData(playerId: string): BiometricData {
-  try {
-    const sessionsKey = `training_sessions_${playerId}`;
-    const stored = localStorage.getItem(sessionsKey);
-    if (stored) {
-      const sessions = JSON.parse(stored);
-      if (sessions && sessions.length > 0) {
-        const latest = sessions[0];
-        return {
-          overallForm: latest.overallForm || latest.metrics?.overallForm || 0,
-          explosivePower: latest.explosivePower || latest.metrics?.explosivePower || 0,
-          symmetryScore: latest.symmetryScore || latest.metrics?.symmetryScore || 0,
-          fatigueIndex: latest.fatigueIndex || latest.fatigue?.fatigueIndex || 0,
-          hasData: true,
-          lastScanDate: latest.timestamp || null,
-        };
-      }
-    }
-  } catch (e) {
-    console.error("Failed to load biometric data", e);
-  }
-  
-  return {
-    overallForm: 0,
-    explosivePower: 0,
-    symmetryScore: 0,
-    fatigueIndex: 0,
-    hasData: false,
-    lastScanDate: null,
-  };
-}
+import { 
+  ArrowLeft, 
+  Award, 
+  Shield, 
+  UserCheck, 
+  Zap, 
+  Crosshair, 
+  Dumbbell, 
+  Activity,
+  AlertCircle,
+  History,
+  Save,
+  RotateCcw,
+  TrendingUp,
+  Loader2
+} from "lucide-react";
+import { BiometricProfile } from "@/components/BiometricProfile";
+import { AttributeSlider } from "@/components/AttributeSlider";
+import { useBiometricData } from "@/hooks/useBiometricData";
+import { useScoutingForm } from "@/hooks/useScoutingForm";
+import { PositionType } from "@/types";
 
 export default function TalentIDPage() {
-  // Safe optional-chaining tracking pattern for Next.js search parameters
   const searchParams = useSearchParams();
   const playerId = searchParams?.get("player_id") ?? "";
+  const coachId = searchParams?.get("coach_id") ?? "coach_default";
   const initialPosition = (searchParams?.get("position") as PositionType) ?? "MID";
 
-  const [position, setPosition] = useState<PositionType>(initialPosition);
-  const [metrics, setMetrics] = useState<Record<string, number>>({
-    pace: 70,
-    technical: 65,
-    tactical: 60,
-    physical: 75,
-    scanning: 55,
-  });
-  
-  const [biometricData, setBiometricData] = useState<BiometricData>({
-    overallForm: 0,
-    explosivePower: 0,
-    symmetryScore: 0,
-    fatigueIndex: 0,
-    hasData: false,
-    lastScanDate: null,
+  // State for showing history
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Biometric data
+  const { 
+    data: biometricData, 
+    loading: bioLoading, 
+    error: bioError,
+    refresh: refreshBio 
+  } = useBiometricData(playerId);
+
+  // Scouting form state
+  const {
+    position,
+    setPosition,
+    attributes,
+    updateAttribute,
+    overallScore,
+    notes,
+    setNotes,
+    isSaving,
+    error: saveError,
+    saveProfile,
+    resetToDefaults,
+    savedProfiles,
+    teamAverages,
+  } = useScoutingForm({
+    playerId,
+    coachId,
+    initialPosition,
   });
 
-  // Load biometric data when playerId is available
-  useEffect(() => {
-    if (playerId) {
-      const bio = loadBiometricData(playerId);
-      setBiometricData(bio);
-    }
-  }, [playerId]);
-
-  const handleMetricChange = (key: string, value: number) => {
-    setMetrics((prev) => ({
-      ...prev,
-      [key]: Math.min(100, Math.max(0, value)),
-    }));
+  // Handle position change with team average refresh
+  const handlePositionChange = (newPosition: PositionType) => {
+    setPosition(newPosition);
   };
 
-  const attributes: AttributeScore[] = [
-    { label: "Pace & Acceleration", key: "pace", icon: Zap },
-    { label: "Technical Execution", key: "technical", icon: Crosshair },
-    { label: "Tactical Awareness", key: "tactical", icon: Shield },
-    { label: "Physical Profile", key: "physical", icon: Dumbbell },
-    { label: "Visual Scanning Frequency", key: "scanning", icon: UserCheck },
-  ].map((attr) => ({
-    label: attr.label,
-    value: metrics[attr.key],
-    icon: attr.icon,
-  }));
+  // Attribute configuration
+  const attributeConfigs = [
+    { key: 'pace' as const, label: 'Pace & Acceleration', icon: <Zap className="h-4 w-4" /> },
+    { key: 'technical' as const, label: 'Technical Execution', icon: <Crosshair className="h-4 w-4" /> },
+    { key: 'tactical' as const, label: 'Tactical Awareness', icon: <Shield className="h-4 w-4" /> },
+    { key: 'physical' as const, label: 'Physical Profile', icon: <Dumbbell className="h-4 w-4" /> },
+    { key: 'scanning' as const, label: 'Visual Scanning Frequency', icon: <UserCheck className="h-4 w-4" /> },
+  ];
 
-  // Calculate generic Grassroots Scouting Grade index
-  const overallScoutingScore = Math.round(
-    Object.values(metrics).reduce((a, b) => a + b, 0) / Object.keys(metrics).length
-  );
-
-  // Get color for form score
-  const getFormColor = (score: number) => {
+  // Get color for overall score
+  const getOverallColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
     if (score >= 60) return "text-amber-500";
     return "text-red-500";
   };
 
-  // Get fatigue display
-  const getFatigueDisplay = (fatigue: number) => {
-    if (fatigue > 60) return { text: "High", color: "text-red-500" };
-    if (fatigue > 30) return { text: "Moderate", color: "text-amber-500" };
-    return { text: "Low", color: "text-emerald-500" };
+  const getOverallBg = (score: number) => {
+    if (score >= 80) return "border-emerald-500/20 bg-emerald-950/10";
+    if (score >= 60) return "border-amber-500/20 bg-amber-950/10";
+    return "border-red-500/20 bg-red-950/10";
   };
 
-  const fatigueDisplay = getFatigueDisplay(biometricData.fatigueIndex);
+  if (!playerId) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold">No Player Selected</h2>
+          <p className="text-gray-400 text-sm mt-2">
+            Please select a player from the squad list
+          </p>
+          <Link
+            href="/coach"
+            className="mt-4 inline-block px-4 py-2 bg-emerald-600 rounded-lg text-sm font-medium hover:bg-emerald-500 transition-colors"
+          >
+            Return to Squad
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-gray-900 text-white">
-      <div className="mx-auto max-w-4xl px-4 py-6">
+      <div className="mx-auto max-w-6xl px-4 py-6">
         {/* Navigation Header */}
         <div className="mb-6 flex items-center justify-between">
           <Link
@@ -143,7 +127,7 @@ export default function TalentIDPage() {
               Grassroots Talent ID Matrix
             </h1>
             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
-              Technical Scouting & Performance Mapping
+              {playerId} • {position} • {new Date().toLocaleDateString()}
             </p>
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-900/30 bg-emerald-950/20 text-emerald-400">
@@ -151,85 +135,61 @@ export default function TalentIDPage() {
           </div>
         </div>
 
-        {/* Biometric Profile Card - NEW SECTION */}
-        {biometricData.hasData && (
-          <div className="mb-6 rounded-2xl bg-gradient-to-r from-emerald-900/40 to-blue-900/40 p-5 border border-emerald-800/30">
-            <div className="flex items-center justify-between mb-3">
+        {/* Biometric Profile */}
+        {bioLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+            <span className="ml-2 text-sm text-gray-400">Loading biometric data...</span>
+          </div>
+        ) : bioError ? (
+          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+            <p className="text-sm text-red-400">{bioError}</p>
+          </div>
+        ) : (
+          <BiometricProfile
+            data={biometricData}
+            playerId={playerId}
+            onRefresh={refreshBio}
+            compact={false}
+          />
+        )}
+
+        {/* Main Grid */}
+        <div className="grid gap-6 lg:grid-cols-3 mt-6">
+          {/* Form Assessment Panel */}
+          <div className="lg:col-span-2 space-y-4 rounded-xl border border-gray-800 bg-gray-900/40 p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">
+                Core Attributes Assessment
+              </h2>
               <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-emerald-500" />
-                <p className="text-xs font-bold text-white">Biometric Profile</p>
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-600/30 text-emerald-400">AI Verified</span>
-              </div>
-              {playerId && (
-                <Link 
-                  href={`/coach/squad/${playerId}`} 
-                  className="text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors"
+                <button
+                  onClick={resetToDefaults}
+                  className="px-2 py-1 text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"
                 >
-                  View Full History →
-                </Link>
-              )}
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <p className="text-[9px] text-gray-400">Overall Form</p>
-                <p className={`text-2xl font-bold ${getFormColor(biometricData.overallForm)}`}>
-                  {biometricData.overallForm || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[9px] text-gray-400">Explosive Power</p>
-                <p className="text-2xl font-bold text-white">{biometricData.explosivePower || "—"}%</p>
-              </div>
-              <div>
-                <p className="text-[9px] text-gray-400">Movement Symmetry</p>
-                <p className="text-2xl font-bold text-white">{biometricData.symmetryScore || "—"}%</p>
-              </div>
-              <div>
-                <p className="text-[9px] text-gray-400">Fatigue Index</p>
-                <p className={`text-2xl font-bold ${fatigueDisplay.color}`}>
-                  {biometricData.fatigueIndex || "—"}
-                </p>
-                <p className={`text-[8px] ${fatigueDisplay.color}`}>{fatigueDisplay.text}</p>
+                  <RotateCcw className="h-3 w-3" />
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="px-2 py-1 text-[10px] text-gray-400 hover:text-white transition-colors flex items-center gap-1"
+                >
+                  <History className="h-3 w-3" />
+                  {showHistory ? 'Hide' : 'Show'} History
+                </button>
               </div>
             </div>
-            {biometricData.lastScanDate && (
-              <p className="mt-3 text-[9px] text-gray-500 text-right">
-                Last scan: {new Date(biometricData.lastScanDate).toLocaleDateString()}
-              </p>
-            )}
-          </div>
-        )}
 
-        {/* No Biometric Data Warning */}
-        {!biometricData.hasData && playerId && (
-          <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-amber-500" />
-              <p className="text-xs text-amber-400">
-                No biometric data available for this player.
-              </p>
-            </div>
-            <p className="text-[10px] text-gray-500 mt-1">
-              Ask the player to complete a movement scan at /player/biomechanics
-            </p>
-          </div>
-        )}
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Form Assessment Input Panel */}
-          <div className="md:col-span-2 space-y-4 rounded-xl border border-gray-800 bg-gray-900/40 p-5">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">
-              Live Core Attributes Entry
-            </h2>
-            
-            {/* Position Select Profile */}
+            {/* Position Selection */}
             <div>
-              <label className="text-[11px] font-bold uppercase text-gray-500">Target Core Position</label>
+              <label className="text-[11px] font-bold uppercase text-gray-500">
+                Target Core Position
+              </label>
               <div className="mt-1 flex gap-2">
                 {(["FW", "MID", "DEF", "GK"] as PositionType[]).map((pos) => (
                   <button
                     key={pos}
-                    onClick={() => setPosition(pos)}
+                    onClick={() => handlePositionChange(pos)}
                     className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
                       position === pos
                         ? "bg-emerald-600 text-white"
@@ -242,64 +202,168 @@ export default function TalentIDPage() {
               </div>
             </div>
 
-            {/* Slider Interfaces */}
+            {/* Attribute Sliders */}
             <div className="space-y-4 pt-2">
-              {[
-                { name: "Pace & Acceleration", key: "pace" },
-                { name: "Technical Execution", key: "technical" },
-                { name: "Tactical Awareness", key: "tactical" },
-                { name: "Physical Profile", key: "physical" },
-                { name: "Visual Scanning Frequency", key: "scanning" },
-              ].map((item) => (
-                <div key={item.key} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-semibold text-gray-300">{item.name}</span>
-                    <span className="font-bold text-emerald-400">{metrics[item.key]}/100</span>
+              {attributeConfigs.map(({ key, label, icon }) => (
+                <AttributeSlider
+                  key={key}
+                  label={label}
+                  value={attributes[key]}
+                  onChange={(value) => updateAttribute(key, value)}
+                  icon={icon}
+                  showComparison={teamAverages?.[key]}
+                />
+              ))}
+            </div>
+
+            {/* Notes Section */}
+            <div className="mt-4">
+              <label className="text-[11px] font-bold uppercase text-gray-500">
+                Coach Notes
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Additional observations, strengths, areas for development..."
+                className="w-full mt-1 rounded-lg border border-gray-700 bg-gray-900/50 p-3 text-sm text-white placeholder-gray-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Scouting Summary Panel */}
+          <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-900/20 p-5">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center mb-4">
+              Performance Index
+            </h2>
+
+            {/* Overall Score */}
+            <div className="mx-auto flex h-32 w-32 flex-col justify-center rounded-full border-4 border-emerald-500/20 bg-emerald-950/10 shadow-inner">
+              <span className={`text-4xl font-black ${getOverallColor(overallScore)}`}>
+                {overallScore}
+              </span>
+              <span className="text-[9px] font-bold uppercase text-emerald-400 tracking-widest">
+                GRADE
+              </span>
+            </div>
+
+            {/* Score Distribution */}
+            <div className="mt-4 space-y-1">
+              {attributeConfigs.map(({ key, label }) => (
+                <div key={key} className="flex justify-between text-xs">
+                  <span className="text-gray-400">{label}</span>
+                  <span className={`font-bold ${getOverallColor(attributes[key])}`}>
+                    {attributes[key]}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Player Info */}
+            <div className="mt-6 space-y-2">
+              <div className="rounded-lg bg-gray-900/80 border border-gray-800 px-3 py-2 text-left flex justify-between items-center">
+                <span className="text-[11px] text-gray-400 uppercase font-medium">
+                  Player ID
+                </span>
+                <span className="text-xs font-mono font-bold text-gray-200">
+                  {playerId}
+                </span>
+              </div>
+              <div className="rounded-lg bg-gray-900/80 border border-gray-800 px-3 py-2 text-left flex justify-between items-center">
+                <span className="text-[11px] text-gray-400 uppercase font-medium">
+                  Position
+                </span>
+                <span className="text-xs font-bold text-emerald-400">
+                  {position}
+                </span>
+              </div>
+              {savedProfiles.length > 0 && (
+                <div className="rounded-lg bg-gray-900/80 border border-gray-800 px-3 py-2 text-left">
+                  <span className="text-[11px] text-gray-400 uppercase font-medium block mb-1">
+                    Previous Scores
+                  </span>
+                  <div className="flex gap-2">
+                    {savedProfiles.slice(0, 3).map((profile, index) => (
+                      <span 
+                        key={index}
+                        className="text-[10px] px-2 py-1 bg-gray-800 rounded-md"
+                      >
+                        {profile.overallScore}% 
+                        <span className="text-gray-500 text-[8px] ml-1">
+                          {new Date(profile.createdAt).toLocaleDateString()}
+                        </span>
+                      </span>
+                    ))}
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={metrics[item.key]}
-                    onChange={(e) => handleMetricChange(item.key, parseInt(e.target.value))}
-                    className="w-full accent-emerald-500 bg-gray-800 rounded-lg appearance-none h-1.5 cursor-pointer"
-                  />
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 space-y-2">
+              {saveError && (
+                <div className="text-xs text-red-400 bg-red-500/10 p-2 rounded-lg">
+                  {saveError}
+                </div>
+              )}
+              <button
+                onClick={saveProfile}
+                disabled={isSaving}
+                className="w-full rounded-xl bg-emerald-600 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-lg hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Log Scouting Profile
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  // Navigate to player profile
+                  window.location.href = `/coach/squad/${playerId}`;
+                }}
+                className="w-full rounded-xl border border-gray-700 py-2.5 text-xs font-medium text-gray-400 hover:bg-gray-800 transition-colors"
+              >
+                View Full Player Profile →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* History Panel (Collapsible) */}
+        {showHistory && savedProfiles.length > 0 && (
+          <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/40 p-5">
+            <h3 className="text-sm font-bold text-gray-400 mb-4">Assessment History</h3>
+            <div className="space-y-3">
+              {savedProfiles.map((profile) => (
+                <div key={profile.id} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-800">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-white">
+                        {profile.overallScore}%
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {profile.position}
+                      </span>
+                    </div>
+                    {profile.notes && (
+                      <p className="text-xs text-gray-500 mt-1">{profile.notes}</p>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {new Date(profile.createdAt).toLocaleString()}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Scouting Assessment Scoring Output Summary */}
-          <div className="flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-900/20 p-5 text-center">
-            <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
-                Performance Index
-              </h2>
-              <div className="mx-auto flex h-28 w-28 flex-col justify-center rounded-full border-4 border-emerald-500/20 bg-emerald-950/10 shadow-inner">
-                <span className="text-4xl font-black text-white">{overallScoutingScore}</span>
-                <span className="text-[9px] font-bold uppercase text-emerald-400 tracking-widest">GRADE</span>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-2">
-              <div className="rounded-lg bg-gray-900/80 border border-gray-800 px-3 py-2 text-left flex justify-between items-center">
-                <span className="text-[11px] text-gray-400 uppercase font-medium">Scouted ID</span>
-                <span className="text-xs font-mono font-bold text-gray-200">{playerId || "GENERIC_ROOT"}</span>
-              </div>
-              <div className="rounded-lg bg-gray-900/80 border border-gray-800 px-3 py-2 text-left flex justify-between items-center">
-                <span className="text-[11px] text-gray-400 uppercase font-medium">Position Matrix</span>
-                <span className="text-xs font-bold text-emerald-400">{position} Evaluation</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => alert(`Saved data parameters for Assessment Score: ${overallScoutingScore}`)}
-              className="mt-6 w-full rounded-xl bg-emerald-600 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-lg hover:bg-emerald-500 active:scale-95 transition-all"
-            >
-              Log Scouting Profile
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

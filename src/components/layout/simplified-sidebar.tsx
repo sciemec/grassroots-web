@@ -54,7 +54,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/analyst", label: "Analyst Hub", icon: <BarChart3 size={18} />, roles: ["analyst"], feature: "analystHub" },
   
   // WORLD CUP
-  { href: "/world-cup", label: "🏆 World Cup", icon: <Trophy size={18} />, roles: ["player", "athlete", "coach", "scout", "fan"] },
 
   // UTILITIES
   { href: "/settings", label: "Settings", icon: <Settings size={18} />, roles: ["player", "athlete", "coach", "scout", "fan", "admin"] },
