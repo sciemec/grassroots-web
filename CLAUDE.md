@@ -2,6 +2,351 @@
 
 ---
 
+## SESSION LOG — 14 July 2026
+
+### Theme — Coaching Marketplace: Browse + Profile/Booking Pages
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Coaching Marketplace — FULLY BUILT ✅
+
+**Commit:** `6847436` — pushed to `sciemec/grassroots-web` master → Render auto-deployed
+
+**3 new frontend pages:**
+
+| File | Purpose |
+|---|---|
+| `src/app/player/coaching/page.tsx` | Coaching hub dashboard — entry point, stats, session history, "Find a Coach" CTA |
+| `src/app/player/coaching/browse/page.tsx` | Coach discovery — search + filter panel (sport, max price, verified, badge), CoachCard grid |
+| `src/app/player/coaching/[coachId]/page.tsx` | Individual coach profile + booking — bio, credentials, availability, reviews, booking flow |
+
+**3 new components:**
+
+| File | Purpose |
+|---|---|
+| `src/components/coaching/PaymentModal.tsx` | 5-stage EcoCash/InnBucks/OneMoney/Card payment flow |
+| `src/components/coaching/ReviewSystem.tsx` | Star ratings, category breakdown, interactive review submission |
+| `src/components/coaching/VideoCall.tsx` | Video session component |
+
+**`/player/coaching/browse` features:**
+- Search bar (name/specialty)
+- Filter panel: sport chips, max price slider, verified toggle, badge filter (premier/zifa/national/academy/elite)
+- `BADGE_CONFIG` — colour-coded badge pills per verification level
+- `CoachCard` — rating stars, hourly rate, session types, specialties, availability day pills
+- Links to `/player/coaching/${coach.id}`
+- Mock coaches with localStorage fallback if API 404
+
+**`/player/coaching/[coachId]` features:**
+- Next.js 15 async params: `const { coachId } = use(params)`
+- Individual Zustand selectors (React #185 prevention): `const user = useAuthStore((s) => s.user)` + `const token = useAuthStore((s) => s.token)`
+- 3 tabs: **Overview** (bio, credentials, coaching style, former clubs, session types) / **Availability** (slot picker with available spaces) / **Reviews** (`ReviewSystem` component)
+- Sticky booking card on desktop (right column) — session type selector + slot picker + notes textarea
+- `handleBook()` → `POST /coaching/sessions` → triggers `PaymentModal`
+- `bookingSuccess` state replaces booking card with green confirmation + "View My Sessions" link
+- `MOCK_COACH` fallback with 4 credentials, 4 availability slots, 3 reviews
+- `DAY_ABBR` + `DAYS_ORDER` helpers for availability grid
+
+**ALL BUILT ROUTES — ADDITIONS:**
+```
+/player/coaching          Coaching hub — session history, active coach card, "Find a Coach" CTA
+/player/coaching/browse   Coach discovery — search + filter + CoachCard grid
+/player/coaching/[coachId]  Coach profile + booking — tabs: overview / availability / reviews
+```
+
+**MISSING LARAVEL BACKEND (copy-paste ready — see below):**
+```
+GET  /api/v1/coaches                List coaches (filters: sport, max_price, is_verified, badge)
+GET  /api/v1/coaches/{id}           Single coach profile
+POST /api/v1/coaching/sessions      Book a session
+GET  /api/v1/coaching/sessions      Player's session history
+PATCH /api/v1/coaching/sessions/{id}/review  Submit review after session
+```
+
+---
+
+### LARAVEL BACKEND — COACHING MARKETPLACE (copy-paste ready)
+
+#### Migration 1 — `coach_profiles` table
+
+```php
+// FILE: database/migrations/2026_07_14_000001_create_coach_profiles_table.php
+Schema::create('coach_profiles', function (Blueprint $table) {
+    $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+    $table->uuid('user_id')->unique()->constrained('users')->cascadeOnDelete();
+    $table->string('name');
+    $table->string('current_club')->nullable();
+    $table->string('current_role')->nullable();
+    $table->json('former_clubs')->nullable();          // string[]
+    $table->json('specialties')->nullable();           // string[]
+    $table->text('coaching_style')->nullable();
+    $table->text('bio')->nullable();
+    $table->json('languages')->nullable();             // string[]
+    $table->unsignedSmallInteger('experience')->default(0);
+    $table->decimal('rating', 3, 2)->default(0);
+    $table->unsignedInteger('total_sessions')->default(0);
+    $table->unsignedInteger('total_students')->default(0);
+    $table->decimal('price_per_session', 8, 2)->default(0);
+    $table->unsignedSmallInteger('session_duration')->default(60); // minutes
+    $table->boolean('is_verified')->default(false);
+    $table->enum('verification_badge', ['premier','zifa','national','academy','elite'])->nullable();
+    $table->string('photo_url')->nullable();
+    $table->json('session_types')->nullable();         // CoachingSession.sessionType[]
+    $table->timestamps();
+});
+```
+
+#### Migration 2 — `coach_credentials` table
+
+```php
+// FILE: database/migrations/2026_07_14_000002_create_coach_credentials_table.php
+Schema::create('coach_credentials', function (Blueprint $table) {
+    $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+    $table->uuid('coach_profile_id')->constrained('coach_profiles')->cascadeOnDelete();
+    $table->string('name');         // e.g. "CAF A License"
+    $table->string('issuer');       // e.g. "CAF"
+    $table->unsignedSmallInteger('year');
+    $table->string('document_url')->nullable();
+    $table->timestamps();
+});
+```
+
+#### Migration 3 — `coach_availability_slots` table
+
+```php
+// FILE: database/migrations/2026_07_14_000003_create_coach_availability_slots_table.php
+Schema::create('coach_availability_slots', function (Blueprint $table) {
+    $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+    $table->uuid('coach_profile_id')->constrained('coach_profiles')->cascadeOnDelete();
+    $table->enum('day', ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
+    $table->time('start_time');
+    $table->time('end_time');
+    $table->boolean('is_recurring')->default(true);
+    $table->unsignedTinyInteger('max_bookings')->default(4);
+    $table->unsignedTinyInteger('booked_count')->default(0);
+    $table->timestamps();
+});
+```
+
+#### Migration 4 — `coaching_sessions` table
+
+```php
+// FILE: database/migrations/2026_07_14_000004_create_coaching_sessions_table.php
+Schema::create('coaching_sessions', function (Blueprint $table) {
+    $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+    $table->uuid('coach_profile_id')->constrained('coach_profiles')->cascadeOnDelete();
+    $table->uuid('player_id')->constrained('users')->cascadeOnDelete();
+    $table->enum('session_type', ['individual','group','video_analysis','tactical','drills','match_analysis']);
+    $table->uuid('slot_id')->nullable()->constrained('coach_availability_slots')->nullOnDelete();
+    $table->timestamp('scheduled_at')->nullable();
+    $table->unsignedSmallInteger('duration_minutes')->default(60);
+    $table->decimal('price', 8, 2);
+    $table->enum('payment_method', ['ecocash','innbucks','onemoney','bank','card'])->nullable();
+    $table->enum('payment_status', ['pending','paid','refunded','failed'])->default('pending');
+    $table->string('payment_reference')->nullable();
+    $table->enum('status', ['upcoming','completed','cancelled','no_show'])->default('upcoming');
+    $table->text('notes')->nullable();
+    $table->text('coach_notes')->nullable();
+    $table->decimal('rating', 3, 2)->nullable();
+    $table->text('review_comment')->nullable();
+    $table->json('review_categories')->nullable(); // { knowledge, communication, punctuality, value }
+    $table->timestamp('reviewed_at')->nullable();
+    $table->timestamps();
+});
+```
+
+#### `CoachController.php`
+
+```php
+// FILE: app/Http/Controllers/Api/CoachController.php
+<?php
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class CoachController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = DB::table('coach_profiles')
+            ->select('coach_profiles.*')
+            ->orderByDesc('rating');
+
+        if ($sport = $request->query('sport')) {
+            $query->whereRaw("specialties::text ILIKE ?", ["%{$sport}%"]);
+        }
+        if ($max = $request->query('max_price')) {
+            $query->where('price_per_session', '<=', (float) $max);
+        }
+        if ($request->query('is_verified') === 'true') {
+            $query->where('is_verified', true);
+        }
+        if ($badge = $request->query('badge')) {
+            $query->where('verification_badge', $badge);
+        }
+
+        $coaches = $query->paginate(20);
+
+        // Attach credentials + availability to each coach
+        $coaches->getCollection()->transform(function ($coach) {
+            $coach->credentials = DB::table('coach_credentials')
+                ->where('coach_profile_id', $coach->id)->get();
+            $coach->availability = DB::table('coach_availability_slots')
+                ->where('coach_profile_id', $coach->id)->get();
+            $coach->reviews = []; // expensive — not loaded on list view
+            return $coach;
+        });
+
+        return response()->json($coaches);
+    }
+
+    public function show(Request $request, string $id)
+    {
+        $coach = DB::table('coach_profiles')->where('id', $id)->first();
+        if (!$coach) return response()->json(['error' => 'Not found'], 404);
+
+        $coach->credentials = DB::table('coach_credentials')
+            ->where('coach_profile_id', $id)->get();
+        $coach->availability = DB::table('coach_availability_slots')
+            ->where('coach_profile_id', $id)->get();
+        $coach->reviews = DB::table('coaching_sessions')
+            ->where('coach_profile_id', $id)
+            ->whereNotNull('rating')
+            ->select('player_id', 'rating', 'review_comment', 'review_categories', 'reviewed_at')
+            ->orderByDesc('reviewed_at')
+            ->limit(20)
+            ->get();
+
+        return response()->json(['data' => $coach]);
+    }
+}
+```
+
+#### `CoachingSessionController.php`
+
+```php
+// FILE: app/Http/Controllers/Api/CoachingSessionController.php
+<?php
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class CoachingSessionController extends Controller
+{
+    public function index(Request $request)
+    {
+        $sessions = DB::table('coaching_sessions')
+            ->join('coach_profiles', 'coaching_sessions.coach_profile_id', '=', 'coach_profiles.id')
+            ->where('coaching_sessions.player_id', $request->user()->id)
+            ->select('coaching_sessions.*', 'coach_profiles.name as coach_name',
+                     'coach_profiles.photo_url as coach_photo', 'coach_profiles.verification_badge')
+            ->orderByDesc('coaching_sessions.scheduled_at')
+            ->paginate(20);
+        return response()->json($sessions);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'coach_profile_id' => 'required|uuid|exists:coach_profiles,id',
+            'session_type'     => 'required|in:individual,group,video_analysis,tactical,drills,match_analysis',
+            'slot_id'          => 'nullable|uuid|exists:coach_availability_slots,id',
+            'scheduled_at'     => 'nullable|date',
+            'duration_minutes' => 'nullable|integer|min:15|max:360',
+            'price'            => 'required|numeric|min:0',
+            'payment_method'   => 'nullable|in:ecocash,innbucks,onemoney,bank,card',
+            'notes'            => 'nullable|string|max:1000',
+        ]);
+
+        $id = (string) Str::uuid();
+        DB::table('coaching_sessions')->insert(array_merge($data, [
+            'id'        => $id,
+            'player_id' => $request->user()->id,
+            'status'    => 'upcoming',
+            'payment_status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]));
+
+        // Increment booked_count on the slot
+        if (!empty($data['slot_id'])) {
+            DB::table('coach_availability_slots')
+                ->where('id', $data['slot_id'])
+                ->increment('booked_count');
+        }
+
+        return response()->json(['data' => DB::table('coaching_sessions')->where('id', $id)->first()], 201);
+    }
+
+    public function review(Request $request, string $id)
+    {
+        $data = $request->validate([
+            'rating'             => 'required|numeric|min:1|max:5',
+            'review_comment'     => 'nullable|string|max:1000',
+            'review_categories'  => 'nullable|array',
+        ]);
+
+        DB::table('coaching_sessions')
+            ->where('id', $id)
+            ->where('player_id', $request->user()->id)
+            ->update(array_merge($data, [
+                'reviewed_at' => now(),
+                'updated_at'  => now(),
+            ]));
+
+        // Recalculate coach average rating
+        $session = DB::table('coaching_sessions')->where('id', $id)->first();
+        if ($session) {
+            $avg = DB::table('coaching_sessions')
+                ->where('coach_profile_id', $session->coach_profile_id)
+                ->whereNotNull('rating')
+                ->avg('rating');
+            DB::table('coach_profiles')
+                ->where('id', $session->coach_profile_id)
+                ->update(['rating' => round($avg, 2), 'updated_at' => now()]);
+        }
+
+        return response()->json(['message' => 'Review saved']);
+    }
+}
+```
+
+#### Routes (add to `routes/api.php`)
+
+```php
+// Coach marketplace — public browse (no auth), booking requires auth
+Route::get('/coaches', [CoachController::class, 'index']);
+Route::get('/coaches/{id}', [CoachController::class, 'show']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/coaching/sessions',            [CoachingSessionController::class, 'index']);
+    Route::post('/coaching/sessions',           [CoachingSessionController::class, 'store']);
+    Route::patch('/coaching/sessions/{id}/review', [CoachingSessionController::class, 'review']);
+});
+```
+
+---
+
+### WHAT STILL NEEDS DOING (14 July 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Coach marketplace migrations | WRITTEN — NOT YET ON RENDER | Copy 4 migrations to bhora-ai → push → auto-migrates |
+| `CoachController` + `CoachingSessionController` | WRITTEN — NOT IN bhora-ai | Copy controllers → add routes to `routes/api.php` |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
 ## SESSION LOG — 13 July 2026
 
 ### Theme — Player→Scout Discovery Loop: 5 Marketing Audit Fixes
