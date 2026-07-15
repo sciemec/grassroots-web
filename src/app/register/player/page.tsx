@@ -7,8 +7,6 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell } fr
 import { normalizePhone } from "@/lib/phone-normalize";
 import { COUNTRIES } from "@/lib/countries";
 
-// Coach name per gender — shown under each button so the player
-// knows which AI coach they will be assigned
 const GENDER_COACH: Record<"male" | "female", { label: string; coach: string }> = {
   male:   { label: "Male",   coach: "THUTO" },
   female: { label: "Female", coach: "Amara" },
@@ -45,7 +43,6 @@ export default function RegisterPlayerPage() {
   const router = useRouter();
   const [step,         setStep]         = useState(1);
 
-  // Pre-fill phone number from ?phone= query param (sent by WhatsApp REGISTER command)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const phoneParam = params.get("phone");
@@ -53,6 +50,7 @@ export default function RegisterPlayerPage() {
       setForm((prev) => ({ ...prev, contactType: "phone", phone: phoneParam }));
     }
   }, []);
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error,        setError]        = useState<string | null>(null);
@@ -136,32 +134,58 @@ export default function RegisterPlayerPage() {
       }
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg =
-          data.message ||
-          (data.errors ? Object.values(data.errors).flat().join(" ") : null) ||
-          "Registration failed. Please try again.";
-        throw new Error(msg);
+        const data = await res.json().catch(() => ({})) as {
+          message?: string;
+          errors?: Record<string, string[]>;
+        };
+
+        // Parse Laravel field-level validation errors into friendly messages
+        if (data.errors && Object.keys(data.errors).length > 0) {
+          const fieldLabels: Record<string, string> = {
+            email:    "Email",
+            phone:    "Phone number",
+            password: "Password",
+            name:     "Name",
+            age:      "Age",
+          };
+          const msgs = Object.entries(data.errors).map(([field, messages]) => {
+            const label = fieldLabels[field] ?? field;
+            // Make common Laravel messages friendlier
+            const rawMsg = messages[0] ?? "";
+            if (rawMsg.includes("already been taken") && field === "email") {
+              return "This email is already registered — try signing in instead.";
+            }
+            if (rawMsg.includes("already been taken") && field === "phone") {
+              return "This phone number is already registered — try signing in instead.";
+            }
+            return `${label}: ${rawMsg}`;
+          });
+          throw new Error(msgs.join(" · "));
+        }
+
+        // Fall back to message field
+        const raw = data.message ?? "Registration failed. Please try again.";
+        const friendly: Record<string, string> = {
+          "Validation failed":
+            "Some details are invalid. Check your phone number or email and try again.",
+          "The email has already been taken.":
+            "This email is already registered — try signing in instead.",
+          "The phone has already been taken.":
+            "This phone number is already registered — try signing in instead.",
+          "The phone number has already been taken.":
+            "This phone number is already registered — try signing in instead.",
+        };
+        throw new Error(friendly[raw] ?? raw);
       }
 
       const data = await res.json();
 
-      // Save gender to localStorage — read by ThutoChat.tsx, DrillsPage.tsx,
-      // talent-id-page.tsx, and thuto-whatsapp-route.ts to auto-select
-      // THUTO (male) or Amara (female) coaching persona
       localStorage.setItem("player_gender", form.gender || "male");
       localStorage.setItem("player_sport",  form.sport);
 
-      // Save token and user if returned — avoids a separate /auth/me call
-      if (data.token) {
-        localStorage.setItem("auth_token", data.token);
-      }
-      if (data.user?.id) {
-        localStorage.setItem("player_id", data.user.id);
-      }
-      if (data.user?.passport_token) {
-        localStorage.setItem("passport_token", data.user.passport_token);
-      }
+      if (data.token)              localStorage.setItem("auth_token",      data.token);
+      if (data.user?.id)           localStorage.setItem("player_id",       data.user.id);
+      if (data.user?.passport_token) localStorage.setItem("passport_token", data.user.passport_token);
 
       router.push("/login?registered=1");
     } catch (err) {
@@ -231,7 +255,7 @@ export default function RegisterPlayerPage() {
                 </div>
               </div>
 
-              {/* Gender — shows coach name under each option */}
+              {/* Gender */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-2">
                   Gender <span className="text-red-400">*</span>
@@ -252,11 +276,7 @@ export default function RegisterPlayerPage() {
                       }`}
                     >
                       <div className="text-sm font-bold">{cfg.label}</div>
-                      <div
-                        className={`text-xs mt-0.5 ${
-                          form.gender === g ? "text-green-200" : "text-gray-400"
-                        }`}
-                      >
+                      <div className={`text-xs mt-0.5 ${form.gender === g ? "text-green-200" : "text-gray-400"}`}>
                         Coach: {cfg.coach}
                       </div>
                     </button>
@@ -384,6 +404,7 @@ export default function RegisterPlayerPage() {
                 )}
               </div>
 
+              {/* Password */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1.5">Password</label>
                 <div className="relative">
@@ -392,7 +413,11 @@ export default function RegisterPlayerPage() {
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)}
                     placeholder="Min. 8 characters"
-                    className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a]"
+                    className={`w-full px-3 py-2.5 pr-10 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5c2a] ${
+                      form.password.length > 0 && form.password.length < 8
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200"
+                    }`}
                   />
                   <button
                     type="button"
@@ -402,8 +427,19 @@ export default function RegisterPlayerPage() {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+                {form.password.length > 0 && form.password.length < 8 && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Password needs {8 - form.password.length} more character{8 - form.password.length !== 1 ? "s" : ""} (min. 8)
+                  </p>
+                )}
+                {form.password.length >= 8 && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <CheckCircle size={11} /> Password length: good
+                  </p>
+                )}
               </div>
 
+              {/* Confirm Password */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1.5">Confirm Password</label>
                 <input
@@ -420,7 +456,34 @@ export default function RegisterPlayerPage() {
                 {form.confirmPassword && form.password !== form.confirmPassword && (
                   <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
                 )}
+                {form.confirmPassword && form.password === form.confirmPassword && form.password.length >= 8 && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <CheckCircle size={11} /> Passwords match
+                  </p>
+                )}
               </div>
+
+              {/* Inline checklist explaining why button is still disabled */}
+              {!canSubmit && (form.password.length > 0 || form.email.length > 0 || form.phone.length > 4) && (
+                <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 space-y-1">
+                  <p className="font-bold mb-1">To enable Create Account:</p>
+                  {!contactValid && form.contactType === "email" && (
+                    <p>→ Enter a valid email address (e.g. you@gmail.com)</p>
+                  )}
+                  {!contactValid && form.contactType === "phone" && (
+                    <p>→ Enter your WhatsApp number — at least 9 digits</p>
+                  )}
+                  {form.password.length > 0 && form.password.length < 8 && (
+                    <p>→ Password must be at least 8 characters (currently {form.password.length})</p>
+                  )}
+                  {form.password.length >= 8 && form.confirmPassword.length === 0 && (
+                    <p>→ Confirm your password in the field below</p>
+                  )}
+                  {form.password.length >= 8 && form.confirmPassword.length > 0 && form.password !== form.confirmPassword && (
+                    <p>→ Passwords do not match — retype your confirm password</p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-1">
                 <button
