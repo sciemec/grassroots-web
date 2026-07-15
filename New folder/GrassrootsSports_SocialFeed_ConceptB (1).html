@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Grassroots Sports — Social Feed</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--g:#1a5c2a;--g2:#145022;--g3:#0f3a1a;--go:#c8962a;--go2:#a67820;--t:#1a1a1a;--t2:#555;--t3:#888;--bg:#fff;--bg2:#f8faf8;--bd:#e5e5e5;--bd2:#d0d9d0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#eaeaea;color:var(--t);padding:0;}
+.page-label{text-align:center;font-size:10px;font-weight:500;color:#888;letter-spacing:3px;text-transform:uppercase;padding:20px 0 16px;background:#eaeaea;}
+
+/* ── NAV ── */
+.nav{background:#fff;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;z-index:50;}
+.nav-top{height:54px;display:flex;align-items:center;padding:0 20px;gap:12px;}
+.logo-box{width:32px;height:32px;background:var(--g);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-box span{color:#fff;font-size:15px;font-weight:600;}
+.logo-wrap{display:flex;flex-direction:column;}
+.logo-name{font-size:13px;font-weight:500;color:var(--t);line-height:1.2;}
+.logo-url{font-size:9px;color:var(--t3);}
+.nav-hubs{display:flex;margin-left:20px;}
+.hub-link{padding:0 14px;height:54px;display:flex;align-items:center;font-size:12px;color:var(--t2);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all 0.15s;}
+.hub-link:hover:not(.active){color:var(--t);border-bottom-color:#e8e8e8;}
+.hub-link.active{color:var(--g);font-weight:500;border-bottom:3px solid var(--go);}
+.nav-search{flex:1;max-width:260px;margin-left:16px;}
+.nav-search input{width:100%;padding:6px 12px 6px 32px;border:0.5px solid var(--bd2);border-radius:20px;font-size:12px;color:var(--t);background:var(--bg2);}
+.search-wrap{position:relative;}
+.search-wrap::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;}
+.nav-right{margin-left:auto;display:flex;gap:10px;align-items:center;}
+.nav-partner{display:flex;align-items:center;gap:5px;padding:4px 10px;border:0.5px solid var(--bd);border-radius:14px;font-size:10px;color:var(--t2);}
+.nav-partner-dot{width:6px;height:6px;background:var(--g);border-radius:50%;flex-shrink:0;}
+.nav-icon-btn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--bd);background:#fff;font-size:15px;cursor:pointer;position:relative;}
+.notif-badge{position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:#e53935;border-radius:50%;font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.nav-avatar{width:32px;height:32px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;cursor:pointer;}
+
+/* ── THREE COLUMN LAYOUT ── */
+.layout{display:grid;grid-template-columns:240px 1fr 280px;gap:0;min-height:100vh;max-width:1200px;margin:0 auto;padding:0 16px 40px;}
+.left-col{padding:16px 14px 16px 0;}
+.center-col{padding:16px 14px;border-left:0.5px solid var(--bd);border-right:0.5px solid var(--bd);}
+.right-col{padding:16px 0 16px 14px;}
+
+/* ── LEFT — profile card ── */
+.profile-card{background:#fff;border:0.5px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.profile-banner{height:52px;background:linear-gradient(135deg,var(--g2),var(--g));}
+.profile-card-body{padding:0 14px 14px;}
+.profile-avatar-wrap{margin-top:-22px;margin-bottom:8px;}
+.profile-avatar{width:44px;height:44px;border-radius:50%;background:var(--g);border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:500;}
+.profile-name{font-size:14px;font-weight:500;color:var(--t);}
+.profile-role{font-size:11px;color:var(--t3);margin-top:2px;}
+.profile-score-row{display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px;background:var(--bg2);border-radius:6px;}
+.profile-score-v{font-size:20px;font-weight:500;color:var(--g);}
+.profile-score-info{flex:1;}
+.profile-score-l{font-size:10px;color:var(--t3);}
+.profile-score-d{font-size:10px;color:var(--g);margin-top:1px;}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);margin-top:10px;border-radius:6px;overflow:hidden;}
+.profile-stat{background:#fff;padding:8px 10px;text-align:center;}
+.profile-stat-v{font-size:14px;font-weight:500;color:var(--t);}
+.profile-stat-l{font-size:9px;color:var(--t3);margin-top:1px;}
+.profile-badges{padding:10px 14px;border-top:0.5px solid var(--bd);}
+.badge-row{display:flex;flex-wrap:wrap;gap:5px;}
+.badge-chip{font-size:9px;padding:3px 8px;border-radius:10px;font-weight:500;}
+.badge-green{background:#e8f5e9;color:var(--g);}
+.badge-gold{background:#fff8e8;color:var(--go2);}
+.badge-blue{background:#e3f2fd;color:#1565c0;}
+.view-profile-btn{width:100%;padding:7px;background:var(--g);color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;margin-top:10px;}
+
+/* left nav menu */
+.left-menu{background:#fff;border:0.5px solid var(--bd);border-radius:10px;overflow:hidden;}
+.menu-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12px;color:var(--t2);cursor:pointer;border-left:3px solid transparent;}
+.menu-item:hover{background:var(--bg2);}
+.menu-item.active{color:var(--g);font-weight:500;border-left:3px solid var(--go);background:#e8f5e9;}
+.menu-item .mi{font-size:15px;width:18px;text-align:center;}
+.menu-section{font-size:9px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;padding:10px 14px 4px;}
+
+/* ── CENTER — compose + feed ── */
+.compose-box{background:#fff;border:0.5px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px;}
+.compose-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.compose-avatar{width:36px;height:36px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:500;flex-shrink:0;}
+.compose-input{flex:1;border:0.5px solid var(--bd);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--t2);background:var(--bg2);min-height:60px;resize:none;font-family:inherit;}
+.compose-input:focus{outline:none;border-color:var(--g);background:#fff;}
+.compose-actions{display:flex;align-items:center;gap:8px;justify-content:space-between;}
+.compose-types{display:flex;gap:6px;}
+.compose-type{display:flex;align-items:center;gap:4px;padding:4px 10px;border:0.5px solid var(--bd);border-radius:14px;font-size:11px;color:var(--t2);cursor:pointer;}
+.compose-type:hover{border-color:var(--g);color:var(--g);}
+.post-btn{padding:6px 18px;background:var(--g);color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:500;cursor:pointer;}
+.post-btn:disabled{opacity:0.4;}
+
+/* feed tabs */
+.feed-tabs{display:flex;border-bottom:0.5px solid var(--bd);margin-bottom:12px;background:#fff;border-radius:10px 10px 0 0;border:0.5px solid var(--bd);}
+.feed-tab{flex:1;padding:10px;text-align:center;font-size:12px;color:var(--t2);cursor:pointer;border-bottom:3px solid transparent;}
+.feed-tab.active{color:var(--g);font-weight:500;border-bottom:3px solid var(--go);}
+
+/* post card */
+.post{background:#fff;border:0.5px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px;}
+.post-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.post-avatar{width:38px;height:38px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:500;flex-shrink:0;cursor:pointer;}
+.post-avatar.school{background:#1e3a6e;border-radius:8px;}
+.post-avatar.auto{background:var(--g3);}
+.post-meta{flex:1;}
+.post-name{font-size:13px;font-weight:500;color:var(--t);cursor:pointer;}
+.post-name:hover{color:var(--g);}
+.post-sub{font-size:11px;color:var(--t3);margin-top:1px;}
+.post-time{font-size:10px;color:var(--t3);margin-left:auto;white-space:nowrap;}
+.verified-tick{color:var(--g);font-size:12px;margin-left:3px;}
+.post-body{font-size:13px;color:var(--t);line-height:1.7;margin-bottom:10px;}
+.post-body .highlight{color:var(--g);font-weight:500;}
+.post-body .tag{color:#1565c0;cursor:pointer;}
+
+/* milestone card — automated */
+.milestone-post{background:linear-gradient(135deg,var(--g3),var(--g2));border-radius:10px;padding:16px;margin-bottom:10px;border:0.5px solid var(--g2);}
+.milestone-post .post-name{color:#fff;}
+.milestone-post .post-sub{color:rgba(255,255,255,0.5);}
+.milestone-post .post-time{color:rgba(255,255,255,0.4);}
+.milestone-content{display:flex;align-items:center;gap:14px;}
+.milestone-icon{font-size:36px;flex-shrink:0;}
+.milestone-text{flex:1;}
+.milestone-title{font-size:14px;font-weight:500;color:#fff;}
+.milestone-sub{font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;line-height:1.5;}
+.milestone-score-change{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.score-before{font-size:18px;font-weight:500;color:rgba(255,255,255,0.4);}
+.score-arrow{font-size:16px;color:var(--go);}
+.score-after{font-size:24px;font-weight:500;color:var(--go);}
+.score-label{font-size:10px;color:rgba(255,255,255,0.4);}
+
+/* scout activity card */
+.scout-activity{background:#fff8e8;border:0.5px solid #f0d080;border-radius:10px;padding:14px;margin-bottom:10px;}
+.scout-activity-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.scout-flag{font-size:18px;}
+.scout-activity-title{font-size:13px;font-weight:500;color:var(--t);}
+.scout-activity-meta{font-size:11px;color:var(--t2);line-height:1.6;}
+.scout-cta{display:inline-block;margin-top:8px;font-size:11px;color:var(--go2);font-weight:500;cursor:pointer;}
+
+/* video clip in feed */
+.post-video{background:var(--g3);border-radius:8px;height:110px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;cursor:pointer;}
+.post-video-play{width:40px;height:40px;border-radius:50%;background:rgba(200,150,42,0.9);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;}
+.post-video-dur{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:#fff;font-size:9px;padding:2px 6px;border-radius:3px;}
+.post-video-badge{position:absolute;top:8px;left:8px;background:var(--go);color:#fff;font-size:9px;padding:2px 7px;border-radius:3px;}
+
+/* post actions */
+.post-actions{display:flex;gap:16px;padding-top:10px;border-top:0.5px solid var(--bd);}
+.post-action{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3);cursor:pointer;}
+.post-action:hover{color:var(--g);}
+.post-action.liked{color:var(--g);}
+
+/* photo grid */
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;border-radius:8px;overflow:hidden;margin-bottom:10px;}
+.photo-cell{background:var(--bg3);height:80px;display:flex;align-items:center;justify-content:center;font-size:28px;}
+
+/* ── RIGHT COL ── */
+.right-card{background:#fff;border:0.5px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.right-card-header{padding:12px 14px;border-bottom:0.5px solid var(--bd);font-size:13px;font-weight:500;color:var(--t);display:flex;align-items:center;justify-content:space-between;}
+.right-card-link{font-size:11px;color:var(--g);cursor:pointer;}
+.right-card-body{padding:10px 14px;}
+
+/* leaderboard */
+.lb-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bd);}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{width:18px;font-size:11px;font-weight:500;color:var(--t3);text-align:center;flex-shrink:0;}
+.lb-rank.top{color:var(--go2);font-weight:700;}
+.lb-av{width:30px;height:30px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:500;flex-shrink:0;}
+.lb-info{flex:1;}
+.lb-name{font-size:12px;font-weight:500;color:var(--t);}
+.lb-pos{font-size:10px;color:var(--t3);}
+.lb-score{font-size:14px;font-weight:500;color:var(--g);}
+.lb-delta{font-size:9px;color:var(--g);display:block;}
+
+/* who to follow */
+.follow-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bd);}
+.follow-row:last-child{border-bottom:none;}
+.follow-av{width:34px;height:34px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;flex-shrink:0;}
+.follow-av.school{border-radius:8px;background:#1e3a6e;}
+.follow-info{flex:1;}
+.follow-name{font-size:12px;font-weight:500;color:var(--t);}
+.follow-sub{font-size:10px;color:var(--t3);}
+.follow-btn{font-size:10px;padding:4px 12px;border:0.5px solid var(--g);border-radius:12px;color:var(--g);background:#fff;cursor:pointer;}
+
+/* trending topics */
+.trend-item{padding:8px 0;border-bottom:0.5px solid var(--bd);cursor:pointer;}
+.trend-item:last-child{border-bottom:none;}
+.trend-tag{font-size:11px;font-weight:500;color:var(--g);}
+.trend-count{font-size:10px;color:var(--t3);margin-top:2px;}
+
+/* scout online */
+.scout-online{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bd);}
+.scout-online:last-child{border-bottom:none;}
+.scout-av{width:30px;height:30px;border-radius:50%;background:#1e3a6e;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:500;flex-shrink:0;position:relative;}
+.online-dot{position:absolute;bottom:0;right:0;width:8px;height:8px;background:#22c55e;border-radius:50%;border:1.5px solid #fff;}
+.scout-info{flex:1;}
+.scout-name{font-size:11px;font-weight:500;color:var(--t);}
+.scout-org{font-size:10px;color:var(--t3);}
+.scout-msg-btn{font-size:10px;padding:3px 10px;background:var(--bg2);border:0.5px solid var(--bd);border-radius:10px;cursor:pointer;color:var(--t2);}
+</style>
+</head>
+<body>
+
+<div class="page-label">Grassroots Sports — Social Feed · Concept B Design</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-top">
+    <div class="logo-box"><span>G</span></div>
+    <div class="logo-wrap">
+      <div class="logo-name">Grassroots Sports</div>
+      <div class="logo-url">grassrootssports.live</div>
+    </div>
+    <div class="nav-hubs">
+      <div class="hub-link active">Player Hub</div>
+      <div class="hub-link">Coach Hub</div>
+      <div class="hub-link">Fan Hub</div>
+      <div class="hub-link">Analysis Hub</div>
+      <div class="hub-link">Scout Hub</div>
+    </div>
+    <div class="nav-search">
+      <div class="search-wrap">
+        <input type="text" placeholder="Search players, schools, scouts..."/>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="nav-partner"><div class="nav-partner-dot"></div>Teach For Zimbabwe</div>
+      <div class="nav-icon-btn">🔔<div class="notif-badge">3</div></div>
+      <div class="nav-icon-btn">✉️</div>
+      <div class="nav-avatar">C</div>
+    </div>
+  </div>
+</div>
+
+<!-- THREE COLUMN LAYOUT -->
+<div class="layout">
+
+  <!-- ── LEFT COLUMN ── -->
+  <div class="left-col">
+
+    <div class="profile-card">
+      <div class="profile-banner"></div>
+      <div class="profile-card-body">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">C</div>
+        </div>
+        <div class="profile-name">Chipo Moyo <span class="verified-tick">✓</span></div>
+        <div class="profile-role">Central Midfielder · Nemakonde High · Harare</div>
+        <div class="profile-score-row">
+          <div class="profile-score-v">84</div>
+          <div class="profile-score-info">
+            <div class="profile-score-l">THUTO score</div>
+            <div class="profile-score-d">↑ +6 this month</div>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat"><div class="profile-stat-v">6</div><div class="profile-stat-l">Scout views</div></div>
+          <div class="profile-stat"><div class="profile-stat-v">8</div><div class="profile-stat-l">Sessions</div></div>
+          <div class="profile-stat"><div class="profile-stat-v">47</div><div class="profile-stat-l">Followers</div></div>
+          <div class="profile-stat"><div class="profile-stat-v">23</div><div class="profile-stat-l">Following</div></div>
+        </div>
+      </div>
+      <div class="profile-badges">
+        <div class="badge-row">
+          <span class="badge-chip badge-green">TFZ School ✓</span>
+          <span class="badge-chip badge-gold">Top 50 🏆</span>
+          <span class="badge-chip badge-green">Contract Aware 📄</span>
+          <span class="badge-chip badge-blue">🔥 3-day streak</span>
+        </div>
+        <button class="view-profile-btn">View my profile</button>
+      </div>
+    </div>
+
+    <div class="left-menu">
+      <div class="menu-item active"><span class="mi">🏠</span>My Feed</div>
+      <div class="menu-item"><span class="mi">🔔</span>Notifications</div>
+      <div class="menu-item"><span class="mi">✉️</span>Messages</div>
+      <div class="menu-section">My hubs</div>
+      <div class="menu-item"><span class="mi">⚡</span>Train now</div>
+      <div class="menu-item"><span class="mi">🏆</span>Success Engine</div>
+      <div class="menu-item"><span class="mi">🧬</span>Player DNA</div>
+      <div class="menu-item"><span class="mi">🔮</span>My prediction</div>
+      <div class="menu-item"><span class="mi">👥</span>Players like you</div>
+      <div class="menu-section">Community</div>
+      <div class="menu-item"><span class="mi">🏫</span>My school</div>
+      <div class="menu-item"><span class="mi">📹</span>Fan Hub</div>
+      <div class="menu-item"><span class="mi">🏆</span>Leaderboard</div>
+    </div>
+
+  </div>
+
+  <!-- ── CENTER COLUMN — FEED ── -->
+  <div class="center-col">
+
+    <!-- Compose box -->
+    <div class="compose-box">
+      <div class="compose-top">
+        <div class="compose-avatar">C</div>
+        <textarea class="compose-input" placeholder="Share a training update, milestone, or question with Zimbabwe's football community..."></textarea>
+      </div>
+      <div class="compose-actions">
+        <div class="compose-types">
+          <div class="compose-type">📹 Clip</div>
+          <div class="compose-type">📸 Photo</div>
+          <div class="compose-type">⚡ Session</div>
+          <div class="compose-type">🎯 Goal</div>
+        </div>
+        <button class="post-btn" disabled>Post</button>
+      </div>
+    </div>
+
+    <!-- Feed tabs -->
+    <div class="feed-tabs">
+      <div class="feed-tab active">All activity</div>
+      <div class="feed-tab">Following</div>
+      <div class="feed-tab">My school</div>
+      <div class="feed-tab">Top 50</div>
+    </div>
+
+    <!-- POST 1 — automated milestone -->
+    <div class="milestone-post">
+      <div class="post-header">
+        <div class="post-avatar auto">C</div>
+        <div class="post-meta">
+          <div class="post-name">Chipo Moyo</div>
+          <div class="post-sub">Nemakonde High · Mashonaland West</div>
+        </div>
+        <div class="post-time">Just now</div>
+      </div>
+      <div class="milestone-content">
+        <div class="milestone-icon">⬆️</div>
+        <div class="milestone-text">
+          <div class="milestone-title">THUTO score improved to 84</div>
+          <div class="milestone-sub">Chipo logged her 8th training session this month. THUTO detected improvement in tactical positioning and passing accuracy. Prediction: PSL / South Africa level.</div>
+          <div class="milestone-score-change">
+            <div><div class="score-before">78</div><div class="score-label">Last month</div></div>
+            <div class="score-arrow">→</div>
+            <div><div class="score-after">84</div><div class="score-label">This month</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="post-actions" style="border-top:0.5px solid rgba(255,255,255,0.1);margin-top:12px;padding-top:10px;">
+        <div class="post-action" style="color:rgba(255,255,255,0.4);">👏 14 reactions</div>
+        <div class="post-action" style="color:rgba(255,255,255,0.4);">💬 3 comments</div>
+        <div class="post-action" style="color:rgba(255,255,255,0.4);">🔗 Share</div>
+      </div>
+    </div>
+
+    <!-- POST 2 — player post with video -->
+    <div class="post">
+      <div class="post-header">
+        <div class="post-avatar">T</div>
+        <div class="post-meta">
+          <div class="post-name">Tawanda Moyo <span class="verified-tick">✓</span></div>
+          <div class="post-sub">Striker · 17 · Mzilikazi High · Bulawayo</div>
+        </div>
+        <div class="post-time">1h ago</div>
+      </div>
+      <div class="post-body">
+        Scored a hat-trick in today's inter-school match. THUTO score now sitting at 91. Coach said I played the best game of the season. 🙏🇿🇼<br/><br/>
+        <span class="tag">#GrassrootsFootball</span> <span class="tag">#ZimTalent</span> <span class="tag">#THUTO</span>
+      </div>
+      <div class="post-video">
+        <div class="post-video-play">▶</div>
+        <div class="post-video-dur">0:42</div>
+        <div class="post-video-badge">Goals</div>
+      </div>
+      <div class="post-actions">
+        <div class="post-action liked">👏 32 reactions</div>
+        <div class="post-action">💬 8 comments</div>
+        <div class="post-action">🔗 Share</div>
+        <div class="post-action">👁 12 scout views on his profile</div>
+      </div>
+    </div>
+
+    <!-- POST 3 — scout activity notification -->
+    <div class="scout-activity">
+      <div class="scout-activity-header">
+        <div class="scout-flag">🌍</div>
+        <div class="scout-activity-title">Scout activity in your network</div>
+      </div>
+      <div class="scout-activity-meta">
+        A verified scout from <strong>Mamelodi Sundowns Ladies FC, Johannesburg</strong> viewed <strong>Rudo Chirwa's</strong> profile and added her to a watchlist. Rudo plays Left Winger at Kwekwe High School, Midlands Province.
+      </div>
+      <div class="scout-cta">View Rudo's profile to see what the scout saw →</div>
+    </div>
+
+    <!-- POST 4 — school page post -->
+    <div class="post">
+      <div class="post-header">
+        <div class="post-avatar school">N</div>
+        <div class="post-meta">
+          <div class="post-name">Nemakonde High School <span class="verified-tick">✓</span></div>
+          <div class="post-sub">TFZ Partner School · Mashonaland West · 18 players registered</div>
+        </div>
+        <div class="post-time">3h ago</div>
+      </div>
+      <div class="post-body">
+        We are proud to announce that 3 of our players received scout views from international scouts this month. Thank you to <span class="highlight">Coach Banda</span> and the <span class="highlight">Teach For Zimbabwe</span> programme for making this possible.<br/><br/>
+        If your child attends Nemakonde — register them at grassrootssports.live using our TFZ code. 25 profiles are free. 🇿🇼
+      </div>
+      <div class="photo-grid">
+        <div class="photo-cell">🏫</div>
+        <div class="photo-cell">⚽</div>
+      </div>
+      <div class="post-actions">
+        <div class="post-action">👏 67 reactions</div>
+        <div class="post-action">💬 12 comments</div>
+        <div class="post-action">🔗 Share</div>
+      </div>
+    </div>
+
+    <!-- POST 5 — badge earned -->
+    <div class="post">
+      <div class="post-header">
+        <div class="post-avatar">R</div>
+        <div class="post-meta">
+          <div class="post-name">Rudo Chirwa</div>
+          <div class="post-sub">Left Winger · 16 · Kwekwe High · Midlands</div>
+        </div>
+        <div class="post-time">5h ago</div>
+      </div>
+      <div class="post-body">
+        Just completed the Contracts and Your Rights track on the Football Business School 📄 Never knew about release clauses or how agents work. Every player should do this. Knowledge is power.<br/><br/>
+        <span class="tag">#FootballBusinessSchool</span> <span class="tag">#GrassrootsSports</span>
+      </div>
+      <div style="background:var(--bg2);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="font-size:32px;">📄</div>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--t);">Badge earned: Contract Aware</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;">Football Business School · Track 2 of 6 completed</div>
+        </div>
+        <div style="margin-left:auto;font-size:10px;color:var(--g);font-weight:500;">View badge →</div>
+      </div>
+      <div class="post-actions">
+        <div class="post-action">👏 24 reactions</div>
+        <div class="post-action">💬 5 comments</div>
+        <div class="post-action">🔗 Share</div>
+      </div>
+    </div>
+
+    <!-- POST 6 — coach post -->
+    <div class="post">
+      <div class="post-header">
+        <div class="post-avatar" style="background:#8b6820;">B</div>
+        <div class="post-meta">
+          <div class="post-name">Coach Banda <span class="verified-tick">✓</span></div>
+          <div class="post-sub">TFZ Fellow · Nemakonde High · Mashonaland West</div>
+        </div>
+        <div class="post-time">Yesterday</div>
+      </div>
+      <div class="post-body">
+        THUTO suggested we focus on defensive transitions this week after analysing our last match. We tried it today — completely different squad shape in the second half. AI coaching is real, coaches. Don't sleep on it.<br/><br/>
+        Our squad average THUTO score went from 68 to 74 in one month. Every session logged counts. 💪<br/><br/>
+        <span class="tag">#THUTOCoach</span> <span class="tag">#TeachForZimbabwe</span> <span class="tag">#GrassrootsFootball</span>
+      </div>
+      <div class="post-actions">
+        <div class="post-action">👏 89 reactions</div>
+        <div class="post-action">💬 21 comments</div>
+        <div class="post-action">🔗 Share</div>
+      </div>
+    </div>
+
+    <!-- POST 7 — automated leaderboard -->
+    <div class="milestone-post" style="background:linear-gradient(135deg,#1e3a6e,#0d1c35);">
+      <div class="post-header">
+        <div class="post-avatar" style="background:var(--go);">🏆</div>
+        <div class="post-meta">
+          <div class="post-name" style="color:#fff;">Zimbabwe Top 50 — May 2026 Update</div>
+          <div class="post-sub">Grassroots Sports · Updated monthly</div>
+        </div>
+        <div class="post-time">2d ago</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:6px;padding:8px 10px;">
+          <div style="font-size:14px;font-weight:700;color:var(--go);width:20px;">1</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--go);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:500;">T</div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#fff;">Tawanda M.</div><div style="font-size:10px;color:rgba(255,255,255,0.4);">ST · Bulawayo · Mzilikazi High</div></div>
+          <div style="font-size:18px;font-weight:500;color:var(--go);">91</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:6px;padding:8px 10px;">
+          <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.4);width:20px;">2</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:500;">C</div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#fff;">Chipo M.</div><div style="font-size:10px;color:rgba(255,255,255,0.4);">CM · Harare · Nemakonde High</div></div>
+          <div style="font-size:18px;font-weight:500;color:#fff;">84</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border-radius:6px;padding:8px 10px;">
+          <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.4);width:20px;">3</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:500;">K</div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#fff;">Knowledge S.</div><div style="font-size:10px;color:rgba(255,255,255,0.4);">CM · Midlands · Kwekwe United</div></div>
+          <div style="font-size:18px;font-weight:500;color:#fff;">88</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:rgba(255,255,255,0.35);text-align:center;cursor:pointer;">View full Top 50 leaderboard →</div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT COLUMN ── -->
+  <div class="right-col">
+
+    <!-- Scouts online now -->
+    <div class="right-card">
+      <div class="right-card-header">
+        Scouts online now
+        <span class="right-card-link">Scout Hub →</span>
+      </div>
+      <div class="right-card-body">
+        <div class="scout-online">
+          <div class="scout-av">S<div class="online-dot"></div></div>
+          <div class="scout-info"><div class="scout-name">David M.</div><div class="scout-org">Mamelodi Sundowns Ladies</div></div>
+          <button class="scout-msg-btn">View</button>
+        </div>
+        <div class="scout-online">
+          <div class="scout-av">J<div class="online-dot"></div></div>
+          <div class="scout-info"><div class="scout-name">João F.</div><div class="scout-org">BFA South Africa</div></div>
+          <button class="scout-msg-btn">View</button>
+        </div>
+        <div class="scout-online">
+          <div class="scout-av">A<div class="online-dot"></div></div>
+          <div class="scout-info"><div class="scout-name">Amara K.</div><div class="scout-org">Stars of Africa EU</div></div>
+          <button class="scout-msg-btn">View</button>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--t3);text-align:center;">3 scouts browsing the platform right now</div>
+      </div>
+    </div>
+
+    <!-- Trending topics -->
+    <div class="right-card">
+      <div class="right-card-header">Trending in Zimbabwe football</div>
+      <div class="right-card-body">
+        <div class="trend-item"><div class="trend-tag">#ZimTalent</div><div class="trend-count">284 posts this week</div></div>
+        <div class="trend-item"><div class="trend-tag">#THUTOScore</div><div class="trend-count">178 posts this week</div></div>
+        <div class="trend-item"><div class="trend-tag">#GrassrootsFootball</div><div class="trend-count">341 posts this week</div></div>
+        <div class="trend-item"><div class="trend-tag">#MOPSEBetterbrands</div><div class="trend-count">92 posts this week</div></div>
+        <div class="trend-item"><div class="trend-tag">#TeachForZimbabwe</div><div class="trend-count">67 posts this week</div></div>
+      </div>
+    </div>
+
+    <!-- Top 50 leaderboard -->
+    <div class="right-card">
+      <div class="right-card-header">Top 50 this month <span class="right-card-link">Full list</span></div>
+      <div class="right-card-body">
+        <div class="lb-row"><div class="lb-rank top">1</div><div class="lb-av">T</div><div class="lb-info"><div class="lb-name">Tawanda M.</div><div class="lb-pos">ST · Bulawayo</div></div><div class="lb-score">91<span class="lb-delta">↑+9</span></div></div>
+        <div class="lb-row"><div class="lb-rank top">2</div><div class="lb-av">K</div><div class="lb-info"><div class="lb-name">Knowledge S.</div><div class="lb-pos">CM · Midlands</div></div><div class="lb-score">88<span class="lb-delta">↑+5</span></div></div>
+        <div class="lb-row"><div class="lb-rank top">3</div><div class="lb-av" style="background:var(--go2);">C</div><div class="lb-info"><div class="lb-name">Chipo M. <span style="font-size:9px;color:var(--go);">You</span></div><div class="lb-pos">CM · Harare</div></div><div class="lb-score">84<span class="lb-delta">↑+6</span></div></div>
+        <div class="lb-row"><div class="lb-rank">4</div><div class="lb-av">N</div><div class="lb-info"><div class="lb-name">Nomusa D.</div><div class="lb-pos">GK · Mat. North</div></div><div class="lb-score">76<span class="lb-delta">↑+5</span></div></div>
+        <div class="lb-row"><div class="lb-rank">5</div><div class="lb-av">R</div><div class="lb-info"><div class="lb-name">Rudo C.</div><div class="lb-pos">LW · Midlands</div></div><div class="lb-score">79<span class="lb-delta">↑+4</span></div></div>
+      </div>
+    </div>
+
+    <!-- Who to follow -->
+    <div class="right-card">
+      <div class="right-card-header">Players like you <span class="right-card-link">See more</span></div>
+      <div class="right-card-body">
+        <div class="follow-row"><div class="follow-av">F</div><div class="follow-info"><div class="follow-name">Farai Ncube</div><div class="follow-sub">CM · 15 · Harare · THUTO 82</div></div><button class="follow-btn">Follow</button></div>
+        <div class="follow-row"><div class="follow-av school">N</div><div class="follow-info"><div class="follow-name">Nemakonde High</div><div class="follow-sub">18 players · TFZ partner</div></div><button class="follow-btn">Follow</button></div>
+        <div class="follow-row"><div class="follow-av" style="background:#8b6820;">B</div><div class="follow-info"><div class="follow-name">Coach Banda</div><div class="follow-sub">TFZ Fellow · Mashonaland West</div></div><button class="follow-btn">Follow</button></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>
