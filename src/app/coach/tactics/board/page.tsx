@@ -634,6 +634,14 @@ function BoardPageInner() {
                   }`} />
                 </button>
               </div>
+              {showOpponents && (
+                <button
+                  onClick={() => setOpponents(OPPONENT_TOKENS.map((op, i) => ({ id: `opp-${i}`, ...op })))}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-red-100 text-red-500 hover:bg-red-50 transition-all"
+                >
+                  <RotateCcw size={10} /> Reset opponents
+                </button>
+              )}
             </div>
 
             {/* XG legend */}
