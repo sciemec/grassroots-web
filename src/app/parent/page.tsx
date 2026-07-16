@@ -18,6 +18,8 @@ export default function ParentHubPage() {
     if (!hasHydrated) return;
     if (!user) { router.push("/login"); return; }
     if ((user.role as string) !== "guardian" && (user.role as string) !== "parent") {
+      // Players are redirected to the invite code generator
+      if ((user.role as string) === "player") { router.replace("/parent/invite"); return; }
       // Allow admins to preview
       if (user.role !== "admin") router.push("/");
     }
