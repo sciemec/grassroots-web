@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Download, Sparkles, CheckCircle2, Circle,
-  Target, History, TrendingUp,
+  Target, History, TrendingUp, Info, ChevronDown, ChevronUp,
+  FlaskConical, Dna, User, Users as UsersIcon, Search,
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -27,6 +28,13 @@ interface ChemSnapshot {
   avg:        number;
   high_count: number;
   squad_size: number;
+}
+
+interface PlayerFingerprint {
+  player_id:   string;
+  player_name: string;
+  dimensions:  { dimension: string; label: string; value: number }[];
+  computed_at: string;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -170,6 +178,11 @@ export default function CoachChemistryPage() {
   const [history,    setHistory]    = useState<ChemSnapshot[]>([]);
   const [snapSaved,  setSnapSaved]  = useState(false);
 
+  const [showScience,       setShowScience]       = useState(false);
+  const [selectedFpPlayer,  setSelectedFpPlayer]  = useState<string>("");
+  const [playerFingerprint, setPlayerFingerprint] = useState<PlayerFingerprint | null>(null);
+  const [fpLoading,         setFpLoading]         = useState(false);
+
   // ── Data loading ─────────────────────────────────────────────────────────
 
   const load = useCallback(async () => {
@@ -209,6 +222,20 @@ export default function CoachChemistryPage() {
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (!selectedFpPlayer || activeTab !== "fingerprint") return;
+    setFpLoading(true);
+    setPlayerFingerprint(null);
+    const token = localStorage.getItem("auth_token") ?? "";
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemistry/fingerprint/${selectedFpPlayer}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((res) => setPlayerFingerprint((res.data ?? res) as PlayerFingerprint))
+      .catch(() => {})
+      .finally(() => setFpLoading(false));
+  }, [selectedFpPlayer, activeTab]);
 
   // ── Derived values ────────────────────────────────────────────────────────
 
@@ -407,6 +434,158 @@ export default function CoachChemistryPage() {
           <StatCard label="Squad Size"           value={String(players.length)} sub="players with data" />
         </div>
 
+        {/* How It Works — collapsible science card */}
+        <div className="rounded-2xl border border-purple-200 bg-purple-50 overflow-hidden">
+          <button
+            onClick={() => setShowScience((v) => !v)}
+            className="w-full flex items-center justify-between px-5 py-3.5 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <FlaskConical size={15} className="text-purple-600" />
+              <span className="text-sm font-bold text-purple-800">How It Works — The Science</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-purple-500 bg-purple-100 px-2 py-0.5 rounded-full">v1</span>
+            </div>
+            {showScience
+              ? <ChevronUp size={14} className="text-purple-500" />
+              : <ChevronDown size={14} className="text-purple-500" />}
+          </button>
+
+          {showScience && (
+            <div className="px-5 pb-5 space-y-4 border-t border-purple-200">
+
+              {/* Formula */}
+              <div className="pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FlaskConical size={13} className="text-purple-600" />
+                  <span className="text-xs font-black uppercase tracking-wider text-purple-700">The Formula</span>
+                </div>
+                <div className="bg-white rounded-xl border border-purple-200 p-4 text-sm text-center font-mono">
+                  <span className="text-gray-800 font-bold">Total Chemistry</span>
+                  <span className="text-gray-400"> = </span>
+                  <span className="text-[#1a5c2a] font-bold">(Style × 60%)</span>
+                  <span className="text-gray-400"> + </span>
+                  <span className="text-purple-600 font-bold">(Demographic × 25%)</span>
+                  <span className="text-gray-400"> + </span>
+                  <span className="text-blue-600 font-bold">(Geographic × 15%)</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  {[
+                    { pct: "60%", label: "Style Score", color: "#1a5c2a", desc: "Playing style, tempo, positioning, pressing, possession tendency" },
+                    { pct: "25%", label: "Demographic", color: "#7c3aed", desc: "Age group, experience level, position group, physical tier" },
+                    { pct: "15%", label: "Geographic",  color: "#2563eb", desc: "Province, club tier, urban/rural background, league level" },
+                  ].map(({ pct, label, color, desc }) => (
+                    <div key={label} className="bg-white rounded-xl border border-purple-100 p-3 text-center">
+                      <div className="text-lg font-black" style={{ color }}>{pct}</div>
+                      <div className="text-[10px] font-bold text-gray-700 mt-0.5">{label}</div>
+                      <div className="text-[9px] text-gray-400 mt-0.5 leading-tight">{desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 32-dim fingerprint */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Dna size={13} className="text-purple-600" />
+                  <span className="text-xs font-black uppercase tracking-wider text-purple-700">32-Dimension Fingerprint</span>
+                </div>
+                <p className="text-xs text-purple-700 leading-relaxed mb-3">
+                  Every player gets a 128-value vector built from drill performance across 32 dimensions.
+                  When two players&apos; vectors are compared, the cosine similarity of each dimension produces the style score.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { group: "Technical",  dims: ["passing_accuracy","dribble_success","first_touch","shot_conversion"],     color: "#1a5c2a" },
+                    { group: "Physical",   dims: ["sprint_speed","stamina_index","aerial_win_rate","strength_index"],         color: "#7c3aed" },
+                    { group: "Tactical",   dims: ["pressing_intensity","defensive_shape","off_ball_movement","transition_speed"], color: "#2563eb" },
+                    { group: "Mental",     dims: ["decision_speed","composure_score","work_rate","adaptability"],             color: "#d97706" },
+                  ].map(({ group, dims, color }) => (
+                    <div key={group} className="bg-white rounded-xl border border-purple-100 p-3">
+                      <div className="text-[9px] font-black uppercase tracking-wider mb-2" style={{ color }}>{group}</div>
+                      {dims.map((d) => (
+                        <div key={d} className="text-[9px] text-gray-500 py-0.5 border-b border-gray-50 last:border-0 capitalize">
+                          {d.replace(/_/g, " ")}
+                        </div>
+                      ))}
+                      <div className="text-[8px] text-gray-300 mt-1">+ 4 more dims</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* User flows */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <UsersIcon size={13} className="text-purple-600" />
+                  <span className="text-xs font-black uppercase tracking-wider text-purple-700">User Flows</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      role: "Coach", color: "#1a5c2a",
+                      icon: <User size={12} />,
+                      steps: [
+                        "Open Chemistry → Matrix tab",
+                        "Tap any cell to see pair breakdown",
+                        "Lineup Builder → Optimise XI",
+                        "Transfer Targets → scout profile gaps",
+                        "History → show board the trend",
+                      ],
+                    },
+                    {
+                      role: "Player", color: "#7c3aed",
+                      icon: <Dna size={12} />,
+                      steps: [
+                        "Complete 8+ drills across 3 sessions",
+                        "Nightly job builds your fingerprint",
+                        "Chemistry tab shows your scores",
+                        "High-chemistry partners = best combos",
+                        "Improve dimensions to lift your score",
+                      ],
+                    },
+                    {
+                      role: "Scout", color: "#2563eb",
+                      icon: <Search size={12} />,
+                      steps: [
+                        "View club fingerprint on player page",
+                        "Compare candidate vs squad style",
+                        "Chemistry fit score shown on profile",
+                        "Filter talent DB by style match",
+                        "Download PDF with fit analysis",
+                      ],
+                    },
+                  ].map(({ role, color, icon, steps }) => (
+                    <div key={role} className="bg-white rounded-xl border border-purple-100 p-3">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span style={{ color }}>{icon}</span>
+                        <span className="text-xs font-bold text-gray-800">{role}</span>
+                      </div>
+                      <ol className="space-y-1">
+                        {steps.map((step, i) => (
+                          <li key={i} className="flex gap-1.5 text-[9px] text-gray-500">
+                            <span className="font-bold flex-shrink-0" style={{ color }}>{i + 1}.</span>
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Data requirement note */}
+              <div className="flex items-start gap-2 bg-white rounded-xl border border-purple-100 p-3">
+                <Info size={12} className="text-purple-400 mt-0.5 flex-shrink-0" />
+                <p className="text-[10px] text-gray-500 leading-relaxed">
+                  <strong className="text-gray-700">Data requirements:</strong> Each player needs ≥ 8 drill completions
+                  across ≥ 3 separate sessions to generate a fingerprint. The nightly similarity job (02:00 Harare time)
+                  then calculates all pair scores. New players appear within 24 hours of meeting the threshold.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Tab bar */}
         <div className="flex gap-1 bg-white rounded-2xl border border-gray-200 p-1 overflow-x-auto">
           {TABS.map((t) => (
@@ -510,6 +689,87 @@ export default function CoachChemistryPage() {
         ════════════════════════════════════════════════════════ */}
         {!loading && !error && activeTab === "fingerprint" && (
           <div className="space-y-4">
+
+            {/* Individual player fingerprint */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Dna size={16} className="text-purple-600" />
+                <div>
+                  <h2 className="text-gray-900 font-bold leading-none">Individual Fingerprint</h2>
+                  <p className="text-gray-500 text-xs mt-0.5">Select a player to view their 32-dimension style vector</p>
+                </div>
+              </div>
+
+              {/* Player dropdown */}
+              <div className="relative mb-4">
+                <User size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <select
+                  value={selectedFpPlayer}
+                  onChange={(e) => setSelectedFpPlayer(e.target.value)}
+                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-300 appearance-none"
+                >
+                  <option value="">— Select a player —</option>
+                  {players.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.position || "unknown"})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Loading */}
+              {fpLoading && (
+                <div className="py-8 text-center text-gray-400 text-sm">Loading fingerprint…</div>
+              )}
+
+              {/* Fingerprint bars */}
+              {!fpLoading && playerFingerprint && playerFingerprint.dimensions.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-3">
+                    {playerFingerprint.player_name} — {playerFingerprint.dimensions.length} dimensions
+                    <span className="ml-2 font-normal normal-case text-gray-300">
+                      · computed {new Date(playerFingerprint.computed_at).toLocaleDateString("en-GB")}
+                    </span>
+                  </div>
+                  {playerFingerprint.dimensions.map(({ dimension, label, value }) => {
+                    const pct = Math.min(100, Math.max(0, Math.round(value)));
+                    const barColor = pct >= 80 ? "#1a5c2a" : pct >= 60 ? "#f0b429" : pct >= 40 ? "#f97316" : "#d1d5db";
+                    return (
+                      <div key={dimension}>
+                        <div className="flex justify-between text-[10px] mb-1">
+                          <span className="font-medium text-gray-700 capitalize">{label || dimension.replace(/_/g, " ")}</span>
+                          <span className="font-bold" style={{ color: barColor }}>{pct}</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${pct}%`, backgroundColor: barColor }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Empty — player selected but no fingerprint */}
+              {!fpLoading && selectedFpPlayer && !playerFingerprint && (
+                <div className="py-8 text-center">
+                  <Dna size={28} className="mx-auto mb-2 text-gray-200" />
+                  <p className="text-gray-400 text-sm">No fingerprint yet for this player.</p>
+                  <p className="text-gray-300 text-xs mt-1">
+                    They need ≥ 8 drills across ≥ 3 sessions.
+                  </p>
+                </div>
+              )}
+
+              {/* No selection state */}
+              {!selectedFpPlayer && (
+                <div className="py-6 text-center">
+                  <p className="text-gray-300 text-sm">Select a player above to view their fingerprint</p>
+                </div>
+              )}
+            </div>
+
+            {/* Club aggregate fingerprint */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6">
               <h2 className="text-gray-900 font-bold mb-1">Club Style Identity</h2>
               <p className="text-gray-500 text-xs mb-5">
