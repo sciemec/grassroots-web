@@ -1,16 +1,25 @@
 // src/app/coach/tactics/board/page.tsx
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, Target, Move, Brain, ChevronRight, Info,
+  ArrowLeft, Target, Move, Brain, ChevronRight, Info, Pencil, Trash2, RotateCcw,
 } from "lucide-react";
+import { getRoleConfig } from "@/config/coaching-staff";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type Formation = "4-3-3" | "4-4-2" | "4-2-3-1" | "3-5-2" | "5-3-2";
-type Mode = "xg" | "manual" | "tactics";
+type Mode = "xg" | "manual" | "tactics" | "draw";
+
+interface Arrow {
+  id: string;
+  x1: number; y1: number;
+  x2: number; y2: number;
+  color: string;
+}
 
 interface PlayerToken {
   id: string;
@@ -163,18 +172,42 @@ function PitchMarkings() {
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Arrow colour palette ─────────────────────────────────────────────────────
 
-export default function TacticalIntelligenceBoardPage() {
-  const [mode, setMode]               = useState<Mode>("xg");
-  const [formation, setFormation]     = useState<Formation>("4-3-3");
-  const [players, setPlayers]         = useState<PlayerToken[]>(() =>
+const ARROW_COLORS = [
+  { color: "#f0b429",              label: "Run",   markerId: "arr-gold"  },
+  { color: "rgba(255,255,255,0.9)", label: "Pass",  markerId: "arr-white" },
+  { color: "#ef4444",              label: "Press", markerId: "arr-red"   },
+  { color: "#60a5fa",              label: "Shape", markerId: "arr-blue"  },
+];
+
+function colorToMarkerId(color: string): string {
+  return ARROW_COLORS.find(a => a.color === color)?.markerId ?? "arr-gold";
+}
+
+// ─── Inner board component ────────────────────────────────────────────────────
+
+function BoardPageInner() {
+  const searchParams = useSearchParams();
+  const deptId   = searchParams.get("dept");
+  const deptRole = deptId ? getRoleConfig(deptId) : null;
+
+  const [mode, setMode]           = useState<Mode>("xg");
+  const [formation, setFormation] = useState<Formation>("4-3-3");
+  const [players, setPlayers]     = useState<PlayerToken[]>(() =>
     FORMATIONS["4-3-3"].map((p, i) => ({ id: `p${i}`, ...p }))
   );
   const [showXgOverlay, setShowXgOverlay] = useState(true);
   const [showOpponents, setShowOpponents] = useState(false);
   const [selectedZone, setSelectedZone]   = useState<string | null>(null);
   const [draggingId, setDraggingId]       = useState<string | null>(null);
+
+  // Draw mode
+  const [arrows, setArrows]         = useState<Arrow[]>([]);
+  const [drawColor, setDrawColor]   = useState(ARROW_COLORS[0].color);
+  const [previewArrow, setPreviewArrow] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const drawStartRef = useRef<{ x: number; y: number } | null>(null);
+
   const svgRef = useRef<SVGSVGElement>(null);
 
   const changeFormation = (f: Formation) => {
@@ -192,28 +225,69 @@ export default function TacticalIntelligenceBoardPage() {
     };
   }, []);
 
-  const onPDown = (e: React.PointerEvent, id: string) => {
+  // SVG background pointer down — used for draw mode
+  const onSvgDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (mode !== "draw") return;
+    e.preventDefault();
+    svgRef.current?.setPointerCapture(e.pointerId);
+    const pt = getSvgPt(e);
+    if (pt) drawStartRef.current = pt;
+  }, [mode, getSvgPt]);
+
+  // Player token pointer down — used for manual mode
+  const onPlayerDown = useCallback((e: React.PointerEvent, id: string) => {
     if (mode !== "manual") return;
     e.preventDefault();
+    e.stopPropagation();
     (e.target as Element).setPointerCapture(e.pointerId);
     setDraggingId(id);
-  };
-  const onPMove = (e: React.PointerEvent) => {
-    if (!draggingId) return;
+  }, [mode]);
+
+  const onPMove = useCallback((e: React.PointerEvent) => {
     const pt = getSvgPt(e);
     if (!pt) return;
-    setPlayers(prev => prev.map(p => p.id === draggingId ? { ...p, ...pt } : p));
-  };
-  const onPUp = () => setDraggingId(null);
+    if (mode === "draw" && drawStartRef.current) {
+      setPreviewArrow({ ...drawStartRef.current, x2: pt.x, y2: pt.y });
+      return;
+    }
+    if (draggingId) {
+      setPlayers(prev => prev.map(p => p.id === draggingId ? { ...p, ...pt } : p));
+    }
+  }, [mode, draggingId, getSvgPt]);
 
-  const showZones = mode === "xg" || showXgOverlay;
+  const onPUp = useCallback((e: React.PointerEvent) => {
+    if (mode === "draw" && drawStartRef.current) {
+      const pt = getSvgPt(e);
+      if (pt) {
+        const dx = pt.x - drawStartRef.current.x;
+        const dy = pt.y - drawStartRef.current.y;
+        if (Math.sqrt(dx * dx + dy * dy) > 10) {
+          setArrows(prev => [...prev, {
+            id: `arr-${Date.now()}`,
+            x1: drawStartRef.current!.x,
+            y1: drawStartRef.current!.y,
+            x2: pt.x,
+            y2: pt.y,
+            color: drawColor,
+          }]);
+        }
+      }
+      drawStartRef.current = null;
+      setPreviewArrow(null);
+      return;
+    }
+    setDraggingId(null);
+  }, [mode, getSvgPt, drawColor]);
+
+  const showZones = mode === "xg" || (mode !== "draw" && showXgOverlay);
   const zoneOpacity = mode === "xg" ? 0.42 : 0.28;
   const selectedZoneData = XG_ZONES.find(z => z.id === selectedZone) ?? null;
 
   const MODES: { key: Mode; icon: React.ElementType; label: string }[] = [
-    { key: "xg",     icon: Target, label: "XG Danger Map" },
-    { key: "manual", icon: Move,   label: "Set Positions"  },
-    { key: "tactics",icon: Brain,  label: "Tactics View"   },
+    { key: "xg",     icon: Target, label: "XG Map"       },
+    { key: "manual", icon: Move,   label: "Set Positions" },
+    { key: "tactics",icon: Brain,  label: "Tactics View"  },
+    { key: "draw",   icon: Pencil, label: "Draw Drill"    },
   ];
 
   const modeInstruction: Record<Mode, string> = {
@@ -223,6 +297,8 @@ export default function TacticalIntelligenceBoardPage() {
       "Drag the green player tokens to set your team shape. Toggle XG overlay to see danger zones while positioning. Perfect for set pieces and specific opponent prep.",
     tactics:
       "Review how your formation covers the XG danger zones. Lines show tactical connections. Toggle opposition (red) to see match-ups and coverage gaps.",
+    draw:
+      "Draw movement arrows directly on the pitch. Gold = player run. White = pass line. Red = pressing trigger. Blue = shape/hold. Drag from start to finish point.",
   };
 
   return (
@@ -230,15 +306,39 @@ export default function TacticalIntelligenceBoardPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
-          <Link href="/coach" className="text-gray-400 hover:text-gray-600 transition-colors">
+          <Link
+            href={deptId ? `/coach/technical-staff/${deptId}` : "/coach"}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <ArrowLeft size={20} />
           </Link>
           <div className="flex-1 min-w-0">
-            <div className="font-black text-gray-900 text-base leading-none">Tactical Intelligence Board</div>
-            <div className="text-[10px] text-gray-500 mt-0.5">XG Danger Map · Formation Builder · Player Positioning</div>
+            <div className="font-black text-gray-900 text-base leading-none">
+              {deptRole ? `${deptRole.title} — Tactical Board` : "Tactical Intelligence Board"}
+            </div>
+            <div className="text-[10px] text-gray-500 mt-0.5">
+              XG Danger Map · Formation Builder · Draw Drills
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Department context banner */}
+      {deptRole && (
+        <div className="border-b border-amber-100 bg-amber-50 px-4 py-2.5">
+          <div className="max-w-7xl mx-auto flex items-center gap-3 flex-wrap">
+            <span className="text-[11px] font-bold text-amber-800">{deptRole.title} focus:</span>
+            {deptRole.focusCategories.map(cat => (
+              <span
+                key={cat}
+                className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200"
+              >
+                {cat.replace(/_/g, " ")}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto p-4 pb-20">
         {/* Mode tabs */}
@@ -262,23 +362,41 @@ export default function TacticalIntelligenceBoardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* ── Pitch ─────────────────────────────────────────────────────── */}
           <div className="lg:col-span-3 space-y-3">
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className={`bg-white rounded-2xl overflow-hidden shadow-sm border transition-colors ${
+              mode === "draw" ? "border-[#f0b429]/50 ring-1 ring-[#f0b429]/20" : "border-gray-200"
+            }`}>
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${W} ${H}`}
                 className="w-full block"
+                onPointerDown={onSvgDown}
                 onPointerMove={onPMove}
                 onPointerUp={onPUp}
-                style={{ touchAction: "none" }}
+                style={{ touchAction: "none", cursor: mode === "draw" ? "crosshair" : "default" }}
               >
+                {/* Arrowhead markers for draw mode */}
+                <defs>
+                  {ARROW_COLORS.map(ac => (
+                    <marker
+                      key={ac.markerId}
+                      id={ac.markerId}
+                      markerWidth="7" markerHeight="7"
+                      refX="5.5" refY="3.5"
+                      orient="auto"
+                    >
+                      <path d="M0,0.5 L7,3.5 L0,6.5 Z" fill={ac.color} />
+                    </marker>
+                  ))}
+                </defs>
+
                 <PitchMarkings />
 
                 {/* XG zone overlays */}
                 {showZones && XG_ZONES.map(z => (
                   <g
                     key={z.id}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setSelectedZone(selectedZone === z.id ? null : z.id)}
+                    style={{ cursor: mode !== "draw" ? "pointer" : "crosshair" }}
+                    onClick={() => mode !== "draw" && setSelectedZone(selectedZone === z.id ? null : z.id)}
                   >
                     <rect
                       x={z.x} y={z.y} width={z.w} height={z.h}
@@ -289,13 +407,9 @@ export default function TacticalIntelligenceBoardPage() {
                     />
                     {z.h >= 20 && (
                       <text
-                        x={z.x + z.w / 2}
-                        y={z.y + z.h / 2 + 3.5}
-                        textAnchor="middle"
-                        fontSize={6.5}
-                        fontWeight="800"
-                        fill="white"
-                        fillOpacity={0.9}
+                        x={z.x + z.w / 2} y={z.y + z.h / 2 + 3.5}
+                        textAnchor="middle" fontSize={6.5} fontWeight="800"
+                        fill="white" fillOpacity={0.9}
                         style={{ pointerEvents: "none", userSelect: "none" }}
                       >
                         {Math.round(z.xg * 100)}%
@@ -320,7 +434,7 @@ export default function TacticalIntelligenceBoardPage() {
                   </>
                 )}
 
-                {/* Tactical formation lines (tactics mode) */}
+                {/* Tactical formation lines */}
                 {mode === "tactics" && FORMATION_LINES[formation].map(([a, b], i) => {
                   const pa = players[a];
                   const pb = players[b];
@@ -329,12 +443,34 @@ export default function TacticalIntelligenceBoardPage() {
                     <line
                       key={i}
                       x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y}
-                      stroke="rgba(240,180,41,0.45)"
-                      strokeWidth={1}
-                      strokeDasharray="4 3"
+                      stroke="rgba(240,180,41,0.45)" strokeWidth={1} strokeDasharray="4 3"
                     />
                   );
                 })}
+
+                {/* Drawn arrows */}
+                {arrows.map(a => (
+                  <line
+                    key={a.id}
+                    x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2}
+                    stroke={a.color}
+                    strokeWidth={2.5}
+                    strokeOpacity={0.92}
+                    markerEnd={`url(#${colorToMarkerId(a.color)})`}
+                  />
+                ))}
+
+                {/* Live preview arrow while drawing */}
+                {previewArrow && (
+                  <line
+                    x1={previewArrow.x1} y1={previewArrow.y1}
+                    x2={previewArrow.x2} y2={previewArrow.y2}
+                    stroke={drawColor} strokeWidth={2} strokeOpacity={0.55}
+                    strokeDasharray="6 3"
+                    markerEnd={`url(#${colorToMarkerId(drawColor)})`}
+                    style={{ pointerEvents: "none" }}
+                  />
+                )}
 
                 {/* Opponent tokens */}
                 {showOpponents && OPPONENT_TOKENS.map((op, i) => (
@@ -355,19 +491,14 @@ export default function TacticalIntelligenceBoardPage() {
                   <g
                     key={p.id}
                     transform={`translate(${p.x},${p.y})`}
-                    onPointerDown={e => onPDown(e, p.id)}
+                    onPointerDown={e => onPlayerDown(e, p.id)}
                     style={{
                       cursor: mode === "manual"
                         ? (draggingId === p.id ? "grabbing" : "grab")
-                        : "default",
+                        : mode === "draw" ? "crosshair" : "default",
                     }}
                   >
-                    <circle
-                      r={13}
-                      fill="#1a5c2a"
-                      stroke="white"
-                      strokeWidth={2}
-                    />
+                    <circle r={13} fill="#1a5c2a" stroke="white" strokeWidth={2} />
                     <text
                       textAnchor="middle" y={4}
                       fontSize={7} fontWeight="800" fill="white"
@@ -383,9 +514,7 @@ export default function TacticalIntelligenceBoardPage() {
             {/* Mode instruction */}
             <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-start gap-3">
               <Info size={13} className="text-[#1a5c2a] mt-0.5 shrink-0" />
-              <p className="text-[11px] text-gray-600 leading-relaxed">
-                {modeInstruction[mode]}
-              </p>
+              <p className="text-[11px] text-gray-600 leading-relaxed">{modeInstruction[mode]}</p>
             </div>
           </div>
 
@@ -410,6 +539,53 @@ export default function TacticalIntelligenceBoardPage() {
                 ))}
               </div>
             </div>
+
+            {/* Draw controls — only in draw mode */}
+            {mode === "draw" && (
+              <div className="bg-white rounded-2xl border border-[#f0b429]/40 p-4 space-y-3">
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Arrow Type</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {ARROW_COLORS.map(ac => (
+                    <button
+                      key={ac.color}
+                      onClick={() => setDrawColor(ac.color)}
+                      className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-semibold border transition-all ${
+                        drawColor === ac.color
+                          ? "border-gray-500 bg-gray-900 text-white"
+                          : "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0 ring-1 ring-black/10"
+                        style={{ backgroundColor: ac.color }}
+                      />
+                      {ac.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => setArrows(prev => prev.slice(0, -1))}
+                    disabled={arrows.length === 0}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 transition-all"
+                  >
+                    <RotateCcw size={11} /> Undo
+                  </button>
+                  <button
+                    onClick={() => setArrows([])}
+                    disabled={arrows.length === 0}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold border border-red-100 text-red-500 hover:bg-red-50 disabled:opacity-30 transition-all"
+                  >
+                    <Trash2 size={11} /> Clear
+                  </button>
+                </div>
+                {arrows.length > 0 && (
+                  <p className="text-[10px] text-gray-400 text-center">
+                    {arrows.length} arrow{arrows.length !== 1 ? "s" : ""} on pitch
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Overlay toggles */}
             <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
@@ -451,10 +627,10 @@ export default function TacticalIntelligenceBoardPage() {
                 <div className="space-y-2">
                   {[
                     { color: "#dc2626", range: "50%+",     label: "Extreme danger" },
-                    { color: "#ea580c", range: "30–50%",   label: "High danger" },
-                    { color: "#ca8a04", range: "15–30%",   label: "Shooting chance" },
-                    { color: "#4b5563", range: "8–15%",    label: "Low chance" },
-                    { color: "#1f2937", range: "Under 8%", label: "Long range" },
+                    { color: "#ea580c", range: "30–50%",   label: "High danger"    },
+                    { color: "#ca8a04", range: "15–30%",   label: "Shooting zone"  },
+                    { color: "#4b5563", range: "8–15%",    label: "Low chance"     },
+                    { color: "#1f2937", range: "Under 8%", label: "Long range"     },
                   ].map(item => (
                     <div key={item.range} className="flex items-center gap-2">
                       <div
@@ -469,7 +645,7 @@ export default function TacticalIntelligenceBoardPage() {
                   ))}
                 </div>
                 <p className="text-[9px] text-gray-400 mt-3 leading-relaxed">
-                  Tap any zone on the pitch for coaching advice.
+                  Tap any zone for coaching advice.
                 </p>
               </div>
             )}
@@ -484,10 +660,7 @@ export default function TacticalIntelligenceBoardPage() {
                   />
                   <p className="text-xs font-black text-gray-900">{selectedZoneData.label}</p>
                 </div>
-                <div
-                  className="text-2xl font-black mb-2"
-                  style={{ color: xgColor(selectedZoneData.xg) }}
-                >
+                <div className="text-2xl font-black mb-2" style={{ color: xgColor(selectedZoneData.xg) }}>
                   {Math.round(selectedZoneData.xg * 100)}% XG
                 </div>
                 <p className="text-[10px] text-gray-600 leading-relaxed">
@@ -507,8 +680,8 @@ export default function TacticalIntelligenceBoardPage() {
               <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Related Tools</p>
               {[
                 { href: "/coach/tactics/simulator", label: "Tactics Simulator" },
-                { href: "/analyst/xg-analysis",    label: "Full XG Analysis" },
-                { href: "/coach/set-pieces",        label: "Set Piece Lab" },
+                { href: "/analyst/xg-analysis",    label: "Full XG Analysis"  },
+                { href: "/coach/set-pieces",        label: "Set Piece Lab"     },
               ].map(link => (
                 <Link
                   key={link.href}
@@ -524,5 +697,15 @@ export default function TacticalIntelligenceBoardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Export (wrapped in Suspense for useSearchParams) ─────────────────────────
+
+export default function TacticalIntelligenceBoardPage() {
+  return (
+    <Suspense>
+      <BoardPageInner />
+    </Suspense>
   );
 }
