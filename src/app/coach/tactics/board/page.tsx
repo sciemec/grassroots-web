@@ -554,6 +554,12 @@ function BoardPageInner() {
                   </button>
                 ))}
               </div>
+              <button
+                onClick={() => setPlayers(FORMATIONS[formation].map((p, i) => ({ id: `p${i}`, ...p })))}
+                className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-green-100 text-[#1a5c2a] hover:bg-green-50 transition-all"
+              >
+                <RotateCcw size={10} /> Reset my players
+              </button>
             </div>
 
             {/* Draw controls — only in draw mode */}
