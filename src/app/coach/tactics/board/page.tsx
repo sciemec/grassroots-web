@@ -1,13 +1,14 @@
 // src/app/coach/tactics/board/page.tsx
 "use client";
 
-import { useState, useRef, useCallback, Suspense } from "react";
+import { useState, useRef, useCallback, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, Target, Move, Brain, ChevronRight, Info, Pencil, RotateCcw,
+  ArrowLeft, Target, Move, Brain, ChevronRight, Info, Pencil, RotateCcw, Share2, Users, X,
 } from "lucide-react";
 import { getRoleConfig } from "@/config/coaching-staff";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -21,11 +22,26 @@ interface Arrow {
   color: string;
 }
 
+interface AssignedPlayer {
+  playerId: string;
+  name: string;
+  initials: string;
+}
+
 interface PlayerToken {
   id: string;
   x: number;
   y: number;
   label: string;
+  assigned?: AssignedPlayer;
+}
+
+interface SquadPlayer {
+  id: string;
+  first_name?: string;
+  surname?: string;
+  name?: string;
+  position?: string;
 }
 
 // ─── Pitch constants ─────────────────────────────────────────────────────────
@@ -210,6 +226,14 @@ function BoardPageInner() {
   const [drawColor, setDrawColor]   = useState(ARROW_COLORS[0].color);
   const [previewArrow, setPreviewArrow] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const drawStartRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerDownClientRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Squad assignment + share
+  const authToken = useAuthStore((s) => s.token);
+  const [squad, setSquad]               = useState<SquadPlayer[]>([]);
+  const [pickerTokenId, setPickerTokenId] = useState<string | null>(null);
+  const [shareNote, setShareNote]       = useState("");
+  const [shareCopied, setShareCopied]   = useState(false);
 
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -218,6 +242,37 @@ function BoardPageInner() {
     setPlayers(FORMATIONS[f].map((p, i) => ({ id: `p${i}`, ...p })));
     setSelectedZone(null);
   };
+
+  useEffect(() => {
+    if (!authToken) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach/squad`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(res => {
+        if (!res) return;
+        const list: SquadPlayer[] = Array.isArray(res) ? res : (res?.data ?? []);
+        setSquad(list);
+      })
+      .catch(() => {});
+  }, [authToken]);
+
+  const assignPlayer = useCallback((tokenId: string, sp: SquadPlayer) => {
+    const firstName = sp.first_name ?? sp.name?.split(" ")[0] ?? "";
+    const surname   = sp.surname   ?? sp.name?.split(" ").slice(1).join(" ") ?? "";
+    const fullName  = [firstName, surname].filter(Boolean).join(" ") || "Player";
+    const initials  = [firstName[0], surname[0]].filter(Boolean).join("").toUpperCase() || "?";
+    setPlayers(prev => prev.map(p =>
+      p.id === tokenId
+        ? { ...p, assigned: { playerId: sp.id, name: fullName, initials } }
+        : p
+    ));
+    setPickerTokenId(null);
+  }, []);
+
+  const unassignPlayer = useCallback((tokenId: string) => {
+    setPlayers(prev => prev.map(p => p.id === tokenId ? { ...p, assigned: undefined } : p));
+  }, []);
 
   const getSvgPt = useCallback((e: React.PointerEvent) => {
     if (!svgRef.current) return null;
@@ -244,6 +299,7 @@ function BoardPageInner() {
     e.stopPropagation();
     (e.target as Element).setPointerCapture(e.pointerId);
     setDraggingId(id);
+    pointerDownClientRef.current = { x: e.clientX, y: e.clientY };
   }, [mode]);
 
   const onPMove = useCallback((e: React.PointerEvent) => {
@@ -284,8 +340,20 @@ function BoardPageInner() {
       }
       return;
     }
+    // Tap detection: pointer moved < 8px on a player token → open assignment picker
+    if (draggingId && !draggingId.startsWith("opp-") && pointerDownClientRef.current) {
+      const dx = e.clientX - pointerDownClientRef.current.x;
+      const dy = e.clientY - pointerDownClientRef.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 8) {
+        setPickerTokenId(draggingId);
+        setDraggingId(null);
+        pointerDownClientRef.current = null;
+        return;
+      }
+    }
+    pointerDownClientRef.current = null;
     setDraggingId(null);
-  }, [mode, getSvgPt, drawColor]);
+  }, [mode, getSvgPt, drawColor, draggingId]);
 
   const showZones = mode === "xg" || (mode !== "draw" && showXgOverlay);
   const zoneOpacity = mode === "xg" ? 0.42 : 0.28;
@@ -302,7 +370,7 @@ function BoardPageInner() {
     xg:
       "Tap any colored zone to see how dangerous it is. Red = 50%+ chance of scoring. Use this to show strikers where to run and defenders what to protect.",
     manual:
-      "Drag the green player tokens to set your team shape. Toggle opposition to place red tokens — these are also draggable. Perfect for set pieces and specific opponent prep.",
+      "Drag tokens to reposition. Tap a green token to assign a squad player to that position. Once assigned, use Share Tactic in the panel to send the formation to your players via WhatsApp.",
     tactics:
       "Review how your formation covers the XG danger zones. Lines show tactical connections. Toggle opposition (red) to see match-ups and coverage gaps.",
     draw:
@@ -514,14 +582,26 @@ function BoardPageInner() {
                         : mode === "draw" ? "crosshair" : "default",
                     }}
                   >
+                    {p.assigned && (
+                      <circle r={16} fill="none" stroke="#f0b429" strokeWidth={2} strokeOpacity={0.9} />
+                    )}
                     <circle r={13} fill="#1a5c2a" stroke="white" strokeWidth={2} />
                     <text
-                      textAnchor="middle" y={4}
-                      fontSize={7} fontWeight="800" fill="white"
+                      textAnchor="middle" y={p.assigned ? -1.5 : 4}
+                      fontSize={p.assigned ? 5.5 : 7} fontWeight="800" fill="white"
                       style={{ pointerEvents: "none", userSelect: "none" }}
                     >
                       {p.label}
                     </text>
+                    {p.assigned && (
+                      <text
+                        textAnchor="middle" y={7}
+                        fontSize={5} fontWeight="900" fill="#f0b429"
+                        style={{ pointerEvents: "none", userSelect: "none" }}
+                      >
+                        {p.assigned.initials}
+                      </text>
+                    )}
                   </g>
                 ))}
               </svg>
@@ -608,6 +688,59 @@ function BoardPageInner() {
                 )}
               </div>
             )}
+
+            {/* Player picker — shown when a token is tapped in manual mode */}
+            {pickerTokenId && (() => {
+              const pickedToken = players.find(p => p.id === pickerTokenId);
+              return (
+                <div className="bg-white rounded-2xl border border-[#f0b429]/60 p-4 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                      Assign — {pickedToken?.label ?? "Position"}
+                    </p>
+                    <button onClick={() => setPickerTokenId(null)} className="text-gray-300 hover:text-gray-600 transition-colors">
+                      <X size={13} />
+                    </button>
+                  </div>
+                  {pickedToken?.assigned && (
+                    <div className="flex items-center justify-between bg-[#f0fdf4] rounded-lg px-2.5 py-2 border border-green-100">
+                      <span className="text-[11px] font-semibold text-[#1a5c2a] truncate">{pickedToken.assigned.name}</span>
+                      <button
+                        onClick={() => unassignPlayer(pickerTokenId)}
+                        className="text-gray-400 hover:text-red-400 transition-colors ml-2 shrink-0"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="max-h-44 overflow-y-auto space-y-0.5">
+                    {squad.length === 0 ? (
+                      <p className="text-[11px] text-gray-400 text-center py-4">
+                        Squad not loaded. Make sure you are logged in as a coach.
+                      </p>
+                    ) : (
+                      squad.map(sp => {
+                        const firstName = sp.first_name ?? sp.name?.split(" ")[0] ?? "";
+                        const surname   = sp.surname   ?? sp.name?.split(" ").slice(1).join(" ") ?? "";
+                        const fullName  = [firstName, surname].filter(Boolean).join(" ") || "Player";
+                        return (
+                          <button
+                            key={sp.id}
+                            onClick={() => assignPlayer(pickerTokenId, sp)}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-gray-700 hover:bg-[#f0fdf4] hover:text-[#1a5c2a] transition-colors"
+                          >
+                            {fullName}
+                            {sp.position && (
+                              <span className="text-gray-400 ml-1">· {sp.position}</span>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Overlay toggles */}
             <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
@@ -722,6 +855,75 @@ function BoardPageInner() {
                   <ChevronRight size={12} className="text-gray-300" />
                 </Link>
               ))}
+            </div>
+
+            {/* Share Tactic */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Share Tactic</p>
+                <Share2 size={12} className="text-gray-300" />
+              </div>
+              {players.some(p => p.assigned) ? (
+                <>
+                  <div className="space-y-1 max-h-36 overflow-y-auto">
+                    {players.filter(p => p.assigned).map(p => (
+                      <div key={p.id} className="flex items-center gap-2">
+                        <span
+                          className="text-[10px] font-bold w-8 shrink-0"
+                          style={{ color: "#1a5c2a" }}
+                        >
+                          {p.label}
+                        </span>
+                        <span className="text-[10px] text-gray-600 truncate">{p.assigned!.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <textarea
+                    value={shareNote}
+                    onChange={e => setShareNote(e.target.value)}
+                    placeholder="Add coaching notes for players..."
+                    className="w-full text-[11px] rounded-lg border border-gray-200 px-2.5 py-2 resize-none text-gray-700 placeholder-gray-300 focus:outline-none focus:border-[#1a5c2a] transition-colors"
+                    rows={2}
+                  />
+                  <button
+                    onClick={() => {
+                      const assigned = players.filter(p => p.assigned);
+                      const lines = [
+                        `⚽ TEAM TACTIC — ${formation}`,
+                        "",
+                        "POSITIONS:",
+                        ...assigned.map(p => `  ${p.label}: ${p.assigned!.name}`),
+                        ...(shareNote.trim() ? ["", `📋 Coach Notes: ${shareNote.trim()}`] : []),
+                        "",
+                        "📱 GrassRoots Sports | grassrootssports.live",
+                      ];
+                      navigator.clipboard
+                        .writeText(lines.join("\n"))
+                        .then(() => {
+                          setShareCopied(true);
+                          setTimeout(() => setShareCopied(false), 2500);
+                        })
+                        .catch(() => {});
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold text-white transition-all"
+                    style={{ backgroundColor: shareCopied ? "#16a34a" : "#1a5c2a" }}
+                  >
+                    <Share2 size={11} />
+                    {shareCopied ? "Copied to clipboard!" : "Copy tactic to share"}
+                  </button>
+                  <p className="text-[9px] text-gray-400 text-center leading-relaxed">
+                    Paste into WhatsApp group to share with your squad
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-3">
+                  <Users size={22} className="text-gray-200 mx-auto mb-2" />
+                  <p className="text-[10px] text-gray-400 leading-snug">
+                    Switch to <strong className="text-gray-600">Set Positions</strong> and tap
+                    a green token to assign squad players.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
