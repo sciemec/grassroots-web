@@ -58,7 +58,7 @@ export function CoachSidebar() {
       </button>
 
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-40 w-72 h-screen bg-[#1a5c2a] text-white flex flex-col transition-transform duration-300 shadow-xl ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed top-0 left-0 z-40 w-72 h-screen bg-[#1a5c2a] text-white flex flex-col transition-transform duration-300 shadow-xl ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="p-5 border-b border-white/10">
           <Link href="/coach" className="block" onClick={() => setIsMobileOpen(false)}>
