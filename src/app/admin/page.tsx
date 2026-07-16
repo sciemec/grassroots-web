@@ -1,309 +1,152 @@
-﻿"use client";
+"use client";
+// src/app/admin/page.tsx
+// Admin Hub — card-based feature dashboard
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Activity, Users, ShieldCheck, Search, CreditCard, BarChart3,
-  Megaphone, Film, Bell, Radio, ChevronRight, Zap, Globe,
-  GraduationCap, Database, Lock,
-} from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import {
+  Users, ShieldCheck, Search, CreditCard, BarChart3, Megaphone,
+  Film, Bell, Database, MessageSquare, Building2, Radio, Activity,
+  Smartphone, Sparkles, Trophy, Globe, UserCircle, Target,
+  Settings, Lock,
+} from "lucide-react";
 
-const WIRE = [
-  "Platform running normally â€” all services operational",
-  "3 new scout verification requests pending review",
-  "12 new player registrations this week across 4 provinces",
-  "Fan Hub: 2 videos flagged for moderation review",
-  "Subscription revenue up 18% â€” 7 new Pro accounts",
-  "THUTO AI processed 94 biometric scans today",
-];
+const GRS_GREEN = "#1a5c2a";
 
-const FEATURES = [
-  {
-    href: "/admin/users",
-    icon: Users,
-    iconBg: "#dbeafe", iconColor: "#2563eb",
-    label: "Users",
-    desc: "Manage all accounts Â· roles Â· access",
-  },
-  {
-    href: "/admin/verifications",
-    icon: ShieldCheck,
-    iconBg: "#dcfce7", iconColor: "#16a34a",
-    label: "Verifications",
-    desc: "Document review Â· identity queue",
-  },
-  {
-    href: "/admin/scout-requests",
-    icon: Search,
-    iconBg: "#f3e8ff", iconColor: "#9333ea",
-    label: "Scout Requests",
-    desc: "Contact approvals Â· accreditation",
-  },
-  {
-    href: "/admin/subscriptions",
-    icon: CreditCard,
-    iconBg: "#fef3c7", iconColor: "#d97706",
-    label: "Subscriptions",
-    desc: "Billing Â· plans Â· Stripe dashboard",
-  },
-  {
-    href: "/admin/stats",
-    icon: BarChart3,
-    iconBg: "#fce7f3", iconColor: "#db2777",
-    label: "Platform Stats",
-    desc: "Users Â· sessions Â· engagement",
-  },
-  {
-    href: "/admin/announcements",
-    icon: Megaphone,
-    iconBg: "#e0f2fe", iconColor: "#0284c7",
-    label: "Announcements",
-    desc: "Platform notices Â· broadcasts",
-  },
-  {
-    href: "/admin/fan-hub",
-    icon: Film,
-    iconBg: "#ede9fe", iconColor: "#7c3aed",
-    label: "Fan Hub Mod",
-    desc: "Pending videos Â· approve Â· remove",
-  },
-  {
-    href: "/notifications",
-    icon: Bell,
-    iconBg: "#fef3c7", iconColor: "#b45309",
-    label: "Push Notifications",
-    desc: "Send FCM alerts to users",
-  },
-  {
-    href: "/talent-leaderboard",
-    icon: Database,
-    iconBg: "#ecfdf5", iconColor: "#059669",
-    label: "Talent Database",
-    desc: "National rankings Â· THUTO scores",
-  },
-];
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 800, color: "#9ca3af",
+      textTransform: "uppercase", letterSpacing: "0.08em",
+      marginBottom: 10, marginTop: 4,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function HubCard({
+  href, icon: Icon, label, desc, accent = false,
+}: {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  desc: string;
+  accent?: boolean;
+}) {
+  return (
+    <Link href={href} style={{ textDecoration: "none" }}>
+      <div style={{
+        backgroundColor: "#fff",
+        borderRadius: 14,
+        padding: "14px 14px 12px",
+        border: `1px solid ${accent ? "#bbf7d0" : "#e5e5e5"}`,
+        display: "flex", flexDirection: "column", gap: 8,
+        height: "100%", cursor: "pointer",
+        transition: "box-shadow 0.15s",
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          backgroundColor: accent ? "#dcfce7" : "#f3f4f6",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Icon size={17} color={accent ? GRS_GREEN : "#6b7280"} />
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#111", marginBottom: 2 }}>{label}</div>
+          <div style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.4 }}>{desc}</div>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function AdminDashboardPage() {
-  const router   = useRouter();
-  const user     = useAuthStore((s) => s.user);
-  const hydrated = useAuthStore((s) => s._hasHydrated);
-  const [wireIndex, setWireIndex] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setWireIndex((p) => (p + 1) % WIRE.length), 4500);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (!user) { router.replace("/login"); return; }
-    if (user.role !== "admin") router.replace("/arena");
-  }, [hydrated, user, router]);
-
-  if (!hydrated || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
-        <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
-      </div>
-    );
-  }
-
-  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "AD";
+  const user = useAuthStore((s) => s.user);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
 
-      {/* Brand header */}
-      <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs"
-              style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
-              GRS
-            </div>
+      {/* Header */}
+      <header style={{
+        backgroundColor: "#fff",
+        borderBottom: "1px solid #e5e5e5",
+        position: "sticky", top: 0, zIndex: 40,
+      }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
             <div>
-              <p className="font-black text-sm uppercase tracking-wider leading-none" style={{ color: "#f0b429" }}>GrassRoots Sports</p>
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(240,180,41,0.7)" }}>Admin Portal</p>
+              <div style={{ fontWeight: 800, fontSize: 16, color: "#111" }}>
+                Admin Console
+              </div>
+              <div style={{ fontSize: 11, color: "#6b7280" }}>
+                {user?.name ?? "Administrator"} · Root Access
+              </div>
             </div>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl"
-            style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <GraduationCap size={14} style={{ color: "#f0b429" }} />
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-widest leading-none" style={{ color: "#f0b429" }}>Education Partner</p>
-              <p className="text-[10px] font-black uppercase" style={{ color: "#f0b429" }}>Teach For Zimbabwe</p>
-            </div>
+            <Link href="/admin/health" style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 14px", borderRadius: 10,
+              backgroundColor: "#f3f4f6", border: "none",
+              fontSize: 12, fontWeight: 600, color: "#374151",
+              textDecoration: "none",
+            }}>
+              <Activity size={14} /> System Health
+            </Link>
           </div>
         </div>
+      </header>
+
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 56px" }}>
+
+        {/* ── 1. User Management ────────────────────────────────────────── */}
+        <SectionLabel>1 · User Management</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+          <HubCard href="/admin/users"          icon={Users}      label="Users"             desc="All accounts, roles & access"      accent />
+          <HubCard href="/admin/verifications"  icon={ShieldCheck} label="Verifications"    desc="Identity queue & document review"  />
+          <HubCard href="/admin/scout-requests" icon={Search}     label="Scout Requests"    desc="Accreditation & contact approvals" />
+          <HubCard href="/admin/player-preview" icon={Sparkles}   label="Player Preview"    desc="Preview player profiles as admin"  />
+        </div>
+
+        {/* ── 2. Revenue & Subscriptions ───────────────────────────────── */}
+        <SectionLabel>2 · Revenue &amp; Subscriptions</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+          <HubCard href="/admin/subscriptions" icon={CreditCard}  label="Subscriptions"     desc="Billing, plans & Stripe dashboard" accent />
+          <HubCard href="/admin/stats"         icon={BarChart3}   label="Platform Stats"    desc="Users, sessions & engagement"      />
+          <HubCard href="/notifications"       icon={Bell}        label="Push Notifications" desc="Send FCM alerts to all users"     />
+          <HubCard href="/talent-leaderboard"  icon={Database}    label="Talent Database"   desc="National rankings & THUTO scores"  />
+        </div>
+
+        {/* ── 3. Content & Community ───────────────────────────────────── */}
+        <SectionLabel>3 · Content &amp; Community</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+          <HubCard href="/admin/announcements" icon={Megaphone}    label="Announcements"    desc="Platform notices & broadcasts"     accent />
+          <HubCard href="/admin/fan-hub"       icon={Film}         label="Fan Hub Mod"      desc="Review, approve & remove videos"   />
+          <HubCard href="/admin/whatsapp"      icon={MessageSquare} label="WhatsApp"        desc="Bot config & message logs"         />
+          <HubCard href="/admin/community"     icon={Building2}    label="Community"        desc="Clubs, schools & league oversight" />
+          <HubCard href="/admin/tournaments/munhumutapa-2026" icon={Trophy} label="Tournaments" desc="Munhumutapa Cup & fixtures"   />
+        </div>
+
+        {/* ── 4. Platform & Infrastructure ─────────────────────────────── */}
+        <SectionLabel>4 · Platform &amp; Infrastructure</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+          <HubCard href="/admin/health"  icon={Activity}   label="System Health"    desc="API status, uptime & errors"       accent />
+          <HubCard href="/admin/stream"  icon={Radio}      label="Stream Control"   desc="Live broadcast management"         />
+          <HubCard href="/admin/pwa"     icon={Smartphone} label="PWA Stats"        desc="Install rates & offline usage"     />
+          <HubCard href="/settings"      icon={Settings}   label="Settings"         desc="Platform configuration"            />
+          <HubCard href="/admin/health"  icon={Lock}       label="Security"         desc="Access logs & audit trail"         />
+        </div>
+
+        {/* ── 5. View as User ──────────────────────────────────────────── */}
+        <SectionLabel>5 · View as User</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+          <HubCard href="/player" icon={UserCircle} label="Player Hub"  desc="Experience the player dashboard"   accent />
+          <HubCard href="/coach"  icon={Users}      label="Coach Hub"   desc="Experience the coach dashboard"    />
+          <HubCard href="/scout"  icon={Target}     label="Scout Hub"   desc="Experience the scout console"      />
+          <HubCard href="/fan"    icon={Trophy}     label="Fan Hub"     desc="Experience the fan dashboard"      />
+          <HubCard href="/arena"  icon={Globe}      label="The Arena"   desc="Monitor the social feed"           />
+        </div>
+
       </div>
-
-      {/* Live wire ticker */}
-      <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
-          <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
-            style={{ backgroundColor: "#dc2626" }}>
-            <Radio size={9} className="animate-pulse" /> System
-          </span>
-          <p className="text-xs font-semibold truncate" style={{ color: "#92400e" }}>
-            {WIRE[wireIndex]}
-          </p>
-        </div>
-      </div>
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-        {/* Hero card */}
-        <div className="rounded-2xl overflow-hidden shadow-sm">
-          {/* Dark green top */}
-          <div className="relative px-5 pt-6 pb-5"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 60%, #0f3320 100%)" }}>
-            <div className="relative flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>Admin Portal,</p>
-                <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user.name || "Admin"}</h2>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
-                    <Lock size={9} /> Admin Â· Root Access
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: "rgba(34,197,94,0.15)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.2)" }}>
-                    <Zap size={9} /> All Systems Live
-                  </span>
-                </div>
-              </div>
-              {/* Avatar */}
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
-                style={{ backgroundColor: "#f0b429", color: "#1a5c2a" }}>
-                {initials}
-              </div>
-            </div>
-
-            {/* Stat tiles */}
-            <div className="grid grid-cols-3 gap-2.5 mt-5">
-              {[
-                { label: "Total Users", value: "â€”", Icon: Users },
-                { label: "Pending", value: "â€”", Icon: ShieldCheck },
-                { label: "Pro Plans", value: "â€”", Icon: CreditCard },
-              ].map(({ label, value, Icon }) => (
-                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
-                  style={{ backgroundColor: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
-                  <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
-                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick links strip */}
-          <div className="grid grid-cols-3 divide-x divide-[#1a5c2a]/10"
-            style={{ backgroundColor: "#f0fdf4", borderTop: "1px solid rgba(26,92,42,0.15)" }}>
-            {[
-              { href: "/admin/users",         label: "Users" },
-              { href: "/admin/verifications", label: "Verify" },
-              { href: "/admin/stats",         label: "Stats" },
-            ].map(({ href, label }) => (
-              <Link key={href} href={href}
-                className="py-2.5 text-center text-[10px] font-black uppercase tracking-wider transition-colors hover:text-[#1a5c2a]"
-                style={{ color: "#6b7280" }}>
-                {label}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* World Cup live banner */}
-        {/* Feature grid */}
-        <section>
-          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 ml-0.5" style={{ color: "#9ca3af" }}>
-            Admin Tools
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {FEATURES.map(({ href, icon: Icon, iconBg, iconColor, label, desc }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group bg-white rounded-2xl p-4 flex flex-col gap-3 border border-gray-200 hover:border-[#1a5c2a] shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: iconBg }}>
-                    <Icon size={16} style={{ color: iconColor }} />
-                  </div>
-                  <ChevronRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wide leading-none text-gray-900">{label}</h4>
-                  <p className="text-[11px] font-medium mt-1 leading-snug text-gray-400">{desc}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* CTA row */}
-        <section className="grid sm:grid-cols-2 gap-3">
-          <Link
-            href="/admin/stats"
-            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #14472a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(240,180,41,0.15)", border: "1px solid rgba(240,180,41,0.2)" }}>
-                <BarChart3 size={16} style={{ color: "#f0b429" }} />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>Platform Analytics</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>Users Â· sessions Â· revenue</p>
-              </div>
-            </div>
-            <ChevronRight size={14} style={{ color: "#f0b429" }} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-
-          <Link
-            href="/arena"
-            className="group rounded-2xl p-5 flex items-center justify-between transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #152d4a 100%)", border: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)" }}>
-                <Globe size={16} style={{ color: "#60a5fa" }} />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide" style={{ color: "#f0b429" }}>The Arena</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color: "rgba(240,180,41,0.7)" }}>View as user Â· monitor feed</p>
-              </div>
-            </div>
-            <ChevronRight size={14} style={{ color: "#60a5fa" }} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </section>
-
-        {/* Identity footer */}
-        <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
-              style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>
-              {initials}
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Admin"}</p>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                Root Access Â· Administrator
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg"
-            style={{ backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
-            <ShieldCheck size={11} /> All Systems Live
-          </div>
-        </div>
-
-      </main>
     </div>
   );
 }

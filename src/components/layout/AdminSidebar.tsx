@@ -80,7 +80,7 @@ export function AdminSidebar() {
       </button>
 
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-40 w-64 h-screen bg-[#1a5c2a] text-white flex flex-col transition-transform duration-300 shadow-xl ${
+        className={`fixed top-0 left-0 z-40 w-72 h-screen bg-[#1a5c2a] text-white flex flex-col transition-transform duration-300 shadow-xl ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
