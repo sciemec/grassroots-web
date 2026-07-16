@@ -5,7 +5,7 @@ import { useState, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, Target, Move, Brain, ChevronRight, Info, Pencil, Trash2, RotateCcw,
+  ArrowLeft, Target, Move, Brain, ChevronRight, Info, Pencil, RotateCcw,
 } from "lucide-react";
 import { getRoleConfig } from "@/config/coaching-staff";
 
@@ -598,7 +598,7 @@ function BoardPageInner() {
                     disabled={arrows.length === 0}
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold border border-red-100 text-red-500 hover:bg-red-50 disabled:opacity-30 transition-all"
                   >
-                    <Trash2 size={11} /> Clear
+                    <RotateCcw size={11} /> Reset arrows
                   </button>
                 </div>
                 {arrows.length > 0 && (
