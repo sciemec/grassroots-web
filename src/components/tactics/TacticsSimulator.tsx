@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as Icons from "lucide-react";
 import { TacticsSimulator as TacticsSimulatorEngine } from "@/lib/tactics-engine";
-import { Formation, SimulationState, ChemistryIntegration, SimulationResult } from "@/types/tactics";
+import { Formation, SimulationState, ChemistryIntegration } from "@/types/tactics";
 import PitchView from "./PitchView";
 import SimulationControls from "./SimulationControls";
 import TacticalOverlay from "./TacticalOverlay";
@@ -15,7 +15,18 @@ interface TacticsSimulatorProps {
   userId?: string;
   position?: string;
   chemistryData?: ChemistryIntegration;
-  onSimulationComplete?: (result: SimulationResult) => void;
+  onSimulationComplete?: (result: Record<string, unknown>) => void;
+}
+
+// Normalized shape the overlay expects — one flat object regardless of phase
+export interface AnalysisState {
+  type: string;
+  recommendation: string;
+  successRate?: number;
+  riskLevel?: number;
+  possession?: number;
+  passingAccuracy?: number;
+  keyPasses?: number;
 }
 
 export default function TacticsSimulator({
@@ -28,58 +39,73 @@ export default function TacticsSimulator({
   const [phase, setPhase] = useState<"attacking" | "defending" | "transition" | "set_piece">("attacking");
   const [simulator] = useState(() => new TacticsSimulatorEngine(formation));
   const [state, setState] = useState<SimulationState>(simulator.getState());
-  const [analysis, setAnalysis] = useState<(SimulationResult & { type: string; recommendation: string }) | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisState | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<string | null>(position || null);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showPassingLanes, setShowPassingLanes] = useState(true);
   const [showPressure, setShowPressure] = useState(true);
   const animationRef = useRef<number | null>(null);
 
-  // Run simulation
+  // Run simulation — generates movements/lanes/zones AND syncs canvas state
   const runSimulation = useCallback((activePhase: "attacking" | "defending" | "transition" | "set_piece" = phase) => {
-    let result;
+    let result: Record<string, unknown> = {};
 
     switch (activePhase) {
-      case "attacking":
-        result = simulator.simulateAttack("build_up");
+      case "attacking": {
+        const r = simulator.simulateAttack("build_up");
+        result = r;
         setAnalysis({
           type: "attacking",
-          ...result,
-          recommendation: "Focus on quick combination play in the final third",
+          successRate: r.effectiveness,
+          riskLevel: Math.round(100 - r.effectiveness),
+          recommendation: "Focus on quick combination play and early runs into the final third.",
         });
         break;
-      case "defending":
-        result = simulator.simulateDefense("low_block");
+      }
+      case "defending": {
+        const r = simulator.simulateDefense("low_block");
+        result = r;
         setAnalysis({
           type: "defending",
-          ...result,
-          recommendation: "Maintain compact shape and delay opposition",
+          successRate: r.solidity,
+          riskLevel: Math.round(100 - r.solidity),
+          recommendation: "Maintain compact shape, delay the opposition, and force wide.",
         });
         break;
-      case "transition":
-        result = simulator.simulateMidfield("possession");
+      }
+      case "transition": {
+        const r = simulator.simulateMidfield("possession");
+        result = r;
         setAnalysis({
           type: "midfield",
-          ...result,
-          recommendation: "Look for forward passes to break lines",
+          possession: r.control.possession,
+          passingAccuracy: r.control.passingAccuracy,
+          keyPasses: r.control.keyPasses,
+          recommendation: "Look for vertical passes to break lines and exploit spaces.",
         });
         break;
-      case "set_piece":
-        result = simulator.simulateSetPiece("corner");
+      }
+      case "set_piece": {
+        const r = simulator.simulateSetPiece("corner");
+        result = r;
         setAnalysis({
           type: "set_piece",
-          ...result,
-          recommendation: "Target near post with early delivery",
+          successRate: r.successRate,
+          recommendation: "Target the near post with a driven delivery and late runs.",
         });
         break;
+      }
     }
 
-    if (result && onSimulationComplete) {
+    // Sync React state with engine state — this triggers canvas re-render
+    setState({ ...simulator.getState() });
+
+    if (onSimulationComplete) {
       onSimulationComplete(result);
     }
   }, [phase, simulator, onSimulationComplete]);
 
-  // Animation loop
+  // Animation loop — uses engine's tick() for smooth ball movement
   useEffect(() => {
     if (!state.isPlaying) {
       if (animationRef.current) {
@@ -89,9 +115,13 @@ export default function TacticsSimulator({
       return;
     }
 
-    const animate = () => {
-      const updated = simulator.getState();
-      setState(prev => ({ ...updated, time: prev.time + 0.016 * prev.speed }));
+    let lastTime = performance.now();
+
+    const animate = (now: number) => {
+      const delta = Math.min((now - lastTime) / 1000, 0.05); // cap at 50ms
+      lastTime = now;
+      simulator.tick(delta);
+      setState({ ...simulator.getState() });
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -99,24 +129,26 @@ export default function TacticsSimulator({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
   }, [state.isPlaying, simulator]);
 
-  // Update simulator when formation changes
+  // Formation change — re-initializes player positions
   useEffect(() => {
-    // Re-initialize simulator with new formation
-    // In production, this would update the simulator
-  }, [formation]);
+    simulator.resetFormation(formation);
+    setState({ ...simulator.getState() });
+    setAnalysis(null);
+  }, [formation, simulator]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      {/* Header with mode indicator */}
+      {/* Header */}
       <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-            mode === "player" 
-              ? "bg-blue-100 text-blue-700" 
+            mode === "player"
+              ? "bg-blue-100 text-blue-700"
               : "bg-[#1a5c2a]/10 text-[#1a5c2a]"
           }`}>
             {mode === "player" ? "Player View" : "Coach View"}
@@ -148,7 +180,7 @@ export default function TacticsSimulator({
             mode={mode}
           />
 
-          {/* Pitch with animations */}
+          {/* Pitch */}
           <div className="relative">
             <PitchView
               formation={formation}
@@ -168,26 +200,24 @@ export default function TacticsSimulator({
             speed={state.speed}
             onPlayPause={() => {
               simulator.togglePlay();
-              setState(simulator.getState());
+              setState({ ...simulator.getState() });
             }}
             onSpeedChange={(speed) => {
               simulator.setSpeed(speed);
-              setState(simulator.getState());
+              setState({ ...simulator.getState() });
             }}
             onPhaseChange={(newPhase) => {
               setPhase(newPhase);
               simulator.setPhase(newPhase);
-              setState(simulator.getState());
               runSimulation(newPhase);
             }}
             phase={phase}
-            onRunSimulation={runSimulation}
+            onRunSimulation={() => runSimulation()}
           />
         </div>
 
         {/* Analysis panel */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Tactical overlays */}
           <TacticalOverlay
             analysis={analysis}
             phase={phase}

@@ -16,6 +16,13 @@ export default function CoachTacticsSimulatorPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [selectedPlayerPosition, setSelectedPlayerPosition] = useState<string | undefined>(undefined);
   const [chemistryData, setChemistryData] = useState<ChemistryIntegration | null>(null);
+  const [lastResult, setLastResult] = useState<Record<string, unknown> | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   useEffect(() => {
     const loadSquad = async () => {
@@ -100,27 +107,76 @@ export default function CoachTacticsSimulatorPage() {
           userId={user?.id}
           position={selectedPlayerPosition}
           chemistryData={chemistryData}
-          onSimulationComplete={() => {}}
+          onSimulationComplete={(result) => setLastResult(result)}
         />
 
         {/* Quick actions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            { icon: Icons.Film, label: "Share with Player", action: () => {} },
-            { icon: Icons.Download, label: "Export Simulation", action: () => {} },
-            { icon: Icons.Share2, label: "Send to Squad", action: () => {} },
-            { icon: Icons.BookOpen, label: "Save as Drill", action: () => {} },
-          ].map((item) => (
-            <button
-              key={item.label}
-              onClick={item.action}
-              className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow flex items-center justify-center gap-2"
-            >
-              <item.icon size={16} className="text-[#1a5c2a]" />
-              <span className="text-sm font-medium text-gray-700">{item.label}</span>
-            </button>
-          ))}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              showToast("Link copied — share with a player");
+            }}
+            className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow flex items-center justify-center gap-2"
+          >
+            <Icons.Film size={16} className="text-[#1a5c2a]" />
+            <span className="text-sm font-medium text-gray-700">Share with Player</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const canvas = document.querySelector("canvas") as HTMLCanvasElement | null;
+              if (!canvas) { showToast("Run a simulation first"); return; }
+              const a = document.createElement("a");
+              a.href = canvas.toDataURL("image/png");
+              a.download = `tactics-${Date.now()}.png`;
+              a.click();
+              showToast("Pitch exported as PNG");
+            }}
+            className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow flex items-center justify-center gap-2"
+          >
+            <Icons.Download size={16} className="text-[#1a5c2a]" />
+            <span className="text-sm font-medium text-gray-700">Export Simulation</span>
+          </button>
+
+          <button
+            onClick={async () => {
+              const url = window.location.href;
+              if (navigator.share) {
+                await navigator.share({ title: "GrassRoots Tactics", url });
+              } else {
+                navigator.clipboard.writeText(url);
+                showToast("Link copied — share with your squad");
+              }
+            }}
+            className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow flex items-center justify-center gap-2"
+          >
+            <Icons.Share2 size={16} className="text-[#1a5c2a]" />
+            <span className="text-sm font-medium text-gray-700">Send to Squad</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const existing: Record<string, unknown>[] = JSON.parse(
+                localStorage.getItem("grassroots_saved_drills") ?? "[]"
+              );
+              existing.push({ id: Date.now(), saved_at: new Date().toISOString(), result: lastResult });
+              localStorage.setItem("grassroots_saved_drills", JSON.stringify(existing));
+              showToast("Saved as drill");
+            }}
+            className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow flex items-center justify-center gap-2"
+          >
+            <Icons.BookOpen size={16} className="text-[#1a5c2a]" />
+            <span className="text-sm font-medium text-gray-700">Save as Drill</span>
+          </button>
         </div>
+
+        {/* Toast */}
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-xl z-50 animate-fade-in">
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   );

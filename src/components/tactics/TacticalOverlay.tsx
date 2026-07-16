@@ -2,10 +2,10 @@
 "use client";
 
 import * as Icons from "lucide-react";
-import { SimulationResult } from "@/types/tactics";
+import type { AnalysisState } from "@/components/tactics/TacticsSimulator";
 
 interface TacticalOverlayProps {
-  analysis: (SimulationResult & { type: string; recommendation: string }) | null;
+  analysis: AnalysisState | null;
   phase: "attacking" | "defending" | "transition" | "set_piece";
   showHeatmap: boolean;
   onToggleHeatmap: () => void;
@@ -144,6 +144,22 @@ export default function TacticalOverlay({
                 <div className="text-[10px] text-gray-500 font-medium">Possession</div>
               </div>
             )}
+            {analysis.passingAccuracy !== undefined && (
+              <div className="bg-gray-50 rounded-lg p-2.5 text-center">
+                <div className="text-lg font-black text-purple-600">
+                  {Math.round(analysis.passingAccuracy)}%
+                </div>
+                <div className="text-[10px] text-gray-500 font-medium">Pass Accuracy</div>
+              </div>
+            )}
+            {analysis.keyPasses !== undefined && (
+              <div className="bg-gray-50 rounded-lg p-2.5 text-center">
+                <div className="text-lg font-black text-emerald-600">
+                  {analysis.keyPasses}
+                </div>
+                <div className="text-[10px] text-gray-500 font-medium">Key Passes</div>
+              </div>
+            )}
           </div>
 
           {/* Recommendation */}
@@ -154,20 +170,7 @@ export default function TacticalOverlay({
             </div>
           </div>
 
-          {/* Key events */}
-          {analysis.keyEvents && analysis.keyEvents.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Key Events</p>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {analysis.keyEvents.slice(0, 5).map((event, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                    <span className="text-[#1a5c2a] font-bold flex-shrink-0">{event.minute}&apos;</span>
-                    <span>{event.description}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
