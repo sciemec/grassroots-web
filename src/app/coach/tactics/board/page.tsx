@@ -398,7 +398,7 @@ function BoardPageInner() {
     xg:
       "Tap any colored zone to see how dangerous it is. Red = 50%+ chance of scoring. Use this to show strikers where to run and defenders what to protect.",
     manual:
-      "Drag tokens to reposition. Tap a green token to assign a squad player to that position. Once assigned, use Share Tactic in the panel to send the formation to your players via WhatsApp.",
+      "Drag tokens to reposition. To assign squad players, use the Lineup panel on the right — or tap any green token directly on the pitch.",
     tactics:
       "Review how your formation covers the XG danger zones. Lines show tactical connections. Toggle opposition (red) to see match-ups and coverage gaps.",
     draw:
@@ -668,6 +668,60 @@ function BoardPageInner() {
               >
                 <RotateCcw size={10} /> Reset my players
               </button>
+            </div>
+
+            {/* Lineup — always visible, click any position to assign a squad player */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2.5">
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Lineup</p>
+                <Users size={12} className="text-gray-300" />
+              </div>
+              <div className="space-y-0.5">
+                {players.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      if (mode !== "manual") setMode("manual");
+                      setPickerTokenId(p.id);
+                    }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors ${
+                      pickerTokenId === p.id
+                        ? "bg-[#f0fdf4] border border-green-200"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <span
+                      className="text-[10px] font-black w-7 shrink-0"
+                      style={{ color: "#1a5c2a" }}
+                    >
+                      {p.label}
+                    </span>
+                    {p.assigned ? (
+                      <>
+                        <span className="text-[11px] font-semibold text-gray-800 truncate flex-1">
+                          {p.assigned.name}
+                        </span>
+                        <span
+                          className="ml-auto text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-white"
+                          style={{ backgroundColor: "#f0b429" }}
+                        >
+                          {p.assigned.initials}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[11px] text-gray-300 italic flex-1">
+                          Assign player
+                        </span>
+                        <ChevronRight size={11} className="text-gray-300 shrink-0" />
+                      </>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[9px] text-gray-400 mt-2 leading-relaxed">
+                Click any position to assign a squad player.
+              </p>
             </div>
 
             {/* Draw controls — only in draw mode */}
