@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   Users, Target, Activity, Zap, BookOpen, Dumbbell, Calendar,
-  Brain, Flag, TrendingUp, TrendingDown, BarChart3, Award, Video,
+  Brain, TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
   ChevronRight, ArrowRight, Play,
 } from "lucide-react";
@@ -166,8 +166,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/matches"           icon={Calendar}   iconBg="#f3f4f6" iconColor="#6b7280" label="Matches"            desc="Fixtures & results"           />
           <HubCard href="/coach/tactics/board"    icon={Layers}     iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"     badge="new" />
           <HubCard href="/coach/tactical-analysis" icon={Crosshair}  iconBg="#fef3c7" iconColor="#d97706" label="Tactical Analysis"  desc="Post-match breakdown"          />
-          <HubCard href="/coach/set-pieces"        icon={Flame}      iconBg="#fee2e2" iconColor="#dc2626" label="Set Pieces"         desc="Corners, free kicks & more"    />
-          <HubCard href="/coach/set-piece-lab"     icon={Flag}       iconBg="#fdf4ff" iconColor="#a21caf" label="Set Piece Lab"      desc="Design & track set plays"      />
+          <HubCard href="/coach/set-pieces"        icon={Video}      iconBg="#fdf4ff" iconColor="#a21caf" label="Set Piece Lab"      desc="Upload clips · Gemini Vision"  badge="ai" />
           <HubCard href="/coach/patterns"          icon={TrendingUp} iconBg="#dcfce7" iconColor="#059669" label="Strategic Patterns" desc="Identify winning patterns"     />
         </div>
 
