@@ -234,6 +234,8 @@ function BoardPageInner() {
   const [pickerTokenId, setPickerTokenId] = useState<string | null>(null);
   const [shareNote, setShareNote]       = useState("");
   const [shareCopied, setShareCopied]   = useState(false);
+  const [shareLink, setShareLink]       = useState<string | null>(null);
+  const [linkCopied, setLinkCopied]     = useState(false);
 
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -273,6 +275,32 @@ function BoardPageInner() {
   const unassignPlayer = useCallback((tokenId: string) => {
     setPlayers(prev => prev.map(p => p.id === tokenId ? { ...p, assigned: undefined } : p));
   }, []);
+
+  const generateShareLink = useCallback(() => {
+    const boardState = {
+      f: formation,
+      p: players.map(p => ({
+        id: p.id,
+        x: Math.round(p.x),
+        y: Math.round(p.y),
+        l: p.label,
+        ...(p.assigned ? { n: p.assigned.name, i: p.assigned.initials } : {}),
+      })),
+      o: showOpponents
+        ? opponents.map(op => ({ x: Math.round(op.x), y: Math.round(op.y), l: op.label }))
+        : null,
+      a: arrows.map(a => ({
+        x1: Math.round(a.x1), y1: Math.round(a.y1),
+        x2: Math.round(a.x2), y2: Math.round(a.y2),
+        c: a.color,
+      })),
+      note: shareNote,
+    };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(boardState))));
+    const url = `${window.location.origin}/tactics/view?state=${encodeURIComponent(encoded)}`;
+    setShareLink(url);
+    return url;
+  }, [formation, players, showOpponents, opponents, arrows, shareNote]);
 
   const getSvgPt = useCallback((e: React.PointerEvent) => {
     if (!svgRef.current) return null;
@@ -885,9 +913,11 @@ function BoardPageInner() {
                     className="w-full text-[11px] rounded-lg border border-gray-200 px-2.5 py-2 resize-none text-gray-700 placeholder-gray-300 focus:outline-none focus:border-[#1a5c2a] transition-colors"
                     rows={2}
                   />
+                  {/* WhatsApp text copy */}
                   <button
                     onClick={() => {
                       const assigned = players.filter(p => p.assigned);
+                      const link = generateShareLink();
                       const lines = [
                         `⚽ TEAM TACTIC — ${formation}`,
                         "",
@@ -895,6 +925,7 @@ function BoardPageInner() {
                         ...assigned.map(p => `  ${p.label}: ${p.assigned!.name}`),
                         ...(shareNote.trim() ? ["", `📋 Coach Notes: ${shareNote.trim()}`] : []),
                         "",
+                        `📲 View on board: ${link}`,
                         "📱 GrassRoots Sports | grassrootssports.live",
                       ];
                       navigator.clipboard
@@ -912,8 +943,61 @@ function BoardPageInner() {
                     {shareCopied ? "Copied to clipboard!" : "Copy tactic to share"}
                   </button>
                   <p className="text-[9px] text-gray-400 text-center leading-relaxed">
-                    Paste into WhatsApp group to share with your squad
+                    Paste into WhatsApp group · includes board link
                   </p>
+
+                  {/* Persistent link */}
+                  <div className="border-t border-gray-100 pt-2.5">
+                    {shareLink ? (
+                      <div className="space-y-1.5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                          Share link
+                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            readOnly
+                            value={shareLink}
+                            className="flex-1 min-w-0 text-[9px] text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 truncate"
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(shareLink).then(() => {
+                                setLinkCopied(true);
+                                setTimeout(() => setLinkCopied(false), 2000);
+                              }).catch(() => {});
+                            }}
+                            className="shrink-0 text-[10px] font-bold px-2 py-1.5 rounded-lg border transition-colors"
+                            style={linkCopied
+                              ? { backgroundColor: "#f0fdf4", color: "#16a34a", borderColor: "#bbf7d0" }
+                              : { backgroundColor: "#f9fafb", color: "#374151", borderColor: "#e5e7eb" }
+                            }
+                          >
+                            {linkCopied ? "Copied!" : "Copy"}
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const url = generateShareLink();
+                            navigator.clipboard.writeText(url).then(() => {
+                              setLinkCopied(true);
+                              setTimeout(() => setLinkCopied(false), 2000);
+                            }).catch(() => {});
+                          }}
+                          className="text-[9px] text-gray-400 hover:text-[#1a5c2a] transition-colors"
+                        >
+                          Regenerate link
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => generateShareLink()}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[11px] font-semibold border border-gray-200 text-gray-600 hover:border-[#1a5c2a] hover:text-[#1a5c2a] transition-colors"
+                      >
+                        <Share2 size={11} />
+                        Generate share link
+                      </button>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="text-center py-3">
