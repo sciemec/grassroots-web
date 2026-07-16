@@ -19,6 +19,9 @@ import {
   Clock,
   Trash2,
   BookOpen,
+  Layers,
+  Video,
+  ChevronRight,
 } from "lucide-react";
 import { getRoleConfig, type StaffRoleConfig } from "@/config/coaching-staff";
 import { safeArray } from "@/lib/safe-array";
@@ -210,12 +213,10 @@ export default function RoleWorkspacePage() {
           </div>
 
           <Link
-            href={`/coach/training-plans/new?role=${roleId}`}
-            className="flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-full text-white transition-colors"
-            style={{ backgroundColor: "#c8962a" }}
+            href="/coach/technical-staff"
+            className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <Plus size={14} />
-            New Plan
+            All Departments
           </Link>
         </div>
       </nav>
@@ -248,6 +249,149 @@ export default function RoleWorkspacePage() {
             </div>
           </div>
         </div>
+
+        {/* Department Tools */}
+        <div className="mb-6">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3 flex items-center gap-2">
+            <span className="inline-block w-4 h-px bg-gray-300" />
+            Department Tools
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Tactical Board */}
+            <Link
+              href={`/coach/tactics/board?dept=${roleId}`}
+              className="group rounded-2xl border border-gray-200 bg-white p-4 hover:border-[#1a5c2a] hover:shadow-md transition-all relative overflow-hidden"
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                style={{ backgroundColor: "#dbeafe" }}
+              >
+                <Layers size={16} style={{ color: "#2563eb" }} />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">
+                Tactical Board
+              </h4>
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                Illustrate drills on pitch
+              </p>
+              <ChevronRight
+                size={12}
+                className="absolute bottom-4 right-4 text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all"
+              />
+            </Link>
+
+            {/* Drills Library */}
+            <Link
+              href={`/coach/drills?dept=${roleId}`}
+              className="group rounded-2xl border border-gray-200 bg-white p-4 hover:border-[#1a5c2a] hover:shadow-md transition-all relative overflow-hidden"
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                style={{ backgroundColor: "#dcfce7" }}
+              >
+                <Dumbbell size={16} style={{ color: "#16a34a" }} />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">
+                Drills Library
+              </h4>
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                Browse department drills
+              </p>
+              <ChevronRight
+                size={12}
+                className="absolute bottom-4 right-4 text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all"
+              />
+            </Link>
+
+            {/* Set Piece Lab */}
+            <Link
+              href="/coach/set-pieces"
+              className="group rounded-2xl border border-gray-200 bg-white p-4 hover:border-[#1a5c2a] hover:shadow-md transition-all relative overflow-hidden"
+            >
+              <span
+                className="absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full text-white"
+                style={{ backgroundColor: "#1a5c2a" }}
+              >
+                ai
+              </span>
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                style={{ backgroundColor: "#fdf4ff" }}
+              >
+                <Video size={16} style={{ color: "#a21caf" }} />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">
+                Set Piece Lab
+              </h4>
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                Upload clips · Gemini Vision
+              </p>
+              <ChevronRight
+                size={12}
+                className="absolute bottom-4 right-4 text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all"
+              />
+            </Link>
+
+            {/* New Training Plan */}
+            <Link
+              href={`/coach/training-plans/new?role=${roleId}`}
+              className="group rounded-2xl border border-gray-200 bg-white p-4 hover:border-[#1a5c2a] hover:shadow-md transition-all relative overflow-hidden"
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                style={{ backgroundColor: "#fef3c7" }}
+              >
+                <Plus size={16} style={{ color: "#d97706" }} />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">
+                New Plan
+              </h4>
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                Create training plan
+              </p>
+              <ChevronRight
+                size={12}
+                className="absolute bottom-4 right-4 text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all"
+              />
+            </Link>
+          </div>
+        </div>
+
+        {/* Focus Areas — drill shortcut cards per department */}
+        {role.focusCategories.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3 flex items-center gap-2">
+              <span className="inline-block w-4 h-px bg-gray-300" />
+              Focus Drills
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              {role.focusCategories.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/coach/drills?category=${cat}&dept=${roleId}`}
+                  className="group rounded-xl border border-gray-200 bg-white p-3 hover:border-[#1a5c2a] hover:shadow-sm transition-all flex items-center gap-3"
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: "#f0fdf4" }}
+                  >
+                    <Target size={14} style={{ color: "#16a34a" }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold text-gray-900 capitalize leading-tight truncate">
+                      {cat.replace(/_/g, " ")}
+                    </p>
+                    <p className="text-[11px] text-gray-400">View drills</p>
+                  </div>
+                  <ChevronRight
+                    size={12}
+                    className="ml-auto text-gray-300 group-hover:text-[#1a5c2a] shrink-0 transition-colors"
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Training plans feed */}
         <div className="mb-4 flex items-center justify-between">
