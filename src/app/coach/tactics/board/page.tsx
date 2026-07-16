@@ -199,6 +199,9 @@ function BoardPageInner() {
   );
   const [showXgOverlay, setShowXgOverlay] = useState(true);
   const [showOpponents, setShowOpponents] = useState(false);
+  const [opponents, setOpponents]         = useState<PlayerToken[]>(() =>
+    OPPONENT_TOKENS.map((op, i) => ({ id: `opp-${i}`, ...op }))
+  );
   const [selectedZone, setSelectedZone]   = useState<string | null>(null);
   const [draggingId, setDraggingId]       = useState<string | null>(null);
 
@@ -234,8 +237,8 @@ function BoardPageInner() {
     if (pt) drawStartRef.current = pt;
   }, [mode, getSvgPt]);
 
-  // Player token pointer down — used for manual mode
-  const onPlayerDown = useCallback((e: React.PointerEvent, id: string) => {
+  // Player / opponent token pointer down — used for manual mode
+  const onTokenDown = useCallback((e: React.PointerEvent, id: string) => {
     if (mode !== "manual") return;
     e.preventDefault();
     e.stopPropagation();
@@ -251,7 +254,11 @@ function BoardPageInner() {
       return;
     }
     if (draggingId) {
-      setPlayers(prev => prev.map(p => p.id === draggingId ? { ...p, ...pt } : p));
+      if (draggingId.startsWith("opp-")) {
+        setOpponents(prev => prev.map(p => p.id === draggingId ? { ...p, ...pt } : p));
+      } else {
+        setPlayers(prev => prev.map(p => p.id === draggingId ? { ...p, ...pt } : p));
+      }
     }
   }, [mode, draggingId, getSvgPt]);
 
@@ -295,7 +302,7 @@ function BoardPageInner() {
     xg:
       "Tap any colored zone to see how dangerous it is. Red = 50%+ chance of scoring. Use this to show strikers where to run and defenders what to protect.",
     manual:
-      "Drag the green player tokens to set your team shape. Toggle XG overlay to see danger zones while positioning. Perfect for set pieces and specific opponent prep.",
+      "Drag the green player tokens to set your team shape. Toggle opposition to place red tokens — these are also draggable. Perfect for set pieces and specific opponent prep.",
     tactics:
       "Review how your formation covers the XG danger zones. Lines show tactical connections. Toggle opposition (red) to see match-ups and coverage gaps.",
     draw:
@@ -474,8 +481,16 @@ function BoardPageInner() {
                 )}
 
                 {/* Opponent tokens */}
-                {showOpponents && OPPONENT_TOKENS.map((op, i) => (
-                  <g key={`opp-${i}`}>
+                {showOpponents && opponents.map(op => (
+                  <g
+                    key={op.id}
+                    onPointerDown={e => onTokenDown(e, op.id)}
+                    style={{
+                      cursor: mode === "manual"
+                        ? (draggingId === op.id ? "grabbing" : "grab")
+                        : mode === "draw" ? "crosshair" : "default",
+                    }}
+                  >
                     <circle cx={op.x} cy={op.y} r={11} fill="#dc2626" stroke="white" strokeWidth={1.5} />
                     <text
                       x={op.x} y={op.y + 4}
@@ -492,7 +507,7 @@ function BoardPageInner() {
                   <g
                     key={p.id}
                     transform={`translate(${p.x},${p.y})`}
-                    onPointerDown={e => onPlayerDown(e, p.id)}
+                    onPointerDown={e => onTokenDown(e, p.id)}
                     style={{
                       cursor: mode === "manual"
                         ? (draggingId === p.id ? "grabbing" : "grab")
