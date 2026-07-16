@@ -247,7 +247,7 @@ function BoardPageInner() {
     const pt = getSvgPt(e);
     if (!pt) return;
     if (mode === "draw" && drawStartRef.current) {
-      setPreviewArrow({ ...drawStartRef.current, x2: pt.x, y2: pt.y });
+      setPreviewArrow({ x1: drawStartRef.current.x, y1: drawStartRef.current.y, x2: pt.x, y2: pt.y });
       return;
     }
     if (draggingId) {
@@ -258,22 +258,23 @@ function BoardPageInner() {
   const onPUp = useCallback((e: React.PointerEvent) => {
     if (mode === "draw" && drawStartRef.current) {
       const pt = getSvgPt(e);
+      const x1 = drawStartRef.current.x;
+      const y1 = drawStartRef.current.y;
+      drawStartRef.current = null;
+      setPreviewArrow(null);
       if (pt) {
-        const dx = pt.x - drawStartRef.current.x;
-        const dy = pt.y - drawStartRef.current.y;
+        const dx = pt.x - x1;
+        const dy = pt.y - y1;
         if (Math.sqrt(dx * dx + dy * dy) > 10) {
           setArrows(prev => [...prev, {
             id: `arr-${Date.now()}`,
-            x1: drawStartRef.current!.x,
-            y1: drawStartRef.current!.y,
+            x1, y1,
             x2: pt.x,
             y2: pt.y,
             color: drawColor,
           }]);
         }
       }
-      drawStartRef.current = null;
-      setPreviewArrow(null);
       return;
     }
     setDraggingId(null);
