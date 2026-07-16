@@ -11,6 +11,7 @@ import {
   Layers, UserCircle, BarChart2, ListChecks, Milestone, BadgeCheck,
   Wind, Footprints, Target, Swords, Hand, Palette, Sprout, Dna,
   Play, HeartPulse, ScanLine, Camera, Wand2, ArrowUpRight,
+  Bell, Users,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { getCurrentStreak } from "@/lib/success/streak";
@@ -509,6 +510,8 @@ export default function PlayerDashboardHome() {
               label="Drill Library" desc="500+ drills Â· age group Â· position-specific" />
             <HubCard href="/player/sessions/new" icon={Activity} iconBg="#dcfce7" iconColor="#16a34a"
               label="Log Session" desc="Record training Â· track load Â· save notes" />
+            <HubCard href="/player/sessions" icon={ListChecks} iconBg="#f0fdf4" iconColor="#15803d"
+              label="My Sessions" desc="Full history Â· filter by sport Â· stats" />
             <HubCard href="/player/position-fit" icon={Crosshair} iconBg="#ffe4e6" iconColor="#dc2626"
               label="Position Finder" desc="GRS Engine finds your best position" />
             <HubCard href="/player/pitch" icon={Play} iconBg="#dcfce7" iconColor="#15803d"
@@ -616,6 +619,10 @@ export default function PlayerDashboardHome() {
               </div>
             </Link>
           </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+            <HubCard href="/player/business-school" icon={BookOpen} iconBg="#fef3c7" iconColor="#b45309"
+              label="Business School" desc="Sports business · sponsorship · contracts" />
+          </div>
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -646,6 +653,10 @@ export default function PlayerDashboardHome() {
               label="My Progress" desc="Form trends Â· improvement over time" />
             <HubCard href="/player/milestones" icon={Milestone} iconBg="#fce7f3" iconColor="#db2777"
               label="Milestones" desc="Achievements Â· goals reached Â· career wins" />
+            <HubCard href="/player/coaching" icon={Users} iconBg="#dbeafe" iconColor="#1d4ed8"
+              label="Find a Coach" desc="Book sessions · match with local coaches" />
+            <HubCard href="/player/notifications" icon={Bell} iconBg="#fef3c7" iconColor="#d97706"
+              label="Notifications" desc="Alerts · scout views · opportunity updates" />
           </div>
           {/* Leaderboard + Arena CTAs */}
           <div className="grid sm:grid-cols-2 gap-3 mt-3">
@@ -672,6 +683,8 @@ export default function PlayerDashboardHome() {
               label="Development" desc="Long-term tracking Â· growth plan" />
             <HubCard href="/player/brand" icon={Palette} iconBg="#fce7f3" iconColor="#be185d"
               label="Brand Studio" desc="Photo Â· profile enhancement Â· image" />
+            <HubCard href="/player/sports" icon={Globe} iconBg="#e0f2fe" iconColor="#0284c7"
+              label="My Sports" desc="Switch sport · multi-sport profile" />
           </div>
         </section>
 
