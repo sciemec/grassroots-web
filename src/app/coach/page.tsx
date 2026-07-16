@@ -7,7 +7,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import {
   Users, Target, Activity, Zap, BookOpen, Dumbbell, Calendar,
   Brain, Flag, TrendingUp, TrendingDown, BarChart3, Award, Video,
-  UserSearch, Shield, Flame, Swords, Globe, Bell, Crosshair, BarChart2,
+  UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
   ChevronRight, ArrowRight, Play,
 } from "lucide-react";
 
@@ -164,8 +164,7 @@ export default function CoachHubPage() {
         <SectionLabel>2 · Match &amp; Tactics</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/coach/matches"           icon={Calendar}   iconBg="#f3f4f6" iconColor="#6b7280" label="Matches"            desc="Fixtures & results"           />
-          <HubCard href="/coach/tactics"           icon={Brain}      iconBg="#dbeafe" iconColor="#2563eb" label="Tactics Board"      desc="Build formations & set plays"  />
-          <HubCard href="/coach/tactics/simulator" icon={Swords}     iconBg="#ede9fe" iconColor="#7c3aed" label="Tactics Simulator"  desc="Simulate match scenarios"      badge="new" />
+          <HubCard href="/coach/tactics/board"    icon={Layers}     iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"     badge="new" />
           <HubCard href="/coach/tactical-analysis" icon={Crosshair}  iconBg="#fef3c7" iconColor="#d97706" label="Tactical Analysis"  desc="Post-match breakdown"          />
           <HubCard href="/coach/set-pieces"        icon={Flame}      iconBg="#fee2e2" iconColor="#dc2626" label="Set Pieces"         desc="Corners, free kicks & more"    />
           <HubCard href="/coach/set-piece-lab"     icon={Flag}       iconBg="#fdf4ff" iconColor="#a21caf" label="Set Piece Lab"      desc="Design & track set plays"      />
