@@ -18,6 +18,9 @@
 
 # misc
 .DS_Store
+
+# AI model files — download separately, do not commit
+/public/models/*.onnx
 *.pem
 
 # debug
