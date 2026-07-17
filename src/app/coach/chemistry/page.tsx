@@ -232,10 +232,27 @@ export default function CoachChemistryPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then((res) => setPlayerFingerprint((res.data ?? res) as PlayerFingerprint))
+      .then((res) => {
+        const raw = (res.data ?? res) as Record<string, unknown>;
+        // dimension_labels is a string[] of 32 key names; fingerprint_vector is float[] (0–1)
+        const keys: string[]   = Array.isArray(raw.dimension_labels) ? (raw.dimension_labels as string[]) : [];
+        const vector: number[] = Array.isArray(raw.fingerprint_vector) ? (raw.fingerprint_vector as number[]) : [];
+        const dimensions = keys.map((key, idx) => ({
+          dimension: key,
+          label:     key.replace(/_/g, " "),
+          value:     Math.round((vector[idx] ?? 0) * 100),
+        }));
+        const playerName = players.find((p) => p.id === selectedFpPlayer)?.name ?? "Player";
+        setPlayerFingerprint({
+          player_id:   selectedFpPlayer,
+          player_name: playerName,
+          dimensions,
+          computed_at: (raw.generated_at as string) ?? "",
+        });
+      })
       .catch(() => {})
       .finally(() => setFpLoading(false));
-  }, [selectedFpPlayer, activeTab]);
+  }, [selectedFpPlayer, activeTab, players]);
 
   // ── Derived values ────────────────────────────────────────────────────────
 
