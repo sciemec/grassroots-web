@@ -48,6 +48,13 @@ const nextConfig = {
         'firebase/storage',
         'firebase/compat/app',
         'firebase/compat/auth',
+        // Browser-only AI/ML packages — WebGL/WASM, cannot run in Node.js
+        '@tensorflow/tfjs',
+        '@tensorflow/tfjs-backend-webgl',
+        '@tensorflow-models/pose-detection',
+        '@mediapipe/tasks-vision',
+        '@mediapipe/pose',
+        'onnxruntime-web',
       ];
       for (const pkg of emptyStubs) {
         config.resolve.alias[pkg] = false;
