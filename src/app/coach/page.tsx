@@ -175,7 +175,8 @@ export default function CoachHubPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/coach/training-plans"  icon={Calendar} iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans"  desc="Build & assign plans"        badge="core" />
           <HubCard href="/coach/drills"          icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb" label="Drills Library"  desc="Browse all drills"           />
-          <HubCard href="/coach/drill-analysis"  icon={Video}    iconBg="#ede9fe" iconColor="#7c3aed" label="Drill Analysis"  desc="Analyse training footage"    />
+          <HubCard href="/coach/drill-analysis"    icon={Video}    iconBg="#ede9fe" iconColor="#7c3aed" label="Drill Analysis"  desc="Analyse training footage"    />
+          <HubCard href="/coach/player-analysis" icon={Activity} iconBg="#fee2e2" iconColor="#dc2626" label="Player Analysis" desc="4-type biomechanics hub"      badge="ai" />
           <HubCard href="/coach/session-library" icon={BookOpen} iconBg="#fef3c7" iconColor="#d97706" label="Session Library" desc="Saved session templates"     />
         </div>
 

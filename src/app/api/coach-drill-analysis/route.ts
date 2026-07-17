@@ -11,6 +11,11 @@ const DRILLS: Record<string, { name: string; metrics: string[] }> = {
   header:          { name: "Jump Header",              metrics: ["arm_swing", "bilateral_asymmetry", "landing_stiffness"] },
   lateral_shuffle: { name: "Side-Step Speed",          metrics: ["trunk_lean", "bilateral_asymmetry", "heel_recovery"] },
   dribble_sprint:  { name: "Dribble Sprint",           metrics: ["trunk_lean", "knee_drive", "heel_recovery"] },
+  // Player Analysis hub types
+  movement:        { name: "Movement & Sprint",        metrics: ["trunk_lean", "knee_drive", "heel_recovery"] },
+  technique:       { name: "Ball Technique",           metrics: ["trunk_lean", "heel_recovery", "bilateral_asymmetry"] },
+  resilience:      { name: "Resilience & Landing",     metrics: ["knee_valgus", "bilateral_asymmetry", "landing_stiffness"] },
+  posture:         { name: "Posture & Balance",         metrics: ["trunk_lean", "bilateral_asymmetry", "arm_swing"] },
 };
 
 const METRIC_LABELS: Record<string, string> = {
