@@ -8,6 +8,7 @@ import {
   ChevronDown, ChevronUp, History, X, StopCircle,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { measureFromVideo, type TestType, type VideoMeasurement } from "@/lib/super-engine";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const HISTORY_KEY = "gs_player_analysis_history";
@@ -91,8 +92,9 @@ interface HistoryEntry {
   metrics:           Record<string, number>;
 }
 
-type Stage = "setup" | "source" | "uploading" | "processing" | "results" | "error";
+type Stage  = "setup" | "source" | "uploading" | "processing" | "results" | "error";
 type Source = "upload" | "camera";
+type Engine = "super" | "gemini" | null;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -143,6 +145,9 @@ export default function PlayerAnalysisPage() {
   const [history,       setHistory]       = useState<HistoryEntry[]>([]);
   const [isRecording,   setIsRecording]   = useState(false);
   const [cameraReady,   setCameraReady]   = useState(false);
+  const [engine,        setEngine]        = useState<Engine>(null);
+  const [enginesUsed,   setEnginesUsed]   = useState<string[]>([]);
+  const [progressLabel, setProgressLabel] = useState("");
 
   // ── Refs ──────────────────────────────────────────────────────────────────
   const fileRef      = useRef<HTMLInputElement>(null);
@@ -173,7 +178,54 @@ export default function PlayerAnalysisPage() {
     };
   }, []);
 
-  // ── Core: run 3-step Gemini pipeline ──────────────────────────────────────
+  // ── TestType mapping ──────────────────────────────────────────────────────
+  const ANALYSIS_TO_TEST_TYPE: Record<AnalysisId, TestType> = {
+    movement:   "sprint",
+    technique:  "ball_mastery",
+    resilience: "jump",
+    posture:    "balance",
+  };
+
+  function videoMeasurementToResult(vm: VideoMeasurement, id: AnalysisId): AnalysisResult {
+    const metrics: Record<string, number> = {};
+    const flags: string[] = [...vm.warnings.map((w) => w.replace(/\s+/g, "_").toLowerCase())];
+
+    switch (id) {
+      case "movement":
+        metrics.trunk_lean          = vm.sprintTrunkLean   ?? 50;
+        metrics.knee_drive          = vm.sprintKneeDrive   ?? 50;
+        metrics.heel_recovery       = vm.sprintArmSwing    ?? 50;
+        metrics.bilateral_asymmetry = vm.sprintAsymmetry   ?? 50;
+        break;
+      case "technique":
+        metrics.trunk_lean          = vm.turnQualityScore  ?? 50;
+        metrics.heel_recovery       = Math.min(100, (vm.jugglingCount ?? 5) * 10);
+        metrics.bilateral_asymmetry = vm.sprintAsymmetry   ?? 50;
+        break;
+      case "resilience":
+        metrics.knee_drive          = Math.min(100, (vm.jumpHeightCm ?? 20) * 2.5);
+        metrics.landing_stiffness   = Math.min(100, (vm.jumpFlightTimeSec ?? 0.4) * 150);
+        metrics.bilateral_asymmetry = vm.sprintAsymmetry   ?? 50;
+        metrics.knee_valgus         = vm.sprintAsymmetry   ?? 50;
+        if ((vm.jumpHeightCm ?? 100) < 10) flags.push("low_jump_height");
+        break;
+      case "posture":
+        metrics.trunk_lean          = vm.sprintTrunkLean   ?? 50;
+        metrics.bilateral_asymmetry = vm.sprintAsymmetry   ?? 50;
+        metrics.arm_swing           = vm.sprintArmSwing    ?? 50;
+        break;
+    }
+
+    const lowerKeys = new Set(["knee_valgus", "bilateral_asymmetry"]);
+    const keys = Object.keys(metrics);
+    const normalised = keys.map((k) => lowerKeys.has(k) ? 100 - metrics[k] : metrics[k]);
+    const performance_index = Math.round(normalised.reduce((s, v) => s + v, 0) / Math.max(normalised.length, 1));
+    const resilience_index  = Math.round(Math.max(0, performance_index - flags.length * 8));
+
+    return { metrics, performance_index, resilience_index, flags };
+  }
+
+  // ── Core: Super Engine on-device first, fall back to Gemini ──────────────
   const runAnalysis = useCallback(async (file: File) => {
     if (!file.type.startsWith("video/")) {
       setErrMsg("Please choose a video file (mp4 or mov).");
@@ -183,9 +235,49 @@ export default function PlayerAnalysisPage() {
 
     setStage("uploading");
     setUploadPct(0);
+    setProgressLabel("Loading AI engines...");
     setResult(null);
     setThutoNote("");
     setArenaPosted(false);
+    setEnginesUsed([]);
+    setEngine("super"); // optimistic — changed to "gemini" if we fall back
+
+    // ── Try Super Engine (MoveNet + YOLOv8 + MediaPipe — all on-device) ──────
+    const testType = ANALYSIS_TO_TEST_TYPE[analysisId];
+    const vm = await measureFromVideo(file, testType, (pct) => {
+      setUploadPct(pct);
+      setProgressLabel(
+        pct < 20 ? "Loading AI engines..."  :
+        pct < 60 ? "Scanning movement..."   :
+        pct < 90 ? "Computing metrics..."   :
+                   "Finalising results..."
+      );
+    });
+
+    if (vm && vm.confidence > 0.1 && vm.framesAnalysed > 0) {
+      const data = videoMeasurementToResult(vm, analysisId);
+      setEnginesUsed(vm.enginesUsed);
+      setResult(data);
+      setStage("results");
+      saveHistory({
+        id:                `${Date.now()}`,
+        timestamp:         new Date().toISOString(),
+        playerName:        playerName.trim() || "Unknown",
+        analysisType:      analysisId,
+        analysisLabel:     analysisType.label,
+        performance_index: data.performance_index,
+        resilience_index:  data.resilience_index,
+        flags:             data.flags,
+        metrics:           data.metrics,
+      });
+      setHistory(loadHistory());
+      return;
+    }
+
+    // ── Super Engine had too few frames — fall back to Gemini ─────────────────
+    setEngine("gemini");
+    setUploadPct(0);
+    setProgressLabel("Uploading for AI analysis...");
 
     // Step 1 — get Google resumable session URL
     let uploadUrl: string;
@@ -212,7 +304,11 @@ export default function PlayerAnalysisPage() {
       const googleRes = await new Promise<{ file: { uri: string; name: string } }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100));
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            setUploadPct(pct);
+            setProgressLabel(`${pct}% uploaded`);
+          }
         };
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
@@ -251,7 +347,6 @@ export default function PlayerAnalysisPage() {
       setResult(data);
       setStage("results");
 
-      // Persist to history
       const entry: HistoryEntry = {
         id:                `${Date.now()}`,
         timestamp:         new Date().toISOString(),
@@ -394,6 +489,9 @@ export default function PlayerAnalysisPage() {
     setArenaPosted(false);
     setErrMsg("");
     setUploadPct(0);
+    setEngine(null);
+    setEnginesUsed([]);
+    setProgressLabel("");
   };
 
   // ── Move to source selection ───────────────────────────────────────────────
@@ -677,18 +775,23 @@ export default function PlayerAnalysisPage() {
           </>
         )}
 
-        {/* ── Stage: Uploading ───────────────────────────────────────────── */}
+        {/* ── Stage: Uploading / Pose scanning ───────────────────────────── */}
         {stage === "uploading" && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-            <div className="text-4xl mb-4">📤</div>
-            <h2 className="text-base font-bold text-gray-900 mb-3">Uploading video...</h2>
+            <div className="text-4xl mb-4">{engine === "gemini" ? "📤" : "🦾"}</div>
+            <h2 className="text-base font-bold text-gray-900 mb-3">
+              {engine === "gemini" ? "Uploading video..." : "Scanning skeleton..."}
+            </h2>
             <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2 max-w-xs mx-auto">
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{ width: `${uploadPct}%`, backgroundColor: "#1a5c2a" }}
               />
             </div>
-            <p className="text-sm text-gray-500">{uploadPct}% uploaded</p>
+            <p className="text-sm text-gray-500">{progressLabel || `${uploadPct}%`}</p>
+            {engine !== "gemini" && (
+              <p className="text-[11px] text-gray-400 mt-2">Running on your device — no upload needed</p>
+            )}
           </div>
         )}
 
@@ -729,11 +832,23 @@ export default function PlayerAnalysisPage() {
           <>
             {/* Score header */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span className="text-sm font-bold text-gray-900">
-                  {playerName.trim() || "Player"} — {analysisType.label}
-                </span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-emerald-500" />
+                  <span className="text-sm font-bold text-gray-900">
+                    {playerName.trim() || "Player"} — {analysisType.label}
+                  </span>
+                </div>
+                {engine === "super" && (
+                  <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+                    {enginesUsed.length > 0 ? enginesUsed.join(" + ") : "On-device"}
+                  </span>
+                )}
+                {engine === "gemini" && (
+                  <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100 shrink-0">
+                    AI Vision
+                  </span>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 text-center">
