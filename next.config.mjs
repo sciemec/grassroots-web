@@ -24,6 +24,9 @@ const nextConfig = {
 
     config.resolve.alias['@google/genai'] = false;
     config.resolve.alias['@anthropic-ai/sdk'] = false;
+    // Optional peer deps of @tensorflow-models/pose-detection not needed for MoveNet
+    config.resolve.alias['@mediapipe/pose'] = false;
+    config.resolve.alias['@tensorflow/tfjs-backend-webgpu'] = false;
 
     config.resolve.alias[`${process.cwd()}/src/app/coach/page.jsx`] = false;
 

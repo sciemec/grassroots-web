@@ -49,6 +49,8 @@
     "cross-env": "^7.0.3",
     "framer-motion": "^11.3.24",
     "groq-sdk": "^0.13.0",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "i18next": "^23.16.0",
     "lucide-react": "^0.408.0",
     "next": "16.2.10",
