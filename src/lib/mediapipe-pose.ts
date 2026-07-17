@@ -28,7 +28,12 @@ async function getLandmarker() {
   if (_loading)   return _loading;
 
   _loading = (async () => {
-    const { PoseLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
+    const { PoseLandmarker, FilesetResolver } = await import(
+      /* webpackIgnore: true */
+      /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+      // @ts-ignore
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs"
+    );
 
     const vision = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm",

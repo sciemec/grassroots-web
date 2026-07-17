@@ -52,8 +52,6 @@ const nextConfig = {
         '@tensorflow/tfjs',
         '@tensorflow/tfjs-backend-webgl',
         '@tensorflow-models/pose-detection',
-        '@mediapipe/tasks-vision',
-        '@mediapipe/pose',
         'onnxruntime-web',
       ];
       for (const pkg of emptyStubs) {
