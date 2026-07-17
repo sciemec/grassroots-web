@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Camera, Upload, X, ChevronDown, ChevronUp, FileDown } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { measureFromVideo, type VideoMeasurement, type TestType } from '@/lib/super-engine';
 
-const AI_URL  = process.env.NEXT_PUBLIC_AI_URL  ?? 'https://ai.bhora-ai.onrender.com';
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -169,6 +169,58 @@ function scoreLabel(s: number) {
   return 'Needs work';
 }
 
+// Map VideoMeasurement → PlayerResult format per drill type
+function vmToPlayerResult(vm: VideoMeasurement, drillId: string): PlayerResult {
+  const isJump = drillId === 'drop_jump' || drillId === 'dynamic_header';
+
+  const tl = vm.sprintTrunkLean ?? 50;
+  const kd = vm.sprintKneeDrive ?? 50;
+  const as = vm.sprintArmSwing  ?? 50;
+  const bA = vm.sprintAsymmetry ?? 30;
+  const jH = vm.jumpHeightCm;
+
+  let performance_index: number;
+  let resilience_index:  number;
+  let metrics: Record<string, number>;
+  const flags: string[] = [];
+
+  if (isJump) {
+    performance_index = jH != null
+      ? Math.min(100, Math.round((jH / 60) * 100))
+      : Math.round((tl + kd) / 2);
+    resilience_index  = Math.max(0, Math.round(100 - bA));
+    metrics = {
+      trunk_lean:   Math.round(tl),
+      knee_flexion: Math.round(kd),
+      asymmetry:    Math.round(bA),
+      ...(jH != null ? { jump_height_cm: Math.round(jH) } : {}),
+    };
+    if (bA > 55) flags.push('landing_imbalance');
+    if (kd < 45) flags.push('knee_flexion_low');
+    if (tl < 45) flags.push('forward_lean_issue');
+  } else {
+    performance_index = Math.round((tl + kd + as) / 3);
+    resilience_index  = Math.max(0, Math.round(100 - bA));
+    metrics = {
+      trunk_lean: Math.round(tl),
+      knee_drive: Math.round(kd),
+      arm_swing:  Math.round(as),
+      asymmetry:  Math.round(bA),
+    };
+    if (bA > 55) flags.push('bilateral_imbalance');
+    if (kd < 45) flags.push('knee_drive_low');
+    if (tl < 45) flags.push('forward_lean_low');
+  }
+
+  return {
+    id:                `local_${Date.now()}`,
+    metrics,
+    performance_index: Math.max(0, Math.min(100, performance_index)),
+    resilience_index:  Math.max(0, Math.min(100, resilience_index)),
+    flags,
+  };
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function BiometricsPage() {
@@ -180,7 +232,6 @@ export default function BiometricsPage() {
   const [drill,          setDrill]         = useState<Drill | null>(null);
   const [videoFile,      setVideoFile]     = useState<File | null>(null);
   const [uploadPct,      setUploadPct]     = useState(0);
-  const [jobId,          setJobId]         = useState<string | null>(null);
   const [results,        setResults]       = useState<PlayerResult[]>([]);
   const [thutoNote,      setThutoNote]     = useState<string | null>(null);
   const [expandMetrics,  setExpandMetrics] = useState(false);
@@ -193,7 +244,6 @@ export default function BiometricsPage() {
   const videoRef    = useRef<HTMLVideoElement>(null);
   const mediaRef    = useRef<MediaRecorder | null>(null);
   const chunksRef   = useRef<Blob[]>([]);
-  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef   = useRef<MediaStream | null>(null);
 
@@ -252,63 +302,41 @@ export default function BiometricsPage() {
     return stopCamera;
   }, [useCamera, startCamera, stopCamera]);
 
-  // ── Upload & poll ─────────────────────────────────────────────────────────
+  // ── In-browser analysis ───────────────────────────────────────────────────
 
-  const upload = () => {
+  const analyseLocally = async () => {
     if (!videoFile || !drill) return;
     setStage('processing');
     setUploadPct(0);
+    setErrorMsg('');
 
-    const fd = new FormData();
-    fd.append('video', videoFile);
-    fd.append('drill', drill.id);
-    fd.append('player_count', '1');
+    try {
+      const testType: TestType = (['drop_jump', 'dynamic_header'] as string[]).includes(drill.id)
+        ? 'jump'
+        : 'sprint';
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${AI_URL}/analyse-team-biomechanics`);
-    if (token && token !== 'dev-token') xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    xhr.upload.onprogress = e => { if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100)); };
-    xhr.onload = () => {
-      try {
-        const data = JSON.parse(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300 && data.job_id) {
-          setJobId(data.job_id);
-          startPolling(data.job_id);
-        } else {
-          setErrorMsg(data.error ?? 'Upload failed. Try again.');
-          setStage('error');
-        }
-      } catch {
-        setErrorMsg('Unexpected response. Try again.');
+      const vm = await measureFromVideo(
+        videoFile,
+        testType,
+        (pct) => setUploadPct(pct),
+      );
+
+      if (!vm || vm.confidence < 0.1) {
+        setErrorMsg('No person detected. Try a clear side-view clip with the full body visible.');
         setStage('error');
+        return;
       }
-    };
-    xhr.onerror = () => { setErrorMsg('Network error. Check your connection.'); setStage('error'); };
-    xhr.send(fd);
-  };
 
-  const startPolling = (id: string) => {
-    pollRef.current = setInterval(async () => {
-      try {
-        const res  = await fetch(`${AI_URL}/job/${id}`);
-        const data = await res.json();
-        if (data.status === 'complete') {
-          clearInterval(pollRef.current!);
-          const players: PlayerResult[] = Array.isArray(data.players) ? data.players : [];
-          setResults(players);
-          setStage('results');
-          fetchThutoNote(players);
-          saveToPassport(players);
-        } else if (data.status === 'failed') {
-          clearInterval(pollRef.current!);
-          setErrorMsg(data.error ?? 'Analysis failed. Try again.');
-          setStage('error');
-        }
-      } catch { /* retry next tick */ }
-    }, 5000);
+      const player = vmToPlayerResult(vm, drill.id);
+      setResults([player]);
+      setStage('results');
+      fetchThutoNote([player]);
+      saveToPassport([player]);
+    } catch {
+      setErrorMsg('Analysis failed. Please try again with a shorter, clearer clip.');
+      setStage('error');
+    }
   };
-
-  useEffect(() => () => { clearInterval(pollRef.current!); }, []);
 
   // ── THUTO coaching note ───────────────────────────────────────────────────
 
@@ -583,7 +611,7 @@ export default function BiometricsPage() {
             )}
 
             <button
-              onClick={upload}
+              onClick={analyseLocally}
               disabled={!videoFile}
               style={{ width: '100%', backgroundColor: videoFile ? '#1a5c2a' : '#d1d5db', color: videoFile ? '#fff' : '#9ca3af', border: 'none', borderRadius: 14, padding: '0.875rem', fontSize: 15, fontWeight: 700, cursor: videoFile ? 'pointer' : 'not-allowed' }}
             >
@@ -603,23 +631,19 @@ export default function BiometricsPage() {
             <div style={{ textAlign: 'center', padding: '3rem 0' }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', border: '4px solid #e5e7eb', borderTop: '4px solid #1a5c2a', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }} />
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Analysing your movement…</h2>
-              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>This takes about 30–60 seconds. Don't close the page.</p>
+              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: '1.5rem' }}>Running MoveNet · MediaPipe in your browser. Takes about 15–40 seconds.</p>
 
-              {uploadPct < 100 && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, color: '#6b7280' }}>Uploading…</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#1a5c2a' }}>{uploadPct}%</span>
-                  </div>
-                  <div style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ height: 6, backgroundColor: '#1a5c2a', width: `${uploadPct}%`, borderRadius: 3, transition: 'width 0.3s' }} />
-                  </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: '#6b7280' }}>
+                    {uploadPct < 30 ? 'Extracting frames…' : uploadPct < 65 ? 'Detecting skeleton…' : uploadPct < 90 ? 'Cross-checking…' : 'Finalising…'}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#1a5c2a' }}>{uploadPct}%</span>
                 </div>
-              )}
-
-              {uploadPct === 100 && (
-                <p style={{ fontSize: 13, color: '#1a5c2a', fontWeight: 600 }}>Upload done — AI is checking your movement now…</p>
-              )}
+                <div style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: 6, backgroundColor: '#1a5c2a', width: `${uploadPct}%`, borderRadius: 3, transition: 'width 0.3s' }} />
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -714,7 +738,7 @@ export default function BiometricsPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
-                onClick={() => { setStage('select'); setDrill(null); setVideoFile(null); setResults([]); setThutoNote(null); setPassportSaved(false); setJobId(null); }}
+                onClick={() => { setStage('select'); setDrill(null); setVideoFile(null); setResults([]); setThutoNote(null); setPassportSaved(false); }}
                 style={{ flex: 1, backgroundColor: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 14, padding: '0.75rem', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
                 New scan
