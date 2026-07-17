@@ -57,7 +57,7 @@
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
     "i18next": "^23.16.0",
-    "lucide-react": "^0.408.0",
+    "lucide-react": "^0.460.0",
     "next": "16.2.10",
     "onnxruntime-web": "^1.27.0",
     "patch-package": "^8.0.0",
