@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Target, Play, CheckCircle2, Brain, Loader2, TrendingUp,
   Activity, ChevronRight, Star, Zap, AlertCircle, Trophy,
+  Upload, X, Video, Camera,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -16,6 +17,7 @@ import { calcBenchmarkScore } from "@/lib/skill-scoring";
 import api from "@/lib/api";
 import { safeArray } from "@/lib/safe-array";
 import { FIELD_META_LABELS } from "@/config/sports";
+import { measureFromVideo, type VideoMeasurement, type TestType } from "@/lib/super-engine";
 
 // ── Test definitions ──────────────────────────────────────────────────────────
 
@@ -138,10 +140,64 @@ const RESULT_LABEL: Record<string, string> = {
   L: "Loss",
 };
 
+// ── Video test definitions ─────────────────────────────────────────────────────
+
+interface VideoTestDef {
+  name: string;
+  testType: TestType;
+  cameraGuide: string;
+}
+
+const VIDEO_TESTS: Record<string, VideoTestDef[]> = {
+  goalkeeper: [
+    { name: "Dive reach",       testType: "jump",         cameraGuide: "Side view — full body from head to outstretched hand" },
+  ],
+  defender: [
+    { name: "40m sprint",       testType: "sprint",       cameraGuide: "Side view — full body visible from start to finish" },
+    { name: "Clearance jump",   testType: "jump",         cameraGuide: "Front-on view — full body including feet on takeoff" },
+  ],
+  midfielder: [
+    { name: "20m sprint",       testType: "sprint",       cameraGuide: "Side view — full body visible" },
+    { name: "Ball retention",   testType: "ball_mastery", cameraGuide: "Side view — include ball and both players" },
+  ],
+  forward: [
+    { name: "10m sprint",       testType: "sprint",       cameraGuide: "Side view — full body from start line" },
+    { name: "Aerial duel",      testType: "jump",         cameraGuide: "Side view — full body including peak of jump" },
+    { name: "Dribble + finish", testType: "ball_mastery", cameraGuide: "Side view — full cone course visible" },
+  ],
+};
+
+interface VideoScore { label: string; value: number; hint: string }
+
+function vmToScores(vm: VideoMeasurement, testType: TestType): VideoScore[] {
+  if (testType === "jump") {
+    const scores: VideoScore[] = [];
+    if (vm.jumpHeightCm != null)
+      scores.push({ label: "Jump Height",     value: Math.min(100, Math.round((vm.jumpHeightCm / 60) * 100)), hint: `${vm.jumpHeightCm.toFixed(1)} cm` });
+    scores.push({ label: "Landing Balance", value: Math.max(0, Math.round(100 - (vm.sprintAsymmetry ?? 30))), hint: vm.sprintAsymmetry != null ? `${vm.sprintAsymmetry.toFixed(0)}% asymmetry` : "" });
+    scores.push({ label: "Knee Flexion",    value: Math.round(vm.sprintKneeDrive ?? 50), hint: "On landing" });
+    return scores;
+  }
+  if (testType === "ball_mastery") {
+    const scores: VideoScore[] = [];
+    if (vm.jugglingCount   != null) scores.push({ label: "Ball Touches",  value: Math.min(100, vm.jugglingCount * 5),         hint: `${vm.jugglingCount} touches` });
+    if (vm.turnQualityScore != null) scores.push({ label: "Turn Quality", value: Math.round(vm.turnQualityScore),              hint: "0–100 scale" });
+    if (!scores.length) scores.push({ label: "Form Quality", value: Math.round(((vm.sprintTrunkLean ?? 50) + (vm.sprintKneeDrive ?? 50)) / 2), hint: "" });
+    return scores;
+  }
+  // sprint (default)
+  return [
+    { label: "Trunk Lean", value: Math.round(vm.sprintTrunkLean  ?? 50), hint: "Forward lean score" },
+    { label: "Knee Drive", value: Math.round(vm.sprintKneeDrive  ?? 50), hint: "Drive phase quality" },
+    { label: "Arm Swing",  value: Math.round(vm.sprintArmSwing   ?? 50), hint: "Arm mechanics score" },
+    { label: "Symmetry",   value: Math.max(0, Math.round(100 - (vm.sprintAsymmetry ?? 30))), hint: "Left/right balance" },
+  ];
+}
+
 
 export default function AssessmentPage() {
-  const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<"field" | "apk" | "stats">("field");
+  const user = useAuthStore((s) => s.user);
+  const [activeTab, setActiveTab] = useState<"field" | "apk" | "stats" | "video">("field");
 
   // Field tests state
   const [positionGroup, setPositionGroup] = useState("");
@@ -161,6 +217,19 @@ export default function AssessmentPage() {
   const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
   const [sessionReport, setSessionReport]     = useState<SessionReport | null>(null);
   const [reportLoading, setReportLoading]     = useState(false);
+
+  // Video analysis state
+  const videoInputRef                             = useRef<HTMLInputElement>(null);
+  const [videoPosGroup,  setVideoPosGroup]        = useState("");
+  const [videoTest,      setVideoTest]            = useState<VideoTestDef | null>(null);
+  const [videoFile,      setVideoFile]            = useState<File | null>(null);
+  const [videoPct,       setVideoPct]             = useState(0);
+  const [videoPhase,     setVideoPhase]           = useState<"pick" | "analyse" | "results">("pick");
+  const [videoMeasure,   setVideoMeasure]         = useState<VideoMeasurement | null>(null);
+  const [videoLoading,   setVideoLoading]         = useState(false);
+  const [videoError,     setVideoError]           = useState("");
+  const [videoNote,      setVideoNote]            = useState("");
+  const [videoNoteLoading, setVideoNoteLoading]   = useState(false);
 
   useEffect(() => { /* auth handled by layout.tsx */ }, [user]);
 
@@ -201,6 +270,50 @@ export default function AssessmentPage() {
       setSessionReport({});
     } finally {
       setReportLoading(false);
+    }
+  };
+
+  const fetchVideoNote = async (vm: VideoMeasurement, test: VideoTestDef) => {
+    setVideoNoteLoading(true);
+    const scores  = vmToScores(vm, test.testType);
+    const summary = scores.map((s) => `${s.label}: ${s.value}/100${s.hint ? ` (${s.hint})` : ""}`).join(", ");
+    try {
+      const note = await queryAI(
+        `Biomechanics video analysis for a ${videoPosGroup} doing "${test.name}": ${summary}. ` +
+        `Frames analysed: ${vm.framesAnalysed ?? "unknown"}. Confidence: ${((vm.confidence ?? 0) * 100).toFixed(0)}%. ` +
+        `Give 2–3 sentences of specific coaching feedback for a Zimbabwean grassroots player. ` +
+        `Mention one clear strength and one actionable improvement.`,
+        "player",
+      );
+      setVideoNote(note);
+    } catch {
+      setVideoNote("");
+    } finally {
+      setVideoNoteLoading(false);
+    }
+  };
+
+  const runVideoTest = async () => {
+    if (!videoFile || !videoTest) return;
+    setVideoLoading(true);
+    setVideoError("");
+    setVideoPct(0);
+    try {
+      const vm = await measureFromVideo(videoFile, videoTest.testType, (pct) => setVideoPct(pct));
+      if (!vm || vm.confidence < 0.1) {
+        setVideoError("No person detected. Film a clear side-view clip with your full body visible.");
+        setVideoPhase("pick");
+        setVideoLoading(false);
+        return;
+      }
+      setVideoMeasure(vm);
+      setVideoPhase("results");
+      fetchVideoNote(vm, videoTest);
+    } catch {
+      setVideoError("Analysis failed. Try a shorter clip (under 30 seconds) with good lighting.");
+      setVideoPhase("pick");
+    } finally {
+      setVideoLoading(false);
     }
   };
 
@@ -295,6 +408,17 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
           >
             <Trophy className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
             Match Stats
+          </button>
+          <button
+            onClick={() => setActiveTab("video")}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+              activeTab === "video"
+                ? "bg-[#f0b429] text-[#1a3a1a]"
+                : "text-[#f0b429]/70 hover:text-[#f0b429]"
+            }`}
+          >
+            <Video className="inline-block h-4 w-4 mr-1.5 -mt-0.5" />
+            Video AI
           </button>
         </div>
 
@@ -844,6 +968,243 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── VIDEO AI TAB ── */}
+        {activeTab === "video" && (
+          <div className="mx-auto max-w-lg space-y-4">
+
+            {/* Hidden file input */}
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                setVideoFile(f);
+                setVideoError("");
+              }}
+            />
+
+            {/* ── PHASE: pick ── */}
+            {videoPhase === "pick" && (
+              <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-7 backdrop-blur-sm">
+                <div className="mb-5 flex items-center gap-3">
+                  <Camera className="h-8 w-8 text-[#f0b429]" />
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: "#f0b429" }}>Video Form Analysis</h2>
+                    <p className="text-xs font-bold text-white">AI measures your biomechanics from a short clip</p>
+                  </div>
+                </div>
+
+                {/* Position group */}
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-[#f0b429]/70">
+                  1. Your position
+                </label>
+                <div className="mb-5 grid grid-cols-2 gap-2">
+                  {Object.entries(VIDEO_TESTS).map(([id]) => {
+                    const label = id.charAt(0).toUpperCase() + id.slice(1);
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => { setVideoPosGroup(id); setVideoTest(null); setVideoFile(null); setVideoError(""); }}
+                        className={`rounded-xl border py-3 text-sm font-medium transition-all ${
+                          videoPosGroup === id
+                            ? "border-[#f0b429] bg-[#f0b429]/10 text-[#f0b429]"
+                            : "border-[#f0b429]/15 bg-[#f0b429]/5 text-[#f0b429]/60 hover:border-[#f0b429]/30"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Test picker */}
+                {videoPosGroup && (
+                  <>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-[#f0b429]/70">
+                      2. Select test
+                    </label>
+                    <div className="mb-5 space-y-2">
+                      {(VIDEO_TESTS[videoPosGroup] ?? []).map((t) => (
+                        <button
+                          key={t.name}
+                          onClick={() => { setVideoTest(t); setVideoFile(null); setVideoError(""); }}
+                          className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
+                            videoTest?.name === t.name
+                              ? "border-[#f0b429] bg-[#f0b429]/10"
+                              : "border-[#f0b429]/15 bg-[#f0b429]/5 hover:border-[#f0b429]/30"
+                          }`}
+                        >
+                          <p className="text-sm font-semibold text-[#f0b429]">{t.name}</p>
+                          <p className="text-[11px] text-[#f0b429]/55 mt-0.5">{t.cameraGuide}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Upload zone */}
+                {videoTest && (
+                  <>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-[#f0b429]/70">
+                      3. Upload your clip
+                    </label>
+                    <div
+                      onClick={() => videoInputRef.current?.click()}
+                      className="mb-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#f0b429]/30 bg-[#f0b429]/5 py-8 hover:border-[#f0b429]/60 transition-colors"
+                    >
+                      {videoFile ? (
+                        <>
+                          <CheckCircle2 className="h-8 w-8 text-green-400" />
+                          <p className="text-sm font-semibold text-green-400">{videoFile.name}</p>
+                          <p className="text-xs text-[#f0b429]/55">{(videoFile.size / 1e6).toFixed(1)} MB — tap to change</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-8 w-8 text-[#f0b429]/50" />
+                          <p className="text-sm font-semibold text-[#f0b429]/70">Tap to select video</p>
+                          <p className="text-xs text-[#f0b429]/40">MP4, MOV, WebM — under 30 seconds</p>
+                        </>
+                      )}
+                    </div>
+
+                    {videoError && (
+                      <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+                        <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-red-300">{videoError}</p>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => { setVideoPhase("analyse"); runVideoTest(); }}
+                      disabled={!videoFile || videoLoading}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] px-4 py-3 text-sm font-bold text-[#1a3a1a] hover:bg-[#f5c542] disabled:opacity-50 transition-colors"
+                    >
+                      <Zap className="h-4 w-4" />
+                      Analyse with AI
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ── PHASE: analyse ── */}
+            {videoPhase === "analyse" && (
+              <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-8 text-center backdrop-blur-sm">
+                <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-[#f0b429]" />
+                <h2 className="mb-1 text-lg font-bold" style={{ color: "#f0b429" }}>Analysing your clip…</h2>
+                <p className="mb-5 text-xs font-bold text-white">
+                  {videoPct < 30 ? "Extracting frames…"
+                    : videoPct < 65 ? "Detecting skeleton…"
+                    : videoPct < 90 ? "Cross-checking pose data…"
+                    : "Finalising results…"}
+                </p>
+                <div className="mx-auto max-w-xs">
+                  <div className="h-2 w-full rounded-full bg-[#f0b429]/15">
+                    <div
+                      className="h-2 rounded-full bg-[#f0b429] transition-all duration-300"
+                      style={{ width: `${videoPct}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-right text-xs text-[#f0b429]/55">{videoPct}%</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── PHASE: results ── */}
+            {videoPhase === "results" && videoMeasure && videoTest && (
+              <>
+                {/* Score cards */}
+                <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-6 backdrop-blur-sm">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold" style={{ color: "#f0b429" }}>{videoTest.name}</h2>
+                      <p className="text-xs text-[#f0b429]/55">
+                        {videoMeasure.framesAnalysed ?? "–"} frames · {((videoMeasure.confidence ?? 0) * 100).toFixed(0)}% confidence
+                        {videoMeasure.enginesUsed?.length ? ` · ${videoMeasure.enginesUsed.join(" + ")}` : ""}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-green-400/15 px-3 py-1 text-xs font-bold text-green-400">
+                      ✓ Done
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {vmToScores(videoMeasure, videoTest.testType).map((s) => (
+                      <div
+                        key={s.label}
+                        className="rounded-xl border border-[#f0b429]/15 bg-[#f0b429]/5 p-4 text-center"
+                      >
+                        <p className={`text-2xl font-black ${scoreColor(s.value)}`}>{s.value}</p>
+                        <p className="text-[11px] font-semibold text-[#f0b429] mt-0.5">{s.label}</p>
+                        {s.hint && <p className="text-[10px] text-[#f0b429]/45 mt-0.5">{s.hint}</p>}
+                        <p className={`text-[10px] font-bold mt-1 ${scoreColor(s.value)}`}>{scoreLabel(s.value)}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {videoMeasure.warnings?.length ? (
+                    <div className="mt-4 flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-yellow-300">{videoMeasure.warnings.join(" · ")}</p>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* THUTO coaching note */}
+                <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Brain className="h-4 w-4 text-[#f0b429]" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#f0b429]/70">THUTO Coaching Note</p>
+                  </div>
+                  {videoNoteLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#f0b429]/50" />
+                      <p className="text-xs text-[#f0b429]/50">Generating feedback…</p>
+                    </div>
+                  ) : videoNote ? (
+                    <p className="text-sm leading-relaxed text-white">{videoNote}</p>
+                  ) : (
+                    <p className="text-xs text-[#f0b429]/45">No coaching note available.</p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setVideoPhase("pick");
+                      setVideoFile(null);
+                      setVideoMeasure(null);
+                      setVideoNote("");
+                      setVideoError("");
+                      setVideoPct(0);
+                    }}
+                    className="flex-1 rounded-xl border border-[#f0b429]/30 py-2.5 text-sm font-semibold text-[#f0b429] hover:bg-[#f0b429]/10 transition-colors"
+                  >
+                    Try another test
+                  </button>
+                  <button
+                    onClick={() => {
+                      setVideoFile(null);
+                      setVideoMeasure(null);
+                      setVideoNote("");
+                      setVideoError("");
+                      setVideoPct(0);
+                      setVideoPhase("pick");
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl border border-[#f0b429]/30 px-4 py-2.5 text-sm font-semibold text-[#f0b429]/60 hover:bg-[#f0b429]/10 transition-colors"
+                  >
+                    <X className="h-4 w-4" /> Reset
+                  </button>
+                </div>
+              </>
+            )}
+
           </div>
         )}
 
