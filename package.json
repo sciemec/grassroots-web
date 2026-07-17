@@ -7,7 +7,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "setup:models": "node scripts/download-models.mjs",
+    "ai:server": "bash scripts/grs-ai-server/start.sh"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.614.0",
