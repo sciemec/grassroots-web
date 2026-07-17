@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef, useCallback, Suspense, useEffect } from "react";
+import type { ElementType } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -256,6 +257,19 @@ function ZoneDetailPanel({ view, selectedZone, onDismiss }: ZoneDetailProps) {
   );
 }
 
+const ZONE_VIEWS: { key: ZoneView; icon: ElementType; label: string; color: string }[] = [
+  { key: "attack",   icon: Target,    label: "Attack",   color: "#dc2626" },
+  { key: "midfield", icon: GitBranch, label: "Midfield", color: "#ca8a04" },
+  { key: "defense",  icon: Shield,    label: "Defence",  color: "#1a5c2a" },
+];
+
+const MODES: { key: Mode; icon: ElementType; label: string }[] = [
+  { key: "xg",      icon: Target, label: "Zone Map"      },
+  { key: "manual",  icon: Move,   label: "Set Positions" },
+  { key: "tactics", icon: Brain,  label: "Tactics View"  },
+  { key: "draw",    icon: Pencil, label: "Draw Drill"    },
+];
+
 function BoardPageInner() {
   const searchParams = useSearchParams();
   const deptId   = searchParams.get("dept");
@@ -286,11 +300,6 @@ function BoardPageInner() {
 
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const ZONE_VIEWS: { key: ZoneView; icon: React.ElementType; label: string; color: string }[] = [
-    { key: "attack",   icon: Target,    label: "Attack",   color: "#dc2626" },
-    { key: "midfield", icon: GitBranch, label: "Midfield", color: "#ca8a04" },
-    { key: "defense",  icon: Shield,    label: "Defence",  color: "#1a5c2a" },
-  ];
 
   const changeFormation = (f: Formation) => {
     setFormation(f);
@@ -413,12 +422,6 @@ function BoardPageInner() {
   const showZones  = mode === "xg" || mode === "tactics";
   const zoneOpacity = mode === "xg" ? 0.42 : 0.28;
 
-  const MODES: { key: Mode; icon: React.ElementType; label: string }[] = [
-    { key: "xg",      icon: Target, label: "Zone Map"      },
-    { key: "manual",  icon: Move,   label: "Set Positions" },
-    { key: "tactics", icon: Brain,  label: "Tactics View"  },
-    { key: "draw",    icon: Pencil, label: "Draw Drill"    },
-  ];
 
   const modeInstruction: Record<Mode, string> = {
     xg:      "Tap any colored zone to see coaching guidance. The pitch is split into three thirds: Attack (XG danger %), Midfield (pass completion %), Defence (danger % when uncovered). Switch between thirds using the tabs below.",
