@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { GenderToggle } from "@/components/school/GenderToggle";
 import { GenderProgrammePanel } from "@/components/school/GenderProgrammePanel";
+import { AcademyPanel } from "@/components/school/AcademyPanel";
 import {
   type Gender,
   PROVINCE_DATA, YEARLY_TRENDS, getGenderRatio, getTotalParticipants,
@@ -207,6 +208,7 @@ const TABS = [
   { key:"announcements", label:"Notices",    icon:Megaphone     },
   { key:"reports",       label:"Reports",    icon:FileText      },
   { key:"gender",        label:"Gender",     icon:PieChart      },
+  { key:"academy",       label:"Academy",    icon:BookOpen      },
 ] as const;
 type Tab = typeof TABS[number]["key"];
 
@@ -410,7 +412,7 @@ export default function SchoolHubPage() {
       <div style={{ backgroundColor:"#fff", borderBottom:"1px solid #e5e5e5", overflowX:"auto" }}>
         <div style={{ maxWidth:1200, margin:"0 auto", display:"flex", padding:"0 16px" }}>
           {TABS.map((t) => {
-            if (role==="parent"     && ["teams","coaches","announcements","reports","gender"].includes(t.key)) return null;
+            if (role==="parent"     && ["teams","coaches","announcements","reports","gender","academy"].includes(t.key)) return null;
             if (role==="coach"      && ["reports"].includes(t.key)) return null;
             const Icon   = t.icon;
             const active = tab === t.key;
@@ -1029,6 +1031,9 @@ export default function SchoolHubPage() {
             </div>
           );
         })()}
+
+        {/* ── ACADEMY ────────────────────────────────────────────────────────── */}
+        {tab==="academy" && <AcademyPanel />}
 
       </div>
     </div>
