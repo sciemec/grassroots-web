@@ -5,26 +5,61 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Home, Users, Target, TrendingUp, Calendar, BarChart3,
+  Home, Users, Target, TrendingUp, TrendingDown, Calendar, BarChart3,
   Activity, Zap, Trophy, Globe, LogOut, Menu, X, BookOpen,
-  Flame, UserSearch, Shield
+  Flame, UserSearch, Shield, Flag, Video, Brain, Dumbbell,
+  Award, Swords, Bell, Crosshair
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 
 const NAV_ITEMS = [
-  { href: '/coach', label: 'Dashboard', icon: <Home size={18} />, exact: true },
-  { href: '/coach/squad', label: 'My Squad', icon: <Users size={18} /> },
-  { href: '/coach/live-match', label: 'Live Match', icon: <Activity size={18} /> },
-  { href: '/coach/training-plans', label: 'Training Plans', icon: <Calendar size={18} /> },
-  { href: '/coach/tactics', label: 'Tactics', icon: <Target size={18} /> },
-  { href: '/coach/set-pieces', label: 'Set Pieces', icon: <Flame size={18} /> },
-  { href: '/coach/patterns', label: 'Strategic Patterns', icon: <TrendingUp size={18} /> },
-  { href: '/coach/chemistry', label: 'Squad Chemistry', icon: <Zap size={18} /> },
-  { href: '/coach/talent-id', label: 'Talent ID', icon: <UserSearch size={18} /> },
-  { href: '/coach/biometrics', label: 'Biometrics', icon: <BarChart3 size={18} /> },
-  { href: '/coach/ai-insights', label: 'AI Insights', icon: <BookOpen size={18} /> },
-  { href: '/coach/recruitment', label: 'Recruitment', icon: <Shield size={18} /> },
-  { href: '/arena', label: 'The Arena', icon: <Globe size={18} /> },
+  // ── Hub ──────────────────────────────────────────────────────────────────
+  { href: '/coach',                      label: 'Dashboard',          icon: <Home size={18} />,        exact: true },
+
+  // ── Squad & Players ───────────────────────────────────────────────────────
+  { href: '/coach/squad',                label: 'My Squad',           icon: <Users size={18} /> },
+  { href: '/coach/talent-id',            label: 'Talent ID',          icon: <UserSearch size={18} /> },
+  { href: '/coach/recruitment',          label: 'Recruitment',        icon: <Shield size={18} /> },
+  { href: '/coach/scouting',             label: 'Scouting',           icon: <UserSearch size={18} /> },
+  { href: '/coach/technical-staff',      label: 'Technical Staff',    icon: <Users size={18} /> },
+
+  // ── Match & Tactics ───────────────────────────────────────────────────────
+  { href: '/coach/live-match',           label: 'Live Match',         icon: <Activity size={18} /> },
+  { href: '/coach/matches',              label: 'Matches',            icon: <Calendar size={18} /> },
+  { href: '/coach/tactics',              label: 'Tactics',            icon: <Target size={18} /> },
+  { href: '/coach/tactics/simulator',    label: 'Tactics Simulator',  icon: <Brain size={18} /> },
+  { href: '/coach/tactical-analysis',    label: 'Tactical Analysis',  icon: <Swords size={18} /> },
+  { href: '/coach/set-pieces',           label: 'Set Pieces',         icon: <Flame size={18} /> },
+  { href: '/coach/set-piece-lab',        label: 'Set Piece Lab',      icon: <Flag size={18} /> },
+  { href: '/coach/patterns',             label: 'Strategic Patterns', icon: <TrendingUp size={18} /> },
+
+  // ── Training ──────────────────────────────────────────────────────────────
+  { href: '/coach/training-plans',       label: 'Training Plans',     icon: <Calendar size={18} /> },
+  { href: '/coach/drills',               label: 'Drills Library',     icon: <Dumbbell size={18} /> },
+  { href: '/coach/drill-analysis',       label: 'Drill Analysis',     icon: <Video size={18} /> },
+  { href: '/coach/session-library',      label: 'Session Library',    icon: <BookOpen size={18} /> },
+
+  // ── Performance & Health ──────────────────────────────────────────────────
+  { href: '/coach/chemistry',            label: 'Squad Chemistry',    icon: <Zap size={18} /> },
+  { href: '/coach/biometrics',           label: 'Biometrics',         icon: <BarChart3 size={18} /> },
+  { href: '/coach/injury-hub',           label: 'Injury Hub',         icon: <Activity size={18} /> },
+  { href: '/coach/fatigue',              label: 'Fatigue Monitor',    icon: <TrendingDown size={18} /> },
+  { href: '/coach/stats',                label: 'Team Stats',         icon: <BarChart3 size={18} /> },
+  { href: '/coach/success',              label: 'Success Tracker',    icon: <Award size={18} /> },
+
+  // ── Analyst Tools ─────────────────────────────────────────────────────────
+  { href: '/analyst',                    label: 'Analyst Hub',        icon: <BarChart3 size={18} /> },
+  { href: '/analyst/live-match',         label: 'Live Collector',     icon: <Flame size={18} /> },
+  { href: '/analyst/team-biomechanics',  label: 'Team Biomechanics',  icon: <Zap size={18} /> },
+  { href: '/analyst/match-eye',          label: 'Match Eye',          icon: <Video size={18} /> },
+  { href: '/analyst/xg-analysis',        label: 'xG Analysis',        icon: <Target size={18} /> },
+  { href: '/analyst/tactical-report',    label: 'Tactical Report',    icon: <Crosshair size={18} /> },
+  { href: '/analyst/season',             label: 'Season Intelligence',icon: <TrendingUp size={18} /> },
+
+  // ── AI & General ──────────────────────────────────────────────────────────
+  { href: '/coach/ai-insights',          label: 'AI Insights',        icon: <BookOpen size={18} /> },
+  { href: '/coach/notifications',        label: 'Notifications',      icon: <Bell size={18} /> },
+  { href: '/arena',                      label: 'The Arena',          icon: <Globe size={18} /> },
 ];
 
 export function CoachSidebar() {
@@ -58,7 +93,7 @@ export function CoachSidebar() {
       </button>
 
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-40 w-72 h-screen bg-[#1a5c2a] text-white flex flex-col transition-transform duration-300 shadow-xl ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed top-0 left-0 z-40 w-72 h-screen bg-[#1a5c2a] text-white flex flex-col transition-transform duration-300 shadow-xl ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="p-5 border-b border-white/10">
           <Link href="/coach" className="block" onClick={() => setIsMobileOpen(false)}>

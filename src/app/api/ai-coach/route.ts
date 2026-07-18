@@ -106,38 +106,17 @@ const AMARA_BASE_PROMPT =
   "\nEnd with: 'Train anywhere in Zimbabwe. Use AI to get recognized.'";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Engine config (unchanged)
+// Engine config — Gemini primary, DeepSeek silent fallback
 // ─────────────────────────────────────────────────────────────────────────────
-const AI_CONFIG = {
-  deepseek: { max_tokens: 1024, temperature: 0.7 },
-  gemini:   { max_tokens: 1500 },
-} as const;
 
-const COMPLEX_KEYWORDS = [
-  "why", "how do i fix", "how do i improve", "what is wrong", "reason", "cause",
-  "analyse", "analysis", "explain", "evaluate", "assess", "review", "diagnose",
-  "tactical", "tactics", "strategy", "plan", "formation", "programme",
-  "set piece", "corner", "free kick", "freekick", "penalty", "dead ball",
-  "defending set", "attack set",
-  "defend", "defensive", "attack", "attacking", "pressing", "high press",
-  "low block", "mid block", "counter", "offside", "marking", "zonal",
-  "man mark", "back line", "high line", "compact",
-  "transition", "position", "movement", "shape", "structure", "overlap",
-  "underlap", "width", "depth", "spacing", "channel", "combination",
-  "develop", "potential", "long term", "periodis", "pre-season",
-  "weakness", "injury", "scout", "valuation", "market value",
-  "compare", "versus", "should i", "how should", "what if",
-  "effect", "impact", "improve my", "work on",
-  "half time", "halftime", "game plan", "opponent", "match plan",
-  "substitut", "rotation",
-];
-
-function isComplex(message: string): boolean {
-  const lower = message.toLowerCase();
-  return COMPLEX_KEYWORDS.some((k) => lower.includes(k)) || message.length > 150;
+async function callGemini(
+  systemPrompt: string,
+  messages: { role: "user" | "assistant"; content: string }[],
+): Promise<string> {
+  return geminiText(systemPrompt, messages, { max_tokens: 1500 });
 }
 
-async function callDeepSeek(
+async function callDeepSeekFallback(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
@@ -158,8 +137,8 @@ async function callDeepSeek(
       },
       body: JSON.stringify({
         model: "deepseek-chat",
-        max_tokens: AI_CONFIG.deepseek.max_tokens,
-        temperature: AI_CONFIG.deepseek.temperature,
+        max_tokens: 1024,
+        temperature: 0.7,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -179,13 +158,6 @@ async function callDeepSeek(
   const reply = data?.choices?.[0]?.message?.content;
   if (!reply) throw new Error("DeepSeek returned empty response");
   return reply;
-}
-
-async function callGemini(
-  systemPrompt: string,
-  messages: { role: "user" | "assistant"; content: string }[],
-): Promise<string> {
-  return geminiText(systemPrompt, messages, { max_tokens: AI_CONFIG.gemini.max_tokens });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -255,35 +227,19 @@ export async function POST(req: NextRequest) {
     { role: "user", content: message },
   ];
 
-  const complex = isComplex(message);
-
-  // ── Engine routing ────────────────────────────────────────────────────────
-  // Simple → DeepSeek first
-  if (!complex) {
-    try {
-      const reply = await callDeepSeek(fullSystem, messages);
-      return NextResponse.json({ response: reply, engine: "deepseek", coach: coachName });
-    } catch (err) {
-      console.error("DeepSeek failed, escalating to Gemini:", err);
-    }
-  }
-
-  // Complex (or DeepSeek failure) → Gemini
+  // ── Engine routing — Gemini primary, DeepSeek silent fallback ────────────
   try {
     const result = await callGemini(fullSystem, messages);
     return NextResponse.json({ response: result, engine: "gemini", coach: coachName });
   } catch (geminiErr) {
-    console.error("Gemini failed, trying DeepSeek as last resort:", geminiErr);
+    console.error("Gemini failed, falling back to DeepSeek:", geminiErr);
   }
 
-  // Last resort → DeepSeek for complex when Gemini fails
-  if (complex) {
-    try {
-      const result = await callDeepSeek(fullSystem, messages);
-      return NextResponse.json({ response: result, engine: "deepseek", coach: coachName });
-    } catch (err) {
-      console.error("DeepSeek last-resort also failed:", err);
-    }
+  try {
+    const result = await callDeepSeekFallback(fullSystem, messages);
+    return NextResponse.json({ response: result, engine: "deepseek", coach: coachName });
+  } catch (err) {
+    console.error("DeepSeek fallback also failed:", err);
   }
 
   return NextResponse.json(

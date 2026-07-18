@@ -1,494 +1,628 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  ArrowLeft, 
-  Plus, 
-  Brain, 
-  Loader2, 
-  Flag, 
-  Target, 
-  Sparkles, 
-  Flame, 
-  RefreshCw, 
-  Shield, 
-  Lightbulb, 
-  Lock 
+import {
+  ArrowLeft, Brain, Loader2, Flag, Target, Sparkles,
+  Upload, X, Film, CheckCircle2, AlertCircle, ChevronRight,
+  Shield, Flame, RefreshCw, Video,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
-import { queryAI } from "@/lib/ai-query";
 
-// 🔄 CONNECTOR INTERNALS: Import your upgraded positions blueprint registry
-import { POSITION_FOCUS_MAP } from "@/config/positions";
+const GRS_GREEN = "#1a5c2a";
 
-type Tab = "corners" | "free-kicks" | "ai";
+type SetPieceType = "corner" | "free-kick" | "penalty" | "throw-in";
+type TeamContext = "attacking" | "defending";
 
-interface Corner {
-  id: string;
-  side: "For" | "Against";
-  outcome: "Goal" | "Shot on target" | "Cleared" | "Other";
-  delivery: "Inswinger" | "Outswinger" | "Short";
-  zone: "Near post" | "Far post" | "Penalty spot";
+interface AnalysisResult {
+  type: SetPieceType;
+  context: TeamContext;
+  analysis: string;
+  hadVideo: boolean;
+  timestamp: string;
 }
 
-interface FreeKick {
-  id: string;
-  side: "For" | "Against";
-  outcome: "Goal" | "Shot on target" | "Blocked" | "Other";
-  distance: "Inside box" | "Edge" | "Long range";
-}
+const SET_PIECE_TYPES: {
+  id: SetPieceType;
+  label: string;
+  icon: React.ElementType;
+  desc: string;
+  iconBg: string;
+  iconColor: string;
+}[] = [
+  { id: "corner",    label: "Corner Kick", icon: Flag,     desc: "Delivery & box movement",      iconBg: "#dcfce7", iconColor: "#16a34a" },
+  { id: "free-kick", label: "Free Kick",   icon: Target,   desc: "Direct, indirect & walls",     iconBg: "#dbeafe", iconColor: "#2563eb" },
+  { id: "penalty",   label: "Penalty",     icon: Flame,    desc: "Spot-kick & keeper tactics",   iconBg: "#fee2e2", iconColor: "#dc2626" },
+  { id: "throw-in",  label: "Throw-in",    icon: RefreshCw,desc: "Long & short throw patterns",  iconBg: "#fef3c7", iconColor: "#d97706" },
+];
 
-const CORNER_OUTCOMES = ["Goal", "Shot on target", "Cleared", "Other"] as const;
-const CORNER_DELIVERIES = ["Inswinger", "Outswinger", "Short"] as const;
-const CORNER_ZONES = ["Near post", "Far post", "Penalty spot"] as const;
-const FK_OUTCOMES = ["Goal", "Shot on target", "Blocked", "Other"] as const;
-const FK_DISTANCES = ["Inside box", "Edge", "Long range"] as const;
-
-const uid = () => Math.random().toString(36).slice(2, 9);
-
-// 📚 Dynamic role-based set piece playbook suggestions mapped to local conditions
-const ROLE_SET_PIECE_GUIDES: Record<string, { roleTitle: string; icon: React.ElementType; color: string; focusText: string; routines: string[] }> = {
-  striker: {
-    roleTitle: "Attacking Specialization Track",
-    icon: Flame,
-    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    focusText: "Focus on box separation, blind-side runs, and first-touch redirect shots inside the 6-yard box.",
-    routines: [
-      "Near-Post Decoy Slip: Striker breaks early to the near post to flick or drag defensive markers out of center slots.",
-      "The Wall Screen Break: Staged blocks on the edge of the box during direct free kicks to generate sightline blind spots for goalies."
-    ]
+const AI_PROMPTS: Record<SetPieceType, Record<TeamContext, string>> = {
+  corner: {
+    attacking: `Analyse this attacking corner kick and provide tactical coaching feedback. Cover:
+1. DELIVERY RECOMMENDATIONS — near post, far post, or penalty spot: which is most effective and why
+2. MOVEMENT PATTERNS — runs to make, blocking and screening tactics
+3. FIRST BALL THREATS — who attacks the ball and from where
+4. SECOND BALL PLAN — midfielder positioning for knockdowns and rebounds
+5. DRILL TO PRACTICE — one specific training exercise
+Be specific and practical for a grassroots team in Zimbabwe.`,
+    defending: `Analyse this defending corner kick and provide tactical coaching feedback. Cover:
+1. MARKING SETUP — zonal vs man-marking recommendations
+2. NEAR POST PROTECTION — who covers it and how
+3. AERIAL THREATS — how to win the first ball
+4. CLEARANCE DIRECTION — where to clear and why
+5. TRANSITION TRIGGER — how to launch the counter-attack from a clearance
+Be specific and practical for a grassroots team in Zimbabwe.`,
   },
-  midfielder: {
-    roleTitle: "Engine Room Specialty Track",
-    icon: RefreshCw,
-    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-    focusText: "Focus on whipped cross delivery trajectories, edge recycling positioning, and short combination sequences.",
-    routines: [
-      "2v1 Short Corner Trigger: Quickly draw out the wide marker with a short option, creating a 45-degree passing channel to cut inside.",
-      "Phase-2 Recycling Loop: Midfield anchor deep-lying spacing mechanics to lock down clearances and reload the attacking wave."
-    ]
+  "free-kick": {
+    attacking: `Analyse this attacking free kick and provide tactical coaching feedback. Cover:
+1. SHOT SELECTION — direct shot vs played in: when to choose each
+2. WALL DECOY RUNS — how to use runners to disrupt the wall
+3. DELIVERY CURVE — inswinger vs outswinger: which and why
+4. SECOND PHASE PLAN — positioning for rebounds and deflections
+5. TRAINING DRILL — one exercise to rehearse this routine
+Be specific and practical for a grassroots team in Zimbabwe.`,
+    defending: `Analyse this defending free kick and provide tactical coaching feedback. Cover:
+1. WALL SETUP — how many in the wall, who, and exact positioning
+2. KEEPER POSITIONING — where the keeper should stand and why
+3. RUNNERS TO TRACK — how to pick up runners from the free kick
+4. PRESSING TRIGGER — when to press after the kick
+5. RECOVERY SHAPE — how to reset defensive shape quickly
+Be specific and practical for a grassroots team in Zimbabwe.`,
   },
-  defender: {
-    roleTitle: "Defensive Wall Specialization Track",
-    icon: Shield,
-    color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    focusText: "Focus on zonal box blocking boundaries, aggressive aerial clearances, and immediate offside tracking.",
-    routines: [
-      "Zonal Anchor Shielding: Defensive grouping configurations covering the near post and penalty spot zones uniformly.",
-      "The Absolute Wall Structure: Lining up size profiles to block direct free kicks while maintaining clear counter-attack launch paths."
-    ]
-  }
+  penalty: {
+    attacking: `Provide penalty kick coaching guidance covering:
+1. SPOT-KICK TECHNIQUE — approach angle, placement vs power, body shape
+2. MENTAL PREPARATION — pre-kick routine and staying composed under pressure
+3. READING THE KEEPER — when and how to change your mind
+4. TARGET SELECTION — top corners vs low: pros and cons
+5. PRACTICE ROUTINE — how to train penalties under pressure
+Be specific and practical for a grassroots team in Zimbabwe.`,
+    defending: `Provide penalty kick defensive coaching guidance covering:
+1. KEEPER TACTICS — which way to dive, how to read the taker's body shape
+2. PRE-KICK POSITIONING — legal ways to gain an edge
+3. REBOUND POSITIONING — where outfield players should stand
+4. POST-SAVE MOMENTUM — how to capitalise on a saved penalty
+5. TRAINING DRILL — how to practice penalty saves effectively
+Be specific and practical for a grassroots team in Zimbabwe.`,
+  },
+  "throw-in": {
+    attacking: `Analyse this attacking throw-in and provide tactical coaching feedback. Cover:
+1. SHORT VS LONG THROW — when to use each option
+2. MOVEMENT TO RECEIVE — runs to create space for the receiver
+3. FLICK-ON PATTERNS — using a target man to redirect play
+4. THIRD MAN RUNS — creating overloads with indirect movement
+5. TRAINING DRILL — one exercise to rehearse throw-in routines
+Be specific and practical for a grassroots team in Zimbabwe.`,
+    defending: `Analyse this defending throw-in and provide tactical coaching feedback. Cover:
+1. PRESSURE ON THROWER — how close to stand legally
+2. MARKING SHAPE — how to prevent easy receipt
+3. LONG THROW DANGER — positioning against a player with a long throw
+4. WINNING THE SECOND BALL — midfield positioning after the throw-in
+5. TRANSITION — how to press and win possession from a throw-in
+Be specific and practical for a grassroots team in Zimbabwe.`,
+  },
 };
+
+// Extract evenly-spaced frames from a video file using HTML5 Canvas.
+// Returns array of base64 JPEG strings (no data: prefix).
+async function extractFrames(file: File, count = 6): Promise<string[]> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+
+    const frames: string[] = [];
+    const canvas = document.createElement("canvas");
+    canvas.width = 480;
+    canvas.height = 270;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { URL.revokeObjectURL(url); resolve([]); return; }
+
+    video.addEventListener("loadedmetadata", () => {
+      const duration = video.duration;
+      if (!isFinite(duration) || duration <= 0) {
+        URL.revokeObjectURL(url);
+        resolve([]);
+        return;
+      }
+      // Sample evenly across the video, avoiding the very start/end
+      const step = duration / (count + 1);
+      const timestamps = Array.from({ length: count }, (_, i) => step * (i + 1));
+      let idx = 0;
+
+      const seekNext = () => {
+        if (idx >= timestamps.length) {
+          URL.revokeObjectURL(url);
+          resolve(frames);
+          return;
+        }
+        video.currentTime = timestamps[idx];
+      };
+
+      video.addEventListener("seeked", () => {
+        try {
+          ctx.drawImage(video, 0, 0, 480, 270);
+          const data = canvas.toDataURL("image/jpeg", 0.75).split(",")[1];
+          if (data) frames.push(data);
+        } catch {
+          // Silently skip frames that can't be captured (e.g. cross-origin)
+        }
+        idx++;
+        seekNext();
+      });
+
+      seekNext();
+    });
+
+    video.addEventListener("error", () => {
+      URL.revokeObjectURL(url);
+      resolve([]);
+    });
+
+    video.load();
+  });
+}
 
 export default function SetPiecesPage() {
   const router = useRouter();
-  const { user, _hasHydrated } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<Tab>("corners");
+  const user = useAuthStore((s) => s.user);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
-  // Localized state handling for custom chosen roles (Defaults to read standard coach settings)
-  const [coachRoleFocus, setCoachRoleFocus] = useState<string>("striker");
+  const [selectedType, setSelectedType] = useState<SetPieceType | null>(null);
+  const [teamContext, setTeamContext] = useState<TeamContext>("attacking");
+  const [notes, setNotes] = useState("");
 
-  // Corner state
-  const [corners, setCorners] = useState<Corner[]>([]);
-  const [showCornerForm, setShowCornerForm] = useState(false);
-  const [cornerForm, setCornerForm] = useState<Omit<Corner, "id">>({
-    side: "For", outcome: "Cleared", delivery: "Inswinger", zone: "Near post",
-  });
+  // Video upload state
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Free kick state
-  const [freeKicks, setFreeKicks] = useState<FreeKick[]>([]);
-  const [showFKForm, setShowFKForm] = useState(false);
-  const [fkForm, setFkForm] = useState<Omit<FreeKick, "id">>({
-    side: "For", outcome: "Blocked", distance: "Edge",
-  });
+  // Analysis state
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState("");
 
-  // AI state
-  const [aiReport, setAiReport] = useState<string>("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string>("");
+  // History (last 4 previous results)
+  const [history, setHistory] = useState<AnalysisResult[]>([]);
 
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!user) return; 
+    if (!user) return;
     if (user.role !== "coach" && user.role !== "admin") {
       router.push("/dashboard");
     }
   }, [_hasHydrated, user, router]);
 
-  function addCorner() {
-    setCorners((c) => [...c, { id: uid(), ...cornerForm }]);
-    setShowCornerForm(false);
-  }
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+  const onDragLeave = useCallback(() => setIsDragging(false), []);
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("video/")) setVideoFile(file);
+  }, []);
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setVideoFile(file);
+  };
 
-  function addFreeKick() {
-    setFreeKicks((f) => [...f, { id: uid(), ...fkForm }]);
-    setShowFKForm(false);
-  }
+  async function runAnalysis() {
+    if (!selectedType) return;
+    setLoading(true);
+    setError("");
+    setResult(null);
 
-  const cornersFor = corners.filter((c) => c.side === "For");
-  const cornersAgainst = corners.filter((c) => c.side === "Against");
-  const cornerGoals = cornersFor.filter((c) => c.outcome === "Goal").length;
-  const cornerConversion = cornersFor.length > 0
-    ? Math.round((cornerGoals / cornersFor.length) * 100)
-    : 0;
-
-  const fksFor = freeKicks.filter((f) => f.side === "For");
-  const fkGoals = fksFor.filter((f) => f.outcome === "Goal").length;
-  const fkShots = fksFor.filter((f) => f.outcome === "Shot on target").length;
-
-  async function runAIAnalysis() {
-    setAiLoading(true);
-    setAiError("");
-    setAiReport("");
     try {
-      const cornerSummary = corners.length > 0
-        ? `Corners: ${corners.length} total (${cornersFor.length} for, ${cornersAgainst.length} against). Goals from corners: ${cornerGoals}. Conversion rate: ${cornerConversion}%.`
-        : "No corner data logged yet.";
-      const fkSummary = freeKicks.length > 0
-        ? `Free kicks: ${freeKicks.length} total (${fksFor.length} for). Goals: ${fkGoals}. Shots on target: ${fkShots}.`
-        : "No free kick data logged yet.";
+      let frames: string[] = [];
 
-      const message = `You are an elite football strategist instructing a grassroots team in Zimbabwe focusing on a ${coachRoleFocus} developmental lens.
+      if (videoFile) {
+        setExtracting(true);
+        frames = await extractFrames(videoFile, 6);
+        setExtracting(false);
+      }
 
-Set Piece Overview:
-${cornerSummary}
-${fkSummary}
+      const prompt = AI_PROMPTS[selectedType][teamContext];
 
-Provide a tactical playbook analysis addressing:
-1. ROLE SPECIFIC DRILL BLUEPRINT: 2 highly tailored exercises matching the coach's specialty track.
-2. CONVERSION STRATEGY: Clear instructions on dead-ball setups considering local clay or uneven grass pitches.`;
+      const res = await fetch("/api/analyse-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          frames,
+          type: selectedType,
+          context: teamContext,
+          notes: notes.trim(),
+          prompt,
+        }),
+      });
 
-      const reply = await queryAI(message, "coach");
-      setAiReport(reply);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error((errData as { error?: string }).error || "Analysis failed. Try again.");
+      }
+
+      const data = await res.json() as { analysis?: string };
+      const analysis = data.analysis || "No feedback returned.";
+
+      const newResult: AnalysisResult = {
+        type: selectedType,
+        context: teamContext,
+        analysis,
+        hadVideo: frames.length > 0,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setResult(newResult);
+      setHistory((h) => [newResult, ...h.slice(0, 3)]);
     } catch (err: unknown) {
-      setAiError(err instanceof Error ? err.message : "Tactical core processing timeout. Try again.");
+      setExtracting(false);
+      setError(err instanceof Error ? err.message : "Analysis failed. Check your connection and try again.");
     } finally {
-      setAiLoading(false);
+      setLoading(false);
+      setExtracting(false);
     }
   }
 
-  const currentGuide = ROLE_SET_PIECE_GUIDES[coachRoleFocus] || ROLE_SET_PIECE_GUIDES.striker;
-  const GuideIconComponent = currentGuide.icon;
+  const canAnalyse = selectedType !== null && !loading;
 
   if (!_hasHydrated || !user) return null;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="gs-watermark flex-1 overflow-auto p-6">
+    <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
 
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between border-b border-[#f0b429]/5 pb-4">
-          <div className="flex items-center gap-3">
-            <Link href="/coach/dashboard" className="rounded-lg p-1.5 bg-[#f0b429]/5 border border-[#f0b429]/10 text-white hover:bg-[#f0b429]/10 transition-colors">
-              <ArrowLeft className="h-4 w-4" />
+      {/* Header */}
+      <header style={{
+        backgroundColor: "#fff", borderBottom: "1px solid #e5e5e5",
+        position: "sticky", top: 0, zIndex: 40,
+      }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, height: 56 }}>
+            <Link href="/coach" style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32, height: 32, borderRadius: 8, backgroundColor: "#f3f4f6",
+              color: "#6b7280", textDecoration: "none",
+            }}>
+              <ArrowLeft size={16} />
             </Link>
             <div>
-              <h1 className="text-xl font-black text-white uppercase tracking-tight">Set Piece Analytics</h1>
-              <p className="text-xs text-[#f0b429]/50 font-semibold">Track corner variables, direct free kicks, and strategic roles</p>
+              <div style={{ fontWeight: 800, fontSize: 16, color: "#111" }}>Set Piece Lab</div>
+              <div style={{ fontSize: 11, color: "#6b7280" }}>
+                Upload a clip — Gemini AI analyses your set piece execution
+              </div>
             </div>
           </div>
         </div>
+      </header>
 
-        {/* 🛠️ SPECIFICATION SELECTION ROW: Switch coaching roles to change training priorities */}
-        <div className="mb-6 bg-[#f0b429]/5 border border-[#f0b429]/10 rounded-2xl p-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[#f0b429]/40 mb-2">Select Your Active Tactical Specialty Focus</p>
-          <div className="flex flex-wrap gap-2">
-            {Object.keys(ROLE_SET_PIECE_GUIDES).map((roleKey) => (
-              <button
-                key={roleKey}
-                onClick={() => setCoachRoleFocus(roleKey)}
-                className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
-                  coachRoleFocus === roleKey
-                    ? "bg-[#f0b429] text-[#1c3d22]"
-                    : "bg-[#f0b429]/5 border border-[#f0b429]/10 text-[#f0b429]/60 hover:bg-[#f0b429]/10"
-                }`}
-              >
-                {roleKey} Track
-              </button>
-            ))}
-          </div>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px 56px" }}>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-          {/* Inline Active Playbook Drawer */}
-          <div className={`mt-4 border p-4 rounded-xl flex items-start gap-4 transition-all ${currentGuide.color}`}>
-            <div className="p-2 bg-[#f0b429]/10 rounded-lg shrink-0 mt-0.5">
-              <GuideIconComponent size={18} />
+          {/* ── LEFT: Config + Upload ── */}
+          <div className="lg:col-span-3 space-y-4">
+
+            {/* 1. Set piece type */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
+                1 · Select Set Piece Type
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {SET_PIECE_TYPES.map((sp) => {
+                  const Icon = sp.icon;
+                  const active = selectedType === sp.id;
+                  return (
+                    <button
+                      key={sp.id}
+                      onClick={() => setSelectedType(sp.id)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all text-center"
+                      style={{
+                        borderColor: active ? GRS_GREEN : "#e5e5e5",
+                        backgroundColor: active ? "#f0fdf4" : "#fff",
+                        boxShadow: active ? `0 0 0 2px ${GRS_GREEN}` : "none",
+                      }}
+                    >
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: active ? sp.iconBg : "#f3f4f6" }}>
+                        <Icon size={16} style={{ color: active ? sp.iconColor : "#9ca3af" }} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-black text-gray-800 leading-tight">{sp.label}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{sp.desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <h4 className="text-xs font-black uppercase tracking-wider text-white">{currentGuide.roleTitle} — Playbook Context</h4>
-              <p className="text-xs text-[#f0b429]/70 leading-relaxed font-medium">{currentGuide.focusText}</p>
-              <div className="pt-1.5 space-y-1">
-                {currentGuide.routines.map((routine, idx) => (
-                  <div key={idx} className="flex gap-2 text-xs text-[#f0b429]/90 font-semibold">
-                    <span className="text-[#f0b429]">»</span>
-                    <p>{routine}</p>
-                  </div>
+
+            {/* 2. Team context */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
+                2 · Your Team Context
+              </p>
+              <div className="flex gap-3">
+                {(["attacking", "defending"] as TeamContext[]).map((ctx) => (
+                  <button
+                    key={ctx}
+                    onClick={() => setTeamContext(ctx)}
+                    className="flex-1 py-3 rounded-xl border font-bold text-sm transition-all"
+                    style={{
+                      borderColor: teamContext === ctx ? GRS_GREEN : "#e5e5e5",
+                      backgroundColor: teamContext === ctx ? GRS_GREEN : "#f9fafb",
+                      color: teamContext === ctx ? "#fff" : "#6b7280",
+                    }}
+                  >
+                    {ctx === "attacking" ? "⚡ Attacking" : "🛡 Defending"}
+                  </button>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Tabs switcher */}
-        <div className="mb-6 flex gap-2">
-          {(["corners", "free-kicks", "ai"] as Tab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${
-                activeTab === tab
-                  ? "bg-white text-black font-black"
-                  : "border border-[#f0b429]/10 bg-card/60 text-[#f0b429]/60 hover:bg-[#f0b429]/10"
-              }`}
-            >
-              {tab === "corners" && "Corners"}
-              {tab === "free-kicks" && "Free Kicks"}
-              {tab === "ai" && "AI Playbook Analyzer"}
-            </button>
-          ))}
-        </div>
+            {/* 3. Video upload */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
+                3 · Upload Set Piece Clip
+                <span className="ml-2 font-medium text-gray-300 normal-case tracking-normal">
+                  — Gemini analyses every frame
+                </span>
+              </p>
 
-        {/* ── Corners Tab ── */}
-        {activeTab === "corners" && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-4 text-center">
-                <p className="text-2xl font-bold text-[#f0b429]">{cornersFor.length}</p>
-                <p className="text-xs text-muted-foreground">Corners (For)</p>
-              </div>
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-4 text-center">
-                <p className="text-2xl font-bold text-green-400">{cornerGoals}</p>
-                <p className="text-xs text-muted-foreground">Goals</p>
-              </div>
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-4 text-center">
-                <p className="text-2xl font-bold text-white">{cornerConversion}%</p>
-                <p className="text-xs text-muted-foreground">Conversion</p>
-              </div>
+              {!videoFile ? (
+                <div
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={onDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="cursor-pointer rounded-xl border-2 border-dashed transition-colors p-8 text-center"
+                  style={{
+                    borderColor: isDragging ? GRS_GREEN : "#d1d5db",
+                    backgroundColor: isDragging ? "#f0fdf4" : "#fafafa",
+                  }}
+                >
+                  <Upload size={28} className="mx-auto mb-3"
+                    style={{ color: isDragging ? GRS_GREEN : "#9ca3af" }} />
+                  <p className="text-sm font-semibold text-gray-600">
+                    Drag & drop a clip, or{" "}
+                    <span style={{ color: GRS_GREEN }} className="font-bold">browse</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">MP4, MOV, AVI — max 500MB</p>
+                  <p className="text-[10px] text-gray-300 mt-3">
+                    6 frames extracted · sent to Gemini Vision for analysis
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={onFileChange}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div
+                    className="flex items-center gap-3 rounded-xl border p-4"
+                    style={{ borderColor: "#bbf7d0", backgroundColor: "#f0fdf4" }}
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: "#dcfce7" }}>
+                      <Film size={18} style={{ color: GRS_GREEN }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{videoFile.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {(videoFile.size / 1024 / 1024).toFixed(1)} MB ·{" "}
+                        <span style={{ color: GRS_GREEN }} className="font-semibold">
+                          6 frames will be extracted for Gemini
+                        </span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setVideoFile(null)}
+                      className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-50 transition-colors"
+                    >
+                      <X size={14} className="text-gray-400 hover:text-red-500" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 flex items-center gap-1.5">
+                    <Video size={10} />
+                    Gemini Vision will analyse player positions, delivery quality, and movement patterns
+                  </p>
+                </div>
+              )}
             </div>
 
-            {corners.length > 0 && (
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-4">
-                <p className="mb-2 text-xs font-black uppercase text-[#f0b429]/40 tracking-wider">Your Corners vs Opposition</p>
-                <div className="flex items-center gap-3 text-xs font-bold text-white">
-                  <span className="w-20 text-right">{cornersFor.length} For</span>
-                  <div className="flex-1 rounded-full bg-[#f0b429]/5 border h-3 overflow-hidden">
-                    <div
-                      className="h-3 bg-[#1a5c2a]"
-                      style={{ width: corners.length ? `${(cornersFor.length / corners.length) * 100}%` : "0%" }}
-                    />
-                  </div>
-                  <span className="w-20">{cornersAgainst.length} Against</span>
-                </div>
-              </div>
-            )}
+            {/* 4. Notes */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
+                4 · Coach Notes (Optional)
+              </p>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={`Describe what to focus on — e.g. "Our near post delivery keeps getting cleared" or "The wall breaks too early on free kicks"`}
+                rows={3}
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-700 resize-none focus:outline-none focus:border-[#1a5c2a] transition-colors"
+                style={{ backgroundColor: "#fafafa" }}
+              />
+            </div>
 
+            {/* Analyse button */}
             <button
-              onClick={() => setShowCornerForm((v) => !v)}
-              className="flex items-center gap-2 rounded-xl bg-[#f0b429] text-[#1c3d22] px-4 py-2.5 text-xs font-black uppercase tracking-wider hover:bg-[#f5c542] transition-colors"
+              onClick={runAnalysis}
+              disabled={!canAnalyse}
+              className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-wider transition-all"
+              style={{
+                backgroundColor: canAnalyse ? GRS_GREEN : "#d1d5db",
+                color: canAnalyse ? "#fff" : "#9ca3af",
+                cursor: canAnalyse ? "pointer" : "not-allowed",
+              }}
             >
-              <Plus className="h-4 w-4 stroke-[3]" /> Log Corner Data
+              {extracting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  Extracting video frames...
+                </span>
+              ) : loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  Gemini is analysing{videoFile ? " your clip" : ""}...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <Brain size={16} />
+                  {selectedType
+                    ? `Analyse ${SET_PIECE_TYPES.find((s) => s.id === selectedType)?.label}${videoFile ? " (with video)" : ""}`
+                    : "Select a set piece type first"}
+                </span>
+              )}
             </button>
 
-            {showCornerForm && (
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-5">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-[#f0b429]/60 uppercase">For / Against</label>
-                    <select value={cornerForm.side} onChange={(e) => setCornerForm((f) => ({ ...f, side: e.target.value as Corner["side"] }))}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-white outline-none">
-                      <option>For</option><option>Against</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-[#f0b429]/60 uppercase">Outcome</label>
-                    <select value={cornerForm.outcome} onChange={(e) => setCornerForm((f) => ({ ...f, outcome: e.target.value as Corner["outcome"] }))}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-white outline-none">
-                      {CORNER_OUTCOMES.map((o) => <option key={o}>{o}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-[#f0b429]/60 uppercase">Delivery Curve</label>
-                    <select value={cornerForm.delivery} onChange={(e) => setCornerForm((f) => ({ ...f, delivery: e.target.value as Corner["delivery"] }))}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-white outline-none">
-                      {CORNER_DELIVERIES.map((d) => <option key={d}>{d}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-[#f0b429]/60 uppercase">Target Landing Zone</label>
-                    <select value={cornerForm.zone} onChange={(e) => setCornerForm((f) => ({ ...f, zone: e.target.value as Corner["zone"] }))}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-white outline-none">
-                      {CORNER_ZONES.map((z) => <option key={z}>{z}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <button onClick={addCorner}
-                  className="mt-4 flex items-center gap-2 rounded-lg bg-[#1a5c2a] px-4 py-2 text-xs font-bold text-white hover:bg-[#227537] transition-colors">
-                  <Flag className="h-4 w-4" /> Save Set Piece Entry
-                </button>
+            {!selectedType && (
+              <p className="text-center text-xs text-gray-400">
+                Select a set piece type above to enable analysis
+              </p>
+            )}
+          </div>
+
+          {/* ── RIGHT: Results + History ── */}
+          <div className="lg:col-span-2 space-y-4">
+
+            {(loading || extracting) && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+                <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: GRS_GREEN }} />
+                <p className="text-sm font-bold text-gray-600">
+                  {extracting ? "Extracting frames from clip..." : "Gemini is analysing your set piece..."}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {extracting ? "Reading key moments from the video" : "This takes a few seconds"}
+                </p>
               </div>
             )}
 
-            {corners.length > 0 && (
+            {error && !loading && (
+              <div className="bg-white rounded-2xl border border-red-200 p-4 flex items-start gap-3">
+                <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
+            {result && !loading && (
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="px-5 py-4 flex items-center gap-3" style={{ backgroundColor: GRS_GREEN }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+                    {result.hadVideo ? (
+                      <Film size={16} className="text-yellow-300" />
+                    ) : (
+                      <Sparkles size={16} className="text-yellow-300" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-white uppercase tracking-wide">
+                      {SET_PIECE_TYPES.find((s) => s.id === result.type)?.label} · {result.context}
+                    </p>
+                    <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.6)" }}>
+                      {result.hadVideo ? "Gemini Vision · video analysed" : "Gemini · text analysis"} · {result.timestamp}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                    {result.analysis}
+                  </div>
+                  <div
+                    className="mt-4 flex items-center gap-2 text-xs font-semibold rounded-lg px-3 py-2"
+                    style={{ backgroundColor: "#f0fdf4", color: GRS_GREEN }}
+                  >
+                    <CheckCircle2 size={12} />
+                    {result.hadVideo
+                      ? "Video analysed — share this with your players before training"
+                      : "Tactical analysis complete — upload a clip for visual feedback"}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!result && !loading && !error && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+                <Brain size={32} className="mx-auto mb-3" style={{ color: "#d1d5db" }} />
+                <p className="text-sm font-semibold text-gray-500">AI feedback will appear here</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Select a type, upload a clip, and tap Analyse
+                </p>
+              </div>
+            )}
+
+            {/* Quick reference */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
+                Quick Reference
+              </p>
               <div className="space-y-2">
-                {corners.map((c, i) => (
-                  <div key={c.id} className="flex items-center gap-3 rounded-xl border border-[#f0b429]/10 bg-card/40 px-4 py-3 text-xs text-white">
-                    <span className="text-[#f0b429]/40 font-bold w-6">#{i + 1}</span>
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${c.side === "For" ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>{c.side}</span>
-                    <span className="font-bold">{c.outcome}</span>
-                    <span className="text-[#f0b429]/50 font-medium ml-auto">{c.delivery} // {c.zone}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {corners.length === 0 && !showCornerForm && (
-              <div className="rounded-xl border border-dashed border-[#f0b429]/10 p-10 text-center text-xs text-[#f0b429]/40 font-bold">
-                No match corners logged in session yet. Click Log Corner Data to begin.
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Free Kicks Tab ── */}
-        {activeTab === "free-kicks" && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-4 text-center">
-                <p className="text-2xl font-bold text-[#f0b429]">{fksFor.length}</p>
-                <p className="text-xs text-muted-foreground">FK Attempted</p>
-              </div>
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-4 text-center">
-                <p className="text-2xl font-bold text-green-400">{fkGoals}</p>
-                <p className="text-xs text-muted-foreground">Goals</p>
-              </div>
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-4 text-center">
-                <p className="text-2xl font-bold text-white">{fkShots}</p>
-                <p className="text-xs text-muted-foreground">Shots on Target</p>
+                {[
+                  { icon: Flag,    label: "Corner",    tip: "Target far post with late-arriving runs" },
+                  { icon: Target,  label: "Free Kick", tip: "Vary delivery to beat the wall" },
+                  { icon: Flame,   label: "Penalty",   tip: "Pick a spot and commit to it" },
+                  { icon: Shield,  label: "Defending", tip: "First man always covers near post" },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label}
+                      className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+                      <Icon size={13} style={{ color: GRS_GREEN }} className="shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-800">{item.label}</p>
+                        <p className="text-[11px] text-gray-400">{item.tip}</p>
+                      </div>
+                      <ChevronRight size={12} className="ml-auto text-gray-300" />
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <button
-              onClick={() => setShowFKForm((v) => !v)}
-              className="flex items-center gap-2 rounded-xl bg-[#f0b429] text-[#1c3d22] px-4 py-2.5 text-xs font-black uppercase tracking-wider hover:bg-[#f5c542] transition-colors"
-            >
-              <Plus className="h-4 w-4 stroke-[3]" /> Log Free Kick
-            </button>
-
-            {showFKForm && (
-              <div className="rounded-xl border border-[#f0b429]/10 bg-card/60 p-5">
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-[#f0b429]/60 uppercase">For / Against</label>
-                    <select value={fkForm.side} onChange={(e) => setFkForm((f) => ({ ...f, side: e.target.value as FreeKick["side"] }))}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-white outline-none">
-                      <option>For</option><option>Against</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-[#f0b429]/60 uppercase">Outcome</label>
-                    <select value={fkForm.outcome} onChange={(e) => setFkForm((f) => ({ ...f, outcome: e.target.value as FreeKick["outcome"] }))}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-white outline-none">
-                      {FK_OUTCOMES.map((o) => <option key={o}>{o}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-[#f0b429]/60 uppercase">Distance Boundary</label>
-                    <select value={fkForm.distance} onChange={(e) => setFkForm((f) => ({ ...f, distance: e.target.value as FreeKick["distance"] }))}
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-xs font-bold text-white outline-none">
-                      {FK_DISTANCES.map((d) => <option key={d}>{d}</option>)}
-                    </select>
-                  </div>
+            {/* History */}
+            {history.length > 1 && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
+                  Previous Analyses
+                </p>
+                <div className="space-y-2">
+                  {history.slice(1).map((h, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setResult(h)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#1a5c2a] hover:bg-[#f0fdf4] transition-all text-left"
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: "#f3f4f6" }}>
+                        {h.hadVideo
+                          ? <Film size={13} style={{ color: GRS_GREEN }} />
+                          : <Brain size={13} style={{ color: GRS_GREEN }} />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-gray-800">
+                          {SET_PIECE_TYPES.find((s) => s.id === h.type)?.label} · {h.context}
+                        </p>
+                        <p className="text-[10px] text-gray-400">
+                          {h.hadVideo ? "Video" : "Text"} · {h.timestamp}
+                        </p>
+                      </div>
+                      <ChevronRight size={12} className="text-gray-300 shrink-0" />
+                    </button>
+                  ))}
                 </div>
-                <button onClick={addFreeKick}
-                  className="mt-4 flex items-center gap-2 rounded-lg bg-[#1a5c2a] px-4 py-2 text-xs font-bold text-white hover:bg-[#227537] transition-colors">
-                  <Target className="h-4 w-4" /> Add Free Kick Entry
-                </button>
-              </div>
-            )}
-
-            {freeKicks.length > 0 && (
-              <div className="space-y-2">
-                {freeKicks.map((fk, i) => (
-                  <div key={fk.id} className="flex items-center gap-3 rounded-xl border border-[#f0b429]/10 bg-card/40 px-4 py-3 text-xs text-white">
-                    <span className="text-[#f0b429]/40 font-bold w-6">#{i + 1}</span>
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${fk.side === "For" ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>{fk.side}</span>
-                    <span className="font-bold">{fk.outcome}</span>
-                    <span className="text-[#f0b429]/50 font-medium ml-auto">{fk.distance}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {freeKicks.length === 0 && !showFKForm && (
-              <div className="rounded-xl border border-dashed border-[#f0b429]/10 p-10 text-center text-xs text-[#f0b429]/40 font-bold">
-                No dead-ball free kicks logged in system yet.
               </div>
             )}
           </div>
-        )}
-
-        {/* ── AI Analysis Tab ── */}
-        {activeTab === "ai" && (
-          <div className="space-y-5">
-            <div className="rounded-2xl border border-[#f0b429]/10 bg-card/60 backdrop-blur-md p-5 sm:p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1a5c2a]">
-                  <Brain className="h-5 w-5 text-[#f0b429]" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-white uppercase tracking-wider">Target Role Analysis Engine</h2>
-                  <p className="text-xs text-[#f0b429]/50 font-semibold">
-                    Compiling advice calibrated specifically to your active <span className="text-amber-400 font-bold font-mono">{coachRoleFocus.toUpperCase()}</span> metrics
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={runAIAnalysis}
-                disabled={aiLoading}
-                className="flex items-center gap-2 rounded-xl bg-[#f0b429] text-[#1c3d22] px-4 py-3 text-xs font-black uppercase tracking-widest hover:bg-[#f5c542] disabled:opacity-40 transition-all"
-              >
-                {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4" />}
-                {aiLoading ? "Processing Matrix..." : `Analyze ${coachRoleFocus.toUpperCase()} Playbooks`}
-              </button>
-
-              {aiLoading && (
-                <div className="mt-4 flex items-center gap-3 rounded-xl bg-[#f0b429]/5 border border-[#f0b429]/5 px-4 py-6">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#f0b429]" />
-                  <p className="text-xs text-[#f0b429]/60 font-bold uppercase tracking-wider animate-pulse">Running advanced tactical computations...</p>
-                </div>
-              )}
-
-              {aiError && !aiLoading && (
-                <div className="mt-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-xs font-bold text-red-400">{aiError}</div>
-              )}
-
-              {aiReport && !aiLoading && (
-                <div className="mt-4 rounded-xl border border-[#1a5c2a]/30 bg-black/30 p-5">
-                  <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-[#f0b429] flex items-center gap-1">
-                    <Sparkles size={12} /> Live Strategy Output Blueprint
-                  </p>
-                  <div className="space-y-2 text-xs sm:text-sm text-[#f0b429]/90 leading-relaxed whitespace-pre-line font-medium">
-                    {aiReport}
-                  </div>
-                </div>
-              )}
-
-              {!aiReport && !aiLoading && !aiError && (
-                <div className="mt-4 rounded-xl border border-dashed border-[#f0b429]/10 px-5 py-8 text-center">
-                  <Brain className="mx-auto mb-2 h-7 w-7 text-[#f0b429]/20" />
-                  <p className="text-xs font-bold uppercase text-[#f0b429]/40 tracking-wider">
-                    Log data points across match configurations, then launch evaluation sweeps above.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </main>
+        </div>
+      </div>
     </div>
   );
 }

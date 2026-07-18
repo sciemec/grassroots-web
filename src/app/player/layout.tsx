@@ -4,7 +4,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
+import { PlayerSidebar } from "@/components/layout/PlayerSidebar";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
 import PlayerBottomNav from "@/components/layout/PlayerBottomNav";
@@ -54,15 +54,15 @@ export default function PlayerLayout({
       <div className="flex min-h-screen bg-[#f4f2ee]">
 
         {/* ── Desktop sidebar (hidden on mobile — bottom nav used instead) ── */}
-        <Sidebar />
+        <PlayerSidebar />
 
         {/* ── Main content area ─────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 lg:ml-72">
           {/* Guest awareness banner */}
           <GuestBanner />
 
-          {/* Page content — lg:ml-64 accounts for desktop sidebar width */}
-          <main className="flex-1 p-4 sm:p-6 md:ml-64 pb-20 md:pb-6">
+          {/* Page content */}
+          <main className="flex-1 pb-20 lg:pb-0">
             {children}
           </main>
         </div>

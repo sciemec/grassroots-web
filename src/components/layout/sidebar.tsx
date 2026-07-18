@@ -9,7 +9,9 @@ import {
   Users, BookOpen, UserSearch, Heart, Settings,
   Activity, Video, Camera, Award, LogOut, Menu, X,
   BarChart3, Medal, Globe, Trophy, Briefcase,
-  Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send, Shield, Brain
+  Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send, Shield, Brain,
+  Bell, User, Calendar, Star, DollarSign, CheckSquare, ClipboardList, MessageCircle,
+  Flame, ListChecks, Swords
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -79,8 +81,21 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/injury-hub", label: "Injury Hub",      icon: <Activity size={18} />,    roles: ["coach"]                     },
   { href: "/coach/fatigue",        label: "Fatigue Monitor", icon: <TrendingDown size={18} />, roles: ["coach"]                     },
   { href: "/coach/set-piece-lab",  label: "Set Piece Lab",   icon: <Flag size={18} />,         roles: ["coach"]                     },
-  { href: "/coach/drill-analysis",    label: "Drill Analysis",    icon: <Video size={18} />,  roles: ["coach"]                  },
-  { href: "/coach/tactics/simulator", label: "Tactics Simulator", icon: <Brain size={18} />, roles: ["coach", "admin"]          },
+  { href: "/coach/drill-analysis",    label: "Drill Analysis",    icon: <Video size={18} />,         roles: ["coach"]            },
+  { href: "/coach/tactics/simulator", label: "Tactics Simulator", icon: <Brain size={18} />,         roles: ["coach","admin"]    },
+  { href: "/coach/live-match",        label: "Live Match",        icon: <Flame size={18} />,         roles: ["coach"]            },
+  { href: "/coach/matches",           label: "Matches",           icon: <Calendar size={18} />,      roles: ["coach"]            },
+  { href: "/coach/training-plans",    label: "Training Plans",    icon: <ClipboardList size={18} />, roles: ["coach"]            },
+  { href: "/coach/stats",             label: "Team Stats",        icon: <BarChart3 size={18} />,     roles: ["coach"]            },
+  { href: "/coach/patterns",          label: "Match Patterns",    icon: <Target size={18} />,        roles: ["coach"]            },
+  { href: "/coach/recruitment",       label: "Recruitment",       icon: <UserSearch size={18} />,    roles: ["coach"]            },
+  { href: "/coach/session-library",   label: "Session Library",   icon: <BookOpen size={18} />,      roles: ["coach"]            },
+  { href: "/coach/technical-staff",   label: "Technical Staff",   icon: <Users size={18} />,         roles: ["coach"]            },
+  { href: "/coach/drills",            label: "Drills Library",    icon: <Dumbbell size={18} />,      roles: ["coach"]            },
+  { href: "/coach/scouting",          label: "Scouting",          icon: <UserSearch size={18} />,    roles: ["coach"]            },
+  { href: "/coach/success",           label: "Success Tracker",   icon: <Award size={18} />,         roles: ["coach"]            },
+  { href: "/coach/tactical-analysis", label: "Tactical Analysis", icon: <Swords size={18} />,        roles: ["coach"]            },
+  { href: "/coach/notifications",     label: "Notifications",     icon: <Bell size={18} />,          roles: ["coach"]            },
 
   // ── Scout ─────────────────────────────────────────────────────────────────
   { href: "/scout/discover",    label: "Discover Talent", icon: <UserSearch size={18} />,  roles: ["scout"], feature: "passport"  },
@@ -92,9 +107,20 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/talent-leaderboard",label: "Leaderboard",     icon: <Award size={18} />,       roles: ["fan","scout","coach"], feature: "passport" },
 
   // ── Admin ─────────────────────────────────────────────────────────────────
-  { href: "/admin",             label: "Admin Hub",       icon: <Home size={18} />,        roles: ["admin"]                     },
-  { href: "/admin/users",       label: "Users",           icon: <Users size={18} />,       roles: ["admin"]                     },
-  { href: "/admin/fan-hub",     label: "Fan Hub Mod",     icon: <Video size={18} />,       roles: ["admin"]                     },
+  { href: "/admin",                  label: "Admin Hub",       icon: <Home size={18} />,          roles: ["admin"] },
+  { href: "/admin/users",            label: "Users",           icon: <Users size={18} />,         roles: ["admin"] },
+  { href: "/admin/fan-hub",          label: "Fan Hub Mod",     icon: <Video size={18} />,         roles: ["admin"] },
+  { href: "/admin/announcements",    label: "Announcements",   icon: <Bell size={18} />,          roles: ["admin"] },
+  { href: "/admin/scout-requests",   label: "Scout Requests",  icon: <UserSearch size={18} />,    roles: ["admin"] },
+  { href: "/admin/verifications",    label: "Verifications",   icon: <CheckSquare size={18} />,   roles: ["admin"] },
+  { href: "/admin/subscriptions",    label: "Subscriptions",   icon: <CreditCard size={18} />,    roles: ["admin"] },
+  { href: "/admin/tournaments",      label: "Tournaments",     icon: <Trophy size={18} />,        roles: ["admin"] },
+  { href: "/admin/community",        label: "Community",       icon: <Globe size={18} />,         roles: ["admin"] },
+  { href: "/admin/whatsapp",         label: "WhatsApp",        icon: <MessageCircle size={18} />, roles: ["admin"] },
+  { href: "/admin/health",           label: "System Health",   icon: <Activity size={18} />,      roles: ["admin"] },
+  { href: "/admin/stream",           label: "Streaming",       icon: <Video size={18} />,         roles: ["admin"] },
+  { href: "/admin/stats",            label: "Platform Stats",  icon: <BarChart3 size={18} />,     roles: ["admin"] },
+  { href: "/school-hub",             label: "School Hub",      icon: <BookOpen size={18} />,      roles: ["admin"] },
 
   // ── Analyst ───────────────────────────────────────────────────────────────
   { href: "/analyst",                   label: "Analyst Hub",        icon: <BarChart3 size={18} />,   roles: ["analyst","admin","coach"] },

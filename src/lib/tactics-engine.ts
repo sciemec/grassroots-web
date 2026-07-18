@@ -1,6 +1,6 @@
 // src/lib/tactics-engine.ts
 
-import { Formation, FormationData, SimulationState, Position } from "@/types/tactics";
+import { Formation, FormationData, SimulationState } from "@/types/tactics";
 
 export const FORMATIONS: Record<Formation, FormationData> = {
   "4-3-3": {
@@ -110,13 +110,16 @@ export class TacticsSimulator {
   private state: SimulationState;
 
   constructor(formation: Formation) {
+    this.state = this.buildInitialState(formation);
+  }
+
+  private buildInitialState(formation: Formation): SimulationState {
     const positions = FORMATIONS[formation].positions;
     const playerPositions: Record<string, { x: number; y: number }> = {};
     positions.forEach(p => {
       playerPositions[p.id] = { x: p.x, y: p.y };
     });
-
-    this.state = {
+    return {
       isPlaying: false,
       speed: 1,
       currentPhase: "attacking",
@@ -129,31 +132,91 @@ export class TacticsSimulator {
     };
   }
 
+  // Reset to a new formation — keeps isPlaying and speed
+  resetFormation(formation: Formation) {
+    const wasPlaying = this.state.isPlaying;
+    const speed = this.state.speed;
+    const phase = this.state.currentPhase;
+    this.state = this.buildInitialState(formation);
+    this.state.isPlaying = wasPlaying;
+    this.state.speed = speed;
+    this.state.currentPhase = phase;
+  }
+
+  // Called every animation frame when isPlaying — moves ball along phase-specific path
+  tick(delta: number) {
+    if (!this.state.isPlaying) return;
+    this.state.time += delta * this.state.speed;
+    const t = this.state.time;
+
+    switch (this.state.currentPhase) {
+      case "attacking":
+        this.state.ballPosition = {
+          x: Math.max(10, Math.min(90, 50 + 20 * Math.sin(t * 0.7))),
+          y: Math.max(10, Math.min(90, 28 + 14 * Math.cos(t * 1.1))),
+        };
+        break;
+      case "defending":
+        this.state.ballPosition = {
+          x: Math.max(10, Math.min(90, 50 + 16 * Math.sin(t * 0.5))),
+          y: Math.max(10, Math.min(90, 65 + 10 * Math.cos(t * 0.8))),
+        };
+        break;
+      case "transition":
+        this.state.ballPosition = {
+          x: Math.max(10, Math.min(90, 50 + 22 * Math.sin(t * 0.6))),
+          y: Math.max(10, Math.min(90, 50 + 18 * Math.cos(t * 0.9))),
+        };
+        break;
+      case "set_piece":
+        // Ball stays at delivery position, only slight wobble
+        this.state.ballPosition = {
+          x: Math.max(2, Math.min(98, this.state.ballPosition.x + Math.sin(t * 3) * 0.3)),
+          y: Math.max(2, Math.min(98, this.state.ballPosition.y + Math.cos(t * 3) * 0.3)),
+        };
+        break;
+    }
+  }
+
   simulateAttack(phase: "build_up" | "final_third" | "shot") {
-    // Attack simulation logic
     const movements = this.generateAttackingMovement(phase);
     const passes = this.generatePassingLanes("attacking");
     const pressure = this.generatePressureZones("attacking");
+    const effectiveness = this.calculateAttackEffectiveness();
 
-    return {
-      movements,
-      passes,
-      pressure,
-      effectiveness: this.calculateAttackEffectiveness(),
+    // Write results back into state so canvas renders them
+    this.state.movementPaths = movements.map(m => ({
+      id: m.id,
+      points: [m.from, m.to],
+    }));
+    this.state.passingLanes = passes;
+    this.state.pressureZones = pressure;
+    this.state.ballPosition = {
+      x: 50 + (Math.random() - 0.5) * 22,
+      y: 20 + Math.random() * 18,
     };
+
+    return { movements, passes, pressure, effectiveness };
   }
 
   simulateDefense(phase: "low_block" | "high_press" | "transition") {
     const movements = this.generateDefensiveMovement(phase);
     const coverage = this.generateDefensiveCoverage();
     const pressure = this.generatePressureZones("defending");
+    const solidity = this.calculateDefensiveSolidity();
 
-    return {
-      movements,
-      coverage,
-      pressure,
-      solidity: this.calculateDefensiveSolidity(),
+    this.state.movementPaths = movements.map(m => ({
+      id: m.id,
+      points: [m.from, m.to],
+    }));
+    this.state.pressureZones = pressure;
+    this.state.passingLanes = [];
+    this.state.ballPosition = {
+      x: 50 + (Math.random() - 0.5) * 22,
+      y: 62 + Math.random() * 18,
     };
+
+    return { movements, coverage, pressure, solidity };
   }
 
   simulateMidfield(phase: "possession" | "counter" | "pressing") {
@@ -161,42 +224,61 @@ export class TacticsSimulator {
     const passing = this.generatePassingLanes("midfield");
     const control = this.calculateMidfieldControl();
 
-    return {
-      movements,
-      passing,
-      control,
-    };
+    this.state.movementPaths = movements.map(m => ({
+      id: m.id,
+      points: [m.from, m.to],
+    }));
+    this.state.passingLanes = passing;
+    this.state.pressureZones = [];
+    this.state.ballPosition = { x: 50, y: 50 };
+
+    return { movements, passing, control };
   }
 
   simulateSetPiece(type: "corner" | "free_kick" | "throw_in" | "penalty") {
     const setup = this.generateSetPieceSetup(type);
     const runs = this.generateSetPieceRuns(type);
     const targets = this.generateSetPieceTargets(type);
+    const successRate = this.calculateSetPieceSuccess(type);
 
-    return {
-      setup,
-      runs,
-      targets,
-      successRate: this.calculateSetPieceSuccess(type),
+    // Reposition players for the set piece
+    for (const [id, pos] of Object.entries(setup)) {
+      if (this.state.playerPositions[id]) {
+        this.state.playerPositions[id] = pos;
+      }
+    }
+    this.state.movementPaths = runs.map(r => ({
+      id: r.id,
+      points: [r.from, r.to],
+    }));
+    this.state.passingLanes = [];
+    this.state.pressureZones = [];
+
+    const ballPositions: Record<string, { x: number; y: number }> = {
+      corner:    { x: 2, y: 5 },
+      free_kick: { x: 50, y: 28 },
+      penalty:   { x: 50, y: 16 },
+      throw_in:  { x: 5, y: 40 },
     };
+    this.state.ballPosition = ballPositions[type] ?? { x: 50, y: 30 };
+
+    return { setup, runs, targets, successRate };
   }
 
   private generateAttackingMovement(phase: string) {
-    // Generate realistic attacking movement patterns
     const movements = [];
     const positions = Object.keys(this.state.playerPositions);
-    
+
     for (const pos of positions) {
       const current = this.state.playerPositions[pos];
       if (!current) continue;
 
-      // Movement based on position
       const dx = (Math.random() - 0.5) * 10;
       const dy = (Math.random() - 0.5) * 8;
-      
+
       movements.push({
         id: pos,
-        from: current,
+        from: { ...current },
         to: {
           x: Math.max(5, Math.min(95, current.x + dx)),
           y: Math.max(5, Math.min(95, current.y + dy)),
@@ -210,19 +292,17 @@ export class TacticsSimulator {
   }
 
   private generateDefensiveMovement(phase: string) {
-    // Generate defensive positioning
     const movements = [];
     const positions = Object.keys(this.state.playerPositions);
-    
+
     for (const pos of positions) {
       const current = this.state.playerPositions[pos];
       if (!current) continue;
 
-      // Defensive shift
       const shift = phase === "low_block" ? 10 : -5;
       movements.push({
         id: pos,
-        from: current,
+        from: { ...current },
         to: {
           x: Math.max(5, Math.min(95, current.x + shift * 0.5)),
           y: Math.max(5, Math.min(95, current.y + shift * 0.3)),
@@ -236,19 +316,17 @@ export class TacticsSimulator {
   }
 
   private generateMidfieldMovement(phase: string) {
-    // Midfield positioning and passing
     const movements = [];
-    const midfielders = ["RM", "RCM", "CM", "LCM", "LM", "CDM", "CAM"];
-    
+    const midfielders = ["RM", "RCM", "CM", "LCM", "LM", "CDM", "CAM", "RCDM", "LCDM"];
+
     for (const pos of midfielders) {
       const current = this.state.playerPositions[pos];
       if (!current) continue;
 
-      // Midfield rotation
       const rotate = phase === "possession" ? 0 : 8;
       movements.push({
         id: pos,
-        from: current,
+        from: { ...current },
         to: {
           x: Math.max(5, Math.min(95, current.x + rotate)),
           y: Math.max(5, Math.min(95, current.y + (Math.random() - 0.5) * 6)),
@@ -262,29 +340,29 @@ export class TacticsSimulator {
   }
 
   private generateSetPieceSetup(type: string) {
-    // Set piece positioning
     const setup: Record<string, { x: number; y: number }> = {};
     const positions = Object.keys(this.state.playerPositions);
-    
+
     for (const pos of positions) {
       const current = this.state.playerPositions[pos];
       if (!current) continue;
 
       if (type === "corner") {
-        // Corner kick setup
         if (["ST", "RS", "LS"].includes(pos)) {
           setup[pos] = { x: 50 + (Math.random() - 0.5) * 20, y: 25 + Math.random() * 15 };
         } else if (["CB", "RCB", "LCB"].includes(pos)) {
           setup[pos] = { x: 50 + (Math.random() - 0.5) * 30, y: 30 + Math.random() * 20 };
         } else {
-          setup[pos] = { x: current.x, y: current.y + 10 };
+          setup[pos] = { x: current.x, y: Math.min(95, current.y + 10) };
         }
       } else if (type === "free_kick") {
-        // Free kick setup
         if (["ST", "RS", "LS", "RW", "LW"].includes(pos)) {
           setup[pos] = { x: 50 + (Math.random() - 0.5) * 15, y: 20 + Math.random() * 10 };
         } else {
-          setup[pos] = { x: current.x + (Math.random() - 0.5) * 10, y: current.y + (Math.random() - 0.5) * 10 };
+          setup[pos] = {
+            x: Math.max(5, Math.min(95, current.x + (Math.random() - 0.5) * 10)),
+            y: Math.max(5, Math.min(95, current.y + (Math.random() - 0.5) * 10)),
+          };
         }
       } else {
         setup[pos] = current;
@@ -295,17 +373,16 @@ export class TacticsSimulator {
   }
 
   private generateSetPieceRuns(type: string) {
-    // Generate set piece runs
     const runs = [];
     const attackers = ["ST", "RS", "LS", "RW", "LW", "CAM"];
-    
+
     for (const pos of attackers) {
       const current = this.state.playerPositions[pos];
       if (!current) continue;
 
       runs.push({
         id: pos,
-        from: current,
+        from: { ...current },
         to: {
           x: Math.max(5, Math.min(95, current.x + (Math.random() - 0.5) * 30)),
           y: Math.max(5, Math.min(95, current.y - 10 - Math.random() * 15)),
@@ -320,7 +397,6 @@ export class TacticsSimulator {
   }
 
   private generateSetPieceTargets(_type: string) {
-    // Target zones for set pieces
     const targets = [];
     const zones = [
       { x: 40, y: 30, label: "Near Post" },
@@ -383,7 +459,7 @@ export class TacticsSimulator {
   private generatePassingLanes(_context: string) {
     const lanes = [];
     const positions = Object.keys(this.state.playerPositions);
-    
+
     for (let i = 0; i < positions.length; i++) {
       for (let j = i + 1; j < positions.length; j++) {
         if (Math.random() > 0.7) continue;
@@ -394,7 +470,7 @@ export class TacticsSimulator {
         const distance = Math.sqrt(
           Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2)
         );
-        
+
         lanes.push({
           from: positions[i],
           to: positions[j],
@@ -408,9 +484,8 @@ export class TacticsSimulator {
 
   private generatePressureZones(context: string) {
     const zones = [];
-    
+
     if (context === "attacking") {
-      // Attacking pressure in final third
       zones.push({
         x: 40 + Math.random() * 20,
         y: 15 + Math.random() * 20,
@@ -418,7 +493,6 @@ export class TacticsSimulator {
         intensity: 60 + Math.random() * 30,
       });
     } else if (context === "defending") {
-      // Defensive pressure
       zones.push({
         x: 40 + Math.random() * 20,
         y: 70 + Math.random() * 20,

@@ -8,6 +8,7 @@ const nextConfig = {
     unoptimized: true,
   },
 
+  // ✅ Add empty turbopack config to silence the error
   turbopack: {},
 
   webpack: (config, { dev, isServer }) => {
@@ -23,16 +24,16 @@ const nextConfig = {
 
     config.resolve.alias['@google/genai'] = false;
     config.resolve.alias['@anthropic-ai/sdk'] = false;
+    // Optional peer deps of @tensorflow-models/pose-detection not needed for MoveNet
+    config.resolve.alias['@mediapipe/pose'] = false;
+    config.resolve.alias['@tensorflow/tfjs-backend-webgpu'] = false;
 
     config.resolve.alias[`${process.cwd()}/src/app/coach/page.jsx`] = false;
 
     config.resolve.alias[`${process.cwd()}/src/components/tactical-iq/WhatWouldYouDo`] =
       `${process.cwd()}/src/lib/tactical-iq/WhatWouldYouDo.tsx`;
 
-    // Alias browser-only / heavy packages out of the server bundle.
-    // This keeps the Cloudflare Workers handler.mjs within the 10 MB limit.
     if (isServer) {
-      // Packages that are simply unused on the server — stub with empty module.
       const emptyStubs = [
         'jspdf',
         'jspdf-autotable',
@@ -50,14 +51,15 @@ const nextConfig = {
         'firebase/storage',
         'firebase/compat/app',
         'firebase/compat/auth',
+        // Browser-only AI/ML packages — WebGL/WASM, cannot run in Node.js
+        '@tensorflow/tfjs',
+        '@tensorflow/tfjs-backend-webgl',
+        '@tensorflow-models/pose-detection',
+        'onnxruntime-web',
       ];
       for (const pkg of emptyStubs) {
         config.resolve.alias[pkg] = false;
       }
-
-      // Dexie is used with class inheritance (class GrassrootsDB extends Dexie).
-      // Stubbing with `false` gives an empty object which breaks class extension.
-      // Use a real stub class that satisfies the inheritance without IndexedDB.
       config.resolve.alias['dexie'] = `${process.cwd()}/src/stubs/dexie.js`;
     }
 
