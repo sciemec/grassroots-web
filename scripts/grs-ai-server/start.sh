@@ -21,5 +21,6 @@ echo "[GRS] Installing dependencies..."
 pip install --quiet -r requirements.txt
 
 # Start server
-echo "[GRS] Starting server on http://localhost:8765"
-uvicorn main:app --host 0.0.0.0 --port 8765 --reload --log-level info
+PORT="${PORT:-8765}"
+echo "[GRS] Starting server on port ${PORT}"
+uvicorn main:app --host 0.0.0.0 --port "${PORT}" --log-level info
