@@ -11,7 +11,7 @@ import {
   Layers, UserCircle, BarChart2, ListChecks, Milestone, BadgeCheck,
   Wind, Footprints, Target, Swords, Hand, Palette, Sprout, Dna,
   Play, HeartPulse, ScanLine, Camera, Wand2, ArrowUpRight,
-  Bell, Users,
+  Bell, Users, Eye,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { getCurrentStreak } from "@/lib/success/streak";
@@ -529,6 +529,8 @@ export default function PlayerDashboardHome() {
         <section>
           <SectionLabel>4 Â· AI Analysis</SectionLabel>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <HubCard href="/player/match-eye" icon={Eye} iconBg="#fee2e2" iconColor="#dc2626"
+              label="Match Eye" desc="Upload match video Â· AI analyses your performance" badge="ai" />
             <HubCard href="/player/analyse" icon={Sparkles} iconBg="#f3e8ff" iconColor="#9333ea"
               label="Drill Analysis" desc="Upload video Â· Gemini AI coaching feedback" badge="Free trial" />
             <HubCard href="/player/biomechanics" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
