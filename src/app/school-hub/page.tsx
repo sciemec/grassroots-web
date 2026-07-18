@@ -9,8 +9,14 @@ import {
   Plus, CheckCircle, AlertCircle, User, Activity,
   Bell, Star, Search, Send, ChevronRight,
   BookOpen, Shield, Megaphone, Phone, Mail,
-  BarChart2, UserCheck, GraduationCap, Heart, Loader2,
+  BarChart2, UserCheck, GraduationCap, Heart, Loader2, PieChart,
 } from "lucide-react";
+import { GenderToggle } from "@/components/school/GenderToggle";
+import { GenderProgrammePanel } from "@/components/school/GenderProgrammePanel";
+import {
+  type Gender,
+  PROVINCE_DATA, YEARLY_TRENDS, getGenderRatio, getTotalParticipants,
+} from "@/data/school-gender-data";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -200,6 +206,7 @@ const TABS = [
   { key:"messages",      label:"Messages",   icon:MessageSquare },
   { key:"announcements", label:"Notices",    icon:Megaphone     },
   { key:"reports",       label:"Reports",    icon:FileText      },
+  { key:"gender",        label:"Gender",     icon:PieChart      },
 ] as const;
 type Tab = typeof TABS[number]["key"];
 
@@ -232,9 +239,10 @@ export default function SchoolHubPage() {
   const [replyBody,   setReplyBody]   = useState("");
   const [sending,     setSending]     = useState(false);
   const [replySent,   setReplySent]   = useState(false);
-  const [newAnnTitle, setNewAnnTitle] = useState("");
-  const [newAnnBody,  setNewAnnBody]  = useState("");
-  const [annPosted,   setAnnPosted]   = useState(false);
+  const [newAnnTitle,   setNewAnnTitle]   = useState("");
+  const [newAnnBody,    setNewAnnBody]    = useState("");
+  const [annPosted,     setAnnPosted]     = useState(false);
+  const [genderFilter,  setGenderFilter]  = useState<Gender>("girls");
 
   // Data state — seed data as initial value, backend overwrites
   const [teams,   setTeams]   = useState<Team[]>(SEED_TEAMS);
@@ -402,7 +410,7 @@ export default function SchoolHubPage() {
       <div style={{ backgroundColor:"#fff", borderBottom:"1px solid #e5e5e5", overflowX:"auto" }}>
         <div style={{ maxWidth:1200, margin:"0 auto", display:"flex", padding:"0 16px" }}>
           {TABS.map((t) => {
-            if (role==="parent"     && ["teams","coaches","announcements","reports"].includes(t.key)) return null;
+            if (role==="parent"     && ["teams","coaches","announcements","reports","gender"].includes(t.key)) return null;
             if (role==="coach"      && ["reports"].includes(t.key)) return null;
             const Icon   = t.icon;
             const active = tab === t.key;
@@ -890,6 +898,137 @@ export default function SchoolHubPage() {
             </div>
           </div>
         )}
+
+        {/* ── GENDER PROGRAMME ───────────────────────────────────────────── */}
+        {tab==="gender" && (() => {
+          const ratio  = getGenderRatio();
+          const boys   = getTotalParticipants("boys");
+          const girls  = getTotalParticipants("girls");
+          const latest = YEARLY_TRENDS[YEARLY_TRENDS.length - 1];
+          return (
+            <div>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:12 }}>
+                <div>
+                  <h2 style={{ fontSize:20, fontWeight:700, color:"#1a1a1a", marginBottom:4 }}>Gender Programme</h2>
+                  <p style={{ fontSize:13, color:"#888" }}>Zimbabwe school sports participation — NASH / NAPH gender equity overview</p>
+                </div>
+                <GenderToggle value={genderFilter} onChange={setGenderFilter} />
+              </div>
+
+              {/* Summary stats row */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:14, marginBottom:28 }}>
+                {[
+                  { label:"Boys Nationally",  value:`${(boys/1000).toFixed(0)}k`,  color:"#1a5c2a", bg:"#f0fdf4", border:"#bbf7d0" },
+                  { label:"Girls Nationally", value:`${(girls/1000).toFixed(0)}k`, color:"#c8962a", bg:"#fffbeb", border:"#fde68a" },
+                  { label:"Boys Share",       value:`${ratio.boysPct}%`,            color:"#1a5c2a", bg:"#f0fdf4", border:"#bbf7d0" },
+                  { label:"Girls Share",      value:`${ratio.girlsPct}%`,           color:"#c8962a", bg:"#fffbeb", border:"#fde68a" },
+                  { label:"Schools (2025)",   value:latest.totalSchools.toLocaleString(), color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
+                ].map((s) => (
+                  <div key={s.label} style={{ backgroundColor:s.bg, border:`1.5px solid ${s.border}`, borderRadius:12, padding:"16px 20px" }}>
+                    <div style={{ fontSize:12, color:"#555", marginBottom:6, fontWeight:500 }}>{s.label}</div>
+                    <div style={{ fontSize:28, fontWeight:800, color:s.color }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Gender toggle split */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:28 }}>
+                {/* Participation bar */}
+                <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", padding:20 }}>
+                  <p style={{ fontWeight:700, fontSize:15, marginBottom:16 }}>Participation Split</p>
+                  <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:8 }}>
+                    <span style={{ fontSize:13, color:"#555", width:46 }}>Boys</span>
+                    <div style={{ flex:1, height:14, backgroundColor:"#f0f0f0", borderRadius:7, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${ratio.boysPct}%`, backgroundColor:"#1a5c2a", borderRadius:7 }} />
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:700, color:"#1a5c2a", width:36, textAlign:"right" }}>{ratio.boysPct}%</span>
+                  </div>
+                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                    <span style={{ fontSize:13, color:"#555", width:46 }}>Girls</span>
+                    <div style={{ flex:1, height:14, backgroundColor:"#f0f0f0", borderRadius:7, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${ratio.girlsPct}%`, backgroundColor:"#c8962a", borderRadius:7 }} />
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:700, color:"#c8962a", width:36, textAlign:"right" }}>{ratio.girlsPct}%</span>
+                  </div>
+                  <p style={{ marginTop:14, fontSize:12, color:"#aaa" }}>
+                    Gap: {ratio.boysPct - ratio.girlsPct}pp — target is 50/50 by 2030
+                  </p>
+                </div>
+
+                {/* Year-on-year trend table */}
+                <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", padding:20 }}>
+                  <p style={{ fontWeight:700, fontSize:15, marginBottom:14 }}>Year-on-Year Growth</p>
+                  <table style={{ width:"100%", fontSize:12, borderCollapse:"collapse" }}>
+                    <thead>
+                      <tr style={{ color:"#aaa" }}>
+                        <th style={{ textAlign:"left", paddingBottom:8, fontWeight:600 }}>Year</th>
+                        <th style={{ textAlign:"right", paddingBottom:8, fontWeight:600 }}>Boys</th>
+                        <th style={{ textAlign:"right", paddingBottom:8, fontWeight:600 }}>Girls</th>
+                        <th style={{ textAlign:"right", paddingBottom:8, fontWeight:600 }}>Schools</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {YEARLY_TRENDS.map((y, i) => (
+                        <tr key={y.year} style={{ backgroundColor: i % 2 === 0 ? "#fafafa" : "#fff" }}>
+                          <td style={{ padding:"6px 4px", fontWeight:600 }}>{y.year}</td>
+                          <td style={{ padding:"6px 4px", textAlign:"right", color:"#1a5c2a", fontWeight:600 }}>{(y.boysParticipants/1000).toFixed(0)}k</td>
+                          <td style={{ padding:"6px 4px", textAlign:"right", color:"#c8962a", fontWeight:600 }}>{(y.girlsParticipants/1000).toFixed(0)}k</td>
+                          <td style={{ padding:"6px 4px", textAlign:"right", color:"#555" }}>{y.totalSchools.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Gender Programme Panel + Province breakdown */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+                <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", padding:20 }}>
+                  <GenderProgrammePanel gender={genderFilter} />
+                </div>
+
+                {/* Province breakdown */}
+                <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", padding:20 }}>
+                  <p style={{ fontWeight:700, fontSize:15, marginBottom:14 }}>
+                    Province Breakdown — {genderFilter === "boys" ? "Boys" : "Girls"}
+                  </p>
+                  <div style={{ overflowX:"auto" }}>
+                    <table style={{ width:"100%", fontSize:12, borderCollapse:"collapse" }}>
+                      <thead>
+                        <tr style={{ color:"#aaa", borderBottom:"1px solid #f0f0f0" }}>
+                          <th style={{ textAlign:"left", padding:"0 4px 8px", fontWeight:600 }}>Province</th>
+                          <th style={{ textAlign:"right", padding:"0 4px 8px", fontWeight:600 }}>Schools</th>
+                          <th style={{ textAlign:"right", padding:"0 4px 8px", fontWeight:600 }}>Participants</th>
+                          <th style={{ textAlign:"left", padding:"0 4px 8px", fontWeight:600 }}>Top School</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...PROVINCE_DATA]
+                          .sort((a, b) =>
+                            genderFilter === "boys"
+                              ? b.boysParticipants - a.boysParticipants
+                              : b.girlsParticipants - a.girlsParticipants
+                          )
+                          .map((prov, i) => {
+                            const count = genderFilter === "boys" ? prov.boysParticipants : prov.girlsParticipants;
+                            const color = genderFilter === "boys" ? "#1a5c2a" : "#c8962a";
+                            return (
+                              <tr key={prov.province} style={{ borderBottom:"1px solid #f9f9f9", backgroundColor: i % 2 === 0 ? "#fafafa" : "#fff" }}>
+                                <td style={{ padding:"7px 4px", fontWeight:600 }}>{prov.province}</td>
+                                <td style={{ padding:"7px 4px", textAlign:"right", color:"#555" }}>{prov.schools}</td>
+                                <td style={{ padding:"7px 4px", textAlign:"right", fontWeight:700, color }}>{count.toLocaleString()}</td>
+                                <td style={{ padding:"7px 4px", color:"#888", fontSize:11 }}>{prov.topSchool}</td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
     </div>
