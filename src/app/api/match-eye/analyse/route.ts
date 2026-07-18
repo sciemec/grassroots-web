@@ -10,6 +10,21 @@ interface MatchEvent {
   description: string;
 }
 
+interface PlayerTrackingResult {
+  jersey: string;
+  name: string;
+  position_tendency: string;
+  key_moments: string[];
+  rating: number;
+  improvement: string;
+}
+
+interface TrackedPlayer {
+  jersey: string;
+  name: string;
+  position: string;
+}
+
 interface MatchAnalysis {
   formation_home: string;
   formation_away: string;
@@ -27,6 +42,7 @@ interface MatchAnalysis {
   man_of_match_candidate: string;
   halftime_recommendation: string;
   key_coaching_points: string[];
+  player_tracking?: PlayerTrackingResult[];
 }
 
 function extractJSON(text: string): MatchAnalysis | null {
@@ -67,7 +83,7 @@ async function waitForFileActive(fileName: string, googleKey: string): Promise<v
 
 export async function POST(req: NextRequest) {
   try {
-    const { fileUri, fileName, mimeType, fileState, homeTeam, awayTeam, competition, sport } =
+    const { fileUri, fileName, mimeType, fileState, homeTeam, awayTeam, competition, sport, trackedPlayers } =
       await req.json() as {
         fileUri: string;
         fileName: string;
@@ -77,6 +93,7 @@ export async function POST(req: NextRequest) {
         awayTeam: string;
         competition?: string;
         sport?: string;
+        trackedPlayers?: TrackedPlayer[];
       };
 
     if (!fileUri || !fileName) {
@@ -93,7 +110,27 @@ export async function POST(req: NextRequest) {
       await waitForFileActive(fileName, googleKey);
     }
 
-    // ── Call Gemini 1.5 Pro with native video file_data ───────────────────────────
+    // ── Build player tracking section (injected when coach specifies players) ───
+    const activePlayers = (trackedPlayers ?? []).filter((p) => p.jersey || p.name);
+    const playerTrackingPrompt = activePlayers.length > 0
+      ? `\n\nPLAYER TRACKING REQUEST — Watch specifically for these players by jersey number:
+${activePlayers.map((p) => `#${p.jersey}${p.name ? ` — ${p.name}` : ""}${p.position ? ` (${p.position})` : ""}`).join("\n")}
+
+For each player, include a "player_tracking" array in your JSON with this structure:
+"player_tracking": [
+  {
+    "jersey": "7",
+    "name": "Player Name",
+    "position_tendency": "Where they positioned themselves and how they moved",
+    "key_moments": ["12:30 — specific action description", "38:00 — another moment"],
+    "rating": 7,
+    "improvement": "One specific, actionable thing this player must improve"
+  }
+]
+Track every player listed above. If a jersey number is not visible in the video, note that in position_tendency.`
+      : "";
+
+    // ── Call Gemini with native video file_data ───────────────────────────────
     const systemPrompt = `You are a professional football analyst with UEFA A-licence coaching experience.
 You will watch the full match video: ${homeTeam} vs ${awayTeam}${competition ? ` (${competition})` : ""}${sport ? ` — Sport: ${sport}` : ""}.
 
@@ -135,7 +172,7 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
 For possession: estimate based on which team controlled the ball across the full match.
 For events: include all significant events visible in the video with accurate timestamps.
 For formations: identify from player positioning throughout the full match.
-Be specific and professional. Base everything on what you observe in the video.`;
+Be specific and professional. Base everything on what you observe in the video.${playerTrackingPrompt}`;
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
@@ -207,7 +244,7 @@ ${JSON.stringify(analysis, null, 2)}
 Write a professional 4-paragraph tactical match report:
 1. Match overview — what happened and who controlled the game
 2. Tactical analysis — what formations were used, what worked, what didn't
-3. Individual highlights and areas of concern
+3. Individual highlights${activePlayers.length > 0 ? ` — include specific observations on tracked players (${activePlayers.map((p) => `#${p.jersey}${p.name ? ` ${p.name}` : ""}`).join(", ")})` : " and areas of concern"}
 4. Training recommendations for the next session based on what was seen
 
 Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference formations, patterns, and events by name. No generic advice.`,
