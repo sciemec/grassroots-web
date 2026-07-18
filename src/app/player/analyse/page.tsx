@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Upload, Play, RefreshCw, Zap, Lock, CheckCircle2,
   Camera, StopCircle, Video,
@@ -70,8 +71,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.co
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AnalysePage() {
-  const user  = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
+  const router = useRouter();
+  const user   = useAuthStore((s) => s.user);
+  const token  = useAuthStore((s) => s.token);
 
   const [sport,     setSport]     = useState(SPORTS[0]);
   const [drill,     setDrill]     = useState(SPORTS[0].drills[0]);
@@ -359,6 +361,7 @@ export default function AnalysePage() {
         is_pro?: boolean;
       };
 
+      if (res.status === 401) { router.push("/login"); return; }
       if (res.status === 402) { setPhase("paywall"); return; }
       if (!res.ok) {
         setErrorMsg(data.error ?? "Analysis failed. Please try again.");

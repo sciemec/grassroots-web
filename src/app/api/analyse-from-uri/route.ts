@@ -98,26 +98,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No file URI provided.' }, { status: 400 });
   }
 
+  // ── Require authentication ────────────────────────────────────────────────
+  if (!token) {
+    return NextResponse.json(
+      { error: 'Please log in to use AI analysis.', login_required: true },
+      { status: 401 }
+    );
+  }
+
   // ── Check credits via Laravel ─────────────────────────────────────────────
   let canAnalyse = true;
   let freeTrial  = false;
   let isPro      = false;
 
-  if (token) {
-    try {
-      const credRes = await fetch(`${API_URL}/video-analysis/credits`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(8_000),
-      });
-      if (credRes.ok) {
-        const cred = await credRes.json() as { can_analyse?: boolean; free_trial?: boolean; is_pro?: boolean };
-        canAnalyse = cred.can_analyse ?? true;
-        freeTrial  = cred.free_trial  ?? false;
-        isPro      = cred.is_pro      ?? false;
-      }
-    } catch {
-      // Non-fatal — allow on credit check failure
+  try {
+    const credRes = await fetch(`${API_URL}/video-analysis/credits`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (credRes.ok) {
+      const cred = await credRes.json() as { can_analyse?: boolean; free_trial?: boolean; is_pro?: boolean };
+      canAnalyse = cred.can_analyse ?? true;
+      freeTrial  = cred.free_trial  ?? false;
+      isPro      = cred.is_pro      ?? false;
     }
+  } catch {
+    // Non-fatal — allow on credit check failure
   }
 
   if (!canAnalyse) {
