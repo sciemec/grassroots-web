@@ -120,6 +120,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/health",           label: "System Health",   icon: <Activity size={18} />,      roles: ["admin"] },
   { href: "/admin/stream",           label: "Streaming",       icon: <Video size={18} />,         roles: ["admin"] },
   { href: "/admin/stats",            label: "Platform Stats",  icon: <BarChart3 size={18} />,     roles: ["admin"] },
+  { href: "/school-hub",             label: "School Hub",      icon: <BookOpen size={18} />,      roles: ["admin"] },
 
   // ── Analyst ───────────────────────────────────────────────────────────────
   { href: "/analyst",                   label: "Analyst Hub",        icon: <BarChart3 size={18} />,   roles: ["analyst","admin","coach"] },
