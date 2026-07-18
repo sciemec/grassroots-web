@@ -178,27 +178,22 @@ Base everything on what you actually see in the video.`;
       );
     }
 
-    // ── Claude personal coaching narrative ────────────────────────────────────
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    // ── Gemini personal coaching narrative ───────────────────────────────────
     let narrative = "";
 
-    if (anthropicKey) {
-      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key":         anthropicKey,
-          "anthropic-version": "2023-06-01",
-          "content-type":      "application/json",
-        },
-        body: JSON.stringify({
-          model:      "claude-sonnet-4-6",
-          max_tokens: 1200,
-          messages: [{
-            role:    "user",
-            content: `You are a personal sports coach writing feedback directly to a ${sportLabel} player.
+    try {
+      const narrativeRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `You are a personal sports coach writing feedback directly to a ${sportLabel} player.
 
 Player: ${positionLabel}${jerseyLabel}
-AI Vision Analysis (Gemini watched the full video):
+AI Vision Analysis (from the video):
 ${JSON.stringify(analysis, null, 2)}
 
 Write a personal 3-paragraph coaching message directly to the player (use "you"):
@@ -206,15 +201,22 @@ Write a personal 3-paragraph coaching message directly to the player (use "you")
 2. Where you need to grow — honest, specific, kind — reference real moments from the video
 3. Your action plan — exactly what to work on before the next session, with one priority drill
 
-Write as a coach who knows this player and cares about their development. Be direct, specific, and encouraging. No generic advice. Reference what was actually seen in the video.`,
-          }],
-        }),
-      });
+Write as a coach who knows this player and cares about their development. Be direct, specific, and encouraging. No generic advice. Reference what was actually seen in the video. Plain text only — no markdown.`,
+              }],
+            }],
+            generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
+          }),
+        }
+      );
 
-      if (claudeRes.ok) {
-        const claudeData = await claudeRes.json() as { content?: Array<{ text?: string }> };
-        narrative = claudeData.content?.[0]?.text ?? "";
+      if (narrativeRes.ok) {
+        const narrativeData = await narrativeRes.json() as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        narrative = narrativeData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
       }
+    } catch {
+      // narrative is optional — silently skip if Gemini call fails
     }
 
     return Response.json({ analysis, narrative });
