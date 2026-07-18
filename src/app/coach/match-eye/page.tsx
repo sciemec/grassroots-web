@@ -11,6 +11,12 @@ import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+interface TrackedPlayer {
+  jersey: string;
+  name: string;
+  position: string;
+}
+
 interface MatchEvent {
   time: string;
   team: "home" | "away" | "neutral";
@@ -35,6 +41,14 @@ interface MatchAnalysis {
   man_of_match_candidate: string;
   halftime_recommendation: string;
   key_coaching_points: string[];
+  player_tracking?: Array<{
+    jersey: string;
+    name: string;
+    position_tendency: string;
+    key_moments: string[];
+    rating: number;
+    improvement: string;
+  }>;
 }
 
 interface HalfResult {
@@ -65,10 +79,11 @@ export default function MatchEyePage() {
   const token = useAuthStore((s) => s.token);
 
   // Match details
-  const [homeTeam,    setHomeTeam]    = useState("");
-  const [awayTeam,    setAwayTeam]    = useState("");
-  const [competition, setCompetition] = useState("");
-  const [sport,       setSport]       = useState("Football");
+  const [homeTeam,       setHomeTeam]       = useState("");
+  const [awayTeam,       setAwayTeam]       = useState("");
+  const [competition,    setCompetition]    = useState("");
+  const [sport,          setSport]          = useState("Football");
+  const [trackedPlayers, setTrackedPlayers] = useState<TrackedPlayer[]>([{ jersey: "", name: "", position: "" }]);
 
   // Page flow
   const [pageStage,   setPageStage]   = useState<PageStage>("setup");
@@ -167,13 +182,14 @@ export default function MatchEyePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fileUri:     half.fileUri,
-          fileName:    half.fileName,
-          mimeType:    half.mimeType,
+          fileUri:        half.fileUri,
+          fileName:       half.fileName,
+          mimeType:       half.mimeType,
           homeTeam,
           awayTeam,
-          competition: competition ? `${competition} — ${label}` : label,
+          competition:    competition ? `${competition} — ${label}` : label,
           sport,
+          trackedPlayers: trackedPlayers.filter((p) => p.jersey || p.name),
         }),
       });
       if (!res.ok) {
@@ -211,6 +227,7 @@ export default function MatchEyePage() {
     setAwayTeam("");
     setCompetition("");
     setSport("Football");
+    setTrackedPlayers([{ jersey: "", name: "", position: "" }]);
   };
 
   // ── Sub-components ───────────────────────────────────────────────────────────
@@ -283,7 +300,64 @@ export default function MatchEyePage() {
     );
   }
 
-  // ── Ball Zone Activity panel (from local YOLOv8 tracking) ───────────────────
+  // ── Per-player analysis cards (from Gemini player tracking) ─────────────────
+  function PlayerTrackingCards({ players }: { players: NonNullable<MatchAnalysis["player_tracking"]> }) {
+    if (!players.length) return null;
+    return (
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "18px 20px" }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 14 }}>
+          Player Tracking — {players.length} player{players.length !== 1 ? "s" : ""}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {players.map((pl, i) => (
+            <div key={i} style={{ border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "14px 16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 8, background: "#1a5c2a",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 800, fontSize: 14, color: "#fff", flexShrink: 0,
+                }}>
+                  #{pl.jersey}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>{pl.name || `Player #${pl.jersey}`}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>{pl.position_tendency}</div>
+                </div>
+                {/* Rating badge */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: 8, flexShrink: 0, display: "flex",
+                  flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  background: pl.rating >= 8 ? "#dcfce7" : pl.rating >= 6 ? "#fef9c3" : "#fee2e2",
+                }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, color: pl.rating >= 8 ? "#15803d" : pl.rating >= 6 ? "#92400e" : "#dc2626", lineHeight: 1 }}>
+                    {pl.rating}
+                  </div>
+                  <div style={{ fontSize: 9, color: "#9ca3af" }}>/10</div>
+                </div>
+              </div>
+
+              {pl.key_moments?.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 5 }}>Key Moments</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {pl.key_moments.map((m, j) => (
+                      <div key={j} style={{ fontSize: 13, color: "#374151", paddingLeft: 10, borderLeft: "2px solid #e5e7eb" }}>{m}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ background: "#fef3c7", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#92400e" }}>
+                <strong>Improve:</strong> {pl.improvement}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Ball Zone Activity panel (from local YOLOv8 tracking) ─────────────────
   function TrackingPanel({ tracking }: { tracking: VideoMeasurement }) {
     if (!tracking.ballTrajectory?.length && !tracking.playersInFrame) return null;
 
@@ -468,6 +542,11 @@ export default function MatchEyePage() {
           </div>
         )}
 
+        {/* Per-player tracking cards */}
+        {(a.player_tracking?.length ?? 0) > 0 && (
+          <PlayerTrackingCards players={a.player_tracking!} />
+        )}
+
         {/* Man of match + halftime rec */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {a.man_of_match_candidate && (
@@ -560,6 +639,70 @@ export default function MatchEyePage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            {/* Players to Track */}
+            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "20px", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a" }}>Players to Track</div>
+                <span style={{ fontSize: 11, color: "#9ca3af" }}>Optional — Gemini will analyse each player specifically</span>
+              </div>
+
+              {/* Header row */}
+              <div style={{ display: "grid", gridTemplateColumns: "64px 1fr 1fr 32px", gap: 8, marginBottom: 6, marginTop: 12 }}>
+                {["Jersey #", "Name", "Position", ""].map((h) => (
+                  <div key={h} style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</div>
+                ))}
+              </div>
+
+              {trackedPlayers.map((p, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "64px 1fr 1fr 32px", gap: 8, marginBottom: 8 }}>
+                  <input
+                    value={p.jersey}
+                    onChange={(e) => {
+                      const next = [...trackedPlayers];
+                      next[i] = { ...next[i], jersey: e.target.value };
+                      setTrackedPlayers(next);
+                    }}
+                    placeholder="#7"
+                    style={{ border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "7px 10px", fontSize: 14, outline: "none" }}
+                  />
+                  <input
+                    value={p.name}
+                    onChange={(e) => {
+                      const next = [...trackedPlayers];
+                      next[i] = { ...next[i], name: e.target.value };
+                      setTrackedPlayers(next);
+                    }}
+                    placeholder="Player name"
+                    style={{ border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "7px 10px", fontSize: 14, outline: "none" }}
+                  />
+                  <input
+                    value={p.position}
+                    onChange={(e) => {
+                      const next = [...trackedPlayers];
+                      next[i] = { ...next[i], position: e.target.value };
+                      setTrackedPlayers(next);
+                    }}
+                    placeholder="e.g. Striker"
+                    style={{ border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "7px 10px", fontSize: 14, outline: "none" }}
+                  />
+                  <button
+                    onClick={() => setTrackedPlayers(trackedPlayers.filter((_, j) => j !== i))}
+                    style={{ border: "none", background: "none", cursor: "pointer", color: "#9ca3af", fontSize: 18, padding: 0, lineHeight: 1 }}
+                    title="Remove"
+                  >×</button>
+                </div>
+              ))}
+
+              {trackedPlayers.length < 11 && (
+                <button
+                  onClick={() => setTrackedPlayers([...trackedPlayers, { jersey: "", name: "", position: "" }])}
+                  style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#1a5c2a", background: "none", border: "1.5px dashed #bbf7d0", borderRadius: 8, padding: "7px 16px", cursor: "pointer", width: "100%" }}
+                >
+                  + Add Player
+                </button>
+              )}
             </div>
 
             {/* Upload zones — only show once team names entered */}
