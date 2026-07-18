@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, BookOpen, Dumbbell, Calendar,
   Brain, TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play,
+  ChevronRight, ArrowRight, Play, Eye,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -167,6 +167,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/tactics/board"    icon={Layers}     iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"     badge="new" />
           <HubCard href="/coach/tactical-analysis" icon={Crosshair}  iconBg="#fef3c7" iconColor="#d97706" label="Tactical Analysis"  desc="Post-match breakdown"          />
           <HubCard href="/coach/set-pieces"        icon={Video}      iconBg="#fdf4ff" iconColor="#a21caf" label="Set Piece Lab"      desc="Upload clips · Gemini Vision"  badge="ai" />
+          <HubCard href="/coach/match-eye"         icon={Eye}        iconBg="#fee2e2" iconColor="#dc2626" label="Match Eye"          desc="Full match video analysis"     badge="ai" />
           <HubCard href="/coach/patterns"          icon={TrendingUp} iconBg="#dcfce7" iconColor="#059669" label="Strategic Patterns" desc="Identify winning patterns"     />
         </div>
 
