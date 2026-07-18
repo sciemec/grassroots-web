@@ -580,7 +580,7 @@ export default function SchoolHubPage() {
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8, marginBottom:14 }}>
                         {[{l:"Players",v:t.players},{l:"Wins",v:t.wins,c:"#16a34a"},{l:"Draws",v:t.draws,c:"#d97706"},{l:"Losses",v:t.losses,c:"#dc2626"}].map((s) => (
                           <div key={s.l} style={{ textAlign:"center" }}>
-                            <div style={{ fontSize:20, fontWeight:800, color:s.c???"#1a1a1a" }}>{s.v}</div>
+                            <div style={{ fontSize:20, fontWeight:800, color:s.c??"#1a1a1a" }}>{s.v}</div>
                             <div style={{ fontSize:11, color:"#888" }}>{s.l}</div>
                           </div>
                         ))}
