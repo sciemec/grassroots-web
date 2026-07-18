@@ -7,6 +7,7 @@ import {
   BookOpen, Clock, Target, Shield, Zap,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,10 @@ export default function MatchEyePage() {
   const [firstResult,  setFirstResult]  = useState<HalfResult | null>(null);
   const [secondResult, setSecondResult] = useState<HalfResult | null>(null);
 
+  // Super Engine local tracking (YOLOv8 ball + player detection in browser)
+  const [firstTracking,  setFirstTracking]  = useState<VideoMeasurement | null>(null);
+  const [secondTracking, setSecondTracking] = useState<VideoMeasurement | null>(null);
+
   // File inputs
   const firstRef  = useRef<HTMLInputElement>(null);
   const secondRef = useRef<HTMLInputElement>(null);
@@ -90,7 +95,13 @@ export default function MatchEyePage() {
 
   const uploadHalf = useCallback(async (file: File, which: "first" | "second") => {
     const setH = which === "first" ? setFirstHalf : setSecondHalf;
+    const setT = which === "first" ? setFirstTracking : setSecondTracking;
     setH((h) => ({ ...h, stage: "uploading", pct: 0, error: "" }));
+
+    // Run Super Engine ball+player tracking in the browser in parallel with upload.
+    // Uses YOLOv8 on 60 evenly-sampled frames — works for any video length.
+    // Silent fail: if YOLOv8 model is missing the tracking panel simply won't show.
+    measureFromVideo(file, "team", () => undefined).then(setT).catch(() => undefined);
 
     // Step 1 — get resumable upload URL from our proxy
     let uploadUrl: string;
@@ -193,6 +204,8 @@ export default function MatchEyePage() {
     setSecondHalf(initHalf());
     setFirstResult(null);
     setSecondResult(null);
+    setFirstTracking(null);
+    setSecondTracking(null);
     setGlobalError("");
     setHomeTeam("");
     setAwayTeam("");
@@ -270,7 +283,90 @@ export default function MatchEyePage() {
     );
   }
 
-  function HalfReport({ result, half }: { result: HalfResult; half: "first" | "second" }) {
+  // ── Ball Zone Activity panel (from local YOLOv8 tracking) ───────────────────
+  function TrackingPanel({ tracking }: { tracking: VideoMeasurement }) {
+    if (!tracking.ballTrajectory?.length && !tracking.playersInFrame) return null;
+
+    // Map ball x-positions (0–640 canvas) into 3 horizontal zones
+    const zones = [0, 0, 0]; // left / centre / right
+    for (const pt of tracking.ballTrajectory ?? []) {
+      const z = pt.x < 213 ? 0 : pt.x < 427 ? 1 : 2;
+      zones[z]++;
+    }
+    const maxZ = Math.max(...zones, 1);
+    const zoneLabels = ["Left Third", "Centre", "Right Third"];
+    const zoneColors = ["#3b82f6", "#1a5c2a", "#3b82f6"];
+
+    // 3×2 grid heatmap from playerHeatmap (if Python server was running)
+    const hmap = tracking.playerHeatmap;
+
+    return (
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span>Ball Zone Activity</span>
+          <span style={{ fontSize: 10, fontWeight: 700, background: "#f3f4f6", color: "#6b7280", padding: "2px 8px", borderRadius: 99 }}>
+            YOLOv8 · {tracking.ballTrajectory?.length ?? 0} frames
+          </span>
+        </div>
+
+        {/* Zone bars */}
+        <div style={{ display: "flex", gap: 8, marginBottom: hmap ? 14 : 0 }}>
+          {zones.map((count, i) => (
+            <div key={i} style={{ flex: 1, textAlign: "center" }}>
+              <div style={{ background: "#f9fafb", borderRadius: 8, padding: "4px 0", marginBottom: 4, height: 56, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <div style={{
+                  width: "60%", borderRadius: "4px 4px 0 0",
+                  height: `${Math.round((count / maxZ) * 100)}%`,
+                  background: zoneColors[i], minHeight: 4,
+                  transition: "height 0.3s",
+                }} />
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#374151" }}>{zoneLabels[i]}</div>
+              <div style={{ fontSize: 10, color: "#9ca3af" }}>{count} detections</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Player heatmap grid (only when Python server provided it) */}
+        {hmap && hmap.length > 0 && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 6 }}>Player Heatmap (ByteTrack)</div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${hmap[0].length}, 1fr)`, gap: 2 }}>
+              {hmap.map((row, ri) =>
+                row.map((val, ci) => {
+                  const intensity = Math.min(val / Math.max(...hmap.flat(), 1), 1);
+                  return (
+                    <div key={`${ri}-${ci}`} style={{
+                      height: 14, borderRadius: 3,
+                      background: `rgba(26,92,42,${0.1 + intensity * 0.9})`,
+                    }} />
+                  );
+                })
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 6, justifyContent: "flex-end" }}>
+              <span style={{ fontSize: 9, color: "#9ca3af" }}>Low</span>
+              {[0.15, 0.35, 0.6, 0.85, 1].map((o) => (
+                <div key={o} style={{ width: 12, height: 8, borderRadius: 2, background: `rgba(26,92,42,${o})` }} />
+              ))}
+              <span style={{ fontSize: 9, color: "#9ca3af" }}>High</span>
+            </div>
+          </div>
+        )}
+
+        {tracking.playersInFrame != null && (
+          <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280" }}>
+            Peak players detected: <strong style={{ color: "#1a1a1a" }}>{tracking.playersInFrame}</strong>
+            {(tracking.enginesUsed ?? []).length > 0 && (
+              <span style={{ marginLeft: 8 }}>· {tracking.enginesUsed.join(", ")}</span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function HalfReport({ result, half, tracking }: { result: HalfResult; half: "first" | "second"; tracking: VideoMeasurement | null }) {
     const a = result.analysis;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -284,6 +380,9 @@ export default function MatchEyePage() {
           <StatBox label="Shots (Away)"      value={String(a.shots_away ?? "—")}    sub={`On target: ${a.shots_on_target_away ?? "—"}`} />
           <StatBox label="Fouls Detected"    value={String(a.fouls_detected ?? "—")} />
         </div>
+
+        {/* Ball tracking panel (Super Engine — optional, appears when YOLOv8 fires) */}
+        {tracking && <TrackingPanel tracking={tracking} />}
 
         {/* Narrative */}
         {result.narrative && (
@@ -566,8 +665,8 @@ export default function MatchEyePage() {
               ))}
             </div>
 
-            {activeTab === "first"  && <HalfReport result={firstResult}  half="first"  />}
-            {activeTab === "second" && <HalfReport result={secondResult} half="second" />}
+            {activeTab === "first"  && <HalfReport result={firstResult}  half="first"  tracking={firstTracking}  />}
+            {activeTab === "second" && <HalfReport result={secondResult} half="second" tracking={secondTracking} />}
 
             {activeTab === "summary" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
