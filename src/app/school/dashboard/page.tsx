@@ -561,10 +561,12 @@ export default function SchoolDashboardPage() {
     <div style={{ minHeight:"100vh", background:"#f4f2ee" }}>
       <header style={{ background:"#fff", borderBottom:"1px solid #e5e5e5", position:"sticky", top:0, zIndex:50 }}>
         <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 20px", height:56, display:"flex", alignItems:"center", gap:14 }}>
-          <Link href="/" style={{ color:"#ccc" }}><Award size={18}/></Link>
+          <Link href="/school-hub" style={{ display:"flex", alignItems:"center", gap:5, color:"#555", textDecoration:"none", fontSize:12, fontWeight:700, whiteSpace:"nowrap" }}>
+            <Award size={14}/> School Hub
+          </Link>
           <div style={{ width:1, height:20, background:"#e5e5e5" }} />
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:14, fontWeight:900, color:"#111", lineHeight:1 }}>School & Academy Hub</div>
+            <div style={{ fontSize:14, fontWeight:900, color:"#111", lineHeight:1 }}>Academy Dashboard</div>
             <div style={{ fontSize:10, color:"#aaa", marginTop:1 }}>Churchill High School · 2026</div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 10px", background:currentRole.color+"12", borderRadius:20, border:`1px solid ${currentRole.color}25` }}>

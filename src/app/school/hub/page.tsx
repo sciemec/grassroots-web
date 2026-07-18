@@ -742,12 +742,13 @@ export default function SchoolHubPage() {
         position:"sticky", top:0, zIndex:20 }}>
         <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 20px", height:56,
           display:"flex", alignItems:"center", gap:14 }}>
-          <Link href="/" style={{ color:"#ccc", display:"flex" }}>
-            <ChevronRight size={20} style={{ transform:"rotate(180deg)" }}/>
+          <Link href="/school-hub" style={{ display:"flex", alignItems:"center", gap:5, color:"#555", textDecoration:"none", fontSize:12, fontWeight:700, whiteSpace:"nowrap" }}>
+            <ChevronRight size={16} style={{ transform:"rotate(180deg)" }}/> School Hub
           </Link>
+          <div style={{ width:1, height:20, background:"#e5e5e5" }} />
           <div style={{ flex:1 }}>
             <div style={{ fontSize:14, fontWeight:900, color:"#111" }}>
-              GRS School Hub
+              Grade Programme
             </div>
             <div style={{ fontSize:10, color:"#aaa" }}>
               Primary &amp; Secondary · Grade 1 → Form 6 · {totalPlayers} players
