@@ -9,7 +9,7 @@ import {
   Plus, CheckCircle, AlertCircle, User, Activity,
   Bell, Star, Search, Send, ChevronRight,
   BookOpen, Shield, Megaphone, Phone, Mail,
-  BarChart2, UserCheck, GraduationCap, Heart, Loader2, PieChart,
+  BarChart2, UserCheck, GraduationCap, Heart, Loader2, PieChart, ArrowLeft,
 } from "lucide-react";
 import { GenderToggle } from "@/components/school/GenderToggle";
 import { GenderProgrammePanel } from "@/components/school/GenderProgrammePanel";
@@ -405,6 +405,11 @@ export default function SchoolHubPage() {
           <span style={{ marginLeft:"auto", fontSize:12, color:"#aaa" }}>
             {loading ? "Syncing with backend..." : "Data loaded"}
           </span>
+          {role==="coach" && (
+            <Link href="/coach" style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:8, backgroundColor:"#f0fdf4", border:"1px solid #bbf7d0", color:"#1a5c2a", fontSize:12, fontWeight:600, textDecoration:"none", marginLeft:8, whiteSpace:"nowrap" }}>
+              <ArrowLeft size={12} /> Coach Hub
+            </Link>
+          )}
         </div>
       </div>
 
@@ -445,6 +450,7 @@ export default function SchoolHubPage() {
                 { href:"/school-hub/football", emoji:"⚽", title:"Football Programme", desc:"Training plans, drills, and match resources for your football teams.", color:"#1a5c2a", bg:"#f0fdf4", border:"#bbf7d0" },
                 { href:"/school/hub",          emoji:"📚", title:"Grade Programme",    desc:"Structured football curriculum from Grade 1 through Form 6.", color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
                 { href:"/school/dashboard",    emoji:"🏫", title:"Academy Dashboard",  desc:"Full academy management — staff, budgets, talent pipeline.", color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff" },
+                ...(role !== "parent" ? [{ href:"/coach", emoji:"🏆", title:"Coach Hub", desc:"Full coaching toolkit — live match, tactics, drills, AI insights.", color:"#c8962a", bg:"#fffbeb", border:"#fde68a" }] : []),
               ].map((tool) => (
                 <Link key={tool.href} href={tool.href} style={{ textDecoration:"none" }}>
                   <div style={{ backgroundColor:tool.bg, border:`1.5px solid ${tool.border}`, borderRadius:14, padding:"18px 20px", cursor:"pointer", transition:"box-shadow 0.15s" }}

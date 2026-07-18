@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, BookOpen, Dumbbell, Calendar,
   Brain, TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -209,6 +209,14 @@ export default function CoachHubPage() {
           <HubCard href="/coach/ai-insights" icon={BookOpen}   iconBg="#dcfce7" iconColor="#16a34a" label="AI Insights"  desc="THUTO coaching intelligence"   badge="ai" />
           <HubCard href="/arena"             icon={Globe}      iconBg="#dbeafe" iconColor="#2563eb" label="The Arena"    desc="Professional sports network"   />
           <HubCard href="/arena/recruitment" icon={UserSearch} iconBg="#ede9fe" iconColor="#7c3aed" label="Talent Board" desc="Open positions & talent wants" />
+        </div>
+
+        {/* ── 7. School Programme ────────────────────────────────────── */}
+        <SectionLabel>7 · School Programme</SectionLabel>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+          <HubCard href="/school-hub"      icon={School}         iconBg="#f0fdf4" iconColor="#1a5c2a" label="School Hub"      desc="NASH teams, fixtures & notices"   badge="nash" />
+          <HubCard href="/school-hub"      icon={GraduationCap}  iconBg="#ede9fe" iconColor="#7c3aed" label="Academy"         desc="Age-group football programmes"    />
+          <HubCard href="/school-leagues"  icon={Trophy}         iconBg="#fffbeb" iconColor="#c8962a" label="School Leagues"  desc="NASH / NAPH tournament tables"    />
         </div>
 
       </div>
