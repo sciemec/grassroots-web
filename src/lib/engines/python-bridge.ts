@@ -4,7 +4,8 @@
 // Server must be running at localhost:8765 (scripts/grs-ai-server/main.py).
 // Gracefully degrades — all functions return null if server is offline.
 
-const SERVER = 'http://localhost:8765';
+const SERVER =
+  process.env.NEXT_PUBLIC_GRS_AI_SERVER_URL ?? 'http://localhost:8765';
 const TIMEOUT_MS = 120_000;
 
 // Cache availability check for the session (re-check only once per page load)
