@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import jsPDF from "jspdf";
 import { useAuthStore } from "@/lib/auth-store";
 import {
@@ -425,6 +426,31 @@ export default function SchoolHubPage() {
         {/* ── OVERVIEW ─────────────────────────────────────────────────────── */}
         {tab==="overview" && (
           <div>
+            {/* ── School Hub Tools ─────────────────────────────────────────── */}
+            <h2 style={{ fontSize:16, fontWeight:700, color:"#555", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:12 }}>
+              School Tools
+            </h2>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:14, marginBottom:32 }}>
+              {[
+                { href:"/school-hub/football", emoji:"⚽", title:"Football Programme", desc:"Training plans, drills, and match resources for your football teams.", color:"#1a5c2a", bg:"#f0fdf4", border:"#bbf7d0" },
+                { href:"/school/hub",          emoji:"📚", title:"Grade Programme",    desc:"Structured football curriculum from Grade 1 through Form 6.", color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
+                { href:"/school/dashboard",    emoji:"🏫", title:"Academy Dashboard",  desc:"Full academy management — staff, budgets, talent pipeline.", color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff" },
+              ].map((tool) => (
+                <Link key={tool.href} href={tool.href} style={{ textDecoration:"none" }}>
+                  <div style={{ backgroundColor:tool.bg, border:`1.5px solid ${tool.border}`, borderRadius:14, padding:"18px 20px", cursor:"pointer", transition:"box-shadow 0.15s" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.10)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.boxShadow="none")}>
+                    <div style={{ fontSize:28, marginBottom:8 }}>{tool.emoji}</div>
+                    <div style={{ fontWeight:700, fontSize:15, color:tool.color, marginBottom:4 }}>{tool.title}</div>
+                    <div style={{ fontSize:13, color:"#555", lineHeight:1.5 }}>{tool.desc}</div>
+                    <div style={{ marginTop:10, fontSize:13, fontWeight:600, color:tool.color, display:"flex", alignItems:"center", gap:4 }}>
+                      Open <ChevronRight size={14} />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
             <h2 style={{ fontSize:20, fontWeight:700, color:"#1a1a1a", marginBottom:20 }}>
               {role==="parent" ? "Your Child's Dashboard" : "School Sports Overview"}
             </h2>
