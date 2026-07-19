@@ -169,6 +169,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/set-pieces"        icon={Video}      iconBg="#fdf4ff" iconColor="#a21caf" label="Set Piece Lab"      desc="Upload clips · Gemini Vision"  badge="ai" />
           <HubCard href="/coach/match-eye"         icon={Eye}        iconBg="#fee2e2" iconColor="#dc2626" label="Match Eye"          desc="Full match video analysis"     badge="ai" />
           <HubCard href="/coach/patterns"          icon={TrendingUp} iconBg="#dcfce7" iconColor="#059669" label="Strategic Patterns" desc="Identify winning patterns"     />
+          <HubCard href="/coach/tactics/learn"     icon={GraduationCap} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Tactics Academy"   desc="Formations, principles & badges" badge="new" />
         </div>
 
         {/* ── 3. Training ────────────────────────────────────────────── */}

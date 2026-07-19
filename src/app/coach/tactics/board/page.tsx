@@ -443,6 +443,11 @@ function BoardPageInner() {
             </div>
             <div className="text-[10px] text-gray-500 mt-0.5">Zone Map · Formation Builder · Draw Drills</div>
           </div>
+          <Link href="/coach/tactics/learn"
+            className="shrink-0 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-colors hover:bg-green-50"
+            style={{ color: "#1a5c2a", borderColor: "#1a5c2a" }}>
+            Learn
+          </Link>
         </div>
       </header>
 
