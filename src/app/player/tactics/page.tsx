@@ -6,7 +6,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
-import { Lock, ChevronLeft, Layers, Zap, CheckCircle2, XCircle } from "lucide-react";
+import { Lock, ChevronLeft, ChevronDown, ChevronUp, Layers, Zap, CheckCircle2, XCircle } from "lucide-react";
+import { FORMATION_LIBRARY } from "@/lib/thuto-tactics-knowledge";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -695,6 +696,7 @@ export default function PlayerTacticsPage() {
   const [posKey, setPosKey] = useState<PosKey>(detectPositionKey(rawPosition));
   const [activeTab, setActiveTab] = useState<"position" | "simulate">("position");
   const [selectedFormation, setSelectedFormation] = useState("4-3-3");
+  const [intelOpen, setIntelOpen] = useState(false);
 
   // Simulation state
   const [simIndex, setSimIndex] = useState(0);
@@ -886,6 +888,76 @@ export default function PlayerTacticsPage() {
                 )}
               </div>
             </div>
+
+            {/* Formation Intel */}
+            {(() => {
+              const intel = FORMATION_LIBRARY.find((f) => f.code === selectedFormation);
+              if (!intel) return null;
+              return (
+                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  <button
+                    className="w-full flex items-center justify-between px-4 py-3 text-left"
+                    onClick={() => setIntelOpen((v) => !v)}
+                  >
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400">Formation Intel</p>
+                      <p className="text-xs font-bold mt-0.5" style={{ color: GRS_GREEN }}>
+                        {intel.name}
+                        <span className="font-normal text-gray-500"> · {intel.style.charAt(0).toUpperCase() + intel.style.slice(1)} style · {intel.era}</span>
+                      </p>
+                    </div>
+                    {intelOpen
+                      ? <ChevronUp size={16} className="text-gray-400 shrink-0" />
+                      : <ChevronDown size={16} className="text-gray-400 shrink-0" />}
+                  </button>
+
+                  {intelOpen && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+                      {/* Strengths & Weaknesses */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-wider mb-1.5" style={{ color: GRS_GREEN }}>Strengths</p>
+                          <ul className="space-y-1.5">
+                            {intel.strengths.map((s) => (
+                              <li key={s} className="flex gap-1.5 items-start">
+                                <CheckCircle2 size={11} style={{ color: GRS_GREEN }} className="mt-0.5 shrink-0" />
+                                <span className="text-[11px] text-gray-700 leading-snug">{s}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-wider mb-1.5 text-red-600">Weaknesses</p>
+                          <ul className="space-y-1.5">
+                            {intel.weaknesses.map((w) => (
+                              <li key={w} className="flex gap-1.5 items-start">
+                                <XCircle size={11} className="text-red-400 mt-0.5 shrink-0" />
+                                <span className="text-[11px] text-gray-700 leading-snug">{w}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Best For */}
+                      <div
+                        className="rounded-xl p-2.5 text-[11px]"
+                        style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}
+                      >
+                        <span className="font-black uppercase tracking-wider" style={{ color: GRS_GREEN }}>Best For: </span>
+                        <span className="text-gray-700">{intel.bestFor}</span>
+                      </div>
+
+                      {/* Famous Use */}
+                      <div className="text-[11px] text-gray-500 italic">
+                        <span className="font-semibold not-italic text-gray-600">Famous Use: </span>
+                        {intel.famousUse}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Locked formations */}
             {!isPro && (
