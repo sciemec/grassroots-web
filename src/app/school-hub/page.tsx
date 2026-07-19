@@ -450,6 +450,7 @@ export default function SchoolHubPage() {
                 { href:"/school-hub/football", emoji:"⚽", title:"Football Programme", desc:"Training plans, drills, and match resources for your football teams.", color:"#1a5c2a", bg:"#f0fdf4", border:"#bbf7d0" },
                 { href:"/school/hub",          emoji:"📚", title:"Grade Programme",    desc:"Structured football curriculum from Grade 1 through Form 6.", color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
                 { href:"/school/dashboard",    emoji:"🏫", title:"Academy Dashboard",  desc:"Full academy management — staff, budgets, talent pipeline.", color:"#7c3aed", bg:"#faf5ff", border:"#e9d5ff" },
+                { href:"/arena",               emoji:"🏟️", title:"The Arena",          desc:"Connect with coaches, scouts and players. Post updates, join clubs, explore talent.", color:"#6d28d9", bg:"#faf5ff", border:"#ddd6fe" },
                 ...(role !== "parent" ? [{ href:"/coach", emoji:"🏆", title:"Coach Hub", desc:"Full coaching toolkit — live match, tactics, drills, AI insights.", color:"#c8962a", bg:"#fffbeb", border:"#fde68a" }] : []),
               ].map((tool) => (
                 <Link key={tool.href} href={tool.href} style={{ textDecoration:"none" }}>
