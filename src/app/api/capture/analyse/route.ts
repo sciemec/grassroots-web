@@ -20,7 +20,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { groqVision, groqText } from "@/lib/groq";
+import { geminiVision, geminiText } from "@/lib/gemini";
 
 interface AnalyseBody {
   frame?:       string;       // base64 JPEG
@@ -93,7 +93,7 @@ Return a JSON object with EXACTLY these three fields (no markdown, no extra text
 }`;
 
   // ── No API key — return a sensible fallback ───────────────────────────────
-  if (!process.env.GROQ_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     const fallback: FeedbackResult = {
       strength: `You showed up and put in the work on your ${drill.toLowerCase()}. That discipline is what separates players who improve from those who do not.`,
       correction: `Focus on your body position when performing ${drill.toLowerCase()}. Keep your knees slightly bent and your weight balanced over the ball — this gives you more control and quicker reaction time.`,
@@ -102,11 +102,11 @@ Return a JSON object with EXACTLY these three fields (no markdown, no extra text
     return NextResponse.json(fallback);
   }
 
-  // ── Call Groq (vision if frame provided, text-only otherwise) ─────────────
+  // ── Call Gemini (vision if frame provided, text-only otherwise) ───────────
   try {
     const raw = frame
-      ? await groqVision(systemPrompt, [frame], userPrompt, { max_tokens: 800 })
-      : await groqText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 800 });
+      ? await geminiVision(systemPrompt, [frame], userPrompt, { max_tokens: 800 })
+      : await geminiText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 800 });
 
     // Strip markdown code fences if present, then parse JSON
     const cleaned = raw

@@ -596,7 +596,7 @@ export default function ThutoChatCoach() {
       if (!open) setUnread((n) => n + 1);
 
     } catch {
-      // Groq failed — try offline knowledge base before showing an error
+      // Gemini failed — try offline knowledge base before showing an error
       const offline = await searchOffline(text);
       const content = offline
         ? `${offline.text}\n\n📚 _Offline mode — from ${offline.source}_`

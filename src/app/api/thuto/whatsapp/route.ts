@@ -8,11 +8,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // Input:  { from: "+263...", message: "THUTO how do I sprint faster?" }
 // Output: { reply: "short coaching text (max ~150 chars for WhatsApp)" }
 //
-// Uses Groq (primary) or Anthropic Claude (fallback) — same provider stack
-// as THUTO chat on the web app.
+// Uses Gemini 2.0 Flash (primary) or Anthropic Claude (fallback) — same provider
+// stack as THUTO chat on the web app.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const GROQ_API_KEY      = process.env.GROQ_API_KEY;
+const GEMINI_API_KEY    = process.env.GEMINI_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 // Strip the command keyword (THUTO / AMARA / COACH) from the raw message
@@ -58,29 +58,24 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // ── Try Groq first ─────────────────────────────────────────────────────────
-  if (GROQ_API_KEY) {
+  // ── Try Gemini first ────────────────────────────────────────────────────────
+  if (GEMINI_API_KEY) {
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+      const res = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model:      'llama-3.1-8b-instant',
-          max_tokens: 80,
-          messages: [
-            { role: 'system',  content: SYSTEM_PROMPT },
-            { role: 'user',    content: question },
-          ],
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: 'user', parts: [{ text: question }] }],
+          generationConfig: { maxOutputTokens: 80 },
         }),
         signal: AbortSignal.timeout(15_000),
       });
 
       if (res.ok) {
         const data = await res.json();
-        const text = data.choices?.[0]?.message?.content ?? '';
+        const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
         if (text) {
           return NextResponse.json({ reply: trimForWhatsApp(text) });
         }

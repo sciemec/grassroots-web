@@ -1,6 +1,6 @@
-// src/lib/audio-commentary.ts — Groq TTS audio commentary
+// src/lib/audio-commentary.ts — AI TTS audio commentary
 //
-// Uses /api/tts (Groq playai-tts) instead of window.speechSynthesis.
+// Uses /api/tts (server route) instead of window.speechSynthesis.
 // new Audio(blobUrl).play() works on ALL browsers including iOS Safari,
 // unlike speechSynthesis which is blocked on mobile when triggered from timers.
 //
@@ -8,7 +8,7 @@
 // before the first commentary line arrives. After that, audio chained via
 // onended plays freely without further gestures.
 
-class GroqAudioCommentary {
+class GeminiAudioCommentary {
   private queue: string[] = [];
   private isPlayingFlag = false;
   private unlocked = false;
@@ -83,10 +83,10 @@ class GroqAudioCommentary {
   }
 }
 
-let instance: GroqAudioCommentary | null = null;
+let instance: GeminiAudioCommentary | null = null;
 
-export function getAudioCommentary(): GroqAudioCommentary {
-  if (typeof window === 'undefined') return {} as GroqAudioCommentary;
-  if (!instance) instance = new GroqAudioCommentary();
+export function getAudioCommentary(): GeminiAudioCommentary {
+  if (typeof window === 'undefined') return {} as GeminiAudioCommentary;
+  if (!instance) instance = new GeminiAudioCommentary();
   return instance;
 }

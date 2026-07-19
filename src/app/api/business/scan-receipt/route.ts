@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { groqVision } from "@/lib/groq";
+import { geminiVision } from "@/lib/gemini";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +27,7 @@ Return ONLY a valid JSON array, no other text. Example:
 
 If you cannot read anything financial from this image, return an empty array: []`;
 
-    const text = await groqVision(
+    const text = await geminiVision(
       "You are a financial document scanner for a Zimbabwe sports platform.",
       [image],
       userText,
