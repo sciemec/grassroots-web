@@ -169,6 +169,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/set-pieces"        icon={Video}      iconBg="#fdf4ff" iconColor="#a21caf" label="Set Piece Lab"      desc="Upload clips · Gemini Vision"  badge="ai" />
           <HubCard href="/coach/match-eye"         icon={Eye}        iconBg="#fee2e2" iconColor="#dc2626" label="Match Eye"          desc="Full match video analysis"     badge="ai" />
           <HubCard href="/coach/patterns"          icon={TrendingUp} iconBg="#dcfce7" iconColor="#059669" label="Strategic Patterns" desc="Identify winning patterns"     />
+          <HubCard href="/coach/tactics/learn"     icon={GraduationCap} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Tactics Academy"   desc="Formations, principles & badges" badge="new" />
         </div>
 
         {/* ── 3. Training ────────────────────────────────────────────── */}
@@ -214,6 +215,7 @@ export default function CoachHubPage() {
         {/* ── 7. School Programme ────────────────────────────────────── */}
         <SectionLabel>7 · School Programme</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+          <HubCard href="/coach/school"    icon={Users}          iconBg="#dcfce7" iconColor="#16a34a" label="School Coach"    desc="Teams, fixtures & coaching tools" badge="new" />
           <HubCard href="/school-hub"      icon={School}         iconBg="#f0fdf4" iconColor="#1a5c2a" label="School Hub"      desc="NASH teams, fixtures & notices"   badge="nash" />
           <HubCard href="/school-hub"      icon={GraduationCap}  iconBg="#ede9fe" iconColor="#7c3aed" label="Academy"         desc="Age-group football programmes"    />
           <HubCard href="/school-leagues"  icon={Trophy}         iconBg="#fffbeb" iconColor="#c8962a" label="School Leagues"  desc="NASH / NAPH tournament tables"    />

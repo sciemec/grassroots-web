@@ -1,7 +1,5 @@
 // src/lib/commentary/engine.ts
-import Groq from 'groq-sdk';
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+import { geminiText } from '@/lib/gemini';
 
 export interface MatchEvent {
   id: string;
@@ -97,20 +95,13 @@ export async function generateCommentary(event: MatchEvent): Promise<string> {
     || COMMENTARY_PROMPTS.default(event);
 
   try {
-    const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
-      messages: [
-        { 
-          role: 'system', 
-          content: 'You are a passionate Zimbabwean football commentator. Speak clearly, energetically, and professionally. Return only the commentary text, no other content.' 
-        },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.8,
-      max_tokens: 200,
-    });
+    const text = await geminiText(
+      'You are a passionate Zimbabwean football commentator. Speak clearly, energetically, and professionally. Return only the commentary text, no other content.',
+      [{ role: 'user', content: prompt }],
+      { max_tokens: 200, temperature: 0.8 },
+    );
 
-    return completion.choices[0]?.message?.content || getFallbackCommentary(event);
+    return text || getFallbackCommentary(event);
   } catch (error) {
     console.error('Commentary generation error:', error);
     return getFallbackCommentary(event);

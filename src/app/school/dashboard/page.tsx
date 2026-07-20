@@ -129,7 +129,7 @@ function HeadmasterDashboard() {
       </div>
 
       <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e5e5", padding:18 }}>
-        <SectionHead title="Team Performance Overview" action="Full Report" actionHref="/school/reports" />
+        <SectionHead title="Team Performance Overview" action="Full Report" actionHref="/coach/stats" />
         <div style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
             <thead>
@@ -158,7 +158,7 @@ function HeadmasterDashboard() {
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
         <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e5e5", padding:18 }}>
-          <SectionHead title="Announcements" action="New" actionHref="/school/announcements/new" />
+          <SectionHead title="Announcements" action="New" actionHref="/school-hub" />
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {announcements.map((a,i) => (
               <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", background:a.urgent?"#fef2f2":"#f9fafb", borderRadius:10, border:a.urgent?"1px solid #fecaca":"1px solid #f0f0f0" }}>
@@ -173,7 +173,7 @@ function HeadmasterDashboard() {
         </div>
 
         <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e5e5", padding:18 }}>
-          <SectionHead title="Fee Collection Status" action="Full Report" actionHref="/school/fees" />
+          <SectionHead title="Fee Collection Status" action="Full Report" actionHref="/business-hub" />
           {[
             { label:"Paid in full",   pct:72, color:"#059669" },
             { label:"Partially paid", pct:18, color:GOLD      },
@@ -200,12 +200,12 @@ function HeadmasterDashboard() {
         <SectionHead title="Quick Actions" />
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:10 }}>
           {[
-            { label:"Send Announcement",  icon:<Megaphone size={16}/>,    href:"/school/announcements/new", color:G         },
-            { label:"Add Coach",          icon:<UserCheck size={16}/>,     href:"/school/staff/add",         color:"#2563eb" },
-            { label:"View EPR Report",    icon:<BarChart3 size={16}/>,     href:"/school/reports/epr",       color:GOLD      },
-            { label:"NASH Registration",  icon:<ClipboardList size={16}/>, href:"/school/compliance/nash",   color:"#7c3aed" },
-            { label:"Fee Collection",     icon:<DollarSign size={16}/>,    href:"/school/fees",              color:"#059669" },
-            { label:"AI Analysis",        icon:<Activity size={16}/>,      href:"/school/analysis",          color:"#dc2626" },
+            { label:"Send Announcement",  icon:<Megaphone size={16}/>,    href:"/school-hub",            color:G         },
+            { label:"Add Coach",          icon:<UserCheck size={16}/>,     href:"/admin/users",           color:"#2563eb" },
+            { label:"View EPR Report",    icon:<BarChart3 size={16}/>,     href:"/coach/stats",           color:GOLD      },
+            { label:"NASH Registration",  icon:<ClipboardList size={16}/>, href:"/school-leagues",        color:"#7c3aed" },
+            { label:"Fee Collection",     icon:<DollarSign size={16}/>,    href:"/business-hub",          color:"#059669" },
+            { label:"AI Analysis",        icon:<Activity size={16}/>,      href:"/coach/ai-insights",     color:"#dc2626" },
           ].map(a => (
             <Link key={a.label} href={a.href}
               style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", background:a.color+"0e", border:`1px solid ${a.color}20`, borderRadius:12, textDecoration:"none" }}>
@@ -274,7 +274,7 @@ function CoachDashboard() {
 
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e5e5", padding:18 }}>
-            <SectionHead title="Upcoming Fixtures" action="All Fixtures" actionHref="/coach/fixtures" />
+            <SectionHead title="Upcoming Fixtures" action="All Fixtures" actionHref="/coach/matches" />
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {upcoming.map(f => (
                 <div key={f.date} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 12px", background:"#f9fafb", borderRadius:10 }}>
@@ -295,10 +295,10 @@ function CoachDashboard() {
             <SectionHead title="Quick Actions" />
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {[
-                { label:"Log Training Session",    icon:<ClipboardList size={14}/>, href:"/coach/training/new",     color:G         },
-                { label:"Run AI Player Analysis",  icon:<Activity size={14}/>,      href:"/coach/tactics/analysis", color:"#dc2626" },
-                { label:"Message Parents",         icon:<MessageSquare size={14}/>, href:"/coach/messages",         color:"#7c3aed" },
-                { label:"Select Team for Fixture", icon:<Target size={14}/>,        href:"/coach/selection",        color:"#2563eb" },
+                { label:"Log Training Session",    icon:<ClipboardList size={14}/>, href:"/coach/training-plans/new", color:G         },
+                { label:"Run AI Player Analysis",  icon:<Activity size={14}/>,      href:"/coach/ai-insights",       color:"#dc2626" },
+                { label:"Message Parents",         icon:<MessageSquare size={14}/>, href:"/arena/messages",          color:"#7c3aed" },
+                { label:"Select Team for Fixture", icon:<Target size={14}/>,        href:"/coach/squad",             color:"#2563eb" },
               ].map(a => (
                 <Link key={a.label} href={a.href}
                   style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:a.color+"0e", border:`1px solid ${a.color}20`, borderRadius:10, textDecoration:"none" }}>
@@ -313,7 +313,7 @@ function CoachDashboard() {
       </div>
 
       <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e5e5", padding:18 }}>
-        <SectionHead title="Message Parents" action="View All" actionHref="/coach/messages" />
+        <SectionHead title="Message Parents" action="View All" actionHref="/arena/messages" />
         <div style={{ display:"flex", gap:10 }}>
           <input placeholder="Type a message to all squad parents..."
             style={{ flex:1, padding:"10px 14px", borderRadius:10, border:"1px solid #e5e5e5", fontSize:12, outline:"none" }} />
@@ -528,11 +528,11 @@ function StudentDashboard() {
           </div>
 
           <div style={{ background:"#fff", borderRadius:16, border:"1px solid #e5e5e5", padding:18 }}>
-            <SectionHead title="THUTO AI Coach" action="Chat" actionHref="/player/thuto" />
+            <SectionHead title="THUTO AI Coach" action="Chat" actionHref="/player/ai-coach" />
             <div style={{ padding:"12px 14px", background:"#f0fdf4", borderRadius:10, border:"1px solid #bbf7d0", fontSize:12, color:"#166534", lineHeight:1.6 }}>
               &quot;Tatenda, your left foot control has improved 12% this month. Focus on your weak-foot receiving drills today — 2 more sessions and you&apos;ll unlock the Advanced badge.&quot;
             </div>
-            <Link href="/player/thuto"
+            <Link href="/player/ai-coach"
               style={{ display:"block", marginTop:10, padding:"10px", background:G, color:"#fff", borderRadius:10, fontWeight:700, fontSize:12, textAlign:"center", textDecoration:"none" }}>
               Ask THUTO a question →
             </Link>

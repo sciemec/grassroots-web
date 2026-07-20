@@ -1,7 +1,5 @@
 // lib/commentary-engine.ts - NO MOCKS, REAL AI ONLY
-
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+import { geminiText } from '@/lib/gemini';
 
 export async function generateCommentary(event: {
   id: string;
@@ -12,38 +10,18 @@ export async function generateCommentary(event: {
   homeScore: number;
   awayScore: number;
 }): Promise<string> {
-  // Require API key - no fallback mocks
-  if (!GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY is required. Get free key from console.groq.com');
-  }
-  
   const prompt = getPromptForEvent(event);
-  
-  const response = await fetch(GROQ_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${GROQ_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 100
-    })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Groq API error: ${response.status}`);
-  }
-  
-  const data = await response.json();
-  const commentary = data.choices[0]?.message?.content;
-  
+
+  const commentary = await geminiText(
+    'You are a live radio commentator. Return ONLY the commentary text.',
+    [{ role: 'user', content: prompt }],
+    { max_tokens: 100, temperature: 0.7 },
+  );
+
   if (!commentary) {
     throw new Error('No commentary generated');
   }
-  
+
   return commentary;
 }
 

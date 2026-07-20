@@ -315,7 +315,7 @@ export default function ThutoChatVisitor() {
         { id: crypto.randomUUID(), role: "assistant", content: answer },
       ]);
     } catch {
-      // Groq failed — try offline knowledge base before showing an error
+      // Gemini failed — try offline knowledge base before showing an error
       const offline = await searchOffline(body);
       const content = offline
         ? `${offline.text}\n\n📚 _Offline mode — from ${offline.source}_`

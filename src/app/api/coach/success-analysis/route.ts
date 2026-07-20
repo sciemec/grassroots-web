@@ -7,9 +7,9 @@ export async function POST(req: NextRequest) {
       streak, daysRemaining, squadSize,
     } = await req.json();
 
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "GROQ_API_KEY not set" }, { status: 500 });
+      return NextResponse.json({ error: "GEMINI_API_KEY not set" }, { status: 500 });
     }
 
     const prompt = `You are THUTO — a motivational AI coach for Zimbabwean grassroots coaches.
@@ -30,17 +30,13 @@ Write a personal, warm weekly report in 3 short paragraphs:
 
 Keep it under 200 words. Write directly to the coach (use "you", not "the coach").`;
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 400,
-        temperature: 0.7,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 400, temperature: 0.7 },
       }),
     });
 
@@ -50,7 +46,7 @@ Keep it under 200 words. Write directly to the coach (use "you", not "the coach"
     }
 
     const data = await res.json();
-    const analysis = data.choices?.[0]?.message?.content ?? "";
+    const analysis: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     return NextResponse.json({ analysis });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

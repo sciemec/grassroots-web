@@ -1,5 +1,5 @@
 // lib/halftime-bots.ts
-import { groqText } from "@/lib/groq";
+import { geminiText } from "@/lib/gemini";
 
 interface MatchData {
   homeTeam?: string;
@@ -36,10 +36,10 @@ export async function generateHalftimeDebate(matchData: MatchData): Promise<stri
 
   // Run both AI calls concurrently — they are independent
   const [analystResponse, punditResponse] = await Promise.all([
-    groqText(ANALYST_PROMPT, matchContext).catch(
+    geminiText(ANALYST_PROMPT, matchContext).catch(
       () => "The numbers tell an interesting story — we'll have more at full time.",
     ),
-    groqText(PUNDIT_PROMPT, matchContext).catch(
+    geminiText(PUNDIT_PROMPT, matchContext).catch(
       () => "WHAT A HALF! I can't believe what I've just seen out there!",
     ),
   ]);

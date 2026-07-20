@@ -16,7 +16,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { groqText } from "@/lib/groq";
+import { geminiText } from "@/lib/gemini";
 
 export interface GroupDrill {
   order:        number;
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     ],
   };
 
-  // ── Ask Groq to build the plan ───────────────────────────────────────────
+  // ── Ask Gemini to build the plan ─────────────────────────────────────────
   const systemPrompt =
     "You are THUTO — a personal football development AI for grassroots players in Zimbabwe. " +
     "You believe that players learn faster when they train together and teach each other. " +
@@ -138,7 +138,7 @@ Each object must have exactly these fields:
 ]`;
 
   try {
-    const raw = await groqText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 1200 });
+    const raw = await geminiText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 1200 });
 
     const cleaned = raw
       .replace(/^```(?:json)?\s*/i, "")

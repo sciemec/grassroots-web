@@ -158,7 +158,7 @@ export default function PlayerPreviewPage() {
       const reply = data.response ?? data.answer ?? "I could not get a response right now.";
       setMessages([...nextMessages, { role: "assistant", content: reply }]);
     } catch {
-      setMessages([...nextMessages, { role: "assistant", content: "Connection error. Check GROQ_API_KEY in Vercel env vars." }]);
+      setMessages([...nextMessages, { role: "assistant", content: "Connection error. Check GEMINI_API_KEY in Vercel env vars." }]);
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
