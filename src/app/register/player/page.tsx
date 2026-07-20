@@ -134,6 +134,11 @@ export default function RegisterPlayerPage() {
       }
 
       if (!res.ok) {
+        // Cold start / server crash — show amber retry prompt, not red error
+        if (res.status >= 500) {
+          throw new Error("__waking__");
+        }
+
         const data = await res.json().catch(() => ({})) as {
           message?: string;
           errors?: Record<string, string[]>;
@@ -222,9 +227,19 @@ export default function RegisterPlayerPage() {
 
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-              {error}
-            </div>
+            error === "__waking__" ? (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                <p className="font-semibold">⏳ Server is starting up</p>
+                <p className="mt-1 text-xs leading-relaxed">
+                  Our server wakes up after a short rest — usually 30 seconds.
+                  Wait a moment then tap Register again.
+                </p>
+              </div>
+            ) : (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+                {error}
+              </div>
+            )
           )}
 
           {/* ── Step 1 — Personal Info ─────────────────────────────── */}
