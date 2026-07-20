@@ -253,6 +253,15 @@ export default function SchoolHubPage() {
   const [fixtures,       setFixtures]       = useState<Fixture[]>(SEED_FIXTURES);
   const [announcements,  setAnnouncements]  = useState<Announcement[]>(SEED_ANN);
   const [messages,       setMessages]       = useState<Message[]>(SEED_MSGS);
+  const [isMobile,       setIsMobile]       = useState(false);
+
+  // ── Detect mobile viewport ────────────────────────────────────────────────────
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // ── Hydrate role from localStorage/user.role ─────────────────────────────────
   useEffect(() => { setRole(defaultRole()); }, [defaultRole]);
@@ -491,7 +500,7 @@ export default function SchoolHubPage() {
               })}
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr", gap:20 }}>
               {/* Top teams */}
               <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", overflow:"hidden" }}>
                 <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0f0f0", display:"flex", alignItems:"center", gap:8 }}>
@@ -605,7 +614,7 @@ export default function SchoolHubPage() {
                 </button>
               )}
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:16 }}>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(320px,1fr))", gap:16 }}>
               {teams.map((t) => {
                 const total=t.wins+t.draws+t.losses; const pct=total?Math.round((t.wins/total)*100):0;
                 return (
@@ -620,7 +629,7 @@ export default function SchoolHubPage() {
                       </div>
                     </div>
                     <div style={{ padding:16 }}>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr 1fr 1fr", gap:8, marginBottom:14 }}>
                         {[{l:"Players",v:t.players},{l:"Wins",v:t.wins,c:"#16a34a"},{l:"Draws",v:t.draws,c:"#d97706"},{l:"Losses",v:t.losses,c:"#dc2626"}].map((s) => (
                           <div key={s.l} style={{ textAlign:"center" }}>
                             <div style={{ fontSize:20, fontWeight:800, color:s.c??"#1a1a1a" }}>{s.v}</div>
@@ -653,7 +662,7 @@ export default function SchoolHubPage() {
                 </button>
               )}
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:16 }}>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(300px,1fr))", gap:16 }}>
               {coaches.map((c) => (
                 <div key={c.id} style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", padding:20 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:14 }}>
@@ -696,13 +705,13 @@ export default function SchoolHubPage() {
               </div>
             )}
             <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", overflow:"hidden" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1fr", padding:"10px 20px", borderBottom:"1px solid #f0f0f0", backgroundColor:"#fafafa" }}>
+              <div style={{ display:isMobile?"none":"grid", gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1fr", padding:"10px 20px", borderBottom:"1px solid #f0f0f0", backgroundColor:"#fafafa" }}>
                 {["Name","Team","Position","Attendance","Form"].map((h) => (
                   <span key={h} style={{ fontSize:11, fontWeight:700, color:"#888", textTransform:"uppercase", letterSpacing:"0.05em" }}>{h}</span>
                 ))}
               </div>
               {(role==="parent" ? players.filter((p) => p.id==="1") : filteredPlayers).map((p) => (
-                <div key={p.id} style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1fr", padding:"14px 20px", borderBottom:"1px solid #f9f9f9", alignItems:"center" }}>
+                <div key={p.id} style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"2fr 1.5fr 1fr 1fr 1fr", padding:"14px 20px", borderBottom:"1px solid #f9f9f9", alignItems:"center" }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                     <div style={{ width:34, height:34, borderRadius:"50%", backgroundColor:"#f0fdf4", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:13, color:"#1a5c2a" }}>
                       {p.name.split(" ").map((n) => n[0]).join("").slice(0,2)}
@@ -770,7 +779,7 @@ export default function SchoolHubPage() {
 
         {/* ── MESSAGES ───────────────────────────────────────────────────────── */}
         {tab==="messages" && (
-          <div style={{ display:"grid", gridTemplateColumns:"320px 1fr", gap:20 }}>
+          <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"320px 1fr", gap:20 }}>
             <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", overflow:"hidden" }}>
               <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0f0f0", fontWeight:700, fontSize:15 }}>Inbox</div>
               {messages.map((m) => (
@@ -867,7 +876,7 @@ export default function SchoolHubPage() {
         {tab==="reports" && (
           <div>
             <h2 style={{ fontSize:20, fontWeight:700, marginBottom:20 }}>Term Performance Reports</h2>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:16 }}>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(320px,1fr))", gap:16 }}>
               {teams.map((t) => {
                 const total=t.wins+t.draws+t.losses; const pct=total?Math.round((t.wins/total)*100):0;
                 const grade=pct>=70?"A":pct>=50?"B":pct>=35?"C":"D";
@@ -941,7 +950,7 @@ export default function SchoolHubPage() {
               </div>
 
               {/* Gender toggle split */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:28 }}>
+              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr", gap:20, marginBottom:28 }}>
                 {/* Participation bar */}
                 <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", padding:20 }}>
                   <p style={{ fontWeight:700, fontSize:15, marginBottom:16 }}>Participation Split</p>
@@ -991,7 +1000,7 @@ export default function SchoolHubPage() {
               </div>
 
               {/* Gender Programme Panel + Province breakdown */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr", gap:20 }}>
                 <div style={{ backgroundColor:"#fff", borderRadius:12, border:"1px solid #e5e5e5", padding:20 }}>
                   <GenderProgrammePanel gender={genderFilter} />
                 </div>
