@@ -2,6 +2,64 @@
 
 ---
 
+## SESSION LOG — 21 July 2026
+
+### Theme — Login Proxy Timeout Fix + Registration Cold-Start Banners
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Login Proxy — AbortController Timeout + Friendly Cold-Start Messages ✅
+
+**File:** `src/app/api/auth/login/route.ts`
+**Commit:** `57cf1a24` — pushed to `sciemec/grassroots-web` main → Render auto-deployed
+
+**Root cause:** The login proxy had no timeout on its internal `fetch()` call. When Render's free-tier backend wakes from sleep (30–60 second cold start), the proxy `fetch()` hung indefinitely. Vercel killed the serverless function at its own timeout limit, returning a generic unhelpful error instead of a friendly cold-start message.
+
+**Fix applied:**
+- `export const maxDuration = 60` — extends Vercel function timeout to 60 seconds
+- `AbortController` with 90-second `setTimeout` — aborts the hanging fetch before Vercel kills it
+- `AbortError` handler returns `503 { message: "Server is waking up — please try again in 30 seconds." }`
+- HTTP 5xx handler returns the same friendly 503 (covers cases where Render responds but with error)
+- All `clearTimeout(timeout)` calls are in `finally` blocks — never leaks the timer
+
+**Result:** Users who log in while Render is cold-starting now see the same friendly amber "Server is waking up" message that the registration pages show, instead of a confusing connection error.
+
+---
+
+#### 2. Registration Pages — `__waking__` Cold-Start Banners ✅
+
+**Commit:** `ebd5feed` (prior session, documented here for completeness)
+
+Added `__waking__` sentinel error string + amber "⏳ Server is starting up" banner to all 3 remaining registration pages:
+- `src/app/register/coach/page.tsx` — amber banner added
+- `src/app/register/scout/page.tsx` — amber banner added
+- `src/app/register/fan/page.tsx` — amber banner added
+
+Player registration (`src/app/register/player/page.tsx`) already had this banner from a prior session.
+
+**How it works:** On HTTP 5xx from Laravel, throw `new Error("__waking__")`. JSX checks `error === "__waking__"` and renders the amber banner instead of the generic red error card.
+
+---
+
+### WHAT STILL NEEDS DOING (21 July 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Coach marketplace migrations | WRITTEN — NOT YET ON RENDER | Copy 4 migrations to bhora-ai → push → auto-migrates |
+| `CoachController` + `CoachingSessionController` | WRITTEN — NOT IN bhora-ai | Copy controllers → add routes to `routes/api.php` |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
 ## SESSION LOG — 14 July 2026
 
 ### Theme — Coaching Marketplace: Browse + Profile/Booking Pages
