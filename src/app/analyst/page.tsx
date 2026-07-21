@@ -9,6 +9,7 @@ import {
   ShieldCheck, GraduationCap, Zap, Trophy,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import SyncStatusBadge from "@/components/ui/SyncStatusBadge";
 
 function greeting(): string {
   const h = new Date().getHours();

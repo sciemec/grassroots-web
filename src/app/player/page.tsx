@@ -19,6 +19,7 @@ import api from "@/lib/api";
 import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
 import { useSport } from "@/lib/use-sport";
 import SportSwitcher from "@/components/ui/SportSwitcher";
+import SyncStatusBadge from "@/components/ui/SyncStatusBadge";
 
 function greeting(): string {
   const h = new Date().getHours();
