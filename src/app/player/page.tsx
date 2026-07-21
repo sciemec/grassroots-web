@@ -333,15 +333,15 @@ export default function PlayerDashboardHome() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>{greeting()},</p>
-                <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user.name || "Athlete"}</h2>
+                <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user?.name || "Player Hub"}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
                     <ShieldCheck size={9} /> {currentStage.label} Â· {currentStage.sub}
                   </span>
-                  {(user as unknown as Record<string, string>).province && (
+                  {(user as unknown as Record<string, string> | null)?.province && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      <MapPin size={9} /> {(user as unknown as Record<string, string>).province}
+                      <MapPin size={9} /> {(user as unknown as Record<string, string> | null)?.province}
                     </span>
                   )}
                 </div>
@@ -715,9 +715,9 @@ export default function PlayerDashboardHome() {
             <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
               style={{ backgroundColor: "#1a5c2a", color: "#f0b429" }}>{initials}</div>
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
+              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user?.name || "Active Session"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {(user as unknown as Record<string, string>).province || "Zimbabwe"} Â· {currentStage.label}
+                {(user as unknown as Record<string, string> | null)?.province || "Zimbabwe"} Â· {currentStage.label}
               </p>
             </div>
           </div>

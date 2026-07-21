@@ -182,7 +182,7 @@ export default function ScoutHubPage() {
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>
                     <ShieldCheck size={9} /> Scout Â· Active
                   </span>
-                  {user.province && (
+                  {user?.province && (
                     <span className="text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
                       ðŸ“ {user.province}
                     </span>
@@ -306,7 +306,7 @@ export default function ScoutHubPage() {
               {initials}
             </div>
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user.name || "Active Session"}</p>
+              <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user?.name || "Scout Hub"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
                 {user.province || "Zimbabwe"} Â· Scout
               </p>
