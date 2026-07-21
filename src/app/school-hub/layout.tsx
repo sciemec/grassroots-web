@@ -11,9 +11,9 @@ export default function SchoolHubLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!user) router.push("/login");
+    // Guests welcome — no login redirect
   }, [hasHydrated, user, router]);
 
-  if (!hasHydrated || !user) return null;
+  if (!hasHydrated) return null;
   return <>{children}</>;
 }

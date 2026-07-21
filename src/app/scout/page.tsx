@@ -184,7 +184,7 @@ export default function ScoutHubPage() {
                   </span>
                   {user?.province && (
                     <span className="text-[10px] font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>
-                      ðŸ“ {user.province}
+                      ðŸ“ {user?.province}
                     </span>
                   )}
                 </div>
@@ -308,7 +308,7 @@ export default function ScoutHubPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-wide text-gray-900 leading-none">{user?.name || "Scout Hub"}</p>
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                {user.province || "Zimbabwe"} Â· Scout
+                {user?.province || "Zimbabwe"} Â· Scout
               </p>
             </div>
           </div>
