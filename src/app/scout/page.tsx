@@ -112,11 +112,11 @@ export default function ScoutHubPage() {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!user) { router.replace("/login"); return; }
-    if (user.role !== "scout" && user.role !== "admin") router.replace("/arena");
+    // Guests are welcome — only redirect wrong-role logged-in users
+    if (user && user.role !== "scout" && user.role !== "admin") router.replace("/arena");
   }, [hydrated, user, router]);
 
-  if (!hydrated || !user) {
+  if (!hydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
         <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
@@ -124,7 +124,7 @@ export default function ScoutHubPage() {
     );
   }
 
-  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : "SC";
+  const initials = user?.name ? user.name.slice(0, 2).toUpperCase() : "SC";
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
@@ -176,7 +176,7 @@ export default function ScoutHubPage() {
             <div className="relative flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold" style={{ color: "rgba(240,180,41,0.7)" }}>{greeting()},</p>
-                <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user.name || "Scout"}</h2>
+                <h2 className="text-2xl font-black mt-0.5 leading-tight truncate" style={{ color: "#f0b429" }}>{user?.name || "Scout Hub"}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429", border: "1px solid rgba(240,180,41,0.25)" }}>

@@ -218,7 +218,7 @@ export default function PlayerDashboardHome() {
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!user) router.replace("/login");
+    // Guests are welcome — no login redirect for unauthenticated visitors
   }, [hydrated, user, router]);
 
   useEffect(() => {
@@ -269,7 +269,7 @@ export default function PlayerDashboardHome() {
       .catch(() => {});
   }, [hydrated, user]);
 
-  if (!hydrated || !user) {
+  if (!hydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f4f2ee" }}>
         <Activity className="animate-spin" size={28} style={{ color: "#1a5c2a" }} />
@@ -277,8 +277,8 @@ export default function PlayerDashboardHome() {
     );
   }
 
-  const initials    = user.name ? user.name.slice(0, 2).toUpperCase() : "GR";
-  const stageIndex  = getPathwayStage((user as unknown as Record<string, string>).age_group);
+  const initials    = user?.name ? user.name.slice(0, 2).toUpperCase() : "GR";
+  const stageIndex  = getPathwayStage((user as unknown as Record<string, string> | null)?.age_group);
   const currentStage = PATHWAY_STAGES[stageIndex];
   const nextStage    = PATHWAY_STAGES[stageIndex + 1];
 
