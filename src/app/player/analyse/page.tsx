@@ -376,24 +376,37 @@ export default function AnalysePage() {
       // Auto-post to Arena (non-blocking, best-effort)
       if (fbText && user) void postToArena(fbText);
 
-      // Save as discoverable showcase record so scouts can find this analysis
+      // Save as unified media record (context=drill_analysis) so scouts can find this analysis
       if (fbText && token && token !== "dev-token") {
         const sentences = fbText.split(/[.!?]/).map((s: string) => s.trim()).filter(Boolean);
-        void fetch(`${API_URL}/player/showcase`, {
+        void fetch(`${API_URL}/media`, {
           method:  "POST",
           headers: {
             "Content-Type":  "application/json",
             "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({
-            skill_type:       drill,
-            video_url:        "",
-            ai_rating:        7,
-            top_strength:     sentences[0] ?? fbText.slice(0, 120),
-            position_fit:     [position],
-            scout_note:       fbText.slice(0, 280),
-            development_flag: sentences[sentences.length - 1] ?? "",
-            open_for_scouting: true,
+            r2_key:     `drill_analysis/${user?.id ?? "unknown"}/${Date.now()}`,
+            r2_url:     "",
+            media_type: "video",
+            title:      `${sport.label} — ${drill}`,
+            context:    "drill_analysis",
+            visibility: "coach_only",
+            metadata: {
+              drill_name: drill,
+              sport:      sport.id,
+              position,
+              ai_rating:  7,
+              top_strength:     sentences[0] ?? fbText.slice(0, 120),
+              position_fit:     [position],
+              development_flag: sentences[sentences.length - 1] ?? "",
+            },
+            ai_feedback: JSON.stringify({
+              score:       7,
+              strengths:   sentences[0] ?? "",
+              improvements: sentences[sentences.length - 1] ?? "",
+              raw:         fbText,
+            }),
           }),
         }).catch(() => { /* best-effort */ });
       }

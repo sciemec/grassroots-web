@@ -141,20 +141,25 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
 
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const res = await fetch(`${API}/fan-hub/videos`, {
+      const res = await fetch(`${API}/media`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token && token !== "dev-token" ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          title:         title.trim(),
-          clip_type:     clipType,
-          province:      province || null,
-          uploader_name: uploaderName.trim() || null,
-          r2_key:        r2Key,
-          r2_url:        r2Url,
-          file_size_bytes: file?.size ?? null,
+          r2_key:     r2Key,
+          r2_url:     r2Url,
+          media_type: "video",
+          title:      title.trim(),
+          context:    "fan_hub",
+          visibility: "public",
+          metadata: {
+            clip_type:     clipType,
+            province:      province || null,
+            uploader_name: uploaderName.trim() || null,
+          },
+          size_bytes: file?.size ?? null,
         }),
       });
 

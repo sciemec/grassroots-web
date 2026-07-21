@@ -80,15 +80,45 @@ export default function FanHubPage() {
     return params.toString();
   }, []);
 
+  // Adapter: user_media record → FanHubVideo shape
+  const adaptMediaToFanVideo = (m: Record<string, unknown>): FanHubVideo => {
+    const meta = (m.metadata as Record<string, unknown>) ?? {};
+    return {
+      id:               String(m.id),
+      title:            String(m.title ?? "Untitled"),
+      clip_type:        String(meta.clip_type ?? "highlight"),
+      province:         meta.province ? String(meta.province) : null,
+      r2_key:           String(m.r2_key ?? ""),
+      r2_url:           String(m.r2_url ?? ""),
+      thumbnail_url:    m.thumbnail_url ? String(m.thumbnail_url) : null,
+      duration_seconds: m.duration_seconds ? Number(m.duration_seconds) : null,
+      uploader_name:    meta.uploader_name ? String(meta.uploader_name) : null,
+      uploader_id:      null,
+      tagged_player_id: null,
+      view_count:       Number(m.view_count ?? 0),
+      is_featured:      false,
+      is_live:          false,
+      is_ai_generated:  Boolean(m.is_ai_analysed),
+      status:           "approved",
+      created_at:       String(m.created_at ?? ""),
+    };
+  };
+
   const fetchFeed = useCallback(async (cat: string, prov: string) => {
     setLoading(true);
     setError("");
     setPage(1);
 
     try {
-      const [featRes, feedRes, aiRes, statsRes, hlRes] = await Promise.allSettled([
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      const authHeaders = token && token !== "dev-token"
+        ? { Authorization: `Bearer ${token}` }
+        : {};
+
+      const [featRes, feedRes, mediaRes, aiRes, statsRes, hlRes] = await Promise.allSettled([
         fetch(`${API}/fan-hub/videos/featured`),
         fetch(`${API}/fan-hub/videos?${buildQuery(1, cat, prov)}`),
+        fetch(`${API}/media/discover?context=fan_hub&per_page=20`, { headers: authHeaders }),
         fetch(`${API}/fan-hub/videos/ai-clips`),
         fetch(`${API}/fan-hub/stats`),
         fetch(`${API}/highlights/feed`),
@@ -99,19 +129,39 @@ export default function FanHubPage() {
         setFeatured(d.data ?? null);
       }
 
+      // Merge legacy + unified media feeds (dedupe by r2_key)
+      const legacyVideos: FanHubVideo[] = [];
+      let lastPage = 1;
       if (feedRes.status === "fulfilled" && feedRes.value.ok) {
         const d = await feedRes.value.json() as { data: FanHubVideo[]; last_page?: number };
         const _r = d.data ?? d;
-        setVideos(Array.isArray(_r) ? _r : []);
-        setHasMore((d.last_page ?? 1) > 1);
-      } else {
-        setVideos([]);
+        if (Array.isArray(_r)) legacyVideos.push(..._r.map((v) => ({ ...v, id: String(v.id) })));
+        lastPage = d.last_page ?? 1;
       }
+
+      const unifiedVideos: FanHubVideo[] = [];
+      if (mediaRes.status === "fulfilled" && mediaRes.value.ok) {
+        const d = await mediaRes.value.json() as { data: Record<string, unknown>[] };
+        const _r = d.data ?? d;
+        if (Array.isArray(_r)) unifiedVideos.push(..._r.map(adaptMediaToFanVideo));
+      }
+
+      // Unified records first (newest uploads), then legacy — dedupe by r2_key
+      const seenKeys = new Set<string>();
+      const merged: FanHubVideo[] = [];
+      for (const v of [...unifiedVideos, ...legacyVideos]) {
+        if (!seenKeys.has(v.r2_key)) {
+          seenKeys.add(v.r2_key);
+          merged.push(v);
+        }
+      }
+      setVideos(merged);
+      setHasMore(lastPage > 1);
 
       if (aiRes.status === "fulfilled" && aiRes.value.ok) {
         const d = await aiRes.value.json() as { data: FanHubVideo[] };
         const _r = d.data ?? d;
-        setAiClips(Array.isArray(_r) ? _r : []);
+        setAiClips(Array.isArray(_r) ? _r.map((v) => ({ ...v, id: String(v.id) })) : []);
       }
 
       if (statsRes.status === "fulfilled" && statsRes.value.ok) {
@@ -140,7 +190,7 @@ export default function FanHubPage() {
       if (!res.ok) throw new Error("Failed to load more");
       const d = await res.json() as { data: FanHubVideo[]; last_page?: number };
       const _r = d.data ?? d;
-      const newVideos = Array.isArray(_r) ? _r : [];
+      const newVideos = Array.isArray(_r) ? _r.map((v) => ({ ...v, id: String(v.id) })) : [];
       setVideos((prev) => [...prev, ...newVideos]);
       setPage(nextPage);
       setHasMore(nextPage < (d.last_page ?? 1));
@@ -151,8 +201,11 @@ export default function FanHubPage() {
     }
   };
 
-  const handleReport = async (videoId: number) => {
-    await fetch(`${API}/fan-hub/videos/${videoId}/report`, { method: "POST" }).catch(() => {});
+  const handleReport = async (videoId: string) => {
+    // Only call legacy report endpoint for numeric IDs (old fan_hub_videos rows)
+    if (/^\d+$/.test(videoId)) {
+      await fetch(`${API}/fan-hub/videos/${videoId}/report`, { method: "POST" }).catch(() => {});
+    }
   };
 
   // Initial load

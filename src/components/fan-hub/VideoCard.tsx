@@ -3,7 +3,7 @@
 import { Play, Eye, MapPin, Cpu } from "lucide-react";
 
 export interface FanHubVideo {
-  id: number;
+  id: string;
   title: string;
   clip_type: string;
   province: string | null;
@@ -12,8 +12,8 @@ export interface FanHubVideo {
   thumbnail_url: string | null;
   duration_seconds: number | null;
   uploader_name: string | null;
-  uploader_id: number | null;
-  tagged_player_id: number | null;
+  uploader_id: string | number | null;
+  tagged_player_id: string | number | null;
   view_count: number;
   is_featured: boolean;
   is_live: boolean;
