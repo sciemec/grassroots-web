@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -18,11 +18,33 @@ function LoginForm() {
   const [showPass, setShowPass]     = useState(false);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
+  const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const isWaking = error?.includes('waking up') ?? false;
+
+  useEffect(() => {
+    if (retryCountdown === null) return;
+    if (retryCountdown <= 0) {
+      setRetryCountdown(null);
+      // Auto-submit
+      document.getElementById('login-submit-btn')?.click();
+      return;
+    }
+    retryTimerRef.current = setInterval(() => {
+      setRetryCountdown((c) => (c !== null ? c - 1 : null));
+    }, 1000);
+    return () => {
+      if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+    };
+  }, [retryCountdown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setRetryCountdown(null);
+    if (retryTimerRef.current) clearInterval(retryTimerRef.current);
 
     // ── Dev-bypass: admin testing without backend ──────────────────────────
     if (identifier.toLowerCase() === 'nnygel@live.com') {
@@ -55,16 +77,19 @@ function LoginForm() {
       if (!e.response) {
         setError(
           e?.code === 'ECONNABORTED'
-            ? 'Server is waking up — please try again in 30 seconds.'
+            ? (() => { setRetryCountdown(30); return 'Server is waking up — please try again in 30 seconds.'; })()
             : `Network error: Cannot reach server. (${e?.code ?? 'no response'})`
         );
       } else {
         const d = e.response.data as Record<string, unknown> | null;
-        setError(
+        const msg =
           (d?.message as string) ??
           (d?.error as string) ??
-          `Server returned ${e.response.status}: ${JSON.stringify(d)}`
-        );
+          `Server returned ${e.response.status}: ${JSON.stringify(d)}`;
+        if (e.response.status === 503 || msg.includes('waking up')) {
+          setRetryCountdown(30);
+        }
+        setError(msg);
       }
     } finally {
       setLoading(false);
@@ -104,11 +129,26 @@ function LoginForm() {
             </div>
           )}
 
-          {error && (
+          {isWaking ? (
+            <div className="mb-4 p-3 rounded-lg bg-amber-900/20 border border-amber-500/30 text-amber-300 text-sm">
+              <p className="font-semibold">⏳ Server is starting up</p>
+              <p className="mt-1 text-xs leading-relaxed">
+                Our server wakes up after a short rest — usually 30 seconds.
+                {retryCountdown !== null && ` Auto-retrying in ${retryCountdown}s…`}
+              </p>
+              <button
+                type="button"
+                onClick={() => { setRetryCountdown(null); document.getElementById('login-submit-btn')?.click(); }}
+                className="mt-2 text-xs underline text-amber-300 hover:text-amber-200"
+              >
+                Retry now
+              </button>
+            </div>
+          ) : error ? (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
               {error}
             </div>
-          )}
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -160,6 +200,7 @@ function LoginForm() {
             </div>
 
             <button
+              id="login-submit-btn"
               type="submit"
               disabled={loading || !identifier || !password}
               className="w-full py-3 rounded-xl font-semibold text-sm
