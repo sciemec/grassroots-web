@@ -750,11 +750,11 @@ cd D:/bhora-ai/grassroots-web && git add -A && git commit -m "$(cat <<'EOF'
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 EOF
-)" && git push origin main:master
+)" && git push origin main
 ```
 
-Render auto-deploys from the master branch — pushing to GitHub IS the deployment.
-No need to run any CLI. Just `git push origin main:master`.
+Render auto-deploys from the main branch — pushing to GitHub IS the deployment.
+No need to run any CLI. Just `git push origin main`.
 
 ---
 
