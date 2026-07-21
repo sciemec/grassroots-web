@@ -17,6 +17,25 @@ function round1(n: number) { return Math.round(n * 10) / 10; }
 
 const LS_KEY = "grassroots_vault_videos";
 
+// Adapts a user_media record from /media?context=vault into PlayerVideo shape
+function adaptMediaToVideo(m: Record<string, unknown>): PlayerVideo {
+  const meta = (m.metadata as Record<string, unknown>) ?? {};
+  const sizeBytes = Number(m.size_bytes ?? 0);
+  return {
+    id:            String(m.id),
+    title:         String(m.title ?? meta.description ?? "Untitled"),
+    description:   meta.description ? String(meta.description) : undefined,
+    r2_key:        String(m.r2_key ?? ""),
+    tag:           (meta.tag as VideoTag) ?? "Skills",
+    duration:      m.duration_seconds ? Number(m.duration_seconds) : undefined,
+    size_mb:       sizeBytes > 0 ? Math.round((sizeBytes / (1024 * 1024)) * 10) / 10 : 0,
+    thumbnail_url: m.thumbnail_url ? String(m.thumbnail_url) : undefined,
+    video_url:     String(m.r2_url ?? ""),
+    created_at:    String(m.created_at ?? ""),
+  };
+}
+
+
 function loadLocalVideos(): PlayerVideo[] {
   try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]"); } catch { return []; }
 }
@@ -184,15 +203,23 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
       });
       set({ progress: 92 });
 
-      // Step 3 — save metadata to Laravel
-      const res = await api.post("/player/vault/metadata", {
-        r2_key:      key,
-        title:       state.title,
-        tag:         state.tag,
-        description: state.description || undefined,
-        size_mb:     sizeMb,
+      // Step 3 — save metadata to unified /media endpoint
+      const publicUrl = key ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? ""}/${key}` : "";
+      const res = await api.post("/media", {
+        r2_key:     key,
+        r2_url:     publicUrl,
+        media_type: "video",
+        title:      state.title,
+        context:    "vault",
+        visibility: "private",
+        metadata: {
+          tag:         state.tag,
+          description: state.description || undefined,
+        },
+        size_bytes: state.file?.size,
       });
-      onUploaded(res.data.video);
+      const saved = res.data?.data ?? res.data;
+      onUploaded(adaptMediaToVideo(saved as Record<string, unknown>));
       // Post to Arena feed (fire-and-forget)
       postToArena(
         `Added "${state.title}" to my Highlight Vault.`,
@@ -369,7 +396,7 @@ function VideoCard({
       return;
     }
     try {
-      await api.delete(`/player/vault/${video.id}`);
+      await api.delete(`/media/${video.id}`);
       onDelete(video.id);
     } catch {
       // If delete fails (backend down), remove locally anyway
@@ -778,19 +805,31 @@ export default function PlayerVaultPage() {
 
   const fetchVault = useCallback(async () => {
     try {
-      const res = await api.get("/player/vault");
-      setVideos(res.data.videos ?? []);
-      setStorage(res.data.storage);
+      // Try unified /media endpoint first
+      const res = await api.get("/media?context=vault");
+      const raw = res.data?.data ?? res.data?.items ?? res.data;
+      const arr = Array.isArray(raw) ? raw : (raw?.data ?? []);
+      const vids: PlayerVideo[] = arr.map((m: Record<string, unknown>) => adaptMediaToVideo(m));
+      const usedBytes = arr.reduce((sum: number, m: Record<string, unknown>) => sum + Number(m.size_bytes ?? 0), 0);
+      setVideos(vids);
+      setStorage({ used_mb: Math.round((usedBytes / (1024 * 1024)) * 10) / 10, limit_mb: 500 });
       setLocalMode(false);
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      // 404/405 = backend controller not yet deployed → use localStorage
-      if (!status || status === 404 || status === 405 || status >= 500) {
-        const local = loadLocalVideos();
-        setVideos(local);
-        const usedMb = local.reduce((sum, v) => sum + (v.size_mb ?? 0), 0);
-        setStorage({ used_mb: usedMb, limit_mb: 500 });
-        setLocalMode(true);
+    } catch {
+      // Fall back to legacy /player/vault endpoint
+      try {
+        const res = await api.get("/player/vault");
+        setVideos(res.data.videos ?? []);
+        setStorage(res.data.storage ?? { used_mb: 0, limit_mb: 500 });
+        setLocalMode(false);
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (!status || status === 404 || status === 405 || status >= 500) {
+          const local = loadLocalVideos();
+          setVideos(local);
+          const usedMb = local.reduce((sum, v) => sum + (v.size_mb ?? 0), 0);
+          setStorage({ used_mb: usedMb, limit_mb: 500 });
+          setLocalMode(true);
+        }
       }
     } finally {
       setLoading(false);
