@@ -52,6 +52,26 @@ type Phase = "idle" | "extracting" | "uploading" | "analysing" | "done" | "error
 
 const LS_KEY = "grassroots_showcase_clips";
 
+// Adapts a user_media record from /media?context=showcase into ShowcaseClip shape
+function adaptMediaToClip(m: Record<string, unknown>): ShowcaseClip {
+  const meta = (m.metadata as Record<string, unknown>) ?? {};
+  const fb   = (m.ai_feedback as Record<string, unknown>) ?? {};
+  return {
+    id:               String(m.id),
+    skill_type:       (meta.skill_type as SkillType) ?? "dribbling",
+    video_url:        String(m.r2_url ?? ""),
+    ai_rating:        Number(fb.score ?? meta.ai_rating ?? 7),
+    top_strength:     String(fb.strengths ?? meta.top_strength ?? ""),
+    position_fit:     Array.isArray(meta.position_fit) ? (meta.position_fit as string[]) : [],
+    scout_note:       String(fb.scout_note ?? ""),
+    development_flag: String(fb.improvements ?? meta.development_flag ?? ""),
+    open_for_scouting: m.visibility === "scout_visible",
+    view_count:       Number(m.view_count ?? 0),
+    created_at:       String(m.created_at ?? ""),
+  };
+}
+
+
 function loadLocalClips(): ShowcaseClip[] {
   if (typeof window === "undefined") return [];
   try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]"); } catch { return []; }
@@ -102,18 +122,31 @@ export default function ShowcasePage() {
 
   // Load clips — try API, fall back to localStorage
   useEffect(() => {
+    // Try unified /media endpoint first, fall back to legacy /player/showcase
     api
-      .get("/player/showcase")
+      .get("/media?context=showcase")
       .then((res) => {
-        const _r = res.data?.data ?? res.data; const data: ShowcaseClip[] = Array.isArray(_r) ? _r : [];
+        const raw = res.data?.data ?? res.data?.items ?? res.data;
+        const arr = Array.isArray(raw) ? raw : (raw?.data ?? []);
+        const data: ShowcaseClip[] = arr.map((m: Record<string, unknown>) => adaptMediaToClip(m));
         setClips(data);
         setLocalMode(false);
         saveLocalClips(data);
       })
-      .catch(() => {
-        setClips(loadLocalClips());
-        setLocalMode(true);
-      });
+      .catch(() =>
+        api.get("/player/showcase")
+          .then((res) => {
+            const _r = res.data?.data ?? res.data;
+            const data: ShowcaseClip[] = Array.isArray(_r) ? _r : [];
+            setClips(data);
+            setLocalMode(false);
+            saveLocalClips(data);
+          })
+          .catch(() => {
+            setClips(loadLocalClips());
+            setLocalMode(true);
+          })
+      );
   }, []);
 
   // ── Modal reset ────────────────────────────────────────────────────────────
@@ -354,11 +387,24 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
       };
 
       try {
-        const saved = await api.post("/player/showcase", {
-          ...newClip,
-          position_fit: analysis.position_fit,
+        const saved = await api.post("/media", {
+          r2_key:     videoUrl ? videoUrl.split("/").slice(-3).join("/") : `local/showcase/${Date.now()}`,
+          r2_url:     videoUrl || "",
+          media_type: "video",
+          title:      `${selectedSkill} showcase`,
+          context:    "showcase",
+          visibility: "scout_visible",
+          metadata: {
+            skill_type:       selectedSkill,
+            ai_rating:        analysis.skill_rating,
+            top_strength:     analysis.top_strength,
+            position_fit:     analysis.position_fit,
+            scout_note:       analysis.scout_note,
+            development_flag: analysis.development_flag,
+          },
+          size_bytes: videoFile?.size,
         });
-        newClip.id = saved.data?.id ?? newClip.id;
+        newClip.id = saved.data?.data?.id ?? saved.data?.id ?? newClip.id;
       } catch { /* backend not ready — localStorage only */ }
 
       const updated = [newClip, ...clips];
@@ -391,8 +437,8 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
     saveLocalClips(updated);
     try {
       const clip = updated.find((c) => c.id === clipId);
-      await api.patch(`/player/showcase/${clipId}/toggle-scouting`, {
-        open_for_scouting: clip?.open_for_scouting,
+      await api.patch(`/media/${clipId}`, {
+        visibility: clip?.open_for_scouting ? "scout_visible" : "private",
       });
     } catch { /* localStorage updated */ }
   };
@@ -401,7 +447,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
     const updated = clips.filter((c) => c.id !== clipId);
     setClips(updated);
     saveLocalClips(updated);
-    try { await api.delete(`/player/showcase/${clipId}`); } catch { /* ok */ }
+    try { await api.delete(`/media/${clipId}`); } catch { /* ok */ }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
