@@ -30,7 +30,7 @@
 
 #### 2. Registration Pages — `__waking__` Cold-Start Banners ✅
 
-**Commit:** `ebd5feed` (prior session, documented here for completeness)
+**Commit:** `4d549a7e` — pushed to `sciemec/grassroots-web` main → Render auto-deployed
 
 Added `__waking__` sentinel error string + amber "⏳ Server is starting up" banner to all 3 remaining registration pages:
 - `src/app/register/coach/page.tsx` — amber banner added
