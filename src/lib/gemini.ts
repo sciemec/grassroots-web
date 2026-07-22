@@ -7,7 +7,7 @@
  * Same API key used by the Laravel CommentaryController on Render.
  */
 
-export const GEMINI_TEXT_MODEL = "gemini-2.0-flash-001";
+export const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
