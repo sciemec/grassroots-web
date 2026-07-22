@@ -353,7 +353,7 @@ export default function ThutoOnboarding({ onComplete }: Props) {
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-teal-900/40 px-2.5 py-1 text-xs font-medium text-teal-300">
             <Sparkles className="h-3 w-3" />
-            Powered by DeepSeek
+            Powered by Gemini
           </div>
         </div>
 
