@@ -413,10 +413,48 @@ export default function PitchPage() {
         {/* ── SETUP ─────────────────────────────────────────────────────────── */}
         {phase === 'setup' && (
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>What drill are you recording?</h2>
-            <p style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>
-              AI will analyse your body position relative to top athletes and tell you exactly how to improve.
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Drill Body Scan</h2>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+              Record yourself doing a drill. Gemini AI watches every frame and scores your body mechanics the same way a professional biomechanics coach would.
             </p>
+
+            {/* How it works */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 20, border: '1px solid #e5e5e5' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#1a5c2a', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>How it works</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1a5c2a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>1</div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>Pick your drill and record a short clip</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#666' }}>Use your phone camera or upload an existing video. 10–30 seconds is enough — you do not need to film a full session.</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1a5c2a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>Gemini AI watches your technique frame by frame</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#666' }}>It looks at knee drive, hip extension, arm swing, trunk alignment, and foot strike — the same 5 checkpoints a UEFA coach uses to assess athletic movement.</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1a5c2a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>3</div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>Get a full breakdown + 3 things to fix today</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#666' }}>Your scores save to your Talent Passport and post to The Arena so coaches and scouts can see your improvement over time.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* When to use */}
+            <div style={{ backgroundColor: '#f0fdf4', borderRadius: 12, padding: '12px 14px', marginBottom: 20, border: '1px solid #bbf7d0' }}>
+              <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#15803d' }}>📅 When to do a Body Scan</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#166534', lineHeight: 1.6 }}>
+                Once a week per drill type. Do it <strong>after a warm-up</strong>, not when you are cold — your mechanics are more natural when you are moving freely. Do the same drill each week so you can track improvement across sessions.
+              </p>
+            </div>
+
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>What drill are you recording?</h3>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24 }}>
               {DRILLS.map((d) => (
@@ -434,6 +472,16 @@ export default function PitchPage() {
 
             {drill && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Recording tips */}
+                <div style={{ backgroundColor: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '1px solid #fde68a' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#92400e' }}>📱 Tips for the best scan</p>
+                  <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: '#78350f', lineHeight: 1.7 }}>
+                    <li><strong>Distance:</strong> Stand 3–5 metres from the camera so your full body is visible from head to toe</li>
+                    <li><strong>Angle:</strong> Film from the side (90°) for sprinting, jumping, and shooting — or from slightly behind for dribbling and first touch</li>
+                    <li><strong>Light:</strong> Face natural light, not away from it — avoid recording with the sun behind you</li>
+                    <li><strong>Duration:</strong> 10–30 seconds is ideal. Film 3–5 repetitions of the movement</li>
+                  </ul>
+                </div>
                 <button
                   onClick={startRecording}
                   style={{ backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
@@ -527,7 +575,18 @@ export default function PitchPage() {
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>
               {drill?.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} Analysis
             </h2>
-            <p style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>AI-powered body position breakdown</p>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>AI-powered body position breakdown by Gemini 2.5 Flash</p>
+
+            {/* Score explainer */}
+            <div style={{ backgroundColor: '#f8fafc', borderRadius: 12, padding: '12px 14px', marginBottom: 16, border: '1px solid #e2e8f0' }}>
+              <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#334155' }}>What do these scores mean?</p>
+              <p style={{ margin: '0 0 4px', fontSize: 12, color: '#475569', lineHeight: 1.6 }}>
+                <strong>Posture Score</strong> — How well your body position matches the mechanics of elite athletes doing this same drill. 60–75 is solid for grassroots level. 85+ is exceptional. The AI scores based on joint angles, body lean, and movement patterns — not effort or speed.
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: '#475569', lineHeight: 1.6 }}>
+                <strong>Movement Efficiency</strong> — How economically your body moves. High efficiency means you generate maximum output (speed, power, accuracy) with minimum wasted energy. Poor efficiency means compensating muscles are doing work they should not be doing — which slows you down and increases injury risk.
+              </p>
+            </div>
 
             {/* Scores */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -539,7 +598,7 @@ export default function PitchPage() {
               <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize: 36, fontWeight: 900, color: '#2563eb' }}>{analysis.movement_efficiency}</div>
                 <div style={{ fontSize: 11, color: '#999', fontWeight: 600 }}>MOVEMENT EFF. /100</div>
-                <div style={{ fontSize: 10, color: '#666', marginTop: 4 }}>Efficiency Rating</div>
+                <div style={{ fontSize: 10, color: '#666', marginTop: 4 }}>Energy efficiency rating</div>
               </div>
             </div>
 
@@ -562,7 +621,10 @@ export default function PitchPage() {
 
             {/* Joint breakdown */}
             <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', margin: '0 0 12px' }}>Body Position Breakdown</h3>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', margin: '0 0 4px' }}>Body Position Breakdown</h3>
+              <p style={{ fontSize: 12, color: '#888', margin: '0 0 12px', lineHeight: 1.5 }}>
+                5 checkpoints used by UEFA and FIFA coaches to assess athletic movement. Each is rated Strong / Good / Fair / Weak with a specific observation from your video.
+              </p>
               {(Object.entries(analysis.joint_scores) as [string, JointScore][]).map(([key, val]) => {
                 const cfg = RATING_CONFIG[val.rating] ?? RATING_CONFIG.fair;
                 return (
