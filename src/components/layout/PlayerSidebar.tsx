@@ -66,7 +66,6 @@ const NAV_ITEMS = [
   // ── Showcase & Media ──────────────────────────────────────────────────────
   { href: '/player/showcase',          label: 'My Showcase',        icon: <Star size={18} /> },
   { href: '/player/vault',             label: 'Highlight Vault',    icon: <Video size={18} /> },
-  { href: '/player/media',             label: 'Media Gallery',      icon: <Camera size={18} /> },
   { href: '/player/scholarship-reel',  label: 'Scholarship Reel',   icon: <Award size={18} /> },
   { href: '/player/analyse',           label: 'Video Analysis',     icon: <Video size={18} /> },
   { href: '/player/story',             label: 'My Story',           icon: <BookOpen size={18} /> },

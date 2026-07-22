@@ -53,7 +53,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/talent-id",  label: "Talent ID",       icon: <Target size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/passport",   label: "Talent Passport", icon: <IdCard size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/vault",      label: "Highlight Vault", icon: <Video size={18} />,       roles: ["player"], feature: "passport"  },
-  { href: "/player/media",      label: "Media Gallery",   icon: <Camera size={18} />,      roles: ["player"], feature: "passport"  },
   { href: "/player/position-fit",label:"Position Finder", icon: <Crosshair size={18} />,   roles: ["player"], feature: "biometrics" },
   { href: "/player/sprint",      label: "Sprint Analyzer", icon: <Zap size={18} />,          roles: ["player"]                     },
   { href: "/player/shooting",    label: "Shooting Analyzer", icon: <Target size={18} />,      roles: ["player"]                     },

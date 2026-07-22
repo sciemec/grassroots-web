@@ -646,8 +646,6 @@ export default function PlayerDashboardHome() {
               label="Scholarship Reel" desc="10 best clips Â· scouts see this first" />
             <HubCard href="/player/showcase" icon={Radio} iconBg="#fce7f3" iconColor="#be185d"
               label="Showcase Clips" desc="Skill videos Â· AI rating Â· open for scouting" />
-            <HubCard href="/player/media" icon={Layers} iconBg="#ede9fe" iconColor="#6d28d9"
-              label="Media Gallery" desc="Photos Â· videos Â· display order" />
             <HubCard href="/player/profile" icon={UserCircle} iconBg="#f0fdf4" iconColor="#15803d"
               label="My Profile" desc="Photo Â· bio Â· stats Â· club Â· school" />
             <HubCard href="/player/verification" icon={BadgeCheck} iconBg="#dbeafe" iconColor="#1d4ed8"
