@@ -216,7 +216,7 @@ export default function ShowcasePage() {
           body: JSON.stringify({
             filename:    videoFile.name,
             contentType: videoFile.type,
-            folder:      "showcase",
+            source:      "showcase",
           }),
         });
         if (presignRes.ok) {
