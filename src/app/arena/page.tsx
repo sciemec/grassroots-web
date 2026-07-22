@@ -347,13 +347,24 @@ export default function ArenaPage() {
             setUploadProgress(Math.round((e.loaded / e.total) * 100));
           }
         };
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`R2 ${xhr.status}`));
-        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.onload = () =>
+          xhr.status >= 200 && xhr.status < 300
+            ? resolve()
+            : reject(new Error(`Upload failed (HTTP ${xhr.status}). Check R2 bucket permissions.`));
+        xhr.onerror = () =>
+          reject(new Error(
+            "Upload blocked — this is usually a CORS error. " +
+            "The R2 bucket needs a CORS rule allowing PUT from this domain. " +
+            "Go to Cloudflare R2 → your bucket → Settings → CORS and add: " +
+            "AllowedOrigins: [\"https://grassrootssports.live\"], AllowedMethods: [\"PUT\"], AllowedHeaders: [\"*\"]"
+          ));
         xhr.send(file);
       });
 
       return publicUrl as string;
     } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown upload error";
+      setMediaError(msg);
       console.error("uploadMedia error:", e);
       return null;
     }
@@ -404,7 +415,7 @@ export default function ArenaPage() {
         setUploadingMedia(false);
         setUploadProgress(0);
         if (!url) {
-          setMediaError("Media upload failed — please try again or post without media.");
+          // mediaError already set inside uploadMedia with the specific reason
           setSubmitting(false);
           return;
         }
