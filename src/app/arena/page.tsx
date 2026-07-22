@@ -329,6 +329,12 @@ export default function ArenaPage() {
       });
       if (!res.ok) return null;
       const { uploadUrl, publicUrl } = await res.json();
+
+      // R2 not configured on this server — uploadUrl will be empty string
+      if (!uploadUrl) {
+        setMediaError("Video uploads are not yet enabled. Post text-only for now, or contact the admin to enable storage.");
+        return null;
+      }
       if (!uploadUrl || !publicUrl) return null;
 
       // Step 2 — upload directly to R2 with progress tracking via XHR
