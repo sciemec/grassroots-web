@@ -73,6 +73,38 @@ const RATING_CONFIG: Record<string, { color: string; bg: string; label: string }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function buildArenaPost(drill: DrillType, a: DrillAnalysis): string {
+  const drillName = drill.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const ratingEmoji = (r: string) =>
+    r === 'strong' ? '🟢' : r === 'good' ? '🔵' : r === 'fair' ? '🟡' : '🔴';
+
+  const joints = Object.entries(a.joint_scores)
+    .map(([k, v]) => `${ratingEmoji(v.rating)} ${JOINT_LABELS[k] ?? k}: ${v.rating.charAt(0).toUpperCase() + v.rating.slice(1)}`)
+    .join('\n');
+
+  const improvements = a.improvements
+    .map((imp, i) => `${i + 1}. ${imp}`)
+    .join('\n');
+
+  return [
+    `🎯 ${drillName} Drill — Body Scan Results`,
+    ``,
+    `📊 Posture Score: ${a.posture_score}/100  |  Movement Efficiency: ${a.movement_efficiency}/100`,
+    ``,
+    `Body Position Breakdown:`,
+    joints,
+    ``,
+    `✅ Strengths: ${a.strengths.join('. ')}`,
+    ``,
+    `Areas to Improve:`,
+    improvements,
+    ``,
+    `💡 Tip: ${a.drill_specific_tip}`,
+    ``,
+    `#GrassRootsSports #DrillAnalysis #Zimbabwe`,
+  ].join('\n');
+}
+
 function scoreColor(score: number): string {
   if (score >= 80) return '#16a34a';
   if (score >= 65) return '#2563eb';
@@ -322,7 +354,7 @@ export default function PitchPage() {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token ?? ''}` },
             body: JSON.stringify({
               post_type: 'video',
-              content:   `Just completed a ${drill.replace(/_/g, ' ')} drill analysis. Posture score: ${drillAnalysis.posture_score}/100. ${drillAnalysis.strengths[0] ?? ''}`,
+              content:   buildArenaPost(drill, drillAnalysis),
               video_url: r2Url,
               metadata:  { drill_type: drill, posture_score: drillAnalysis.posture_score, video_source: 'pitch_drill' },
             }),
