@@ -1,8 +1,8 @@
 ﻿export async function POST(req: Request) {
   try {
-    const googleKey = process.env.GOOGLE_AI_API_KEY;
+    const googleKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_AI_API_KEY;
     if (!googleKey) {
-      return Response.json({ error: "GOOGLE_AI_API_KEY not configured" }, { status: 500 });
+      return Response.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
     }
 
     const contentType = req.headers.get("content-type") || "video/mp4";
