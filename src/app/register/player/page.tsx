@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Dumbbell } from "lucide-react";
@@ -51,9 +51,11 @@ export default function RegisterPlayerPage() {
     }
   }, []);
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error,        setError]        = useState<string | null>(null);
+  const [showPassword,    setShowPassword]    = useState(false);
+  const [isSubmitting,    setIsSubmitting]    = useState(false);
+  const [error,           setError]           = useState<string | null>(null);
+  const [retryCountdown,  setRetryCountdown]  = useState<number | null>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [form, setForm] = useState<FormData>({
     first_name:      "",
@@ -95,6 +97,8 @@ export default function RegisterPlayerPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
+    setRetryCountdown(null);
+    if (retryTimerRef.current) clearInterval(retryTimerRef.current);
     try {
       const body: Record<string, unknown> = {
         first_name:            form.first_name.trim(),
@@ -182,11 +186,29 @@ export default function RegisterPlayerPage() {
 
       router.push("/login?registered=1");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      setError(msg);
+      if (msg === "__waking__") setRetryCountdown(30);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (retryCountdown === null) return;
+    if (retryCountdown <= 0) {
+      setRetryCountdown(null);
+      void handleSubmit();
+      return;
+    }
+    retryTimerRef.current = setInterval(() => {
+      setRetryCountdown((c) => (c !== null ? c - 1 : null));
+    }, 1000);
+    return () => {
+      if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retryCountdown]);
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] flex items-center justify-center p-4">
@@ -220,8 +242,15 @@ export default function RegisterPlayerPage() {
                 <p className="font-semibold">⏳ Server is starting up</p>
                 <p className="mt-1 text-xs leading-relaxed">
                   Our server wakes up after a short rest — usually 30 seconds.
-                  Wait a moment then tap Register again.
+                  {retryCountdown !== null && ` Auto-retrying in ${retryCountdown}s…`}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => { setRetryCountdown(null); void handleSubmit(); }}
+                  className="mt-2 text-xs underline text-amber-700 hover:text-amber-900"
+                >
+                  Retry now
+                </button>
               </div>
             ) : (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
