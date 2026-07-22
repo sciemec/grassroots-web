@@ -228,18 +228,25 @@ export async function POST(req: NextRequest) {
   ];
 
   // ── Engine routing — Gemini primary, DeepSeek silent fallback ────────────
+  const geminiKey   = process.env.GEMINI_API_KEY;
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
+
+  console.log(`[ai-coach] request received | coach=${coachName} | gemini=${geminiKey ? "key_present" : "KEY_MISSING"} | deepseek=${deepseekKey ? "key_present" : "KEY_MISSING"}`);
+
   try {
     const result = await callGemini(fullSystem, messages);
+    console.log(`[ai-coach] Gemini responded OK | coach=${coachName}`);
     return NextResponse.json({ response: result, engine: "gemini", coach: coachName });
   } catch (geminiErr) {
-    console.error("Gemini failed, falling back to DeepSeek:", geminiErr);
+    console.error(`[ai-coach] Gemini FAILED | coach=${coachName} | error:`, geminiErr instanceof Error ? geminiErr.message : geminiErr);
   }
 
   try {
     const result = await callDeepSeekFallback(fullSystem, messages);
+    console.log(`[ai-coach] DeepSeek fallback responded OK | coach=${coachName}`);
     return NextResponse.json({ response: result, engine: "deepseek", coach: coachName });
   } catch (err) {
-    console.error("DeepSeek fallback also failed:", err);
+    console.error(`[ai-coach] DeepSeek fallback ALSO FAILED | coach=${coachName} | error:`, err instanceof Error ? err.message : err);
   }
 
   return NextResponse.json(
