@@ -154,6 +154,8 @@ export default function ArenaPage() {
   const [loadingComments,   setLoadingComments]    = useState<Record<string, boolean>>({});
   const [newComment,        setNewComment]         = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment]  = useState<Record<string, boolean>>({});
+  const [editingComment,    setEditingComment]     = useState<string | null>(null);
+  const [editCommentBody,   setEditCommentBody]    = useState<string>("");
   const [showLoginPrompt,   setShowLoginPrompt]    = useState(false);
   const [mediaFile,         setMediaFile]          = useState<File | null>(null);
   const [mediaPreview,      setMediaPreview]       = useState<string | null>(null);
@@ -302,6 +304,33 @@ export default function ArenaPage() {
       fetchPosts(); // refresh comment_count on the post card
     } catch {
       // If it fails, re-fetch to restore state
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const cr = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
+      if (cr.ok) {
+        const cj = await cr.json();
+        setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(cj.data ?? cj) }));
+      }
+    }
+  };
+
+  const saveCommentEdit = async (postId: string, commentId: string) => {
+    const body = editCommentBody.trim();
+    if (!body) return;
+    // Optimistic update
+    setExpandedComments(prev => ({
+      ...prev,
+      [postId]: (prev[postId] ?? []).map(c => c.id === commentId ? { ...c, body } : c),
+    }));
+    setEditingComment(null);
+    try {
+      await fetch(`${API}/arena/posts/${postId}/comments/${commentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ body }),
+      });
+    } catch {
+      // Revert on failure by re-fetching
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
       const cr = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
@@ -1159,17 +1188,44 @@ export default function ArenaPage() {
                                       {role.charAt(0).toUpperCase() + role.slice(1)}
                                     </span>
                                     <span className="text-[9px] text-gray-400">{timeAgo(comment.created_at)}</span>
-                                    {user && (comment.user?.id === user.id || post.user?.id === user.id) && (
+                                    {user && comment.user?.id === user.id && editingComment !== comment.id && (
+                                      <button
+                                        onClick={() => { setEditingComment(comment.id); setEditCommentBody(comment.body); }}
+                                        className="text-gray-300 hover:text-[#1a5c2a] transition"
+                                        title="Edit comment"
+                                      >
+                                        <Pencil size={11} />
+                                      </button>
+                                    )}
+                                    {user && (comment.user?.id === user.id || post.user?.id === user.id) && editingComment !== comment.id && (
                                       <button
                                         onClick={() => deleteComment(post.id, comment.id)}
-                                        className="ml-auto text-gray-300 hover:text-red-400 transition"
+                                        className="text-gray-300 hover:text-red-400 transition"
                                         title="Delete comment"
                                       >
                                         <Trash2 size={11} />
                                       </button>
                                     )}
                                   </div>
-                                  <p className="text-xs text-gray-700 mt-0.5 break-words">{comment.body}</p>
+                                  {editingComment === comment.id ? (
+                                    <div className="flex gap-1.5 mt-1">
+                                      <input
+                                        autoFocus
+                                        value={editCommentBody}
+                                        onChange={e => setEditCommentBody(e.target.value)}
+                                        onKeyDown={e => {
+                                          if (e.key === "Enter") saveCommentEdit(post.id, comment.id);
+                                          if (e.key === "Escape") setEditingComment(null);
+                                        }}
+                                        maxLength={280}
+                                        className="flex-1 text-xs border border-[#1a5c2a] rounded px-2 py-1 focus:outline-none"
+                                      />
+                                      <button onClick={() => saveCommentEdit(post.id, comment.id)} className="text-[10px] font-bold text-white bg-[#1a5c2a] px-2 py-1 rounded">Save</button>
+                                      <button onClick={() => setEditingComment(null)} className="text-[10px] font-bold text-gray-500 px-2 py-1 rounded border border-gray-200">Cancel</button>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-gray-700 mt-0.5 break-words">{comment.body}</p>
+                                  )}
                                 </div>
                               </div>
                             );
