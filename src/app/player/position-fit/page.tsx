@@ -67,11 +67,11 @@ const POS_CONFIG: Record<PosKey, PosConfig> = {
 // ── Domain labels ─────────────────────────────────────────────────────────────
 const DOMAIN_META: Record<DomainKey, { label: string; test: string }> = {
   linearSpeed:    { label: 'Sprint Speed',          test: 'T2 — 20m Sprint'      },
-  cognitiveSpeed: { label: 'Reaction / Decision',   test: 'T4 — Reaction Catch'  },
+  cognitiveSpeed: { label: 'Reaction / Decision',   test: 'T4 — Reactive Interference'  },
   ballMastery:    { label: 'Ball Mastery',           test: 'T6 — Juggling'        },
   explosivePower: { label: 'Explosive Power',        test: 'T1 — Jump'            },
   balance:        { label: 'Balance',                test: 'T3 — Balance'         },
-  endurance:      { label: 'Endurance',              test: 'T5 — Chitima Run'     },
+  endurance:      { label: 'Agility / COD',           test: 'T5 — Illinois Agility'     },
 };
 
 // ── Test guides ───────────────────────────────────────────────────────────────
@@ -89,119 +89,164 @@ interface TestGuide {
 
 const TEST_GUIDE: Record<DomainKey, TestGuide> = {
   explosivePower: {
-    title: 'T1 — Vertical Jump',
-    what: 'Measures your explosive leg power — critical for winning headers, shot power, and first-step burst.',
-    equipment: ['Flat, hard surface (no grass if possible)', 'Chalk or tape marker on wall (optional)', 'Smartphone camera or My Jump Lab app'],
+    title: 'T1 — Vertical Jump (Flight Time Method)',
+    what: 'Measures your explosive leg power using flight time — the same method used by professional academies. Force plates cost thousands of dollars, but a smartphone and basic gravity equations (h = ½g(t/2)²) give you the same result within millimetres.',
+    equipment: [
+      'Flat, hard surface — concrete, court, or hard pitch (NOT grass — absorbs energy)',
+      'Smartphone on a tripod or rested against a water bottle — camera at GROUND LEVEL, side profile',
+      'My Jump Lab app (iOS/Android) — FREE, used by university sports science departments',
+    ],
     steps: [
-      'Stand flat-footed next to a wall or open space.',
-      'Bend knees to about 90°, swing arms back.',
-      'Explode upward — drive arms up as you jump.',
-      'Land softly on two feet in the same spot.',
-      'Repeat 3 times. Record your best height.',
+      'Position the phone at ground level, side-on, 2–3 metres away from the athlete. MUST be stationary.',
+      'Stand flat-footed, feet shoulder-width apart. Swing arms back and bend knees to ~90°.',
+      'Explode upward — drive arms forcefully overhead as you leave the ground.',
+      'Land softly in the same spot on both feet.',
+      'In My Jump Lab: tap the video to select the exact FRAME where toes leave the ground (takeoff) and the exact FRAME where toes first touch back down (landing). The app computes flight time (t) and calculates jump height using h = ½ × g × (t/2)².',
+      'Do 3 attempts with 60 seconds rest between. Record your BEST result.',
     ],
     reps: '3 jumps — use best result',
-    duration: '~3 minutes including rest',
+    duration: '~5 minutes including rest',
     apps: [
-      'My Jump Lab (iOS/Android) — uses slow-motion camera and flight time to calculate exact jump height. FREE.',
-      'Measure tape on wall — chalk your fingertips, mark highest reach standing vs highest reach jumping. Difference = jump height.',
+      'My Jump Lab (iOS/Android) — frame-by-frame flight time measurement. Used by Premier League academies. FREE version works for this test.',
+      'Jump Measurement (Android) — alternative app. Uses slow-motion video and auto-detects takeoff/landing frames.',
+      'Manual slow-motion: Record at 240fps on iPhone or Samsung. Count frames between toe-off and toe-touch. Divide by frame rate to get flight time (t). h = ½ × 9.81 × (t/2)² in metres.',
     ],
-    cameraTip: 'Film side-on at hip height, 2–3 metres away. Slow motion (120fps) gives best flight time accuracy. Place the phone on a tripod or have a friend hold it steady.',
-    proTip: 'FIFA testing uses countermovement jump (CMJ). Arms help — do NOT hold them at your sides. Best average for grassroots U17: 35–50 cm.',
+    cameraTip: 'Camera must be at ground level, perfectly side-on, 2–3 metres away. Use 120fps or 240fps slow motion. Keep the phone on a tripod — any movement ruins frame accuracy. Key rule: same camera distance every test session for consistent comparisons.',
+    proTip: 'Arms MUST swing — they contribute 10–15cm. FIFA academy reference: U13 boys avg 28cm, U17 boys avg 42cm, U17 girls avg 32cm. Record Reactive Strength Index (RSI) in My Jump Lab too — it shows how quickly you generate force, not just how high you jump.',
   },
   linearSpeed: {
-    title: 'T2 — 20m Sprint',
-    what: 'Measures your linear acceleration and top speed over 20 metres — the most important physical attribute for strikers and wingers.',
-    equipment: ['20-metre flat surface (track, road, or pitch)', '2 cones or markers', 'Smartphone with slow-motion video, OR stopwatch', 'Optional: Photo Finish app, My Sprint Pro app'],
+    title: 'T2 — Speed & Acceleration (0–10m + 10–30m)',
+    what: 'Measures both your acceleration (0–10m, first-step burst) and your top-end speed (10–30m) using slow-motion video — the same split-time method used by professional clubs without laser timing gates. You get two separate scores: acceleration and maximum velocity.',
+    equipment: [
+      'Flat surface — 30 metres minimum (road, track, or dry pitch)',
+      '3 cones at 0m (start), 10m, and 30m',
+      'Smartphone on a fixed tripod, perpendicular to the sprint path',
+      'Photo Finish app or My Sprint Pro app (iOS/Android)',
+    ],
     steps: [
-      'Mark a start line and a finish line exactly 20 metres apart.',
-      'Stand with one foot just behind the start line. Do NOT use a crouching start — stand normally.',
-      'On your signal (or a partner\'s shout), sprint as fast as possible to the finish cone.',
-      'Run THROUGH the finish — do not slow down before the line.',
-      'Rest 3 minutes between attempts.',
-      'Do 2–3 runs and record your best time.',
+      'Set cones at exactly 0m, 10m, and 30m. Measure with a tape — accuracy matters.',
+      'Position the phone on a TRIPOD, perpendicular to the running direction, zoomed out enough to see all 3 cones. Camera must be completely STATIONARY.',
+      'Record the sprint at 120fps or 240fps (slow motion).',
+      'Athlete starts from a STANDING position behind the 0m cone. No crouching start.',
+      'Sprint THROUGH the 30m cone without decelerating.',
+      'In Photo Finish or My Sprint Pro: mark the frame when the athlete\'s chest (or hips) crosses each cone to extract 0–10m split and 10–30m split.',
+      'Rest 3–4 minutes between runs. Do 2–3 attempts. Record the best time for each split.',
     ],
-    reps: '2–3 sprints — best time counts',
-    duration: '~10 minutes including rest',
+    reps: '2–3 sprints — best time for each split',
+    duration: '~12 minutes including rest',
     apps: [
-      'Photo Finish (iOS/Android) — analyzes slow-motion video from your phone camera to time sprints precisely. Accuracy: ±0.05s.',
-      'My Sprint Pro — set up your phone at the finish line, it detects when you cross using the camera.',
-      'Manual stopwatch — have a partner time you. React to your first movement, stop when you cross the line.',
+      'Photo Finish (iOS/Android) — uses slow-motion video as an optical timing gate. Mark start and finish frames manually. Accuracy: ±0.03s at 240fps.',
+      'My Sprint Pro (iOS) — dedicated sprint timing from phone camera. Set up at the side of the track, detects athlete passing each marker.',
+      'SpeedClock (iOS) — radar-style speed measurement from video. Good for top-speed estimate.',
+      'Manual frame count — at 120fps, count frames between cone crossings. Divide by 120 to get seconds. Slow and less accurate but works offline.',
     ],
-    cameraTip: 'Place the phone at the FINISH LINE at sprint height (knees level), 3–5 metres to the side. Slow motion (120–240fps) gives the most accurate timing. Do NOT film from behind the runner.',
-    proTip: 'ZIFA reference times: U13 under 3.9s = elite. U17 under 3.3s = elite. Adults under 3.0s = elite. Head wind or wet grass adds 0.1–0.2s — note conditions.',
+    cameraTip: 'Camera MUST be perpendicular to the run (directly to the side), on a tripod, zoomed out to see all 3 cones clearly. 240fps gives the most accurate timing. Do NOT chase the runner with the camera — it makes timing impossible. Key rule: keep a consistent distance between camera and run path each session.',
+    proTip: 'Two scores are better than one. A player with a fast 0–10m but slow 10–30m is an explosive accelerator (classic striker). A player with a slow 0–10m but fast 10–30m is a top-speed runner (winger in a race). ZIFA U17 reference: elite 0–10m = sub-1.70s, elite 10–30m = sub-2.50s.',
   },
   balance: {
     title: 'T3 — Single-Leg Balance',
-    what: 'Measures your proprioception and ankle stability — players with better balance have fewer ankle injuries and better composure under pressure.',
-    equipment: ['Flat hard surface', 'Bare feet or thin socks (no shoes — they mask balance)', 'A partner to count errors'],
+    what: 'Measures your proprioception and ankle stability — players with better balance have fewer ankle injuries and better composure when receiving the ball under pressure. Eyes-closed testing reveals true neuromuscular control that shoes and flat grass hide.',
+    equipment: [
+      'Flat, HARD surface — barefoot or thin socks only (shoes mask ankle instability)',
+      'A partner to count errors (or record yourself for review)',
+      'Timer or phone stopwatch',
+    ],
     steps: [
-      'Stand on ONE leg. The other foot should NOT touch anything.',
+      'Stand on ONE leg. The lifted foot must NOT touch the standing leg or the ground.',
       'Hold the position for 30 seconds.',
-      'Each time you need to touch down, hop, or grab something = 1 error.',
-      'Test in this order: Right foot eyes OPEN → Left foot eyes OPEN → Right foot eyes CLOSED → Left foot eyes CLOSED.',
+      'Each touch-down, hop, or grab = 1 error.',
+      'Test in this exact order: Right leg eyes OPEN → Left leg eyes OPEN → Right leg eyes CLOSED → Left leg eyes CLOSED.',
       'Rest 30 seconds between each stance.',
-      'Enter the number of foot-correction errors for each of the 4 stances.',
+      'Enter your error count for all 4 stances. Eyes-closed scores are weighted 1.5× in the GRS engine — harder = more informative.',
     ],
     reps: '4 stances × 30 seconds each',
     duration: '~5 minutes',
-    apps: ['No app needed. A partner counts errors. Eyes-closed tests are much harder — this is normal.'],
-    cameraTip: 'Record yourself from the front so a partner can review your foot corrections if needed.',
-    proTip: 'Eyes-closed score is weighted 1.5× in the GRS engine because it reveals true proprioception. Midfielders and goalkeepers need this most. Target: 0–2 errors on all 4 stances.',
+    apps: [
+      'No app required. A partner counts errors live. If alone, record yourself with the phone propped up in front and review the video.',
+      'Hudl Technique or Kinovea (free, PC) — useful for reviewing your body sway if you want to analyse form.',
+    ],
+    cameraTip: 'Film from directly in front at knee height. Stable camera — any movement makes foot corrections hard to count. Normal speed (30fps) is fine for this test.',
+    proTip: 'Midfielders and goalkeepers need the best balance scores. Target: 0–2 errors across all 4 stances. Eyes-closed is typically 3–4× harder than eyes-open — this is normal. Training tip: progress to balance on an unstable surface (folded towel, foam pad) once you achieve 0 errors with eyes open.',
   },
   cognitiveSpeed: {
-    title: 'T4 — Reaction Catch',
-    what: 'Measures your reaction time and hand-eye coordination — reflects how quickly your brain processes movement signals, which transfers to reading the game.',
-    equipment: ['A ruler or a partner holding a ball', 'Open space'],
+    title: 'T4 — Reactive Interference Test (Divided Attention)',
+    what: 'Measures divided attention and decision-making speed under motor load — the ability to process external information (calls, signals) while maintaining a physical task. This mirrors real match demands: a midfielder must read a pressing trigger while passing, a goalkeeper must organise defenders while tracking the ball.',
+    equipment: [
+      '2 tennis balls',
+      'A partner or coach (tester)',
+      'Open space',
+      'Optional: smartphone at 60fps for cycle frequency analysis',
+    ],
     steps: [
-      'Method A (ruler drop): Partner holds a 30cm ruler vertically. You place your hand at the bottom, not touching it. Partner drops it without warning. You catch it. Score = how many cm it fell.',
-      'Method B (ball catch): Stand 5 metres from a wall. Partner throws a tennis ball against the wall. You catch the rebound = 1 catch. Do 5 attempts.',
-      'Score out of 5: how many catches you made cleanly.',
+      'The player juggles 2 tennis balls — alternating between hands (left throw → right catch → right throw → left catch), OR juggling 2 balls in one hand if able.',
+      'Once the player establishes a steady rhythm, the TESTER holds up a number on their fingers (1–5) or calls out a colour.',
+      'The player must SHOUT the number or colour mid-juggle without breaking rhythm or dropping a ball.',
+      'Each successful response without a drop = 1 point.',
+      'Run 5 trials. Record how many the player answered correctly while maintaining juggling rhythm.',
+      'Score 0–5: 5 = answered all 5 correctly with no drops. 0 = dropped every time or could not respond.',
     ],
-    reps: '5 attempts',
-    duration: '~3 minutes',
-    apps: ['Simple Reaction Time (free web app: humanbenchmark.com) — tap the screen the moment a colour changes. Record milliseconds.'],
-    cameraTip: 'Not needed for this test. Use the humanbenchmark.com reaction test if doing it solo.',
-    proTip: 'Average reaction time: 250ms. Elite footballers average 190ms. Goalkeepers should aim for sub-200ms. Fatigue slows reaction time — test when fresh.',
-  },
-  endurance: {
-    title: 'T5 — Chitima Endurance Run',
-    what: 'The Chitima Run (adapted from the Beep Test) measures your aerobic capacity (VO2 max) — how long you can keep running before you can\'t keep up.',
-    equipment: ['20-metre flat area', '2 cones', 'Audio beep track (download "Beep Test" app)', 'Smartphone speaker or portable speaker'],
-    steps: [
-      'Mark two lines 20 metres apart.',
-      'Play the beep track. You must reach the opposite line BEFORE each beep.',
-      'Start slow — the speed increases every minute.',
-      'When you miss 2 beeps in a row (fail to reach the line in time), your test ends.',
-      'Record the total time you lasted (minutes and seconds).',
-    ],
-    reps: 'Until you cannot keep up — continuous',
-    duration: '5–20 minutes depending on fitness',
-    apps: [
-      'Beep Test (iOS/Android) — has the audio track and shows current level and shuttle.',
-      'Bleep Test (web: bleeptest.co.uk) — play from browser on any device.',
-    ],
-    cameraTip: 'Not needed. A partner with a stopwatch can track when you drop out.',
-    proTip: 'Midfielders need the highest endurance — they cover 10–13 km per match. Target for U17 midfielder: 8+ minutes. Strikers need less — 5+ minutes is fine. Do this last — it is the most exhausting.',
-  },
-  ballMastery: {
-    title: 'T6 — Juggling',
-    what: 'Measures your technical ball control and touch quality. Juggling forces you to constantly adjust your body position — it directly develops match ball control.',
-    equipment: ['Standard football (size 4 for U13, size 5 for U17+)', 'Open space', 'Optional: smartphone camera to count touches'],
-    steps: [
-      'Start with the ball in your hands. Drop it onto your dominant foot.',
-      'Juggle using feet, knees, or thighs — any combination.',
-      'Every time the ball touches the ground = end of sequence. Record your count.',
-      'Do 3 attempts. Record your BEST single sequence (most consecutive touches).',
-      'Soft-ball variation: use a slightly deflated ball (40% pressure) — harder to control, builds better touch.',
-    ],
-    reps: '3 attempts — best score counts',
+    reps: '5 trials — score is correct responses out of 5',
     duration: '~5 minutes',
     apps: [
-      'Ball Juggling Counter (Android) — uses camera to count ball bounces automatically.',
-      'Keepy Uppy (iOS) — AI counting from phone camera. FREE.',
+      'Smartphone at 60fps or 120fps (side-on at chest height) — count juggling catches per second to calculate cycle frequency (Hz). Higher Hz = faster motor processing speed.',
+      'Drop recovery time: use slow-motion to time how long from ball drop → player retrieves and re-establishes rhythm. Elite: under 1.5 seconds.',
+      'No dedicated app needed — score manually on paper or note the video timestamp of each trial.',
     ],
-    cameraTip: 'Place phone 3–4 metres away at waist height. Bright light helps the AI count touches. Film from the front, not from behind. Slow motion is not needed — normal speed works fine.',
-    proTip: 'GRS scoring: 0–5 = Beginner, 6–15 = Developing, 16–30 = Competent, 31–60 = Advanced, 61+ = Elite. Record heading juggling separately — useful for defenders and strikers.',
+    cameraTip: 'Record at 60fps or 120fps from directly in front at chest height, 2–3 metres away. Count catches per second in the video to get cycle frequency. A tighter, faster rhythm at the same accuracy score means a higher motor processing speed.',
+    proTip: 'For field athletes: combine with footwork — juggle 2 tennis balls while performing quick-feet ladder drills. This isolates whether the brain can separate upper-body responsiveness from lower-body movement — a key indicator of elite multi-tasking. Average grassroots score: 2–3/5. Elite youth: 4–5/5.',
+  },
+  endurance: {
+    title: 'T5 — Agility & Change of Direction (COD)',
+    what: 'Measures your ability to decelerate, change direction, and re-accelerate — the most game-specific form of fitness for football. Traditional straight-line endurance matters less than your ability to change direction quickly and repeatedly, which is what the Chitima/Illinois test captures.',
+    equipment: [
+      'Cones laid out in Illinois or 5-10-5 agility pattern (standard dimensions)',
+      'Smartphone on a tripod or elevated stand (standing on a bench gives a cleaner angle)',
+      'Timing app or manual stopwatch',
+    ],
+    steps: [
+      'Illinois Agility Test layout: 10m length × 5m width. 4 cones at corners + 4 central cones in a line down the middle at 3.3m intervals.',
+      'Start lying face-down at the start cone, hands by shoulders.',
+      'On go: sprint to the far end, weave through the 4 central cones (slalom), sprint back to finish.',
+      'Record total time from "go" to crossing the finish line.',
+      'Alternative — 5-10-5 Shuttle (Pro Agility): start in the middle. Sprint 5 yards right, touch the line, sprint 10 yards left, touch, sprint 5 yards back through the middle. Time from first movement to finish.',
+      'Rest 3 minutes. Do 2 attempts. Record best time in total seconds (enter as minutes = 0, seconds = your time).',
+    ],
+    reps: '2 attempts — best time counts',
+    duration: '~8 minutes including rest',
+    apps: [
+      'Record from an ELEVATED angle (stand on a bench, use a tripod on a table) — this eliminates cone occlusion and gives cleaner split-time visibility.',
+      'Photo Finish or SpeedClock — mark start frame and finish frame in the video for accurate timing.',
+      'Kinovea (free, PC) — can track split times at each direction change from video replay. Useful for identifying which direction change is slowest.',
+      'Manual stopwatch with a partner — reactive start (start timing on first movement, not on voice command).',
+    ],
+    cameraTip: 'Elevated angle (camera on tripod on a table, or held from above) is essential for agility tests — it shows all cones and direction changes clearly. Keep the camera STATIONARY. Record at 60fps minimum. Normal speed is fine for timing; slow-motion is only needed if analysing deceleration mechanics.',
+    proTip: 'Illinois Agility Test reference: U17 boys elite = sub-15.2s, average = 16–17s. U17 girls elite = sub-16.0s. 5-10-5 reference: U17 boys elite = sub-4.3s. Agility is 60% trainable — poor scores here respond well to cone drills and reactive training sessions.',
+  },
+  ballMastery: {
+    title: 'T6 — Ball Juggling (Football)',
+    what: 'Measures your technical ball control and touch quality. Juggling forces constant micro-adjustments of body position and weight transfer — the same mechanisms used in first touch, passing, and dribbling. It is the simplest standardised test of foot-eye coordination.',
+    equipment: [
+      'Standard football — size 4 (U13 and under), size 5 (U14 and above)',
+      'Open flat surface — indoors is best (wind affects count outdoors)',
+      'Smartphone camera (optional — for AI counting or review)',
+    ],
+    steps: [
+      'Start with the ball in your hands. Drop it onto your dominant foot.',
+      'Juggle using feet, knees, or thighs — any combination is allowed.',
+      'Every time the ball touches the ground = end of sequence. Count stops.',
+      'Do 3 attempts with 1 minute rest between. Record your BEST single sequence (most consecutive touches without a drop).',
+      'Soft-ball variation (advanced): use a ball at 40% normal pressure. Much harder to control — builds superior first touch.',
+      'For an extra challenge: count only alternating-foot touches (left → right → left). This is harder and maps more directly to dribbling rhythm.',
+    ],
+    reps: '3 attempts — best consecutive count',
+    duration: '~5 minutes',
+    apps: [
+      'Keepy Uppy (iOS) — AI counts ball touches from phone camera in real time. FREE.',
+      'Ball Juggling Counter (Android) — detects ball bounce from camera to count touches.',
+      'Camera + AI Measure button below — records your session and counts touches using Gemini AI.',
+    ],
+    cameraTip: 'Place phone 3–4 metres away at waist height, filming from the FRONT (not from behind). Bright, even light — avoid shadows which confuse the AI counter. Normal 30fps speed is fine for counting. Use 120fps only if you want to analyse touch mechanics.',
+    proTip: 'GRS reference: 0–5 = Beginner · 6–15 = Developing · 16–30 = Competent · 31–60 = Advanced · 61+ = Elite. Goalkeepers: use a tennis ball in one hand instead to test hand-eye coordination. Defenders: include heading juggles (head the ball to yourself repeatedly) — a separate useful metric.',
   },
 };
 
@@ -210,8 +255,8 @@ const TABLE_ROWS: { test: string; striker: number; winger: number; midfielder: n
   { test: 'T1 — Jump (cm)',           striker: 4, winger: 4, midfielder: 6, defender: 1, goalkeeper: 2 },
   { test: 'T2 — 20m Sprint (sec)',    striker: 1, winger: 1, midfielder: 5, defender: 2, goalkeeper: 4 },
   { test: 'T3 — Balance (errors)',    striker: 5, winger: 5, midfielder: 3, defender: 4, goalkeeper: 3 },
-  { test: 'T4 — Reaction (catches)',  striker: 2, winger: 3, midfielder: 2, defender: 3, goalkeeper: 1 },
-  { test: 'T5 — Chitima (min)',       striker: 6, winger: 6, midfielder: 1, defender: 5, goalkeeper: 6 },
+  { test: 'T4 — Reactive Interference (0–5)',  striker: 2, winger: 3, midfielder: 2, defender: 3, goalkeeper: 1 },
+  { test: 'T5 — Illinois Agility (sec)',       striker: 6, winger: 6, midfielder: 1, defender: 5, goalkeeper: 6 },
   { test: 'T6 — Juggling (count)',    striker: 3, winger: 2, midfielder: 4, defender: 6, goalkeeper: 5 },
 ];
 
@@ -261,7 +306,6 @@ export default function PositionFitPage() {
   const [balRightClosed, setBalRightClosed] = useState('');
   const [balLeftClosed,  setBalLeftClosed]  = useState('');
   const [catches,        setCatches]        = useState<number | null>(null);
-  const [chitimaMin,     setChitimaMin]     = useState('');
   const [chitimaSec,     setChitimaSec]     = useState('');
   const [juggles,        setJuggles]        = useState('');
 
@@ -291,10 +335,8 @@ export default function PositionFitPage() {
   const cfg = POS_CONFIG[pos];
 
   const chitimaTotalSec = (() => {
-    const m = parseFloat(chitimaMin);
     const s = parseFloat(chitimaSec);
-    if (!isNaN(m) && !isNaN(s)) return m * 60 + s;
-    if (!isNaN(m)) return m * 60;
+    if (!isNaN(s) && s > 0) return s;
     return undefined;
   })();
 
@@ -794,7 +836,7 @@ export default function PositionFitPage() {
                     {/* T4 Reaction */}
                     {domainKey === 'cognitiveSpeed' && (
                       <div>
-                        <p style={{ fontSize: 12, color: '#6b7280', marginTop: 0, marginBottom: 10 }}>Catches out of 5 — tap to select:</p>
+                        <p style={{ fontSize: 12, color: '#6b7280', marginTop: 0, marginBottom: 10 }}>Reactive Interference Score (0–5) — tap to select:</p>
                         <div style={{ display: 'flex', gap: 8 }}>
                           {[0, 1, 2, 3, 4, 5].map(n => (
                             <button key={n} onClick={() => setCatches(catches === n ? null : n)}
@@ -808,26 +850,22 @@ export default function PositionFitPage() {
                               }}>{n}</button>
                           ))}
                         </div>
-                        <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6, marginBottom: 0 }}>5 = excellent · higher is better</p>
+                        <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6, marginBottom: 0 }}>5 = all correct responses while juggling · higher is better</p>
                       </div>
                     )}
 
-                    {/* T5 Chitima */}
+                    {/* T5 Illinois Agility */}
                     {domainKey === 'endurance' && (
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <input type="number" min={0} max={60} value={chitimaMin}
-                            onChange={e => setChitimaMin(e.target.value)} placeholder="min"
-                            style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, width: 72 }} />
-                          <span style={{ fontSize: 13, color: '#6b7280' }}>min</span>
-                          <input type="number" min={0} max={59} value={chitimaSec}
-                            onChange={e => setChitimaSec(e.target.value)} placeholder="sec"
-                            style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, width: 72 }} />
-                          <span style={{ fontSize: 13, color: '#6b7280' }}>sec</span>
+                          <input type="number" min={10} max={60} step={0.1} value={chitimaSec}
+                            onChange={e => setChitimaSec(e.target.value)} placeholder="e.g. 15.4"
+                            style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, width: 110 }} />
+                          <span style={{ fontSize: 13, color: '#6b7280' }}>seconds — lower is better</span>
                         </div>
                         {chitimaTotalSec !== undefined && (
                           <p style={{ fontSize: 12, color: cfg.color, marginTop: 6, marginBottom: 0, fontWeight: 600 }}>
-                            = {formatChitima(chitimaTotalSec)} ({chitimaTotalSec}s total) — longer is better
+                            {chitimaTotalSec.toFixed(1)}s — U17 elite: sub-15.2s (boys) · sub-16.0s (girls)
                           </p>
                         )}
                       </div>
