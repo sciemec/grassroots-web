@@ -1159,7 +1159,7 @@ export default function ArenaPage() {
                                       {role.charAt(0).toUpperCase() + role.slice(1)}
                                     </span>
                                     <span className="text-[9px] text-gray-400">{timeAgo(comment.created_at)}</span>
-                                    {user && comment.user?.id === user.id && (
+                                    {user && (comment.user?.id === user.id || post.user?.id === user.id) && (
                                       <button
                                         onClick={() => deleteComment(post.id, comment.id)}
                                         className="ml-auto text-gray-300 hover:text-red-400 transition"
