@@ -310,6 +310,12 @@ export default function PositionFitPage() {
   // Guide panels
   const [guideOpen, setGuideOpen] = useState<Partial<Record<DomainKey, boolean>>>({});
 
+  // Save / share state
+  const [saving,       setSaving]       = useState(false);
+  const [saved,        setSaved]        = useState(false);
+  const [arenaSharing, setArenaSharing] = useState(false);
+  const [arenaShared,  setArenaShared]  = useState(false);
+
   // Camera state
   const [camTarget,  setCamTarget]  = useState<CamTarget>(null);
   const [camPhase,   setCamPhase]   = useState<CamPhase>('idle');
@@ -338,8 +344,10 @@ export default function PositionFitPage() {
     return undefined;
   })();
 
-  const runAssessment = useCallback(() => {
+  const runAssessment = useCallback(async () => {
     if (!playerName.trim() || !age) return;
+    setSaved(false);
+    setArenaShared(false);
     const inputs: RawTestInputs = {
       playerName: playerName.trim(), age: parseInt(age, 10), gender,
       position: cfg.grsPos,
@@ -366,9 +374,59 @@ export default function PositionFitPage() {
     saveToHistory(playerName.trim(), entry);
     setHistory(loadHistory(playerName.trim()));
     setShowHistory(false);
+
+    // ── Auto-save to passport (non-blocking) ──────────────────────────────
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? '';
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (token && token !== 'dev-token') {
+      setSaving(true);
+      try {
+        await fetch(`${apiBase}/player/biometrics/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            testType: 'position-fit',
+            ageGroup: res.ageGroup,
+            rawScore: res.aq,
+            tier: res.tier,
+            scoutNarrative: res.scoutNarrative,
+            recommendedPositions: [POS_CONFIG[best as PosKey]?.label ?? best],
+            suggestedDrills: res.suggestedDrills.map((d: { name: string }) => d.name),
+          }),
+        });
+        setSaved(true);
+      } catch {
+        /* offline or server error — result already saved locally */
+      } finally {
+        setSaving(false);
+      }
+    }
   }, [playerName, age, gender, pos, cfg,
       jumpCm, sprintSec, balRightOpen, balLeftOpen, balRightClosed, balLeftClosed,
       catches, chitimaTotalSec, juggles]);
+
+  const shareToArena = async () => {
+    if (!result) return;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? '';
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token || token === 'dev-token') return;
+    const bestFitLabel = POS_CONFIG[result.pq.bestFit as PosKey]?.label ?? result.pq.bestFit;
+    const bestFitPct   = Math.round(result.pq[cfg.pqKey]);
+    const postBody = `Just completed my GRS Position Fit assessment!\n\nBest position: ${cfg.emoji} ${bestFitLabel} (${bestFitPct}% fit) · AQ Score: ${result.aq} · ${result.tier}\n\n"${result.scoutNarrative}"\n\n#GrassRootsSports #PositionFit #Zimbabwe`;
+    setArenaSharing(true);
+    try {
+      await fetch(`${apiBase}/arena/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ body: postBody, post_type: 'milestone' }),
+      });
+      setArenaShared(true);
+    } catch {
+      /* silent */
+    } finally {
+      setArenaSharing(false);
+    }
+  };
 
   const openHistory = () => {
     if (playerName.trim()) { setHistory(loadHistory(playerName.trim())); setShowHistory(true); }
@@ -1153,6 +1211,52 @@ export default function PositionFitPage() {
                 </ul>
               </div>
             )}
+
+            {/* ── Passport save + Arena share ───────────────────────────── */}
+            <div style={{ backgroundColor: 'white', borderRadius: 12, border: '1px solid #e5e7eb', padding: 20 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 600, color: '#111', marginTop: 0, marginBottom: 4 }}>Save & Share</h3>
+              <p style={{ fontSize: 13, color: '#6b7280', marginTop: 0, marginBottom: 16 }}>
+                Your result is saved to your device. Sign in to save it to your player passport and share to The Arena.
+              </p>
+
+              {/* Passport save status */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, padding: '10px 14px', borderRadius: 8, backgroundColor: saved ? '#f0fdf4' : '#f9fafb', border: `1px solid ${saved ? '#bbf7d0' : '#e5e7eb'}` }}>
+                <CheckCircle size={16} style={{ color: saved ? '#15803d' : '#9ca3af', flexShrink: 0 }} />
+                <div>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: saved ? '#15803d' : '#374151' }}>
+                    {saving ? 'Saving to passport…' : saved ? 'Saved to your player passport' : 'Player passport — sign in to save'}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
+                    Your AQ score, tier, best position and scout narrative appear on your profile.
+                  </p>
+                </div>
+              </div>
+
+              {/* Arena share button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, backgroundColor: arenaShared ? '#f0fdf4' : '#f9fafb', border: `1px solid ${arenaShared ? '#bbf7d0' : '#e5e7eb'}` }}>
+                <Star size={16} style={{ color: arenaShared ? '#15803d' : '#9ca3af', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: arenaShared ? '#15803d' : '#374151' }}>
+                    {arenaShared ? 'Posted to The Arena!' : 'Share milestone to The Arena'}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
+                    Post your best position and AQ score as a milestone — visible to coaches and scouts in your network.
+                  </p>
+                </div>
+                {!arenaShared && (
+                  <button
+                    onClick={shareToArena}
+                    disabled={arenaSharing}
+                    style={{
+                      flexShrink: 0, padding: '8px 16px', borderRadius: 6, border: 'none',
+                      backgroundColor: arenaSharing ? '#d1d5db' : '#1a5c2a',
+                      color: 'white', fontSize: 13, fontWeight: 600, cursor: arenaSharing ? 'not-allowed' : 'pointer',
+                    }}>
+                    {arenaSharing ? 'Posting…' : 'Post'}
+                  </button>
+                )}
+              </div>
+            </div>
 
           </div>
         )}
