@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
+import { compressVideo } from "@/lib/compress-video";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ interface HalfResult {
 }
 
 interface HalfUploadState {
-  stage: "idle" | "uploading" | "uploaded" | "error";
+  stage: "idle" | "compressing" | "uploading" | "uploaded" | "error";
   pct: number;
   fileUri: string;
   fileName: string;
@@ -157,17 +158,21 @@ export default function MatchEyePage() {
   const uploadHalf = useCallback(async (file: File, which: "first" | "second") => {
     const setH = which === "first" ? setFirstHalf : setSecondHalf;
     const setT = which === "first" ? setFirstTracking : setSecondTracking;
-    setH((h) => ({ ...h, stage: "uploading", pct: 0, error: "" }));
 
-    // Run Super Engine ball+player tracking in the browser in parallel with upload.
-    // Uses YOLOv8 on 60 evenly-sampled frames — works for any video length.
-    // Silent fail: if YOLOv8 model is missing the tracking panel simply won't show.
+    // Run Super Engine ball+player tracking in the browser in parallel with compression+upload.
     measureFromVideo(file, "team", () => undefined).then(setT).catch(() => undefined);
 
-    // POST the file to our Next.js proxy, which streams it to Google server-to-server.
+    // Step 1 — compress to 720p H.264 in the browser (skipped if file < 50 MB)
+    setH((h) => ({ ...h, stage: "compressing", pct: 0, error: "" }));
+    const fileToUpload = await compressVideo(file, (pct) => {
+      setH((h) => ({ ...h, pct }));
+    });
+
+    // Step 2 — POST compressed file to our Next.js proxy, which streams it to Google server-to-server.
     // A direct browser → Google PUT is blocked by CORS (Google does not set
-    // Access-Control-Allow-Origin on their Gemini Files API upload endpoint).
-    // XHR is used instead of fetch so we can track upload progress.
+    // Access-Control-Allow-Origin on the Gemini Files API upload endpoint).
+    // XHR is used so we can track upload progress.
+    setH((h) => ({ ...h, stage: "uploading", pct: 0 }));
     try {
       const data = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>(
         (resolve, reject) => {
@@ -191,8 +196,8 @@ export default function MatchEyePage() {
           };
           xhr.onerror = () => reject(new Error("Network error during upload"));
           xhr.open("POST", "/api/match-eye/upload");
-          xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
-          xhr.send(file);
+          xhr.setRequestHeader("Content-Type", fileToUpload.type || "video/mp4");
+          xhr.send(fileToUpload);
         }
       );
       setH((h) => ({ ...h, stage: "uploaded", pct: 100, fileUri: data.fileUri, fileName: data.fileName, mimeType: data.mimeType }));
@@ -340,6 +345,21 @@ export default function MatchEyePage() {
           </div>
         )}
 
+        {half.stage === "compressing" && (
+          <div style={{ border: "1.5px solid #e5e7eb", borderRadius: 12, padding: "20px 16px", background: "#fff" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1a5c2a", marginBottom: 8 }}>
+              Preparing video... {half.pct > 0 ? `${half.pct}%` : ""}
+            </div>
+            <div style={{ background: "#e5e7eb", borderRadius: 99, height: 5, overflow: "hidden" }}>
+              {half.pct > 0
+                ? <div style={{ background: "#1a5c2a", borderRadius: 99, height: 5, width: `${half.pct}%`, transition: "width 0.3s" }} />
+                : <div style={{ background: "#1a5c2a", borderRadius: 99, height: 5, width: "40%", animation: "pulse 1.2s ease-in-out infinite" }} />
+              }
+            </div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Compressing to 720p — makes upload 5–10× faster</div>
+          </div>
+        )}
+
         {half.stage === "uploading" && (
           <div style={{ border: "1.5px solid #e5e7eb", borderRadius: 12, padding: "20px 16px", background: "#fff" }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#1a5c2a", marginBottom: 8 }}>
@@ -348,7 +368,7 @@ export default function MatchEyePage() {
             <div style={{ background: "#e5e7eb", borderRadius: 99, height: 5 }}>
               <div style={{ background: "#1a5c2a", borderRadius: 99, height: 5, width: `${half.pct}%`, transition: "width 0.3s" }} />
             </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Going directly to Google — no server limit</div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Sending to Google for AI analysis</div>
           </div>
         )}
 
