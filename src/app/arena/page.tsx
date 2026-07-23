@@ -8,7 +8,7 @@ import {
   Home, Users, Heart, MessageCircle, Share2, Image,
   Video, MapPin, Globe, LogIn, Plus, Send,
   Play, Eye, UserPlus, Filter, Briefcase, MessageSquare,
-  MoreVertical, Pencil, Trash2, X, Check, GraduationCap,
+  MoreVertical, Pencil, Trash2, X, Check, GraduationCap, Flag,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { matchPrograms, type MatchResult, type PlayerMatchData } from "@/lib/scholarship-matcher";
@@ -156,6 +156,8 @@ export default function ArenaPage() {
   const [submittingComment, setSubmittingComment]  = useState<Record<string, boolean>>({});
   const [editingComment,    setEditingComment]     = useState<string | null>(null);
   const [editCommentBody,   setEditCommentBody]    = useState<string>("");
+  const [reportingComment,  setReportingComment]   = useState<string | null>(null);
+  const [reportedComments,  setReportedComments]   = useState<Set<string>>(new Set());
   const [showLoginPrompt,   setShowLoginPrompt]    = useState(false);
   const [mediaFile,         setMediaFile]          = useState<File | null>(null);
   const [mediaPreview,      setMediaPreview]       = useState<string | null>(null);
@@ -338,6 +340,20 @@ export default function ArenaPage() {
         const cj = await cr.json();
         setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(cj.data ?? cj) }));
       }
+    }
+  };
+
+  const submitReport = async (postId: string, commentId: string, reason: string) => {
+    setReportingComment(null);
+    setReportedComments(prev => new Set(prev).add(commentId));
+    try {
+      await fetch(`${API}/arena/posts/${postId}/comments/${commentId}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ reason }),
+      });
+    } catch {
+      // Silent — UI already shows "Reported"
     }
   };
 
@@ -1206,7 +1222,39 @@ export default function ArenaPage() {
                                         <Trash2 size={11} />
                                       </button>
                                     )}
+                                    {user && comment.user?.id !== user.id && editingComment !== comment.id && (
+                                      reportedComments.has(comment.id) ? (
+                                        <span className="text-[9px] text-red-400 font-semibold">Reported</span>
+                                      ) : (
+                                        <button
+                                          onClick={() => setReportingComment(reportingComment === comment.id ? null : comment.id)}
+                                          className="text-gray-300 hover:text-orange-400 transition"
+                                          title="Report comment"
+                                        >
+                                          <Flag size={11} />
+                                        </button>
+                                      )
+                                    )}
                                   </div>
+                                  {reportingComment === comment.id && (
+                                    <div className="mt-1.5 flex flex-wrap gap-1">
+                                      {["offensive", "spam", "harassment", "other"].map(reason => (
+                                        <button
+                                          key={reason}
+                                          onClick={() => submitReport(post.id, comment.id, reason)}
+                                          className="text-[9px] px-2 py-0.5 rounded-full border border-orange-300 text-orange-600 hover:bg-orange-50 transition capitalize"
+                                        >
+                                          {reason}
+                                        </button>
+                                      ))}
+                                      <button
+                                        onClick={() => setReportingComment(null)}
+                                        className="text-[9px] px-2 py-0.5 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 transition"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  )}
                                   {editingComment === comment.id ? (
                                     <div className="flex gap-1.5 mt-1">
                                       <input
