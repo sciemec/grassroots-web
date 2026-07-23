@@ -83,18 +83,26 @@ async function waitForFileActive(fileName: string, googleKey: string): Promise<v
 
 export async function POST(req: NextRequest) {
   try {
-    const { fileUri, fileName, mimeType, fileState, homeTeam, awayTeam, competition, sport, trackedPlayers } =
-      await req.json() as {
-        fileUri: string;
-        fileName: string;
-        mimeType: string;
-        fileState?: string;
-        homeTeam: string;
-        awayTeam: string;
-        competition?: string;
-        sport?: string;
-        trackedPlayers?: TrackedPlayer[];
-      };
+    const {
+      fileUri, fileName, mimeType, fileState,
+      sessionType,
+      homeTeam, awayTeam, competition,
+      drillType, drillFocus,
+      sport, trackedPlayers,
+    } = await req.json() as {
+      fileUri: string;
+      fileName: string;
+      mimeType: string;
+      fileState?: string;
+      sessionType?: string;
+      homeTeam?: string;
+      awayTeam?: string;
+      competition?: string;
+      drillType?: string;
+      drillFocus?: string;
+      sport?: string;
+      trackedPlayers?: TrackedPlayer[];
+    };
 
     if (!fileUri || !fileName) {
       return Response.json({ error: "No file URI provided" }, { status: 400 });
@@ -129,6 +137,116 @@ For each player, include a "player_tracking" array in your JSON with this struct
 ]
 Track every player listed above. If a jersey number is not visible in the video, note that in position_tendency.`
       : "";
+
+    // ── DRILL MODE ────────────────────────────────────────────────────────────
+    if (sessionType === "drill") {
+      const drillPrompt = `You are an experienced ${sport ?? "football"} coach with UEFA A-licence experience watching a training drill video.
+Drill type: ${drillType ?? "Training Drill"}
+Sport: ${sport ?? "Football"}${drillFocus ? `\nCoach's focus: ${drillFocus}` : ""}
+
+Watch the full video carefully. Observe player movement, technique, decision-making, press intensity, and coaching moments throughout.
+
+Return ONLY a valid JSON object — no markdown, no explanation:
+{
+  "drill_type": "${drillType ?? "Training Drill"}",
+  "duration_observed": "estimated duration e.g. 8 minutes",
+  "intensity_rating": 7,
+  "player_count": 8,
+  "key_observations": [
+    "Pattern or behaviour you observe across the group as a whole",
+    "Another repeated pattern"
+  ],
+  "individual_feedback": [
+    {
+      "identifier": "describe by jersey colour, bib, position or number",
+      "observation": "specific thing this player does wrong or well",
+      "fix": "exact actionable correction or praise"
+    }
+  ],
+  "technical_issues": [
+    "Technical problem affecting the whole group",
+    "Another technical issue"
+  ],
+  "positives": [
+    "Something the group or individuals are doing well",
+    "Another positive to reinforce"
+  ],
+  "coaching_points": [
+    "Most important thing to address right now",
+    "Second priority coaching point",
+    "Third priority"
+  ],
+  "drill_progression": "Specific way to progress or regress this drill based on what you observed"
+}
+
+Be specific and practical. Reference what you actually see — jersey colours, positions, moments in the video. No generic advice.${playerTrackingPrompt}`;
+
+      const geminiDrillRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: drillPrompt },
+                { file_data: { mime_type: mimeType, file_uri: fileUri } },
+                { text: "Now provide your complete JSON analysis of this training drill video." },
+              ],
+            }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 3000 },
+          }),
+        }
+      );
+
+      if (!geminiDrillRes.ok) {
+        const errText = await geminiDrillRes.text();
+        return Response.json({ error: `Gemini API error: ${geminiDrillRes.status}`, detail: errText }, { status: 502 });
+      }
+
+      const geminiDrillData = await geminiDrillRes.json() as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      const drillText = geminiDrillData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      const drillAnalysis = extractJSON(drillText);
+
+      if (!drillAnalysis) {
+        return Response.json({ error: "Gemini returned unreadable drill analysis", raw: drillText.slice(0, 500) }, { status: 502 });
+      }
+
+      // Narrative for drill
+      const drillNarrativePrompt = `You are an experienced ${sport ?? "football"} coach writing a brief training session report.
+
+Drill: ${drillType ?? "Training Drill"}${drillFocus ? `\nFocus: ${drillFocus}` : ""}
+Analysis data:
+${JSON.stringify(drillAnalysis, null, 2)}
+
+Write a concise 3-paragraph coaching report:
+1. Overall session assessment — intensity, engagement, what the group achieved
+2. Main technical issue to work on and why it matters in a match situation
+3. What to do next — specific instruction for the next drill or session
+
+Write as a coach talking directly to their assistant. Be specific, direct, practical. No generic phrases. Plain text only — no markdown.`;
+
+      let drillNarrative = "";
+      const drillNarrRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: drillNarrativePrompt }] }],
+            generationConfig: { temperature: 0.4, maxOutputTokens: 800 },
+          }),
+        }
+      );
+      if (drillNarrRes.ok) {
+        const nd = await drillNarrRes.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+        drillNarrative = nd.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      }
+
+      return Response.json({ analysis: drillAnalysis, narrative: drillNarrative });
+    }
 
     // ── Call Gemini with native video file_data ───────────────────────────────
     const systemPrompt = `You are a professional football analyst with UEFA A-licence coaching experience.

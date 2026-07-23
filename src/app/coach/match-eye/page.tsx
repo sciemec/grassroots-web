@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle, Eye,
-  BookOpen, Clock, Target, Shield, Zap,
+  BookOpen, Clock, Target, Shield, Zap, Users,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
@@ -69,6 +69,44 @@ type PageStage = "setup" | "analysing" | "results" | "error";
 
 const SPORTS = ["Football", "Rugby", "Netball", "Basketball", "Cricket", "Hockey"];
 
+type SessionType = "match" | "drill";
+
+const DRILL_TYPES = [
+  "Rondo",
+  "Defence vs Strikers",
+  "Attack vs Defence",
+  "Small-Sided Game",
+  "Finishing Drill",
+  "Passing Patterns",
+  "Pressing Drill",
+  "Set Pieces",
+  "Free / Other",
+];
+
+interface DrillObservation {
+  identifier: string;
+  observation: string;
+  fix: string;
+}
+
+interface DrillAnalysis {
+  drill_type: string;
+  duration_observed: string;
+  intensity_rating: number;
+  player_count?: number;
+  key_observations: string[];
+  individual_feedback: DrillObservation[];
+  technical_issues: string[];
+  positives: string[];
+  coaching_points: string[];
+  drill_progression: string;
+}
+
+interface DrillResult {
+  analysis: DrillAnalysis;
+  narrative: string;
+}
+
 const initHalf = (): HalfUploadState => ({
   stage: "idle", pct: 0, fileUri: "", fileName: "", mimeType: "", error: "",
 });
@@ -78,12 +116,19 @@ const initHalf = (): HalfUploadState => ({
 export default function MatchEyePage() {
   const token = useAuthStore((s) => s.token);
 
+  // Session type
+  const [sessionType, setSessionType] = useState<SessionType>("match");
+
   // Match details
   const [homeTeam,       setHomeTeam]       = useState("");
   const [awayTeam,       setAwayTeam]       = useState("");
   const [competition,    setCompetition]    = useState("");
   const [sport,          setSport]          = useState("Football");
   const [trackedPlayers, setTrackedPlayers] = useState<TrackedPlayer[]>([{ jersey: "", name: "", position: "" }]);
+
+  // Drill details
+  const [drillType,  setDrillType]  = useState("Rondo");
+  const [drillFocus, setDrillFocus] = useState("");
 
   // Page flow
   const [pageStage,   setPageStage]   = useState<PageStage>("setup");
@@ -97,6 +142,7 @@ export default function MatchEyePage() {
   // Results
   const [firstResult,  setFirstResult]  = useState<HalfResult | null>(null);
   const [secondResult, setSecondResult] = useState<HalfResult | null>(null);
+  const [drillResult,  setDrillResult]  = useState<DrillResult | null>(null);
 
   // Super Engine local tracking (YOLOv8 ball + player detection in browser)
   const [firstTracking,  setFirstTracking]  = useState<VideoMeasurement | null>(null);
@@ -170,12 +216,45 @@ export default function MatchEyePage() {
     setH((h) => ({ ...h, stage: "uploaded", pct: 100, fileUri, fileName, mimeType }));
   }, []);
 
-  // ── Analyse both halves in parallel ─────────────────────────────────────────
+  // ── Analyse ─────────────────────────────────────────────────────────────────
 
   const analyse = useCallback(async () => {
-    if (firstHalf.stage !== "uploaded" || secondHalf.stage !== "uploaded") return;
     setPageStage("analysing");
     setGlobalError("");
+
+    // ── Drill mode: single video ─────────────────────────────────────────────
+    if (sessionType === "drill") {
+      if (firstHalf.stage !== "uploaded") return;
+      try {
+        const res = await fetch("/api/match-eye/analyse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileUri:        firstHalf.fileUri,
+            fileName:       firstHalf.fileName,
+            mimeType:       firstHalf.mimeType,
+            sessionType:    "drill",
+            drillType,
+            drillFocus,
+            sport,
+            trackedPlayers: trackedPlayers.filter((p) => p.jersey || p.name),
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({})) as { error?: string };
+          throw new Error(err.error ?? `Analysis failed (${res.status})`);
+        }
+        setDrillResult(await res.json() as DrillResult);
+        setPageStage("results");
+      } catch (err) {
+        setGlobalError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
+        setPageStage("error");
+      }
+      return;
+    }
+
+    // ── Match mode: two halves in parallel ───────────────────────────────────
+    if (firstHalf.stage !== "uploaded" || secondHalf.stage !== "uploaded") return;
 
     const analyseHalf = async (half: HalfUploadState, label: string): Promise<HalfResult> => {
       const res = await fetch("/api/match-eye/analyse", {
@@ -185,6 +264,7 @@ export default function MatchEyePage() {
           fileUri:        half.fileUri,
           fileName:       half.fileName,
           mimeType:       half.mimeType,
+          sessionType:    "match",
           homeTeam,
           awayTeam,
           competition:    competition ? `${competition} — ${label}` : label,
@@ -212,7 +292,7 @@ export default function MatchEyePage() {
       setGlobalError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
       setPageStage("error");
     }
-  }, [firstHalf, secondHalf, homeTeam, awayTeam, competition, sport]);
+  }, [sessionType, firstHalf, secondHalf, homeTeam, awayTeam, competition, sport, drillType, drillFocus, trackedPlayers]);
 
   const reset = () => {
     setPageStage("setup");
@@ -220,6 +300,7 @@ export default function MatchEyePage() {
     setSecondHalf(initHalf());
     setFirstResult(null);
     setSecondResult(null);
+    setDrillResult(null);
     setFirstTracking(null);
     setSecondTracking(null);
     setGlobalError("");
@@ -227,6 +308,8 @@ export default function MatchEyePage() {
     setAwayTeam("");
     setCompetition("");
     setSport("Football");
+    setDrillType("Rondo");
+    setDrillFocus("");
     setTrackedPlayers([{ jersey: "", name: "", position: "" }]);
   };
 
@@ -440,6 +523,123 @@ export default function MatchEyePage() {
     );
   }
 
+  // ── Drill session results ─────────────────────────────────────────────────
+  function DrillReport({ result, tracking }: { result: DrillResult; tracking: VideoMeasurement | null }) {
+    const a = result.analysis;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+        {/* Header stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 10 }}>
+          <StatBox label="Drill Type"  value={a.drill_type || drillType} />
+          <StatBox label="Intensity"   value={`${a.intensity_rating ?? "—"}/10`} />
+          {a.duration_observed && <StatBox label="Duration" value={a.duration_observed} />}
+          {a.player_count != null && <StatBox label="Players" value={String(a.player_count)} />}
+        </div>
+
+        {/* YOLOv8 tracking panel */}
+        {tracking && <TrackingPanel tracking={tracking} />}
+
+        {/* Narrative */}
+        {result.narrative && (
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "18px 20px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+              <BookOpen size={15} style={{ color: "#1a5c2a" }} /> Session Report
+            </div>
+            <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.75, whiteSpace: "pre-line" }}>
+              {result.narrative}
+            </div>
+          </div>
+        )}
+
+        {/* What's working */}
+        {(a.positives?.length ?? 0) > 0 && (
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#15803d", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <Zap size={13} style={{ color: "#16a34a" }} /> What&apos;s Working
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 16 }}>
+              {a.positives.map((p, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{p}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {/* Key observations */}
+        {(a.key_observations?.length ?? 0) > 0 && (
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <Eye size={13} style={{ color: "#2563eb" }} /> Key Observations
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 16 }}>
+              {a.key_observations.map((o, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{o}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {/* Technical issues + next progression */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
+          {(a.technical_issues?.length ?? 0) > 0 && (
+            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <Shield size={13} style={{ color: "#dc2626" }} /> Technical Issues
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 16 }}>
+                {a.technical_issues.map((t, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{t}</li>)}
+              </ul>
+            </div>
+          )}
+          {a.drill_progression && (
+            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "16px 18px" }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#1e40af", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <Target size={13} style={{ color: "#2563eb" }} /> Next Progression
+              </div>
+              <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{a.drill_progression}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Individual player feedback */}
+        {(a.individual_feedback?.length ?? 0) > 0 && (
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "18px 20px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 14 }}>
+              Individual Feedback — {a.individual_feedback.length} player{a.individual_feedback.length !== 1 ? "s" : ""}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {a.individual_feedback.map((pl, i) => (
+                <div key={i} style={{ border: "1.5px solid #e5e7eb", borderRadius: 10, padding: "14px 16px" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a", marginBottom: 4 }}>{pl.identifier}</div>
+                  <div style={{ fontSize: 13, color: "#374151", marginBottom: 8 }}>{pl.observation}</div>
+                  <div style={{ background: "#fef3c7", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#92400e" }}>
+                    <strong>Fix:</strong> {pl.fix}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Coaching points */}
+        {(a.coaching_points?.length ?? 0) > 0 && (
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#15803d", marginBottom: 8 }}>
+              Coaching Points
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 16 }}>
+              {a.coaching_points.map((p, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 5 }}>{p}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <button
+          onClick={reset}
+          style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+        >
+          Analyse Another Session
+        </button>
+      </div>
+    );
+  }
+
   function HalfReport({ result, half, tracking }: { result: HalfResult; half: "first" | "second"; tracking: VideoMeasurement | null }) {
     const a = result.analysis;
     return (
@@ -572,7 +772,9 @@ export default function MatchEyePage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
-  const canAnalyse = firstHalf.stage === "uploaded" && secondHalf.stage === "uploaded" && homeTeam && awayTeam;
+  const canAnalyse = sessionType === "drill"
+    ? firstHalf.stage === "uploaded"
+    : firstHalf.stage === "uploaded" && secondHalf.stage === "uploaded" && homeTeam && awayTeam;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", fontFamily: "system-ui,sans-serif" }}>
@@ -599,46 +801,111 @@ export default function MatchEyePage() {
         {/* ── SETUP & UPLOAD ──────────────────────────────────────────────────── */}
         {(pageStage === "setup") && (
           <>
-            {/* Match details form */}
-            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "20px", marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 16 }}>Match Details</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Home Team *</label>
-                  <input
-                    value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}
-                    placeholder="e.g. Dynamos FC"
-                    style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Away Team *</label>
-                  <input
-                    value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)}
-                    placeholder="e.g. Highlanders FC"
-                    style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Competition</label>
-                  <input
-                    value={competition} onChange={(e) => setCompetition(e.target.value)}
-                    placeholder="e.g. Premier League"
-                    style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Sport</label>
-                  <select
-                    value={sport} onChange={(e) => setSport(e.target.value)}
-                    style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+            {/* Session type toggle */}
+            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "16px 20px", marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#555", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>What are you analysing?</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                {([
+                  { value: "match" as SessionType, label: "Full Match", icon: <Eye size={16} />, sub: "Two halves, full game" },
+                  { value: "drill" as SessionType, label: "Training Drill", icon: <Users size={16} />, sub: "Rondo, defence drills, etc." },
+                ] as const).map(({ value, label, icon, sub }) => (
+                  <button
+                    key={value}
+                    onClick={() => { setSessionType(value); setFirstHalf(initHalf()); setSecondHalf(initHalf()); }}
+                    style={{
+                      flex: 1, padding: "12px 16px", border: `2px solid ${sessionType === value ? "#1a5c2a" : "#e5e7eb"}`,
+                      borderRadius: 10, cursor: "pointer", textAlign: "left",
+                      background: sessionType === value ? "#f0fdf4" : "#fafafa",
+                    }}
                   >
-                    {SPORTS.map((s) => <option key={s}>{s}</option>)}
-                  </select>
-                </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                      <span style={{ color: sessionType === value ? "#1a5c2a" : "#9ca3af" }}>{icon}</span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: sessionType === value ? "#1a5c2a" : "#374151" }}>{label}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6b7280", paddingLeft: 24 }}>{sub}</div>
+                  </button>
+                ))}
               </div>
+            </div>
+
+            {/* Details form — match or drill */}
+            <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "20px", marginBottom: 16 }}>
+              {sessionType === "match" ? (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 16 }}>Match Details</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Home Team *</label>
+                      <input
+                        value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}
+                        placeholder="e.g. Dynamos FC"
+                        style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Away Team *</label>
+                      <input
+                        value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)}
+                        placeholder="e.g. Highlanders FC"
+                        style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Competition</label>
+                      <input
+                        value={competition} onChange={(e) => setCompetition(e.target.value)}
+                        placeholder="e.g. Premier League"
+                        style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Sport</label>
+                      <select
+                        value={sport} onChange={(e) => setSport(e.target.value)}
+                        style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+                      >
+                        {SPORTS.map((s) => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 16 }}>Drill Details</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Drill Type *</label>
+                      <select
+                        value={drillType} onChange={(e) => setDrillType(e.target.value)}
+                        style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+                      >
+                        {DRILL_TYPES.map((d) => <option key={d}>{d}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Sport</label>
+                      <select
+                        value={sport} onChange={(e) => setSport(e.target.value)}
+                        style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+                      >
+                        {SPORTS.map((s) => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>
+                      What should Gemini focus on? <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+                    </label>
+                    <input
+                      value={drillFocus} onChange={(e) => setDrillFocus(e.target.value)}
+                      placeholder="e.g. press timing, first touch, defensive shape under pressure"
+                      style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Players to Track */}
@@ -705,17 +972,29 @@ export default function MatchEyePage() {
               )}
             </div>
 
-            {/* Upload zones — only show once team names entered */}
-            {homeTeam && awayTeam && (
+            {/* Upload zones */}
+            {(sessionType === "drill" || (homeTeam && awayTeam)) && (
               <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "20px", marginBottom: 16 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 4 }}>Upload Match Footage</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
-                  Videos upload directly to Google — no file size limit. Upload both halves, then click Analyse.
-                </div>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <UploadZone label="First Half (0–45 min)"   half={firstHalf}  inputRef={firstRef}  onChange={(f) => uploadHalf(f, "first")}  />
-                  <UploadZone label="Second Half (45–90 min)" half={secondHalf} inputRef={secondRef} onChange={(f) => uploadHalf(f, "second")} />
-                </div>
+                {sessionType === "drill" ? (
+                  <>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 4 }}>Upload Drill Video</div>
+                    <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+                      Upload your training clip. Goes directly to Google — no file size limit.
+                    </div>
+                    <UploadZone label="Drill Clip" half={firstHalf} inputRef={firstRef} onChange={(f) => uploadHalf(f, "first")} />
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: "#1a1a1a", marginBottom: 4 }}>Upload Match Footage</div>
+                    <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+                      Videos upload directly to Google — no file size limit. Upload both halves, then click Analyse.
+                    </div>
+                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                      <UploadZone label="First Half (0–45 min)"   half={firstHalf}  inputRef={firstRef}  onChange={(f) => uploadHalf(f, "first")}  />
+                      <UploadZone label="Second Half (45–90 min)" half={secondHalf} inputRef={secondRef} onChange={(f) => uploadHalf(f, "second")} />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -729,7 +1008,7 @@ export default function MatchEyePage() {
                   cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
-                <Eye size={18} /> Analyse Full Match with Gemini AI
+                <Eye size={18} /> {sessionType === "drill" ? `Analyse ${drillType} with Gemini AI` : "Analyse Full Match with Gemini AI"}
               </button>
             )}
           </>
@@ -740,14 +1019,15 @@ export default function MatchEyePage() {
           <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "48px 24px", textAlign: "center" }}>
             <Eye size={44} style={{ color: "#1a5c2a", marginBottom: 16 }} />
             <div style={{ fontWeight: 800, fontSize: 18, color: "#1a1a1a", marginBottom: 8 }}>
-              Gemini is watching the match...
+              {sessionType === "drill" ? "Gemini is watching the drill..." : "Gemini is watching the match..."}
             </div>
             <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 32, maxWidth: 380, margin: "0 auto 32px" }}>
-              {homeTeam} vs {awayTeam} — both halves are being analysed simultaneously.
-              This takes 2–5 minutes depending on video length.
+              {sessionType === "drill"
+                ? `${drillType} — Gemini is analysing player movement, technique, and coaching moments. This takes 1–3 minutes.`
+                : `${homeTeam} vs ${awayTeam} — both halves are being analysed simultaneously. This takes 2–5 minutes.`}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 340, margin: "0 auto" }}>
-              {(["First Half", "Second Half"] as const).map((label) => (
+              {(sessionType === "drill" ? ["Drill Clip"] : ["First Half", "Second Half"]).map((label) => (
                 <div key={label} style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{
                     width: 9, height: 9, borderRadius: "50%", background: "#1a5c2a", flexShrink: 0,
@@ -775,8 +1055,29 @@ export default function MatchEyePage() {
           </div>
         )}
 
-        {/* ── RESULTS ─────────────────────────────────────────────────────────── */}
-        {pageStage === "results" && firstResult && secondResult && (
+        {/* ── DRILL RESULTS ───────────────────────────────────────────────────── */}
+        {pageStage === "results" && sessionType === "drill" && drillResult && (
+          <div>
+            <div style={{
+              background: "#1a5c2a", borderRadius: 14, padding: "16px 20px",
+              marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {sport} — Training Session Analysis
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: "#fff", marginTop: 2 }}>
+                  {drillType}
+                </div>
+              </div>
+              <Users size={28} style={{ color: "rgba(255,255,255,0.5)" }} />
+            </div>
+            <DrillReport result={drillResult} tracking={firstTracking} />
+          </div>
+        )}
+
+        {/* ── MATCH RESULTS ───────────────────────────────────────────────────── */}
+        {pageStage === "results" && sessionType === "match" && firstResult && secondResult && (
           <div>
             {/* Match banner */}
             <div style={{
