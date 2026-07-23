@@ -534,8 +534,8 @@ export default function PlayerDashboardHome() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <HubCard href="/player/match-eye" icon={Eye} iconBg="#fee2e2" iconColor="#dc2626"
               label="Match Eye" desc="Upload match video Â· AI analyses your performance" badge="ai" />
-            <HubCard href="/player/analyse" icon={Sparkles} iconBg="#f3e8ff" iconColor="#9333ea"
-              label="Drill Analysis" desc="Upload video Â· Gemini AI coaching feedback" badge="Free trial" />
+            <HubCard href="/player/analyse" icon={Flame} iconBg="#fff7ed" iconColor="#ea580c"
+              label="Fitness Tests" desc="5-test battery Â· speed Â· jump Â· balance Â· reaction Â· agility" badge="ai" />
             <HubCard href="/player/biomechanics" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
               label="Movement Check" desc="Film a drill Â· AI scores your movement Â· see your weak spots" />
             <HubCard href="/player/gemini-drills" icon={Wand2} iconBg="#fdf4ff" iconColor="#7c3aed"
