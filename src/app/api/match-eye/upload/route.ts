@@ -9,7 +9,13 @@ export async function POST(req: Request) {
     }
 
     const contentType   = req.headers.get("content-type")   || "video/mp4";
-    const contentLength = req.headers.get("content-length") || "0";
+    // nginx/Render strips Content-Length for large bodies and uses chunked transfer instead.
+    // Browsers can't set Content-Length on XHR (forbidden header), so we accept the file size
+    // via a custom header X-Upload-Content-Length that browsers ARE allowed to set.
+    const contentLength =
+      req.headers.get("x-upload-content-length") ||
+      req.headers.get("content-length") ||
+      "0";
 
     // Step 1 — start a resumable upload session with Google (server-side, key never leaves server)
     const initRes = await fetch(

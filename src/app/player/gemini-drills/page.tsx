@@ -384,7 +384,7 @@ export default function GeminiDrillsPage() {
         xhr.onerror = () => reject(new Error('Network error during upload'));
         xhr.open('POST', '/api/match-eye/upload');
         xhr.setRequestHeader('Content-Type', blob.type || 'video/webm');
-        xhr.setRequestHeader('Content-Length', String(blob.size));
+        xhr.setRequestHeader('X-Upload-Content-Length', String(blob.size));
         xhr.send(blob);
       });
       const fileUri  = uploadData.fileUri;

@@ -292,7 +292,7 @@ export default function PlayerMatchEyePage() {
         xhr.onerror = () => reject(new Error("Network error during upload"));
         xhr.open("POST", "/api/match-eye/upload");
         xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
-        xhr.setRequestHeader("Content-Length", String(file.size));
+        xhr.setRequestHeader("X-Upload-Content-Length", String(file.size));
         xhr.send(file);
       });
 
