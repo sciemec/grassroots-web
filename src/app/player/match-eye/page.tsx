@@ -275,49 +275,31 @@ export default function PlayerMatchEyePage() {
     setError("");
     setUploadedFile(file);
 
-    let uploadUrl: string;
-    let mime: string;
     try {
-      const res = await fetch("/api/match-eye/upload", {
-        method: "POST",
-        headers: {
-          "content-type":     file.type || "video/mp4",
-          "x-content-length": String(file.size),
-        },
-      });
-      if (!res.ok) throw new Error(`Upload session failed (${res.status})`);
-      const data = await res.json() as { uploadUrl: string; mimeType: string };
-      uploadUrl = data.uploadUrl;
-      mime      = data.mimeType;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start upload");
-      setPageStage("error");
-      return;
-    }
-
-    try {
-      const result = await new Promise<{ file: { uri: string; name: string } }>((resolve, reject) => {
+      const data = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100));
+          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 95));
         };
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText) as { file: { uri: string; name: string } }); }
-            catch { reject(new Error("Unexpected response from Google")); }
+            try { resolve(JSON.parse(xhr.responseText) as { fileUri: string; fileName: string; mimeType: string }); }
+            catch { reject(new Error("Unexpected response from upload server")); }
           } else {
             reject(new Error(`Upload failed (${xhr.status})`));
           }
         };
         xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", mime);
+        xhr.open("POST", "/api/match-eye/upload");
+        xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
+        xhr.setRequestHeader("Content-Length", String(file.size));
         xhr.send(file);
       });
 
-      setFileUri(result.file.uri);
-      setFileName(result.file.name);
-      setMimeType(mime);
+      setFileUri(data.fileUri);
+      setFileName(data.fileName);
+      setMimeType(data.mimeType);
+      setUploadPct(100);
       setPageStage("uploaded");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");

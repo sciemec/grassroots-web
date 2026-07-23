@@ -269,32 +269,15 @@ export default function CoachDrillAnalysisPage() {
     };
     uploadToR2();
 
-    // ── Step 1: Get Google resumable upload session URL ───────────────────
-    let uploadUrl: string;
-    let mimeType: string;
-    try {
-      const initRes = await fetch("/api/match-eye/upload", {
-        method:  "POST",
-        headers: { "content-type": file.type, "x-content-length": String(file.size) },
-      });
-      if (!initRes.ok) throw new Error(`Init failed: ${initRes.status}`);
-      const init = await initRes.json() as { uploadUrl: string; mimeType: string };
-      uploadUrl = init.uploadUrl;
-      mimeType  = init.mimeType;
-    } catch {
-      setErrMsg("Could not start upload. Check your internet and try again.");
-      setStage("error");
-      return;
-    }
-
-    // ── Step 2: Upload video directly to Google (no Vercel limit) ─────────
+    // ── Upload through proxy (avoids CORS & Render size limits) ─────────
     let fileUri: string;
     let fileName: string;
+    let mimeType: string;
     try {
-      const googleRes = await new Promise<{ file: { uri: string; name: string; mimeType: string } }>((resolve, reject) => {
+      const uploadData = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100));
+          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 95));
         };
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
@@ -305,12 +288,14 @@ export default function CoachDrillAnalysisPage() {
           }
         };
         xhr.onerror = () => reject(new Error("Network error during upload. Check your connection."));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", mimeType);
+        xhr.open("POST", "/api/match-eye/upload");
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.setRequestHeader("Content-Length", String(file.size));
         xhr.send(file);
       });
-      fileUri  = googleRes.file.uri;
-      fileName = googleRes.file.name;
+      fileUri  = uploadData.fileUri;
+      fileName = uploadData.fileName;
+      mimeType = uploadData.mimeType;
     } catch (err) {
       setErrMsg(err instanceof Error ? err.message : "Upload failed. Please try again.");
       setStage("error");

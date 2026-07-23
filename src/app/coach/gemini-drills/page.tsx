@@ -239,34 +239,24 @@ export default function CoachGeminiDrillsPage() {
     if (!drill) return;
 
     try {
-      // Step 1: get Google resumable upload URL
-      setUploadPhase("getting_url");
-      const initRes = await fetch("/api/match-eye/upload", {
-        method: "POST",
-        headers: { "content-type": file.type, "x-content-length": String(file.size) },
-      });
-      if (!initRes.ok) throw new Error("Could not start upload");
-      const { uploadUrl } = await initRes.json();
-
-      // Step 2: XHR PUT directly to Google (bypasses Vercel 4MB limit)
+      // Upload through proxy — avoids CORS block on direct Google uploads
       setUploadPhase("uploading");
       const { fileUri, fileName } = await new Promise<{ fileUri: string; fileName: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.upload.addEventListener("progress", (ev) => {
-          if (ev.lengthComputable) setUploadPct(Math.round((ev.loaded / ev.total) * 100));
+          if (ev.lengthComputable) setUploadPct(Math.round((ev.loaded / ev.total) * 95));
         });
         xhr.addEventListener("load", () => {
           try {
-            const d = JSON.parse(xhr.responseText);
-            const uri  = d.file?.uri  ?? d.fileUri  ?? "";
-            const name = d.file?.name ?? d.fileName ?? "";
-            if (!uri) { reject(new Error("No fileUri in Google response")); return; }
-            resolve({ fileUri: uri, fileName: name });
+            const d = JSON.parse(xhr.responseText) as { fileUri?: string; fileName?: string };
+            if (!d.fileUri) { reject(new Error("Upload server did not return a file URI")); return; }
+            resolve({ fileUri: d.fileUri, fileName: d.fileName ?? "" });
           } catch { reject(new Error("Failed to parse upload response")); }
         });
         xhr.addEventListener("error", () => reject(new Error("Upload failed")));
-        xhr.open("PUT", uploadUrl);
+        xhr.open("POST", "/api/match-eye/upload");
         xhr.setRequestHeader("Content-Type", file.type);
+        xhr.setRequestHeader("Content-Length", String(file.size));
         xhr.send(file);
       });
 

@@ -363,45 +363,33 @@ export default function GeminiDrillsPage() {
     setUpload({ phase: 'getting_url', progress: 0, result: null, error: null });
 
     try {
-      // Step 1: Get Gemini resumable upload URL (reuses match-eye upload route)
-      const initRes = await fetch('/api/match-eye/upload', {
-        method: 'POST',
-        headers: {
-          'content-type': blob.type || 'video/webm',
-          'x-content-length': String(blob.size),
-        },
-      });
-      if (!initRes.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl } = await initRes.json() as { uploadUrl: string };
-
-      // Step 2: Upload blob directly to Google via XHR (bypass Vercel 4MB limit)
+      // Upload through proxy — avoids CORS block on direct Google uploads
       setUpload(prev => ({ ...prev, phase: 'uploading', progress: 0 }));
-      await new Promise<void>((resolve, reject) => {
+      const uploadData = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
         xhr.upload.onprogress = (ev) => {
           if (ev.lengthComputable) {
-            setUpload(prev => ({ ...prev, progress: Math.round((ev.loaded / ev.total) * 100) }));
+            setUpload(prev => ({ ...prev, progress: Math.round((ev.loaded / ev.total) * 95) }));
           }
         };
         xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`Upload failed: ${xhr.status}`));
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText)); }
+            catch { reject(new Error('Unexpected response from upload server')); }
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status}`));
+          }
         };
         xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.open('PUT', uploadUrl);
+        xhr.open('POST', '/api/match-eye/upload');
         xhr.setRequestHeader('Content-Type', blob.type || 'video/webm');
-        xhr.setRequestHeader('X-Goog-Upload-Command', 'upload, finalize');
-        xhr.setRequestHeader('X-Goog-Upload-Offset', '0');
+        xhr.setRequestHeader('Content-Length', String(blob.size));
         xhr.send(blob);
       });
-
-      // Parse Google's response to get the file URI
-      let googleResponse: { file?: { uri?: string; name?: string } } = {};
-      try { googleResponse = JSON.parse(xhrRef.current?.responseText ?? '{}'); } catch { /* ignore */ }
-      const fileUri  = googleResponse.file?.uri  ?? '';
-      const fileName = googleResponse.file?.name ?? '';
-      if (!fileUri) throw new Error('Google did not return a file URI');
+      const fileUri  = uploadData.fileUri;
+      const fileName = uploadData.fileName;
+      if (!fileUri) throw new Error('Upload server did not return a file URI');
 
       // Step 3: Analyse with Gemini
       setUpload(prev => ({ ...prev, phase: 'processing', progress: 100 }));
