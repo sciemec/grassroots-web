@@ -217,28 +217,14 @@ Be specific and professional. Base everything on what you observe in the video.$
       );
     }
 
-    // ── Call Claude for tactical narrative ────────────────────────────────────────
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    // ── Call Gemini for tactical narrative ────────────────────────────────────────
     let narrative = "";
 
-    if (anthropicKey) {
-      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1500,
-          messages: [{
-            role: "user",
-            content: `You are a professional football analyst writing a post-match report for a coach.
+    const narrativePrompt = `You are a professional football analyst writing a post-match report for a coach.
 
 Match: ${homeTeam} vs ${awayTeam}${competition ? `\nCompetition: ${competition}` : ""}${sport ? `\nSport: ${sport}` : ""}
 
-AI Vision Analysis (Gemini 1.5 Pro watched the full match video natively):
+Match analysis data:
 ${JSON.stringify(analysis, null, 2)}
 
 Write a professional 4-paragraph tactical match report:
@@ -247,17 +233,25 @@ Write a professional 4-paragraph tactical match report:
 3. Individual highlights${activePlayers.length > 0 ? ` — include specific observations on tracked players (${activePlayers.map((p) => `#${p.jersey}${p.name ? ` ${p.name}` : ""}`).join(", ")})` : " and areas of concern"}
 4. Training recommendations for the next session based on what was seen
 
-Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference formations, patterns, and events by name. No generic advice.`,
-          }],
-        }),
-      });
+Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference formations, patterns, and events by name. No generic advice. Return plain text only — no markdown, no bullet points.`;
 
-      if (claudeRes.ok) {
-        const claudeData = await claudeRes.json() as {
-          content?: Array<{ text?: string }>;
-        };
-        narrative = claudeData.content?.[0]?.text ?? "";
+    const narrativeRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: narrativePrompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 1500 },
+        }),
       }
+    );
+
+    if (narrativeRes.ok) {
+      const narrativeData = await narrativeRes.json() as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      narrative = narrativeData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     }
 
     return Response.json({ analysis, narrative });
