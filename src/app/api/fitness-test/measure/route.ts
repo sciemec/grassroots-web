@@ -138,6 +138,59 @@ Return ONLY valid JSON, no markdown:
 }
 
 If the ball is not visible or the clip quality is too poor to count, return confidence "low" with measured_value 0.`,
+
+  reaction: `You are a sports science measurement system analysing a Scanning & Reactive Shuttle test video.
+
+Setup: The athlete stands at a CENTER cone. A LEFT cone is 5m to their left and a RIGHT cone is 5m to their right.
+A coach stands 5m ahead of the athlete holding a RED and a BLUE marker.
+The camera is placed DIRECTLY BEHIND the athlete at chest height — you will see the athlete's back, the coach ahead, and both side cones.
+
+Your task: measure the REACTION TIME in seconds — from the moment the coach raises a coloured marker to the moment the athlete's foot crosses past the called cone.
+
+Method:
+- Find the exact frame when the coach's arm raises the marker visibly upward.
+- Find the exact frame when the athlete's leading foot passes the target side cone.
+- Count frames between these two events. Use the video frame rate (typically 30fps, 60fps, or 120fps slow-mo).
+- If slow-motion: divide the frame count by the actual fps to get real seconds.
+- Typical elite range: 1.5–2.5s. Grassroots range: 2.5–4.5s.
+- If multiple trials are visible, measure each separately and return the AVERAGE.
+
+Return ONLY valid JSON, no markdown:
+{
+  "measured_value": <decimal seconds to 2dp, e.g. 2.74>,
+  "unit": "seconds",
+  "confidence": "<high|medium|low>",
+  "notes": "<one sentence: what you observed, frame count or method used, and whether it is a single trial or average>"
+}
+
+If the marker raise or cone crossing is not clearly visible, return confidence "low" with measured_value 0 and explain in notes.`,
+
+  agility: `You are a sports science measurement system analysing a 5-10-5 Pro Agility Shuttle test video.
+
+Setup: Three cones in a straight line — Cone A (left end), Cone B (centre, where the athlete starts), Cone C (right end). Each gap is 5m. Total run: 20m with two direction changes.
+The camera is placed 8–10m DIRECTLY ACROSS from Cone B, perpendicular to the cone line. All three cones must be visible.
+
+Run pattern: athlete starts at Cone B → sprints to Cone C (5m) → cuts back past Cone A (10m) → sprints back past Cone B (5m, finish).
+
+Your task: measure the TOTAL TIME in seconds from first movement at Cone B to when the athlete crosses back past Cone B at the finish.
+
+Method:
+- Find the first frame where the athlete's feet leave their starting stance (movement initiation at Cone B).
+- Find the frame where the athlete's body crosses the Cone B line at the finish (they run PAST Cone B to complete the drill).
+- Count frames between these two events. Use the video frame rate (30fps standard, 120fps slow-mo, 240fps ultra slow-mo).
+- If slow-motion: the frame count ÷ actual fps = real elapsed seconds.
+- Typical grassroots range: 4.5–7.0s. Elite youth: 4.0–4.8s.
+- If two attempts are visible, measure each and return the BEST (fastest) time.
+
+Return ONLY valid JSON, no markdown:
+{
+  "measured_value": <decimal seconds to 2dp, e.g. 5.23>,
+  "unit": "seconds",
+  "confidence": "<high|medium|low>",
+  "notes": "<one sentence: frame count used, fps detected, whether single or best-of-two>"
+}
+
+If the start or finish at Cone B is not clearly visible in frame, return confidence "low" with measured_value 0 and explain in notes.`,
 };
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -159,7 +212,7 @@ export async function POST(req: NextRequest) {
 
     if (!testType || !PROMPTS[testType]) {
       return Response.json(
-        { error: "testType must be one of: jump, sprint, juggling" },
+        { error: "testType must be one of: jump, sprint, juggling, reaction, agility" },
         { status: 400 }
       );
     }
