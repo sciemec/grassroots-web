@@ -288,6 +288,30 @@ export default function ArenaPage() {
     setLoadingComments(prev => ({ ...prev, [postId]: false }));
   };
 
+  const deleteComment = async (postId: string, commentId: string) => {
+    // Optimistic removal
+    setExpandedComments(prev => ({
+      ...prev,
+      [postId]: (prev[postId] ?? []).filter(c => c.id !== commentId),
+    }));
+    try {
+      await fetch(`${API}/arena/posts/${postId}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      fetchPosts(); // refresh comment_count on the post card
+    } catch {
+      // If it fails, re-fetch to restore state
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const cr = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
+      if (cr.ok) {
+        const cj = await cr.json();
+        setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(cj.data ?? cj) }));
+      }
+    }
+  };
+
   const addComment = async (postId: string) => {
     const body = newComment[postId]?.trim();
     if (!body) return;
@@ -1135,6 +1159,15 @@ export default function ArenaPage() {
                                       {role.charAt(0).toUpperCase() + role.slice(1)}
                                     </span>
                                     <span className="text-[9px] text-gray-400">{timeAgo(comment.created_at)}</span>
+                                    {user && comment.user?.id === user.id && (
+                                      <button
+                                        onClick={() => deleteComment(post.id, comment.id)}
+                                        className="ml-auto text-gray-300 hover:text-red-400 transition"
+                                        title="Delete comment"
+                                      >
+                                        <Trash2 size={11} />
+                                      </button>
+                                    )}
                                   </div>
                                   <p className="text-xs text-gray-700 mt-0.5 break-words">{comment.body}</p>
                                 </div>
