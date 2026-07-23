@@ -107,7 +107,7 @@ interface Comment {
   id: string;
   body: string;
   created_at: string;
-  user?: { id: string; name: string; role: string };
+  user?: { id: string; name: string; first_name?: string; surname?: string; role: string };
 }
 
 // Showcase discover feed — GET /showcase/discover
@@ -1116,20 +1116,31 @@ export default function ArenaPage() {
                         ) : expandedComments[post.id].length === 0 ? (
                           <p className="text-xs text-gray-400 text-center">No comments yet</p>
                         ) : (
-                          expandedComments[post.id].map(comment => (
-                            <div key={comment.id} className="flex gap-2">
-                              <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-[10px] font-bold">
-                                {comment.user?.name?.charAt(0) || "?"}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold">{comment.user?.name || comment.user?.role || "Player"}</span>
-                                  <span className="text-[9px] text-gray-400">{timeAgo(comment.created_at)}</span>
+                          expandedComments[post.id].map(comment => {
+                            const displayName = comment.user
+                              ? [comment.user.first_name, comment.user.surname].filter(Boolean).join(" ") || comment.user.name || "Unknown"
+                              : "Unknown";
+                            const role = comment.user?.role ?? "player";
+                            const avatarBg: Record<string, string> = { coach: "bg-blue-500", scout: "bg-purple-500", admin: "bg-red-500" };
+                            const roleBadge: Record<string, string> = { coach: "bg-blue-100 text-blue-700", scout: "bg-purple-100 text-purple-700", admin: "bg-red-100 text-red-700", fan: "bg-amber-100 text-amber-700" };
+                            return (
+                              <div key={comment.id} className="flex gap-2">
+                                <div className={`w-7 h-7 rounded-full ${avatarBg[role] ?? "bg-[#1a5c2a]"} flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0`}>
+                                  {displayName.charAt(0).toUpperCase()}
                                 </div>
-                                <p className="text-xs text-gray-700 mt-0.5">{comment.body}</p>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs font-bold text-gray-900">{displayName}</span>
+                                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${roleBadge[role] ?? "bg-green-100 text-green-700"}`}>
+                                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                                    </span>
+                                    <span className="text-[9px] text-gray-400">{timeAgo(comment.created_at)}</span>
+                                  </div>
+                                  <p className="text-xs text-gray-700 mt-0.5 break-words">{comment.body}</p>
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                         {user && (
                           <div className="flex gap-2 mt-2">
