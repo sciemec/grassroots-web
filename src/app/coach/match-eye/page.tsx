@@ -315,6 +315,45 @@ export default function MatchEyePage() {
     );
   }
 
+  // Shows upload progress with estimated time remaining
+  function UploadProgress({ pct }: { pct: number }) {
+    const startRef = useRef<{ time: number; pct: number } | null>(null);
+    const [eta, setEta] = useState<string>("");
+
+    // On first render (pct may already be > 0), record baseline
+    if (!startRef.current && pct > 0) {
+      startRef.current = { time: Date.now(), pct };
+    }
+
+    // Recalculate ETA whenever pct changes
+    const pctRef = useRef(pct);
+    pctRef.current = pct;
+    if (startRef.current && pct > startRef.current.pct) {
+      const elapsed = (Date.now() - startRef.current.time) / 1000;
+      const done = pct - startRef.current.pct;
+      const remaining = 100 - pct;
+      const secsLeft = (elapsed / done) * remaining;
+      if (secsLeft > 1 && secsLeft < 600) {
+        const m = Math.floor(secsLeft / 60);
+        const s = Math.round(secsLeft % 60);
+        setEta(m > 0 ? `~${m}m ${s}s remaining` : `~${s}s remaining`);
+      }
+    }
+
+    return (
+      <div style={{ border: "1.5px solid #e5e7eb", borderRadius: 12, padding: "20px 16px", background: "#fff" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a5c2a" }}>Uploading... {pct}%</div>
+          {eta && <div style={{ fontSize: 11, color: "#9ca3af" }}>{eta}</div>}
+        </div>
+        <div style={{ background: "#e5e7eb", borderRadius: 99, height: 5 }}>
+          <div style={{ background: "#1a5c2a", borderRadius: 99, height: 5, width: `${pct}%`, transition: "width 0.3s" }} />
+        </div>
+        <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Sending to Google for AI analysis</div>
+      </div>
+    );
+  }
+
   function UploadZone({
     label, half, inputRef, onChange,
   }: {
@@ -341,6 +380,7 @@ export default function MatchEyePage() {
             <Upload size={26} style={{ color: "#9ca3af", marginBottom: 8 }} />
             <div style={{ fontSize: 13, color: "#555", fontWeight: 600 }}>Click to upload</div>
             <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>MP4, MOV, AVI — any size</div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>Tip: record at 720p for fastest upload</div>
             {half.error && <div style={{ marginTop: 8, fontSize: 12, color: "#ef4444" }}>{half.error}</div>}
           </div>
         )}
@@ -361,15 +401,7 @@ export default function MatchEyePage() {
         )}
 
         {half.stage === "uploading" && (
-          <div style={{ border: "1.5px solid #e5e7eb", borderRadius: 12, padding: "20px 16px", background: "#fff" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1a5c2a", marginBottom: 8 }}>
-              Uploading... {half.pct}%
-            </div>
-            <div style={{ background: "#e5e7eb", borderRadius: 99, height: 5 }}>
-              <div style={{ background: "#1a5c2a", borderRadius: 99, height: 5, width: `${half.pct}%`, transition: "width 0.3s" }} />
-            </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Sending to Google for AI analysis</div>
-          </div>
+          <UploadProgress pct={half.pct} />
         )}
 
         {half.stage === "uploaded" && (
