@@ -67,7 +67,7 @@ const POS_CONFIG: Record<PosKey, PosConfig> = {
 // ── Domain labels ─────────────────────────────────────────────────────────────
 const DOMAIN_META: Record<DomainKey, { label: string; test: string }> = {
   linearSpeed:    { label: 'Sprint Speed',          test: 'T2 — 20m Sprint'      },
-  cognitiveSpeed: { label: 'Reaction / Decision',   test: 'T4 — Reactive Interference'  },
+  cognitiveSpeed: { label: 'Reaction / Decision',   test: 'T4 — Ball Juggle (1 min)'  },
   ballMastery:    { label: 'Ball Mastery',           test: 'T6 — Juggling'        },
   explosivePower: { label: 'Explosive Power',        test: 'T1 — Jump'            },
   balance:        { label: 'Balance',                test: 'T3 — Balance'         },
@@ -169,31 +169,29 @@ const TEST_GUIDE: Record<DomainKey, TestGuide> = {
     proTip: 'Midfielders and goalkeepers need the best balance scores. Target: 0–2 errors across all 4 stances. Eyes-closed is typically 3–4× harder than eyes-open — this is normal. Training tip: progress to balance on an unstable surface (folded towel, foam pad) once you achieve 0 errors with eyes open.',
   },
   cognitiveSpeed: {
-    title: 'T4 — Reactive Interference Test (Divided Attention)',
-    what: 'Measures divided attention and decision-making speed under motor load — the ability to process external information (calls, signals) while maintaining a physical task. This mirrors real match demands: a midfielder must read a pressing trigger while passing, a goalkeeper must organise defenders while tracking the ball.',
+    title: 'T4 — Ball Juggle (1 Minute)',
+    what: 'Measures hand-eye coordination, rhythm, and motor control under sustained effort. Counts total successful catches in a 1-minute window — the more catches maintained without a drop, the higher the score. Works with any juggleable object.',
     equipment: [
-      '2 tennis balls',
-      'A partner or coach (tester)',
+      '1 or 2 juggling objects — tennis balls, small rubber balls, oranges, rolled socks, beanbags, or anything similar in weight',
+      'A timer (phone stopwatch is fine)',
       'Open space',
-      'Optional: smartphone at 60fps for cycle frequency analysis',
     ],
     steps: [
-      'The player juggles 2 tennis balls — alternating between hands (left throw → right catch → right throw → left catch), OR juggling 2 balls in one hand if able.',
-      'Once the player establishes a steady rhythm, the TESTER holds up a number on their fingers (1–5) or calls out a colour.',
-      'The player must SHOUT the number or colour mid-juggle without breaking rhythm or dropping a ball.',
-      'Each successful response without a drop = 1 point.',
-      'Run 5 trials. Record how many the player answered correctly while maintaining juggling rhythm.',
-      'Score 0–5: 5 = answered all 5 correctly with no drops. 0 = dropped every time or could not respond.',
+      'Player stands in open space holding their chosen juggling objects.',
+      'On "Go", start a 1-minute timer.',
+      'Player juggles continuously — throwing and catching alternating between hands. Any juggling style counts: 2-ball alternating, 1 ball hand-to-hand, cascade pattern.',
+      'Count EVERY successful catch throughout the full minute.',
+      'If a ball drops — pick it up and continue immediately. Catches already made are kept.',
+      'Do 3 attempts with 2 minutes rest between. Record the BEST score.',
     ],
-    reps: '5 trials — score is correct responses out of 5',
-    duration: '~5 minutes',
+    reps: '3 attempts — record best catch count',
+    duration: '~10 minutes including rest',
     apps: [
-      'Smartphone at 60fps or 120fps (side-on at chest height) — count juggling catches per second to calculate cycle frequency (Hz). Higher Hz = faster motor processing speed.',
-      'Drop recovery time: use slow-motion to time how long from ball drop → player retrieves and re-establishes rhythm. Elite: under 1.5 seconds.',
-      'No dedicated app needed — score manually on paper or note the video timestamp of each trial.',
+      'No app needed — just a phone timer and a counter (can use a tally on paper).',
+      'Optional: record video and count catches in playback for accuracy.',
     ],
-    cameraTip: 'Record at 60fps or 120fps from directly in front at chest height, 2–3 metres away. Count catches per second in the video to get cycle frequency. A tighter, faster rhythm at the same accuracy score means a higher motor processing speed.',
-    proTip: 'For field athletes: combine with footwork — juggle 2 tennis balls while performing quick-feet ladder drills. This isolates whether the brain can separate upper-body responsiveness from lower-body movement — a key indicator of elite multi-tasking. Average grassroots score: 2–3/5. Elite youth: 4–5/5.',
+    cameraTip: 'Set phone on a tripod or lean it against a bag, facing the player from 3–4 metres away. You can count catches from the video replay if you lose count live.',
+    proTip: 'Use the lightest objects you can find — lighter = faster rhythm = higher score. An orange or a pair of rolled-up socks works fine if tennis balls are not available. Grassroots reference: 30–60 catches/min is average, 80–100+ is strong hand-eye coordination.',
   },
   endurance: {
     title: 'T5 — Agility & Change of Direction (COD)',
@@ -255,7 +253,7 @@ const TABLE_ROWS: { test: string; striker: number; winger: number; midfielder: n
   { test: 'T1 — Jump (cm)',           striker: 4, winger: 4, midfielder: 6, defender: 1, goalkeeper: 2 },
   { test: 'T2 — 20m Sprint (sec)',    striker: 1, winger: 1, midfielder: 5, defender: 2, goalkeeper: 4 },
   { test: 'T3 — Balance (errors)',    striker: 5, winger: 5, midfielder: 3, defender: 4, goalkeeper: 3 },
-  { test: 'T4 — Reactive Interference (0–5)',  striker: 2, winger: 3, midfielder: 2, defender: 3, goalkeeper: 1 },
+  { test: 'T4 — Ball Juggle (catches/min)',  striker: 2, winger: 3, midfielder: 2, defender: 3, goalkeeper: 1 },
   { test: 'T5 — Illinois Agility (sec)',       striker: 6, winger: 6, midfielder: 1, defender: 5, goalkeeper: 6 },
   { test: 'T6 — Juggling (count)',    striker: 3, winger: 2, midfielder: 4, defender: 6, goalkeeper: 5 },
 ];
@@ -305,7 +303,7 @@ export default function PositionFitPage() {
   const [balLeftOpen,    setBalLeftOpen]    = useState('');
   const [balRightClosed, setBalRightClosed] = useState('');
   const [balLeftClosed,  setBalLeftClosed]  = useState('');
-  const [catches,        setCatches]        = useState<number | null>(null);
+  const [catches,        setCatches]        = useState('');
   const [chitimaSec,     setChitimaSec]     = useState('');
   const [juggles,        setJuggles]        = useState('');
 
@@ -353,7 +351,7 @@ export default function PositionFitPage() {
       balanceLeftOpen:    balLeftOpen    ? parseInt(balLeftOpen,    10) : undefined,
       balanceRightClosed: balRightClosed ? parseInt(balRightClosed, 10) : undefined,
       balanceLeftClosed:  balLeftClosed  ? parseInt(balLeftClosed,  10) : undefined,
-      reactionCatchRate:  catches !== null ? catches : undefined,
+      reactionCatchRate:  catches ? parseInt(catches, 10) : undefined,
       chitimaTotalSec,
       jugglingSequence:   juggles        ? parseInt(juggles, 10)       : undefined,
     };
@@ -833,24 +831,13 @@ export default function PositionFitPage() {
                       </div>
                     )}
 
-                    {/* T4 Reaction */}
+                    {/* T4 Ball Juggle */}
                     {domainKey === 'cognitiveSpeed' && (
-                      <div>
-                        <p style={{ fontSize: 12, color: '#6b7280', marginTop: 0, marginBottom: 10 }}>Reactive Interference Score (0–5) — tap to select:</p>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          {[0, 1, 2, 3, 4, 5].map(n => (
-                            <button key={n} onClick={() => setCatches(catches === n ? null : n)}
-                              style={{
-                                width: 44, height: 44, borderRadius: 8,
-                                border: `2px solid ${catches === n ? cfg.color : '#d1d5db'}`,
-                                backgroundColor: catches === n ? cfg.bgColor : 'white',
-                                color: catches === n ? cfg.color : '#374151',
-                                fontWeight: catches === n ? 700 : 500,
-                                fontSize: 16, cursor: 'pointer',
-                              }}>{n}</button>
-                          ))}
-                        </div>
-                        <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6, marginBottom: 0 }}>5 = all correct responses while juggling · higher is better</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <input type="number" min={0} max={300} value={catches}
+                          onChange={e => setCatches(e.target.value)} placeholder="Best count"
+                          style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, width: 110 }} />
+                        <span style={{ fontSize: 13, color: '#6b7280' }}>catches in 1 min — higher is better</span>
                       </div>
                     )}
 
