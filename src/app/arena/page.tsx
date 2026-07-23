@@ -268,10 +268,12 @@ export default function ArenaPage() {
   // ── Social actions (Document 15) ─────────────────────────────────────────
 
   const loadComments = async (postId: string) => {
-    if (expandedComments[postId]) {
+    if (expandedComments[postId] !== undefined) {
       setExpandedComments(prev => { const s = { ...prev }; delete s[postId]; return s; });
       return;
     }
+    // Open the section immediately so the spinner is visible before the API responds
+    setExpandedComments(prev => ({ ...prev, [postId]: [] }));
     setLoadingComments(prev => ({ ...prev, [postId]: true }));
     try {
       const headers: HeadersInit = {};
@@ -280,7 +282,9 @@ export default function ArenaPage() {
       if (!res.ok) throw new Error();
       const json = await res.json();
       setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(json.data ?? json) }));
-    } catch {}
+    } catch {
+      // leave as [] — section stays open with "No comments yet" + input box
+    }
     setLoadingComments(prev => ({ ...prev, [postId]: false }));
   };
 
