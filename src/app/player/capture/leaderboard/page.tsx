@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Trophy,
@@ -70,6 +70,14 @@ function scoreColour(score: number) {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DrillLeaderboardPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }} />}>
+      <DrillLeaderboard />
+    </Suspense>
+  );
+}
+
+function DrillLeaderboard() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const token        = useAuthStore((s) => s.token);
