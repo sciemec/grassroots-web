@@ -164,56 +164,41 @@ export default function MatchEyePage() {
     // Silent fail: if YOLOv8 model is missing the tracking panel simply won't show.
     measureFromVideo(file, "team", () => undefined).then(setT).catch(() => undefined);
 
-    // Step 1 — get resumable upload URL from our proxy
-    let uploadUrl: string;
-    let mimeType: string;
+    // POST the file to our Next.js proxy, which streams it to Google server-to-server.
+    // A direct browser → Google PUT is blocked by CORS (Google does not set
+    // Access-Control-Allow-Origin on their Gemini Files API upload endpoint).
+    // XHR is used instead of fetch so we can track upload progress.
     try {
-      const res = await fetch("/api/match-eye/upload", {
-        method: "POST",
-        headers: {
-          "content-type":      file.type || "video/mp4",
-          "x-content-length":  String(file.size),
-        },
-      });
-      if (!res.ok) throw new Error(`Session start failed (${res.status})`);
-      const data = await res.json() as { uploadUrl: string; mimeType: string };
-      uploadUrl = data.uploadUrl;
-      mimeType  = data.mimeType;
-    } catch (err) {
-      setH((h) => ({ ...h, stage: "error", error: err instanceof Error ? err.message : "Could not start upload" }));
-      return;
-    }
-
-    // Step 2 — upload bytes directly to Google (bypasses Render size limits)
-    let fileUri: string;
-    let fileName: string;
-    try {
-      const result = await new Promise<{ file: { uri: string; name: string } }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setH((h) => ({ ...h, pct: Math.round((e.loaded / e.total) * 100) }));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText) as { file: { uri: string; name: string } }); }
-            catch { reject(new Error("Unexpected response from Google")); }
-          } else {
-            reject(new Error(`Upload failed (${xhr.status})`));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", mimeType);
-        xhr.send(file);
-      });
-      fileUri  = result.file.uri;
-      fileName = result.file.name;
+      const data = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>(
+        (resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable)
+              setH((h) => ({ ...h, pct: Math.round((e.loaded / e.total) * 95) }));
+          };
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                resolve(JSON.parse(xhr.responseText) as { fileUri: string; fileName: string; mimeType: string });
+              } catch {
+                reject(new Error("Unexpected response from server"));
+              }
+            } else {
+              let msg = `Upload failed (${xhr.status})`;
+              try { msg = (JSON.parse(xhr.responseText) as { error?: string }).error ?? msg; } catch {}
+              reject(new Error(msg));
+            }
+          };
+          xhr.onerror = () => reject(new Error("Network error during upload"));
+          xhr.open("POST", "/api/match-eye/upload");
+          xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
+          xhr.send(file);
+        }
+      );
+      setH((h) => ({ ...h, stage: "uploaded", pct: 100, fileUri: data.fileUri, fileName: data.fileName, mimeType: data.mimeType }));
     } catch (err) {
       setH((h) => ({ ...h, stage: "error", error: err instanceof Error ? err.message : "Upload failed" }));
-      return;
     }
-
-    setH((h) => ({ ...h, stage: "uploaded", pct: 100, fileUri, fileName, mimeType }));
   }, []);
 
   // ── Analyse ─────────────────────────────────────────────────────────────────
