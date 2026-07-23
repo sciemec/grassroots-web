@@ -8,14 +8,17 @@ export async function POST(req: Request) {
       return Response.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
     }
 
-    const contentType   = req.headers.get("content-type")   || "video/mp4";
-    // nginx/Render strips Content-Length for large bodies and uses chunked transfer instead.
-    // Browsers can't set Content-Length on XHR (forbidden header), so we accept the file size
-    // via a custom header X-Upload-Content-Length that browsers ARE allowed to set.
-    const contentLength =
-      req.headers.get("x-upload-content-length") ||
-      req.headers.get("content-length") ||
-      "0";
+    const contentType = req.headers.get("content-type") || "video/mp4";
+
+    // File size: query param is the only reliable channel — nginx strips both Content-Length
+    // (uses chunked encoding for large bodies) and custom request headers.
+    // Frontend sends: POST /api/match-eye/upload?size=<file.size>
+    const sizeFromQuery  = new URL(req.url).searchParams.get("size");
+    const contentLength  =
+      sizeFromQuery                              ||   // ← most reliable: URL query param
+      req.headers.get("x-upload-content-length") ||   // ← fallback: custom header
+      req.headers.get("content-length")          ||   // ← fallback: standard header (may be stripped)
+      "0";                                            // ← last resort (will cause Google to reject)
 
     // Step 1 — start a resumable upload session with Google (server-side, key never leaves server)
     const initRes = await fetch(

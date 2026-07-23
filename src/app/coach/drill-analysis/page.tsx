@@ -288,9 +288,8 @@ export default function CoachDrillAnalysisPage() {
           }
         };
         xhr.onerror = () => reject(new Error("Network error during upload. Check your connection."));
-        xhr.open("POST", "/api/match-eye/upload");
+        xhr.open("POST", `/api/match-eye/upload?size=${file.size}`);
         xhr.setRequestHeader("Content-Type", file.type);
-        xhr.setRequestHeader("X-Upload-Content-Length", String(file.size));
         xhr.send(file);
       });
       fileUri  = uploadData.fileUri;

@@ -254,9 +254,8 @@ export default function CoachGeminiDrillsPage() {
           } catch { reject(new Error("Failed to parse upload response")); }
         });
         xhr.addEventListener("error", () => reject(new Error("Upload failed")));
-        xhr.open("POST", "/api/match-eye/upload");
+        xhr.open("POST", `/api/match-eye/upload?size=${file.size}`);
         xhr.setRequestHeader("Content-Type", file.type);
-        xhr.setRequestHeader("X-Upload-Content-Length", String(file.size));
         xhr.send(file);
       });
 

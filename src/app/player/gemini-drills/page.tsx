@@ -382,9 +382,8 @@ export default function GeminiDrillsPage() {
           }
         };
         xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.open('POST', '/api/match-eye/upload');
+        xhr.open('POST', `/api/match-eye/upload?size=${blob.size}`);
         xhr.setRequestHeader('Content-Type', blob.type || 'video/webm');
-        xhr.setRequestHeader('X-Upload-Content-Length', String(blob.size));
         xhr.send(blob);
       });
       const fileUri  = uploadData.fileUri;
