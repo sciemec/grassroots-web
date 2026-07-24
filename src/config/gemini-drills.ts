@@ -36,6 +36,10 @@ export interface GeminiDrill {
   dimensions: DrillDimension[];
   geminiPrompt: string;  // exact prompt sent to Gemini after video is uploaded
   passportLabel: string;
+  diagram?: string;       // ASCII illustration shown before recording
+  protocol?: string[];    // step-by-step instructions (English)
+  protocolSn?: string[];  // ChiShona version (75% EN, 25% SN)
+  protocolNd?: string[];  // isiNdebele version (75% EN, 25% ND)
 }
 
 // ── FOOTBALL DRILLS ──────────────────────────────────────────────────────────
@@ -80,6 +84,42 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low — how clearly the technique was visible in this clip>"
 }`,
     passportLabel: 'First Touch',
+    diagram: `  [PARTNER / WALL]
+       |
+       v  pass or throw
+  ─────────────────
+       [BALL]
+  ─────────────────
+  Turn SIDE-ON first   <- open body before ball arrives
+  Inside foot ──>      <- touch ball forward or sideways
+  [CAMERA: side view, hip height]`,
+    protocol: [
+      'Find a partner or wall. Stand 8–10 large steps away.',
+      'Ask your partner to pass or throw the ball toward you (or kick it off the wall).',
+      'BEFORE the ball arrives, turn your body side-on — show your shoulder to your partner.',
+      'As the ball comes, meet it with the INSIDE of your foot. Step forward to meet it — do not wait.',
+      'Touch the ball FORWARD or SIDEWAYS — away from where it came from.',
+      'Quickly move off after the touch, like you are attacking space.',
+      'Do 8 touches. Keep the camera recording the whole time.',
+    ],
+    protocolSn: [
+      'Tsvaga partner kana madziro. Mira makadhi 8–10 kure (stand 8–10 large steps away).',
+      'Kumbira partner akurusire kana kuhodha bhora (ask partner to pass or throw the ball to you).',
+      'USATI bhora rasvika, tendeuka kuti muviri wako ufanane nechipande — show your shoulder to the partner.',
+      'Bhora richieri, risangane naro ne inside yekirawa yako. Usagara — step forward to meet it.',
+      'Touch bhora MBERI kana KUCHINJIKA — away from where it came from.',
+      'Kumhanya mushure mekutouch, senge uri kurwira nzvimbo (attack space).',
+      'Ita 8 touches. Rega camera ichitora video yese pamwe chete.',
+    ],
+    protocolNd: [
+      'Thola umngane loba udonga. Yima amagxathu angu-8 kude (stand 8–10 large steps away).',
+      'Cela umngane akuphosele ibhola (ask partner to pass or throw the ball).',
+      'LINGAKAFIKI ibhola, jika umzimba wakho ecaleni — show your shoulder to the partner.',
+      'Ibhola lifikile, lihlangabeze ngoNyawo lwangaphakathi (inside foot). Ungalindi — step forward to meet it.',
+      'Shaya ibhola PHAMBILI loba ECELENI — away from where it came from.',
+      'Gijima kancane emuva kokushaya, njengokusukela indawo (attack space).',
+      'Yenza izikhathi ezingu-8. Shiya ikhamera ifake konke engxenyeni eyodwa.',
+    ],
   },
 
   {
@@ -122,6 +162,43 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Shooting',
+    diagram: `  [YOU] ── run-up ──> [BALL]
+                         |
+          kick with LACES (power)
+          or INSIDE foot (accuracy)
+                         |
+                         v
+          ─────── [GOAL / TARGET] ─────
+  Use 2 bottles as goalposts if no goal
+  Ball 12–18 large steps from target
+  [CAMERA: side or behind, see full run-up + strike]`,
+    protocol: [
+      'Place a ball 12–18 large steps from a goal. No goal? Use two bottles as goalposts.',
+      'Take 3–4 steps back from the ball. Decide where you want to shoot.',
+      'Start your run-up and plant your NON-KICKING foot BESIDE the ball — not behind it.',
+      'At the moment you kick, lean your body FORWARD over the ball. Head down. Eyes on the ball.',
+      'Strike with your LACES (top of foot) for power — or with the INSIDE of your foot for accuracy.',
+      'Follow ALL THE WAY THROUGH — let your kicking leg swing up high after contact.',
+      'Do 6–8 shots. Keep the camera rolling the whole time.',
+    ],
+    protocolSn: [
+      'Isa bhora makadhi 12–18 mberi kwegole. Hapana gole? Shandisa mabhodhoro maviri sechivharo (use two bottles as goalposts).',
+      'Tsiga magweru 3–4 kumashure kwebhora. Sarudza kwaunoda kukanda bhora uko (decide where to shoot).',
+      'Tanga kumhanya — isa kirawa yako isiri yekukanda PEDYO nebhora, kwete kumashure kwaro (beside the ball, not behind it).',
+      'Panguva yekukanda, gonesa muviri wako PAMBERI pamusoro pebhora. Musoro pasi. Meso pabhora.',
+      'Rova ne LACES (musoro wekirawa) kuti uuwane simba — kana ne INSIDE yekirawa kuti unange zvakanaka (for accuracy).',
+      'Gara uchipedza swing yese — rega gumbo rako rekukanda richisimudzira (swing all the way through).',
+      'Ita 6–8 mashot. Rega camera ichitora yese (keep camera recording).',
+    ],
+    protocolNd: [
+      'Beka ibhola amagxathu angu-12–18 phambi kwe-goal. Alikho i-goal? Sebenzisa amabhodlela amabili njengegoli (use two bottles as goalposts).',
+      'Hamba amagxathu angu-3–4 emuva kwibhola. Nquma ukuthi ufuna ukishaya kuphi (decide where to shoot).',
+      'Qala ukugijima — beka unyawo lwakho olungelona olushayayo EDUZE kwibhola, hhayi emuva kwalo (beside the ball, not behind it).',
+      'Ngesikhathi ushaya, goba umzimba wakho PHAMBILI phezu kwibhola. Ikhanda phansi. Amehlo kwibhola.',
+      'Shaya nge-LACES (phezulu kunyawo) for power — loba ngangaphakathi kunyawo for accuracy (ukucondisa).',
+      'Qhubeka ne-swing yonke — vumela unyawo lwakho olusha phakamuke emuva kokuthinta (swing all the way through).',
+      'Yenza amashot angu-6–8. Shiya ikhamera ifake konke (keep camera recording).',
+    ],
   },
 
   {
@@ -162,6 +239,49 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Dribbling',
+    diagram: `  START
+    |
+    v
+  [M1] ── swerve around ──>
+              |
+              v
+  [M2] <── cut back ──
+              |
+              v
+  [M3] ── swerve around ──>
+              |
+              v
+  [M4]  FINISH
+  M = marker (bottle, stone, or shoe)
+  Place markers 3–4 steps apart
+  [CAMERA: side view to see all turns]`,
+    protocol: [
+      'Place 4–6 markers in a zigzag — use bottles, stones, or shoes. Each marker 3–4 large steps apart.',
+      'Start at one end with the ball at your feet.',
+      'Dribble around each marker — push the ball with the OUTSIDE of your foot, then cut back with the INSIDE.',
+      'At each marker, slow down (decelerate) BEFORE you turn. Do not overshoot past the marker.',
+      'After the turn, burst into the next space with a quick acceleration.',
+      'Keep your knees bent and body low throughout. Lower body = quicker turns.',
+      'Film from the SIDE so all turns are visible. Do 4–5 full runs.',
+    ],
+    protocolSn: [
+      'Disa mamarker 4–6 — shandisa mabhodhoro, matombo, kana shangu. Aripo makadhi 3–4 mumukati (3–4 large steps apart).',
+      'Tanga kumucheto mumwe nebhora patsoka dzako (start at one end with the ball).',
+      'Dribble mamarker — push bhora ne KUNZE kwekirawa, wozochinja ne MUKATI (outside then inside of foot).',
+      'Pane rimwe nerimwe marker, nonoka (slow down) USATI utendeuke. Usadarika marker (do not overshoot).',
+      'Mushure metendeuka, mhanya nekukurumidza (burst of speed) kune nzvimbo inotevera.',
+      'Gara magokora ako akotamira uye muviri uri pasi (body low, knees bent). Pasi zvakawanda = kutendeuka nekukurumidza.',
+      'Tora video KUBVA PARUTIVI kuti matendeuko ese aonekwe (side view). Ita 4–5 mhanyamhanya.',
+    ],
+    protocolNd: [
+      'Beka izimaka ezingu-4–6 — sebenzisa amabhodlela, amatshe, loba izicathulo. Isikhala sangu-3–4 phakathi (3–4 large steps apart).',
+      'Qala kwisiqalo sinye lezinyawo zakho phezu kwibhola (start at one end with the ball).',
+      'Dribble izimaka — shaya ibhola ngaphandle kunyawo, bese ujike ngaphakathi (outside then inside of foot).',
+      'Kwizimaka ngayinye, hamba kancane (slow down) NGAPHAMBI ukujika. Ungadluli isilinganiso (do not overshoot).',
+      'Emuva kokujika, gijima ngamandla (burst of speed) endaweni elandelayo.',
+      'Yiba namadolo agobile nomzimba ophansi (body low, knees bent). Phansi kakhulu = amajiko ashesha.',
+      'Faka ikhamera ECELENI ukuze ukwazi ukubona onke amajiko (side view). Yenza ukugijima okungu-4–5.',
+    ],
   },
 
   {
@@ -202,6 +322,44 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Sprint Form',
+    diagram: `  [START] <- mark with stone or bottle
+      |
+      v  DRIVE PHASE: lean forward, arms pumping
+      |
+      |  ACCELERATION: strides get longer
+      |
+      v  TOP SPEED: body straightens
+      |
+  [FINISH] 20–30 large steps away
+  Sprint at 100% effort. Rest fully between runs.
+  [CAMERA: side view, hip height, full distance visible]`,
+    protocol: [
+      'Find a flat, open space of at least 20–30 large steps — a road, path, or field works fine.',
+      'Mark a start line with a stone or bottle on each side.',
+      'From a standing start, sprint at 100% effort — give everything you have.',
+      'In the FIRST 10 steps: lean your body FORWARD. Drive your arms hard front and back — not across your chest.',
+      'After 10 steps: straighten up slightly and let your strides get LONGER and more powerful.',
+      'Land on the BALL OF YOUR FOOT — not your heel.',
+      'Film from the SIDE at hip height. Camera must see your full sprint. Do 3–4 sprints with full rest in between.',
+    ],
+    protocolSn: [
+      'Tsvaga nzvimbo yakatwasuka nemakadhi 20–30. Mugwagwa, nzira, kana munda zvishanda (a road, path, or field).',
+      'Isa chiratidzo chemutsetse wekutanga — shandisa mwanga kana bhodhoro chimwe nechimwe (mark start line with stone or bottle).',
+      'Kubva pakumira, mhanya nesimba rose — ipa zvose zvaunazvo (sprint at 100% effort).',
+      'Mu MAGWERU EKUTANGA 10: gonera muviri wako pamberi. Driva maoko esimba — mberi neshure, kwete kupfurikidza pakati pepfuva (arms front and back, not across chest).',
+      'Mushure memagweru 10: simuka zvishoma. Rega masanganyiko ako awande UYE asimbe zvakare (longer, more powerful strides).',
+      'Rema ne PAMBERI PETSOKA yako — kwete negumbo rine musana (ball of foot, not heel).',
+      'Tora video KUBVA PARUTIVI pahakato. Camera inofanira kuona mhanyamhanya yako yese. Ita 3–4. Zorora zvakakwana pakati (rest fully between sprints).',
+    ],
+    protocolNd: [
+      'Thola indawo evulekileko yamagxathu angu-20–30. Umgwaqo, indlela, loba insimu kusebenza kahle (a road, path, or field).',
+      'Beka isilinganiso semudwa wokuqala — sebenzisa itshe loba ibhodlela ngalinye (mark start line with stone or bottle).',
+      'Kusukela ekumeni, gijima ngamandla wonke — nikela konke onakho (sprint at 100% effort).',
+      'Nge-AMAGXATHU AKULON-10 OKUQALA: goba umzimba phambili. Shayisa izandla ngamandla — phambili lanemuva, hhayi phezu kwesifuba (arms front and back, not across chest).',
+      'Emuva kwamagxathu angu-10: qonda kancane. Vumela amagxathu akho abe MUDE ngakunzima (longer, more powerful strides).',
+      'Hlala NGAPHAMBILI KUNYAWO — hhayi ngomsondela (ball of foot, not heel).',
+      'Faka ikhamera ECELENI phakathi. Ikhamera kumele ikubone ugijima kwakho konke. Yenza ugijima okungu-3–4. Phumula ngokuphelele phakathi (rest fully between sprints).',
+    ],
   },
 
   {
@@ -242,6 +400,44 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: '1v1 Defence',
+    diagram: `  [ATTACKER] ──> dribbles toward you
+         |
+         v
+  [YOU] side-on, knees bent, weight forward
+     wait... wait... wait for the ball to move
+         |
+         v
+  JOCKEY (shuffle side to side) ──> guide to weak foot
+         |
+  COMMIT only when ball is away from their foot
+  [CAMERA: side or 45° view showing both players]`,
+    protocol: [
+      'Ask a partner to be the attacker and give them the ball.',
+      'Face your partner from 4–5 large steps away in a LOW, SIDE-ON stance — knees bent, weight on your front foot.',
+      'Your partner will dribble toward you. DO NOT charge at them — jockey (shuffle slowly side to side) and guide them toward their weaker foot.',
+      'Wait for the ball to move away from their foot — THEN go for the tackle.',
+      'Do not dive in early. Patience is the skill being tested here.',
+      'If they beat you, sprint to recover your defensive shape — do not give up.',
+      'Do 5–6 sequences. Film from the SIDE or at 45° so both players are visible.',
+    ],
+    protocolSn: [
+      'Kumbira shamwari kuti ive attacker (the one with the ball). Ipa bhora.',
+      'Mira pedyo neshamwari, makadhi 4–5 — muviri ari pasi, ugumi, uzivi (knees bent, weight forward, side-on).',
+      'Shamwari yako ichatora bhora yakuenda. USAWASANANGURA — jockey (famba zvishoma chidziro nechidziro) uchimuendesa kukirawa yake inyongeswa (toward their weaker foot).',
+      'Mirira bhora riwande kure netsoka dzake — WOBVA uisa kirawa yako (tackle when ball moves away).',
+      'Usawarakasha nekukurumidza. Mwoyo murefu ndiko kuzivikanwa muno (patience is the skill here).',
+      'Akakupfuura, mhanya kumhanya upinde chimiro chako chekurinda (sprint to recover).',
+      'Ita 5–6 mafambiro. Tora video KUBVA PARUTIVI kana pa-45° kuti vatambi vaviri vaonekwe (side or 45° view).',
+    ],
+    protocolNd: [
+      'Cela umngane ukuba umhlaseleli (attacker) amnikeze ibhola.',
+      'Yima eduze komngane, amagxathu angu-4–5 — umzimba ophansi, uziqinile, ube ecaleni (knees bent, weight forward, side-on).',
+      'Umngane wakho uzodribble eze kuwe. UNGAGIJIMI KUYE — jockey (zula kancane eceleni ngeceleni) umkhombise unyawo lwakhe olubuthakathaka (toward their weaker foot).',
+      'Linda ibhola lisuke kude nezinyawo zakhe — KHONA ukushaya (tackle when ball moves away).',
+      'Ungasheshi ugijime. Ukubekezela yikhono elihlolwayo lapha (patience is the skill here).',
+      'Uma ekudlulele, gijima uphinde uzakhele kabusha (sprint to recover).',
+      'Yenza izikhathi ezingu-5–6. Faka ikhamera ECELENI loba ku-45° ukuze abadlali bobabili babone (side or 45° view).',
+    ],
   },
 
   {
@@ -282,6 +478,41 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Passing',
+    diagram: `  [YOU] ── inside foot ──> [PARTNER / TARGET]
+    |                              |
+  OPEN BODY                   receives + passes back
+  (turn side-on,                  |
+   see field + target)  <─────────┘
+  Non-kicking foot BESIDE ball, pointing at target
+  Distance: 10–20 large steps
+  [CAMERA: 45° or behind, body shape must be visible]`,
+    protocol: [
+      'Stand 10–20 large steps from a partner or a target (tree, bottle, or chalk mark on a wall).',
+      'Before you pass, OPEN YOUR BODY — turn slightly side-on so you can see both the target and the space around you.',
+      'Plant your NON-KICKING foot beside the ball, pointing toward the target.',
+      'Use the INSIDE of your foot for short passes (accurate and controlled). Use LACES for longer passes.',
+      'Swing your kicking leg ALL THE WAY THROUGH — do not cut the kick short.',
+      'Look UP at the target BEFORE you pass, then look DOWN at the ball at the moment of contact.',
+      'Do 8–10 passes of varying distances. Film from behind or 45° so your body shape is clearly visible.',
+    ],
+    protocolSn: [
+      'Mira makadhi 10–20 mberi kwapartner kana chivharo (tree, bottle, or chalk on a wall).',
+      'Usati uendaramisa bhora, VHURA MUVIRI WAKO — tendeuka zvishoma kuchinjika kuti uone target nenzvimbo yakakupoteredza (open your body to see the target and space).',
+      'Isa kirawa yako isiri yekudaro pedyo nebhora, ichinyangadza target (non-kicking foot beside ball, pointing at target).',
+      'Shandisa MUKATI wekirawa yako for mapasi mapfupi (inside foot for short passes). Shandisa LACES for pasi refu.',
+      'Svinya gumbo rako rekudaro KUSVIKA KUMAGUMO — usapedza ruwi rako chinhambwe (swing all the way through).',
+      'Tarira target USATI uendaramisa, wozotarira PASI pabhora panguva yekubata (look up first, then eyes on ball at contact).',
+      'Ita 8–10 mapasi of varying distances. Tora video kumashure kana pa-45° kuti muviri wako waonekwe (body shape visible).',
+    ],
+    protocolNd: [
+      'Yima amagxathu angu-10–20 phambi komngane loba isilinganiso (umuthi, ibhodlela, loba u-chalk odongeni).',
+      'Ngaphambi kukudlulisela, VULA UMZIMBA WAKHO — jika kancane eceleni ukuze ubone isilinganiso nensimu (open body to see target and space).',
+      'Beka unyawo lwakho olungelona olushayayo eduze kwibhola, lukhombe isilinganiso (non-kicking foot beside ball, pointing at target).',
+      'Sebenzisa NGAPHAKATHI kwunyawo for amapass amafishane (inside foot, short passes). Sebenzisa LACES for amapass amade.',
+      'Pendeza unyawo lwakho olusha KUZE KUFIKE EKUPHELENI — ungayeki ushayo wakho njalo (swing all the way through).',
+      'Buka isilinganiso NGAPHAMBI ukudlulisa, bese ubuka PHANSI kwibhola ngesikhathi sokuwa (look up first, then eyes on ball at contact).',
+      'Yenza amapass angu-8–10 wobona amabanga ahlukahlukene. Faka ikhamera ngemuva loba ku-45° ukuze umzimba wakho ubone (body shape visible).',
+    ],
   },
 
   {
@@ -322,6 +553,45 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Heading',
+    diagram: `  [PARTNER] ──> throws ball high in the air
+                         |
+                         v  ball drops toward you
+                    ┌─────────┐
+                    |   BALL  |  <- your jump peak
+                    └─────────┘
+               FOREHEAD contact (flat middle part)
+               Neck muscles TIGHT — attack the ball
+               Drive FORWARD to meet it — do not wait
+                         |
+                         v  [CHOSEN DIRECTION]
+  [CAMERA: side view to see jump timing + contact point]`,
+    protocol: [
+      'Ask a partner to throw the ball up in the air toward your head from 4–5 large steps away.',
+      'Keep your EYES ON THE BALL from the moment it leaves your partner\'s hands.',
+      'Decide early whether to head from standing or to JUMP — jump if the ball is above your head height.',
+      'As the ball drops, ATTACK it — drive your forehead forward to meet the ball. Do not let it hit you passively.',
+      'Tighten your NECK MUSCLES at the moment of contact — this gives the header power and direction.',
+      'Contact the ball on the FLAT OF YOUR FOREHEAD — not the top or back of your head.',
+      'Do 6–8 headers. Film from the SIDE so the jump timing and contact point are clearly visible.',
+    ],
+    protocolSn: [
+      'Kumbira partner kuti adzise bhora mudenga achingokuendesa musoro wako kubva makadhi 4–5.',
+      'Gara meso ako ari pabhora kubva panguva rinosiya maoko epartner (eyes on ball from the start).',
+      'Sarudza nekukurumidza kana uchazosimuka kana kupara musoro uchinzi — SIMUKA kana bhora riri pamusoro wako (jump if ball is above your head).',
+      'Bhora richiwira pasi, RIONESERA — rova nehuma yako mberi kurirwira. Usarega rihugure zvaro (attack the ball, do not wait for it).',
+      'Misa mishipa yeunyanga hwako panguva yekubata — izi zviri kumupa musoro simba nenzirani (tighten neck at contact for power and direction).',
+      'Bata bhora ne PAHUMA YAKAFANANA (flat of forehead) — kwete pamusoro womusoro wako (not the top of the head).',
+      'Ita 6–8 maheader. Tora video KUBVA PARUTIVI kuti kuenda kumajosi nekubatana kwaonekwe (side view).',
+    ],
+    protocolNd: [
+      'Cela umngane akhande ibhola phezulu ekhanda lakho kusukela amagxathu angu-4–5.',
+      'Gcina amehlo akho ehlezi kwibhola ngesikhathi lisuka ezandleni zomngane (eyes on ball from the start).',
+      'Nquma masinya ukuthi uzophumba loba uqhwathe ekhanda — PUMBA uma ibhola likhona phezulu kweli khanda (jump if ball is above your head).',
+      'Ibhola linehlela phansi, LIHLASELE — shayisa iPhahla phambili ukuhlangabeza. Ungalindi ukuthi likushayele (attack the ball, do not wait for it).',
+      'Qinisa imisipha yentamo ngesikhathi lokuthinta — lokhu kunika i-header amandla nenzimu (tighten neck at contact for power and direction).',
+      'Thinta ibhola NGAPHANA LEPHAHLA (flat of forehead) — hhayi phezulu kwentanda (not the top of the head).',
+      'Yenza amaheader angu-6–8. Faka ikhamera ECELENI ukuze ukuphuma kwesigodi lokuthinta kubone (side view).',
+    ],
   },
 
   {
@@ -362,6 +632,46 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Ball Juggling',
+    diagram: `     [BALL] <- drop from hands onto foot
+       |
+       v
+  foot touch (laces or inside)
+       |
+       v
+     [BALL] <- back up (keep it at waist height)
+       |
+  thigh / laces / inside ... repeat
+  Stay BALANCED — knee bent on standing leg
+  Use BOTH FEET equally
+  Eyes on ball AT ALL TIMES
+  [CAMERA: front or 45° view]`,
+    protocol: [
+      'Hold the ball in your hands and DROP it gently onto your foot — do not kick it hard at first.',
+      'Keep your EYES FIXED on the ball at all times.',
+      'Use the TOP OF YOUR FOOT (laces) or the INSIDE of your foot for each touch. Try using both.',
+      'Keep your touches SOFT and CONSISTENT — about waist height. Do not let the ball go too high.',
+      'Stay balanced — keep your knee slightly bent on the supporting leg.',
+      'Try to use BOTH FEET equally. When you lose control, just start again — no penalty for dropping.',
+      'Film from the FRONT or at a 45° angle. Record your longest run — aim for at least 30 seconds.',
+    ],
+    protocolSn: [
+      'Bata bhora mumaoko ako uchirisimudza pakirawa yako zvishoma — usirikando rirwe zvakasimba pakutanga (drop gently onto your foot).',
+      'Gara meso ako asina kusimukira pabhora nguva YESE (eyes on ball at all times).',
+      'Shandisa PAMUSORO PETSOKA (laces) kana MUKATI wekirawa yako kune rimwe nerimwe ruwi. Edza zvose zviviri (try both surfaces).',
+      'Ruwi rako rinofanira kuva RAKANYOROVA UYE RAKAGADZIRIRIKA — pahuruse pakati. Usarega bhora rakakwira zvakanyanya (soft touches, waist height).',
+      'Gara wakamira zvakasimba — gara negumbo rine magokora akotamika kurudi rwakamira (knee bent on standing leg).',
+      'Edza shandisa KIRAWA DZOSE MBIRI zvakaenzana. Kana radonha, tanga zvakare — hazvina dambudziko (both feet equally, no penalty for dropping).',
+      'Tora video KUBVA PAMBERI kana pa-45°. Tora mhanyamhanya yako yakarefu — mira makumi matatu esekondi (aim for 30 seconds).',
+    ],
+    protocolNd: [
+      'Bamba ibhola ezandleni zakho ubeke ngokukhulu phezu kunyawo lwakho — ungalikishi kakhulu ekuqaleni (drop gently onto your foot).',
+      'Gcina amehlo akho ehlezi kwibhola NGASIKHATHI SONKE (eyes on ball at all times).',
+      'Sebenzisa PHEZULU KUNYAWO (laces) loba NGAPHAKATHI kunyawo ngokuthinta ngakunye. Zama zombili (try both surfaces).',
+      'Thinta izinto EZITHAMBILE NEZIYOLWANAYO — malunga nezinqe. Ungabeki ibhola kakhulu phezulu (soft touches, waist height).',
+      'Hlala uzinzile — goba idolo lakho kancane unyawo lwesekelo (knee bent on standing leg).',
+      'Zama ukusebenzisa IZINYAWO ZOMBILI ngokulinganayo. Uma wawa, qala kabusha — akukho ijeziso (both feet equally, no penalty for dropping).',
+      'Faka ikhamera NGAPHAMBILI loba ku-45°. Qopha ukugijima kwakho okuside kakhulu — uhlose okungangu-30 imizuzwana (aim for 30 seconds).',
+    ],
   },
 
 ];

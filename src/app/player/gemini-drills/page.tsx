@@ -218,6 +218,7 @@ export default function GeminiDrillsPage() {
   const [bestScores, setBestScores] = useState<Record<string, number>>({});
   const [history, setHistory]       = useState<DrillResult[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [lang, setLang]             = useState<'en' | 'en-sn' | 'en-nd'>('en');
 
   const xhrRef            = useRef<XMLHttpRequest | null>(null);
   const mediaRecorderRef  = useRef<MediaRecorder | null>(null);
@@ -540,6 +541,71 @@ export default function GeminiDrillsPage() {
                   <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{selected.description}</div>
                 </div>
               </div>
+
+              {/* Language selector */}
+              {selected.protocol && selected.protocol.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                    Instructions language / Mutauro / Ulimi
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {([
+                      { id: 'en',    label: 'English only' },
+                      { id: 'en-sn', label: 'English + ChiShona' },
+                      { id: 'en-nd', label: 'English + isiNdebele' },
+                    ] as const).map(opt => (
+                      <button
+                        key={opt.id}
+                        onClick={() => setLang(opt.id)}
+                        style={{
+                          flex: 1, borderRadius: 8, border: '1.5px solid',
+                          padding: '6px 4px', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                          background: lang === opt.id ? GRS_GREEN : '#fff',
+                          color: lang === opt.id ? '#fff' : '#555',
+                          borderColor: lang === opt.id ? GRS_GREEN : '#e5e5e5',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ASCII Diagram */}
+              {selected.diagram && (
+                <div style={{ background: '#f8faff', border: '1px solid #dbeafe', borderRadius: 10, padding: '10px 12px', marginBottom: 10, overflowX: 'auto' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                    Drill diagram
+                  </div>
+                  <pre style={{ fontSize: 11, color: '#1e3a5f', fontFamily: 'monospace', lineHeight: 1.6, whiteSpace: 'pre', margin: 0 }}>
+                    {selected.diagram}
+                  </pre>
+                </div>
+              )}
+
+              {/* Step-by-step protocol */}
+              {selected.protocol && selected.protocol.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                    Step-by-step instructions
+                  </div>
+                  {(lang === 'en-sn' ? (selected.protocolSn ?? selected.protocol) :
+                    lang === 'en-nd' ? (selected.protocolNd ?? selected.protocol) :
+                    selected.protocol).map((step, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                      <div style={{
+                        flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
+                        background: GRS_GREEN, color: '#fff',
+                        fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#333', lineHeight: 1.6, paddingTop: 2 }}>{step}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* What to record */}
               <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '10px 12px', marginBottom: 10 }}>
