@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { GEMINI_VISION_MODEL } from "@/lib/gemini";
 
-export const maxDuration = 300;
+export const maxDuration = 600;
 export const runtime = "nodejs";
 
 interface MatchEvent {

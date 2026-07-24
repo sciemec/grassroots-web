@@ -16,6 +16,49 @@
 const CHUNK_BYTES = 8 * 1024 * 1024; // 8 MB — Google's resumable upload granularity
 const MAX_RETRIES = 3;
 
+// ── Upload Advisory ─────────────────────────────────────────────────────────
+// Typical sustained throughput per connection type (conservative estimates):
+const SPEED_MBPS = { "4G": 8, "3G": 1.5 };
+const GEMINI_MAX_BYTES = 1.9 * 1024 * 1024 * 1024; // 1.9 GB — Gemini Files API hard limit
+
+export interface UploadAdvisory {
+  sizeMB:        number;
+  /** "Large file" warning shown when file > 500 MB */
+  sizeWarning:   string | null;
+  /** Hard-limit error shown when file > 1.9 GB */
+  limitError:    string | null;
+  /** Estimated upload time strings, e.g. "~3 min on 4G · ~16 min on 3G" */
+  estimatedTime: string;
+}
+
+function fmtMins(seconds: number): string {
+  const m = Math.round(seconds / 60);
+  return m <= 1 ? "~1 min" : `~${m} min`;
+}
+
+/**
+ * Returns size info and human-readable upload time estimates for a file.
+ * Call this before starting the upload to display a pre-flight advisory to the user.
+ */
+export function getUploadAdvisory(file: File): UploadAdvisory {
+  const sizeMB   = file.size / (1024 * 1024);
+  const sizeBytes = file.size;
+
+  const t4G = (sizeBytes / (SPEED_MBPS["4G"]  * 1024 * 1024 / 8));
+  const t3G = (sizeBytes / (SPEED_MBPS["3G"]  * 1024 * 1024 / 8));
+  const estimatedTime = `${fmtMins(t4G)} on 4G · ${fmtMins(t3G)} on 3G`;
+
+  const limitError = sizeBytes > GEMINI_MAX_BYTES
+    ? `File is ${sizeMB.toFixed(0)} MB — exceeds the 1.9 GB Gemini limit. Please trim the video or use a shorter clip.`
+    : null;
+
+  const sizeWarning = !limitError && sizeMB > 500
+    ? `Large file (${sizeMB.toFixed(0)} MB). For best results on mobile, record at 720p. Upload on WiFi if possible.`
+    : null;
+
+  return { sizeMB, sizeWarning, limitError, estimatedTime };
+}
+
 export interface ChunkUploadResult {
   fileUri:  string;
   fileName: string;

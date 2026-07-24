@@ -9,7 +9,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
-import { uploadVideoInChunks } from "@/lib/upload-chunks";
+import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ interface HalfUploadState {
   error: string;
 }
 
-type PageStage = "setup" | "analysing" | "results" | "error";
+type PageStage = "setup" | "confirm" | "analysing" | "results" | "error";
 
 const SPORTS = ["Football", "Rugby", "Netball", "Basketball", "Cricket", "Hockey"];
 
@@ -153,6 +153,26 @@ export default function MatchEyePage() {
   // File inputs
   const firstRef  = useRef<HTMLInputElement>(null);
   const secondRef = useRef<HTMLInputElement>(null);
+
+  // Pre-upload advisory state
+  const [pendingHalf, setPendingHalf] = useState<"first" | "second" | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
+
+  // ── Pre-upload advisory check ────────────────────────────────────────────────
+
+  const confirmHalf = useCallback((file: File, which: "first" | "second") => {
+    const adv = getUploadAdvisory(file);
+    if (adv.limitError) {
+      // Hard limit — block immediately, don't go to confirm
+      setGlobalError(adv.limitError);
+      return;
+    }
+    setPendingFile(file);
+    setPendingHalf(which);
+    setAdvisory(adv);
+    setPageStage("confirm");
+  }, []);
 
   // ── Upload one half directly to Gemini ──────────────────────────────────────
 
@@ -997,7 +1017,7 @@ export default function MatchEyePage() {
                     <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
                       Upload your training clip. Goes directly to Google — no file size limit.
                     </div>
-                    <UploadZone label="Drill Clip" half={firstHalf} inputRef={firstRef} onChange={(f) => uploadHalf(f, "first")} />
+                    <UploadZone label="Drill Clip" half={firstHalf} inputRef={firstRef} onChange={(f) => confirmHalf(f, "first")} />
                   </>
                 ) : (
                   <>
@@ -1006,8 +1026,8 @@ export default function MatchEyePage() {
                       Videos upload directly to Google — no file size limit. Upload both halves, then click Analyse.
                     </div>
                     <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                      <UploadZone label="First Half (0–45 min)"   half={firstHalf}  inputRef={firstRef}  onChange={(f) => uploadHalf(f, "first")}  />
-                      <UploadZone label="Second Half (45–90 min)" half={secondHalf} inputRef={secondRef} onChange={(f) => uploadHalf(f, "second")} />
+                      <UploadZone label="First Half (0–45 min)"   half={firstHalf}  inputRef={firstRef}  onChange={(f) => confirmHalf(f, "first")}  />
+                      <UploadZone label="Second Half (45–90 min)" half={secondHalf} inputRef={secondRef} onChange={(f) => confirmHalf(f, "second")} />
                     </div>
                   </>
                 )}
@@ -1028,6 +1048,60 @@ export default function MatchEyePage() {
               </button>
             )}
           </>
+        )}
+
+        {/* ── CONFIRM UPLOAD ──────────────────────────────────────────────────── */}
+        {pageStage === "confirm" && advisory && pendingFile && pendingHalf && (
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "32px 24px", maxWidth: 480, margin: "0 auto" }}>
+            <div style={{ fontWeight: 800, fontSize: 17, color: "#1a1a1a", marginBottom: 4 }}>Ready to upload?</div>
+            <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
+              {pendingHalf === "first" ? (sessionType === "drill" ? "Drill Clip" : "First Half (0–45 min)") : "Second Half (45–90 min)"}
+            </div>
+
+            <div style={{ background: "#f9fafb", borderRadius: 10, padding: "14px 16px", marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#6b7280" }}>File</span>
+                <span style={{ fontWeight: 600, color: "#1a1a1a", maxWidth: 260, textAlign: "right", wordBreak: "break-all" }}>{pendingFile.name}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#6b7280" }}>Size</span>
+                <span style={{ fontWeight: 600, color: "#1a1a1a" }}>{advisory.sizeMB.toFixed(0)} MB</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#6b7280" }}>Est. upload time</span>
+                <span style={{ fontWeight: 600, color: "#1a1a1a" }}>{advisory.estimatedTime}</span>
+              </div>
+            </div>
+
+            {advisory.sizeWarning && (
+              <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#92400e" }}>
+                ⚠️ {advisory.sizeWarning}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { setPageStage("setup"); setPendingFile(null); setPendingHalf(null); setAdvisory(null); }}
+                style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 14, color: "#374151", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const file = pendingFile;
+                  const which = pendingHalf;
+                  setPendingFile(null);
+                  setPendingHalf(null);
+                  setAdvisory(null);
+                  setPageStage("setup");
+                  uploadHalf(file, which);
+                }}
+                style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: "#1a5c2a", fontWeight: 700, fontSize: 14, color: "#fff", cursor: "pointer" }}
+              >
+                Start Upload
+              </button>
+            </div>
+          </div>
         )}
 
         {/* ── ANALYSING ───────────────────────────────────────────────────────── */}

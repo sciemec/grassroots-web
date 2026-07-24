@@ -8,7 +8,7 @@ import {
   Clock, ChevronDown, ChevronUp, Dumbbell,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { uploadVideoInChunks } from "@/lib/upload-chunks";
+import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
 const SPORTS = [
@@ -43,7 +43,7 @@ interface PlayerAnalysis {
   scout_note: string;
 }
 
-type PageStage = "setup" | "uploading" | "uploaded" | "analysing" | "results" | "error";
+type PageStage = "setup" | "confirm" | "uploading" | "uploaded" | "analysing" | "results" | "error";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -262,9 +262,11 @@ export default function PlayerMatchEyePage() {
   const [jersey,        setJersey]        = useState("");
   const [focusQuestion, setFocusQuestion] = useState("");
 
-  const [analysis,  setAnalysis]  = useState<PlayerAnalysis | null>(null);
-  const [narrative, setNarrative] = useState("");
-  const [error,     setError]     = useState("");
+  const [analysis,    setAnalysis]    = useState<PlayerAnalysis | null>(null);
+  const [narrative,   setNarrative]   = useState("");
+  const [error,       setError]       = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -290,15 +292,27 @@ export default function PlayerMatchEyePage() {
     }
   }, []);
 
+  const confirmAndUpload = (file: File) => {
+    const adv = getUploadAdvisory(file);
+    if (adv.limitError) {
+      setError(adv.limitError);
+      setPageStage("error");
+      return;
+    }
+    setPendingFile(file);
+    setAdvisory(adv);
+    setPageStage("confirm");
+  };
+
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) uploadVideo(file);
+    if (file) confirmAndUpload(file);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file?.type.startsWith("video/")) uploadVideo(file);
+    if (file?.type.startsWith("video/")) confirmAndUpload(file);
   };
 
   // ── Analyse ─────────────────────────────────────────────────────────────────
@@ -341,6 +355,8 @@ export default function PlayerMatchEyePage() {
     setAnalysis(null);
     setNarrative("");
     setError("");
+    setPendingFile(null);
+    setAdvisory(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -506,8 +522,54 @@ export default function PlayerMatchEyePage() {
             }}>
               <Zap size={15} color={GRS_GREEN} style={{ marginTop: 2, flexShrink: 0 }} />
               <p style={{ fontSize: 12, color: "#166534", lineHeight: 1.5 }}>
-                Gemini 2.5 Flash watches your full video and analyses your individual performance — positioning, technique, key moments, and specific drills to improve.
+                Gemini analyses your full video and scores your individual performance — positioning, technique, key moments, and specific drills to improve.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── CONFIRM (pre-upload advisory) ── */}
+        {pageStage === "confirm" && advisory && pendingFile && (
+          <div style={{ background: "#fff", borderRadius: 16, padding: 22, border: "1px solid #e5e7eb" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <Upload size={18} color={GRS_GREEN} />
+              <p style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>Ready to upload</p>
+            </div>
+            <div style={{ background: "#f9fafb", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 13 }}>
+              <p style={{ color: "#374151", marginBottom: 4 }}>
+                <strong>{pendingFile.name}</strong>
+              </p>
+              <p style={{ color: "#6b7280" }}>
+                {advisory.sizeMB.toFixed(0)} MB · {advisory.estimatedTime}
+              </p>
+            </div>
+            {advisory.sizeWarning && (
+              <div style={{
+                background: "#fffbeb", border: "1px solid #f0b429", borderRadius: 10,
+                padding: "10px 12px", marginBottom: 14, fontSize: 12, color: "#92400e", lineHeight: 1.5,
+              }}>
+                ⚠️ {advisory.sizeWarning}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { setPendingFile(null); setAdvisory(null); setPageStage("setup"); }}
+                style={{
+                  flex: 1, padding: "11px 0", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  background: "none", border: "1px solid #d1d5db", color: "#374151", cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => pendingFile && uploadVideo(pendingFile)}
+                style={{
+                  flex: 2, padding: "11px 0", borderRadius: 10, fontSize: 14, fontWeight: 800,
+                  background: GRS_GREEN, color: "#fff", border: "none", cursor: "pointer",
+                }}
+              >
+                Start Upload
+              </button>
             </div>
           </div>
         )}

@@ -17,7 +17,7 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
-import { uploadVideoInChunks } from '@/lib/upload-chunks';
+import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from '@/lib/upload-chunks';
 import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,
@@ -229,6 +229,7 @@ export default function GeminiDrillsPage() {
   const [recordingPhase, setRecordingPhase] = useState<'idle' | 'requesting' | 'recording' | 'preview'>('idle');
   const [countdown, setCountdown]           = useState(30);
   const [previewUrl, setPreviewUrl]         = useState<string | null>(null);
+  const [clipAdvisory, setClipAdvisory]     = useState<UploadAdvisory | null>(null);
 
   // Load best scores from localStorage
   useEffect(() => {
@@ -328,6 +329,8 @@ export default function GeminiDrillsPage() {
         stream.getTracks().forEach(t => t.stop());
         const blob = new Blob(recordedChunksRef.current, { type: mimeType });
         const url = URL.createObjectURL(blob);
+        const dummyFile = new File([blob], `clip.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`, { type: blob.type });
+        setClipAdvisory(getUploadAdvisory(dummyFile));
         setPreviewUrl(url);
         setRecordingPhase('preview');
       };
@@ -359,6 +362,12 @@ export default function GeminiDrillsPage() {
     if (!selected || recordedChunksRef.current.length === 0) return;
     const mimeType = recordedChunksRef.current[0]?.type ?? 'video/webm';
     const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+
+    // Guard: reject clips that exceed Gemini's hard limit
+    if (clipAdvisory?.limitError) {
+      setUpload({ phase: 'error', progress: 0, result: null, error: clipAdvisory.limitError });
+      return;
+    }
 
     setRecordingPhase('idle');
     setPreviewUrl(null);
@@ -406,6 +415,7 @@ export default function GeminiDrillsPage() {
     setRecordingPhase('idle');
     setPreviewUrl(null);
     setCountdown(30);
+    setClipAdvisory(null);
     recordedChunksRef.current = [];
     setUpload({ phase: 'idle', progress: 0, result: null, error: null });
   };
@@ -681,9 +691,20 @@ export default function GeminiDrillsPage() {
                   controls
                   style={{ width: '100%', borderRadius: 10, background: '#000', marginBottom: 12, maxHeight: 280, objectFit: 'contain' }}
                 />
+                {clipAdvisory && (
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{clipAdvisory.sizeMB.toFixed(1)} MB</span>
+                    <span>Est. {clipAdvisory.estimatedTime}</span>
+                  </div>
+                )}
+                {clipAdvisory?.sizeWarning && (
+                  <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#92400e' }}>
+                    ⚠️ {clipAdvisory.sizeWarning}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button
-                    onClick={() => { setRecordingPhase('idle'); setPreviewUrl(null); recordedChunksRef.current = []; }}
+                    onClick={() => { setRecordingPhase('idle'); setPreviewUrl(null); setClipAdvisory(null); recordedChunksRef.current = []; }}
                     style={{ flex: 1, padding: '12px', borderRadius: 10, background: '#fff', color: '#555', fontWeight: 600, fontSize: 13, border: '1px solid #d1d5db', cursor: 'pointer' }}
                   >
                     Retake

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { ALL_GEMINI_DRILLS, getDrillsBySport, getDrillById, DrillResult } from "@/config/gemini-drills";
 import { postToArena } from "@/lib/arena-poster";
-import { uploadVideoInChunks } from "@/lib/upload-chunks";
+import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -173,8 +173,10 @@ export default function CoachGeminiDrillsPage() {
   const [activeTab,       setActiveTab]       = useState<"library" | "results">("library");
 
   // Upload state
-  const [uploadPhase, setUploadPhase] = useState<"idle" | "getting_url" | "uploading" | "processing" | "done" | "error">("idle");
+  const [uploadPhase, setUploadPhase] = useState<"idle" | "confirm" | "getting_url" | "uploading" | "processing" | "done" | "error">("idle");
   const [uploadPct,   setUploadPct]   = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
   const [drillResult, setDrillResult] = useState<DrillResult | null>(null);
   const [errorMsg,    setErrorMsg]    = useState("");
   const [lang,        setLang]        = useState<"en" | "en-sn" | "en-nd">("en");
@@ -232,16 +234,22 @@ export default function CoachGeminiDrillsPage() {
     setErrorMsg("");
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeDrillId || !selectedPlayer) return;
     e.target.value = "";
+    const adv = getUploadAdvisory(file);
+    if (adv.limitError) { setErrorMsg(adv.limitError); setUploadPhase("error"); return; }
+    setPendingFile(file);
+    setAdvisory(adv);
+    setUploadPhase("confirm");
+  };
 
-    const drill = getDrillById(activeDrillId);
-    if (!drill) return;
+  const doUploadAndAnalyse = async (file: File) => {
+    const activeDrill = getDrillById(activeDrillId ?? "");
+    if (!activeDrill || !activeDrillId) return;
 
     try {
-      // Upload through proxy in chunks — avoids CORS block and survives mobile connection drops
       setUploadPhase("uploading");
       const { fileUri, fileName } = await uploadVideoInChunks(file, (pct) => setUploadPct(pct));
 
@@ -519,6 +527,33 @@ export default function CoachGeminiDrillsPage() {
                   >
                     <Play size={16} /> Upload clip for {selectedName}
                   </button>
+                )}
+
+                {uploadPhase === "confirm" && advisory && pendingFile && (
+                  <div style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 14px", border: "1px solid #e5e7eb" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 6 }}>Ready to upload</div>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
+                      {pendingFile.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: advisory.sizeWarning ? 8 : 12 }}>
+                      {advisory.sizeMB.toFixed(0)} MB · {advisory.estimatedTime}
+                    </div>
+                    {advisory.sizeWarning && (
+                      <div style={{ fontSize: 11, color: "#92400e", background: "#fffbeb", border: "1px solid #f0b429", borderRadius: 6, padding: "6px 8px", marginBottom: 10 }}>
+                        ⚠️ {advisory.sizeWarning}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => { setPendingFile(null); setAdvisory(null); setUploadPhase("idle"); }}
+                        style={{ flex: 1, padding: "8px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "none", border: "1px solid #d1d5db", color: "#374151", cursor: "pointer" }}
+                      >Cancel</button>
+                      <button
+                        onClick={() => pendingFile && doUploadAndAnalyse(pendingFile)}
+                        style={{ flex: 2, padding: "8px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: GRS_GREEN, color: "#fff", border: "none", cursor: "pointer" }}
+                      >Start Upload</button>
+                    </div>
+                  </div>
                 )}
 
                 {uploadPhase === "getting_url" && (

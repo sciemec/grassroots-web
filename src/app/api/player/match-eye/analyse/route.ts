@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-export const maxDuration = 300;
+export const maxDuration = 600;
 export const runtime = "nodejs";
 
 interface KeyMoment {

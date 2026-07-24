@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
-import { uploadVideoInChunks } from "@/lib/upload-chunks";
+import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -188,7 +188,7 @@ interface AnalysisResult {
   players: PlayerResult[];
 }
 
-type Stage = "select" | "upload" | "processing" | "results" | "error";
+type Stage = "select" | "confirm" | "upload" | "processing" | "results" | "error";
 
 function scoreColor(v: number, lower = false) {
   const good = lower ? v <= 30 : v >= 70;
@@ -214,6 +214,8 @@ export default function CoachDrillAnalysisPage() {
   const [drillId,      setDrillId]      = useState("sprint_10m");
   const [playerName,   setPlayerName]   = useState("");
   const [uploadPct,    setUploadPct]    = useState(0);
+  const [pendingFile,  setPendingFile]  = useState<File | null>(null);
+  const [advisory,     setAdvisory]     = useState<UploadAdvisory | null>(null);
   const [result,       setResult]       = useState<AnalysisResult | null>(null);
   const [errMsg,       setErrMsg]       = useState("");
   const [showGuide,    setShowGuide]    = useState(false);
@@ -231,12 +233,24 @@ export default function CoachDrillAnalysisPage() {
 
   // ── Upload + Analyse (3-step Gemini flow) ────────────────────────────────
 
-  const handleFile = useCallback(async (file: File) => {
+  const handleFilePick = (file: File) => {
     if (!file.type.startsWith("video/")) {
       setErrMsg("Please choose a video file (mp4 or mov).");
       setStage("error");
       return;
     }
+    const adv = getUploadAdvisory(file);
+    if (adv.limitError) {
+      setErrMsg(adv.limitError);
+      setStage("error");
+      return;
+    }
+    setPendingFile(file);
+    setAdvisory(adv);
+    setStage("confirm");
+  };
+
+  const handleFile = useCallback(async (file: File) => {
     setStage("upload");
     setUploadPct(0);
     setResult(null);
@@ -611,7 +625,7 @@ export default function CoachDrillAnalysisPage() {
                 className="rounded-2xl border-2 border-dashed border-white/20 p-8 text-center cursor-pointer hover:border-[#f0b429]/50 hover:bg-[#f0b429]/5 transition-all"
                 onClick={() => fileRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFilePick(f); }}
               >
                 <Upload size={28} className="mx-auto mb-3 text-white/30" />
                 <p className="text-sm font-semibold text-white/60">Tap to choose video or drag it here</p>
@@ -623,7 +637,40 @@ export default function CoachDrillAnalysisPage() {
                   Choose video file
                 </button>
               </div>
-              <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+              <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFilePick(f); }} />
+            </div>
+          </div>
+        )}
+
+        {/* ── Stage: Confirm (pre-upload advisory) ───────────────────────── */}
+        {stage === "confirm" && advisory && pendingFile && (
+          <div className="max-w-md mx-auto mt-10 rounded-2xl bg-white/10 border border-white/20 p-6">
+            <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <Upload size={16} /> Ready to upload
+            </h2>
+            <div className="bg-white/5 rounded-xl p-3 mb-3 text-sm">
+              <p className="text-white font-semibold truncate">{pendingFile.name}</p>
+              <p className="text-white/50 mt-0.5">{advisory.sizeMB.toFixed(0)} MB · {advisory.estimatedTime}</p>
+            </div>
+            {advisory.sizeWarning && (
+              <div className="bg-amber-500/10 border border-amber-400/40 rounded-xl p-3 mb-4 text-xs text-amber-300">
+                ⚠️ {advisory.sizeWarning}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setPendingFile(null); setAdvisory(null); setStage("select"); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/70 border border-white/20 bg-transparent"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => pendingFile && handleFile(pendingFile)}
+                className="flex-[2] py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ background: "#1a5c2a" }}
+              >
+                Start Upload
+              </button>
             </div>
           </div>
         )}
