@@ -8,9 +8,10 @@
  * Same API key used by the Laravel GeminiAnalysisService on Render.
  */
 
-// gemini-2.5-flash: stable, fast, multimodal — works for both text and video via generateContent.
-export const GEMINI_TEXT_MODEL   = "gemini-2.5-flash";
-export const GEMINI_VISION_MODEL = "gemini-2.5-flash";
+// gemini-3.5-flash: confirmed working with generateContent as of July 2026.
+// gemini-2.5-flash returns 404 for new API keys — use gemini-3.5-flash instead.
+export const GEMINI_TEXT_MODEL   = "gemini-3.5-flash";
+export const GEMINI_VISION_MODEL = "gemini-3.5-flash";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
