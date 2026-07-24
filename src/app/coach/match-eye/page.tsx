@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
+import { uploadVideoInChunks } from "@/lib/upload-chunks";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -174,31 +175,9 @@ export default function MatchEyePage() {
     // XHR is used so we can track upload progress.
     setH((h) => ({ ...h, stage: "uploading", pct: 0 }));
     try {
-      const data = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>(
-        (resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable)
-              setH((h) => ({ ...h, pct: Math.round((e.loaded / e.total) * 95) }));
-          };
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                resolve(JSON.parse(xhr.responseText) as { fileUri: string; fileName: string; mimeType: string });
-              } catch {
-                reject(new Error("Unexpected response from server"));
-              }
-            } else {
-              let msg = `Upload failed (${xhr.status})`;
-              try { msg = (JSON.parse(xhr.responseText) as { error?: string }).error ?? msg; } catch {}
-              reject(new Error(msg));
-            }
-          };
-          xhr.onerror = () => reject(new Error("Network error during upload"));
-          xhr.open("POST", "/api/match-eye/upload");
-          xhr.setRequestHeader("Content-Type", fileToUpload.type || "video/mp4");
-          xhr.send(fileToUpload);
-        }
+      const data = await uploadVideoInChunks(
+        fileToUpload,
+        (pct) => setH((h) => ({ ...h, pct })),
       );
       setH((h) => ({ ...h, stage: "uploaded", pct: 100, fileUri: data.fileUri, fileName: data.fileName, mimeType: data.mimeType }));
     } catch (err) {

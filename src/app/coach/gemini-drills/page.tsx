@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ALL_GEMINI_DRILLS, getDrillsBySport, getDrillById, DrillResult } from "@/config/gemini-drills";
 import { postToArena } from "@/lib/arena-poster";
+import { uploadVideoInChunks } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -240,25 +241,9 @@ export default function CoachGeminiDrillsPage() {
     if (!drill) return;
 
     try {
-      // Upload through proxy — avoids CORS block on direct Google uploads
+      // Upload through proxy in chunks — avoids CORS block and survives mobile connection drops
       setUploadPhase("uploading");
-      const { fileUri, fileName } = await new Promise<{ fileUri: string; fileName: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", (ev) => {
-          if (ev.lengthComputable) setUploadPct(Math.round((ev.loaded / ev.total) * 95));
-        });
-        xhr.addEventListener("load", () => {
-          try {
-            const d = JSON.parse(xhr.responseText) as { fileUri?: string; fileName?: string };
-            if (!d.fileUri) { reject(new Error("Upload server did not return a file URI")); return; }
-            resolve({ fileUri: d.fileUri, fileName: d.fileName ?? "" });
-          } catch { reject(new Error("Failed to parse upload response")); }
-        });
-        xhr.addEventListener("error", () => reject(new Error("Upload failed")));
-        xhr.open("POST", `/api/match-eye/upload?size=${file.size}`);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
-      });
+      const { fileUri, fileName } = await uploadVideoInChunks(file, (pct) => setUploadPct(pct));
 
       // Step 3: Gemini analysis
       setUploadPhase("processing");

@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
+import { uploadVideoInChunks } from '@/lib/upload-chunks';
 import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,
@@ -364,29 +365,13 @@ export default function GeminiDrillsPage() {
     setUpload({ phase: 'getting_url', progress: 0, result: null, error: null });
 
     try {
-      // Upload through proxy — avoids CORS block on direct Google uploads
+      // Upload through proxy in chunks — avoids CORS block and survives mobile connection drops
       setUpload(prev => ({ ...prev, phase: 'uploading', progress: 0 }));
-      const uploadData = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhrRef.current = xhr;
-        xhr.upload.onprogress = (ev) => {
-          if (ev.lengthComputable) {
-            setUpload(prev => ({ ...prev, progress: Math.round((ev.loaded / ev.total) * 95) }));
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText)); }
-            catch { reject(new Error('Unexpected response from upload server')); }
-          } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
-          }
-        };
-        xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.open('POST', `/api/match-eye/upload?size=${blob.size}`);
-        xhr.setRequestHeader('Content-Type', blob.type || 'video/webm');
-        xhr.send(blob);
-      });
+      const videoFile = new File([blob], `drill-${Date.now()}.webm`, { type: blob.type || 'video/webm' });
+      const uploadData = await uploadVideoInChunks(
+        videoFile,
+        (pct) => setUpload(prev => ({ ...prev, progress: pct })),
+      );
       const fileUri  = uploadData.fileUri;
       const fileName = uploadData.fileName;
       if (!fileUri) throw new Error('Upload server did not return a file URI');

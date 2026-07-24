@@ -8,6 +8,7 @@ import {
   Clock, ChevronDown, ChevronUp, Dumbbell,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { uploadVideoInChunks } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
 const SPORTS = [
@@ -276,24 +277,7 @@ export default function PlayerMatchEyePage() {
     setUploadedFile(file);
 
     try {
-      const data = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 95));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText) as { fileUri: string; fileName: string; mimeType: string }); }
-            catch { reject(new Error("Unexpected response from upload server")); }
-          } else {
-            reject(new Error(`Upload failed (${xhr.status})`));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.open("POST", `/api/match-eye/upload?size=${file.size}`);
-        xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
-        xhr.send(file);
-      });
+      const data = await uploadVideoInChunks(file, (pct) => setUploadPct(pct));
 
       setFileUri(data.fileUri);
       setFileName(data.fileName);

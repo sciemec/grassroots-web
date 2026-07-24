@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
+import { uploadVideoInChunks } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -274,24 +275,7 @@ export default function CoachDrillAnalysisPage() {
     let fileName: string;
     let mimeType: string;
     try {
-      const uploadData = await new Promise<{ fileUri: string; fileName: string; mimeType: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 95));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText)); }
-            catch { reject(new Error("Unexpected response from upload server.")); }
-          } else {
-            reject(new Error(`Upload failed (${xhr.status}). Try a shorter clip.`));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error during upload. Check your connection."));
-        xhr.open("POST", `/api/match-eye/upload?size=${file.size}`);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
-      });
+      const uploadData = await uploadVideoInChunks(file, (pct) => setUploadPct(pct));
       fileUri  = uploadData.fileUri;
       fileName = uploadData.fileName;
       mimeType = uploadData.mimeType;
