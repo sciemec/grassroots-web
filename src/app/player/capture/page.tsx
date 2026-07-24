@@ -43,9 +43,12 @@ interface DrillDef {
   emoji:       string;
   category:    "Technical" | "Cognitive" | "Physical";
   tagline:     string;
-  protocol:    string[];
+  diagram:     string;          // ASCII illustration shown before protocol steps
+  protocol:    string[];        // English steps
+  protocolSn:  string[];        // 75% English + 25% ChiShona mix
+  protocolNd:  string[];        // 75% English + 25% isiNdebele mix
   cameraSetup: string;
-  equipment:   string;
+  equipment:   string;          // uses local resources (bottles etc.)
   metrics:     DrillMetric[];
   focus:       string;
   maxDuration: number;
@@ -89,15 +92,40 @@ const DRILLS: DrillDef[] = [
     emoji: "🦶",
     category: "Technical",
     tagline: "Dispersion radius · Release latency · Bilateral ratio",
-    equipment: "Football · 3 cones · partner",
+    diagram:
+      "       PARTNER\n" +
+      "         (10-15m away)\n" +
+      "              |\n" +
+      "              |  ball incoming\n" +
+      "              v\n" +
+      "        +----------+\n" +
+      "        | CONTROL  |  <- triangle zone\n" +
+      "        |  ZONE    |     ~2m sides\n" +
+      "        +----------+\n" +
+      "          [ YOU ]",
+    equipment: "Football · 3 sand-filled bottles (triangle markers) · partner",
     protocol: [
-      "Place 3 cones in a 2 m triangle as your 'landing target zone'.",
-      "Partner delivers the ball from 10–15 m (varied heights and speeds).",
-      "Receive the ball and control it INSIDE the triangle with your first touch.",
-      "Immediately pass or shoot to a second target after your touch.",
-      "5 reps each foot (10 total). No stopping between reps.",
+      "Put 3 bottles on the ground in a triangle shape — each side about 2 metres wide.",
+      "Ask a partner to stand 10 to 15 metres away and kick or throw the ball to you.",
+      "Stop the ball INSIDE the triangle using just your first touch.",
+      "Right after touching the ball, pass it or shoot straight away — no extra dribbles.",
+      "Do 5 touches with each foot — 10 touches in total.",
     ],
-    cameraSetup: "SIDE-ON · hip height · 4 m from player · triangle cones + full body in frame.",
+    protocolSn: [
+      "Isa mabhodhoro matatu pasi mumutsara wetriangle — each side ingori 2 metres.",
+      "Kumbira shamwari yako imire 10 kusvika 15 metres — ikande kana ikicker bhora kwamuri.",
+      "Misa bhora MUKATI metriangle ne first touch yako chete.",
+      "Mushure mekubata bhora, pfuura kana shaya nekukurumidza — no extra dribbles.",
+      "Ita touches 5 ne gumbo rimwe nerimwe — 10 total.",
+    ],
+    protocolNd: [
+      "Beka amabhodlela amathathu phansi ngomugqa wetriangle — each side ingaba 2 amamamitha.",
+      "Cela umngane wakho ame amamamitha ali-10 kuya ku-15 — akulahle noma ashaye ibhola.",
+      "Misa ibhola PHAKATHI kwetriangle ngokukhawuleza kokunye unyawo kuphela.",
+      "Emva kokuthinta ibhola, dlulisela noma shaya ngokukhawuleza — ayikho ezinye izinyathelo.",
+      "Yenza izinhlandla ezi-5 ngonyawo ngalinye — gu-10 isamba.",
+    ],
+    cameraSetup: "SIDE-ON · hip height · 4m from player · triangle bottles + full body in frame.",
     metrics: [
       { key: "dispersion_radius", label: "Touch Dispersion Radius", unit: "m",  description: "Average distance ball lands from triangle centre (lower = better)" },
       { key: "release_latency",   label: "Release Latency",         unit: "s",  description: "Time from ball arrival to your next action (lower = sharper)" },
@@ -112,19 +140,46 @@ const DRILLS: DrillDef[] = [
     emoji: "⚡",
     category: "Technical",
     tagline: "Turn sharpness · Strike accuracy · Body shield position",
-    equipment: "Football · wall or rebounder",
+    diagram:
+      "  +--------------------+\n" +
+      "  |   WALL / FENCE     |\n" +
+      "  +--------+-----------+\n" +
+      "           |  ball bounces back\n" +
+      "           |  (5 metres)\n" +
+      "      [ YOU ] <- stand with back to wall\n" +
+      "           |\n" +
+      "      Turn 180 degrees\n" +
+      "           |\n" +
+      "           v\n" +
+      "    [B]         [B]   <- 2 bottles as gate\n" +
+      "       (2m wide, 8m away)",
+    equipment: "Football · wall or fence · 2 sand-filled bottles (gate markers)",
     protocol: [
-      "Stand 5 m from a wall or rebounder with your back to it.",
-      "Pass the ball hard against the wall.",
-      "As it returns, receive with your back to the 'defender' and immediately turn.",
-      "Strike at a marked target (cone gate 2 m wide, 8 m away) within 2 touches.",
-      "Alternate left/right turns. 8 reps total.",
+      "Stand 5 metres from a wall with your BACK facing it.",
+      "Place 2 bottles as a gate — 2 metres wide, 8 metres behind you.",
+      "Kick the ball hard against the wall in front of you.",
+      "When the ball comes back, receive it and turn to face the gate.",
+      "Strike the ball through the gate in 2 touches or less. Do 8 turns — half left, half right.",
+    ],
+    protocolSn: [
+      "Mira 5 metres kubva kumadziro, kumashure kwako kune wall.",
+      "Isa mabhodhoro maviri segateway — 2 metres yakafara, 8 metres kumashure kwako.",
+      "Shaya bhora nesimba kumadziro kumuneri wako.",
+      "Bhora rikazoodzoka, bata wobva watendeuka ukatarisana negateway.",
+      "Shaya bhora nepasi yegateway mukati me 2 touches — ita nhungamiro 8, hafu kuruboshwe hafu kurudyi.",
+    ],
+    protocolNd: [
+      "Yima amamamitha ali-5 uvela odongeni, ngemuva kwakho kune uwall.",
+      "Beka amabhodlela amabili njengesango — amamitha ama-2 ububanzi, amamamitha ali-8 ngemuva kwakho.",
+      "Shaya ibhola ngamandla egangeni lakho.",
+      "Ibhola libuyela, lilamukele bese uphenduka ubhekane nesango.",
+      "Shaya ibhola ngaphandle kwesango ngezinyathelo ezi-2 noma ngaphansi — yenza ama-turn ama-8, ihhafu kwekhohlo ihhafu kwesokudla.",
     ],
     cameraSetup: "45° DIAGONAL · waist height · capture both the turn and the strike.",
     metrics: [
-      { key: "turn_sharpness",        label: "Turn Sharpness",        unit: "s",  description: "Time from ball receipt to completed turn (lower = faster)" },
-      { key: "strike_accuracy",       label: "Strike Accuracy",       unit: "/8", description: "Number of strikes hitting the cone gate target" },
-      { key: "body_shield_position",  label: "Body Shield Position",  unit: "pts", description: "AI rating: how well you use body to protect ball (1–10)" },
+      { key: "turn_sharpness",       label: "Turn Sharpness",       unit: "s",   description: "Time from ball receipt to completed turn (lower = faster)" },
+      { key: "strike_accuracy",      label: "Strike Accuracy",      unit: "/8",  description: "Number of strikes hitting the gate target" },
+      { key: "body_shield_position", label: "Body Shield Position", unit: "pts", description: "AI rating: how well you use body to protect ball (1–10)" },
     ],
     focus: "back-to-goal receiving — body shield positioning, turn technique (inside/outside), transition from receive to strike, accuracy of the final shot, balance on non-dominant side",
     maxDuration: 60,
@@ -135,19 +190,43 @@ const DRILLS: DrillDef[] = [
     emoji: "🎯",
     category: "Technical",
     tagline: "Gate precision · Velocity control · Weak foot score",
-    equipment: "Football · 6 cones",
+    diagram:
+      "    [ YOU ]\n" +
+      "       |\n" +
+      "       +---------> [B][B]  10m (inside foot)\n" +
+      "       |\n" +
+      "       +-------------------> [B][B]  15m (laces)\n" +
+      "       |\n" +
+      "       +----------------------------> [B][B]  20m (laces)\n" +
+      "\n" +
+      "  Each gate = 2 bottles, 50cm apart",
+    equipment: "Football · 6 sand-filled bottles (2 per gate, 3 gates)",
     protocol: [
-      "Set 3 cone gates: each gate 50 cm wide, at 10 m, 15 m, and 20 m distances.",
-      "Pass through each gate alternating distances. 4 passes per gate (12 total).",
-      "Use inside of foot for the 10 m gate, laces for 15 m and 20 m gates.",
-      "Last 3 passes: use your weak foot only.",
-      "Record how many passes go through the centre of each gate.",
+      "Make 3 gates using pairs of bottles — each gate 50cm wide.",
+      "Put them at 10m, 15m, and 20m straight in front of you.",
+      "Pass 4 times to each gate — use the inside of your foot for the 10m gate.",
+      "Use your laces for the 15m and 20m gates.",
+      "Your last 3 passes must use your weaker foot only.",
+    ],
+    protocolSn: [
+      "Gadzira magates matatu ne mabhodhoro maviri maviri — each gate ingori 50cm yakafara.",
+      "Aisei pa 10m, 15m, ne 20m pamberi pako.",
+      "Pfuura bhora 4 times kune gate imwe neimwe — shandisa mukati megumbo kune 10m gate.",
+      "Shandisa laces kune 15m ne 20m gates.",
+      "Passes dzenyu dzekupedzisira 3 dzinofanirwa kushandisa gumbo rako rakaoma chete.",
+    ],
+    protocolNd: [
+      "Yenza amasango amathathu ngamabhodlela amabili amabili — isango ngalinye 50cm ububanzi.",
+      "Wabeka ku-10m, 15m, le-20m phambi kwakho.",
+      "Dlulisa ibhola izikhathi ezine ku-isango ngalinye — sebenzisa indlela yangaphakathi yonyawo ku-10m.",
+      "Sebenzisa izindosi ku-15m le-20m amasango.",
+      "Izicelo zakho zokugcina ezi-3 kumele zisebenzise unyawo lwakho olubuthaka kuphela.",
     ],
     cameraSetup: "BEHIND the player · elevated · all 3 gates visible · shows pass trajectory.",
     metrics: [
-      { key: "gate_precision",    label: "Gate Precision",    unit: "/12", description: "Passes through gate centre (both feet combined)" },
-      { key: "velocity_control",  label: "Velocity Control",  unit: "pts", description: "AI rating: appropriate pace for each distance (1–10)" },
-      { key: "weak_foot_score",   label: "Weak Foot Score",   unit: "/3",  description: "Number of weak-foot passes through gate" },
+      { key: "gate_precision",   label: "Gate Precision",   unit: "/12", description: "Passes through gate centre (both feet combined)" },
+      { key: "velocity_control", label: "Velocity Control", unit: "pts", description: "AI rating: appropriate pace for each distance (1–10)" },
+      { key: "weak_foot_score",  label: "Weak Foot Score",  unit: "/3",  description: "Number of weak-foot passes through gate" },
     ],
     focus: "passing technique — standing foot placement, hip rotation, follow-through, head down at contact, lace vs inside-of-foot selection, weight of pass appropriate to distance, weak foot mechanics",
     maxDuration: 90,
@@ -158,13 +237,36 @@ const DRILLS: DrillDef[] = [
     emoji: "🥅",
     category: "Technical",
     tagline: "Strike power · Placement accuracy · Non-dominant foot",
-    equipment: "Football · goal or wall markings · 3 cones",
+    diagram:
+      "  [B]-------- GOAL (6m wide) --------[B]\n" +
+      "   ^ top corner                top corner ^\n" +
+      "\n" +
+      "              * 11m  <- penalty spot\n" +
+      "\n" +
+      "           *  16m   <- free kick arc\n" +
+      "\n" +
+      "          [ YOU ]  aim for the corners",
+    equipment: "Football · 4 sand-filled bottles (goal posts) · open wall or real goal",
     protocol: [
-      "Mark a goal 6 m wide with cones. Place cones at penalty spot (11 m) and 16 m arc.",
-      "Series A: 3 shots from penalty spot — aim for top corners (left, right, left).",
-      "Series B: 3 shots from 16 m — aim for low corners.",
-      "Series C: 3 shots with weak foot from penalty spot.",
-      "Allow 20 seconds between shots. No run-up limit.",
+      "Mark a goal 6 metres wide using 2 bottles at each post.",
+      "Series A — 3 shots from 11 metres (penalty spot). Aim: top left, top right, top left corner.",
+      "Series B — 3 shots from 16 metres. Aim: low left corner, low right corner, your choice.",
+      "Series C — 3 shots with your weaker foot from 11 metres.",
+      "Wait 20 seconds between shots. No limit on your run-up.",
+    ],
+    protocolSn: [
+      "Maka goal 6 metres wide ne mabhodhoro maviri pane post imwe neimwe.",
+      "Series A — shaya 3 kubva pa 11 metres (penalty spot). Goneka: kona yekuruboshwe, kurudyi, kurudyi zvakare.",
+      "Series B — shaya 3 kubva pa 16 metres. Goneka: kona yepasi kuruboshwe, kurudyi, iwe unosarudza.",
+      "Series C — shaya 3 ne gumbo rako rakaoma kubva pa 11 metres.",
+      "Mirira 20 seconds pakati peshots. Haina muganho pane kumhanya.",
+    ],
+    protocolNd: [
+      "Maka isango esibanzi ama-6 amamamitha ngamabhodlela amabili ngepost ngayinye.",
+      "Series A — shaya izi-3 ku-11 amamamitha (indawo ye-penalty). Miselela: ikhona ekhohlo, kwesokudla, ekhohlo futhi.",
+      "Series B — shaya izi-3 ku-16 amamamitha. Miselela: ikhona ephansi kwekhohlo, kwesokudla, ukhetha.",
+      "Series C — shaya izi-3 ngonyawo lwakho olubuthaka ku-11 amamamitha.",
+      "Linda imizuzwana eli-20 phakathi kwezishayo. Alikho ithawela ekugijimeni.",
     ],
     cameraSetup: "BEHIND the goal · slightly elevated · capture both the striking foot AND the ball path.",
     metrics: [
@@ -181,15 +283,39 @@ const DRILLS: DrillDef[] = [
     emoji: "🌐",
     category: "Technical",
     tagline: "Landing zone accuracy · Delivery height · Both feet",
-    equipment: "Football · 3 cones · optional target player",
+    diagram:
+      "        [B]---- GOAL ----[B]\n" +
+      "         |               |\n" +
+      "  [B] <--+  TARGET ZONE  |   <- land cross here\n" +
+      " (far     |  penalty spot|    (penalty spot to\n" +
+      "  post)   +---------------+    far post)\n" +
+      "              |\n" +
+      "  ────────────●──── byline\n" +
+      "              |\n" +
+      "         [ YOU ] -> run from 35m and cross",
+    equipment: "Football · 3 bottles (penalty spot + far post markers)",
     protocol: [
-      "Place a cone 'penalty spot' and a 'far post cone' to mark your target zone.",
-      "Start 35 m from goal at the byline. Dribble to the byline and cross.",
-      "4 crosses from left flank, 4 from right flank (8 total).",
-      "Aim for the landing zone: between penalty spot and far post cone.",
-      "Crosses must clear head height and arrive with pace.",
+      "Put one bottle at the penalty spot and one at the far post — that is your TARGET ZONE.",
+      "Start 35 metres from the goal near the side of the pitch.",
+      "Run to the byline and then cross the ball into the target zone.",
+      "Do 4 crosses from the left side and 4 from the right side — 8 total.",
+      "Every cross must go above head height and arrive fast.",
     ],
-    cameraSetup: "HIGH AND WIDE · 8 m from crosser · capture run-up, contact, and ball flight.",
+    protocolSn: [
+      "Isa bhodhoro rimwe pa penalty spot ne rimwe pamusuwo wekure — iyo ndiyo nzvimbo yako yegonekera.",
+      "Tanga 35 metres kubva kugoal padivi repamucheto.",
+      "Mhanya kubyline, wobva wakrossa bhora mukati menzvimbo yako.",
+      "Ita ma-cross 4 kubva kuruboshwe ne 4 kubva kurudyi — 8 total.",
+      "Cross imwe neimwe inofanira kupfuura pamwero wemusoro wemunhu ichibva nesimba.",
+    ],
+    protocolNd: [
+      "Beka ibhodlela elilodwa endaweni ye-penalty spot elinye ku-far post — le yindawo yakho yokumiselela.",
+      "Qala ku-35 amamamitha uvela esangweni eduze nzwangedge yenkundla.",
+      "Gijima ku-byline bese uwela ibhola ngaphakathi kwendawo yakho.",
+      "Yenza ama-cross ama-4 ohlangothini olwesokunxele nama-4 kwesokudla — gu-8 isamba.",
+      "Yilelo cross kumele lidlule phezulu kwekhanda lomuntu lilandele ngamandla.",
+    ],
+    cameraSetup: "HIGH AND WIDE · 8m from crosser · capture run-up, contact, and ball flight.",
     metrics: [
       { key: "landing_accuracy", label: "Landing Zone Accuracy", unit: "/8",  description: "Crosses landing in the marked scoring zone" },
       { key: "delivery_height",  label: "Delivery Height",       unit: "pts", description: "AI rating: crosses clearing defensive line height (1–10)" },
@@ -204,19 +330,44 @@ const DRILLS: DrillDef[] = [
     emoji: "🌀",
     category: "Technical",
     tagline: "Bend accuracy · Strike elevation · Wall clearance",
-    equipment: "Football · 3 cones (wall) · goal markings",
+    diagram:
+      "  [B]------- GOAL (6m) -------[B]\n" +
+      "   |                           |\n" +
+      "   |   <- AIM: far corner      |\n" +
+      "   +---------------------------+\n" +
+      "              |\n" +
+      "   [B][B][B]  |   <- 3-bottle WALL (9m from ball)\n" +
+      "              |\n" +
+      "         *    |   <- ball (25m out, slightly left)\n" +
+      "\n" +
+      "        [ YOU ]",
+    equipment: "Football · 5 sand-filled bottles (3 for wall + 2 for goal posts)",
     protocol: [
-      "Set up a 3-cone 'wall' 4 m high (use a fence or jerseys on sticks) 9 m from the ball.",
-      "Mark a goal 6 m wide. Ball placed 25 m out, slightly left of centre.",
-      "Attempt 5 free kicks. Aim to bend the ball over/around the wall into the right corner.",
-      "2 kicks with left foot, 2 with right foot, 1 of your choice.",
-      "Each kick must clear the wall — strikes hitting the wall don't count.",
+      "Line up 3 bottles in a row 9 metres from the ball — this is your 'wall'.",
+      "Mark a goal 6 metres wide with 2 bottles, 25 metres ahead of you.",
+      "Place the ball 25 metres out, slightly to the left of the goal's centre.",
+      "Try 5 free kicks — bend the ball over or around the bottle wall into the corner.",
+      "Do 2 with your left foot, 2 with your right, 1 with the foot you choose. Shots hitting the wall do not count.",
+    ],
+    protocolSn: [
+      "Teedzana mabhodhoro matatu mumutsara 9 metres kubva kubhora — iyo ndiyo 'wall' yako.",
+      "Maka goal 6 metres wide ne mabhodhoro maviri, 25 metres pamberi pako.",
+      "Isa bhora 25 metres mberi, kuruboshwe zvishoma kubva pakati pegoal.",
+      "Edza ma free kicks mashanu — bengera bhora PAMUSORO kana KUNE RUDYI rwe wall yemabhodhoro upinde mukona.",
+      "Ita 2 ne gumbo rerudyi, 2 ne reruboshwe, 1 ne gumbo raunosarudza. Kana ukabhurura wall hazvibvumirwe.",
+    ],
+    protocolNd: [
+      "Beka amabhodlela amathathu ngomugqa amamamitha ali-9 uvela ebholeni — yiyo 'i-wall' yakho.",
+      "Maka isango esibanzi ama-6 amamamitha ngamabhodlela amabili, amamamitha ali-25 phambi kwakho.",
+      "Beka ibhola amamamitha ali-25 phambili, kancane kwesokudla ekhalfini yesango.",
+      "Zama izishayo ezi-5 zamahhala — goba ibhola NGENHLA noma NXAZOMBILI kwe-wall yemabhodlela ushesha ekhoneni.",
+      "Yenza ezi-2 ngonyawo lwesokudla, ezi-2 ngolwekhohlo, elilodwa ngowazikhethela. Izishayo ezihlaba uwall azibaliwe.",
     ],
     cameraSetup: "SIDE-ON · captures run-up, ball contact, and full flight path over the wall.",
     metrics: [
-      { key: "wall_clearance",    label: "Wall Clearance",   unit: "/5",  description: "Kicks clearing the cone wall" },
-      { key: "target_accuracy",   label: "Target Accuracy",  unit: "/5",  description: "Kicks reaching the corner target zone" },
-      { key: "strike_elevation",  label: "Strike Elevation", unit: "pts", description: "AI rating: lift and flight trajectory quality (1–10)" },
+      { key: "wall_clearance",   label: "Wall Clearance",   unit: "/5",  description: "Kicks clearing the bottle wall" },
+      { key: "target_accuracy",  label: "Target Accuracy",  unit: "/5",  description: "Kicks reaching the corner target zone" },
+      { key: "strike_elevation", label: "Strike Elevation", unit: "pts", description: "AI rating: lift and flight trajectory quality (1–10)" },
     ],
     focus: "free kick technique — approach angle, standing foot position, striking zone (inside of laces for curl, instep for dip), follow-through direction, ball elevation, consistent contact point, mental routine and composure",
     maxDuration: 90,
@@ -227,15 +378,38 @@ const DRILLS: DrillDef[] = [
     emoji: "👤",
     category: "Technical",
     tagline: "Forehead contact · Attack angle · Bilateral coordination",
-    equipment: "Football · jump marker (tape on wall)",
+    diagram:
+      "  +---------------------------+\n" +
+      "  |   WALL   X  <- TARGET    |  20cm above arm reach\n" +
+      "  |                          |\n" +
+      "  +---------------------------+\n" +
+      "\n" +
+      "      ^ jump and attack\n" +
+      "      |\n" +
+      "   [ YOU ]  <- throw ball up, head at target",
+    equipment: "Football · tape or chalk mark on wall (20cm above your reach height)",
     protocol: [
-      "Mark a target height on a wall at 20 cm above your standing reach.",
-      "Series A: 5 standing headers — toss ball yourself, head it at the wall target.",
-      "Series B: 5 jumping headers — throw ball slightly forward, attack with a run-up.",
-      "Series C: 5 headers alternating left/right sides (2 step approach, cross delivery angle).",
-      "Partner holds/throws ball for series B and C if available.",
+      "Make a mark on the wall 20cm higher than you can reach with your arm fully stretched up.",
+      "Series A — Throw the ball up yourself and head it at the wall mark. Do 5 headers.",
+      "Series B — Take 2 running steps, jump, and head the ball at the mark. Do 5 jumping headers.",
+      "Series C — Head the ball as it comes from the left side, then the right side. 5 total.",
+      "Ask a partner to throw the ball for Series B and C if you can.",
     ],
-    cameraSetup: "FRONT-ON · 3 m away · captures forehead contact point, neck position, and eyes.",
+    protocolSn: [
+      "Isa mako kumadziro 20cm kupfuura pakausvika ruoko rwako rwakatwasanurwa.",
+      "Series A — Kandira bhora wega wobva uripapa richikanganisa mark yako. Ita 5.",
+      "Series B — Mhanya nhanho mbiri, tsamira, upape bhora uchikanganisa mark. Ita 5.",
+      "Series C — Pape bhora richidzooka kuruboshwe, wobva kurudyi. Total 5.",
+      "Kana une shamwari, anokukanda bhora kune Series B ne C.",
+    ],
+    protocolNd: [
+      "Beka uphawu odongeni olungama-20cm aphakamise ukwedlula lapho unyawo lwakho lungafinyelela khona.",
+      "Series A — Phosa ibhola ngokwakho bese uthepha ukuze likhame uphawu. Yenza izi-5.",
+      "Series B — Gijima izinyathelo ezi-2, xhuma, uthepha ibhola ukhame uphawu. Yenza izi-5.",
+      "Series C — Thepha ibhola liza ohlangothini olwesokunxele, bese kwekhohlo. Izinhlandla ezi-5.",
+      "Uma ulenqabathi, makakulahle ibhola ku-Series B naku-C.",
+    ],
+    cameraSetup: "FRONT-ON · 3m away · captures forehead contact point, neck position, and eyes.",
     metrics: [
       { key: "forehead_contact",   label: "Forehead Contact Accuracy", unit: "pts", description: "AI rating: consistent ball-to-forehead contact (1–10)" },
       { key: "attack_angle",       label: "Attack Angle",              unit: "pts", description: "AI rating: downward attack angle on the ball (1–10)" },
@@ -250,19 +424,43 @@ const DRILLS: DrillDef[] = [
     emoji: "⚽",
     category: "Technical",
     tagline: "Consecutive count · Surface variety · Weak foot control",
-    equipment: "Football",
+    diagram:
+      "         * keep it in the air!\n" +
+      "        / | \\\n" +
+      "      R   |   L    <- right foot, left foot\n" +
+      "          |\n" +
+      "          ^   <- thigh\n" +
+      "          |\n" +
+      "       [ YOU ]\n" +
+      "\n" +
+      "  Sequence: R x2 -> L x2 -> Thigh x1",
+    equipment: "Football only — no extra equipment needed",
     protocol: [
-      "Warm up: 30 seconds of free juggling to find your rhythm.",
-      "Test 1: Maximum consecutive juggles — feet only. Count until drop. 2 attempts.",
-      "Test 2: Structured sequence — right foot × 2, left foot × 2, thigh × 1. Repeat sequence for 30 seconds.",
-      "Test 3: 20 consecutive juggles using weak foot only (restart from 0 on each drop).",
-      "Take 15 seconds rest between each test.",
+      "Warm up — juggle the ball freely for 30 seconds to find your rhythm.",
+      "Test 1 — Juggle with your feet only. Count how many in a row before it drops. Try twice.",
+      "Test 2 — Follow this sequence for 30 seconds: right foot 2 times, left foot 2 times, thigh 1 time. Keep repeating.",
+      "Test 3 — Juggle with your weaker foot only. Count how many in a row. Start from zero each time it drops.",
+      "Rest 15 seconds between each test.",
+    ],
+    protocolSn: [
+      "Warm up — juggla bhora pamwe chete for 30 seconds kuti uwane rhythm yako.",
+      "Test 1 — Juggla ne magumbo chete. Verenga mangapi asina kudonha. Edzazvakare kaviri.",
+      "Test 2 — Tevera sequence iyi for 30 seconds: gumbo rerudyi x2, reruboshwe x2, thigh x1. Dzokera kubvira.",
+      "Test 3 — Juggla ne gumbo rako rakaoma chete. Verenga mangapi asina kudonha. Dzoka pazero pega drop.",
+      "Zorora 15 seconds pakati petest imwe neimwe.",
+    ],
+    protocolNd: [
+      "Warm up — juggla ibhola ngokukhululeka imizuzwana eli-30 ukuthola isigqi sakho.",
+      "Test 1 — Juggla ngezinyawo kuphela. Bala ezingaphi zomugqa zingaweli. Zama kabili.",
+      "Test 2 — Landela lena imizuzu eli-30: unyawo lwesokudla x2, lwesokuphakama x2, ithanga x1. Phinda usebenze.",
+      "Test 3 — Juggla ngonyawo lwakho olubuthaka kuphela. Bala ezingaphi zomugqa. Buyela ku-zero ngalo lonke ukuwela.",
+      "Phumula imizuzwana eli-15 phakathi kwabo bonke obavivinyo.",
     ],
     cameraSetup: "FRONT-ON · full body · waist height · all contact surfaces visible.",
     metrics: [
-      { key: "max_consecutive",  label: "Max Consecutive Juggles", unit: "reps", description: "Best score from 2 attempts — feet only" },
-      { key: "sequence_quality", label: "Sequence Quality",        unit: "pts",  description: "AI rating: rhythm and surface variety in test 2 (1–10)" },
-      { key: "weak_foot_juggles",label: "Weak Foot Consecutive",   unit: "reps", description: "Best consecutive count with non-dominant foot only" },
+      { key: "max_consecutive",   label: "Max Consecutive Juggles", unit: "reps", description: "Best score from 2 attempts — feet only" },
+      { key: "sequence_quality",  label: "Sequence Quality",        unit: "pts",  description: "AI rating: rhythm and surface variety in test 2 (1–10)" },
+      { key: "weak_foot_juggles", label: "Weak Foot Consecutive",   unit: "reps", description: "Best consecutive count with non-dominant foot only" },
     ],
     focus: "juggling technique — ankle lock on contact, consistent contact point on foot, soft cushioning on receipt, body balance and core stability, height control (knee height), transition between surfaces, rhythm and relaxation",
     maxDuration: 120,
@@ -273,15 +471,38 @@ const DRILLS: DrillDef[] = [
     emoji: "🧠",
     category: "Cognitive",
     tagline: "Reaction time · Hand-eye coordination · Bilateral speed",
-    equipment: "Tennis ball · wall",
+    diagram:
+      "  +--------------------+\n" +
+      "  |       WALL         |\n" +
+      "  +----------+---------+\n" +
+      "             |  ball bounces back\n" +
+      "             |\n" +
+      "   right <- (*) -> left   <- switch hands each time\n" +
+      "             |\n" +
+      "          [ YOU ]  1 metre from wall",
+    equipment: "Tennis ball · wall or fence — no other equipment needed",
     protocol: [
-      "Stand 1 m from a wall. Throw the tennis ball against the wall with your right hand.",
-      "Catch it with your LEFT hand. Then throw with left, catch with right.",
-      "Count how many successful catch-throw-catch cycles you complete in 30 seconds.",
-      "Rest 20 seconds. Repeat for a second 30-second test.",
-      "Third test: Same drill but close your eyes after throwing. Catch by sound.",
+      "Stand 1 metre from a wall or fence.",
+      "Throw the tennis ball at the wall with your RIGHT hand. Catch it with your LEFT hand.",
+      "Then throw with your LEFT hand. Catch with your RIGHT. That is 1 full cycle.",
+      "Count how many full cycles you finish in 30 seconds. Rest 20 seconds. Do it again.",
+      "Third test — same thing but CLOSE YOUR EYES right after throwing. Try to catch the ball by sound.",
     ],
-    cameraSetup: "SIDE-ON · 1.5 m distance · captures both hands and wall contact clearly.",
+    protocolSn: [
+      "Mira 1 metre kubva kumadziro kana fence.",
+      "Kanda bhora diki kumadziro ne RUOKO RWERUDYI. Ribate ne RUBOSHWE rwako.",
+      "Wobva wakanda ne RUBOSHWE. Ribate ne RURUDYI. Iyo ndiyo cycle imwe yakazara.",
+      "Verenga cycles dzakakwana muma 30 seconds. Zorora 20 seconds. Itazve.",
+      "Test yechitatu — chinhu chimwe chete asi PFIGA MESO pashure pekukanda. Edza kubata nenzwi.",
+    ],
+    protocolNd: [
+      "Yima amamitha alodwa uvela odongeni noma uthangeni.",
+      "Phosa ibhola dike odongeni ngesandla SESOKUDLA. Sithathile ngesandla SEKHOHLO.",
+      "Bese uphosa ngesandla SEKHOHLO. Sithathile ngesandla SESOKUDLA. Leyo ngu-cycle eyodwa ephelele.",
+      "Bala izinhlangano eziphelele kwimizuzwana eli-30. Phumula imizuzwana eli-20. Phinda.",
+      "Isivivinyo sesithathu — into efanayo kodwa VALA AMEHLO akho emva kokufosa. Zama ukubamba ngomsindo.",
+    ],
+    cameraSetup: "SIDE-ON · 1.5m distance · captures both hands and wall contact clearly.",
     metrics: [
       { key: "cycles_30s",      label: "Cycles per 30 seconds", unit: "reps", description: "Successful throw-switch-catch cycles (best of 2 attempts)" },
       { key: "bilateral_speed", label: "Bilateral Speed",       unit: "pts",  description: "AI rating: smooth hand switching without hesitation (1–10)" },
@@ -296,19 +517,41 @@ const DRILLS: DrillDef[] = [
     emoji: "🙌",
     category: "Technical",
     tagline: "Distance reach · Non-dominant stance · Technique score",
-    equipment: "Football · target cones",
+    diagram:
+      "  ball starts BEHIND your head\n" +
+      "        |\n" +
+      "     [ YOU ]  <- feet must stay behind this line ---\n" +
+      "        |\n" +
+      "        +-----------> [B]  10m target (bottle)\n" +
+      "        |\n" +
+      "        +------------------------------> [B]  15m target (bottle)",
+    equipment: "Football · 2 sand-filled bottles (targets at 10m and 15m)",
     protocol: [
-      "Mark targets at 10 m and 15 m from your feet.",
-      "Test A: 4 throw-ins from standing position — both feet behind line.",
-      "Test B: 4 throw-ins from short run-up (3 steps). Feet must not cross line at release.",
-      "Test C: 3 throw-ins from non-dominant stance (opposite foot forward).",
-      "Ball must start behind the head and follow a clean arc — no short-arming.",
+      "Put one bottle at 10 metres and another at 15 metres straight ahead of you.",
+      "Test A — 4 throw-ins from standing still. Both feet must stay behind the line the whole time.",
+      "Test B — 4 throw-ins with a short 3-step run-up. Your feet must not cross the line when you let go.",
+      "Test C — 3 throw-ins with your less natural foot in front (swap which foot leads).",
+      "The ball must start from behind your head and travel in a clean arc — no short arm throws.",
+    ],
+    protocolSn: [
+      "Isa bhodhoro rimwe pa 10 metres ne rimwe pa 15 metres pamberi kwako.",
+      "Test A — 4 throw-ins nemirira chete. Magumbo ako ose asare kumashure kwemutsetse.",
+      "Test B — 4 throw-ins nemhanyamhanya mishanu mitatu. Gumbo rako harifanire kupfuura mutsetse paunorasa.",
+      "Test C — 3 throw-ins netsika yako isina nguva (shandura gumbo riri pamberi).",
+      "Bhora rinofanira kutanga kumashure kwemusoro wako risvetuke zvakanaka — zorodzera pasina kumhanya.",
+    ],
+    protocolNd: [
+      "Beka ibhodlela elilodwa ku-10 amamamitha elinye ku-15 amamamitha phambi kwakho.",
+      "Test A — ama-throw-in ama-4 uthe uzime. Zombi izinyawo kumele zihlale ngemuva komugqa.",
+      "Test B — ama-throw-in ama-4 nokubaleka izinyathelo ezi-3 ezifushane. Izinyawo zakho azihlangabezi umugqa uma ukhipha.",
+      "Test C — ama-throw-in ama-3 ngesimo sakho esingelona esejwayelekile (shintsha unyawo olungaphambili).",
+      "Ibhola kumele liqale ngemuva kwekhanda lakho liwele ngendlela enhle — ungasheshi ngezandla.",
     ],
     cameraSetup: "SIDE-ON · full body · captures feet position, arm arc, and ball release point.",
     metrics: [
-      { key: "max_distance",     label: "Maximum Distance",         unit: "m",   description: "Furthest legal throw-in (feet behind line, ball behind head)" },
-      { key: "weak_accuracy",    label: "Non-Dominant Accuracy",    unit: "%",   description: "Throws landing on target — opposite stance" },
-      { key: "technique_score",  label: "Throw Technique",          unit: "pts", description: "AI rating: feet, arc, arm symmetry, follow-through (1–10)" },
+      { key: "max_distance",    label: "Maximum Distance",      unit: "m",   description: "Furthest legal throw-in (feet behind line, ball behind head)" },
+      { key: "weak_accuracy",   label: "Non-Dominant Accuracy", unit: "%",   description: "Throws landing on target — opposite stance" },
+      { key: "technique_score", label: "Throw Technique",       unit: "pts", description: "AI rating: feet, arc, arm symmetry, follow-through (1–10)" },
     ],
     focus: "throw-in technique — both feet on or behind line, ball starting behind head, equal contribution from both hands, arching trajectory, distance and accuracy to target, comparison between dominant and non-dominant stance, follow-through and body balance after release",
     maxDuration: 60,
@@ -423,6 +666,7 @@ export default function FootballSkillAnalysisPage() {
   const [savedToVault, setSavedToVault] = useState(false);
   const [errorMsg,     setErrorMsg]     = useState("");
   const [cameraError,  setCameraError]  = useState(false);
+  const [lang,         setLang]         = useState<"en" | "en-sn" | "en-nd">("en");
 
   // Profile + history
   const [profile,       setProfile]       = useState<PlayerProfile | null>(null);
@@ -761,6 +1005,35 @@ export default function FootballSkillAnalysisPage() {
                 </Link>
               </div>
 
+              {/* Language selector */}
+              <div className="rounded-2xl border bg-white p-4" style={{ borderColor: "#e5e5e5" }}>
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+                  Instructions language / Mutauro / Ulimi
+                </p>
+                <div className="flex gap-2">
+                  {(
+                    [
+                      { id: "en",    label: "English only" },
+                      { id: "en-sn", label: "English + ChiShona" },
+                      { id: "en-nd", label: "English + isiNdebele" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setLang(opt.id)}
+                      className="flex-1 rounded-xl border py-2 text-xs font-semibold transition-all"
+                      style={
+                        lang === opt.id
+                          ? { backgroundColor: "#1a5c2a", color: "#fff", borderColor: "#1a5c2a" }
+                          : { backgroundColor: "#fff", color: "#555", borderColor: "#e5e5e5" }
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {CATEGORIES.map((cat) => {
                 const catDrills = DRILLS.filter((d) => d.category === cat.id);
                 if (catDrills.length === 0) return null;
@@ -830,10 +1103,25 @@ export default function FootballSkillAnalysisPage() {
                 <p className="text-sm text-gray-700">{drill.equipment}</p>
               </div>
 
+              {drill.diagram && (
+                <div
+                  className="rounded-2xl border p-4 overflow-x-auto"
+                  style={{ backgroundColor: "#f8faff", borderColor: "#dbeafe" }}
+                >
+                  <p className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-2">Drill diagram</p>
+                  <pre
+                    className="text-xs leading-relaxed whitespace-pre"
+                    style={{ color: "#1e3a5f", fontFamily: "monospace" }}
+                  >
+                    {drill.diagram}
+                  </pre>
+                </div>
+              )}
+
               <div className="rounded-2xl border bg-white p-4" style={{ borderColor: "#e5e5e5" }}>
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Setup & Protocol</p>
                 <ol className="space-y-2.5">
-                  {drill.protocol.map((step, i) => (
+                  {(lang === "en-sn" ? drill.protocolSn : lang === "en-nd" ? drill.protocolNd : drill.protocol).map((step, i) => (
                     <li key={i} className="flex gap-3">
                       <span
                         className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white mt-0.5"
