@@ -8,7 +8,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 // 1. PRODUCER: Stream LLM text and buffer into sentences
 // ============================================================
 export class CommentaryProducer {
-  private model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+  private model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
   private buffer = '';
   private sentenceEndings = new Set(['.', '!', '?', '\n']);
 

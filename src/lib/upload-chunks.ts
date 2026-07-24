@@ -1,14 +1,19 @@
 /**
  * uploadVideoInChunks — resilient video upload for mobile connections.
  *
- * Slices a file into CHUNK_BYTES pieces and sends them sequentially through
- * /api/match-eye/upload. Each chunk is retried up to MAX_RETRIES times with
- * exponential backoff. The Google resumable-session URL is threaded from the
- * server response back to subsequent requests so the upload can survive a
- * dropped mobile connection mid-file.
+ * Flow:
+ *   1. Call /api/match-eye/upload/session — server creates a Google resumable
+ *      session and returns an opaque session URL. The API key stays server-side.
+ *   2. Slice the file into CHUNK_BYTES pieces and PUT them sequentially
+ *      DIRECTLY to Google's session URL from the browser.
+ *      No Render proxy hop — bytes travel phone → Google only (1× bandwidth).
+ *   3. Each chunk is retried up to MAX_RETRIES times with exponential backoff.
+ *
+ * CORS: confirmed — Google mirrors any Origin in Access-Control-Allow-Origin,
+ * so this works in both production (grassrootssports.live) and localhost dev.
  */
 
-const CHUNK_BYTES = 8 * 1024 * 1024; // 8 MB — matches Google's resumable upload chunk granularity (8,388,608 bytes)
+const CHUNK_BYTES = 8 * 1024 * 1024; // 8 MB — Google's resumable upload granularity
 const MAX_RETRIES = 3;
 
 export interface ChunkUploadResult {
@@ -17,56 +22,66 @@ export interface ChunkUploadResult {
   mimeType: string;
 }
 
-interface ServerChunkResponse {
-  sessionUrl?: string;
-  fileUri?:    string;
-  fileName?:   string;
-  mimeType?:   string;
-  error?:      string;
+/** Google's response body on the final chunk */
+interface GoogleFinalResponse {
+  file?: { uri: string; name: string; mimeType?: string };
 }
 
-/** Send a single chunk via XHR (so onprogress fires) and resolve with the JSON response. */
-function sendChunkXhr(
-  chunk:      Blob,
-  params:     URLSearchParams,
-  sessionUrl: string | null,
+/**
+ * PUT a single chunk directly to Google's resumable session URL via XHR
+ * (XHR is used so onprogress fires for accurate progress bars).
+ *
+ * Returns the parsed JSON body on the final chunk, null on intermediate chunks.
+ */
+function sendChunkDirect(
+  chunk:           Blob,
+  sessionUrl:      string,
+  offset:          number,
+  isLast:          boolean,
+  mimeType:        string,
   onChunkProgress: (loaded: number) => void,
-): Promise<ServerChunkResponse> {
+): Promise<GoogleFinalResponse | null> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onChunkProgress(e.loaded);
     };
+
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          resolve(JSON.parse(xhr.responseText) as ServerChunkResponse);
-        } catch {
-          reject(new Error("Unexpected response from upload server"));
+        if (isLast) {
+          try {
+            resolve(JSON.parse(xhr.responseText) as GoogleFinalResponse);
+          } catch {
+            reject(new Error("Unexpected response from Google on final chunk"));
+          }
+        } else {
+          resolve(null); // intermediate chunk — no body needed
         }
       } else {
-        let msg = `Upload chunk failed (${xhr.status})`;
-        try {
-          const body = JSON.parse(xhr.responseText) as { error?: string };
-          if (body.error) msg = body.error;
-        } catch {}
-        reject(new Error(msg));
+        reject(new Error(
+          `Upload chunk failed (${xhr.status}): ${xhr.responseText.slice(0, 200)}`
+        ));
       }
     };
+
     xhr.onerror = () =>
       reject(new Error("Network error during upload — check your connection and try again"));
-    xhr.open("POST", `/api/match-eye/upload?${params.toString()}`);
-    xhr.setRequestHeader("Content-Type", chunk.type || "video/mp4");
-    // Thread the Google session URL so the server can continue the same resumable upload
-    if (sessionUrl) xhr.setRequestHeader("X-Upload-Session-Url", sessionUrl);
+
+    xhr.open("PUT", sessionUrl);
+    xhr.setRequestHeader("Content-Type",            mimeType);
+    xhr.setRequestHeader("X-Goog-Upload-Command",   isLast ? "upload, finalize" : "upload");
+    xhr.setRequestHeader("X-Goog-Upload-Offset",    String(offset));
     xhr.send(chunk);
   });
 }
 
 /**
- * Upload a File in 5 MB chunks.
+ * Upload a File to the Gemini Files API in 8 MB chunks sent directly from
+ * the browser to Google (no Render proxy — single bandwidth hop).
  *
- * @param file       - The video File (or Blob wrapped in a File) to upload.
+ * @param file       - The video File to upload.
  * @param onProgress - Called with integer 0–95 as bytes are sent.
  * @returns          - { fileUri, fileName, mimeType } from the Gemini Files API.
  */
@@ -76,21 +91,30 @@ export async function uploadVideoInChunks(
 ): Promise<ChunkUploadResult> {
   const totalSize   = file.size;
   const totalChunks = Math.ceil(totalSize / CHUNK_BYTES);
-  let   sessionUrl: string | null = null;
+  const mimeType    = file.type || "video/mp4";
   let   bytesUploaded = 0;
 
+  // ── Step 1: Get a Google resumable session URL from our server ────────────
+  // The API key stays server-side. The session URL is an opaque signed token.
+  const sessionRes = await fetch("/api/match-eye/upload/session", {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify({ size: totalSize, mimeType, fileName: file.name }),
+  });
+
+  if (!sessionRes.ok) {
+    const body = await sessionRes.json() as { error?: string };
+    throw new Error(body.error ?? "Failed to start upload session");
+  }
+
+  const { sessionUrl } = await sessionRes.json() as { sessionUrl: string };
+
+  // ── Step 2: Send all chunks directly to Google ────────────────────────────
   for (let i = 0; i < totalChunks; i++) {
     const start  = i * CHUNK_BYTES;
     const end    = Math.min(start + CHUNK_BYTES, totalSize);
     const chunk  = file.slice(start, end);
     const isLast = i === totalChunks - 1;
-
-    const params = new URLSearchParams({
-      size:   String(totalSize),
-      chunk:  String(chunk.size),
-      offset: String(start),
-      last:   String(isLast),
-    });
 
     let lastError: Error | null = null;
 
@@ -101,33 +125,29 @@ export async function uploadVideoInChunks(
       }
 
       try {
-        const res = await sendChunkXhr(
+        const res = await sendChunkDirect(
           chunk,
-          params,
           sessionUrl,
+          start,
+          isLast,
+          mimeType,
           (loaded) => {
-            // Report cumulative progress across all chunks, capped at 95%
             onProgress(Math.round(((bytesUploaded + loaded) / totalSize) * 95));
           },
         );
 
-        if (res.error) throw new Error(res.error);
-
-        // Thread the session URL forward to subsequent chunk requests
-        if (res.sessionUrl) sessionUrl = res.sessionUrl;
-
         if (isLast) {
-          if (!res.fileUri) throw new Error("Upload server did not return a file URI");
+          if (!res?.file?.uri) throw new Error("Google did not return a file URI");
           return {
-            fileUri:  res.fileUri,
-            fileName: res.fileName ?? "",
-            mimeType: res.mimeType ?? file.type,
+            fileUri:  res.file.uri,
+            fileName: res.file.name ?? file.name,
+            mimeType,
           };
         }
 
         bytesUploaded = end;
         lastError = null;
-        break; // chunk succeeded — advance to next chunk
+        break; // chunk succeeded — advance to next
       } catch (err) {
         lastError = err instanceof Error ? err : new Error("Unknown upload error");
       }
