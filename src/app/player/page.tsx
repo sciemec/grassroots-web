@@ -541,7 +541,7 @@ export default function PlayerDashboardHome() {
             <HubCard href="/player/gemini-drills" icon={Wand2} iconBg="#fdf4ff" iconColor="#7c3aed"
               label="Gemini Drills" desc="AI drill coaching Â· 10 sports Â· guided sessions" />
             <HubCard href="/player/capture" icon={Camera} iconBg="#f0fdf4" iconColor="#15803d"
-              label="Skill Analysis" desc="10 drills · protocols · AI coaching · metrics" badge="new" />
+              label="Football Skill Analysis" desc="10 drills · protocols · AI coaching · metrics" badge="new" />
             <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
               label="Athletic Profile" desc="6-test battery Â· jump Â· sprint Â· balance Â· drill analysis" />
             <HubCard href="/player/goal" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
