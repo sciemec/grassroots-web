@@ -107,7 +107,7 @@ export async function POST(request) {
 
     // Step 4: Generate tactical analysis using the File API URI
     const generateRes = await fetch(
-      `${GEMINI_BASE}/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `${GEMINI_BASE}/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
