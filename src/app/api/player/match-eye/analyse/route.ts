@@ -136,7 +136,7 @@ drill_recommendations: 2-4 drills that directly address the weaknesses observed.
 Base everything on what you actually see in the video.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,7 +183,7 @@ Base everything on what you actually see in the video.`;
 
     try {
       const narrativeRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

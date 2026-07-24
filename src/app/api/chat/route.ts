@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const positionConfig = getPositionConfig(playerPosition, playerAgeGroup); // ✅ FIXED: Bound to matching engine signature
 
   const payload = {
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     messages: [
       {
         role: "system",

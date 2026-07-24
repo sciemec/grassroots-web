@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
     // Run the drill-specific Gemini prompt
     const genRes = await fetch(
-      `${GEMINI_API_BASE}/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+      `${GEMINI_API_BASE}/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

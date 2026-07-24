@@ -182,7 +182,7 @@ Return ONLY a valid JSON object — no markdown, no explanation:
 Be specific and practical. Reference what you actually see — jersey colours, positions, moments in the video. No generic advice.${playerTrackingPrompt}`;
 
       const geminiDrillRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -230,7 +230,7 @@ Write as a coach talking directly to their assistant. Be specific, direct, pract
 
       let drillNarrative = "";
       const drillNarrRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -293,7 +293,7 @@ For formations: identify from player positioning throughout the full match.
 Be specific and professional. Base everything on what you observe in the video.${playerTrackingPrompt}`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -354,7 +354,7 @@ Write a professional 4-paragraph tactical match report:
 Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference formations, patterns, and events by name. No generic advice. Return plain text only — no markdown, no bullet points.`;
 
     const narrativeRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -1,13 +1,16 @@
 /**
  * Gemini API helper — shared across all Next.js server routes.
  *
- * Uses Google Gemini 2.0 Flash for fast, cost-effective text generation.
- * Env var: GEMINI_API_KEY (set in .env.local + Vercel dashboard)
+ * Model names are defined once here. To update after a future deprecation,
+ * change only these two constants — all routes using the helpers update automatically.
  *
- * Same API key used by the Laravel CommentaryController on Render.
+ * Env var: GEMINI_API_KEY (set in .env.local + Render dashboard)
+ * Same API key used by the Laravel GeminiAnalysisService on Render.
  */
 
-export const GEMINI_TEXT_MODEL = "gemini-2.0-flash";
+// gemini-2.5-flash: stable, fast, multimodal — works for both text and video via generateContent.
+export const GEMINI_TEXT_MODEL   = "gemini-2.5-flash";
+export const GEMINI_VISION_MODEL = "gemini-2.5-flash";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -27,7 +30,7 @@ export async function geminiText(
   const model = options.model ?? GEMINI_TEXT_MODEL;
   const url   = `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
 
-  // Gemini requires strict user/model alternation — merge consecutive same-role messages
+  // generateContent requires strict user/model alternation — merge consecutive same-role messages
   const contents: { role: "user" | "model"; parts: { text: string }[] }[] = [];
   for (const m of messages) {
     const geminiRole = m.role === "assistant" ? "model" : "user";
@@ -76,7 +79,7 @@ export async function geminiVision(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured in Vercel environment variables.");
 
-  const model = options.model ?? GEMINI_TEXT_MODEL;
+  const model = options.model ?? GEMINI_VISION_MODEL;
   const url   = `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
 
   // Build parts: image frames first, then the text prompt
