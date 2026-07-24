@@ -8,7 +8,7 @@
  * dropped mobile connection mid-file.
  */
 
-const CHUNK_BYTES = 5 * 1024 * 1024; // 5 MB per chunk
+const CHUNK_BYTES = 8 * 1024 * 1024; // 8 MB — matches Google's resumable upload chunk granularity (8,388,608 bytes)
 const MAX_RETRIES = 3;
 
 export interface ChunkUploadResult {
