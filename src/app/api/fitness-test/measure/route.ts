@@ -206,25 +206,59 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formData = await req.formData();
-    const testType = (formData.get("testType") as string | null)?.toLowerCase();
-    const videoFile = formData.get("video") as File | null;
+    let testType: string;
+    let uri: string;
+    let name: string;
+    let mimeType: string;
 
-    if (!testType || !PROMPTS[testType]) {
-      return Response.json(
-        { error: "testType must be one of: jump, sprint, juggling, reaction, agility" },
-        { status: 400 }
-      );
+    const ct = req.headers.get("content-type") ?? "";
+
+    if (ct.includes("application/json")) {
+      // Pre-uploaded via chunked proxy — receive fileUri/fileName directly.
+      // Video bytes never touch this server's RAM.
+      const body = await req.json() as {
+        testType?: string;
+        fileUri?:  string;
+        fileName?: string;
+        mimeType?: string;
+      };
+      testType = (body.testType ?? "").toLowerCase();
+      uri      = body.fileUri  ?? "";
+      name     = body.fileName ?? "";
+      mimeType = body.mimeType ?? "video/mp4";
+
+      if (!testType || !PROMPTS[testType]) {
+        return Response.json(
+          { error: "testType must be one of: jump, sprint, juggling, reaction, agility" },
+          { status: 400 }
+        );
+      }
+      if (!uri) {
+        return Response.json({ error: "fileUri is required" }, { status: 400 });
+      }
+    } else {
+      // FormData fallback — used by position-fit page for short clips
+      const formData = await req.formData();
+      testType = ((formData.get("testType") as string | null) ?? "").toLowerCase();
+      const videoFile = formData.get("video") as File | null;
+
+      if (!testType || !PROMPTS[testType]) {
+        return Response.json(
+          { error: "testType must be one of: jump, sprint, juggling, reaction, agility" },
+          { status: 400 }
+        );
+      }
+      if (!videoFile) {
+        return Response.json({ error: "video file is required" }, { status: 400 });
+      }
+
+      mimeType = videoFile.type || "video/mp4";
+      const videoBytes = await videoFile.arrayBuffer();
+      const uploaded = await uploadToGemini(videoBytes, mimeType, googleKey);
+      uri  = uploaded.uri;
+      name = uploaded.name;
     }
-    if (!videoFile) {
-      return Response.json({ error: "video file is required" }, { status: 400 });
-    }
 
-    const mimeType = videoFile.type || "video/mp4";
-    const videoBytes = await videoFile.arrayBuffer();
-
-    // Upload to Gemini Files API
-    const { uri, name } = await uploadToGemini(videoBytes, mimeType, googleKey);
     await waitForFileActive(name, googleKey);
 
     // Call Gemini 2.5 Flash
