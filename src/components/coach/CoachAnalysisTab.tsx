@@ -10,7 +10,7 @@ import {
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
-const AI_URL    = process.env.NEXT_PUBLIC_AI_URL ?? "https://grassroots-ai-service.onrender.com";
+const AI_URL    = process.env.NEXT_PUBLIC_AI_URL ?? "";
 const API_URL   = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
