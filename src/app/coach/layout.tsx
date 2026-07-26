@@ -10,6 +10,7 @@ import { GuestGateProvider } from "@/components/ui/register-modal";
 import dynamic from "next/dynamic";
 
 const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
+const GrassrootsNewsTicker = dynamic(() => import("@/components/ui/GrassrootsNewsTicker"), { ssr: false });
 
 export default function CoachLayout({
   children,
@@ -49,6 +50,7 @@ export default function CoachLayout({
         </div>
       </div>
       <ThutoChatCoach />
+      <GrassrootsNewsTicker />
     </GuestGateProvider>
   );
 }

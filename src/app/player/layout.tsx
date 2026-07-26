@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 
 // Dynamically import Thuto AI Coach widget without Server-Side Rendering
 const ThutoChat = dynamic(() => import("@/components/thuto/ThutoChat"), { ssr: false });
+const GrassrootsNewsTicker = dynamic(() => import("@/components/ui/GrassrootsNewsTicker"), { ssr: false });
 
 // ── AdBanner intentionally removed from this layout ───────────────────────
 // The banner-below-nav AdBanner was causing severe visual corruption on
@@ -76,6 +77,7 @@ export default function PlayerLayout({
 
       {/* ── Persistent THUTO AI assistant ─────────────────────────────── */}
       <ThutoChat />
+      <GrassrootsNewsTicker />
     </GuestGateProvider>
   );
 }

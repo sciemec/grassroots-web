@@ -9,6 +9,7 @@ import { ScoutSidebar } from "@/components/layout/ScoutSidebar";
 import dynamic from "next/dynamic";
 
 const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
+const GrassrootsNewsTicker = dynamic(() => import("@/components/ui/GrassrootsNewsTicker"), { ssr: false });
 
 export default function ScoutLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -42,6 +43,7 @@ export default function ScoutLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
       <ThutoChatCoach />
+      <GrassrootsNewsTicker />
     </GuestGateProvider>
   );
 }

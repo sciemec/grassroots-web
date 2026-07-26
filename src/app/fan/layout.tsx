@@ -9,6 +9,7 @@ import { FanSidebar } from "@/components/layout/FanSidebar";
 import dynamic from "next/dynamic";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
+const GrassrootsNewsTicker = dynamic(() => import("@/components/ui/GrassrootsNewsTicker"), { ssr: false });
 
 export default function FanLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
@@ -42,6 +43,7 @@ export default function FanLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <ThutoChatVisitor />
+      <GrassrootsNewsTicker />
     </GuestGateProvider>
   );
 }
