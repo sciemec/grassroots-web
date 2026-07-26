@@ -25,14 +25,15 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const LS_KEY = "gs_admin_announcements";
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AdminAnnouncementsPage() {
-  useAuthStore();
+  const token = useAuthStore((s) => s.token);
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ title: "", body: "", target_role: "all" });
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [saving, setSaving] = useState(false);
-  const [pushResult, setPushResult] = useState<"sent" | "failed" | null>(null);
+  const [broadcastResult, setBroadcastResult] = useState<{ sent_to?: number; ok: boolean } | null>(null);
 
   useEffect(() => {
     try {
@@ -49,7 +50,7 @@ export default function AdminAnnouncementsPage() {
   const publish = async () => {
     if (!form.title.trim() || !form.body.trim()) return;
     setSaving(true);
-    setPushResult(null);
+    setBroadcastResult(null);
 
     const newAnnouncement: Announcement = {
       id: Date.now().toString(),
@@ -60,9 +61,29 @@ export default function AdminAnnouncementsPage() {
       is_active: true,
     };
 
-    // Fire push notification via existing Firebase route
+    // 1. Write to every matching user's notification bell via Laravel
+    let broadcastOk = false;
+    let sentTo = 0;
     try {
-      const res = await fetch("/api/notifications/send", {
+      const res = await fetch(`${API}/admin/notifications/broadcast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token ?? ""}` },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          body: form.body.trim(),
+          target_role: form.target_role,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        broadcastOk = true;
+        sentTo = json.sent_to ?? 0;
+      }
+    } catch { /* silently log — still saves locally */ }
+
+    // 2. Also fire FCM push (best-effort — needs GOOGLE_APPLICATION_CREDENTIALS_JSON on Render)
+    try {
+      await fetch("/api/notifications/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -71,11 +92,9 @@ export default function AdminAnnouncementsPage() {
           data: { type: "announcement", target_role: form.target_role },
         }),
       });
-      setPushResult(res.ok ? "sent" : "failed");
-    } catch {
-      setPushResult("failed");
-    }
+    } catch { /* FCM is best-effort */ }
 
+    setBroadcastResult({ ok: broadcastOk, sent_to: sentTo });
     persist([newAnnouncement, ...announcements]);
     setForm({ title: "", body: "", target_role: "all" });
     setFormOpen(false);
@@ -109,15 +128,15 @@ export default function AdminAnnouncementsPage() {
           </button>
         </div>
 
-        {/* Push result banner */}
-        {pushResult === "sent" && (
+        {/* Broadcast result banner */}
+        {broadcastResult?.ok && (
           <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-            ✓ Announcement published and push notification sent to all users.
+            ✓ Notification delivered to {broadcastResult.sent_to} user{broadcastResult.sent_to === 1 ? "" : "s"} — they will see it in their notification bell.
           </div>
         )}
-        {pushResult === "failed" && (
+        {broadcastResult && !broadcastResult.ok && (
           <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-            Announcement saved. Push delivery failed — check FIREBASE_* env vars in Vercel.
+            Announcement saved locally. In-app delivery failed — check the backend is running on Render and the admin token is valid.
           </div>
         )}
 
