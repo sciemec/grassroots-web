@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GEMINI_VISION_MODEL } from '@/lib/gemini';
 
 // POST /api/analyse-from-uri
 // ─────────────────────────────────────────────────────────────────────────────
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
   // ── Generate coaching feedback ────────────────────────────────────────────
   const context = buildContext(sport, drill, position);
   const genRes  = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },

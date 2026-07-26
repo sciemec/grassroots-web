@@ -11,6 +11,7 @@
 
 import { NextResponse } from 'next/server';
 import { getDrillById } from '@/config/gemini-drills';
+import { GEMINI_VISION_MODEL } from '@/lib/gemini';
 
 export const maxDuration = 300; // 5 min — Gemini can take time on longer clips
 
@@ -52,9 +53,9 @@ function extractJson(text: string): Record<string, unknown> | null {
 
 export async function POST(req: Request) {
   try {
-    const googleKey = process.env.GOOGLE_AI_API_KEY;
+    const googleKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_AI_API_KEY;
     if (!googleKey) {
-      return NextResponse.json({ error: 'GOOGLE_AI_API_KEY not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 });
     }
 
     const { fileUri, fileName, drillId } = await req.json() as {
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
 
     // Run the drill-specific Gemini prompt
     const genRes = await fetch(
-      `${GEMINI_API_BASE}/v1beta/models/gemini-3.5-flash:generateContent?key=${googleKey}`,
+      `${GEMINI_API_BASE}/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

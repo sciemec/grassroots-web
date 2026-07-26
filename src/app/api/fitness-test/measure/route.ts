@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { GEMINI_VISION_MODEL } from "@/lib/gemini";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -263,7 +264,7 @@ export async function POST(req: NextRequest) {
 
     // Call Gemini 2.5 Flash
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

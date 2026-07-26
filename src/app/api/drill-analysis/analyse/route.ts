@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { GEMINI_VISION_MODEL } from "@/lib/gemini";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -146,7 +147,7 @@ Be specific to what you see in the video. If visibility is limited, note it in y
 Score honestly — 60-75 is good for grassroots level. Reserve 85+ for clearly exceptional technique.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
