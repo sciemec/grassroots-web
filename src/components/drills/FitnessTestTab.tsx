@@ -367,7 +367,21 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
           }
         };
 
-        xhr.onerror = () => { clearInterval(ticker); reject(new Error("Network error")); };
+        xhr.onerror = () => {
+          clearInterval(ticker);
+          console.error("[FitnessTest] upload failed", {
+            endpoint,
+            AI_URL,
+            status: xhr.status,          // 0 = no connection / CORS blocked
+            statusText: xhr.statusText,
+            readyState: xhr.readyState,
+            responseText: xhr.responseText,
+          });
+          const detail = xhr.status > 0
+            ? `HTTP ${xhr.status} from ${endpoint}`
+            : `No response from ${endpoint} — CORS, cold start, or env var missing`;
+          reject(new Error(detail));
+        };
         xhr.open("POST", endpoint);
         xhr.send(formData);
       });
