@@ -12,7 +12,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ChevronLeft, Camera, StopCircle, Video, CheckCircle2, AlertCircle,
-  Loader2, Star, Info, History, ChevronDown, ChevronRight,
+  Loader2, Star, Info, History, ChevronDown, ChevronRight, Download,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
@@ -22,6 +22,7 @@ import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,
 } from '@/config/gemini-drills';
+import { downloadDrillResultPdf } from '@/lib/generate-analysis-pdf';
 
 const GRS_GREEN  = '#1a5c2a';
 const GRS_GOLD   = '#c8962a';
@@ -752,6 +753,18 @@ export default function GeminiDrillsPage() {
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Analysis complete — results saved to your profile</span>
                 </div>
                 <ResultDisplay result={upload.result} drill={selected} />
+                <button
+                  onClick={() => downloadDrillResultPdf(upload.result!, selected)}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: 12,
+                    background: '#fff', color: '#374151', fontWeight: 700, fontSize: 13,
+                    border: '1px solid #d1d5db', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  <Download size={15} />
+                  Download PDF Report
+                </button>
                 <button
                   onClick={resetUpload}
                   style={{

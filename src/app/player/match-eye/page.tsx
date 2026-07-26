@@ -5,10 +5,11 @@ import Link from "next/link";
 import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle,
   Star, TrendingUp, TrendingDown, Zap, Target,
-  Clock, ChevronDown, ChevronUp, Dumbbell,
+  Clock, ChevronDown, ChevronUp, Dumbbell, Download,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { compressVideo } from "@/lib/compress-video";
+import { downloadPlayerMatchEyePdf } from "@/lib/generate-analysis-pdf";
 import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
@@ -668,6 +669,20 @@ export default function PlayerMatchEyePage() {
             </div>
 
             <ResultsPanel analysis={analysis} narrative={narrative} />
+
+            {/* Download PDF */}
+            <button
+              onClick={() => downloadPlayerMatchEyePdf(analysis, narrative, sport)}
+              style={{
+                width: "100%", padding: "13px 0", borderRadius: 12,
+                background: "#fff", border: "1px solid #d1d5db",
+                color: "#374151", fontWeight: 700, fontSize: 14, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <Download size={16} />
+              Download PDF Report
+            </button>
 
             {/* Timeline marker */}
             <div style={{ display: "flex", gap: 16, padding: "10px 0", justifyContent: "center" }}>

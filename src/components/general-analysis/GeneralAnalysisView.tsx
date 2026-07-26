@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { uploadVideoInChunks } from '@/lib/upload-chunks';
 import { useAuthStore } from '@/lib/auth-store';
+import { downloadGeneralAnalysisPdf } from '@/lib/generate-analysis-pdf';
 
 interface GeneralAnalysisParticipants {
   estimated_count: number;
@@ -422,9 +423,8 @@ export default function GeneralAnalysisView({ backHref }: Props) {
                 Analyse Another
               </button>
               <button
-                disabled
-                title="PDF download coming in Stage 2"
-                className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 bg-white text-gray-300 flex items-center justify-center gap-2 cursor-not-allowed"
+                onClick={() => downloadGeneralAnalysisPdf(analysis)}
+                className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Download PDF
