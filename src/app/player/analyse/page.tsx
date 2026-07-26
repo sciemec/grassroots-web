@@ -8,6 +8,7 @@ import {
   Share2, Trophy, Info, Target,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { uploadVideoInChunks } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -409,10 +410,18 @@ export default function AnalysePage() {
     if (!st.video || !t.geminiType) return;
     patch(t.id, { measuring: true, error: "" });
     try {
-      const form = new FormData();
-      form.append("testType", t.geminiType);
-      form.append("video", st.video);
-      const res  = await fetch("/api/fitness-test/measure", { method: "POST", body: form });
+      // Upload via Render proxy first — video bytes never load into server RAM
+      const uploaded = await uploadVideoInChunks(st.video, () => {});
+      const res = await fetch("/api/fitness-test/measure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          testType: t.geminiType,
+          fileUri:  uploaded.fileUri,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+        }),
+      });
       const data = await res.json() as {
         result?: { measured_value: number; unit: string; confidence: string; notes: string };
         error?: string;
