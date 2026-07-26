@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { evaluate, type RawTestInputs, type GRSResult, type Gender, type Position } from '@/lib/grs-engine';
 import { useAuthStore } from '@/lib/auth-store';
+import { uploadVideoInChunks } from '@/lib/upload-chunks';
 
 // ── Position configuration ────────────────────────────────────────────────────
 type PosKey = 'striker' | 'winger' | 'midfielder' | 'defender' | 'goalkeeper';
@@ -510,10 +511,17 @@ export default function PositionFitPage() {
     if (!camBlob || !camTarget) return;
     setCamPhase('processing');
     try {
-      const fd = new FormData();
-      fd.append('testType', camTarget);
-      fd.append('video', camBlob, 'clip.webm');
-      const res = await fetch('/api/fitness-test/measure', { method: 'POST', body: fd });
+      const uploaded = await uploadVideoInChunks(camBlob, () => {});
+      const res = await fetch('/api/fitness-test/measure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testType: camTarget,
+          fileUri:  uploaded.fileUri,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+        }),
+      });
       const json = (await res.json()) as { result?: { measured_value: number; unit: string; confidence: string; notes: string }; error?: string };
       if (!res.ok || json.error) {
         setCamError(json.error ?? 'Analysis failed');
