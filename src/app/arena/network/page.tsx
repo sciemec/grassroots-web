@@ -25,10 +25,12 @@ interface Connection {
 
 interface SuggestedUser {
   id: string;
-  name: string;
+  initials: string;
   role: string;
   sport?: string;
   province?: string;
+  match_reason?: string;
+  joined_ago?: string;
 }
 
 function ArenaNav({ userName }: { userName: string }) {
@@ -62,7 +64,6 @@ function ArenaNav({ userName }: { userName: string }) {
 
 function UserCard({ user, token, onConnect }: { user: SuggestedUser; token: string; onConnect: (id: string) => void }) {
   const [sent, setSent] = useState(false);
-  const initials = (user.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const connect = async () => {
     setSent(true);
     try {
@@ -75,13 +76,14 @@ function UserCard({ user, token, onConnect }: { user: SuggestedUser; token: stri
   };
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{initials}</div>
+      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{user.initials}</div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-gray-900 truncate">{user.name}</p>
-        <p className="text-xs text-gray-500 capitalize">{[user.role, user.sport, user.province].filter(Boolean).join(" · ")}</p>
+        <p className="font-semibold text-sm text-gray-900 truncate capitalize">{user.role}{user.sport ? ` · ${user.sport}` : ""}</p>
+        <p className="text-xs truncate" style={{ color: GRS_GREEN }}>{user.match_reason ?? "On GrassRoots"}</p>
+        {user.joined_ago && <p className="text-xs text-gray-400">{user.joined_ago}</p>}
       </div>
       <button onClick={connect} disabled={sent}
-        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 flex-shrink-0"
         style={sent ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN } : { borderColor: GRS_GREEN, color: GRS_GREEN }}>
         <UserPlus size={13} />
         {sent ? "Sent" : "Connect"}
@@ -109,7 +111,7 @@ export default function NetworkPage() {
         const [connRes, pendingRes, sugRes] = await Promise.allSettled([
           fetch(`${API}/arena/connections`,         { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${API}/arena/connections/pending`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API}/arena/discover`,            { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/arena/suggested`,           { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         if (connRes.status === "fulfilled" && connRes.value.ok) {
           const json = await connRes.value.json();
@@ -180,7 +182,7 @@ export default function NetworkPage() {
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tab === t ? "text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
               style={tab === t ? { background: GRS_GREEN } : {}}>
-              {t === "connections" ? `Connections (${connections.length})` : t === "pending" ? `Pending (${pending.length})` : "Discover"}
+              {t === "connections" ? `Connections (${connections.length})` : t === "pending" ? `Pending (${pending.length})` : "People you may know"}
             </button>
           ))}
         </div>
