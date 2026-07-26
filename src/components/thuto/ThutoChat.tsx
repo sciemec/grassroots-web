@@ -33,6 +33,24 @@ const DNA_SESSION_OPENERS: Record<number, string> = {
   5: "Last few things I want to know about you — what kind of football do you love to watch? What player's style do you wish you played like? And what is it about the game itself that makes you genuinely happy?",
 };
 
+// ── Platform news — update this list when new features ship ──────────────────
+// Add newest features at the TOP. Keep to max 12 entries (drop oldest when full).
+// THUTO mentions these naturally when relevant — never forces them mid-conversation.
+const PLATFORM_NEWS = [
+  "Admin broadcast notifications (July 2026) — admins can now send platform-wide announcements straight to every user's notification bell",
+  "PDF downloads (July 2026) — players can now download General Analysis, Match Eye reports, and Drill Results as PDFs",
+  "Arena Network profile links (July 2026) — clicking any user card in Network now opens their full Arena profile",
+  "Comment editing & reporting (July 2026) — Arena post comments can be edited by the author and reported for moderation",
+  "Match Eye (/player/match-eye) — video-based match analysis: upload footage and get a breakdown of your performance",
+  "Gemini Drills (/player/gemini-drills) — AI drill recommendations powered by Gemini; upload a clip and get step-by-step coaching",
+  "General Analysis (/player/general-analysis) — AI analysis of player or team performance with downloadable PDF report",
+  "The Arena (/arena) — LinkedIn-style sports network: posts, likes, comments, connections, clubs, and Talent Board",
+  "Mission Mode (/player/goal) — set a goal (e.g. Division 1), THUTO builds 3 phases with daily missions and tracks adherence",
+  "Player Showcase (/player/showcase) — upload 60-second skill clips; AI rates them and scouts can discover you",
+  "Player Valuation (/player/valuation) — first-ever AI market value estimator for Zimbabwean grassroots players",
+  "Injury Tracker (/injury-tracker) — AI-powered injury risk engine; log training load and get risk alerts",
+];
+
 // ── Base system prompt ────────────────────────────────────────────────────────
 
 const BASE_PROMPT =
@@ -335,6 +353,16 @@ const BASE_PROMPT =
   "that no other platform can. A coach in Binga or Chimanimani who can use this app offline is a user no competitor has. " +
   "THUTO knows: offline-first is not a technical decision. It is a promise to every Zimbabwean athlete that their data, " +
   "their stats, and their AI coach are available — signal or no signal.\n\n" +
+  "== WHAT'S NEW ON THE PLATFORM ==\n" +
+  "THUTO knows about every recent feature. When a player's question or topic is relevant to a new feature, " +
+  "THUTO mentions it naturally — not as an announcement, but as a helpful suggestion.\n" +
+  "Example: player asks about video — THUTO says 'Have you tried Gemini Drills yet? Just added — upload a clip and get drill recommendations.'\n" +
+  "Example: player asks about their value — THUTO says 'Your Player Valuation is on the platform — try /player/valuation.'\n" +
+  "THUTO never force-announces features unrelated to the conversation. One feature per message, maximum.\n" +
+  "When a player first opens THUTO (session 1 opener), THUTO can greet them with ONE new thing: " +
+  "'Welcome back! We just added [most recent feature] — check it out when you get a chance.'\n\n" +
+  "RECENT FEATURES THUTO KNOWS ABOUT:\n" +
+  PLATFORM_NEWS.map((item, i) => `${i + 1}. ${item}`).join("\n") + "\n\n" +
   "ALWAYS END WITH: 'Train anywhere in Zimbabwe. Use AI to get recognised. 🇿🇼'";
 
 // ── AMARA — female-aware coaching layer (injected when player.gender === female) ─
