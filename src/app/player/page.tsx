@@ -10,7 +10,7 @@ import {
   MapPin, Brain, BookMarked, Sparkles, Globe, CheckCircle2, ArrowRight, Lock,
   Layers, UserCircle, BarChart2, ListChecks, Milestone, BadgeCheck,
   Wind, Footprints, Target, Swords, Hand, Palette, Sprout, Dna,
-  Play, HeartPulse, ScanLine, Camera, Wand2, ArrowUpRight,
+  Play, HeartPulse, ScanLine, Camera, Wand2, Film, ArrowUpRight,
   Bell, Users, Eye,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -540,6 +540,8 @@ export default function PlayerDashboardHome() {
               label="Movement Check" desc="Film a drill Â· AI scores your movement Â· see your weak spots" />
             <HubCard href="/player/gemini-drills" icon={Wand2} iconBg="#fdf4ff" iconColor="#7c3aed"
               label="Gemini Drills" desc="AI drill coaching Â· 10 sports Â· guided sessions" />
+            <HubCard href="/player/general-analysis" icon={Film} iconBg="#f0fdf4" iconColor="#1a5c2a"
+              label="General Analysis" desc="Any football footage - match, drill, street play - open AI feedback" badge="ai" />
             <HubCard href="/player/capture" icon={Camera} iconBg="#f0fdf4" iconColor="#15803d"
               label="Football Skill Analysis" desc="10 drills · protocols · AI coaching · metrics" badge="new" />
             <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
