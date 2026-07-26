@@ -947,6 +947,14 @@ function LogModal({
 
 // ─── Assign Modal ─────────────────────────────────────────────────────────────
 
+interface SquadMember {
+  id: string;
+  name: string;
+  position: string;
+  shirt_no: number;
+  player_user_id: string | null;
+}
+
 function AssignModal({
   drillName,
   formatLabel,
@@ -958,24 +966,65 @@ function AssignModal({
   onSave: (a: Omit<DrillAssignment, "id" | "assignedAt">) => void;
   onClose: () => void;
 }) {
-  const [playerNames, setPlayerNames] = useState("");
-  const [message, setMessage]         = useState("");
-  const [sent, setSent]               = useState(false);
+  const [squad, setSquad]               = useState<SquadMember[]>([]);
+  const [squadLoading, setSquadLoading] = useState(true);
+  const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set());
+  const [extraNames, setExtraNames]     = useState("");
+  const [message, setMessage]           = useState("");
+  const [sent, setSent]                 = useState(false);
+
+  const api   = process.env.NEXT_PUBLIC_API_URL;
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+
+  useEffect(() => {
+    fetch(`${api}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((j) => setSquad(Array.isArray(j.data) ? j.data : []))
+      .catch(() => setSquad([]))
+      .finally(() => setSquadLoading(false));
+  }, [api, token]);
+
+  const toggleMember = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Build the player_names display string from selections + extra text
+  const linkedMembers  = squad.filter((m) => m.player_user_id && selectedIds.has(m.player_user_id));
+  const linkedNames    = linkedMembers.map((m) => m.name).join(", ");
+  const combinedNames  = [linkedNames, extraNames.trim()].filter(Boolean).join(", ");
+  const canSend        = combinedNames.length > 0;
 
   const handleSend = async () => {
-    if (!playerNames.trim()) return;
+    if (!canSend) return;
 
-    const payload = { drillName, formatLabel, playerNames: playerNames.trim(), message: message.trim() };
+    const playerUserIds = Array.from(selectedIds);
+    const payload = {
+      drillName,
+      formatLabel,
+      playerNames:    combinedNames,
+      playerUserIds,
+      message:        message.trim(),
+    };
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach/drill-assignments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
-        body: JSON.stringify(payload),
+      const res = await fetch(`${api}/coach/drill-assignments`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({
+          drill_name:       drillName,
+          format_label:     formatLabel,
+          player_names:     combinedNames,
+          player_user_ids:  playerUserIds,
+          message:          message.trim() || undefined,
+        }),
       });
       if (!res.ok) throw new Error("api-error");
     } catch {
-      // fallback: save to localStorage
+      // fallback: save to localStorage only
     }
 
     onSave(payload);
@@ -983,9 +1032,12 @@ function AssignModal({
     setTimeout(onClose, 1500);
   };
 
+  const linkedSquad   = squad.filter((m) => m.player_user_id);
+  const unlinkedSquad = squad.filter((m) => !m.player_user_id);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-md rounded-t-3xl border border-[#f0b429]/10 bg-[#0f2318] p-6 sm:rounded-3xl">
+      <div className="w-full max-w-md rounded-t-3xl border border-[#f0b429]/10 bg-[#0f2318] p-6 sm:rounded-3xl max-h-[90vh] overflow-y-auto">
         {sent ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500/20 mb-4">
@@ -1004,28 +1056,84 @@ function AssignModal({
               </div>
               <button onClick={onClose} className="rounded-xl p-2 text-white/30 hover:text-white transition-colors"><X className="h-5 w-5" /></button>
             </div>
+
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 flex gap-2 mb-4">
               <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-300/80 leading-relaxed">Players will receive this drill as a recommendation in their Training tab.</p>
+              <p className="text-sm text-amber-300/80 leading-relaxed">Linked players get an in-app notification and can see this drill in their Training tab.</p>
             </div>
+
             <div className="space-y-4">
+              {/* Linked squad members — checkboxes */}
+              {squadLoading ? (
+                <p className="text-sm text-white/30 py-2">Loading squad...</p>
+              ) : linkedSquad.length > 0 ? (
+                <div>
+                  <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Squad Members</label>
+                  <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {linkedSquad.map((m) => {
+                      const checked = selectedIds.has(m.player_user_id!);
+                      return (
+                        <button
+                          key={m.player_user_id}
+                          onClick={() => toggleMember(m.player_user_id!)}
+                          className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
+                            checked
+                              ? "bg-[#f0b429]/15 border border-[#f0b429]/40"
+                              : "bg-white/5 border border-white/10 hover:bg-white/10"
+                          }`}
+                        >
+                          <div className={`h-4 w-4 rounded flex items-center justify-center shrink-0 border ${
+                            checked ? "bg-[#f0b429] border-[#f0b429]" : "border-white/30"
+                          }`}>
+                            {checked && <Check className="h-3 w-3 text-[#1a3a1a]" />}
+                          </div>
+                          <span className="text-sm text-white font-medium flex-1">{m.name}</span>
+                          <span className="text-xs text-white/40">#{m.shirt_no} · {m.position}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Unlinked members hint */}
+              {unlinkedSquad.length > 0 && (
+                <p className="text-xs text-white/30 -mt-1">
+                  {unlinkedSquad.length} squad member{unlinkedSquad.length > 1 ? "s" : ""} not linked to an account — add their names below.
+                </p>
+              )}
+
+              {/* Free-text for unlinked members */}
               <div>
-                <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Player Names</label>
-                <textarea value={playerNames} onChange={(e) => setPlayerNames(e.target.value)} rows={3}
-                  placeholder="One per line or comma-separated&#10;e.g. Tinashe Moyo, Farai Dube"
-                  className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none" />
+                <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">
+                  {linkedSquad.length > 0 ? "Additional Players (unlinked)" : "Player Names"}
+                </label>
+                <textarea
+                  value={extraNames}
+                  onChange={(e) => setExtraNames(e.target.value)}
+                  rows={2}
+                  placeholder={linkedSquad.length > 0 ? "Any players without an account…" : "One per line or comma-separated\ne.g. Tinashe Moyo, Farai Dube"}
+                  className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all resize-none"
+                />
               </div>
+
               <div>
                 <label className="text-sm uppercase tracking-widest text-white/50 font-semibold">Message to Players (optional)</label>
-                <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="e.g. Focus on your first touch this week"
-                  className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all" />
+                <input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="e.g. Focus on your first touch this week"
+                  className="mt-1.5 w-full rounded-xl border border-[#f0b429]/10 bg-white/5 px-4 py-2.5 text-base text-white placeholder-white/30 outline-none focus:border-[#f0b429]/40 transition-all"
+                />
               </div>
             </div>
+
             <div className="mt-5 flex gap-2">
               <button onClick={onClose} className="flex-1 rounded-xl border border-[#f0b429]/10 py-2.5 text-base text-white/50 hover:text-white transition-colors">Cancel</button>
-              <button onClick={handleSend} disabled={!playerNames.trim()}
+              <button onClick={handleSend} disabled={!canSend}
                 className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-2.5 text-base font-bold text-[#1a3a1a] disabled:opacity-40 transition-opacity">
-                <UserPlus className="h-4 w-4" /> Assign Drill
+                <UserPlus className="h-4 w-4" />
+                Assign{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
               </button>
             </div>
           </>
