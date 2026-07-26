@@ -93,6 +93,17 @@ export default function FootballDrillsLabPage() {
   const [filterDifficulty, setFilterDifficulty] = useState<1 | 2 | 3 | "all">("all");
   const [showFilters,      setShowFilters]      = useState(false);
 
+  // Coach-assigned drills
+  interface AssignedDrill {
+    id: string;
+    drillName: string;
+    formatLabel: string;
+    playerNames: string;
+    message: string | null;
+    assignedAt: string;
+  }
+  const [assignedDrills, setAssignedDrills] = useState<AssignedDrill[]>([]);
+
   useEffect(() => {
     if (!hydrated) return;
     if (!user) { router.replace("/login"); return; }
@@ -157,6 +168,19 @@ export default function FootballDrillsLabPage() {
               }
             }
           } catch { /* silent — mastery loads from localStorage fallback */ }
+
+          // Load coach-assigned drills
+          try {
+            const assignedRes = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/player/assigned-drills`,
+              { headers: { Authorization: `Bearer ${apiToken}` } }
+            );
+            if (assignedRes.ok) {
+              const assignedJson = await assignedRes.json();
+              const arr = Array.isArray(assignedJson.data) ? assignedJson.data : [];
+              setAssignedDrills(arr);
+            }
+          } catch { /* silent */ }
         }
 
         // Set default age group from user's age_group field
@@ -895,6 +919,44 @@ export default function FootballDrillsLabPage() {
         {/* ── TAB: MY COACH ── */}
         {activeTab === "coach" && (
           <div className="space-y-4">
+
+            {/* ── Drills assigned by real coach ── */}
+            {assignedDrills.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1c3d22]">Drills from your coach</h4>
+                  <div className="flex-1 h-px bg-[#1c3d22]/20" />
+                  <span className="text-[9px] text-gray-400">{assignedDrills.length} assigned</span>
+                </div>
+                {assignedDrills.map((a) => (
+                  <div key={a.id} className="bg-white border border-[#1c3d22]/20 rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div>
+                        <p className="text-sm font-black text-[#1c3d22]">{a.drillName}</p>
+                        <span className="inline-block text-[9px] font-bold uppercase tracking-wider bg-[#f0b429]/20 text-[#c8962a] px-2 py-0.5 rounded-full mt-1">
+                          {a.formatLabel}
+                        </span>
+                      </div>
+                      <span className="text-[9px] text-gray-400 whitespace-nowrap shrink-0">
+                        {new Date(a.assignedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                      </span>
+                    </div>
+                    {a.message && (
+                      <p className="text-xs text-gray-600 italic leading-relaxed border-l-2 border-[#1c3d22]/30 pl-3 mt-2">
+                        &ldquo;{a.message}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 text-center shadow-sm">
+                <Dumbbell className="mx-auto text-gray-300 mb-2" size={24} />
+                <p className="text-xs font-bold text-gray-400">No drills assigned yet</p>
+                <p className="text-[10px] text-gray-300 mt-1">Your coach will assign drills from FutureFit</p>
+              </div>
+            )}
+
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-[#1c3d22] flex items-center justify-center font-black text-[#f0b429] text-xl flex-shrink-0">
