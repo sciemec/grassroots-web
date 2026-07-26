@@ -76,12 +76,14 @@ function UserCard({ user, token, onConnect }: { user: SuggestedUser; token: stri
   };
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{user.initials}</div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-gray-900 truncate capitalize">{user.role}{user.sport ? ` · ${user.sport}` : ""}</p>
-        <p className="text-xs truncate" style={{ color: GRS_GREEN }}>{user.match_reason ?? "On GrassRoots"}</p>
-        {user.joined_ago && <p className="text-xs text-gray-400">{user.joined_ago}</p>}
-      </div>
+      <Link href={`/arena/profile/${user.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{user.initials}</div>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm text-gray-900 truncate capitalize">{user.role}{user.sport ? ` · ${user.sport}` : ""}</p>
+          <p className="text-xs truncate" style={{ color: GRS_GREEN }}>{user.match_reason ?? "On GrassRoots"}</p>
+          {user.joined_ago && <p className="text-xs text-gray-400">{user.joined_ago}</p>}
+        </div>
+      </Link>
       <button onClick={connect} disabled={sent}
         className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 flex-shrink-0"
         style={sent ? { background: "#f0fdf4", borderColor: "#bbf7d0", color: GRS_GREEN } : { borderColor: GRS_GREEN, color: GRS_GREEN }}>
@@ -155,11 +157,13 @@ export default function NetworkPage() {
     const isPending = c.status === "pending" && c.recipient_id === user.id;
     return (
       <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{initials}</div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-gray-900">{other?.name ?? "User"}</p>
-          <p className="text-xs text-gray-500 capitalize">{[other?.role, other?.sport, other?.province].filter(Boolean).join(" · ")}</p>
-        </div>
+        <Link href={`/arena/profile/${other?.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0" style={{ background: GRS_GREEN }}>{initials}</div>
+          <div className="min-w-0">
+            <p className="font-semibold text-sm text-gray-900">{other?.name ?? "User"}</p>
+            <p className="text-xs text-gray-500 capitalize">{[other?.role, other?.sport, other?.province].filter(Boolean).join(" · ")}</p>
+          </div>
+        </Link>
         {isPending && (
           <div className="flex gap-2">
             <button onClick={() => respond(c.id, "accepted")} className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full text-white" style={{ background: GRS_GREEN }}><Check size={12} /> Accept</button>
