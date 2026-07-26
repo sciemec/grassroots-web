@@ -315,10 +315,11 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
       const formData = new FormData();
       formData.append("file", file);
 
-      // Ball mastery → Gemini, others → MediaPipe
-      const endpoint = test.id === "ball_mastery"
-        ? `${AI_URL}/analyse-drill?drill_type=general&age_group=${ageGroup}&mode=gemini`
-        : `${AI_URL}/athletic-test?test_type=${test.drillType}&age_group=${ageGroup}`;
+      // Proxy through Next.js so the browser never talks to the Python service directly.
+      // Direct browser→Python calls hit Render's 30s response timeout; the Next.js
+      // route has maxDuration=300 so long MediaPipe analyses complete without dropping.
+      const endpoint =
+        `/api/fitness-test?test_type=${test.drillType}&age_group=${ageGroup}`;
 
       const result = await new Promise<TestScore>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
