@@ -99,7 +99,7 @@ export default function GrassrootsNewsTicker() {
         bottom: "24px",
         left: "24px",
         zIndex: 50,
-        width: "300px",
+        width: "min(300px, calc(100vw - 32px))",
         background: "#fff",
         border: "1.5px solid #e5e7eb",
         borderRadius: "14px",
