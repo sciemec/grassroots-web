@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type TestType, type VideoMeasurement } from "@/lib/super-engine";
+import { uploadVideoInChunks } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const HISTORY_KEY = "gs_player_analysis_history";
@@ -279,52 +280,17 @@ export default function PlayerAnalysisPage() {
     setUploadPct(0);
     setProgressLabel("Uploading for AI analysis...");
 
-    // Step 1 — get Google resumable session URL
-    let uploadUrl: string;
-    let mimeType: string;
-    try {
-      const initRes = await fetch("/api/match-eye/upload", {
-        method:  "POST",
-        headers: { "content-type": file.type, "x-content-length": String(file.size) },
-      });
-      if (!initRes.ok) throw new Error(`Upload init failed (${initRes.status}).`);
-      const init = await initRes.json() as { uploadUrl: string; mimeType: string };
-      uploadUrl = init.uploadUrl;
-      mimeType  = init.mimeType;
-    } catch {
-      setErrMsg("Could not start upload. Check your internet and try again.");
-      setStage("error");
-      return;
-    }
-
-    // Step 2 — upload to Google directly (XHR for progress)
+    // Upload via Render proxy (mobile-safe chunked upload)
     let fileUri: string;
     let fileName: string;
+    const mimeType = file.type || "video/mp4";
     try {
-      const googleRes = await new Promise<{ file: { uri: string; name: string } }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setUploadPct(pct);
-            setProgressLabel(`${pct}% uploaded`);
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText) as { file: { uri: string; name: string } }); }
-            catch { reject(new Error("Unexpected upload response.")); }
-          } else {
-            reject(new Error(`Upload failed (${xhr.status}). Try a shorter clip.`));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error during upload."));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", mimeType);
-        xhr.send(file);
+      const uploaded = await uploadVideoInChunks(file, (pct) => {
+        setUploadPct(pct);
+        setProgressLabel(`${pct}% uploaded`);
       });
-      fileUri  = googleRes.file.uri;
-      fileName = googleRes.file.name;
+      fileUri  = uploaded.fileUri;
+      fileName = uploaded.fileName;
     } catch (err) {
       setErrMsg(err instanceof Error ? err.message : "Upload failed. Please try again.");
       setStage("error");

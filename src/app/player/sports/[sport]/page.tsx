@@ -9,6 +9,7 @@ import { SPORT_MAP, SPORT_STATS, getSportAnalysisPrompt, SportKey } from "@/conf
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
+import { uploadVideoInChunks } from "@/lib/upload-chunks";
 
 interface StatEntry {
   [key: string]: string | number;
@@ -315,34 +316,11 @@ function VideoTalentSection({
     if (!file) return;
     setStage("uploading"); setProgress(0); setErrorMsg("");
     try {
-      // Step 1 — get Gemini resumable upload session
-      const initRes = await fetch("/api/match-eye/upload", {
-        method: "POST",
-        headers: {
-          "content-type": file.type || "video/mp4",
-          "x-content-length": String(file.size),
-        },
+      // Upload via Render proxy (mobile-safe chunked upload)
+      const uploaded = await uploadVideoInChunks(file, (pct) => {
+        setProgress(Math.round(pct * 0.85));
       });
-      if (!initRes.ok) throw new Error("Failed to start upload session");
-      const { uploadUrl, mimeType } = await initRes.json();
-
-      // Step 2 — XHR PUT directly to Google (real progress, no body size limit)
-      const fileUri = await new Promise<string>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", mimeType);
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 80));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText)?.file?.uri ?? ""); }
-            catch { resolve(xhr.getResponseHeader("Location") ?? ""); }
-          } else { reject(new Error(`Upload failed: ${xhr.status}`)); }
-        };
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.send(file);
-      });
+      const { fileUri, mimeType } = uploaded;
 
       setProgress(85); setStage("analysing");
 

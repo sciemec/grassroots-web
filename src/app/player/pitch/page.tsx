@@ -8,6 +8,7 @@ import {
   AlertTriangle, Minus, Loader2, Play
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
+import { uploadVideoInChunks } from '@/lib/upload-chunks';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -255,37 +256,12 @@ export default function PitchPage() {
     } catch { /* non-fatal */ }
     updateStep(0, 'done');
 
-    // Step 2: Gemini Files API
+    // Step 2: Gemini Files API (via Render proxy — mobile-safe)
     updateStep(1, 'running');
     try {
-      const uploadRes = await fetch('/api/match-eye/upload', {
-        method: 'POST',
-        headers: { 'content-type': mimeType, 'x-content-length': String(videoBlob.size) },
-      });
-      if (!uploadRes.ok) throw new Error('Gemini upload init failed');
-      const { uploadUrl: geminiUrl } = await uploadRes.json() as { uploadUrl: string };
-
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', geminiUrl);
-        xhr.setRequestHeader('Content-Type', mimeType);
-        xhr.setRequestHeader('X-Goog-Upload-Command', 'upload, finalize');
-        xhr.setRequestHeader('X-Goog-Upload-Offset', '0');
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const resp = JSON.parse(xhr.responseText) as { file?: { uri?: string; name?: string } };
-              fileUri  = resp.file?.uri  ?? '';
-              fileName = resp.file?.name ?? '';
-              resolve();
-            } catch { reject(new Error('Failed to parse Gemini upload response')); }
-          } else {
-            reject(new Error(`Gemini upload failed: ${xhr.status}`));
-          }
-        };
-        xhr.onerror = () => reject(new Error('Gemini upload network error'));
-        xhr.send(videoBlob);
-      });
+      const uploaded = await uploadVideoInChunks(videoBlob, () => {});
+      fileUri  = uploaded.fileUri;
+      fileName = uploaded.fileName;
       updateStep(1, 'done');
     } catch (e) {
       updateStep(1, 'error');
