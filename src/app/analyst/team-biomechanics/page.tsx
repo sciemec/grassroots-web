@@ -264,8 +264,8 @@ export default function TeamBiometricsPage() {
       setErrMsg("Network error. Check that the AI service at ai.bhora-ai.onrender.com is reachable.");
       setStage("error");
     };
-    xhr.open("POST", `${AI_URL}/analyse-team-biomechanics`);
-    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    // Proxy through Next.js (maxDuration=300) to avoid Render's 30s browser timeout.
+    xhr.open("POST", "/api/team-biomechanics");
     xhr.send(form);
   }, [drillId, token]);
 

@@ -536,7 +536,7 @@ export default function CoachAnalysisTab({ token }: { token: string | null }) {
     }, 700);
 
     try {
-      const res = await fetch(`${AI_URL}${endpoint}`, { method: "POST", body: formData });
+      const res = await fetch(`/api/coach-analysis?endpoint=${encodeURIComponent(endpoint)}`, { method: "POST", body: formData });
       clearInterval(ticker);
       if (!res.ok) {
         const err = await res.json().catch(() => ({})) as { detail?: string };
