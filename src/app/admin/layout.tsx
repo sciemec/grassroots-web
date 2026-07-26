@@ -8,6 +8,7 @@ import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import dynamic from "next/dynamic";
 
 const ThutoChatCoach = dynamic(() => import("@/components/thuto/ThutoChatCoach"), { ssr: false });
+const GrassrootsNewsTicker = dynamic(() => import("@/components/ui/GrassrootsNewsTicker"), { ssr: false });
 
 export default function AdminLayout({
   children,
@@ -47,6 +48,7 @@ export default function AdminLayout({
         </main>
       </div>
       <ThutoChatCoach />
+      <GrassrootsNewsTicker />
     </>
   );
 }
