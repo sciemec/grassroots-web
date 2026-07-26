@@ -7,8 +7,7 @@
 // This only runs in the Node.js runtime (not edge), once per server boot.
 
 const KEEP_ALIVE_URLS = [
-  "https://grassroots-ai-service.onrender.com/health",  // CoachAnalysisTab Python service
-  "https://ai.bhora-ai.onrender.com/health",            // FitnessTestTab Python service
+  "https://grassroots-ai-service.onrender.com/health",  // Python AI service (CoachAnalysisTab + FitnessTestTab)
   "https://bhora-ai.onrender.com/api/v1/health",        // Laravel backend
 ];
 

@@ -27,7 +27,7 @@ import ReactionTest from "./ReactionTest";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
-const AI_URL    = process.env.NEXT_PUBLIC_AI_URL ?? "https://ai.bhora-ai.onrender.com";
+const AI_URL    = process.env.NEXT_PUBLIC_AI_URL ?? "https://grassroots-ai-service.onrender.com";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
