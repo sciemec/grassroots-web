@@ -8,6 +8,7 @@ import {
   Clock, ChevronDown, ChevronUp, Dumbbell,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { compressVideo } from "@/lib/compress-video";
 import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
@@ -279,7 +280,10 @@ export default function PlayerMatchEyePage() {
     setUploadedFile(file);
 
     try {
-      const data = await uploadVideoInChunks(file, (pct) => setUploadPct(pct));
+      // Compress to 720p H.264 before upload (matches Coach Hub — reduces failures on large files)
+      const fileToUpload = await compressVideo(file, (pct) => setUploadPct(Math.round(pct * 0.5)));
+
+      const data = await uploadVideoInChunks(fileToUpload, (pct) => setUploadPct(50 + Math.round(pct * 0.5)));
 
       setFileUri(data.fileUri);
       setFileName(data.fileName);

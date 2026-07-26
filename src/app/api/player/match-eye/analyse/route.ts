@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { GEMINI_VISION_MODEL } from "@/lib/gemini";
 
 export const maxDuration = 600;
 export const runtime = "nodejs";
@@ -136,7 +137,7 @@ drill_recommendations: 2-4 drills that directly address the weaknesses observed.
 Base everything on what you actually see in the video.`;
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${googleKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,7 +184,7 @@ Base everything on what you actually see in the video.`;
 
     try {
       const narrativeRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
