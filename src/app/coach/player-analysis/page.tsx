@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type TestType, type VideoMeasurement } from "@/lib/super-engine";
-import { uploadVideoInChunks } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const HISTORY_KEY = "gs_player_analysis_history";
@@ -285,7 +285,7 @@ export default function PlayerAnalysisPage() {
     let fileName: string;
     const mimeType = file.type || "video/mp4";
     try {
-      const uploaded = await uploadVideoInChunks(file, (pct) => {
+      const uploaded = await uploadVideoInChunksParallel(file, (pct) => {
         setUploadPct(pct);
         setProgressLabel(`${pct}% uploaded`);
       });

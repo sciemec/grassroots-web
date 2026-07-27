@@ -6,7 +6,7 @@ import {
   ArrowLeft, Loader2, CheckCircle2, AlertCircle, Download,
   Star, Users, Target, Lightbulb, Zap, Film, TrendingUp,
 } from 'lucide-react';
-import { uploadVideoInChunks } from '@/lib/upload-chunks';
+import { uploadVideoInChunksParallel } from '@/lib/upload-chunks';
 import { useAuthStore } from '@/lib/auth-store';
 import { downloadGeneralAnalysisPdf } from '@/lib/generate-analysis-pdf';
 
@@ -102,7 +102,7 @@ export default function GeneralAnalysisView({ backHref }: Props) {
     setErrorMsg('');
 
     try {
-      const uploaded = await uploadVideoInChunks(file, (pct) => setProgress(pct));
+      const uploaded = await uploadVideoInChunksParallel(file, (pct) => setProgress(pct));
       setStatus('analysing');
 
       const res = await fetch('/api/analyse-general', {

@@ -9,7 +9,7 @@ import { SPORT_MAP, SPORT_STATS, getSportAnalysisPrompt, SportKey } from "@/conf
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
-import { uploadVideoInChunks } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 
 interface StatEntry {
   [key: string]: string | number;
@@ -317,7 +317,7 @@ function VideoTalentSection({
     setStage("uploading"); setProgress(0); setErrorMsg("");
     try {
       // Upload via Render proxy (mobile-safe chunked upload)
-      const uploaded = await uploadVideoInChunks(file, (pct) => {
+      const uploaded = await uploadVideoInChunksParallel(file, (pct) => {
         setProgress(Math.round(pct * 0.85));
       });
       const { fileUri, mimeType } = uploaded;

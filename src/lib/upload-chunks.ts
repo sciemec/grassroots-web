@@ -13,7 +13,8 @@
  * this pathway was broken multiple times on mobile before the proxy was stable.
  */
 
-const CHUNK_BYTES = 8 * 1024 * 1024; // 8 MB — matches Google's resumable upload chunk granularity
+const CHUNK_BYTES       = 8  * 1024 * 1024; // 8 MB  — matches Google's resumable upload chunk granularity
+const LARGE_CHUNK_BYTES = 25 * 1024 * 1024; // 25 MB — fewer proxy round trips (still a multiple of 256 KB)
 const MAX_RETRIES = 3;
 
 // ── Upload Advisory ─────────────────────────────────────────────────────────
@@ -190,6 +191,85 @@ export async function uploadVideoInChunks(
         bytesUploaded = end;
         lastError = null;
         break; // chunk succeeded — advance to next chunk
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error("Unknown upload error");
+      }
+    }
+
+    if (lastError) throw lastError;
+  }
+
+  throw new Error("Upload completed but no file URI was returned");
+}
+
+/**
+ * Faster variant — uses 25 MB chunks instead of 8 MB.
+ * Reduces proxy round trips by ~3× for large files.
+ *
+ * Example: 200 MB file
+ *   uploadVideoInChunks         → 25 chunks × ~500 ms proxy overhead ≈ 12 s overhead
+ *   uploadVideoInChunksParallel →  8 chunks × ~500 ms proxy overhead ≈  4 s overhead
+ *
+ * Google resumable upload is still sequential (required by the protocol).
+ * The speed gain comes from amortising the per-round-trip latency over more data.
+ *
+ * Use this instead of uploadVideoInChunks on /player/analyse.
+ * The original is preserved for backwards compatibility.
+ */
+export async function uploadVideoInChunksParallel(
+  file:       File,
+  onProgress: (pct: number) => void,
+): Promise<ChunkUploadResult> {
+  const totalSize   = file.size;
+  const totalChunks = Math.ceil(totalSize / LARGE_CHUNK_BYTES);
+  let   sessionUrl: string | null = null;
+  let   bytesUploaded = 0;
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start  = i * LARGE_CHUNK_BYTES;
+    const end    = Math.min(start + LARGE_CHUNK_BYTES, totalSize);
+    const chunk  = file.slice(start, end);
+    const isLast = i === totalChunks - 1;
+
+    const params = new URLSearchParams({
+      size:   String(totalSize),
+      chunk:  String(chunk.size),
+      offset: String(start),
+      last:   String(isLast),
+    });
+
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        await new Promise<void>((r) => setTimeout(r, attempt * 1000));
+      }
+
+      try {
+        const res = await sendChunkXhr(
+          chunk,
+          params,
+          sessionUrl,
+          (loaded) => {
+            onProgress(Math.round(((bytesUploaded + loaded) / totalSize) * 95));
+          },
+        );
+
+        if (res.error) throw new Error(res.error);
+        if (res.sessionUrl) sessionUrl = res.sessionUrl;
+
+        if (isLast) {
+          if (!res.fileUri) throw new Error("Upload server did not return a file URI");
+          return {
+            fileUri:  res.fileUri,
+            fileName: res.fileName ?? "",
+            mimeType: res.mimeType ?? file.type,
+          };
+        }
+
+        bytesUploaded = end;
+        lastError = null;
+        break;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error("Unknown upload error");
       }

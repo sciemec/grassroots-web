@@ -69,6 +69,18 @@ interface Props {
 
 type Phase = "idle" | "uploading" | "registering" | "done" | "error";
 
+function fmtSpeed(bps: number): string {
+  if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(0)} KB/s`;
+  return `${(bps / (1024 * 1024)).toFixed(1)} MB/s`;
+}
+
+function fmtEta(remaining: number, bps: number): string {
+  if (bps <= 0) return "";
+  const secs = Math.ceil(remaining / bps);
+  if (secs < 60) return ` · ${secs}s left`;
+  return ` · ${Math.ceil(secs / 60)}m left`;
+}
+
 export default function VideoUpload({
   context,
   title,
@@ -83,11 +95,14 @@ export default function VideoUpload({
   const user  = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
 
-  const inputRef    = useRef<HTMLInputElement>(null);
-  const [phase,     setPhase]     = useState<Phase>("idle");
-  const [progress,  setProgress]  = useState(0);
-  const [errorMsg,  setErrorMsg]  = useState<string | null>(null);
-  const [fileName,  setFileName]  = useState<string | null>(null);
+  const inputRef      = useRef<HTMLInputElement>(null);
+  const speedRef      = useRef<{ time: number; loaded: number } | null>(null);
+  const [phase,       setPhase]       = useState<Phase>("idle");
+  const [progress,    setProgress]    = useState(0);
+  const [errorMsg,    setErrorMsg]    = useState<string | null>(null);
+  const [fileName,    setFileName]    = useState<string | null>(null);
+  const [uploadSpeed, setUploadSpeed] = useState(0);   // bytes/sec
+  const [fileSize,    setFileSize]    = useState(0);   // total bytes (for ETA)
 
   const fail = (msg: string) => {
     setPhase("error");
@@ -113,9 +128,12 @@ export default function VideoUpload({
     }
 
     setFileName(file.name);
+    setFileSize(file.size);
     setPhase("uploading");
     setProgress(0);
+    setUploadSpeed(0);
     setErrorMsg(null);
+    speedRef.current = null;
 
     // ── Step 1: Get presigned URL ─────────────────────────────────
     let uploadUrl = "", publicUrl = "", key = "";
@@ -146,7 +164,20 @@ export default function VideoUpload({
         xhr.open("PUT", uploadUrl);
         xhr.setRequestHeader("Content-Type", file.type);
         xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 90));
+          if (!e.lengthComputable) return;
+          setProgress(Math.round((e.loaded / e.total) * 90));
+          const now = Date.now();
+          if (!speedRef.current) {
+            speedRef.current = { time: now, loaded: 0 };
+          } else {
+            const elapsed = (now - speedRef.current.time) / 1000;
+            if (elapsed > 0.5) {
+              const bps = Math.round((e.loaded - speedRef.current.loaded) / elapsed);
+              if (bps > 0) setUploadSpeed(bps);
+              // Roll baseline every 3 s so speed reflects recent throughput
+              if (elapsed > 3) speedRef.current = { time: now, loaded: e.loaded };
+            }
+          }
         };
         xhr.onload  = () => (xhr.status < 300 ? resolve() : reject(new Error(`R2 ${xhr.status}`)));
         xhr.onerror = () => reject(new Error("Upload network error"));
@@ -263,7 +294,11 @@ export default function VideoUpload({
           />
         </div>
         <p className="text-[10px] text-gray-400">
-          {phase === "registering" ? "Saving record..." : `Uploading… ${progress}%`}
+          {phase === "registering"
+            ? "Saving record..."
+            : `Uploading… ${progress}%${uploadSpeed > 0
+                ? ` · ${fmtSpeed(uploadSpeed)}${fmtEta(fileSize * (1 - progress / 90), uploadSpeed)}`
+                : ""}`}
         </p>
       </div>
     );

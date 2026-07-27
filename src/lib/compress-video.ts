@@ -40,8 +40,9 @@ export async function compressVideo(
   file: File,
   onProgress: (pct: number) => void
 ): Promise<File> {
-  // Skip compression for small files — not worth the WASM startup cost
-  const SKIP_BELOW_MB = 50;
+  // Skip compression for files under 200 MB — ffmpeg.wasm on mobile is single-threaded
+  // and typically takes 30–90 s for a 100 MB file. The raw R2 upload is faster than waiting.
+  const SKIP_BELOW_MB = 200;
   if (file.size < SKIP_BELOW_MB * 1024 * 1024) {
     onProgress(100);
     return file;

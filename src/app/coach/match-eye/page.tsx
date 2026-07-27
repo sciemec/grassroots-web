@@ -9,7 +9,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
-import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -195,7 +195,7 @@ export default function MatchEyePage() {
     // XHR is used so we can track upload progress.
     setH((h) => ({ ...h, stage: "uploading", pct: 0 }));
     try {
-      const data = await uploadVideoInChunks(
+      const data = await uploadVideoInChunksParallel(
         fileToUpload,
         (pct) => setH((h) => ({ ...h, pct })),
       );

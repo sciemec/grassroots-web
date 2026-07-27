@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { ALL_GEMINI_DRILLS, getDrillsBySport, getDrillById, DrillResult } from "@/config/gemini-drills";
 import { postToArena } from "@/lib/arena-poster";
-import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -251,7 +251,7 @@ export default function CoachGeminiDrillsPage() {
 
     try {
       setUploadPhase("uploading");
-      const { fileUri, fileName } = await uploadVideoInChunks(file, (pct) => setUploadPct(pct));
+      const { fileUri, fileName } = await uploadVideoInChunksParallel(file, (pct) => setUploadPct(pct));
 
       // Step 3: Gemini analysis
       setUploadPhase("processing");

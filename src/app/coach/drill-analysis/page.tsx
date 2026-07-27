@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
-import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -289,7 +289,7 @@ export default function CoachDrillAnalysisPage() {
     let fileName: string;
     let mimeType: string;
     try {
-      const uploadData = await uploadVideoInChunks(file, (pct) => setUploadPct(pct));
+      const uploadData = await uploadVideoInChunksParallel(file, (pct) => setUploadPct(pct));
       fileUri  = uploadData.fileUri;
       fileName = uploadData.fileName;
       mimeType = uploadData.mimeType;

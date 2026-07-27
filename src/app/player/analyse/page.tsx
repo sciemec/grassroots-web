@@ -8,7 +8,7 @@ import {
   Share2, Trophy, Info, Target,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { uploadVideoInChunks } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -411,7 +411,7 @@ export default function AnalysePage() {
     patch(t.id, { measuring: true, error: "" });
     try {
       // Upload via Render proxy first — video bytes never load into server RAM
-      const uploaded = await uploadVideoInChunks(st.video, () => {});
+      const uploaded = await uploadVideoInChunksParallel(st.video, () => {});
       const res = await fetch("/api/fitness-test/measure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

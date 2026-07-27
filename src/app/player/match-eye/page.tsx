@@ -10,7 +10,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { compressVideo } from "@/lib/compress-video";
 import { downloadPlayerMatchEyePdf } from "@/lib/generate-analysis-pdf";
-import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
 
 const GRS_GREEN = "#1a5c2a";
 const SPORTS = [
@@ -284,7 +284,7 @@ export default function PlayerMatchEyePage() {
       // Compress to 720p H.264 before upload (matches Coach Hub — reduces failures on large files)
       const fileToUpload = await compressVideo(file, (pct) => setUploadPct(Math.round(pct * 0.5)));
 
-      const data = await uploadVideoInChunks(fileToUpload, (pct) => setUploadPct(50 + Math.round(pct * 0.5)));
+      const data = await uploadVideoInChunksParallel(fileToUpload, (pct) => setUploadPct(50 + Math.round(pct * 0.5)));
 
       setFileUri(data.fileUri);
       setFileName(data.fileName);

@@ -8,7 +8,7 @@ import {
   AlertTriangle, Minus, Loader2, Play
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
-import { uploadVideoInChunks } from '@/lib/upload-chunks';
+import { uploadVideoInChunksParallel } from '@/lib/upload-chunks';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -259,7 +259,7 @@ export default function PitchPage() {
     // Step 2: Gemini Files API (via Render proxy — mobile-safe)
     updateStep(1, 'running');
     try {
-      const uploaded = await uploadVideoInChunks(videoBlob, () => {});
+      const uploaded = await uploadVideoInChunksParallel(videoBlob, () => {});
       fileUri  = uploaded.fileUri;
       fileName = uploaded.fileName;
       updateStep(1, 'done');

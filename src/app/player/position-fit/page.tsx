@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { evaluate, type RawTestInputs, type GRSResult, type Gender, type Position } from '@/lib/grs-engine';
 import { useAuthStore } from '@/lib/auth-store';
-import { uploadVideoInChunks } from '@/lib/upload-chunks';
+import { uploadVideoInChunksParallel } from '@/lib/upload-chunks';
 
 // ── Position configuration ────────────────────────────────────────────────────
 type PosKey = 'striker' | 'winger' | 'midfielder' | 'defender' | 'goalkeeper';
@@ -511,7 +511,7 @@ export default function PositionFitPage() {
     if (!camBlob || !camTarget) return;
     setCamPhase('processing');
     try {
-      const uploaded = await uploadVideoInChunks(camBlob, () => {});
+      const uploaded = await uploadVideoInChunksParallel(camBlob, () => {});
       const res = await fetch('/api/fitness-test/measure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

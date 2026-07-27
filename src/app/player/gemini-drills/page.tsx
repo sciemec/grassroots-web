@@ -17,7 +17,7 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
-import { uploadVideoInChunks, getUploadAdvisory, type UploadAdvisory } from '@/lib/upload-chunks';
+import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from '@/lib/upload-chunks';
 import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,
@@ -378,7 +378,7 @@ export default function GeminiDrillsPage() {
       // Upload through proxy in chunks — avoids CORS block and survives mobile connection drops
       setUpload(prev => ({ ...prev, phase: 'uploading', progress: 0 }));
       const videoFile = new File([blob], `drill-${Date.now()}.webm`, { type: blob.type || 'video/webm' });
-      const uploadData = await uploadVideoInChunks(
+      const uploadData = await uploadVideoInChunksParallel(
         videoFile,
         (pct) => setUpload(prev => ({ ...prev, progress: pct })),
       );
