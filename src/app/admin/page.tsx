@@ -8,7 +8,7 @@ import {
   Users, ShieldCheck, Search, CreditCard, BarChart3, Megaphone,
   Film, Bell, Database, MessageSquare, Building2, Radio, Activity,
   Smartphone, Sparkles, Trophy, Globe, UserCircle, Target,
-  Settings, Lock,
+  Settings, Lock, Flag,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -124,6 +124,7 @@ export default function AdminDashboardPage() {
           <HubCard href="/admin/whatsapp"      icon={MessageSquare} label="WhatsApp"        desc="Bot config & message logs"         />
           <HubCard href="/admin/community"     icon={Building2}    label="Community"        desc="Clubs, schools & league oversight" />
           <HubCard href="/admin/tournaments/munhumutapa-2026" icon={Trophy} label="Tournaments" desc="Munhumutapa Cup & fixtures"   />
+          <HubCard href="/admin/reports"       icon={Flag}         label="Comment Reports"  desc="Review & moderate flagged comments" />
         </div>
 
         {/* ── 4. Platform & Infrastructure ─────────────────────────────── */}
