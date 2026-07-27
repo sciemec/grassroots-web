@@ -47,8 +47,8 @@ function fmtMins(seconds: number): string {
  * Call this before starting the upload to display a pre-flight advisory to the user.
  */
 // Files above this threshold go to R2 first, then a server-side job compresses
-// and sends them to Gemini. Set low (5 MB) for testing; raise to 500 MB in prod.
-export const LARGE_FILE_BYTES = 5 * 1024 * 1024; // 5 MB — testing threshold
+// and sends them to Gemini. Raw phone footage for a 45-min half is 3–8 GB.
+export const LARGE_FILE_BYTES = 500 * 1024 * 1024; // 500 MB
 
 export function getUploadAdvisory(file: File): UploadAdvisory {
   const sizeMB    = file.size / (1024 * 1024);
