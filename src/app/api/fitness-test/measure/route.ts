@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { GEMINI_VISION_MODEL } from "@/lib/gemini";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 export interface MeasureResult {
@@ -13,56 +13,8 @@ export interface MeasureResult {
 
 // ── Gemini Files API helpers ──────────────────────────────────────────────────
 
-async function uploadToGemini(
-  videoBytes: ArrayBuffer,
-  mimeType: string,
-  googleKey: string
-): Promise<{ uri: string; name: string }> {
-  // Initiate resumable upload
-  const initRes = await fetch(
-    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${googleKey}`,
-    {
-      method: "POST",
-      headers: {
-        "X-Goog-Upload-Protocol": "resumable",
-        "X-Goog-Upload-Command": "start",
-        "X-Goog-Upload-Header-Content-Length": String(videoBytes.byteLength),
-        "X-Goog-Upload-Header-Content-Type": mimeType,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ file: { display_name: "fitness-test-clip" } }),
-    }
-  );
-  if (!initRes.ok) {
-    const t = await initRes.text();
-    throw new Error(`Gemini upload init failed: ${initRes.status} — ${t.slice(0, 200)}`);
-  }
-  const uploadUrl = initRes.headers.get("x-goog-upload-url");
-  if (!uploadUrl) throw new Error("No upload URL from Gemini Files API");
-
-  // Upload bytes
-  const upRes = await fetch(uploadUrl, {
-    method: "POST",
-    headers: {
-      "X-Goog-Upload-Command": "upload, finalize",
-      "X-Goog-Upload-Offset": "0",
-      "Content-Type": mimeType,
-    },
-    body: videoBytes,
-  });
-  if (!upRes.ok) {
-    const t = await upRes.text();
-    throw new Error(`Gemini upload failed: ${upRes.status} — ${t.slice(0, 200)}`);
-  }
-  const data = (await upRes.json()) as { file?: { uri?: string; name?: string } };
-  const uri = data.file?.uri;
-  const name = data.file?.name;
-  if (!uri || !name) throw new Error("Gemini upload response missing uri/name");
-  return { uri, name };
-}
-
 async function waitForFileActive(name: string, googleKey: string): Promise<void> {
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 60; i++) {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/${name}?key=${googleKey}`
     );
@@ -72,7 +24,7 @@ async function waitForFileActive(name: string, googleKey: string): Promise<void>
     if (data.state === "FAILED") throw new Error("Gemini file processing failed");
     await new Promise((r) => setTimeout(r, 5000));
   }
-  throw new Error("Video did not become ready within 2 minutes");
+  throw new Error("Video did not become ready within 5 minutes");
 }
 
 // ── Test-specific prompts ─────────────────────────────────────────────────────
@@ -207,57 +159,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let testType: string;
-    let uri: string;
-    let name: string;
-    let mimeType: string;
+    // Pre-uploaded via chunked proxy — receive fileUri/fileName directly.
+    // Video bytes never touch this server's RAM.
+    const body = await req.json() as {
+      testType?: string;
+      fileUri?:  string;
+      fileName?: string;
+      mimeType?: string;
+    };
+    const testType = (body.testType ?? "").toLowerCase();
+    const uri      = body.fileUri  ?? "";
+    const name     = body.fileName ?? "";
+    const mimeType = body.mimeType ?? "video/mp4";
 
-    const ct = req.headers.get("content-type") ?? "";
-
-    if (ct.includes("application/json")) {
-      // Pre-uploaded via chunked proxy — receive fileUri/fileName directly.
-      // Video bytes never touch this server's RAM.
-      const body = await req.json() as {
-        testType?: string;
-        fileUri?:  string;
-        fileName?: string;
-        mimeType?: string;
-      };
-      testType = (body.testType ?? "").toLowerCase();
-      uri      = body.fileUri  ?? "";
-      name     = body.fileName ?? "";
-      mimeType = body.mimeType ?? "video/mp4";
-
-      if (!testType || !PROMPTS[testType]) {
-        return Response.json(
-          { error: "testType must be one of: jump, sprint, juggling, reaction, agility" },
-          { status: 400 }
-        );
-      }
-      if (!uri) {
-        return Response.json({ error: "fileUri is required" }, { status: 400 });
-      }
-    } else {
-      // FormData fallback — used by position-fit page for short clips
-      const formData = await req.formData();
-      testType = ((formData.get("testType") as string | null) ?? "").toLowerCase();
-      const videoFile = formData.get("video") as File | null;
-
-      if (!testType || !PROMPTS[testType]) {
-        return Response.json(
-          { error: "testType must be one of: jump, sprint, juggling, reaction, agility" },
-          { status: 400 }
-        );
-      }
-      if (!videoFile) {
-        return Response.json({ error: "video file is required" }, { status: 400 });
-      }
-
-      mimeType = videoFile.type || "video/mp4";
-      const videoBytes = await videoFile.arrayBuffer();
-      const uploaded = await uploadToGemini(videoBytes, mimeType, googleKey);
-      uri  = uploaded.uri;
-      name = uploaded.name;
+    if (!testType || !PROMPTS[testType]) {
+      return Response.json(
+        { error: "testType must be one of: jump, sprint, juggling, reaction, agility" },
+        { status: 400 }
+      );
+    }
+    if (!uri) {
+      return Response.json({ error: "fileUri is required" }, { status: 400 });
     }
 
     await waitForFileActive(name, googleKey);
