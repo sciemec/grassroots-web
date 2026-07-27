@@ -26,10 +26,15 @@ export interface UploadAdvisory {
   sizeMB:        number;
   /** "Large file" warning shown when file > 500 MB */
   sizeWarning:   string | null;
-  /** Hard-limit error shown when file > 1.9 GB */
+  /**
+   * Hard-limit error shown when file > 1.9 GB AND routed through the Gemini
+   * proxy. Null for large-file path (R2 → server-side ffmpeg → Gemini).
+   */
   limitError:    string | null;
   /** Estimated upload time strings, e.g. "~3 min on 4G · ~16 min on 3G" */
   estimatedTime: string;
+  /** True when file should take the R2 direct-upload + server-side processing path */
+  isLargeFile:   boolean;
 }
 
 function fmtMins(seconds: number): string {
@@ -41,6 +46,10 @@ function fmtMins(seconds: number): string {
  * Returns size info and human-readable upload time estimates for a file.
  * Call this before starting the upload to display a pre-flight advisory to the user.
  */
+// Files above this threshold go to R2 first, then a server-side job compresses
+// and sends them to Gemini. Set low (5 MB) for testing; raise to 500 MB in prod.
+export const LARGE_FILE_BYTES = 5 * 1024 * 1024; // 5 MB — testing threshold
+
 export function getUploadAdvisory(file: File): UploadAdvisory {
   const sizeMB    = file.size / (1024 * 1024);
   const sizeBytes = file.size;
@@ -49,15 +58,22 @@ export function getUploadAdvisory(file: File): UploadAdvisory {
   const t3G = (sizeBytes / (SPEED_MBPS["3G"] * 1024 * 1024 / 8));
   const estimatedTime = `${fmtMins(t4G)} on 4G · ${fmtMins(t3G)} on 3G`;
 
-  const limitError = sizeBytes > GEMINI_MAX_BYTES
+  const isLargeFile = sizeBytes >= LARGE_FILE_BYTES;
+
+  // Large files go via R2 → server-side ffmpeg → Gemini, so the 1.9 GB
+  // Gemini limit applies to the compressed output, not the raw upload.
+  // We only block at the browser level for the small-file proxy path.
+  const limitError = !isLargeFile && sizeBytes > GEMINI_MAX_BYTES
     ? `File is ${sizeMB.toFixed(0)} MB — exceeds the 1.9 GB Gemini limit. Please trim the video or use a shorter clip.`
     : null;
 
-  const sizeWarning = !limitError && sizeMB > 500
-    ? `Large file (${sizeMB.toFixed(0)} MB). For best results on mobile, record at 720p. Upload on WiFi if possible.`
-    : null;
+  const sizeWarning = isLargeFile
+    ? `Large file (${sizeMB.toFixed(0)} MB). This will be uploaded to R2 and compressed server-side — upload on WiFi if possible.`
+    : !limitError && sizeMB > 500
+      ? `Large file (${sizeMB.toFixed(0)} MB). For best results on mobile, record at 720p. Upload on WiFi if possible.`
+      : null;
 
-  return { sizeMB, sizeWarning, limitError, estimatedTime };
+  return { sizeMB, sizeWarning, limitError, estimatedTime, isLargeFile };
 }
 
 export interface ChunkUploadResult {

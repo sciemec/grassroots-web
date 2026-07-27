@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle, Eye,
@@ -9,7 +9,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
-import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel, getUploadAdvisory, LARGE_FILE_BYTES, type UploadAdvisory } from "@/lib/upload-chunks";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -59,12 +59,14 @@ interface HalfResult {
 }
 
 interface HalfUploadState {
-  stage: "idle" | "compressing" | "uploading" | "uploaded" | "error";
+  stage: "idle" | "compressing" | "uploading" | "processing" | "uploaded" | "error";
   pct: number;
   fileUri: string;
   fileName: string;
   mimeType: string;
   error: string;
+  /** Set when the large-file R2 → job path is used. Polled until done/failed. */
+  jobId: string;
 }
 
 type PageStage = "setup" | "confirm" | "analysing" | "results" | "error";
@@ -110,7 +112,7 @@ interface DrillResult {
 }
 
 const initHalf = (): HalfUploadState => ({
-  stage: "idle", pct: 0, fileUri: "", fileName: "", mimeType: "", error: "",
+  stage: "idle", pct: 0, fileUri: "", fileName: "", mimeType: "", error: "", jobId: "",
 });
 
 // ── Page ───────────────────────────────────────────────────────────────────────
@@ -155,24 +157,38 @@ export default function MatchEyePage() {
   const secondRef = useRef<HTMLInputElement>(null);
 
   // Pre-upload advisory state
-  const [pendingHalf, setPendingHalf] = useState<"first" | "second" | null>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
+  const [pendingHalf,      setPendingHalf]      = useState<"first" | "second" | null>(null);
+  const [pendingFile,      setPendingFile]      = useState<File | null>(null);
+  const [advisory,         setAdvisory]         = useState<UploadAdvisory | null>(null);
+  const [isLargeFilePending, setIsLargeFilePending] = useState(false);
 
   // ── Pre-upload advisory check ────────────────────────────────────────────────
 
   const confirmHalf = useCallback((file: File, which: "first" | "second") => {
     const adv = getUploadAdvisory(file);
+
+    // Hard limit (only applies to the small-file proxy path)
     if (adv.limitError) {
-      // Hard limit — block immediately, don't go to confirm
       setGlobalError(adv.limitError);
       return;
     }
+
+    // Large files (>= LARGE_FILE_BYTES) go via R2 + server-side job.
+    // Drill mode doesn't support the async job path — full-match only.
+    if (adv.isLargeFile && sessionType === "drill") {
+      setGlobalError(
+        `This clip is ${adv.sizeMB.toFixed(0)} MB. The server-side processing path is only available for full-match uploads. ` +
+        `Please trim the drill clip to under ${Math.round(LARGE_FILE_BYTES / (1024 * 1024))} MB or use a shorter recording.`
+      );
+      return;
+    }
+
     setPendingFile(file);
     setPendingHalf(which);
     setAdvisory(adv);
+    setIsLargeFilePending(adv.isLargeFile);
     setPageStage("confirm");
-  }, []);
+  }, [sessionType]);
 
   // ── Upload one half directly to Gemini ──────────────────────────────────────
 
@@ -204,6 +220,145 @@ export default function MatchEyePage() {
       setH((h) => ({ ...h, stage: "error", error: err instanceof Error ? err.message : "Upload failed" }));
     }
   }, []);
+
+  // ── Upload large file: R2 direct PUT → Laravel background job ───────────────
+  //
+  // Large raw match footage (>= LARGE_FILE_BYTES) goes directly to R2 via a
+  // presigned URL, then a Laravel background job downloads it, runs ffmpeg
+  // compression server-side, and streams the output to Gemini.
+  // The frontend polls GET /api/v1/match-eye/status/{jobId} every 10s.
+  //
+  // The existing uploadHalf() path (small files via proxy) is NOT touched.
+
+  const uploadHalfLarge = useCallback(async (file: File, which: "first" | "second") => {
+    const setH = which === "first" ? setFirstHalf : setSecondHalf;
+
+    setH((h) => ({ ...h, stage: "uploading", pct: 0, error: "" }));
+
+    try {
+      // Step 1 — get a presigned PUT URL from our Next.js proxy (reuses existing route)
+      const presignRes = await fetch("/api/upload/presigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "video/mp4",
+          source: "match_eye_raw",
+        }),
+      });
+      if (!presignRes.ok) throw new Error("Failed to get upload URL");
+      const { uploadUrl, key } = await presignRes.json() as { uploadUrl: string; key: string };
+
+      // Step 2 — PUT directly to R2 with XHR for progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setH((h) => ({ ...h, pct: Math.round((e.loaded / e.total) * 95) }));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`R2 upload failed (${xhr.status})`));
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
+        xhr.send(file);
+      });
+
+      setH((h) => ({ ...h, pct: 100 }));
+
+      // Step 3 — POST to Laravel to create the background job
+      const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const token = useAuthStore.getState().token ?? "";
+      const jobRes = await fetch(`${API}/match-eye/analyse-full`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          r2_key:          key,
+          half:            which === "first" ? "first" : "second",
+          home_team:       homeTeam,
+          away_team:       awayTeam,
+          competition,
+          sport,
+          tracked_players: trackedPlayers.filter((p) => p.jersey || p.name),
+        }),
+      });
+      if (!jobRes.ok) {
+        const err = await jobRes.json().catch(() => ({})) as { message?: string };
+        throw new Error(err.message ?? `Job dispatch failed (${jobRes.status})`);
+      }
+      const { job_id } = await jobRes.json() as { job_id: string };
+
+      // Step 4 — set stage to "processing" — polling useEffect will take over
+      setH((h) => ({ ...h, stage: "processing", jobId: job_id }));
+
+    } catch (err) {
+      setH((h) => ({ ...h, stage: "error", error: err instanceof Error ? err.message : "Upload failed" }));
+    }
+  }, [homeTeam, awayTeam, competition, sport, trackedPlayers]);
+
+  // ── Poll for large-file job completion ──────────────────────────────────────
+
+  useEffect(() => {
+    const API = process.env.NEXT_PUBLIC_API_URL ?? "";
+    const token = useAuthStore.getState().token ?? "";
+
+    const pollHalf = async (
+      half: HalfUploadState,
+      setH: React.Dispatch<React.SetStateAction<HalfUploadState>>,
+      setResult: React.Dispatch<React.SetStateAction<HalfResult | null>>,
+    ) => {
+      if (half.stage !== "processing" || !half.jobId) return;
+      try {
+        const res = await fetch(`${API}/match-eye/status/${half.jobId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json() as {
+          status: "pending" | "processing" | "done" | "failed";
+          result?: HalfResult;
+          error?: string;
+        };
+        if (data.status === "done" && data.result) {
+          setResult(data.result);
+          setH((h) => ({ ...h, stage: "uploaded", pct: 100 }));
+        } else if (data.status === "failed") {
+          setH((h) => ({ ...h, stage: "error", error: data.error ?? "Analysis failed on server" }));
+        }
+        // pending/processing → keep polling
+      } catch {
+        // Network hiccup — keep polling, don't set error
+      }
+    };
+
+    const interval = setInterval(() => {
+      pollHalf(firstHalf, setFirstHalf, setFirstResult);
+      pollHalf(secondHalf, setSecondHalf, setSecondResult);
+    }, 10_000);
+
+    return () => clearInterval(interval);
+  }, [firstHalf, secondHalf]);
+
+  // ── Auto-navigate to results once both large-file halves are done ────────────
+
+  useEffect(() => {
+    if (
+      sessionType === "match" &&
+      pageStage === "setup" &&
+      firstResult !== null &&
+      secondResult !== null &&
+      firstHalf.stage === "uploaded" &&
+      secondHalf.stage === "uploaded"
+    ) {
+      setPageStage("results");
+      setActiveTab("first");
+    }
+  }, [sessionType, pageStage, firstResult, secondResult, firstHalf.stage, secondHalf.stage]);
 
   // ── Analyse ─────────────────────────────────────────────────────────────────
 
@@ -300,6 +455,10 @@ export default function MatchEyePage() {
     setDrillType("Rondo");
     setDrillFocus("");
     setTrackedPlayers([{ jersey: "", name: "", position: "" }]);
+    setPendingFile(null);
+    setPendingHalf(null);
+    setAdvisory(null);
+    setIsLargeFilePending(false);
   };
 
   // ── Sub-components ───────────────────────────────────────────────────────────
@@ -401,6 +560,21 @@ export default function MatchEyePage() {
 
         {half.stage === "uploading" && (
           <UploadProgress pct={half.pct} />
+        )}
+
+        {half.stage === "processing" && (
+          <div style={{ border: "1.5px solid #bfdbfe", borderRadius: 12, padding: "20px 16px", background: "#eff6ff" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#1d4ed8", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#2563eb", flexShrink: 0, animation: "matcheye-pulse 1.5s ease-in-out infinite" }} />
+              Processing on server...
+            </div>
+            <div style={{ background: "#dbeafe", borderRadius: 99, height: 5, overflow: "hidden" }}>
+              <div style={{ background: "#2563eb", borderRadius: 99, height: 5, width: "60%", animation: "pulse 1.5s ease-in-out infinite" }} />
+            </div>
+            <div style={{ fontSize: 11, color: "#3b82f6", marginTop: 6 }}>
+              Compressing &amp; sending to Gemini — checking every 10s
+            </div>
+          </div>
         )}
 
         {half.stage === "uploaded" && (
@@ -808,9 +982,13 @@ export default function MatchEyePage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
+  // For large-file halves (stage="processing"), results arrive via polling and
+  // auto-navigate fires. The manual Analyse button is only for small-file path.
   const canAnalyse = sessionType === "drill"
     ? firstHalf.stage === "uploaded"
-    : firstHalf.stage === "uploaded" && secondHalf.stage === "uploaded" && homeTeam && awayTeam;
+    : firstHalf.stage === "uploaded" && secondHalf.stage === "uploaded" &&
+      !firstResult && !secondResult && // haven't already got results from polling
+      homeTeam && awayTeam;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", fontFamily: "system-ui,sans-serif" }}>
@@ -1079,22 +1257,40 @@ export default function MatchEyePage() {
               </div>
             )}
 
+            {isLargeFilePending && (
+              <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#1d4ed8" }}>
+                This file will upload directly to R2, then be compressed and analysed server-side. Results will appear automatically — no need to click Analyse.
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10 }}>
               <button
-                onClick={() => { setPageStage("setup"); setPendingFile(null); setPendingHalf(null); setAdvisory(null); }}
+                onClick={() => {
+                  setPageStage("setup");
+                  setPendingFile(null);
+                  setPendingHalf(null);
+                  setAdvisory(null);
+                  setIsLargeFilePending(false);
+                }}
                 style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 14, color: "#374151", cursor: "pointer" }}
               >
                 Cancel
               </button>
               <button
                 onClick={() => {
-                  const file = pendingFile;
-                  const which = pendingHalf;
+                  const file = pendingFile!;
+                  const which = pendingHalf!;
+                  const useLarge = isLargeFilePending;
                   setPendingFile(null);
                   setPendingHalf(null);
                   setAdvisory(null);
+                  setIsLargeFilePending(false);
                   setPageStage("setup");
-                  uploadHalf(file, which);
+                  if (useLarge) {
+                    uploadHalfLarge(file, which);
+                  } else {
+                    uploadHalf(file, which);
+                  }
                 }}
                 style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: "#1a5c2a", fontWeight: 700, fontSize: 14, color: "#fff", cursor: "pointer" }}
               >
