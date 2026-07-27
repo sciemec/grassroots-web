@@ -34,7 +34,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = "pathway" | "formats" | "3v3" | "saved" | "log" | "chat";
+type Tab = "pathway" | "formats" | "3v3" | "saved" | "log" | "assigned" | "chat";
 
 interface SavedItem {
   id: string;
@@ -1143,6 +1143,124 @@ function AssignModal({
   );
 }
 
+// ─── AssignedTab ──────────────────────────────────────────────────────────────
+
+function AssignedTab({
+  localAssignments,
+  onDelete,
+  onFetched,
+}: {
+  localAssignments: DrillAssignment[];
+  onDelete: (id: string) => void;
+  onFetched: (items: DrillAssignment[]) => void;
+}) {
+  const [items, setItems]     = useState<DrillAssignment[]>(localAssignments);
+  const [loading, setLoading] = useState(true);
+
+  const api   = process.env.NEXT_PUBLIC_API_URL;
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+
+  useEffect(() => {
+    if (!token) { setLoading(false); return; }
+    fetch(`${api}/coach/drill-assignments`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((j) => {
+        const fetched: DrillAssignment[] = (Array.isArray(j.data) ? j.data : []).map(
+          (a: Record<string, unknown>) => ({
+            id:          String(a.id),
+            drillName:   String(a.drill_name   ?? a.drillName   ?? ""),
+            formatLabel: String(a.format_label ?? a.formatLabel ?? ""),
+            playerNames: String(a.player_names ?? a.playerNames ?? ""),
+            message:     a.message ? String(a.message) : "",
+            assignedAt:  String(a.assigned_at  ?? a.assignedAt  ?? ""),
+          }),
+        );
+        setItems(fetched);
+        onFetched(fetched);
+      })
+      .catch(() => { /* keep localAssignments already in state */ })
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    setItems((prev) => prev.filter((a) => a.id !== id));
+    onDelete(id);
+    try {
+      await fetch(`${api}/coach/drill-assignments/${id}`, {
+        method:  "DELETE",
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
+    } catch { /* silent — local state already updated */ }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-[#f0b429]/60" />
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="px-5 py-12 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0b429]/10">
+          <Send className="h-6 w-6 text-[#f0b429]/60" />
+        </div>
+        <p className="text-sm font-bold text-white/50">No assignments sent yet</p>
+        <p className="mt-1 text-xs text-white/30">
+          Use the Assign button on any drill in the Formats tab to send it to your players.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-5 py-4 space-y-3">
+      <p className="text-xs font-bold uppercase tracking-widest text-white/30 mb-1">
+        {items.length} assignment{items.length !== 1 ? "s" : ""} sent
+      </p>
+      {items.map((a) => (
+        <div key={a.id} className="rounded-2xl border border-[#f0b429]/10 bg-[#0f2318] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white leading-snug">{a.drillName}</p>
+              <div className="mt-1 flex items-center gap-2 flex-wrap">
+                <span className="rounded-full bg-[#f0b429]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#f0b429]">
+                  {a.formatLabel}
+                </span>
+                <span className="text-[10px] text-white/30">
+                  {a.assignedAt
+                    ? new Date(a.assignedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+                    : ""}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-white/50">
+                <span className="font-semibold text-white/70">To: </span>{a.playerNames}
+              </p>
+              {a.message && (
+                <p className="mt-1.5 border-l-2 border-[#f0b429]/30 pl-2 text-xs italic text-white/40 leading-relaxed">
+                  &ldquo;{a.message}&rdquo;
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => handleDelete(a.id)}
+              className="shrink-0 rounded-xl p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+              title="Remove assignment"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function FutureFitPage() {
@@ -1220,6 +1338,19 @@ export default function FutureFitPage() {
     });
   }, []);
 
+  const handleDeleteAssignment = useCallback((id: string) => {
+    setAssignments((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      lsSet(LS_ASSIGNMENTS, next);
+      return next;
+    });
+  }, []);
+
+  const handleAssignmentsFetched = useCallback((fetched: DrillAssignment[]) => {
+    setAssignments(fetched);
+    lsSet(LS_ASSIGNMENTS, fetched);
+  }, []);
+
   // ── Open modals from FormatsTab ───────────────────────────────────────────
   const handleOpenLog = useCallback((fmt: TrainingFormat) => {
     setLogPresetFmt(fmt);
@@ -1281,8 +1412,9 @@ export default function FutureFitPage() {
     { key: "formats", label: "Formats",  icon: Flag         },
     { key: "3v3",     label: "3v3",      icon: Users        },
     { key: "saved",   label: "Saved",    icon: Star,        badge: savedItems.length    },
-    { key: "log",     label: "Log",      icon: ClipboardList,badge: sessionLogs.length  },
-    { key: "chat",    label: "THUTO",    icon: Brain        },
+    { key: "log",      label: "Log",      icon: ClipboardList, badge: sessionLogs.length  },
+    { key: "assigned", label: "Assigned", icon: Send,          badge: assignments.length },
+    { key: "chat",     label: "THUTO",    icon: Brain        },
   ];
 
   return (
@@ -1338,7 +1470,14 @@ export default function FutureFitPage() {
         )}
         {activeTab === "3v3"     && <ThreeVThreeTab />}
         {activeTab === "saved"   && <SavedTab saved={savedItems} onRemove={handleRemoveSaved} />}
-        {activeTab === "log"     && <LogTab logs={sessionLogs} onDelete={handleDeleteLog} onAdd={() => setShowLogModal(true)} />}
+        {activeTab === "log"      && <LogTab logs={sessionLogs} onDelete={handleDeleteLog} onAdd={() => setShowLogModal(true)} />}
+        {activeTab === "assigned" && (
+          <AssignedTab
+            localAssignments={assignments}
+            onDelete={handleDeleteAssignment}
+            onFetched={handleAssignmentsFetched}
+          />
+        )}
 
         {/* Chat tab */}
         {activeTab === "chat" && (
