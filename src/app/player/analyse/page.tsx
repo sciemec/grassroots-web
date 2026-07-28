@@ -209,7 +209,7 @@ const TESTS: TestDef[] = [
     name: "Balance & Proprioception",
     icon: "⚖️",
     tagline: "Ankle stability + neuromuscular control — 4 stances × 30 sec",
-    geminiType: null,
+    geminiType: "balance",  // measures hip drop + knee valgus during single-leg stance
     inputVariant: "balance",
     unit: "errors",
     lowerIsBetter: true,
@@ -798,7 +798,7 @@ export default function AnalysePage() {
                   </div>
 
                   {/* AI vs Manual tabs (only for tests that have Gemini support) */}
-                  {t.geminiType && t.inputVariant === "single" && (
+                  {t.geminiType && (t.inputVariant === "single" || t.inputVariant === "balance") && (
                     <div className="flex gap-2">
                       <button
                         onClick={() => patch(t.id, { inputMode: "video", error: "" })}
@@ -935,7 +935,7 @@ export default function AnalysePage() {
                   )}
 
                   {/* ── BALANCE 4-field input ── */}
-                  {t.inputVariant === "balance" && !done && (
+                  {t.inputVariant === "balance" && (st.inputMode === "manual" || !t.geminiType) && !done && (
                     <div className="space-y-3">
                       <p className="text-[11px] font-black text-gray-500 uppercase tracking-wider">
                         Error count per stance (enter 0 if no errors)
