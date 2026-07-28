@@ -1059,9 +1059,9 @@ export default function FootballSkillAnalysisPage() {
                 style={{ backgroundColor: "#fffbeb", borderColor: "#fde68a" }}
               >
                 <div className="flex items-start gap-2">
-                  <Camera className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600" />
+                  <Upload className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">Camera Position</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">Video Position</p>
                     <p className="text-sm text-amber-800">{drill.cameraSetup}</p>
                   </div>
                 </div>
