@@ -20,10 +20,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Route to the correct Python endpoint
+  const SKILL_DRILLS = new Set([
+    "shooting", "passing", "tackling", "dribbling", "first_touch",
+    "free_kick", "heading", "crossing", "ball_juggling", "throw_in", "rebound_turn_strike",
+  ]);
   const targetUrl =
     testType === "ball_mastery"
       ? `${aiUrl}/analyse-drill?drill_type=general&age_group=${ageGroup}&mode=gemini`
-      : `${aiUrl}/athletic-test?test_type=${testType}&age_group=${ageGroup}`;
+      : SKILL_DRILLS.has(testType)
+        ? `${aiUrl}/analyse-drill?drill_type=${testType}&age_group=${ageGroup}`
+        : `${aiUrl}/athletic-test?test_type=${testType}&age_group=${ageGroup}`;
 
   // Forward the raw multipart body (preserves boundary header)
   const body        = await req.arrayBuffer();

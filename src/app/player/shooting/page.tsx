@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Target, ChevronDown, ChevronUp, RotateCcw, History } from "lucide-react";
+import { ArrowLeft, Target, ChevronDown, ChevronUp, RotateCcw, History, Video } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { postToArena } from "@/lib/arena-poster";
 
@@ -150,7 +150,11 @@ export default function ShootingTechniquePage() {
   const [openDrill,  setOpenDrill]  = useState<string | null>(null);
   const [history,     setHistory]     = useState<HistoryEntry[]>([]);
   const [histLoading, setHistLoading] = useState(false);
-  const [openHist,    setOpenHist]    = useState<string | null>(null);
+  const [openHist,     setOpenHist]     = useState<string | null>(null);
+  const [inputMode,    setInputMode]    = useState<"manual" | "video">("manual");
+  const [videoFile,    setVideoFile]    = useState<File | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [aiMeasured,   setAiMeasured]   = useState<Record<string, boolean>>({});
 
   const allRated = MECHANICS.every((m) => ratings[m.key]);
 
@@ -165,6 +169,36 @@ export default function ShootingTechniquePage() {
   };
 
   useEffect(() => { fetchHistory(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Video analysis (MediaPipe body mechanics) ────────────────────────────
+
+  const analyseVideoFile = async () => {
+    if (!videoFile) return;
+    setVideoLoading(true);
+    const form = new FormData();
+    form.append("file", videoFile);
+    try {
+      const r = await fetch("/api/fitness-test?test_type=shooting&age_group=u17", {
+        method: "POST",
+        body: form,
+      });
+      const data = await r.json();
+      if (data.mechanics) {
+        const newRatings: Record<string, number> = {};
+        const measured: Record<string, boolean> = {};
+        for (const [key, val] of Object.entries(data.mechanics as Record<string, { score: number | null; measurable: boolean }>)) {
+          if (val.measurable && val.score !== null) {
+            newRatings[key] = Math.max(1, Math.min(5, Math.round(val.score / 20)));
+            measured[key] = true;
+          }
+        }
+        setRatings((prev) => ({ ...prev, ...newRatings }));
+        setAiMeasured(measured);
+        setInputMode("manual");
+      }
+    } catch { /* silent — user rates manually */ }
+    setVideoLoading(false);
+  };
 
   // ── Score calculations ────────────────────────────────────────────────────
 
@@ -502,16 +536,67 @@ Return this exact JSON structure:
         </div>
 
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "28px 16px" }}>
-          <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 24 }}>
+          <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
             Rate each mechanic honestly based on how you shoot. 1 = needs major work, 5 = excellent.
           </p>
+
+          {/* Input mode toggle */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            <button
+              onClick={() => setInputMode("manual")}
+              style={{ flex: 1, padding: "10px", borderRadius: 8, border: `2px solid ${inputMode === "manual" ? "#1a5c2a" : "#e5e7eb"}`, backgroundColor: inputMode === "manual" ? "#1a5c2a" : "white", color: inputMode === "manual" ? "white" : "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              Rate Manually
+            </button>
+            <button
+              onClick={() => setInputMode("video")}
+              style={{ flex: 1, padding: "10px", borderRadius: 8, border: `2px solid ${inputMode === "video" ? "#1a5c2a" : "#e5e7eb"}`, backgroundColor: inputMode === "video" ? "#1a5c2a" : "white", color: inputMode === "video" ? "white" : "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+            >
+              <Video size={14} /> Measure by Video
+            </button>
+          </div>
+
+          {/* Video upload section */}
+          {inputMode === "video" && (
+            <div style={{ ...card, border: "2px dashed #1a5c2a", backgroundColor: "#f0fdf4", marginBottom: 20 }}>
+              <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: "#1a5c2a" }}>AI Body Measurement</h3>
+              <p style={{ margin: "0 0 12px", fontSize: 13, color: "#6b7280", lineHeight: 1.5 }}>
+                Upload a video of yourself shooting. MediaPipe will measure <strong>body shape</strong> and <strong>follow-through</strong> from your pose. Plant foot placement and ankle lock need manual rating.
+              </p>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+                style={{ display: "block", marginBottom: 12, fontSize: 13, color: "#374151" }}
+              />
+              <button
+                onClick={analyseVideoFile}
+                disabled={!videoFile || videoLoading}
+                style={{ width: "100%", padding: "11px", backgroundColor: videoFile && !videoLoading ? "#1a5c2a" : "#d1d5db", color: "white", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: videoFile && !videoLoading ? "pointer" : "not-allowed" }}
+              >
+                {videoLoading ? "Analysing body mechanics…" : "Analyse Video"}
+              </button>
+              {Object.keys(aiMeasured).length > 0 && (
+                <p style={{ margin: "10px 0 0", fontSize: 12, color: "#15803d", fontWeight: 500 }}>
+                  ✓ AI measured {Object.keys(aiMeasured).length} mechanic(s) — rate the remaining ones below
+                </p>
+              )}
+            </div>
+          )}
 
           {MECHANICS.map((m) => {
             const current = ratings[m.key] || 0;
             return (
               <div key={m.key} style={{ ...card, borderLeft: `4px solid ${current ? m.color : "#e5e7eb"}` }}>
                 <div style={{ marginBottom: 12 }}>
-                  <h3 style={{ margin: "0 0 2px", fontSize: 15, fontWeight: 700, color: "#111" }}>{m.label}</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#111" }}>{m.label}</h3>
+                    {aiMeasured[m.key] && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#15803d", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "2px 6px", whiteSpace: "nowrap" }}>
+                        📡 AI Measured
+                      </span>
+                    )}
+                  </div>
                   <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>{m.desc}</p>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>

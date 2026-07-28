@@ -313,7 +313,7 @@ export default function DrillCard({
           <div className="flex flex-wrap gap-2 pt-1">
             {isPremiumUser ? (
               <Link
-                href={`/player/analyse?drill=${drill.id}&name=${encodeURIComponent(drill.name)}`}
+                href={`/player/drill-analyse?drill_type=${drill.mediapipe_drill_type ?? "ball_mastery"}&name=${encodeURIComponent(drill.name)}`}
                 className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all"
                 style={{ background: "#7e22ce", color: "#fff", border: "1px solid #7e22ce" }}
               >

@@ -29,6 +29,10 @@ export interface DrillData {
   // Context fields
   when_to_use?: string;   // The game situation or phase of play where this skill is needed
   where_on_pitch?: string; // The pitch zone or positional context where this drill applies
+  // MediaPipe drill type — when set, "Record & Get AI Feedback" uses the MediaPipe scorer for this drill type
+  // If not set, falls back to ball_mastery (Gemini general analysis)
+  mediapipe_drill_type?: "shooting" | "passing" | "tackling" | "dribbling" | "first_touch"
+    | "free_kick" | "heading" | "crossing" | "ball_juggling" | "throw_in" | "rebound_turn_strike";
   // MediaPipe prescription — which AI flags this drill fixes
   // Used to auto-prescribe drills when MediaPipe detects specific issues
   mediapipe_fixes?: Array<
