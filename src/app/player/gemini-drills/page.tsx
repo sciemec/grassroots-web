@@ -12,7 +12,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ChevronLeft, Camera, StopCircle, Video, CheckCircle2, AlertCircle,
-  Loader2, Star, Info, History, ChevronDown, ChevronRight, Download,
+  Loader2, Info, History, ChevronDown, ChevronRight, Download, Upload,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
@@ -200,6 +200,72 @@ function ResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDr
   );
 }
 
+function MediaPipeResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDrill }) {
+  const dimMap = Object.fromEntries(drill.dimensions.map(d => [d.key, d]));
+  const entries = Object.entries(result.scores ?? {});
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Overall score hero */}
+      <div style={{ background: '#1d4ed8', borderRadius: 12, padding: '18px', textAlign: 'center' }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
+          Overall Score
+        </div>
+        <div style={{ fontSize: 56, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{result.overall_score}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>out of 10</div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>
+          MediaPipe pose analysis · 33 body landmarks
+        </div>
+      </div>
+
+      {/* Mechanic scores */}
+      <div style={{ background: '#fff', borderRadius: 12, padding: '14px', border: '1px solid #e5e5e5' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+          Technique Breakdown
+        </div>
+        {entries.map(([key, s]) => {
+          const label = dimMap[key]?.label ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          return (
+            <div key={key} style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#333', minWidth: 120 }}>{label}</span>
+                <ScoreBar score={s.score} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(s.score), minWidth: 30 }}>{s.score}/10</span>
+              </div>
+              <div style={{ fontSize: 11, color: '#666', paddingLeft: 128, lineHeight: 1.5 }}>{s.observation}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Strength + improvement */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '12px', border: '1px solid #bbf7d0' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+            Your Strength
+          </div>
+          <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.5 }}>{result.top_strength}</div>
+        </div>
+        <div style={{ background: '#fff7ed', borderRadius: 12, padding: '12px', border: '1px solid #fed7aa' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+            Work On This
+          </div>
+          <div style={{ fontSize: 12, color: '#9a3412', lineHeight: 1.5 }}>{result.key_improvement}</div>
+        </div>
+      </div>
+
+      {/* Coach note */}
+      {result.coach_note && (
+        <div style={{ background: '#f8f7f4', borderRadius: 12, padding: '12px 14px', border: '1px solid #e5e0d8' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+            Coach Note
+          </div>
+          <div style={{ fontSize: 12, color: '#444', lineHeight: 1.6, fontStyle: 'italic' }}>{result.coach_note}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GeminiDrillsPage() {
   const user      = useAuthStore((s) => s.user);
   const hydrated  = useAuthStore((s) => s._hasHydrated);
@@ -221,6 +287,9 @@ export default function GeminiDrillsPage() {
   const [history, setHistory]       = useState<DrillResult[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [lang, setLang]             = useState<'en' | 'en-sn' | 'en-nd'>('en');
+  const [analysisEngine, setAnalysisEngine] = useState<'gemini' | 'mediapipe'>('gemini');
+  const [mpFile, setMpFile]         = useState<File | null>(null);
+  const mpFileRef                   = useRef<HTMLInputElement | null>(null);
 
   const xhrRef            = useRef<XMLHttpRequest | null>(null);
   const mediaRecorderRef  = useRef<MediaRecorder | null>(null);
@@ -409,6 +478,72 @@ export default function GeminiDrillsPage() {
     }
   }, [selected, saveDrillResult]);
 
+  const handleMediaPipeUpload = useCallback(async () => {
+    if (!selected || !mpFile || !selected.mediapipe_drill_type) return;
+    setUpload({ phase: 'uploading', progress: 0, result: null, error: null });
+
+    try {
+      const formData = new FormData();
+      formData.append('file', mpFile);
+
+      setUpload(prev => ({ ...prev, phase: 'processing', progress: 100 }));
+      const res = await fetch(
+        `/api/fitness-test?test_type=${encodeURIComponent(selected.mediapipe_drill_type!)}&age_group=senior`,
+        { method: 'POST', body: formData },
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Analysis failed' }));
+        throw new Error((err as { detail?: string }).detail ?? 'MediaPipe analysis failed');
+      }
+
+      const data = await res.json() as { mechanics?: Record<string, { score: number; measurable: boolean; detail: string }>; summary?: string };
+      const mechanics = data.mechanics ?? {};
+
+      const scores: Record<string, { score: number; observation: string }> = {};
+      let total = 0;
+      let count = 0;
+      let bestKey = '';
+      let bestVal = -1;
+      let worstKey = '';
+      let worstVal = 101;
+
+      for (const [key, m] of Object.entries(mechanics)) {
+        const normalized = Math.round((m.score / 10) * 10) / 10; // 0-100 → 0-10 (1 dp)
+        scores[key] = { score: normalized, observation: m.detail };
+        total += normalized;
+        count++;
+        if (m.score > bestVal)  { bestVal = m.score;  bestKey = key; }
+        if (m.score < worstVal) { worstVal = m.score; worstKey = key; }
+      }
+
+      const overall_score = count > 0 ? Math.round((total / count) * 10) / 10 : 0;
+
+      const dimMap = Object.fromEntries(selected.dimensions.map(d => [d.key, d]));
+      const bestLabel  = dimMap[bestKey]?.label  ?? bestKey.replace(/_/g, ' ');
+      const worstLabel = dimMap[worstKey]?.label ?? worstKey.replace(/_/g, ' ');
+
+      const result: DrillResult = {
+        drillId:         selected.id,
+        drillName:       selected.name,
+        sport:           selected.sport,
+        overall_score,
+        scores,
+        top_strength:    data.summary ?? (bestKey  ? `Strong ${bestLabel} technique detected by pose analysis.` : 'Good technique shown.'),
+        key_improvement: worstKey ? `Focus on improving ${worstLabel} — this was your lowest-scoring mechanic.` : 'Keep practising all mechanics consistently.',
+        analysedAt:      new Date().toISOString(),
+        engine:          'mediapipe',
+      };
+
+      saveDrillResult(result);
+      setUpload({ phase: 'done', progress: 100, result, error: null });
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setUpload({ phase: 'error', progress: 0, result: null, error: message });
+    }
+  }, [selected, mpFile, saveDrillResult]);
+
   const resetUpload = () => {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
@@ -417,6 +552,8 @@ export default function GeminiDrillsPage() {
     setPreviewUrl(null);
     setCountdown(30);
     setClipAdvisory(null);
+    setMpFile(null);
+    setAnalysisEngine('gemini');
     recordedChunksRef.current = [];
     setUpload({ phase: 'idle', progress: 0, result: null, error: null });
   };
@@ -629,29 +766,111 @@ export default function GeminiDrillsPage() {
                 {!isPro && (
                   <div style={{ background: '#fffbeb', border: '1px solid #f0b429', borderRadius: 12, padding: '14px 16px', marginBottom: 4 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>🔒 Premium Feature</div>
-                    <div style={{ fontSize: 12, color: '#92400e', marginBottom: 10 }}>Subscribe to record videos and get Gemini AI coaching scores.</div>
+                    <div style={{ fontSize: 12, color: '#92400e', marginBottom: 10 }}>Subscribe to record videos and get AI coaching scores.</div>
                     <Link href="/player/subscription" style={{ display: 'inline-block', padding: '8px 18px', background: '#c8962a', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
                       View plans →
                     </Link>
                   </div>
                 )}
-                <button
-                  onClick={handleStartRecording}
-                  style={{
-                    width: '100%', padding: '18px', borderRadius: 14,
-                    background: isPro ? GRS_GREEN : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 15,
-                    border: 'none', cursor: isPro ? 'pointer' : 'not-allowed',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                    opacity: isPro ? 1 : 0.6,
-                  }}
-                  disabled={!isPro}
-                >
-                  <Camera size={18} />
-                  {isPro ? 'Record 30-second video for Gemini' : '🔒 Unlock to record videos'}
-                </button>
-                <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
-                  Records 30 seconds from your camera · Gemini analyses motion over time
-                </div>
+
+                {/* Engine toggle — only shown when drill supports MediaPipe */}
+                {selected.mediapipe_drill_type && (
+                  <div style={{ display: 'flex', gap: 0, borderRadius: 10, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+                    {(['gemini', 'mediapipe'] as const).map(eng => (
+                      <button
+                        key={eng}
+                        onClick={() => { setAnalysisEngine(eng); setMpFile(null); }}
+                        style={{
+                          flex: 1, padding: '11px 8px', border: 'none', cursor: 'pointer',
+                          fontWeight: 700, fontSize: 12,
+                          background: analysisEngine === eng ? (eng === 'mediapipe' ? '#1d4ed8' : GRS_GREEN) : '#fff',
+                          color: analysisEngine === eng ? '#fff' : '#666',
+                        }}
+                      >
+                        {eng === 'gemini' ? '🎬 Gemini · record' : '🤖 MediaPipe · upload'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Hidden file input */}
+                <input
+                  ref={mpFileRef}
+                  type="file"
+                  accept="video/*"
+                  style={{ display: 'none' }}
+                  onChange={e => { setMpFile(e.target.files?.[0] ?? null); e.target.value = ''; }}
+                />
+
+                {analysisEngine === 'mediapipe' && selected.mediapipe_drill_type ? (
+                  <>
+                    <div style={{ background: '#eff6ff', borderRadius: 12, padding: '12px 14px', border: '1px solid #bfdbfe' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#1d4ed8', marginBottom: 4 }}>MediaPipe Pose Analysis</div>
+                      <div style={{ fontSize: 11, color: '#1e40af', lineHeight: 1.6 }}>
+                        Upload a video of you performing this drill. MediaPipe tracks 33 body landmarks per frame to score your technique mechanics with precision.
+                      </div>
+                    </div>
+                    {mpFile ? (
+                      <div style={{ background: '#fff', borderRadius: 12, padding: '14px', border: '1px solid #e5e5e5' }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 4 }}>{mpFile.name}</div>
+                        <div style={{ fontSize: 11, color: '#888', marginBottom: 12 }}>{(mpFile.size / (1024 * 1024)).toFixed(1)} MB</div>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                          <button
+                            onClick={() => setMpFile(null)}
+                            style={{ flex: 1, padding: '10px', borderRadius: 10, background: '#fff', color: '#555', fontWeight: 600, fontSize: 13, border: '1px solid #d1d5db', cursor: 'pointer' }}
+                          >
+                            Change
+                          </button>
+                          <button
+                            onClick={handleMediaPipeUpload}
+                            disabled={!isPro}
+                            style={{ flex: 2, padding: '10px', borderRadius: 10, background: isPro ? '#1d4ed8' : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: isPro ? 'pointer' : 'not-allowed' }}
+                          >
+                            Analyse with MediaPipe
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { if (isPro) mpFileRef.current?.click(); }}
+                        disabled={!isPro}
+                        style={{
+                          width: '100%', padding: '18px', borderRadius: 14,
+                          background: isPro ? '#1d4ed8' : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 15,
+                          border: 'none', cursor: isPro ? 'pointer' : 'not-allowed',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                          opacity: isPro ? 1 : 0.6,
+                        }}
+                      >
+                        <Upload size={18} />
+                        {isPro ? 'Upload video for MediaPipe analysis' : '🔒 Unlock to analyse videos'}
+                      </button>
+                    )}
+                    <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
+                      Tracks 33 body landmarks · precision pose scoring
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleStartRecording}
+                      style={{
+                        width: '100%', padding: '18px', borderRadius: 14,
+                        background: isPro ? GRS_GREEN : '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 15,
+                        border: 'none', cursor: isPro ? 'pointer' : 'not-allowed',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                        opacity: isPro ? 1 : 0.6,
+                      }}
+                      disabled={!isPro}
+                    >
+                      <Camera size={18} />
+                      {isPro ? 'Record 30-second video for Gemini' : '🔒 Unlock to record videos'}
+                    </button>
+                    <div style={{ textAlign: 'center', fontSize: 11, color: '#aaa' }}>
+                      Records 30 seconds from your camera · Gemini analyses motion over time
+                    </div>
+                  </>
+                )}
               </>
             )}
 
@@ -736,12 +955,24 @@ export default function GeminiDrillsPage() {
 
             {upload.phase === 'processing' && (
               <div style={{ background: '#fff', borderRadius: 14, padding: '32px 24px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
-                <Loader2 size={36} color={GRS_GREEN} className="animate-spin" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 6 }}>Gemini is watching your video…</div>
-                <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
-                  Gemini 2.0 Flash processes every second of your clip — reading body shape, foot surface, acceleration, and technique across the full video.
-                </div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 12 }}>This takes 30–90 seconds</div>
+                <Loader2 size={36} color={analysisEngine === 'mediapipe' ? '#1d4ed8' : GRS_GREEN} className="animate-spin" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
+                {analysisEngine === 'mediapipe' ? (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 6 }}>MediaPipe is analysing your technique…</div>
+                    <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
+                      33 body landmarks are being tracked across every frame — scoring your mechanics with precision.
+                    </div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 12 }}>This takes 15–60 seconds</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 6 }}>Gemini is watching your video…</div>
+                    <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
+                      Gemini 2.0 Flash processes every second of your clip — reading body shape, foot surface, acceleration, and technique across the full video.
+                    </div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 12 }}>This takes 30–90 seconds</div>
+                  </>
+                )}
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
               </div>
             )}
@@ -752,7 +983,10 @@ export default function GeminiDrillsPage() {
                   <CheckCircle2 size={16} />
                   <span style={{ fontSize: 13, fontWeight: 600 }}>Analysis complete — results saved to your profile</span>
                 </div>
-                <ResultDisplay result={upload.result} drill={selected} />
+                {upload.result.engine === 'mediapipe'
+                  ? <MediaPipeResultDisplay result={upload.result} drill={selected} />
+                  : <ResultDisplay result={upload.result} drill={selected} />
+                }
                 <button
                   onClick={() => downloadDrillResultPdf(upload.result!, selected)}
                   style={{

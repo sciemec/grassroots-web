@@ -36,6 +36,7 @@ export interface GeminiDrill {
   dimensions: DrillDimension[];
   geminiPrompt: string;  // exact prompt sent to Gemini after video is uploaded
   passportLabel: string;
+  mediapipe_drill_type?: string;  // if set, MediaPipe pose analysis is also available
   diagram?: string;       // ASCII illustration shown before recording
   protocol?: string[];    // step-by-step instructions (English)
   protocolSn?: string[];  // ChiShona version (75% EN, 25% SN)
@@ -84,6 +85,7 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low — how clearly the technique was visible in this clip>"
 }`,
     passportLabel: 'First Touch',
+    mediapipe_drill_type: 'first_touch',
     diagram: `  [PARTNER / WALL]
        |
        v  pass or throw
@@ -162,6 +164,7 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Shooting',
+    mediapipe_drill_type: 'shooting',
     diagram: `  [YOU] ── run-up ──> [BALL]
                          |
           kick with LACES (power)
@@ -239,6 +242,7 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Dribbling',
+    mediapipe_drill_type: 'dribbling',
     diagram: `  START
     |
     v
@@ -478,6 +482,7 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Passing',
+    mediapipe_drill_type: 'passing',
     diagram: `  [YOU] ── inside foot ──> [PARTNER / TARGET]
     |                              |
   OPEN BODY                   receives + passes back
@@ -553,6 +558,7 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Heading',
+    mediapipe_drill_type: 'heading',
     diagram: `  [PARTNER] ──> throws ball high in the air
                          |
                          v  ball drops toward you
@@ -632,6 +638,7 @@ Return ONLY valid JSON, no markdown, no extra text:
   "data_confidence": "<high|medium|low>"
 }`,
     passportLabel: 'Ball Juggling',
+    mediapipe_drill_type: 'ball_juggling',
     diagram: `     [BALL] <- drop from hands onto foot
        |
        v
@@ -671,6 +678,202 @@ Return ONLY valid JSON, no markdown, no extra text:
       'Hlala uzinzile — goba idolo lakho kancane unyawo lwesekelo (knee bent on standing leg).',
       'Zama ukusebenzisa IZINYAWO ZOMBILI ngokulinganayo. Uma wawa, qala kabusha — akukho ijeziso (both feet equally, no penalty for dropping).',
       'Faka ikhamera NGAPHAMBILI loba ku-45°. Qopha ukugijima kwakho okuside kakhulu — uhlose okungangu-30 imizuzwana (aim for 30 seconds).',
+    ],
+  },
+
+  // ── NEW: drills with MediaPipe-first scoring ─────────────────────────────
+
+  {
+    id: 'fb_crossing',
+    name: 'Crossing & Delivery',
+    sport: 'football',
+    emoji: '🌐',
+    positions: ['Winger', 'Full Back', 'Midfielder'],
+    description: 'Deliver accurate crosses from wide positions into the penalty area — for wingers and full backs.',
+    coachingFocus: 'Trunk angle at delivery, hip level on approach, landing zone accuracy, weak-foot quality.',
+    whatToRecord: 'From a wide position (roughly the byline or just inside), deliver 6–8 crosses into the penalty area. Film from behind or 45° angle. Show the full run-up and contact.',
+    duration: '60–90 seconds',
+    equipment: ['4–6 balls', 'wide position marker'],
+    difficulty: 'intermediate',
+    grsDomain: 'ballMastery',
+    mediapipe_drill_type: 'crossing',
+    dimensions: [
+      { key: 'delivery_height',    label: 'Delivery Height',    tip: 'Trunk angle at delivery controls cross height — forward lean = low cross, backward lean = high cross' },
+      { key: 'body_balance',       label: 'Body Balance',       tip: 'Hip level on approach — level hips produce consistent delivery' },
+      { key: 'landing_zone',       label: 'Landing Zone',       tip: 'Ball arrival accuracy into the penalty area' },
+      { key: 'weak_foot_delivery', label: 'Weak Foot Delivery', tip: 'Crossing ability from non-dominant side — can the player deliver from both flanks?' },
+    ],
+    geminiPrompt: `You are an elite UEFA-qualified football coach reviewing a crossing drill clip from a young Zimbabwean winger or full back.
+
+Watch each delivery — assess the trunk angle at contact (does it control the height of the cross?), whether the hips stay level on the approach run, how accurately the ball lands in the penalty area, and whether the player can cross with their weak foot.
+
+Return ONLY valid JSON, no markdown, no extra text:
+{
+  "scores": {
+    "delivery_height":    { "score": <0-10>, "observation": "<one sentence>" },
+    "body_balance":       { "score": <0-10>, "observation": "<one sentence>" },
+    "landing_zone":       { "score": <0-10>, "observation": "<one sentence>" },
+    "weak_foot_delivery": { "score": <0-10>, "observation": "<one sentence>" }
+  },
+  "overall_score": <0-10>,
+  "top_strength": "<one sentence>",
+  "key_improvement": "<one specific actionable fix>",
+  "coach_note": "<2 sentences — encouraging and instructive>",
+  "data_confidence": "<high|medium|low>"
+}`,
+    passportLabel: 'Crossing',
+    protocol: [
+      'Place a ball on the right flank, roughly level with the penalty area.',
+      'Take a short run-up and cross the ball into the penalty area using your laces or inside of the foot.',
+      'Aim to land the ball at the far post or near post — imagine a striker arriving there.',
+      'Repeat 6–8 times from the RIGHT flank, then 6–8 times from the LEFT flank.',
+      'Film from BEHIND or at 45° — the camera must see your full body AND the ball flight.',
+      'After the clip, review: did you hit the right area? Were your crosses low or high? Could you use both feet?',
+    ],
+  },
+
+  {
+    id: 'fb_free_kick',
+    name: 'Free Kick Technique',
+    sport: 'football',
+    emoji: '🌀',
+    positions: ['Midfielder', 'Winger', 'Striker'],
+    description: 'Strike a set piece free kick with curl, elevation control, and wall clearance — a match-winning skill.',
+    coachingFocus: 'Trunk angle at contact, approach run balance, foot shape for bend, trajectory over/around wall.',
+    whatToRecord: 'Place the ball 20–22m from goal. Set up or imagine a wall 9m away. Strike 6–8 free kicks aiming to bend over or around the wall. Film from the side showing your full run-up and strike.',
+    duration: '60–90 seconds',
+    equipment: ['4–6 balls', 'goal or target', 'cones for wall (optional)'],
+    difficulty: 'advanced',
+    grsDomain: 'ballMastery',
+    mediapipe_drill_type: 'free_kick',
+    dimensions: [
+      { key: 'strike_elevation', label: 'Strike Elevation',   tip: 'Trunk angle at contact — leaning forward keeps it low, backward sends it high' },
+      { key: 'approach_balance', label: 'Approach Balance',   tip: 'Hip level during run-up — level hips produce consistent strike power' },
+      { key: 'bend_accuracy',    label: 'Bend Accuracy',      tip: 'Foot shape and contact point for curl — inside of laces wrapping around the ball' },
+      { key: 'wall_clearance',   label: 'Wall Clearance',     tip: 'Strike trajectory clears a defensive wall and dips toward goal' },
+    ],
+    geminiPrompt: `You are an elite UEFA-qualified football coach reviewing a free kick technique clip from a young Zimbabwean player.
+
+Watch each strike — assess whether the trunk leans forward or backward at contact (controls elevation), how balanced the hips are during the approach run, whether the foot shape and contact point produce bend/curl, and if the ball trajectory realistically clears a wall and dips toward goal.
+
+Return ONLY valid JSON, no markdown, no extra text:
+{
+  "scores": {
+    "strike_elevation": { "score": <0-10>, "observation": "<one sentence>" },
+    "approach_balance": { "score": <0-10>, "observation": "<one sentence>" },
+    "bend_accuracy":    { "score": <0-10>, "observation": "<one sentence>" },
+    "wall_clearance":   { "score": <0-10>, "observation": "<one sentence>" }
+  },
+  "overall_score": <0-10>,
+  "top_strength": "<one sentence>",
+  "key_improvement": "<one specific actionable fix>",
+  "coach_note": "<2 sentences — encouraging and instructive>",
+  "data_confidence": "<high|medium|low>"
+}`,
+    passportLabel: 'Free Kick',
+    protocol: [
+      'Place the ball 20–22 large steps from goal. Use cones to mark a "wall" 9 steps in front of the ball (or just imagine it).',
+      'Approach at a diagonal angle — not straight on. This helps create curl.',
+      'Strike with the INSIDE of your laces, wrapping your foot around the ball for bend.',
+      'Aim to send the ball OVER the wall and then DIP toward the top corner.',
+      'Lean SLIGHTLY FORWARD over the ball at contact — this keeps it from sailing over the bar.',
+      'Repeat 6–8 times. Film from the SIDE so we can see your full run-up, contact, and ball flight.',
+    ],
+  },
+
+  {
+    id: 'fb_throw_in',
+    name: 'Throw-In Technique',
+    sport: 'football',
+    emoji: '🙌',
+    positions: [],
+    description: 'Execute a legal and powerful throw-in — both feet on the ground, ball released from above the head.',
+    coachingFocus: 'Full trunk arc from behind the head to release, symmetrical arm contribution, distance reach, non-dominant foot leading.',
+    whatToRecord: 'Stand on a sideline (or mark one with cones). Perform 8–10 throw-ins — mix short (5m) and long (10m+ if possible). Film from the front or side showing your full body from feet to release.',
+    duration: '45–60 seconds',
+    equipment: ['1 ball', 'sideline or cone marker'],
+    difficulty: 'beginner',
+    grsDomain: 'ballMastery',
+    mediapipe_drill_type: 'throw_in',
+    dimensions: [
+      { key: 'technique',           label: 'Throw Technique',     tip: 'Full trunk arc from behind the head all the way to front release — no short-arming it' },
+      { key: 'shoulder_symmetry',   label: 'Arm Symmetry',        tip: 'Both arms contributing equally to the throw — one weak arm = less power and may be illegal' },
+      { key: 'distance_reach',      label: 'Distance Reach',      tip: 'Maximum delivery distance into play — a longer throw-in is a bigger weapon' },
+      { key: 'non_dominant_stance', label: 'Non-Dominant Stance', tip: 'Comfort throwing with non-dominant foot leading — can the player throw from both sides?' },
+    ],
+    geminiPrompt: `You are an elite UEFA-qualified football coach reviewing a throw-in technique clip from a young Zimbabwean player.
+
+Watch each throw — assess whether the full trunk arc goes from behind the head all the way to front release, whether both arms contribute symmetrically (weak arm going through fully), how far the ball travels, and whether the player can lead with their non-dominant foot.
+
+Return ONLY valid JSON, no markdown, no extra text:
+{
+  "scores": {
+    "technique":           { "score": <0-10>, "observation": "<one sentence>" },
+    "shoulder_symmetry":   { "score": <0-10>, "observation": "<one sentence>" },
+    "distance_reach":      { "score": <0-10>, "observation": "<one sentence>" },
+    "non_dominant_stance": { "score": <0-10>, "observation": "<one sentence>" }
+  },
+  "overall_score": <0-10>,
+  "top_strength": "<one sentence>",
+  "key_improvement": "<one specific actionable fix>",
+  "coach_note": "<2 sentences — encouraging and instructive>",
+  "data_confidence": "<high|medium|low>"
+}`,
+    passportLabel: 'Throw-In',
+    protocol: [
+      'Stand with both feet BEHIND or ON the sideline — both feet must stay on or behind the line.',
+      'Hold the ball with BOTH HANDS behind your head, starting the arc from behind.',
+      'Swing the ball up and over your head in a continuous arc, releasing it in FRONT of your head.',
+      'Both hands must contribute equally — do not let one arm go limp.',
+      'Try 4 short throws (5 steps away) and 4 long throws (as far as you can reach).',
+      'Film from the FRONT or SIDE showing your full body. Repeat from both sides of the pitch.',
+    ],
+  },
+
+  {
+    id: 'fb_rebound_turn_strike',
+    name: 'Rebound Turn & Strike',
+    sport: 'football',
+    emoji: '⚡',
+    positions: ['Striker', 'Midfielder'],
+    description: 'Receive a rebound, turn quickly under pressure, and strike. The complete striker skill — touch, turn, finish.',
+    coachingFocus: 'Centre of gravity during turn, body shield angle, balance and contact quality on the finish.',
+    whatToRecord: 'Kick a ball against a wall 4–5m away, let it rebound, turn away from the wall and strike. Repeat 6–8 times. Film from the SIDE showing your full body — the turn and the strike must both be in frame.',
+    duration: '45–60 seconds',
+    equipment: ['1 ball', 'wall or rebounder', 'target/goal (optional)'],
+    difficulty: 'intermediate',
+    grsDomain: 'ballMastery',
+    mediapipe_drill_type: 'rebound_turn_strike',
+    dimensions: [
+      { key: 'turn_sharpness',  label: 'Turn Sharpness',   tip: 'Centre of gravity stays low during the directional change — player stays balanced, not stumbling' },
+      { key: 'body_shield',     label: 'Body Shield',      tip: 'Trunk angle used to shield the ball from pressure during the turn' },
+      { key: 'strike_accuracy', label: 'Strike Quality',   tip: 'Balance and body position at contact after turning — clean strike vs rushed/off-balance' },
+    ],
+    geminiPrompt: `You are an elite UEFA-qualified football coach reviewing a rebound turn and strike drill clip from a young Zimbabwean striker or midfielder.
+
+Watch each repetition — assess whether the centre of gravity stays low during the turn (balance), how well the player uses their body to shield the ball from the imaginary defender, and how clean and balanced their contact is on the finish after turning.
+
+Return ONLY valid JSON, no markdown, no extra text:
+{
+  "scores": {
+    "turn_sharpness":  { "score": <0-10>, "observation": "<one sentence>" },
+    "body_shield":     { "score": <0-10>, "observation": "<one sentence>" },
+    "strike_accuracy": { "score": <0-10>, "observation": "<one sentence>" }
+  },
+  "overall_score": <0-10>,
+  "top_strength": "<one sentence>",
+  "key_improvement": "<one specific actionable fix>",
+  "coach_note": "<2 sentences — encouraging and instructive>",
+  "data_confidence": "<high|medium|low>"
+}`,
+    passportLabel: 'Rebound Turn & Strike',
+    protocol: [
+      'Stand 4–5 large steps away from a solid wall (or a rebounder board).',
+      'Pass the ball firmly against the wall so it bounces straight back to you.',
+      'AS the ball comes back, turn AWAY from the wall in one movement — do not stop and then turn.',
+      'Keep your centre of gravity LOW during the turn — bend your knees and stay balanced.',
+      'Strike the ball toward a target after turning. Focus on a CLEAN contact, not just power.',
+      'Repeat 6–8 times. Film from the SIDE — your full body must be in frame during the turn AND the strike.',
     ],
   },
 
@@ -1865,4 +2068,5 @@ export interface DrillResult {
   data_confidence: string;
   scores: Record<string, { score: number; observation: string }>;
   analysedAt: string; // ISO date
+  engine?: 'gemini' | 'mediapipe';  // which AI analysed this result
 }
