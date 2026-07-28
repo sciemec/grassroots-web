@@ -45,6 +45,62 @@ function scoreTier(s: number): { tier: string; color: string; bg: string } {
   return               { tier: "Beginner",  color: "#374151", bg: "#f3f4f6" };
 }
 
+// ── Plain English helpers ─────────────────────────────────────────────────────
+
+function plainEnglish(testId: string, score: number): string {
+  switch (testId) {
+    case "sprint":
+      if (score >= 75) return "Your speed and acceleration are well above average. Scouts notice fast players instantly — this is a standout attribute.";
+      if (score >= 50) return "Decent pace for your level. Work on your first 10m explosion — that's where sprints are won or lost.";
+      return "Speed takes time to build but improves fast with the right drills. Short burst training 3× per week will make a noticeable difference.";
+    case "jump":
+      if (score >= 75) return "Excellent explosive leg power. Your fast-twitch muscle fibres are naturally strong — great for sprinting and aerial ability.";
+      if (score >= 50) return "Average leg power for your age group. Box jumps and squat jumps twice a week will improve this over 6–8 weeks.";
+      return "Leg power is trainable. Start with bodyweight squats and calf raises daily, then progress to bounding and jump drills.";
+    case "balance":
+      if (score >= 75) return "Strong body control. You naturally know where your body is in space — this makes you harder to knock off the ball and safer under pressure.";
+      if (score >= 50) return "Decent balance. Single-leg exercises and eyes-closed standing will build this further within a few weeks.";
+      return "Balance training protects your ankles and makes you more stable in challenges. Practise single-leg stands daily — it's simple and it works.";
+    case "reaction":
+      if (score >= 75) return "Fast reactive speed — your brain responds to movement quickly. This gives you a split-second advantage in one-on-one situations.";
+      if (score >= 50) return "Average reaction time. Ladder drills and partner reaction games improve this within 4–6 weeks.";
+      return "Reaction speed responds well to training. Mirror drills and reaction ball exercises are fun and effective — try them daily.";
+    case "agility":
+      if (score >= 75) return "Sharp change-of-direction ability. You can stop, pivot, and accelerate quickly — a key trait scouts look for in every position.";
+      if (score >= 50) return "Adequate agility. Cone drills done 2–3 times per week will sharpen your cuts and turns noticeably.";
+      return "Agility develops quickly with practice. Start with basic ladder footwork, then progress to reactive cone patterns as you get sharper.";
+    default:
+      return `${scoreTier(score).tier} level result. Keep training consistently to improve.`;
+  }
+}
+
+function drillTip(testId: string, score: number): string {
+  switch (testId) {
+    case "sprint":
+      if (score >= 75) return "Hill sprints × 6 reps — keeps top-end speed sharp";
+      if (score >= 50) return "A-skip + 10m burst × 8 reps — builds acceleration mechanics";
+      return "Wall drive × 3 sets of 10 each leg — teaches correct sprint posture";
+    case "jump":
+      if (score >= 75) return "Depth jumps × 3 sets of 5 — maintains reactive power";
+      if (score >= 50) return "Box jump × 4 sets of 6 — builds explosive power";
+      return "Squat jump (bodyweight) × 3 sets of 10 — develops fast-twitch fibres";
+    case "balance":
+      if (score >= 75) return "Single-leg deadlift × 3 sets each side — advanced proprioception";
+      if (score >= 50) return "Eyes-closed single-leg stand × 30 sec × 3 sets — deeper balance";
+      return "Single-leg stand (eyes open) × 3 sets of 30 sec each side — do this daily";
+    case "reaction":
+      if (score >= 75) return "Partner reaction ball throws × 3 min — keeps sharpness";
+      if (score >= 50) return "Mirror drill with a partner × 5 min — reactive footwork";
+      return "Tennis ball drop reactions × 10 reps — trains response speed simply";
+    case "agility":
+      if (score >= 75) return "5-10-5 shuttle × 5 timed reps — fine-tunes peak change of direction";
+      if (score >= 50) return "T-drill × 5 reps each direction — builds multi-directional agility";
+      return "Basic ladder footwork (2 feet each box) × 4 passes — foundation agility";
+    default:
+      return "20 min general athletic training 3× per week";
+  }
+}
+
 // ── Test definitions ─────────────────────────────────────────────────────────
 
 type TestId = "sprint" | "jump" | "balance" | "reaction" | "agility";
@@ -315,6 +371,8 @@ export default function AnalysePage() {
   const [arenaSharing, setArenaSharing] = useState(false);
   const [arenaPosted,  setArenaPosted]  = useState(false);
   const [ageGroup,     setAgeGroup]     = useState<"u13" | "u17" | "senior">("senior");
+  const [testArenaPosted,    setTestArenaPosted]    = useState<Record<string, boolean>>({});
+  const [testPassportSaved,  setTestPassportSaved]  = useState<Record<string, boolean>>({});
 
   // Single shared camera instance
   const [camTestId,   setCamTestId]   = useState<string | null>(null);
@@ -533,6 +591,43 @@ export default function AnalysePage() {
       });
       setArenaPosted(true);
     } catch { /* silent */ } finally { setArenaSharing(false); }
+  };
+
+  const saveTestToPassport = async (t: TestDef, score: number, tierLabel: string) => {
+    if (!token || token === "dev-token") return;
+    try {
+      await fetch(`${API_URL}/player/biometrics/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          testType: `biomechanics-${t.id}`,
+          rawScore: score,
+          tier: tierLabel,
+          scoutNarrative:
+            `${t.name}: ${score}/100 — ${tierLabel}. ` +
+            plainEnglish(t.id, score),
+          suggestedDrills: [drillTip(t.id, score)],
+        }),
+      });
+      setTestPassportSaved((prev) => ({ ...prev, [t.id]: true }));
+    } catch { /* silent */ }
+  };
+
+  const shareTestToArena = async (t: TestDef, score: number, tierLabel: string) => {
+    if (!token || token === "dev-token") return;
+    const body =
+      `${t.icon} ${t.name} — Talent ID Result\n\n` +
+      `Score: ${score}/100 · ${tierLabel}\n\n` +
+      plainEnglish(t.id, score) + "\n\n" +
+      `#GrassRootsSports #TalentID #Zimbabwe`;
+    try {
+      await fetch(`${API_URL}/arena/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ body, post_type: "milestone" }),
+      });
+      setTestArenaPosted((prev) => ({ ...prev, [t.id]: true }));
+    } catch { /* silent */ }
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -940,21 +1035,57 @@ export default function AnalysePage() {
                           <p className="text-xs font-bold mt-0.5" style={{ color: tier.color, opacity: 0.85 }}>
                             Score: {st.score}/100 · {tier.tier}
                           </p>
-                          {st.measureNote && st.measureNote !== "Manually entered" && (
-                            <p className="text-[11px] mt-1 italic" style={{ color: tier.color, opacity: 0.65 }}>
-                              {st.measureNote}
-                            </p>
-                          )}
+                          {/* Plain English explanation */}
+                          <p className="text-xs mt-2 leading-relaxed font-medium" style={{ color: tier.color, opacity: 0.9 }}>
+                            {plainEnglish(t.id, st.score ?? 0)}
+                          </p>
+                          {/* Drill tip */}
+                          <p className="text-[11px] mt-1.5 font-semibold" style={{ color: tier.color, opacity: 0.7 }}>
+                            Try this: {drillTip(t.id, st.score ?? 0)}
+                          </p>
                         </div>
                         <CheckCircle2 size={22} style={{ color: tier.color, opacity: 0.5 }} />
                       </div>
+
+                      {/* Per-test share buttons */}
+                      {user && (
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            onClick={() => saveTestToPassport(t, st.score ?? 0, tier.tier)}
+                            disabled={testPassportSaved[t.id]}
+                            className="flex-1 text-[11px] font-bold py-1.5 px-2 rounded-lg border transition"
+                            style={{
+                              color: tier.color,
+                              borderColor: `${tier.color}60`,
+                              background: testPassportSaved[t.id] ? `${tier.color}18` : "transparent",
+                              opacity: testPassportSaved[t.id] ? 0.75 : 1,
+                            }}
+                          >
+                            {testPassportSaved[t.id] ? "Saved to Passport" : "Add to Passport"}
+                          </button>
+                          <button
+                            onClick={() => shareTestToArena(t, st.score ?? 0, tier.tier)}
+                            disabled={testArenaPosted[t.id]}
+                            className="flex-1 text-[11px] font-bold py-1.5 px-2 rounded-lg border transition"
+                            style={{
+                              color: tier.color,
+                              borderColor: `${tier.color}60`,
+                              background: testArenaPosted[t.id] ? `${tier.color}18` : "transparent",
+                              opacity: testArenaPosted[t.id] ? 0.75 : 1,
+                            }}
+                          >
+                            {testArenaPosted[t.id] ? "Posted to Arena" : "Share to Arena"}
+                          </button>
+                        </div>
+                      )}
+
                       <button
                         onClick={() => patch(t.id, {
                           measuredValue: null, score: null, manualValue: "",
                           balRightOpen: "", balLeftOpen: "", balRightClosed: "", balLeftClosed: "",
                           video: null, preview: null, measureNote: "",
                         })}
-                        className="mt-3 text-xs font-bold underline"
+                        className="mt-3 text-xs font-bold underline block"
                         style={{ color: tier.color, opacity: 0.6 }}
                       >
                         Redo this test
