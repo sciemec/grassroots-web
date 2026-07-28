@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Shuffle, ChevronDown, ChevronUp, RotateCcw, History } from "lucide-react";
+import { ArrowLeft, Shuffle, ChevronDown, ChevronUp, RotateCcw, History, Video } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { postToArena } from "@/lib/arena-poster";
 
@@ -160,6 +160,38 @@ export default function DribblingAnalyzerPage() {
   const [history,     setHistory]     = useState<HistoryEntry[]>([]);
   const [histLoading, setHistLoading] = useState(false);
   const [openHist,    setOpenHist]    = useState<string | null>(null);
+  const [inputMode,    setInputMode]    = useState<"manual" | "video">("manual");
+  const [videoFile,    setVideoFile]    = useState<File | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [aiMeasured,   setAiMeasured]   = useState<Record<string, boolean>>({});
+
+  const analyseVideoFile = async () => {
+    if (!videoFile) return;
+    setVideoLoading(true);
+    const form = new FormData();
+    form.append("file", videoFile);
+    try {
+      const r = await fetch("/api/fitness-test?test_type=dribbling&age_group=u17", {
+        method: "POST",
+        body: form,
+      });
+      const data = await r.json();
+      if (data.mechanics) {
+        const newRatings: Record<string, number> = {};
+        const measured: Record<string, boolean> = {};
+        for (const [key, val] of Object.entries(data.mechanics as Record<string, { score: number | null; measurable: boolean }>)) {
+          if (val.measurable && val.score !== null) {
+            newRatings[key] = Math.max(1, Math.min(5, Math.round((val.score as number) / 20)));
+            measured[key] = true;
+          }
+        }
+        setRatings((prev) => ({ ...prev, ...newRatings }));
+        setAiMeasured(measured);
+        setInputMode("manual");
+      }
+    } catch { /* silent — user rates manually */ }
+    setVideoLoading(false);
+  };
 
   const fetchHistory = async () => {
     if (!token) return;
@@ -475,6 +507,30 @@ Return this exact JSON structure:
         </div>
 
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "28px 16px" }}>
+          {/* Input mode toggle */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            <button onClick={() => setInputMode("manual")} style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: `2px solid ${inputMode === "manual" ? "#1a5c2a" : "#e5e7eb"}`, backgroundColor: inputMode === "manual" ? "#1a5c2a" : "white", color: inputMode === "manual" ? "white" : "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              Rate Manually
+            </button>
+            <button onClick={() => setInputMode("video")} style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: `2px solid ${inputMode === "video" ? "#1a5c2a" : "#e5e7eb"}`, backgroundColor: inputMode === "video" ? "#1a5c2a" : "white", color: inputMode === "video" ? "white" : "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <Video size={14} /> Measure by Video
+            </button>
+          </div>
+
+          {inputMode === "video" && (
+            <div style={{ border: "2px dashed #16a34a", borderRadius: 12, padding: "24px 16px", marginBottom: 20, textAlign: "center", backgroundColor: "#f0fdf4" }}>
+              <Video size={28} color="#16a34a" style={{ marginBottom: 8 }} />
+              <p style={{ margin: "0 0 12px", fontSize: 13, color: "#374151", fontWeight: 500 }}>Upload a short dribbling clip (max 60s)</p>
+              <input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)} style={{ marginBottom: 12, fontSize: 13 }} />
+              {videoFile && (
+                <button onClick={analyseVideoFile} disabled={videoLoading} style={{ padding: "9px 20px", backgroundColor: "#1a5c2a", color: "white", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: videoLoading ? "not-allowed" : "pointer" }}>
+                  {videoLoading ? "Measuring…" : "Measure Mechanics"}
+                </button>
+              )}
+              <p style={{ margin: "10px 0 0", fontSize: 12, color: "#6b7280" }}>AI measures body position &amp; change of direction. Rate the rest manually.</p>
+            </div>
+          )}
+
           <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 24 }}>
             Rate each mechanic honestly. 1 = needs major work, 5 = excellent.
           </p>
@@ -485,7 +541,12 @@ Return this exact JSON structure:
               <div key={m.key} style={{ ...card, borderLeft: `4px solid ${current ? m.color : "#e5e7eb"}` }}>
                 <div style={{ marginBottom: 4 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                    <h3 style={{ margin: "0 0 2px", fontSize: 15, fontWeight: 700, color: "#111" }}>{m.label}</h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <h3 style={{ margin: "0 0 2px", fontSize: 15, fontWeight: 700, color: "#111" }}>{m.label}</h3>
+                      {aiMeasured[m.key] && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#16a34a", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 6px" }}>AI Measured</span>
+                      )}
+                    </div>
                     <span style={{ fontSize: 11, color: "#9ca3af" }}>{Math.round(m.weight * 100)}% weight</span>
                   </div>
                   <p style={{ margin: "0 0 12px", fontSize: 13, color: "#6b7280" }}>{m.desc}</p>
