@@ -2066,7 +2066,7 @@ export interface DrillResult {
   key_improvement: string;
   coach_note: string;
   data_confidence: string;
-  scores: Record<string, { score: number; observation: string }>;
+  scores: Record<string, { score: number; observation: string; measurable?: boolean }>;
   analysedAt: string; // ISO date
   engine?: 'gemini' | 'mediapipe';  // which AI analysed this result
 }

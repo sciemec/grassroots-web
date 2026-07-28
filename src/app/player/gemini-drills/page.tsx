@@ -200,9 +200,69 @@ function ResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDr
   );
 }
 
+// ─── MediaPipe drill recs — 2 targeted drills per mechanic key ───────────────
+const MEDIAPIPE_DRILL_RECS: Record<string, string[]> = {
+  strike_elevation:     ['Wall shooting: tie a rope at 1 m between two poles. Place 5 balls and shoot low under the rope. 3 sets of 5.', 'One-two combination: partner pass → first-time low drive into bottom corners. 10 reps each foot.'],
+  approach_balance:     ['3-step walk-up: approach a cone on exactly 3 steps, hold your finish position for 2 seconds. 10 reps.', 'Curved-cone approach: set 4 cones in an arc, dribble through and strike on the last step. 15 reps.'],
+  bend_accuracy:        ['Inside-of-foot curve: shoot from 20 m at an angle, curling towards the far post. 10 reps per foot.', 'Wide target practice: place a cone 1 m outside the post at 25 m — bend the ball around it into goal. 12 reps.'],
+  wall_clearance:       ['Rope clearance: tie a rope at 1.5 m, 5 m away from you — practise clearing it into the goal. 10 reps.', 'Partner-loft drill: a partner stands with arms up 18 m away — loft the ball over them into goal. 10 reps.'],
+  leg_swing:            ['Pendulum swings: stand on one leg, swing your kicking leg back and through in a slow controlled arc. 3 × 20 reps.', 'Resistance-band kick: loop a band at ankle height and drive your leg through against resistance. 3 × 15 reps.'],
+  hip_rotation:         ['Hip-rotation mirror: stand sideways to a mirror, rotate hips slowly to mimic kick follow-through. 20 slow reps.', 'Seated hip turns: sit on the floor with feet planted, rotate torso and hips left to right. 3 × 12 reps.'],
+  follow_through:       ['Hold your finish: after each kick freeze in the follow-through position for 2 secs before resetting. 15 kicks.', 'Slow-motion striking: kick at 30% power focusing only on a full, complete swing. 3 × 12 reps.'],
+  plant_foot:           ['Footprint drill: mark a footprint on the ground, practise placing your plant foot on it perfectly every time. 20 kicks.', 'Cone-plant habit: plant your foot 10 cm to the side of a cone, 100 kicks to build the muscle memory.'],
+  jump_timing:          ['Toss and head: partner throws ball at varying heights — time your jump to meet it at the peak. 20 reps.', 'Standing header sequence: toss → jump → head → land on both feet. Focus only on timing. 15 reps.'],
+  neck_set:             ['Neck isometric hold: tuck chin for 3 secs then lift head back for 3 secs, alternate. 15 reps.', 'Soft-toss contact: partner tosses from 1 m — meet ball on forehead while keeping neck locked. 20 reps.'],
+  contact_point:        ['Dot heading: mark a spot on the ball with tape, head only that dot. 20 toss-and-head reps.', 'Mirror heading: stand near a wall, mark your forehead with chalk — see exactly where the ball hits. 10 reps.'],
+  direction_control:    ['Direction header: place two targets on the floor, head the ball to alternate targets on a partner\'s call. 20 reps.', 'Arrow header: partner calls "left" or "right" before the toss — redirect the header that way. 15 reps.'],
+  tackle_timing:        ['Shadow and wait: follow a dribbler for 10 m without committing — only lunge when the ball rolls away from their feet. 5 × 1-min.', 'Gate tackle: partner dribbles through cones; tackle them the moment they cross the final gate. 15 reps.'],
+  body_shape:           ['Low-centre walk: crouch in tackle stance, walk sideways 10 m maintaining bent knees and wide base. 5 sets.', 'Mirror shadowing: face a partner in tackle stance, mirror their lateral movements for 30 secs. 5 reps.'],
+  weight_transfer:      ['Step-and-pass: take a full stride into each pass — feel your full body weight push through to the front foot. 20 passes.', 'Slow-motion pass: play at 30% power, focusing entirely on driving weight through the ball. 3 × 15 reps.'],
+  pivot_efficiency:     ['Square pivot drill: 4 cones in a square — cut sharply around each one. 3 × 1-min.', 'L-turn habit: dribble to a cone, execute a tight L-cut, explode away. 20 reps per foot.'],
+  side_step:            ['Ladder laterals: quick side-steps through an agility ladder without crossing your feet. 5 × 1-min.', 'Cone-gate laterals: dribble sideways through gates set 1 m apart. 10 sets.'],
+  cross_accuracy:       ['Hoop crossing: hang a hoop in the box, swing crosses through it from both flanks. 20 reps.', 'Moving run cross: jog along the touchline and strike a cross with one touch into the far-post zone. 15 reps.'],
+  delivery_shape:       ['Hip-open approach: slow approach to the ball, check hip angle before contact. 10 isolated reps.', 'Byline cross: from the byline, open your body and float a cross onto a target\'s head. 15 reps.'],
+  touch_height:         ['Bounce control: toss the ball above head height, control with chest or thigh, bring to foot in 2 touches. 20 reps.', 'Drop-and-cushion: drop ball from hip height, first touch to kill the bounce before it rises. 20 reps.'],
+  foot_position:        ['Angled-foot trap: set foot at 45° before the ball arrives — cushion, do not stab. 20 partner-pass reps.', 'Sole-roll reception: receive a rolling ball under the sole and drag it behind your standing leg. 15 reps.'],
+  juggling_consistency: ['Start-from-hands: toss ball to foot, juggle 5 touches, catch. Add 1 extra touch each day.', 'Alternating juggle: juggle both feet strictly alternating every touch. 3 × 30 secs.'],
+  knee_height:          ['Thigh juggling only: juggle using only your thighs, keeping the ball at chest height. 3 × 30 secs.', 'High-knee jog juggle: jog with high knees and juggle 2 touches per stride. 4 × 20 m.'],
+  feet_alternation:     ['Strict-alternate rule: juggle with a hard rule — every touch must swap feet. No two in a row on the same foot. 3 × 30 secs.', 'Weak-foot only: juggle 50 consecutive touches with your weak foot daily.'],
+  wrist_snap:           ['Wrist warm-up: circular wrist rotations × 20, then flick a towel for snap speed. 3 sets.', 'Legal throw-in reps: both feet on the ground — focus only on the wrist snap at release. 20 reps.'],
+  trunk_rotation:       ['Standing twist: hold ball at chest, rotate torso fully left then right. 3 × 15 reps.', 'Rotational throw: stand at 90° to a partner, rotate and throw the ball explosively from the hips. 3 × 12.'],
+  arm_swing:            ['Shadow-kick walk: slowly walk through the kicking motion focusing only on the opposite arm swinging for balance. 20 reps.', 'Weighted arm swing: hold 0.5 kg weights, swing arms in kicking rhythm. 3 × 15 reps.'],
+  stance_width:         ['Wide-stance squats: squat with feet shoulder-width apart, hold the bottom position for 2 secs. 3 × 12.', 'Balance board stance: hold drill-ready position on a balance board for 30 secs. 5 reps.'],
+};
+
+function scoreLabel(score: number): string {
+  if (score >= 8) return 'Excellent';
+  if (score >= 6) return 'Good';
+  if (score >= 4) return 'Needs work';
+  return 'Critical';
+}
+
+function scoreLabelColor(score: number): string {
+  if (score >= 8) return '#16a34a';
+  if (score >= 6) return '#ca8a04';
+  if (score >= 4) return '#ea580c';
+  return '#dc2626';
+}
+
+function scoreLabelBg(score: number): string {
+  if (score >= 8) return '#f0fdf4';
+  if (score >= 6) return '#fefce8';
+  if (score >= 4) return '#fff7ed';
+  return '#fef2f2';
+}
+
 function MediaPipeResultDisplay({ result, drill }: { result: DrillResult; drill: GeminiDrill }) {
-  const dimMap = Object.fromEntries(drill.dimensions.map(d => [d.key, d]));
+  const dimMap  = Object.fromEntries(drill.dimensions.map(d => [d.key, d]));
   const entries = Object.entries(result.scores ?? {});
+
+  // Two weakest mechanics drive the drill recommendations
+  const weakestKeys = [...entries]
+    .sort((a, b) => a[1].score - b[1].score)
+    .slice(0, 2)
+    .map(([k]) => k);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Overall score hero */}
@@ -213,28 +273,67 @@ function MediaPipeResultDisplay({ result, drill }: { result: DrillResult; drill:
         <div style={{ fontSize: 56, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{result.overall_score}</div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>out of 10</div>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>
-          MediaPipe pose analysis · 33 body landmarks
+          MediaPipe pose analysis · 33 body landmarks tracked
         </div>
       </div>
 
-      {/* Mechanic scores */}
+      {/* Per-mechanic cards */}
       <div style={{ background: '#fff', borderRadius: 12, padding: '14px', border: '1px solid #e5e5e5' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>
           Technique Breakdown
         </div>
-        {entries.map(([key, s]) => {
-          const label = dimMap[key]?.label ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-          return (
-            <div key={key} style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#333', minWidth: 120 }}>{label}</span>
-                <ScoreBar score={s.score} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(s.score), minWidth: 30 }}>{s.score}/10</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {entries.map(([key, s]) => {
+            const label       = dimMap[key]?.label ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            const isMeasured  = s.measurable !== false;
+            const pct         = s.score * 10;
+            const barColor    = pct >= 80 ? '#16a34a' : pct >= 60 ? '#ca8a04' : pct >= 40 ? '#ea580c' : '#dc2626';
+
+            return (
+              <div key={key}>
+                {/* Label + badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#111', flex: 1 }}>{label}</span>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
+                    background: isMeasured ? '#dbeafe' : '#f3f4f6',
+                    color:      isMeasured ? '#1d4ed8' : '#6b7280',
+                  }}>
+                    {isMeasured ? 'AI Measured' : 'Rate Manually'}
+                  </span>
+                </div>
+
+                {/* Bar + score + label */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <div style={{ flex: 1, height: 8, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 4, transition: 'width 0.6s ease' }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: barColor, minWidth: 34, textAlign: 'right' }}>
+                    {s.score}/10
+                  </span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, minWidth: 72, textAlign: 'center',
+                    background: scoreLabelBg(s.score), color: scoreLabelColor(s.score),
+                  }}>
+                    {scoreLabel(s.score)}
+                  </span>
+                </div>
+
+                {/* Detail observation */}
+                <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6, background: '#fafafa', borderRadius: 8, padding: '8px 10px' }}>
+                  {s.observation}
+                </div>
+
+                {/* Manual-rate tip */}
+                {!isMeasured && (
+                  <div style={{ fontSize: 11, color: '#6b7280', fontStyle: 'italic', marginTop: 5 }}>
+                    Ball-tracking is needed to measure this precisely. Review your video and rate how well you executed it.
+                  </div>
+                )}
               </div>
-              <div style={{ fontSize: 11, color: '#666', paddingLeft: 128, lineHeight: 1.5 }}>{s.observation}</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Strength + improvement */}
@@ -252,6 +351,39 @@ function MediaPipeResultDisplay({ result, drill }: { result: DrillResult; drill:
           <div style={{ fontSize: 12, color: '#9a3412', lineHeight: 1.5 }}>{result.key_improvement}</div>
         </div>
       </div>
+
+      {/* Drill recommendations for weakest mechanics */}
+      {weakestKeys.some(k => MEDIAPIPE_DRILL_RECS[k]) && (
+        <div style={{ background: '#eff6ff', borderRadius: 12, padding: '14px', border: '1px solid #bfdbfe' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+            Drills to improve your weakest areas
+          </div>
+          {weakestKeys.map(key => {
+            const recs  = MEDIAPIPE_DRILL_RECS[key];
+            if (!recs) return null;
+            const label = dimMap[key]?.label ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            return (
+              <div key={key} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1e40af', marginBottom: 8 }}>
+                  To improve {label}:
+                </div>
+                {recs.map((rec, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                    <div style={{
+                      flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+                      background: '#1d4ed8', color: '#fff', fontSize: 10, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {i + 1}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#1e3a8a', lineHeight: 1.5 }}>{rec}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Coach note */}
       {result.coach_note && (
@@ -289,6 +421,8 @@ export default function GeminiDrillsPage() {
   const [lang, setLang]             = useState<'en' | 'en-sn' | 'en-nd'>('en');
   const [analysisEngine, setAnalysisEngine] = useState<'gemini' | 'mediapipe'>('gemini');
   const [mpFile, setMpFile]         = useState<File | null>(null);
+  const [passportSaved, setPassportSaved] = useState(false);
+  const [arenaShared,   setArenaShared]   = useState(false);
   const mpFileRef                   = useRef<HTMLInputElement | null>(null);
 
   const xhrRef            = useRef<XMLHttpRequest | null>(null);
@@ -348,8 +482,9 @@ export default function GeminiDrillsPage() {
     setHistory(prev => [result, ...prev].slice(0, 20));
 
     // Persist to backend + Arena (fire-and-forget — never blocks the UI)
+    // MediaPipe results skip auto-post: the user chooses via explicit buttons
     const apiToken = localStorage.getItem('auth_token');
-    if (apiToken && apiToken !== 'dev-token') {
+    if (apiToken && apiToken !== 'dev-token' && result.engine !== 'mediapipe') {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/drills/${result.drillId}/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
@@ -500,7 +635,7 @@ export default function GeminiDrillsPage() {
       const data = await res.json() as { mechanics?: Record<string, { score: number; measurable: boolean; detail: string }>; summary?: string };
       const mechanics = data.mechanics ?? {};
 
-      const scores: Record<string, { score: number; observation: string }> = {};
+      const scores: Record<string, { score: number; observation: string; measurable?: boolean }> = {};
       let total = 0;
       let count = 0;
       let bestKey = '';
@@ -510,7 +645,7 @@ export default function GeminiDrillsPage() {
 
       for (const [key, m] of Object.entries(mechanics)) {
         const normalized = Math.round((m.score / 10) * 10) / 10; // 0-100 → 0-10 (1 dp)
-        scores[key] = { score: normalized, observation: m.detail };
+        scores[key] = { score: normalized, observation: m.detail, measurable: m.measurable };
         total += normalized;
         count++;
         if (m.score > bestVal)  { bestVal = m.score;  bestKey = key; }
@@ -554,6 +689,8 @@ export default function GeminiDrillsPage() {
     setClipAdvisory(null);
     setMpFile(null);
     setAnalysisEngine('gemini');
+    setPassportSaved(false);
+    setArenaShared(false);
     recordedChunksRef.current = [];
     setUpload({ phase: 'idle', progress: 0, result: null, error: null });
   };
@@ -961,12 +1098,92 @@ export default function GeminiDrillsPage() {
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a' }}>
                   <CheckCircle2 size={16} />
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Analysis complete — results saved to your profile</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>
+                    {upload.result.engine === 'mediapipe'
+                      ? 'Pose analysis complete'
+                      : 'Analysis complete — results saved to your profile'}
+                  </span>
                 </div>
+
                 {upload.result.engine === 'mediapipe'
                   ? <MediaPipeResultDisplay result={upload.result} drill={selected} />
                   : <ResultDisplay result={upload.result} drill={selected} />
                 }
+
+                {/* MediaPipe: explicit Save / Share choice */}
+                {upload.result.engine === 'mediapipe' && (
+                  <div style={{ background: '#fff', borderRadius: 14, padding: '16px', border: '1px solid #e5e5e5' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#333', marginBottom: 12 }}>
+                      What would you like to do with these results?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {/* Save to Passport */}
+                      <button
+                        onClick={() => {
+                          if (passportSaved || !upload.result) return;
+                          const apiToken = localStorage.getItem('auth_token');
+                          if (apiToken && apiToken !== 'dev-token') {
+                            fetch(`${process.env.NEXT_PUBLIC_API_URL}/drills/${upload.result.drillId}/analyze`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiToken}` },
+                              body: JSON.stringify({
+                                overall_score:   upload.result.overall_score,
+                                top_strength:    upload.result.top_strength,
+                                key_improvement: upload.result.key_improvement,
+                                sport:           upload.result.sport,
+                              }),
+                            }).catch(() => {});
+                          }
+                          setPassportSaved(true);
+                        }}
+                        style={{
+                          width: '100%', padding: '13px', borderRadius: 12,
+                          background: passportSaved ? '#f0fdf4' : GRS_GREEN,
+                          color: passportSaved ? '#16a34a' : '#fff',
+                          fontWeight: 700, fontSize: 14, border: passportSaved ? '1px solid #bbf7d0' : 'none',
+                          cursor: passportSaved ? 'default' : 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        }}
+                      >
+                        {passportSaved ? <><CheckCircle2 size={16} /> Saved to Passport</> : '⚽ Save to Passport'}
+                      </button>
+
+                      {/* Share to Arena */}
+                      <button
+                        onClick={() => {
+                          if (arenaShared || !upload.result) return;
+                          postToArena(
+                            `Scored ${upload.result.overall_score}/10 on "${upload.result.drillName}" — MediaPipe pose analysis`,
+                            {
+                              postType:     'milestone',
+                              activityType: 'mediapipe_drill',
+                              activityData: {
+                                drillId:      upload.result.drillId,
+                                drillName:    upload.result.drillName,
+                                score:        upload.result.overall_score,
+                                sport:        upload.result.sport,
+                                top_strength: upload.result.top_strength,
+                              },
+                            }
+                          );
+                          setArenaShared(true);
+                        }}
+                        style={{
+                          width: '100%', padding: '13px', borderRadius: 12,
+                          background: arenaShared ? '#f5f3ff' : '#7c3aed',
+                          color: arenaShared ? '#7c3aed' : '#fff',
+                          fontWeight: 700, fontSize: 14, border: arenaShared ? '1px solid #ddd6fe' : 'none',
+                          cursor: arenaShared ? 'default' : 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        }}
+                      >
+                        {arenaShared ? <><CheckCircle2 size={16} /> Shared to Arena</> : '🏟️ Share to Arena'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* PDF download — always available */}
                 <button
                   onClick={() => downloadDrillResultPdf(upload.result!, selected)}
                   style={{
@@ -979,6 +1196,7 @@ export default function GeminiDrillsPage() {
                   <Download size={15} />
                   Download PDF Report
                 </button>
+
                 <button
                   onClick={resetUpload}
                   style={{
