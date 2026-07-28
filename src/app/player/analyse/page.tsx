@@ -292,7 +292,7 @@ const TESTS: TestDef[] = [
     name: "5-10-5 Pro Agility Shuttle",
     icon: "🔀",
     tagline: "Acceleration + deceleration + change of direction",
-    geminiType: null,   // shuttle time can't be extracted from pose landmarks — manual entry only
+    geminiType: "agility",  // measures cut depth, L/R symmetry, COM height during direction changes
     inputVariant: "single",
     unit: "sec",
     lowerIsBetter: true,
