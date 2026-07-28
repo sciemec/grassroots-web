@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Force unique build ID on every deploy so browsers always fetch fresh JS chunks
+  generateBuildId: async () => `build-${Date.now()}`,
+
   typescript: {
     ignoreBuildErrors: true,
   },
