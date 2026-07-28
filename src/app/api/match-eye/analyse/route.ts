@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { GEMINI_VISION_MODEL } from "@/lib/gemini";
+import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
 
 export const maxDuration = 600;
 export const runtime = "nodejs";
@@ -62,25 +62,6 @@ function extractJSON(text: string): MatchAnalysis | null {
   }
 }
 
-// Poll Gemini until the uploaded file is ACTIVE (ready for generateContent)
-async function waitForFileActive(fileName: string, googleKey: string): Promise<void> {
-  for (let i = 0; i < 120; i++) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${googleKey}`
-    );
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`File state check failed: ${res.status} — ${body.slice(0, 300)}`);
-    }
-
-    const data = await res.json() as { state: string };
-    if (data.state === "ACTIVE") return;
-    if (data.state === "FAILED") throw new Error("Gemini file processing failed");
-
-    await new Promise((r) => setTimeout(r, 5000)); // check every 5s → 10 min max
-  }
-  throw new Error("Video file did not become ready within 10 minutes");
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -116,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     // Skip polling if upload already confirmed ACTIVE
     if (fileState !== "ACTIVE") {
-      await waitForFileActive(fileName, googleKey);
+      await waitForGeminiFile(fileName, googleKey, 10);
     }
 
     // ── Build player tracking section (injected when coach specifies players) ───
@@ -182,33 +163,15 @@ Return ONLY a valid JSON object — no markdown, no explanation:
 
 Be specific and practical. Reference what you actually see — jersey colours, positions, moments in the video. No generic advice.${playerTrackingPrompt}`;
 
-      const geminiDrillRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: drillPrompt },
-                { file_data: { mime_type: mimeType, file_uri: fileUri } },
-                { text: "Now provide your complete JSON analysis of this training drill video." },
-              ],
-            }],
-            generationConfig: { temperature: 0.2, maxOutputTokens: 3000 },
-          }),
-        }
+      const drillText = await callGemini(
+        googleKey,
+        [
+          { text: drillPrompt },
+          { file_data: { mime_type: mimeType, file_uri: fileUri } },
+          { text: "Now provide your complete JSON analysis of this training drill video." },
+        ],
+        { temperature: 0.2, maxOutputTokens: 3000 }
       );
-
-      if (!geminiDrillRes.ok) {
-        const errText = await geminiDrillRes.text();
-        return Response.json({ error: `Gemini API error: ${geminiDrillRes.status}`, detail: errText }, { status: 502 });
-      }
-
-      const geminiDrillData = await geminiDrillRes.json() as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-      };
-      const drillText = geminiDrillData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
       const drillAnalysis = extractJSON(drillText);
 
       if (!drillAnalysis) {
@@ -230,20 +193,14 @@ Write a concise 3-paragraph coaching report:
 Write as a coach talking directly to their assistant. Be specific, direct, practical. No generic phrases. Plain text only — no markdown.`;
 
       let drillNarrative = "";
-      const drillNarrRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: drillNarrativePrompt }] }],
-            generationConfig: { temperature: 0.4, maxOutputTokens: 800 },
-          }),
-        }
-      );
-      if (drillNarrRes.ok) {
-        const nd = await drillNarrRes.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-        drillNarrative = nd.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      try {
+        drillNarrative = await callGemini(
+          googleKey,
+          [{ text: drillNarrativePrompt }],
+          { temperature: 0.4, maxOutputTokens: 800 }
+        );
+      } catch {
+        // narrative is optional — silently skip
       }
 
       return Response.json({ analysis: drillAnalysis, narrative: drillNarrative });
@@ -293,40 +250,15 @@ For events: include all significant events visible in the video with accurate ti
 For formations: identify from player positioning throughout the full match.
 Be specific and professional. Base everything on what you observe in the video.${playerTrackingPrompt}`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: systemPrompt },
-              { file_data: { mime_type: mimeType, file_uri: fileUri } },
-              { text: "Now provide your complete JSON analysis of this full match video." },
-            ],
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 4096,
-          },
-        }),
-      }
+    const geminiText = await callGemini(
+      googleKey,
+      [
+        { text: systemPrompt },
+        { file_data: { mime_type: mimeType, file_uri: fileUri } },
+        { text: "Now provide your complete JSON analysis of this full match video." },
+      ],
+      { temperature: 0.2, maxOutputTokens: 4096 }
     );
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      return Response.json(
-        { error: `Gemini API error: ${geminiRes.status}`, detail: errText },
-        { status: 502 }
-      );
-    }
-
-    const geminiData = await geminiRes.json() as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    };
-
-    const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const analysis = extractJSON(geminiText);
 
     if (!analysis) {
@@ -354,23 +286,14 @@ Write a professional 4-paragraph tactical match report:
 
 Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference formations, patterns, and events by name. No generic advice. Return plain text only — no markdown, no bullet points.`;
 
-    const narrativeRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: narrativePrompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 1500 },
-        }),
-      }
-    );
-
-    if (narrativeRes.ok) {
-      const narrativeData = await narrativeRes.json() as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-      };
-      narrative = narrativeData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    try {
+      narrative = await callGemini(
+        googleKey,
+        [{ text: narrativePrompt }],
+        { temperature: 0.4, maxOutputTokens: 1500 }
+      );
+    } catch {
+      // narrative is optional — silently skip
     }
 
     return Response.json({ analysis, narrative });

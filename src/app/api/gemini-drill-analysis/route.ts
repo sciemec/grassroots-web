@@ -11,29 +11,9 @@
 
 import { NextResponse } from 'next/server';
 import { getDrillById } from '@/config/gemini-drills';
-import { GEMINI_VISION_MODEL } from '@/lib/gemini';
+import { waitForGeminiFile, callGemini, deleteGeminiFile } from '@/lib/gemini-api';
 
 export const maxDuration = 300; // 5 min — Gemini can take time on longer clips
-
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com';
-
-async function waitForFileActive(
-  fileName: string,
-  apiKey: string,
-  maxAttempts = 36 // 3 minutes at 5s intervals
-): Promise<boolean> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const res = await fetch(
-      `${GEMINI_API_BASE}/v1beta/${fileName}?key=${apiKey}`
-    );
-    if (!res.ok) return false;
-    const data = await res.json();
-    if (data.state === 'ACTIVE') return true;
-    if (data.state === 'FAILED') return false;
-    await new Promise(r => setTimeout(r, 5000));
-  }
-  return false;
-}
 
 function extractJson(text: string): Record<string, unknown> | null {
   // Try direct parse
@@ -73,51 +53,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Unknown drill: ${drillId}` }, { status: 400 });
     }
 
-    // Wait for Gemini to finish processing the uploaded file
-    const isActive = await waitForFileActive(fileName, googleKey);
-    if (!isActive) {
-      return NextResponse.json({ error: 'File did not become active within timeout' }, { status: 504 });
-    }
+    // Wait for Gemini to finish processing the uploaded file (3 min timeout)
+    await waitForGeminiFile(fileName, googleKey, 3);
 
     // Run the drill-specific Gemini prompt
-    const genRes = await fetch(
-      `${GEMINI_API_BASE}/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                file_data: {
-                  mime_type: 'video/mp4',
-                  file_uri: fileUri,
-                },
-              },
-              { text: drill.geminiPrompt },
-            ],
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-          },
-        }),
-      }
+    const rawText = await callGemini(
+      googleKey,
+      [
+        { file_data: { mime_type: 'video/mp4', file_uri: fileUri } },
+        { text: drill.geminiPrompt },
+      ],
+      { temperature: 0.3, maxOutputTokens: 1024 }
     );
 
-    if (!genRes.ok) {
-      const errText = await genRes.text();
-      return NextResponse.json({ error: `Gemini generateContent failed: ${errText}` }, { status: 502 });
-    }
-
-    const genData = await genRes.json();
-    const rawText = genData.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    const parsed = extractJson(rawText);
-
     // Clean up the uploaded file (fire and forget)
-    fetch(`${GEMINI_API_BASE}/v1beta/${fileName}?key=${googleKey}`, { method: 'DELETE' })
-      .catch(() => { /* ignore */ });
+    deleteGeminiFile(fileName, googleKey);
 
+    const parsed = extractJson(rawText);
     if (!parsed) {
       return NextResponse.json(
         { error: 'Could not parse Gemini response', raw: rawText },

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { GEMINI_VISION_MODEL } from "@/lib/gemini";
+import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -9,22 +9,6 @@ export interface MeasureResult {
   unit: string;
   confidence: "high" | "medium" | "low";
   notes: string;
-}
-
-// ── Gemini Files API helpers ──────────────────────────────────────────────────
-
-async function waitForFileActive(name: string, googleKey: string): Promise<void> {
-  for (let i = 0; i < 60; i++) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${name}?key=${googleKey}`
-    );
-    if (!res.ok) throw new Error(`File state check failed: ${res.status}`);
-    const data = (await res.json()) as { state?: string };
-    if (data.state === "ACTIVE") return;
-    if (data.state === "FAILED") throw new Error("Gemini file processing failed");
-    await new Promise((r) => setTimeout(r, 5000));
-  }
-  throw new Error("Video did not become ready within 5 minutes");
 }
 
 // ── Test-specific prompts ─────────────────────────────────────────────────────
@@ -182,47 +166,16 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "fileUri is required" }, { status: 400 });
     }
 
-    await waitForFileActive(name, googleKey);
+    await waitForGeminiFile(name, googleKey, 5);
 
-    // Call Gemini 2.5 Flash
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: PROMPTS[testType] },
-                { file_data: { mime_type: mimeType, file_uri: uri } },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.05,
-            maxOutputTokens: 512,
-          },
-        }),
-      }
+    const rawText = await callGemini(
+      googleKey,
+      [
+        { text: PROMPTS[testType] },
+        { file_data: { mime_type: mimeType, file_uri: uri } },
+      ],
+      { temperature: 0.05, maxOutputTokens: 512 }
     );
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      return Response.json(
-        { error: `Gemini error: ${geminiRes.status}`, detail: errText.slice(0, 300) },
-        { status: 502 }
-      );
-    }
-
-    const geminiData = (await geminiRes.json()) as {
-      candidates?: Array<{
-        content?: { parts?: Array<{ text?: string }> };
-      }>;
-    };
-
-    const rawText =
-      geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
     // Parse JSON from response
     let result: MeasureResult | null = null;

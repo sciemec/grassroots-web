@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { GEMINI_VISION_MODEL } from "@/lib/gemini";
+import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
 
 export const maxDuration = 600;
 export const runtime = "nodejs";
@@ -45,22 +45,6 @@ function extractJSON(text: string): PlayerAnalysis | null {
   }
 }
 
-async function waitForFileActive(fileName: string, googleKey: string): Promise<void> {
-  for (let i = 0; i < 120; i++) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${googleKey}`
-    );
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`File state check failed: ${res.status} — ${body.slice(0, 300)}`);
-    }
-    const data = await res.json() as { state: string };
-    if (data.state === "ACTIVE") return;
-    if (data.state === "FAILED") throw new Error("Gemini file processing failed");
-    await new Promise((r) => setTimeout(r, 5000));
-  }
-  throw new Error("Video file did not become ready within 10 minutes");
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (fileState !== "ACTIVE") {
-      await waitForFileActive(fileName, googleKey);
+      await waitForGeminiFile(fileName, googleKey, 10);
     }
 
     const sportLabel    = sport     || "Football";
@@ -136,41 +120,16 @@ technical_strengths and areas_to_improve: 3-5 items each — specific to THIS pl
 drill_recommendations: 2-4 drills that directly address the weaknesses observed.
 Base everything on what you actually see in the video.`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: systemPrompt },
-              { file_data: { mime_type: mimeType, file_uri: fileUri } },
-              { text: "Now provide your complete JSON analysis of this player's performance." },
-            ],
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 4096,
-          },
-        }),
-      }
+    const geminiText = await callGemini(
+      googleKey,
+      [
+        { text: systemPrompt },
+        { file_data: { mime_type: mimeType, file_uri: fileUri } },
+        { text: "Now provide your complete JSON analysis of this player's performance." },
+      ],
+      { temperature: 0.2, maxOutputTokens: 4096 }
     );
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      return Response.json(
-        { error: `Gemini API error: ${geminiRes.status}`, detail: errText },
-        { status: 502 }
-      );
-    }
-
-    const geminiData = await geminiRes.json() as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    };
-
-    const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    const analysis   = extractJSON(geminiText);
+    const analysis = extractJSON(geminiText);
 
     if (!analysis) {
       return Response.json(
@@ -183,15 +142,10 @@ Base everything on what you actually see in the video.`;
     let narrative = "";
 
     try {
-      const narrativeRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_VISION_MODEL}:generateContent?key=${googleKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `You are a personal sports coach writing feedback directly to a ${sportLabel} player.
+      narrative = await callGemini(
+        googleKey,
+        [{
+          text: `You are a personal sports coach writing feedback directly to a ${sportLabel} player.
 
 Player: ${positionLabel}${jerseyLabel}
 AI Vision Analysis (from the video):
@@ -203,19 +157,9 @@ Write a personal 3-paragraph coaching message directly to the player (use "you")
 3. Your action plan — exactly what to work on before the next session, with one priority drill
 
 Write as a coach who knows this player and cares about their development. Be direct, specific, and encouraging. No generic advice. Reference what was actually seen in the video. Plain text only — no markdown.`,
-              }],
-            }],
-            generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
-          }),
-        }
+        }],
+        { temperature: 0.4, maxOutputTokens: 1024 }
       );
-
-      if (narrativeRes.ok) {
-        const narrativeData = await narrativeRes.json() as {
-          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-        };
-        narrative = narrativeData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      }
     } catch {
       // narrative is optional — silently skip if Gemini call fails
     }
