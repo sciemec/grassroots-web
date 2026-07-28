@@ -8,7 +8,6 @@ import {
   Share2, Trophy, Info, Target,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -315,6 +314,7 @@ export default function AnalysePage() {
   const [saved,        setSaved]        = useState(false);
   const [arenaSharing, setArenaSharing] = useState(false);
   const [arenaPosted,  setArenaPosted]  = useState(false);
+  const [ageGroup,     setAgeGroup]     = useState<"u13" | "u17" | "senior">("senior");
 
   // Single shared camera instance
   const [camTestId,   setCamTestId]   = useState<string | null>(null);
@@ -328,6 +328,7 @@ export default function AnalysePage() {
   const chunksRef   = useRef<Blob[]>([]);
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileRefs    = useRef<Record<string, HTMLInputElement | null>>({});
+  const xhrRef      = useRef<XMLHttpRequest | null>(null);
 
   const patch = (id: string, p: Partial<TestState>) =>
     setStates((prev) => ({ ...prev, [id]: { ...prev[id], ...p } }));
@@ -403,41 +404,56 @@ export default function AnalysePage() {
     }, 1000);
   };
 
-  // ── Gemini AI measurement ─────────────────────────────────────────────────
+  // ── Python MediaPipe AI measurement ──────────────────────────────────────
 
-  const measureWithGemini = async (t: TestDef) => {
+  const measureWithPython = (t: TestDef) => {
     const st = states[t.id];
     if (!st.video || !t.geminiType) return;
     patch(t.id, { measuring: true, error: "" });
-    try {
-      // Upload via Render proxy first — video bytes never load into server RAM
-      const uploaded = await uploadVideoInChunksParallel(st.video, () => {});
-      const res = await fetch("/api/fitness-test/measure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          testType: t.geminiType,
-          fileUri:  uploaded.fileUri,
-          fileName: uploaded.fileName,
-          mimeType: uploaded.mimeType,
-        }),
-      });
-      const data = await res.json() as {
-        result?: { measured_value: number; unit: string; confidence: string; notes: string };
-        error?: string;
-      };
-      if (!res.ok || !data.result) throw new Error(data.error ?? "Measurement failed");
-      const val = data.result.measured_value;
-      patch(t.id, {
-        measuring: false, measuredValue: val,
-        measureNote: data.result.notes, score: t.scoreFn(val), error: "",
-      });
-    } catch (err) {
+
+    const formData = new FormData();
+    formData.append("file", st.video);
+    const endpoint = `/api/fitness-test?test_type=${t.geminiType}&age_group=${ageGroup}`;
+
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          const note = [data.key_metric, data.detail].filter(Boolean).join(" — ");
+          patch(t.id, {
+            measuring:     false,
+            measuredValue: null,
+            score:         data.test_score ?? data.overall_percentile ?? 50,
+            measureNote:   note || "Analysis complete.",
+            error:         "",
+          });
+        } catch {
+          patch(t.id, { measuring: false, error: "Invalid response from AI service." });
+        }
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText);
+          patch(t.id, { measuring: false, error: err.detail ?? `Analysis failed (${xhr.status})` });
+        } catch {
+          patch(t.id, { measuring: false, error: `Analysis failed (${xhr.status})` });
+        }
+      }
+    };
+
+    xhr.onerror = () => {
       patch(t.id, {
         measuring: false,
-        error: err instanceof Error ? err.message : "Measurement failed. Try again or enter manually.",
+        error: xhr.status > 0
+          ? `HTTP ${xhr.status} from AI service`
+          : "No response from AI service — check connection or try again.",
       });
-    }
+    };
+
+    xhr.open("POST", endpoint);
+    xhr.send(formData);
   };
 
   // ── Manual submit (single-value tests) ───────────────────────────────────
@@ -572,6 +588,24 @@ export default function AnalysePage() {
           <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
             <div className="h-full rounded-full transition-all duration-500"
               style={{ width: `${(completedTests.length / TOTAL_TESTS) * 100}%`, background: "#1c3d22" }} />
+          </div>
+        </div>
+
+        {/* Age group selector */}
+        <div className="bg-white rounded-2xl border border-gray-200 px-4 py-3 flex items-center gap-3">
+          <p className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex-shrink-0">Age group</p>
+          <div className="flex gap-2">
+            {(["u13", "u17", "senior"] as const).map((ag) => (
+              <button key={ag} onClick={() => setAgeGroup(ag)}
+                className="text-xs font-bold px-3 py-1.5 rounded-full border transition-colors"
+                style={{
+                  background:   ageGroup === ag ? "#1c3d22" : "transparent",
+                  color:        ageGroup === ag ? "#fff"    : "#374151",
+                  borderColor:  ageGroup === ag ? "#1c3d22" : "#d1d5db",
+                }}>
+                {ag === "u13" ? "U13" : ag === "u17" ? "U17" : "Senior"}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -763,14 +797,14 @@ export default function AnalysePage() {
                         </div>
                       )}
 
-                      {st.preview && !st.measuredValue && (
-                        <button onClick={() => measureWithGemini(t)}
+                      {st.preview && st.score === null && (
+                        <button onClick={() => measureWithPython(t)}
                           disabled={st.measuring}
                           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black text-white disabled:opacity-50"
                           style={{ background: "#1c3d22" }}>
                           {st.measuring
-                            ? <><RefreshCw size={13} className="animate-spin" /> Gemini is measuring…</>
-                            : <><Zap size={13} /> Measure with Gemini AI</>}
+                            ? <><RefreshCw size={13} className="animate-spin" /> AI is analysing…</>
+                            : <><Zap size={13} /> Analyse with AI</>}
                         </button>
                       )}
                     </div>
@@ -899,7 +933,9 @@ export default function AnalysePage() {
                           <p className="text-lg font-black" style={{ color: tier.color }}>
                             {t.id === "balance"
                               ? `${st.measuredValue} weighted errors`
-                              : `${st.measuredValue}${t.unit}`}
+                              : st.measuredValue !== null
+                                ? `${st.measuredValue}${t.unit}`
+                                : "AI Analysed"}
                           </p>
                           <p className="text-xs font-bold mt-0.5" style={{ color: tier.color, opacity: 0.85 }}>
                             Score: {st.score}/100 · {tier.tier}
