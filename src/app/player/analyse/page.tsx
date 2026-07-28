@@ -251,7 +251,7 @@ const TESTS: TestDef[] = [
     name: "Scanning & Reactive Shuttle",
     icon: "👁️",
     tagline: "Visual scan → decision → explosive directional burst",
-    geminiType: "reaction",
+    geminiType: null,   // reaction time can't be extracted from pose landmarks — manual entry only
     inputVariant: "single",
     unit: "sec",
     lowerIsBetter: true,
@@ -292,7 +292,7 @@ const TESTS: TestDef[] = [
     name: "5-10-5 Pro Agility Shuttle",
     icon: "🔀",
     tagline: "Acceleration + deceleration + change of direction",
-    geminiType: "agility",
+    geminiType: null,   // shuttle time can't be extracted from pose landmarks — manual entry only
     inputVariant: "single",
     unit: "sec",
     lowerIsBetter: true,
