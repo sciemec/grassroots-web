@@ -19,8 +19,8 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Video, Square, RotateCcw, CheckCircle,
-  AlertCircle, Camera, ChevronRight, Trophy,
+  ArrowLeft, Upload, RotateCcw, CheckCircle,
+  AlertCircle, ChevronRight, Trophy,
   Activity, Brain, Target, TrendingUp, TrendingDown,
   Minus, RefreshCw, CheckSquare, Square as SquareIcon,
 } from "lucide-react";
@@ -54,7 +54,7 @@ interface DrillDef {
   maxDuration: number;
 }
 
-type Screen = "select" | "protocol" | "recording" | "uploading" | "feedback" | "error";
+type Screen = "select" | "protocol" | "upload" | "uploading" | "feedback" | "error";
 
 interface PracticeExercise {
   name:        string;
@@ -660,12 +660,11 @@ export default function FootballSkillAnalysisPage() {
   // ── State ──
   const [screen,       setScreen]       = useState<Screen>("select");
   const [drillId,      setDrillId]      = useState<string>("");
-  const [elapsed,      setElapsed]      = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [feedback,     setFeedback]     = useState<THUTOFeedback | null>(null);
   const [videoUrl,     setVideoUrl]     = useState<string | null>(null);
   const [savedToVault, setSavedToVault] = useState(false);
   const [errorMsg,     setErrorMsg]     = useState("");
-  const [cameraError,  setCameraError]  = useState(false);
   const [lang,         setLang]         = useState<"en" | "en-sn" | "en-nd">("en");
 
   // Profile + history
@@ -679,12 +678,7 @@ export default function FootballSkillAnalysisPage() {
   const [practiceComplete, setPracticeComplete] = useState(false);
 
   // ── Refs ──
-  const videoRef    = useRef<HTMLVideoElement>(null);
-  const streamRef   = useRef<MediaStream | null>(null);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef   = useRef<Blob[]>([]);
-  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const blobRef     = useRef<Blob | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Typewriter ──
   const strengthText   = useTypewriter(screen === "feedback" ? (feedback?.strength ?? "")           : "", 20);
@@ -714,89 +708,15 @@ export default function FootballSkillAnalysisPage() {
     setPracticeComplete(false);
   }, [feedback]);
 
-  // ── Camera ────────────────────────────────────────────────────────────────
+  // ── File selection handler ────────────────────────────────────────────────
 
-  const startCamera = async (): Promise<void> => {
-    setCameraError(false);
-    try {
-      let stream: MediaStream | null = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      }
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(() => {});
-      }
-    } catch { setCameraError(true); }
-  };
-
-  const stopStream = () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    if (timerRef.current) clearInterval(timerRef.current);
-  };
-
-  useEffect(() => {
-    if (screen === "recording") {
-      startCamera().then(() => {
-        setTimeout(() => { if (streamRef.current) startRecording(); }, 400);
-      });
-    }
-    if (screen === "select" || screen === "protocol") stopStream();
-    return () => { if (screen !== "recording") stopStream(); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen]);
-
-  useEffect(() => () => stopStream(), []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Recording ─────────────────────────────────────────────────────────────
-
-  const getMimeType = (): string => {
-    const types = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"];
-    if (typeof MediaRecorder === "undefined") return "";
-    return types.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
-  };
-
-  const startRecording = useCallback(() => {
-    if (!streamRef.current) return;
-    recorderRef.current = null;
-    chunksRef.current   = [];
-    const mimeType = getMimeType();
-    const recorder = new MediaRecorder(streamRef.current, mimeType ? { mimeType } : undefined);
-    recorder.ondataavailable = (e) => { if (e.data?.size > 0) chunksRef.current.push(e.data); };
-    recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: mimeType || "video/webm" });
-      blobRef.current = blob;
-      handleUploadAndAnalyse(blob);
-    };
-    recorder.start(200);
-    recorderRef.current = recorder;
-    const maxSec = drill?.maxDuration ?? 60;
-    setElapsed(0);
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setElapsed((prev) => {
-        if (prev >= maxSec - 1) { stopRecording(); return maxSec; }
-        return prev + 1;
-      });
-    }, 1000);
-  }, [drill]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const stopRecording = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
-    setScreen("uploading");
+  const handleFileSelected = useCallback((file: File) => {
+    setSelectedFile(file);
   }, []);
 
   // ── Upload + Analyse ──────────────────────────────────────────────────────
 
-  const handleUploadAndAnalyse = async (blob: Blob) => {
+  const handleUploadAndAnalyse = async (blob: Blob | File) => {
     if (!drill) return;
     try {
       let frame: string | null = null;
@@ -880,14 +800,13 @@ export default function FootballSkillAnalysisPage() {
 
   const retest = () => {
     // Keep drillId — same drill
-    blobRef.current = null;
+    setSelectedFile(null);
     // previousScore stays as the old best (for next comparison)
     const lastScore = feedback?.drill_score ?? null;
     if (lastScore !== null) setPreviousScore(lastScore);
     setFeedback(null);
     setVideoUrl(null);
     setSavedToVault(false);
-    setElapsed(0);
     setPracticeTicks([]);
     setPracticeComplete(false);
     setRank(null);
@@ -898,11 +817,10 @@ export default function FootballSkillAnalysisPage() {
   // ── Full reset ────────────────────────────────────────────────────────────
 
   const reset = () => {
-    blobRef.current = null;
+    setSelectedFile(null);
     setFeedback(null);
     setVideoUrl(null);
     setSavedToVault(false);
-    setElapsed(0);
     setPreviousScore(null);
     setRank(null);
     setImprovement(null);
@@ -942,7 +860,8 @@ export default function FootballSkillAnalysisPage() {
             <button
               onClick={() => {
                 if (screen === "protocol")  setScreen("select");
-                else if (screen === "recording" || screen === "feedback" || screen === "error") reset();
+                else if (screen === "upload") { setSelectedFile(null); setScreen("protocol"); }
+                else if (screen === "feedback" || screen === "error") reset();
               }}
               className="flex h-9 w-9 items-center justify-center rounded-full border transition-colors hover:bg-gray-100"
               style={{ borderColor: "#e5e5e5" }}
@@ -958,7 +877,7 @@ export default function FootballSkillAnalysisPage() {
             <p className="text-xs text-gray-500 truncate">
               {screen === "select"    && "Select a drill to analyse"}
               {screen === "protocol" && (drill?.label ?? "Setup & Protocol")}
-              {screen === "recording" && `Recording — ${drill?.label}`}
+              {screen === "upload" && `Upload video — ${drill?.label}`}
               {screen === "uploading" && "THUTO is analysing..."}
               {screen === "feedback"  && `${drill?.label} — Feedback`}
               {screen === "error"     && "Analysis failed"}
@@ -1169,75 +1088,94 @@ export default function FootballSkillAnalysisPage() {
               </div>
 
               <button
-                onClick={() => setScreen("recording")}
+                onClick={() => setScreen("upload")}
                 className="flex w-full items-center justify-center gap-3 rounded-2xl py-5 text-lg font-bold text-white transition-all active:scale-95"
                 style={{ backgroundColor: "#1a5c2a" }}
               >
-                <Video className="h-5 w-5" />
-                Start Recording ({drill.maxDuration}s max)
+                <Upload className="h-5 w-5" />
+                Upload Video for Analysis
               </button>
 
               <p className="text-center text-xs text-gray-400">
-                Follow the protocol above before pressing record.
+                Follow the protocol above, record your video, then upload it here.
                 THUTO will analyse your technique from the video.
               </p>
             </div>
           )}
 
           {/* ════════════════════════════════════════════════════════════════
-              SCREEN 3 — RECORDING
+              SCREEN 3 — VIDEO UPLOAD
               ════════════════════════════════════════════════════════════════ */}
-          {screen === "recording" && drill && (
+          {screen === "upload" && drill && (
             <div className="space-y-5">
-              <div className="relative overflow-hidden rounded-2xl bg-black aspect-[9/16] max-h-[440px]">
-                {cameraError ? (
-                  <div className="flex h-full flex-col items-center justify-center gap-3 text-white/60">
-                    <Camera className="h-12 w-12 opacity-40" />
-                    <p className="text-sm">Camera not available</p>
-                    <button
-                      onClick={startCamera}
-                      className="rounded-xl bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/20"
-                    >
-                      Try again
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                    <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                    <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-sm">
-                      <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
-                      <span className="text-xs font-bold text-white">REC</span>
-                    </div>
-                    <div className="absolute top-4 right-4 rounded-full bg-black/60 px-3 py-1.5 backdrop-blur-sm">
-                      <span className="text-xs font-bold text-white tabular-nums">
-                        {drill.maxDuration - elapsed}s
-                      </span>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                      <div
-                        className="h-full bg-red-500 transition-all duration-1000"
-                        style={{ width: `${(elapsed / drill.maxDuration) * 100}%` }}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-
+              {/* Drill reminder */}
               <div className="rounded-xl bg-white border p-4 text-center" style={{ borderColor: "#e5e5e5" }}>
                 <p className="text-2xl mb-1">{drill.emoji}</p>
                 <p className="font-semibold text-sm" style={{ color: "#1a5c2a" }}>{drill.label}</p>
-                <p className="text-xs text-gray-400 mt-1">{elapsed}s elapsed · max {drill.maxDuration}s</p>
+                <p className="text-xs text-gray-400 mt-1">{drill.cameraSetup}</p>
               </div>
 
-              {!cameraError && (
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileSelected(file);
+                  e.target.value = "";
+                }}
+              />
+
+              {selectedFile ? (
+                /* File chosen — show name + Analyse button */
+                <div className="rounded-2xl bg-white border p-5 space-y-4" style={{ borderColor: "#bbf7d0" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: "#f0fdf4" }}>
+                      <CheckCircle className="h-5 w-5" style={{ color: "#1a5c2a" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: "#1a1a1a" }}>{selectedFile.name}</p>
+                      <p className="text-xs text-gray-400">{(selectedFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setSelectedFile(null)}
+                      className="flex-1 rounded-xl border py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                      style={{ borderColor: "#e5e5e5" }}
+                    >
+                      Change
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!selectedFile) return;
+                        setScreen("uploading");
+                        handleUploadAndAnalyse(selectedFile);
+                      }}
+                      className="flex-[2] flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-all active:scale-95"
+                      style={{ backgroundColor: "#1a5c2a" }}
+                    >
+                      <Upload className="h-4 w-4" />
+                      Analyse with THUTO
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* No file yet — big upload button */
                 <button
-                  onClick={stopRecording}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 py-4 text-base font-bold transition-all active:scale-95"
-                  style={{ borderColor: "#ef4444", color: "#ef4444", backgroundColor: "#fef2f2" }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-12 transition-colors hover:bg-gray-50"
+                  style={{ borderColor: "#1a5c2a" }}
                 >
-                  <Square className="h-5 w-5 fill-red-500" />
-                  Stop & Analyse
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: "#f0fdf4" }}>
+                    <Upload className="h-7 w-7" style={{ color: "#1a5c2a" }} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-base font-bold" style={{ color: "#1a5c2a" }}>Choose video to upload</p>
+                    <p className="text-xs text-gray-400 mt-1">MP4, MOV, or WebM · max {drill.maxDuration}s recommended</p>
+                  </div>
                 </button>
               )}
             </div>
