@@ -1225,92 +1225,80 @@ export default function FootballSkillAnalysisPage() {
           {screen === "feedback" && feedback && drill && (
             <div className="space-y-4">
 
-              {/* THUTO header */}
+              {/* ── BLUE HERO HEADER (matches MediaPipe style) ── */}
               <div
-                className="flex items-center gap-3 rounded-2xl border p-4"
-                style={{ backgroundColor: "#f0fdf4", borderColor: "#bbf7d0" }}
+                className="rounded-2xl overflow-hidden"
+                style={{ background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)" }}
               >
-                <div
-                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "linear-gradient(135deg, #1a5c2a, #16a34a)" }}
-                >
-                  <span className="text-2xl">🤖</span>
+                {/* Top row: drill name + AI badge */}
+                <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-1">
+                      {drill.emoji} {drill.label}
+                    </p>
+                    <p className="text-xs text-blue-300">
+                      THUTO{profile?.gender === "female" ? " + AMARA" : ""} · AI Video Analysis
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-4xl font-black text-white tabular-nums leading-none">
+                      {feedback.drill_score.toFixed(1)}
+                    </p>
+                    <p className="text-xs text-blue-200 mt-0.5">/ 10</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold" style={{ color: "#1a5c2a" }}>THUTO{profile?.gender === "female" ? " + AMARA" : ""}</p>
-                  <p className="text-xs text-gray-500">{drill.label} · just now</p>
+
+                {/* Score bar */}
+                <div className="px-5 pb-2">
+                  <div className="h-2 w-full rounded-full bg-blue-900/50 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${(feedback.drill_score / 10) * 100}%`,
+                        background: feedback.drill_score >= 7 ? "#4ade80"
+                          : feedback.drill_score >= 5 ? "#fbbf24" : "#f87171",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Score label + improvement/rank row */}
+                <div className="flex items-center justify-between px-5 pb-4">
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-xs font-black"
+                    style={{
+                      background: feedback.drill_score >= 7 ? "#166534" : feedback.drill_score >= 5 ? "#92400e" : "#7f1d1d",
+                      color: "#fff",
+                    }}
+                  >
+                    {feedback.drill_score >= 7 ? "Excellent" : feedback.drill_score >= 5 ? "Good" : feedback.drill_score >= 3 ? "Needs Work" : "Critical"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {previousScore !== null && improvement !== null && (
+                      <span className="flex items-center gap-1 text-xs font-semibold text-blue-100">
+                        {improvement > 0
+                          ? <><TrendingUp  className="h-3.5 w-3.5 text-green-300" />+{improvement.toFixed(1)} vs best</>
+                          : improvement < 0
+                          ? <><TrendingDown className="h-3.5 w-3.5 text-red-300" />{improvement.toFixed(1)} vs best</>
+                          : <><Minus className="h-3.5 w-3.5 text-blue-300" />Same as best</>
+                        }
+                      </span>
+                    )}
+                    {rank !== null && rank <= 20 && (
+                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold text-white"
+                        style={{ background: rank <= 3 ? "#c8962a" : "#166534" }}>
+                        <Trophy className="h-3 w-3" />#{rank}{playerAG ? ` ${playerAG}` : ""}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* ── SCORE BADGE ── */}
-              {(() => {
-                const sc = scoreColour(feedback.drill_score);
-                return (
-                  <div
-                    className="flex flex-col items-center rounded-2xl border p-5"
-                    style={{ backgroundColor: sc.bg, borderColor: sc.border }}
-                  >
-                    <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: sc.text }}>
-                      THUTO Score
-                    </p>
-                    <p className="text-5xl font-black tabular-nums" style={{ color: sc.text }}>
-                      {feedback.drill_score.toFixed(1)}
-                      <span className="text-2xl font-bold">/10</span>
-                    </p>
-                    <p className="mt-1 text-sm font-semibold" style={{ color: sc.text }}>{sc.label}</p>
-
-                    {/* Progress vs previous */}
-                    {previousScore !== null && improvement !== null && (
-                      <div className="mt-3 flex items-center gap-2">
-                        {improvement > 0 ? (
-                          <>
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                            <span className="text-sm font-semibold text-green-700">
-                              +{improvement.toFixed(1)} vs best ({previousScore.toFixed(1)})
-                            </span>
-                          </>
-                        ) : improvement < 0 ? (
-                          <>
-                            <TrendingDown className="h-4 w-4 text-red-500" />
-                            <span className="text-sm font-semibold text-red-600">
-                              {improvement.toFixed(1)} vs best ({previousScore.toFixed(1)})
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Minus className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm font-semibold text-gray-600">
-                              Same as best ({previousScore.toFixed(1)})
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Rank */}
-                    {rank !== null && rank <= 20 && (
-                      <div
-                        className="mt-3 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
-                        style={{ backgroundColor: rank <= 3 ? "#c8962a" : "#1a5c2a", color: "#fff" }}
-                      >
-                        <Trophy className="h-3.5 w-3.5" />
-                        Ranked #{rank}
-                        {playerAG ? ` in ${playerAG}` : ""}
-                        {profile?.gender ? ` ${profile.gender === "female" ? "Female" : "Male"}` : ""}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* Strength */}
+              {/* ── STRENGTH ── */}
               <div className="rounded-xl border p-4" style={{ backgroundColor: "#f0fdf4", borderColor: "#bbf7d0" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">✅</span>
-                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#1a5c2a" }}>
-                    What you did well
-                  </p>
-                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#1a5c2a" }}>
+                  💪 What you did well
+                </p>
                 <p className="text-sm leading-relaxed text-gray-800 min-h-[3rem]">
                   {strengthText}
                   {strengthText.length < (feedback.strength?.length ?? 0) && (
@@ -1319,14 +1307,11 @@ export default function FootballSkillAnalysisPage() {
                 </p>
               </div>
 
-              {/* Correction */}
+              {/* ── KEY IMPROVEMENT ── */}
               <div className="rounded-xl border p-4" style={{ backgroundColor: "#fffbeb", borderColor: "#fde68a" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🔧</span>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-                    One thing to fix
-                  </p>
-                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-2">
+                  🔧 Key improvement
+                </p>
                 <p className="text-sm leading-relaxed text-gray-800 min-h-[3rem]">
                   {correctionText}
                   {correctionText.length < (feedback.correction?.length ?? 0) && (
@@ -1335,14 +1320,11 @@ export default function FootballSkillAnalysisPage() {
                 </p>
               </div>
 
-              {/* Drill recommendation */}
+              {/* ── DRILL TO TRY ── */}
               <div className="rounded-xl border p-4" style={{ backgroundColor: "#eff6ff", borderColor: "#bfdbfe" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🏋️</span>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
-                    Drill to try right now
-                  </p>
-                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-2">
+                  🏋️ Drill to try right now
+                </p>
                 <p className="text-sm leading-relaxed text-gray-800 min-h-[3rem]">
                   {drillText}
                   {drillText.length < (feedback.drillRecommendation?.length ?? 0) && (
@@ -1426,7 +1408,7 @@ export default function FootballSkillAnalysisPage() {
                   style={{ borderColor: "#1a5c2a", color: "#1a5c2a" }}
                 >
                   <RotateCcw className="h-4 w-4" />
-                  Record Again
+                  Upload Again
                 </button>
 
                 <Link
