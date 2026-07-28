@@ -773,27 +773,7 @@ export default function GeminiDrillsPage() {
                   </div>
                 )}
 
-                {/* Engine toggle — only shown when drill supports MediaPipe */}
-                {selected.mediapipe_drill_type && (
-                  <div style={{ display: 'flex', gap: 0, borderRadius: 10, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
-                    {(['gemini', 'mediapipe'] as const).map(eng => (
-                      <button
-                        key={eng}
-                        onClick={() => { setAnalysisEngine(eng); setMpFile(null); }}
-                        style={{
-                          flex: 1, padding: '11px 8px', border: 'none', cursor: 'pointer',
-                          fontWeight: 700, fontSize: 12,
-                          background: analysisEngine === eng ? (eng === 'mediapipe' ? '#1d4ed8' : GRS_GREEN) : '#fff',
-                          color: analysisEngine === eng ? '#fff' : '#666',
-                        }}
-                      >
-                        {eng === 'gemini' ? '🎬 Gemini · record' : '🤖 MediaPipe · upload'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Hidden file input */}
+                {/* Hidden file input for MediaPipe upload */}
                 <input
                   ref={mpFileRef}
                   type="file"
@@ -802,7 +782,7 @@ export default function GeminiDrillsPage() {
                   onChange={e => { setMpFile(e.target.files?.[0] ?? null); e.target.value = ''; }}
                 />
 
-                {analysisEngine === 'mediapipe' && selected.mediapipe_drill_type ? (
+                {selected.mediapipe_drill_type ? (
                   <>
                     <div style={{ background: '#eff6ff', borderRadius: 12, padding: '12px 14px', border: '1px solid #bfdbfe' }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#1d4ed8', marginBottom: 4 }}>MediaPipe Pose Analysis</div>
