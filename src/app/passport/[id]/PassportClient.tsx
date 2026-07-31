@@ -223,6 +223,27 @@ export default function PassportClient({
               ✓ Coach verified
             </span>
           )}
+          {/* Data provenance label — derived from who submitted the session */}
+          {latestSession && (() => {
+            const byCoach  = latestSession.recordedBy === 'coach';
+            const hasVideo = !!latestSession.videoClipId;  // Option B: always false until clip linked
+            const who      = byCoach ? 'Coach-recorded' : 'Self-recorded';
+            const videoTag = hasVideo ? 'Video-verified' : 'No video';
+            return (
+              <span style={{
+                background: byCoach ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.10)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 500,
+                padding: '4px 10px',
+                borderRadius: 20,
+                border: '1px solid rgba(255,255,255,0.2)',
+                letterSpacing: '0.01em',
+              }}>
+                {who} · {videoTag}
+              </span>
+            );
+          })()}
         </div>
       </div>
 
