@@ -17,7 +17,7 @@
 //   - Resuming: if saved session has config + currentTest !== 'setup', prompt user
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   createInitialState,
   loadSession,
@@ -30,6 +30,8 @@ import {
   type SessionPartials,
   type TestId,
 } from '@/lib/session-manager';
+import { useAuthStore }     from '@/lib/auth-store';
+import { useSessionSubmit } from '@/hooks/useSessionSubmit';
 import { SessionHeader } from '@/components/session/shared';
 import {
   SetupScreen,
@@ -217,6 +219,41 @@ export default function WeeklySessionPage() {
   const [resumeState, setResumeState] = useState<SessionState | null>(null);
   const [loaded,      setLoaded]      = useState(false);
 
+  const user                           = useAuthStore((s) => s.user);
+  const { submit: submitGamification } = useSessionSubmit();
+  const submittedRef                   = useRef(false);
+
+  // ── POST results to backend when results screen loads ─────────────────────
+  useEffect(() => {
+    if (state.currentTest !== 'results' || !state.result || !state.config) return;
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token || token === 'dev-token') return;
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/grs-test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        player_name:    state.config.playerName,
+        age:            state.config.age,
+        position:       state.config.position,
+        session_date:   state.config.sessionDate,
+        verified_by:    state.config.verifiedBy,
+        aq_score:       state.result.aq,
+        tier:           state.result.tier,
+        dq_value:       state.result.dq,
+        partials:       state.partials,
+        player_user_id: state.config.playerUserId ?? null,
+      }),
+    }).catch(() => {});
+
+    if (user?.id && state.result) {
+      submitGamification({ playerId: String(user.id), result: state.result }).catch(() => {});
+    }
+  }, [state.currentTest]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Restore saved session on mount ────────────────────────────────────────
   useEffect(() => {
     const saved = loadSession();
@@ -335,6 +372,7 @@ export default function WeeklySessionPage() {
 
   // ── Reset to a fresh session ──────────────────────────────────────────────
   const handleReset = useCallback(() => {
+    submittedRef.current = false;
     clearSession();
     setRestAfter(null);
     setResumeState(null);
