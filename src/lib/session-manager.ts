@@ -49,6 +49,9 @@ export interface SessionConfig {
   sessionDate:   string;
   verifiedBy:    string;
   coachVerified: boolean;
+  // UUID of the player being tested.
+  // Auto-set by the backend for player-role users; optionally supplied by coaches.
+  playerUserId?: string;
   // Which tests to run (coach can skip tests not available today)
   activeTests:   TestId[];
 }

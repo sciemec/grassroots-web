@@ -18,6 +18,7 @@ import {
 } from './shared';
 import type { Position } from '@/lib/grs-engine';
 import type { SessionConfig } from '@/lib/session-manager';
+import { useAuthStore } from '@/lib/auth-store';
 
 const BG     = '#111111';
 const CARD   = '#1c1c1c';
@@ -31,11 +32,15 @@ const GREEN  = '#2ecc71';
 // SETUP SCREEN
 // ═══════════════════════════════════════════════════════════════════════════════
 export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
-  const [playerName, setPlayerName] = useState('');
-  const [age,        setAge]        = useState<number>(14);
-  const [gender,     setGender]     = useState<'male' | 'female'>('male');
-  const [position,   setPosition]   = useState<Position>('midfielder');
-  const [verifiedBy, setVerifiedBy] = useState('');
+  const authUser = useAuthStore((s) => s.user);
+  const isCoach  = authUser?.role === 'coach';
+
+  const [playerName,   setPlayerName]   = useState('');
+  const [age,          setAge]          = useState<number>(14);
+  const [gender,       setGender]       = useState<'male' | 'female'>('male');
+  const [position,     setPosition]     = useState<Position>('midfielder');
+  const [verifiedBy,   setVerifiedBy]   = useState('');
+  const [playerUserId, setPlayerUserId] = useState('');
 
   const ALL_TESTS = ['t1_jump','t2_sprint','t3_balance','t4_reaction','t5_endurance','t6_ball'] as const;
   const [selectedTests, setSelectedTests] = useState<string[]>([...ALL_TESTS]);
@@ -69,6 +74,7 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
   const canStart = playerName.trim().length > 0 && verifiedBy.trim().length > 0 && selectedTests.length > 0;
 
   const handleStart = () => {
+    const trimmedPlayerId = playerUserId.trim();
     const config: SessionConfig = {
       playerName:    playerName.trim(),
       age,
@@ -77,6 +83,10 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
       sessionDate:   new Date().toISOString().split('T')[0],
       verifiedBy:    verifiedBy.trim(),
       coachVerified: true,
+      // Coaches can paste the player's account ID from their passport URL so the
+      // session appears on the correct player's passport.
+      // Players don't need this — the backend sets player_user_id automatically.
+      playerUserId:  isCoach && trimmedPlayerId ? trimmedPlayerId : undefined,
       activeTests:   [...selectedTests, 'results'] as any,
     };
     onUpdate({ config, startedAt: new Date().toISOString() });
@@ -225,6 +235,25 @@ export function SetupScreen({ onAdvance, onUpdate }: TestScreenProps) {
                 style={inputStyle}
               />
             </div>
+
+            {/* Player Account ID — coaches only */}
+            {isCoach && (
+              <div>
+                <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 6 }}>
+                  Player account ID <span style={{ fontWeight: 400 }}>(optional)</span>
+                </div>
+                <input
+                  type="text"
+                  value={playerUserId}
+                  onChange={e => setPlayerUserId(e.target.value)}
+                  placeholder="Paste player's passport ID to link this session"
+                  style={inputStyle}
+                />
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 5 }}>
+                  Found in the player's passport URL — links this session to their profile.
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
