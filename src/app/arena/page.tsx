@@ -1207,19 +1207,19 @@ export default function ArenaPage() {
                                     {user && comment.user?.id === user.id && editingComment !== comment.id && (
                                       <button
                                         onClick={() => { setEditingComment(comment.id); setEditCommentBody(comment.body); }}
-                                        className="text-gray-300 hover:text-[#1a5c2a] transition"
+                                        className="text-gray-400 hover:text-[#1a5c2a] transition"
                                         title="Edit comment"
                                       >
-                                        <Pencil size={11} />
+                                        <Pencil size={13} />
                                       </button>
                                     )}
                                     {user && (comment.user?.id === user.id || post.user?.id === user.id || user.role === 'admin') && editingComment !== comment.id && (
                                       <button
                                         onClick={() => deleteComment(post.id, comment.id)}
-                                        className="text-gray-300 hover:text-red-400 transition"
+                                        className="text-gray-400 hover:text-red-500 transition"
                                         title="Delete comment"
                                       >
-                                        <Trash2 size={11} />
+                                        <Trash2 size={13} />
                                       </button>
                                     )}
                                     {user && comment.user?.id !== user.id && editingComment !== comment.id && (
@@ -1228,10 +1228,10 @@ export default function ArenaPage() {
                                       ) : (
                                         <button
                                           onClick={() => setReportingComment(reportingComment === comment.id ? null : comment.id)}
-                                          className="text-gray-300 hover:text-orange-400 transition"
+                                          className="text-gray-400 hover:text-orange-500 transition"
                                           title="Report comment"
                                         >
-                                          <Flag size={11} />
+                                          <Flag size={13} />
                                         </button>
                                       )
                                     )}
