@@ -14,6 +14,12 @@ const nextConfig = {
   // ✅ Add empty turbopack config to silence the error
   turbopack: {},
 
+  // Raise Next.js body buffer limit for the /api/match-eye/upload proxy route.
+  // Default is 10 MB — videos sent in chunks can exceed this.
+  experimental: {
+    proxyClientMaxBodySize: '500mb',
+  },
+
   webpack: (config, { dev, isServer }) => {
     config.resolve.symlinks = false;
 
