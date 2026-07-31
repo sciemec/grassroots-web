@@ -1213,7 +1213,7 @@ export default function ArenaPage() {
                                         <Pencil size={11} />
                                       </button>
                                     )}
-                                    {user && (comment.user?.id === user.id || post.user?.id === user.id) && editingComment !== comment.id && (
+                                    {user && (comment.user?.id === user.id || post.user?.id === user.id || user.role === 'admin') && editingComment !== comment.id && (
                                       <button
                                         onClick={() => deleteComment(post.id, comment.id)}
                                         className="text-gray-300 hover:text-red-400 transition"
