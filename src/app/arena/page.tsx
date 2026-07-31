@@ -98,6 +98,7 @@ interface Post {
   liked?: number;
   my_reaction?: string | null;
   from_whatsapp?: boolean;
+  recorded_by?: string;
   activity_type?: string;
   activity_data?: Record<string, string | number | boolean | null | undefined>;
   user?: { id: string; name: string; role: string; sport?: string; province?: string };
@@ -1055,8 +1056,19 @@ export default function ArenaPage() {
                         )}
 
                         {post.aq_at_post && (
-                          <div className="mt-2 inline-flex items-center gap-1 bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded-full">
-                            🏆 AQ: {post.aq_at_post}
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded-full">
+                              🏆 AQ: {post.aq_at_post}
+                            </div>
+                            {post.recorded_by && (
+                              <div className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-full border ${
+                                post.recorded_by === 'coach'
+                                  ? 'bg-blue-50 text-blue-600 border-blue-200'
+                                  : 'bg-gray-50 text-gray-500 border-gray-200'
+                              }`}>
+                                {post.recorded_by === 'coach' ? '👤 Coach-recorded' : '📱 Self-recorded'}
+                              </div>
+                            )}
                           </div>
                         )}
 
