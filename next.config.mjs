@@ -75,6 +75,15 @@ const nextConfig = {
     return config;
   },
 
+  async redirects() {
+    return [
+      // Retire legacy /video-analysis — superseded by /video-studio
+      { source: '/video-analysis', destination: '/video-studio', permanent: true },
+      // Retire legacy /athlete/vault — superseded by /player/vault
+      { source: '/athlete/vault', destination: '/player/vault', permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {
