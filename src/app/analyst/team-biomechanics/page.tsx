@@ -10,7 +10,7 @@ import {
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 
-const AI_URL = process.env.NEXT_PUBLIC_AI_URL ?? "https://ai.bhora-ai.onrender.com";
+const AI_URL = process.env.NEXT_PUBLIC_AI_URL ?? "https://grassroots-ai-tracker.onrender.com";
 
 // ── Drill battery definitions ──────────────────────────────────────────────
 
