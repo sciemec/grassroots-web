@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Upload, Play, CheckCircle2, Loader2, X, Film, ChevronDown, ChevronUp, Trash2, Globe, Lock,
+  Upload, Play, CheckCircle2, Loader2, X, Film, ChevronDown, ChevronUp, Trash2, Globe, Lock, Share2,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -138,6 +138,7 @@ export default function VideoStudioPage() {
 
   const [savedId, setSavedId] = useState<string | null>(null);
   const [savedShared, setSavedShared] = useState(false);
+  const [sharedToArena, setSharedToArena] = useState(false);
 
   const saveAnalysis = useMutation({
     mutationFn: (payload: Partial<SavedAnalysis> & { ai_feedback: string }) =>
@@ -158,6 +159,13 @@ export default function VideoStudioPage() {
   const toggleShare = useMutation({
     mutationFn: (id: string) => api.patch(`/video-analyses/${id}/toggle-share`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-analyses"] }),
+  });
+
+  const arenaShareMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/video-analyses/${id}/share-to-arena`),
+    onSuccess: () => {
+      setSharedToArena(true);
+    },
   });
 
   useEffect(() => { if (!user) router.push("/login"); }, [user, router]);
@@ -221,7 +229,7 @@ export default function VideoStudioPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const reset = () => { clearFile(); setSport(""); setAnalysisType(""); setQuestion(""); setResult(null); setSavedId(null); setSavedShared(false); };
+  const reset = () => { clearFile(); setSport(""); setAnalysisType(""); setQuestion(""); setResult(null); setSavedId(null); setSavedShared(false); setSharedToArena(false); };
 
   const downloadHighlight = async () => {
     if (!file) return;
@@ -522,6 +530,41 @@ export default function VideoStudioPage() {
               >
                 {savedShared ? "Unshare" : "Share"}
               </button>
+            </div>
+          )}
+
+          {/* Share to Arena */}
+          {stage === "done" && savedId && (
+            <div className="rounded-xl border border-primary/20 bg-card p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Share2 className={`h-4 w-4 flex-shrink-0 ${sharedToArena ? "text-green-400" : "text-primary"}`} />
+                <div>
+                  <p className="text-sm font-medium">
+                    {sharedToArena ? "Posted to The Arena" : "Share to The Arena"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {sharedToArena
+                      ? "Your AI analysis is live on the Arena feed for coaches and scouts to see."
+                      : "Post your AI feedback to the Arena — let coaches and scouts discover your analysis."}
+                  </p>
+                </div>
+              </div>
+              {sharedToArena ? (
+                <button
+                  onClick={() => router.push("/arena")}
+                  className="flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold bg-green-500/15 text-green-400 hover:bg-green-500/25 transition-colors"
+                >
+                  View on Arena
+                </button>
+              ) : (
+                <button
+                  onClick={() => savedId && arenaShareMutation.mutate(savedId)}
+                  disabled={arenaShareMutation.isPending}
+                  className="flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                >
+                  {arenaShareMutation.isPending ? "Sharing…" : "Share"}
+                </button>
+              )}
             </div>
           )}
 
