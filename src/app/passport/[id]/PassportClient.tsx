@@ -61,19 +61,34 @@ interface DrillScore {
   data_confidence?: string;
 }
 
+interface JourneySection {
+  count:       number;
+  latestScore: number | null;
+  bestScore:   number | null;
+  trend:       'insufficient_data' | 'improving' | 'stable' | 'declining';
+  sparkline:   number[] | null;
+}
+
+interface PerformanceJourney {
+  drills:   JourneySection;
+  matchEye: JourneySection;
+}
+
 interface PassportProps {
-  player:         { id: string; name: string; age: number; position: string; school: string; username: string };
-  latestSession:  any;
-  recentSessions: any[];
-  gamification:   any;
-  videos:         any[];
-  token:          string;
-  drillScores?:   DrillScore[];
-  reelClips?:     ReelClip[];
+  player:              { id: string; name: string; age: number; position: string; school: string; username: string };
+  latestSession:       any;
+  recentSessions:      any[];
+  gamification:        any;
+  videos:              any[];
+  token:               string;
+  drillScores?:        DrillScore[];
+  reelClips?:          ReelClip[];
+  performanceJourney?: PerformanceJourney;
 }
 
 export default function PassportClient({
   player, latestSession, recentSessions, gamification, videos, token, drillScores, reelClips,
+  performanceJourney,
 }: PassportProps) {
   const [activeVideo,     setActiveVideo]     = useState<any | null>(null);
   const [activeReelVideo, setActiveReelVideo] = useState<string | null>(null);
@@ -420,6 +435,87 @@ export default function PassportClient({
           </div>
           </PremiumGate>
         )}
+
+        {/* ── Performance Journey ───────────────────────────────────────── */}
+        {performanceJourney && (performanceJourney.drills.count > 0 || performanceJourney.matchEye.count > 0) && (() => {
+          const TREND_ICON: Record<string, string> = { improving: '↑', stable: '→', declining: '↓', insufficient_data: '' };
+          const TREND_COLOR: Record<string, string> = { improving: GRS_GREEN, stable: '#888', declining: '#b42318', insufficient_data: '#888' };
+
+          const Sparkline = ({ data }: { data: number[] }) => {
+            const W = 80; const H = 28; const pad = 2;
+            const min = Math.min(...data); const max = Math.max(...data);
+            const range = max - min || 1;
+            const pts = data.map((v, i) => {
+              const x = pad + (i / (data.length - 1)) * (W - pad * 2);
+              const y = H - pad - ((v - min) / range) * (H - pad * 2);
+              return `${x},${y}`;
+            }).join(' ');
+            return (
+              <svg width={W} height={H} style={{ overflow: 'visible' }}>
+                <polyline points={pts} fill="none" stroke={GRS_GREEN} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+                {data.map((v, i) => {
+                  const x = pad + (i / (data.length - 1)) * (W - pad * 2);
+                  const y = H - pad - ((v - min) / range) * (H - pad * 2);
+                  return <circle key={i} cx={x} cy={y} r={i === data.length - 1 ? 3 : 1.5} fill={GRS_GREEN} />;
+                })}
+              </svg>
+            );
+          };
+
+          const JourneyTrack = ({ section, label }: { section: JourneySection; label: string }) => {
+            if (section.count === 0) return null;
+            const trendIcon  = TREND_ICON[section.trend];
+            const trendColor = TREND_COLOR[section.trend];
+            return (
+              <div style={{ borderTop: '0.5px solid #f0f0f0', paddingTop: 10, marginTop: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: '#aaa' }}>{section.count} session{section.count !== 1 ? 's' : ''}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {section.latestScore !== null && (
+                      <div style={{ fontSize: 20, fontWeight: 700, color: GRS_GREEN, lineHeight: 1 }}>
+                        {section.latestScore.toFixed(1)}
+                        <span style={{ fontSize: 11, fontWeight: 400, color: '#aaa' }}>/10</span>
+                      </div>
+                    )}
+                    {section.trend !== 'insufficient_data' && (
+                      <div style={{ fontSize: 11, fontWeight: 600, color: trendColor, marginTop: 2 }}>
+                        {trendIcon} {section.trend}
+                        {section.bestScore !== null && section.bestScore !== section.latestScore && (
+                          <span style={{ fontWeight: 400, color: '#bbb' }}> · best {section.bestScore.toFixed(1)}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {section.sparkline && section.sparkline.length >= 3 ? (
+                  <div style={{ marginTop: 8 }}>
+                    <Sparkline data={section.sparkline} />
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11, color: '#bbb', marginTop: 6, fontStyle: 'italic' }}>
+                    Not enough data yet — keep training!
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          return (
+            <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', border: '0.5px solid #e5e5e5' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
+                Performance Journey
+              </div>
+              <div style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>
+                AI scores from training sessions and match analysis over time
+              </div>
+              <JourneyTrack section={performanceJourney.drills}   label="Training & Drills" />
+              <JourneyTrack section={performanceJourney.matchEye} label="Match Eye Analysis" />
+            </div>
+          );
+        })()}
 
         {/* ── Scholarship Reel ──────────────────────────────────────────── */}
         {reelClips && reelClips.length > 0 && (

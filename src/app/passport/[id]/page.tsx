@@ -62,6 +62,7 @@ export default async function PassportPage({ params }: Props) {
         token={id}
         drillScores={Array.isArray(dd) ? dd : (dd.data ?? [])}
         reelClips={Array.isArray(rd?.data) ? rd.data : []}
+        performanceJourney={pd.performanceJourney ?? undefined}
       />
     </div>
   );
