@@ -99,6 +99,7 @@ interface Post {
   my_reaction?: string | null;
   from_whatsapp?: boolean;
   recorded_by?: string;
+  has_video?: boolean;
   activity_type?: string;
   activity_data?: Record<string, string | number | boolean | null | undefined>;
   user?: { id: string; name: string; role: string; sport?: string; province?: string };
@@ -1066,7 +1067,7 @@ export default function ArenaPage() {
                                   ? 'bg-blue-50 text-blue-600 border-blue-200'
                                   : 'bg-gray-50 text-gray-500 border-gray-200'
                               }`}>
-                                {post.recorded_by === 'coach' ? '👤 Coach-recorded' : '📱 Self-recorded'}
+                                {post.recorded_by === 'coach' ? '👤 Coach-recorded' : '📱 Self-recorded'}{post.has_video ? ' · Video-verified' : ''}
                               </div>
                             )}
                           </div>
