@@ -464,10 +464,22 @@ export default function AnalysePage() {
 
   // ── Python MediaPipe AI measurement ──────────────────────────────────────
 
-  const measureWithPython = (t: TestDef) => {
+  const measureWithPython = async (t: TestDef) => {
     const st = states[t.id];
     if (!st.video || !t.geminiType) return;
     patch(t.id, { measuring: true, error: "" });
+
+    // Pre-warm: ping the Python service via SSE before sending the video.
+    // The SSE stream sends keep-alive comments so Render's LB doesn't drop the
+    // connection while the Python pod wakes from sleep (cold-start ~30-60 s).
+    await new Promise<void>((resolve) => {
+      try {
+        const es = new EventSource("/api/fitness-test/warm");
+        const guard = setTimeout(() => { es.close(); resolve(); }, 100_000);
+        es.onmessage = () => { clearTimeout(guard); es.close(); resolve(); };
+        es.onerror  = () => { clearTimeout(guard); es.close(); resolve(); };
+      } catch { resolve(); }
+    });
 
     const formData = new FormData();
     formData.append("file", st.video);
