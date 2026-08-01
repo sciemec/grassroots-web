@@ -642,3 +642,356 @@ export function downloadDrillResultPdf(result: DrillResult, drill: GeminiDrill):
   drawFooter(doc);
   doc.save(`grassroots-drill-${drill.id}-${date.replace(/ /g, '-')}.pdf`);
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// 4.  COACH MATCH EYE — FULL MATCH
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface CoachHalfAnalysis {
+  formation_home: string;
+  formation_away: string;
+  possession_home: number;
+  possession_away: number;
+  shots_home: number;
+  shots_away: number;
+  shots_on_target_home: number;
+  shots_on_target_away: number;
+  fouls_detected: number;
+  key_events: Array<{ time: string; team: 'home' | 'away' | 'neutral'; type: string; description: string }>;
+  tactical_patterns: string[];
+  defensive_issues: string[];
+  attacking_strengths: string[];
+  man_of_match_candidate: string;
+  halftime_recommendation: string;
+  key_coaching_points: string[];
+}
+
+export interface CoachHalfResult {
+  analysis: CoachHalfAnalysis;
+  narrative: string;
+}
+
+export function downloadCoachMatchEyePdf(
+  firstResult: CoachHalfResult,
+  secondResult: CoachHalfResult,
+  homeTeam: string,
+  awayTeam: string,
+  sport: string,
+  competition: string,
+): void {
+  const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const type = `Coach Match Eye — ${sport}`;
+
+  drawHeader(doc, type, date);
+  let y = 30;
+
+  // ── Match title banner ────────────────────────────────────────────────────
+  const bannerH = 16;
+  doc.setFillColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+  doc.roundedRect(ML, y, UW, bannerH, 3, 3, 'F');
+  if (competition) {
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(255, 255, 255);
+    doc.text(competition, ML + 4, y + 5.5);
+  }
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text(`${homeTeam} vs ${awayTeam}`, ML + 4, y + 12);
+  y += bannerH + 10;
+
+  // ── Full match combined stats ─────────────────────────────────────────────
+  y = checkPage(doc, y, 16, type, date);
+  y = sectionLabel(doc, 'Full Match Stats', y);
+
+  const statCols = [
+    { label: 'Shots (Home)',    value: String((firstResult.analysis.shots_home ?? 0) + (secondResult.analysis.shots_home ?? 0)),    sub: `On target: ${(firstResult.analysis.shots_on_target_home ?? 0) + (secondResult.analysis.shots_on_target_home ?? 0)}` },
+    { label: 'Shots (Away)',    value: String((firstResult.analysis.shots_away ?? 0) + (secondResult.analysis.shots_away ?? 0)),    sub: `On target: ${(firstResult.analysis.shots_on_target_away ?? 0) + (secondResult.analysis.shots_on_target_away ?? 0)}` },
+    { label: 'Poss 1H (Home)', value: `${firstResult.analysis.possession_home ?? '—'}%` },
+    { label: 'Poss 2H (Home)', value: `${secondResult.analysis.possession_home ?? '—'}%` },
+    { label: 'Total Fouls',    value: String((firstResult.analysis.fouls_detected ?? 0) + (secondResult.analysis.fouls_detected ?? 0)) },
+  ];
+  doc.setFillColor(248, 250, 248);
+  doc.roundedRect(ML, y, UW, 22, 2, 2, 'F');
+  const sw5 = (UW - 16) / 5;
+  statCols.forEach((s, i) => {
+    const cx = ML + i * (sw5 + 4) + sw5 / 2;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+    doc.text(s.value, cx, y + 8, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(s.label, cx, y + 13, { align: 'center' });
+    if (s.sub) doc.text(s.sub, cx, y + 18, { align: 'center' });
+  });
+  y += 28;
+
+  // ── Render each half ──────────────────────────────────────────────────────
+  const renderHalf = (result: CoachHalfResult, halfLabel: string, home: string, away: string) => {
+    const a = result.analysis;
+
+    y = checkPage(doc, y, 14, type, date);
+    doc.setFillColor(240, 253, 244);
+    doc.roundedRect(ML, y, UW, 9, 2, 2, 'F');
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+    doc.text(halfLabel, ML + 4, y + 6);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(`${a.formation_home} vs ${a.formation_away}`, PW - 14, y + 6, { align: 'right' });
+    y += 13;
+
+    if (result.narrative) {
+      const nLines = doc.splitTextToSize(result.narrative, UW) as string[];
+      y = checkPage(doc, y, nLines.length * LH + 10, type, date);
+      y = addText(doc, result.narrative, ML, y, UW, 8.5, 'normal', MID);
+      y += 6;
+    }
+
+    if ((a.key_events?.length ?? 0) > 0) {
+      y = checkPage(doc, y, 16, type, date);
+      y = sectionLabel(doc, 'Key Events', y);
+      for (const ev of a.key_events.slice(0, 8)) {
+        const evLines = doc.splitTextToSize(`${ev.type} — ${ev.description}`, UW - 30) as string[];
+        y = checkPage(doc, y, evLines.length * LH + 3, type, date);
+        const teamColor: readonly [number, number, number] =
+          ev.team === 'home' ? [29, 78, 216] : ev.team === 'away' ? [220, 38, 38] : MUTED;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+        doc.text(ev.time, ML, y);
+        doc.setTextColor(teamColor[0], teamColor[1], teamColor[2]);
+        doc.text(ev.team === 'home' ? home : ev.team === 'away' ? away : '–', ML + 12, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(MID[0], MID[1], MID[2]);
+        evLines.forEach((l, li) => doc.text(l, ML + 30, y + li * LH));
+        y += Math.max(evLines.length * LH, LH) + 2;
+      }
+      y += 3;
+    }
+
+    const lists: Array<[string, string[], readonly [number, number, number]]> = [
+      ['Tactical Patterns',   a.tactical_patterns   ?? [], MID],
+      ['Defensive Issues',    a.defensive_issues    ?? [], [180, 40, 40]],
+      ['Attacking Strengths', a.attacking_strengths ?? [], GREEN_TEXT],
+    ];
+    for (const [title, items, color] of lists) {
+      if (!items.length) continue;
+      y = checkPage(doc, y, items.length * (LH + 1) + 14, type, date);
+      y = sectionLabel(doc, title, y);
+      y = bulletList(doc, items, ML, y, UW, color, color);
+      y += 4;
+    }
+
+    if ((a.key_coaching_points?.length ?? 0) > 0) {
+      y = checkPage(doc, y, a.key_coaching_points.length * (LH + 1) + 14, type, date);
+      y = sectionLabel(doc, 'Coaching Points', y);
+      y = bulletList(doc, a.key_coaching_points, ML, y, UW, GREEN_TEXT, GRS_GREEN);
+      y += 4;
+    }
+
+    if (halfLabel.includes('First') && a.halftime_recommendation) {
+      const htLines = doc.splitTextToSize(a.halftime_recommendation, UW - 8) as string[];
+      const htH     = htLines.length * LH + 10;
+      y = checkPage(doc, y, htH + 8, type, date);
+      doc.setFillColor(239, 246, 255);
+      doc.roundedRect(ML, y, UW, htH, 2, 2, 'F');
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 64, 175);
+      doc.text('HALFTIME RECOMMENDATION', ML + 4, y + 5.5);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(MID[0], MID[1], MID[2]);
+      htLines.forEach((l, i) => doc.text(l, ML + 4, y + 10 + i * LH));
+      y += htH + 6;
+    }
+
+    y += 4;
+  };
+
+  renderHalf(firstResult,  'First Half',  homeTeam, awayTeam);
+  y = checkPage(doc, y, 10, type, date);
+  doc.setDrawColor(220, 220, 220);
+  doc.line(ML, y, ML + UW, y);
+  y += 8;
+  renderHalf(secondResult, 'Second Half', homeTeam, awayTeam);
+
+  // ── Man of match ──────────────────────────────────────────────────────────
+  const motm = secondResult.analysis.man_of_match_candidate || firstResult.analysis.man_of_match_candidate;
+  if (motm) {
+    const motmH = 16;
+    y = checkPage(doc, y, motmH + 8, type, date);
+    doc.setFillColor(254, 243, 199);
+    doc.roundedRect(ML, y, UW, motmH, 2, 2, 'F');
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(146, 64, 14);
+    doc.text('MAN OF THE MATCH', ML + 4, y + 5.5);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text(motm, ML + 4, y + 12.5);
+    y += motmH + 6;
+  }
+
+  drawFooter(doc);
+  const slug = `${homeTeam.replace(/\s+/g, '-')}-vs-${awayTeam.replace(/\s+/g, '-')}`;
+  doc.save(`grassroots-coach-match-eye-${slug}-${date.replace(/ /g, '-')}.pdf`);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 5.  COACH MATCH EYE — DRILL SESSION
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface CoachDrillAnalysis {
+  drill_type: string;
+  duration_observed: string;
+  intensity_rating: number;
+  player_count?: number;
+  key_observations: string[];
+  individual_feedback: Array<{ identifier: string; observation: string; fix: string }>;
+  technical_issues: string[];
+  positives: string[];
+  coaching_points: string[];
+  drill_progression: string;
+}
+
+export function downloadCoachDrillPdf(
+  result: { analysis: CoachDrillAnalysis; narrative: string },
+  drillType: string,
+  sport: string,
+): void {
+  const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const a    = result.analysis;
+  const type = `Coach Drill — ${a.drill_type || drillType}`;
+
+  drawHeader(doc, type, date);
+  let y = 30;
+
+  // ── Title + stats row ─────────────────────────────────────────────────────
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.text(`${a.drill_type || drillType} — ${sport}`, ML, y + 7);
+  y += 14;
+
+  const statRow = [
+    { label: 'Intensity', value: `${a.intensity_rating ?? '—'}/10` },
+    ...(a.duration_observed ? [{ label: 'Duration', value: a.duration_observed }] : []),
+    ...(a.player_count != null ? [{ label: 'Players', value: String(a.player_count) }] : []),
+  ];
+  if (statRow.length) {
+    doc.setFillColor(248, 250, 248);
+    doc.roundedRect(ML, y, UW, 14, 2, 2, 'F');
+    const sw = UW / statRow.length;
+    statRow.forEach((s, i) => {
+      const cx = ML + i * sw + sw / 2;
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+      doc.text(s.value, cx, y + 7, { align: 'center' });
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(s.label, cx, y + 12, { align: 'center' });
+    });
+    y += 20;
+  }
+
+  // ── Session narrative ─────────────────────────────────────────────────────
+  if (result.narrative) {
+    y = checkPage(doc, y, 14, type, date);
+    y = sectionLabel(doc, 'Session Report', y);
+    y = addText(doc, result.narrative, ML, y, UW, 8.5, 'normal', MID);
+    y += 6;
+  }
+
+  // ── What's working ────────────────────────────────────────────────────────
+  if ((a.positives?.length ?? 0) > 0) {
+    y = checkPage(doc, y, a.positives.length * (LH + 1) + 14, type, date);
+    y = sectionLabel(doc, "What's Working", y);
+    y = bulletList(doc, a.positives, ML, y, UW, GREEN_TEXT, [22, 163, 74]);
+    y += 4;
+  }
+
+  // ── Key observations ──────────────────────────────────────────────────────
+  if ((a.key_observations?.length ?? 0) > 0) {
+    y = checkPage(doc, y, a.key_observations.length * (LH + 1) + 14, type, date);
+    y = sectionLabel(doc, 'Key Observations', y);
+    y = bulletList(doc, a.key_observations, ML, y, UW, MID, GRS_GREEN);
+    y += 4;
+  }
+
+  // ── Technical issues ──────────────────────────────────────────────────────
+  if ((a.technical_issues?.length ?? 0) > 0) {
+    y = checkPage(doc, y, a.technical_issues.length * (LH + 1) + 14, type, date);
+    y = sectionLabel(doc, 'Technical Issues', y);
+    y = bulletList(doc, a.technical_issues, ML, y, UW, [160, 40, 40] as const, [220, 38, 38] as const);
+    y += 4;
+  }
+
+  // ── Individual player feedback ────────────────────────────────────────────
+  if ((a.individual_feedback?.length ?? 0) > 0) {
+    y = checkPage(doc, y, 16, type, date);
+    y = sectionLabel(doc, 'Individual Player Feedback', y);
+    for (const pl of a.individual_feedback) {
+      const obsLines = doc.splitTextToSize(pl.observation,      UW - 8) as string[];
+      const fixLines = doc.splitTextToSize(`Fix: ${pl.fix}`,    UW - 8) as string[];
+      const rowH     = 8 + (obsLines.length + fixLines.length) * LH + 6;
+      y = checkPage(doc, y, rowH + 4, type, date);
+      doc.setFillColor(249, 250, 251);
+      doc.roundedRect(ML, y, UW, rowH, 2, 2, 'F');
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+      doc.text(pl.identifier, ML + 4, y + 5.5);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(MID[0], MID[1], MID[2]);
+      obsLines.forEach((l, i) => doc.text(l, ML + 4, y + 9.5 + i * LH));
+      const fy = y + 9.5 + obsLines.length * LH + 2;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(AMBER_TEXT[0], AMBER_TEXT[1], AMBER_TEXT[2]);
+      fixLines.forEach((l, i) => doc.text(l, ML + 4, fy + i * LH));
+      y += rowH + 4;
+    }
+    y += 2;
+  }
+
+  // ── Coaching points ───────────────────────────────────────────────────────
+  if ((a.coaching_points?.length ?? 0) > 0) {
+    y = checkPage(doc, y, a.coaching_points.length * (LH + 1) + 14, type, date);
+    y = sectionLabel(doc, 'Coaching Points', y);
+    y = bulletList(doc, a.coaching_points, ML, y, UW, GREEN_TEXT, GRS_GREEN);
+    y += 4;
+  }
+
+  // ── Next progression ──────────────────────────────────────────────────────
+  if (a.drill_progression) {
+    const dpLines = doc.splitTextToSize(a.drill_progression, UW - 8) as string[];
+    const dpH     = dpLines.length * LH + 10;
+    y = checkPage(doc, y, dpH + 8, type, date);
+    doc.setFillColor(239, 246, 255);
+    doc.roundedRect(ML, y, UW, dpH, 2, 2, 'F');
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 64, 175);
+    doc.text('NEXT PROGRESSION', ML + 4, y + 5.5);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(MID[0], MID[1], MID[2]);
+    dpLines.forEach((l, i) => doc.text(l, ML + 4, y + 10 + i * LH));
+    y += dpH + 6;
+  }
+
+  drawFooter(doc);
+  doc.save(`grassroots-drill-${(a.drill_type || drillType).replace(/\s+/g, '-').toLowerCase()}-${date.replace(/ /g, '-')}.pdf`);
+}

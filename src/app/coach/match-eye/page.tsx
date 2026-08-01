@@ -4,8 +4,9 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle, Eye,
-  BookOpen, Clock, Target, Shield, Zap, Users,
+  BookOpen, Clock, Target, Shield, Zap, Users, Download,
 } from "lucide-react";
+import { downloadCoachMatchEyePdf, downloadCoachDrillPdf } from "@/lib/generate-analysis-pdf";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
@@ -841,6 +842,13 @@ export default function MatchEyePage() {
         )}
 
         <button
+          onClick={() => downloadCoachDrillPdf(result, drillType, sport)}
+          style={{ background: "#1a5c2a", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+        >
+          <Download size={16} /> Download PDF Report
+        </button>
+
+        <button
           onClick={reset}
           style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
         >
@@ -1448,6 +1456,13 @@ export default function MatchEyePage() {
                     <div style={{ fontSize: 14, color: "#374151" }}>{secondResult.analysis.man_of_match_candidate}</div>
                   </div>
                 )}
+
+                <button
+                  onClick={() => downloadCoachMatchEyePdf(firstResult, secondResult, homeTeam, awayTeam, sport, competition)}
+                  style={{ background: "#1a5c2a", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                >
+                  <Download size={16} /> Download PDF Report
+                </button>
 
                 <button
                   onClick={reset}
