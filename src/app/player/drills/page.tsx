@@ -73,6 +73,7 @@ export default function FootballDrillsLabPage() {
   const [activeTab, setActiveTab] = useState<"drills" | "challenges" | "coach" | "fitness">("drills");
   const [tierProgress, setTierProgress] = useState<TierProgress | null>(null);
   const [expandedDrill, setExpandedDrill] = useState<string | null>(null);
+  const [highlightId,   setHighlightId]   = useState<string | null>(null);
   const [coachTip,   setCoachTip]   = useState<string>("");
   const [tipLoading, setTipLoading] = useState(false);
 
@@ -222,6 +223,21 @@ export default function FootballDrillsLabPage() {
     loadAll();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, user, router]);
+
+  // Read ?highlight=drill_id from URL, auto-expand + scroll to that drill
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("highlight");
+    if (!id) return;
+    setHighlightId(id);
+    setExpandedDrill(id);
+    // Scroll after a brief delay to allow render
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`drill-${id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
 
   // When sport changes, reset to the first position of the new sport
   useEffect(() => {
@@ -450,18 +466,20 @@ export default function FootballDrillsLabPage() {
   const freeDrills = filteredDrills.filter(d => !d.is_premium);
   const proDrills  = filteredDrills.filter(d =>  d.is_premium);
   const drillCard = (drill: typeof filteredDrills[0], i: number) => (
-    <DrillCard
-      key={drill.id}
-      drill={drill}
-      index={i}
-      isDone={completedDrills.includes(drill.id)}
-      isExpanded={expandedDrill === drill.id}
-      isPremiumUser={isPremiumUser}
-      onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
-      onMarkDone={toggleDrillCompletion}
-      ageGroup={ageGroup}
-      masteryCount={masteryMap[drill.id] ?? 0}
-    />
+    <div key={drill.id} id={`drill-${drill.id}`}>
+      <DrillCard
+        drill={drill}
+        index={i}
+        isDone={completedDrills.includes(drill.id)}
+        isExpanded={expandedDrill === drill.id}
+        isPremiumUser={isPremiumUser}
+        onToggleExpand={(id) => setExpandedDrill(expandedDrill === id ? null : id)}
+        onMarkDone={toggleDrillCompletion}
+        ageGroup={ageGroup}
+        masteryCount={masteryMap[drill.id] ?? 0}
+        isHighlighted={drill.id === highlightId}
+      />
+    </div>
   );
 
   return (

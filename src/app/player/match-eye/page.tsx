@@ -6,7 +6,7 @@ import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle,
   Star, TrendingUp, TrendingDown, Zap, Target,
   Clock, ChevronDown, ChevronUp, Dumbbell, Download,
-  Share2, BookOpen,
+  Share2, BookOpen, ChevronRight,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { compressVideo } from "@/lib/compress-video";
@@ -28,6 +28,7 @@ interface KeyMoment {
 }
 
 interface DrillRecommendation {
+  drill_id?: string | null;
   drill: string;
   why: string;
   frequency: string;
@@ -190,23 +191,48 @@ function ResultsPanel({ analysis, narrative }: { analysis: PlayerAnalysis; narra
       {analysis.drill_recommendations?.length > 0 && (
         <ExpandableSection title="Recommended Drills">
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {analysis.drill_recommendations.map((d, i) => (
-              <div key={i} style={{
-                background: "#f0f9ff", border: "1px solid #bae6fd",
-                borderRadius: 10, padding: "12px 14px",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                  <Dumbbell size={13} color="#0284c7" />
-                  <span style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>{d.drill}</span>
-                  <span style={{
-                    marginLeft: "auto", fontSize: 10, fontWeight: 700,
-                    background: "#e0f2fe", color: "#0369a1",
-                    padding: "2px 8px", borderRadius: 20,
-                  }}>{d.frequency}</span>
+            {analysis.drill_recommendations.map((d, i) =>
+              d.drill_id ? (
+                <Link
+                  key={i}
+                  href={`/player/drills?highlight=${d.drill_id}`}
+                  style={{ textDecoration: "none", display: "block" }}
+                >
+                  <div style={{
+                    background: "#f0fdf4", border: "1px solid #86efac",
+                    borderRadius: 10, padding: "12px 14px", cursor: "pointer",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <Dumbbell size={13} color="#15803d" />
+                      <span style={{ fontWeight: 700, fontSize: 13, color: "#15803d" }}>{d.drill}</span>
+                      <span style={{
+                        marginLeft: "auto", fontSize: 10, fontWeight: 700,
+                        background: "#dcfce7", color: "#15803d",
+                        padding: "2px 8px", borderRadius: 20,
+                      }}>{d.frequency}</span>
+                      <ChevronRight size={12} color="#15803d" />
+                    </div>
+                    <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.4, margin: 0 }}>{d.why}</p>
+                  </div>
+                </Link>
+              ) : (
+                <div key={i} style={{
+                  background: "#f0f9ff", border: "1px solid #bae6fd",
+                  borderRadius: 10, padding: "12px 14px",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                    <Dumbbell size={13} color="#0284c7" />
+                    <span style={{ fontWeight: 700, fontSize: 13, color: "#0369a1" }}>{d.drill}</span>
+                    <span style={{
+                      marginLeft: "auto", fontSize: 10, fontWeight: 700,
+                      background: "#e0f2fe", color: "#0369a1",
+                      padding: "2px 8px", borderRadius: 20,
+                    }}>{d.frequency}</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.4 }}>{d.why}</p>
                 </div>
-                <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.4 }}>{d.why}</p>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </ExpandableSection>
       )}

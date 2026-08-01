@@ -1,5 +1,16 @@
 import { NextRequest } from "next/server";
 import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
+import { FOOTBALL_POSITION_DRILLS } from "@/lib/drill-data";
+
+// Compact catalog injected into the Gemini prompt so it recommends real drill IDs
+const DRILL_CATALOG = Object.values(FOOTBALL_POSITION_DRILLS)
+  .flatMap((track) => track.drills)
+  .map((d) => ({
+    id:        d.id,
+    name:      d.name,
+    positions: d.position_tags,
+    benefit:   d.football_benefit.split(".")[0].slice(0, 100),
+  }));
 
 export const maxDuration = 600;
 export const runtime = "nodejs";
@@ -11,6 +22,7 @@ interface KeyMoment {
 }
 
 interface DrillRecommendation {
+  drill_id?: string | null;
   drill: string;
   why: string;
   frequency: string;
@@ -108,8 +120,8 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
   "physical_assessment": "Paragraph: pace, stamina, physicality, aerial ability. What physical qualities stood out positively or negatively?",
   "tactical_understanding": "Paragraph: decision-making, reading the game, understanding of their role. Did they make smart choices?",
   "drill_recommendations": [
-    { "drill": "Specific drill name", "why": "Why this drill addresses what was seen", "frequency": "3x per week" },
-    { "drill": "Another drill", "why": "Why", "frequency": "Daily" }
+    { "drill_id": "eng_st_01", "drill": "Lions' Den Central Turning", "why": "Why this drill addresses what was seen", "frequency": "3x per week" },
+    { "drill_id": null, "drill": "Generic drill if no catalog match", "why": "Why", "frequency": "Daily" }
   ],
   "scout_note": "One sentence a scout would write — honest, professional, specific to what was seen"
 }
@@ -117,8 +129,11 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
 overall_rating: 1 (very poor) to 10 (exceptional). Be honest — most grassroots players are 4-7.
 key_moments: include 3-6 moments with accurate timestamps.
 technical_strengths and areas_to_improve: 3-5 items each — specific to THIS player in THIS video.
-drill_recommendations: 2-4 drills that directly address the weaknesses observed.
-Base everything on what you actually see in the video.`;
+drill_recommendations: 2-4 drills. For each weakness you identify, pick the BEST matching drill from the catalog below by ID. Set drill_id to that ID and drill to that drill's name. If no catalog drill fits the weakness, set drill_id to null and invent a suitable drill name.
+Base everything on what you actually see in the video.
+
+DRILL CATALOG — match weaknesses to these drills by ID:
+${JSON.stringify(DRILL_CATALOG)}`;
 
     const geminiText = await callGemini(
       googleKey,

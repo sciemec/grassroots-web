@@ -32,6 +32,7 @@ interface DrillCardProps {
   onMarkDone:     (id: string) => void;
   ageGroup?:      AgeGroup;
   masteryCount?:  number;
+  isHighlighted?: boolean;
 }
 
 export default function DrillCard({
@@ -44,6 +45,7 @@ export default function DrillCard({
   onMarkDone,
   ageGroup,
   masteryCount = 0,
+  isHighlighted = false,
 }: DrillCardProps) {
   const diff  = DIFFICULTY_CONFIG[drill.difficulty_level];
   const equip = EQUIPMENT_CONFIG[drill.equipment_tier];
@@ -69,13 +71,24 @@ export default function DrillCard({
     <div
       className="border rounded-2xl overflow-hidden transition-all shadow-sm"
       style={
-        isLocked
+        isHighlighted
+          ? { background: "#f0fdf4", borderColor: "#15803d", borderWidth: 2 }
+          : isLocked
           ? { background: "#faf7ff", borderColor: "#e9d5ff" }
           : isDone
           ? { background: "rgba(240,253,244,0.5)", borderColor: "#bbf7d0" }
           : { background: "#fff", borderColor: "#e5e7eb" }
       }
     >
+      {isHighlighted && (
+        <div style={{
+          background: "#15803d", color: "#fff",
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.05em",
+          padding: "5px 14px",
+        }}>
+          ⚡ Recommended by Match Eye
+        </div>
+      )}
       {/* ── COLLAPSED HEADER ── */}
       <button
         onClick={() => onToggleExpand(drill.id)}
