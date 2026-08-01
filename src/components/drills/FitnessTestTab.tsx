@@ -29,6 +29,18 @@ const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
 const AI_URL    = process.env.NEXT_PUBLIC_AI_URL ?? "";
 
+// ─── Fitness → Exercise recommendations (rule-based, score < 50 threshold) ───
+const FITNESS_EXERCISE_RECS: Record<
+  "power" | "pace" | "balance" | "endurance" | "reaction",
+  { name: string; category: string; reps: string; benefit: string; why: string }
+> = {
+  power:     { name: "Vertical Jump",               category: "plyometrics", reps: "3 × 8 reps",              benefit: "Vertical jump is the primary physical determinant of heading ability.",          why: "Your jump score shows explosive power needs development." },
+  pace:      { name: "Marker Ladder — One Foot In", category: "agility",     reps: "4 lengths",                benefit: "Mimics sprint mechanics and trains the neuromuscular system for quicker turnover.", why: "Your sprint score shows stride rate and foot speed need work." },
+  balance:   { name: "Single Leg Stance",           category: "stability",   reps: "3 × 30 s each leg",        benefit: "Ankle and knee stability prevents sprains and ACL injuries.",                      why: "Your balance score shows ankle/hip instability that increases injury risk." },
+  endurance: { name: "High-Intensity Circuit",      category: "hiit",        reps: "3 rounds, 40 s on / 20 s off", benefit: "Trains the cardiovascular system to recover between sprint efforts.",            why: "Your endurance score shows technique degrades under fatigue." },
+  reaction:  { name: "Marker Ladder — Two Feet In", category: "agility",     reps: "4 lengths",                benefit: "Develops foot speed and coordination for instant positional adjustments.",           why: "Your reaction score shows neuromuscular response time needs faster activation." },
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type TestId = "jump" | "sprint" | "balance" | "reaction" | "endurance" | "ball_mastery";
@@ -1002,6 +1014,55 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
             );
           })}
         </div>
+
+        {/* Conditioning recommendations for weak dimensions */}
+        {(() => {
+          const WEAK_DIMS = (
+            ["power", "pace", "balance", "endurance", "reaction"] as const
+          ).filter((dim) => profile[dim] < 50);
+          if (WEAK_DIMS.length === 0) return null;
+          return (
+            <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid #e5e5e5" }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#111", marginBottom: 4 }}>
+                Recommended Conditioning
+              </div>
+              <div style={{ fontSize: 11, color: "#666", marginBottom: 14 }}>
+                Exercises matched to your lowest test scores
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {WEAK_DIMS.map((dim) => {
+                  const rec = FITNESS_EXERCISE_RECS[dim];
+                  const dimLabel = dim.charAt(0).toUpperCase() + dim.slice(1);
+                  const dimScore = profile[dim];
+                  return (
+                    <div key={dim} style={{ background: "#fff8f0", border: "1px solid #fed7aa", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 20, background: "#ffedd5", color: "#c2410c", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          {rec.category}
+                        </span>
+                        <span style={{ fontSize: 10, color: "#9ca3af", marginLeft: "auto" }}>
+                          {dimLabel} score: <strong style={{ color: "#ef4444" }}>{dimScore}</strong>/100
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#111", marginBottom: 2 }}>
+                        {rec.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>
+                        {rec.reps}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#374151", lineHeight: 1.5, marginBottom: 4 }}>
+                        {rec.benefit}
+                      </div>
+                      <div style={{ fontSize: 10, color: "#c2410c", fontStyle: "italic" }}>
+                        {rec.why}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Saved notice */}
         <div style={{ background: "#f0fdf4", borderRadius: 12, padding: "12px 16px", border: "1px solid #bbf7d0", display: "flex", alignItems: "center", gap: 10 }}>
