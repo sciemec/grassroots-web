@@ -586,21 +586,58 @@ export default function AnalysePage() {
   const shareToArena = async () => {
     if (!token || token === "dev-token" || overallScore === null) return;
     setArenaSharing(true);
-    const lines = completedTests.map((t) => {
-      const st = states[t.id];
-      return `${t.icon} ${t.name}: ${st.measuredValue}${t.unit} — ${scoreTier(st.score ?? 0).tier}`;
-    });
-    const body =
-      `Just completed the GRS Biomechanics Talent Identifier! 🧬\n\n` +
-      lines.join("\n") +
-      `\n\nOverall Ability Score: ${overallScore}/100 — ${scoreTier(overallScore).tier}\n\n` +
-      `#GrassRootsSports #BiomechanicsTalent #Zimbabwe`;
     try {
-      await fetch(`${API_URL}/arena/posts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ body, post_type: "milestone" }),
-      });
+      // Step 1: ensure result is saved to video_analyses
+      let analysisId: string | null = null;
+      if (!saved) {
+        const saveRes = await fetch(`${API_URL}/video-analyses`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            sport: "Athletics",
+            analysis_type: "fitness_analyse",
+            ai_feedback: {
+              overall_score: overallScore,
+              tier: scoreTier(overallScore).tier,
+              tests: completedTests.map((t) => ({
+                id: t.id, name: t.name,
+                score: states[t.id].score,
+                measured: states[t.id].measuredValue,
+                unit: t.unit,
+              })),
+            },
+            user_question: "GRS Biomechanics Talent Identifier",
+          }),
+        });
+        if (saveRes.ok) {
+          const d = await saveRes.json() as { data?: { id?: string }; id?: string };
+          analysisId = d.data?.id ?? d.id ?? null;
+          setSaved(true);
+        }
+      }
+      // Step 2: share via video_analyses endpoint (or fall back to direct post)
+      if (analysisId) {
+        await fetch(`${API_URL}/video-analyses/${analysisId}/share-to-arena`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        // Fallback: direct post (backend may not have video_analyses yet)
+        const lines = completedTests.map((t) => {
+          const st = states[t.id];
+          return `${t.icon} ${t.name}: ${st.measuredValue}${t.unit} — ${scoreTier(st.score ?? 0).tier}`;
+        });
+        const postBody =
+          `Just completed the GRS Biomechanics Talent Identifier! 🧬\n\n` +
+          lines.join("\n") +
+          `\n\nOverall Ability Score: ${overallScore}/100 — ${scoreTier(overallScore).tier}\n\n` +
+          `#GrassRootsSports #BiomechanicsTalent #Zimbabwe`;
+        await fetch(`${API_URL}/arena/posts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ body: postBody, post_type: "milestone" }),
+        });
+      }
       setArenaPosted(true);
     } catch { /* silent */ } finally { setArenaSharing(false); }
   };
@@ -627,12 +664,36 @@ export default function AnalysePage() {
 
   const shareTestToArena = async (t: TestDef, score: number, tierLabel: string) => {
     if (!token || token === "dev-token") return;
-    const body =
-      `${t.icon} ${t.name} — Talent ID Result\n\n` +
-      `Score: ${score}/100 · ${tierLabel}\n\n` +
-      plainEnglish(t.id, score) + "\n\n" +
-      `#GrassRootsSports #TalentID #Zimbabwe`;
     try {
+      // Try video_analyses pathway first
+      const saveRes = await fetch(`${API_URL}/video-analyses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          sport: "Athletics",
+          analysis_type: "fitness_analyse",
+          ai_feedback: { test_id: t.id, name: t.name, score, tier: tierLabel, summary: plainEnglish(t.id, score) },
+          user_question: t.name,
+        }),
+      });
+      if (saveRes.ok) {
+        const d = await saveRes.json() as { data?: { id?: string }; id?: string };
+        const id = d.data?.id ?? d.id ?? null;
+        if (id) {
+          await fetch(`${API_URL}/video-analyses/${id}/share-to-arena`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setTestArenaPosted((prev) => ({ ...prev, [t.id]: true }));
+          return;
+        }
+      }
+      // Fallback: direct milestone post
+      const body =
+        `${t.icon} ${t.name} — Talent ID Result\n\n` +
+        `Score: ${score}/100 · ${tierLabel}\n\n` +
+        plainEnglish(t.id, score) + "\n\n" +
+        `#GrassRootsSports #TalentID #Zimbabwe`;
       await fetch(`${API_URL}/arena/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

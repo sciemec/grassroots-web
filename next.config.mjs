@@ -81,6 +81,10 @@ const nextConfig = {
       { source: '/video-analysis', destination: '/video-studio', permanent: true },
       // Retire legacy /athlete/vault — superseded by /player/vault
       { source: '/athlete/vault', destination: '/player/vault', permanent: true },
+      // Consolidation: Video Studio → Match Eye (Match Eye covers all sports + focus questions)
+      { source: '/video-studio', destination: '/player/match-eye', permanent: false },
+      // Consolidation: Showcase → Passport (Arena + Passport replaces scout-facing discovery)
+      { source: '/player/showcase', destination: '/player/passport', permanent: false },
     ];
   },
 

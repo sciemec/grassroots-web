@@ -3,7 +3,7 @@
 import { useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Video, Upload, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Video, Upload, CheckCircle2, AlertCircle, Loader2, Share2, BookOpen } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -135,6 +135,12 @@ function DrillAnalysePage() {
   const [done,         setDone]         = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [savedId,       setSavedId]       = useState<string | null>(null);
+  const [passportSaved, setPassportSaved] = useState(false);
+  const [arenaShared,   setArenaShared]   = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [sharing,       setSharing]       = useState(false);
+
   const analyseVideo = async () => {
     if (!videoFile) return;
     setVideoLoading(true);
@@ -169,6 +175,48 @@ function DrillAnalysePage() {
       setError("Could not reach the AI service. Check your connection and try again.");
     }
     setVideoLoading(false);
+  };
+
+  const saveToPassport = async (): Promise<string | null> => {
+    if (saving) return savedId;
+    setSaving(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      const feedback = results ?? { text: geminiText };
+      const res = await fetch(`${apiBase}/video-analyses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          sport: "Football",
+          analysis_type: "drill_analyse",
+          ai_feedback: feedback,
+          user_question: drillName,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { data?: { id?: string }; id?: string };
+        const id = data.data?.id ?? data.id ?? null;
+        setSavedId(id);
+        setPassportSaved(true);
+        return id;
+      }
+    } catch { /* silent */ } finally { setSaving(false); }
+    return null;
+  };
+
+  const shareToArena = async () => {
+    if (sharing) return;
+    const id = savedId ?? await saveToPassport();
+    if (!id) return;
+    setSharing(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      await fetch(`${apiBase}/video-analyses/${id}/share-to-arena`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArenaShared(true);
+    } catch { /* silent */ } finally { setSharing(false); }
   };
 
   return (
@@ -353,10 +401,48 @@ function DrillAnalysePage() {
           </div>
         )}
 
+        {/* Save to Passport + Share to Arena */}
+        {done && (
+          <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+            <button
+              onClick={() => { void saveToPassport(); }}
+              disabled={saving || passportSaved}
+              style={{
+                flex: 1, padding: "13px 0", borderRadius: 12,
+                background: passportSaved ? "#f0fdf4" : "#1a5c2a",
+                border: passportSaved ? "1px solid #bbf7d0" : "none",
+                color: passportSaved ? "#16a34a" : "#fff",
+                fontWeight: 700, fontSize: 13, cursor: passportSaved ? "default" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                opacity: saving ? 0.7 : 1,
+              }}
+            >
+              <BookOpen size={15} />
+              {saving ? "Saving…" : passportSaved ? "Saved to Passport ✓" : "Save to Passport"}
+            </button>
+            <button
+              onClick={() => { void shareToArena(); }}
+              disabled={sharing || arenaShared}
+              style={{
+                flex: 1, padding: "13px 0", borderRadius: 12,
+                background: arenaShared ? "#f0fdf4" : "#fff",
+                border: arenaShared ? "1px solid #bbf7d0" : "1px solid #d1d5db",
+                color: arenaShared ? "#16a34a" : "#374151",
+                fontWeight: 700, fontSize: 13, cursor: arenaShared ? "default" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                opacity: sharing ? 0.7 : 1,
+              }}
+            >
+              <Share2 size={15} />
+              {sharing ? "Sharing…" : arenaShared ? "Shared to Arena ✓" : "Share to Arena"}
+            </button>
+          </div>
+        )}
+
         {/* Try again */}
         {done && (
           <button
-            onClick={() => { setDone(false); setResults(null); setGeminiText(""); setVideoFile(null); setError(""); }}
+            onClick={() => { setDone(false); setResults(null); setGeminiText(""); setVideoFile(null); setError(""); setSavedId(null); setPassportSaved(false); setArenaShared(false); }}
             style={{
               width: "100%", padding: "12px 0", borderRadius: 12, border: "2px solid #1a5c2a",
               background: "transparent", color: "#1a5c2a", fontWeight: 800, fontSize: 13, cursor: "pointer",

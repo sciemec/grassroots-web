@@ -6,6 +6,7 @@ import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle,
   Star, TrendingUp, TrendingDown, Zap, Target,
   Clock, ChevronDown, ChevronUp, Dumbbell, Download,
+  Share2, BookOpen,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { compressVideo } from "@/lib/compress-video";
@@ -250,9 +251,15 @@ function ResultsPanel({ analysis, narrative }: { analysis: PlayerAnalysis; narra
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function PlayerMatchEyePage() {
-  const user = useAuthStore((s) => s.user);
+  const user  = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
 
   const [pageStage, setPageStage]     = useState<PageStage>("setup");
+  const [savedId,       setSavedId]       = useState<string | null>(null);
+  const [passportSaved, setPassportSaved] = useState(false);
+  const [arenaShared,   setArenaShared]   = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [sharing,       setSharing]       = useState(false);
   const [uploadPct, setUploadPct]     = useState(0);
   const [fileUri,   setFileUri]       = useState("");
   const [fileName,  setFileName]      = useState("");
@@ -362,7 +369,51 @@ export default function PlayerMatchEyePage() {
     setError("");
     setPendingFile(null);
     setAdvisory(null);
+    setSavedId(null);
+    setPassportSaved(false);
+    setArenaShared(false);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const saveToPassport = async (): Promise<string | null> => {
+    if (!analysis || saving) return savedId;
+    setSaving(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      const res = await fetch(`${apiBase}/video-analyses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          sport,
+          analysis_type: "match_eye",
+          ai_feedback: analysis,
+          user_question: focusQuestion || null,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { data?: { id?: string }; id?: string };
+        const id = data.data?.id ?? data.id ?? null;
+        setSavedId(id);
+        setPassportSaved(true);
+        return id;
+      }
+    } catch { /* silent */ } finally { setSaving(false); }
+    return null;
+  };
+
+  const shareToArena = async () => {
+    if (sharing) return;
+    const id = savedId ?? await saveToPassport();
+    if (!id) return;
+    setSharing(true);
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      await fetch(`${apiBase}/video-analyses/${id}/share-to-arena`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArenaShared(true);
+    } catch { /* silent */ } finally { setSharing(false); }
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -669,6 +720,42 @@ export default function PlayerMatchEyePage() {
             </div>
 
             <ResultsPanel analysis={analysis} narrative={narrative} />
+
+            {/* Save to Passport + Share to Arena */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { void saveToPassport(); }}
+                disabled={saving || passportSaved}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: 12,
+                  background: passportSaved ? "#f0fdf4" : GRS_GREEN,
+                  border: passportSaved ? `1px solid #bbf7d0` : "none",
+                  color: passportSaved ? "#16a34a" : "#fff",
+                  fontWeight: 700, fontSize: 13, cursor: passportSaved ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                  opacity: saving ? 0.7 : 1,
+                }}
+              >
+                <BookOpen size={15} />
+                {saving ? "Saving…" : passportSaved ? "Saved to Passport ✓" : "Save to Passport"}
+              </button>
+              <button
+                onClick={() => { void shareToArena(); }}
+                disabled={sharing || arenaShared}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: 12,
+                  background: arenaShared ? "#f0fdf4" : "#fff",
+                  border: arenaShared ? `1px solid #bbf7d0` : "1px solid #d1d5db",
+                  color: arenaShared ? "#16a34a" : "#374151",
+                  fontWeight: 700, fontSize: 13, cursor: arenaShared ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                  opacity: sharing ? 0.7 : 1,
+                }}
+              >
+                <Share2 size={15} />
+                {sharing ? "Sharing…" : arenaShared ? "Shared to Arena ✓" : "Share to Arena"}
+              </button>
+            </div>
 
             {/* Download PDF */}
             <button
