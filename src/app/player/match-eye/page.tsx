@@ -6,7 +6,7 @@ import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle,
   Star, TrendingUp, TrendingDown, Zap, Target,
   Clock, ChevronDown, ChevronUp, Dumbbell, Download,
-  Share2, BookOpen, ChevronRight,
+  Share2, BookOpen, ChevronRight, ShieldAlert,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { compressVideo } from "@/lib/compress-video";
@@ -62,6 +62,93 @@ function momentColor(type: KeyMoment["type"]) {
   if (type === "strength") return { bg: "#f0fdf4", border: "#bbf7d0", dot: "#16a34a" };
   if (type === "weakness") return { bg: "#fef9c3", border: "#fde047", dot: "#ca8a04" };
   return { bg: "#f8fafc", border: "#e2e8f0", dot: "#94a3b8" };
+}
+
+// ── Safety & Injury Exposure ────────────────────────────────────────────────
+
+const BALL_RETENTION_KEYWORDS = [
+  "hold", "held the ball", "too long", "slow release", "reluctant to release",
+  "too many touches", "excessive touches", "takes too long", "doesn't release",
+  "under pressure", "tight area", "pressed", "dispossessed", "loses the ball",
+  "needs to play quicker", "release earlier", "play quicker",
+];
+
+function extractPlayerSafetyFlags(analysis: PlayerAnalysis): string[] {
+  const flags: string[] = [];
+  const lower = (s: string) => s.toLowerCase();
+
+  for (const m of analysis.key_moments ?? []) {
+    const desc = lower(m.description);
+    if (BALL_RETENTION_KEYWORDS.some((kw) => desc.includes(kw))) {
+      flags.push(m.description);
+    }
+  }
+  for (const a of analysis.areas_to_improve ?? []) {
+    if (BALL_RETENTION_KEYWORDS.some((kw) => lower(a).includes(kw))) {
+      flags.push(a);
+    }
+  }
+  if (analysis.physical_assessment) {
+    const pl = lower(analysis.physical_assessment);
+    if (BALL_RETENTION_KEYWORDS.some((kw) => pl.includes(kw))) {
+      flags.push(analysis.physical_assessment);
+    }
+  }
+
+  return Array.from(new Set(flags));
+}
+
+function PlayerSafetyExposureNotes({ analysis }: { analysis: PlayerAnalysis }) {
+  const flags = extractPlayerSafetyFlags(analysis);
+  if (flags.length === 0) return null;
+
+  return (
+    <div style={{
+      background: "#fffbeb", borderRadius: 14,
+      border: "1px solid #f59e0b", overflow: "hidden",
+    }}>
+      <div style={{
+        background: "#f59e0b", padding: "8px 14px",
+        display: "flex", alignItems: "center", gap: 8,
+      }}>
+        <ShieldAlert size={14} color="#fff" />
+        <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Safety &amp; Injury Exposure
+        </span>
+      </div>
+      <div style={{ padding: "12px 14px" }}>
+        <p style={{ fontSize: 12, color: "#92400e", lineHeight: 1.5, marginBottom: 10 }}>
+          Moments were observed where you held the ball under pressure or in tight areas.
+          At grassroots level, this increases exposure to mistimed challenges and physical contact.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+          {flags.map((flag, i) => (
+            <div key={i} style={{
+              background: "#fef3c7", borderRadius: 8, padding: "7px 10px",
+              border: "1px solid #fde68a", fontSize: 12, color: "#78350f", lineHeight: 1.4,
+            }}>
+              ⚡ {flag}
+            </div>
+          ))}
+        </div>
+        <div style={{
+          background: "#fff7ed", borderRadius: 10, border: "1px solid #fdba74",
+          padding: "10px 12px",
+        }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#c2410c", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Coaching Fix
+          </p>
+          <p style={{ fontSize: 12, color: "#7c2d12", lineHeight: 1.5, margin: 0 }}>
+            Work on 1–2 touch passing in tight spaces. Scan before receiving and know your next
+            action before the ball arrives — this reduces dwell time and your exposure to physical challenges.
+          </p>
+        </div>
+        <p style={{ fontSize: 10, color: "#b45309", fontStyle: "italic", marginTop: 8, lineHeight: 1.4 }}>
+          This is a coaching observation, not a medical assessment.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -169,6 +256,9 @@ function ResultsPanel({ analysis, narrative }: { analysis: PlayerAnalysis; narra
           ))}
         </div>
       </div>
+
+      {/* Safety & Injury Exposure Notes */}
+      <PlayerSafetyExposureNotes analysis={analysis} />
 
       {/* Detailed breakdowns */}
       {analysis.positioning_analysis && (
