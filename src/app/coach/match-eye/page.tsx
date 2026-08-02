@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle, Eye,
-  BookOpen, Clock, Target, Shield, Zap, Users, Download, GraduationCap,
+  BookOpen, Clock, Target, Shield, Zap, Users, Download, GraduationCap, ShieldAlert,
 } from "lucide-react";
 import { FORMATION_LIBRARY, TACTICAL_PRINCIPLES, type FormationDetail, type TacticalPrinciple } from "@/lib/thuto-tactics-knowledge";
 import { downloadCoachMatchEyePdf, downloadCoachDrillPdf } from "@/lib/generate-analysis-pdf";
@@ -963,6 +963,131 @@ export default function MatchEyePage() {
     );
   }
 
+  // ── Safety & Injury Exposure ─────────────────────────────────────────────────
+
+  const BALL_RETENTION_KEYWORDS = [
+    "hold", "held the ball", "too long", "slow release", "reluctant to release",
+    "too many touches", "excessive touches", "takes too long", "doesn't release",
+    "under pressure", "tight area", "pressed", "dispossessed", "loses the ball",
+    "needs to play quicker", "release earlier", "play quicker",
+  ];
+
+  interface SafetyFlag {
+    player: string;   // jersey + name, or empty for zone-only flags
+    moment: string;   // the raw text that triggered the flag
+    source: "gemini" | "yolo";
+  }
+
+  function extractSafetyFlags(a: MatchAnalysis, tracking: VideoMeasurement | null): SafetyFlag[] {
+    const flags: SafetyFlag[] = [];
+    const seen = new Set<string>();
+
+    // Layer 1 — Gemini player_tracking key_moments + improvement field
+    for (const pt of a.player_tracking ?? []) {
+      const label = [pt.jersey && `#${pt.jersey}`, pt.name].filter(Boolean).join(" ") || "A player";
+
+      for (const moment of pt.key_moments ?? []) {
+        const lower = moment.toLowerCase();
+        if (BALL_RETENTION_KEYWORDS.some((kw) => lower.includes(kw))) {
+          const key = `${label}::${moment}`;
+          if (!seen.has(key)) { seen.add(key); flags.push({ player: label, moment, source: "gemini" }); }
+        }
+      }
+
+      if (pt.improvement) {
+        const lower = pt.improvement.toLowerCase();
+        if (BALL_RETENTION_KEYWORDS.some((kw) => lower.includes(kw))) {
+          const key = `${label}::${pt.improvement}`;
+          if (!seen.has(key)) { seen.add(key); flags.push({ player: label, moment: pt.improvement, source: "gemini" }); }
+        }
+      }
+    }
+
+    // Layer 1b — scan tactical_patterns and defensive_issues for general mentions
+    for (const text of [...(a.tactical_patterns ?? []), ...(a.defensive_issues ?? [])]) {
+      const lower = text.toLowerCase();
+      if (BALL_RETENTION_KEYWORDS.some((kw) => lower.includes(kw))) {
+        const key = `team::${text}`;
+        if (!seen.has(key)) { seen.add(key); flags.push({ player: "", moment: text, source: "gemini" }); }
+      }
+    }
+
+    // Layer 2 — YOLOv8 ball trajectory stasis (ball held in zone ≥ 18 consecutive frames ≈ 0.6s at 30fps)
+    const traj = tracking?.ballTrajectory;
+    if (traj && traj.length >= 18) {
+      let runStart = 0;
+      for (let i = 1; i < traj.length; i++) {
+        const dx = traj[i].x - traj[runStart].x;
+        const dy = traj[i].y - traj[runStart].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0.06) {
+          // ball moved — measure previous run
+          const runLen = i - runStart;
+          if (runLen >= 18) {
+            const zoneX = traj[runStart].x;
+            const zoneLabel =
+              zoneX < 0.33 ? "left flank" : zoneX > 0.67 ? "right flank" : "central area";
+            const key = `yolo::${runStart}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              flags.push({
+                player: "",
+                moment: `Ball stationary in ${zoneLabel} for ~${((runLen / 30)).toFixed(1)}s (frame ${traj[runStart].frame}–${traj[i - 1].frame}) — identify who had possession here`,
+                source: "yolo",
+              });
+            }
+          }
+          runStart = i;
+        }
+      }
+    }
+
+    return flags;
+  }
+
+  function SafetyExposureNotes({ analysis, tracking }: { analysis: MatchAnalysis; tracking: VideoMeasurement | null }) {
+    const flags = extractSafetyFlags(analysis, tracking);
+    if (flags.length === 0) return null;
+
+    return (
+      <div style={{
+        background: "#fff7ed", border: "1.5px solid #fed7aa",
+        borderRadius: 12, padding: "16px 18px",
+      }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 7,
+          fontWeight: 700, fontSize: 13, color: "#c2410c", marginBottom: 6,
+        }}>
+          <ShieldAlert size={15} style={{ color: "#dc2626", flexShrink: 0 }} />
+          Safety &amp; Injury Exposure Notes
+        </div>
+        <p style={{ fontSize: 11, color: "#9a3412", margin: "0 0 12px", fontStyle: "italic" }}>
+          Coaching observations on ball retention habits that increase exposure to physical contact — not medical assessments.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {flags.map((f, i) => (
+            <div key={i} style={{
+              background: "#fff", border: "1px solid #fed7aa",
+              borderRadius: 8, padding: "10px 14px",
+            }}>
+              {f.player && (
+                <div style={{ fontWeight: 700, fontSize: 12, color: "#9a3412", marginBottom: 4 }}>
+                  {f.player}
+                </div>
+              )}
+              <div style={{ fontSize: 13, color: "#374151", marginBottom: 6 }}>{f.moment}</div>
+              <div style={{ fontSize: 11, color: "#78350f", borderTop: "1px solid #fed7aa", paddingTop: 6 }}>
+                {f.source === "yolo"
+                  ? "⚠ YOLOv8 detected extended ball stasis — review footage to identify the player involved."
+                  : "Prolonged possession under pressure increases exposure to mistimed challenges and studs-up tackles. Coaching fix: encourage 1–2 touch play in contested areas — receive, assess, release."}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   function HalfReport({ result, half, tracking }: { result: HalfResult; half: "first" | "second"; tracking: VideoMeasurement | null }) {
     const a = result.analysis;
     return (
@@ -1093,6 +1218,9 @@ export default function MatchEyePage() {
             </ul>
           </div>
         )}
+
+        {/* Safety & Injury Exposure */}
+        <SafetyExposureNotes analysis={a} tracking={tracking} />
 
         {/* Per-player tracking cards */}
         {(a.player_tracking?.length ?? 0) > 0 && (
