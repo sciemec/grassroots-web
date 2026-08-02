@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, BookOpen, Target, GraduationCap,
   ChevronDown, ChevronUp, CheckCircle2, Trophy,
@@ -509,8 +509,14 @@ function CourseModuleCard({
 type Tab = "formations" | "principles" | "education";
 
 export default function TacticsLearnPage() {
-  const router  = useRouter();
-  const [tab,    setTab]    = useState<Tab>("formations");
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const paramTab     = searchParams?.get("tab");
+  const [tab, setTab] = useState<Tab>(
+    paramTab === "formations" || paramTab === "principles" || paramTab === "education"
+      ? paramTab
+      : "formations"
+  );
   const [badges, setBadges] = useState<Set<string>>(new Set());
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [

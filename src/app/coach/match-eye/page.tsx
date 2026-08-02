@@ -4,8 +4,9 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle, Eye,
-  BookOpen, Clock, Target, Shield, Zap, Users, Download,
+  BookOpen, Clock, Target, Shield, Zap, Users, Download, GraduationCap,
 } from "lucide-react";
+import { FORMATION_LIBRARY, TACTICAL_PRINCIPLES, type FormationDetail, type TacticalPrinciple } from "@/lib/thuto-tactics-knowledge";
 import { downloadCoachMatchEyePdf, downloadCoachDrillPdf } from "@/lib/generate-analysis-pdf";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
@@ -874,6 +875,94 @@ export default function MatchEyePage() {
     );
   }
 
+  // ── Tactical Academy cross-reference ────────────────────────────────────────
+  // Keywords calibrated from Gemini's actual prompt example language:
+  // "pressed high", "right channel", "combination play", "exposed on counter-attacks"
+
+  const PRINCIPLE_KEYWORDS: Record<string, string[]> = {
+    "pressing":          ["press high", "pressed high", "pressing", "high press", "counter-press"],
+    "defensive-block":   ["compact", "defensive block", "defensive shape", "low block", "deep defensive", "defensive line", "back line", "exposed", "shape"],
+    "counter-attack":    ["counter-attack", "counter-attacking", "transition", "on transition", "fast break"],
+    "width-attack":      ["right channel", "left channel", "wide area", "width", "overlap", "overlapping", "winger", "cross"],
+    "pass-and-move":     ["combination play", "link play", "one-touch", "possession", "pass and move"],
+    "set-pieces-attack": ["set piece", "corner", "free kick", "dead ball"],
+  };
+
+  function matchTacticalRef(a: MatchAnalysis): {
+    principles: TacticalPrinciple[];
+    formations: FormationDetail[];
+  } {
+    const corpus = [
+      ...(a.tactical_patterns   ?? []),
+      ...(a.defensive_issues    ?? []),
+      ...(a.attacking_strengths ?? []),
+    ].join(" ").toLowerCase();
+
+    const matchedIds = new Set(
+      Object.entries(PRINCIPLE_KEYWORDS)
+        .filter(([, kws]) => kws.some((kw) => corpus.includes(kw)))
+        .map(([id]) => id)
+    );
+
+    return {
+      principles: TACTICAL_PRINCIPLES.filter((p) => matchedIds.has(p.id)),
+      formations: FORMATION_LIBRARY.filter((f) =>
+        corpus.includes(f.code.toLowerCase())
+      ),
+    };
+  }
+
+  function TacticalAcademyCallout({ analysis }: { analysis: MatchAnalysis }) {
+    const refs = matchTacticalRef(analysis);
+    if (refs.principles.length === 0 && refs.formations.length === 0) return null;
+    return (
+      <div style={{
+        background: "#f0f7f2", border: "1.5px solid #a7d7b6",
+        borderRadius: 12, padding: "14px 18px",
+      }}>
+        <div style={{
+          fontWeight: 700, fontSize: 13, color: "#1a5c2a",
+          marginBottom: 8, display: "flex", alignItems: "center", gap: 6,
+        }}>
+          <GraduationCap size={14} /> Study in Tactical Academy
+        </div>
+        <p style={{ fontSize: 12, color: "#4b7a5a", margin: "0 0 10px" }}>
+          Based on this match, these topics may help your team improve:
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {refs.principles.map((p) => (
+            <Link
+              key={p.id}
+              href="/coach/tactics/learn?tab=principles"
+              style={{
+                fontSize: 12, fontWeight: 700, padding: "5px 12px",
+                borderRadius: 8, textDecoration: "none",
+                background: "#1a5c2a", color: "#fff",
+                display: "inline-flex", alignItems: "center", gap: 4,
+              }}
+            >
+              {p.title} →
+            </Link>
+          ))}
+          {refs.formations.map((f) => (
+            <Link
+              key={f.code}
+              href="/coach/tactics/learn?tab=formations"
+              style={{
+                fontSize: 12, fontWeight: 700, padding: "5px 12px",
+                borderRadius: 8, textDecoration: "none",
+                background: "#c8962a", color: "#fff",
+                display: "inline-flex", alignItems: "center", gap: 4,
+              }}
+            >
+              {f.code} Formation →
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   function HalfReport({ result, half, tracking }: { result: HalfResult; half: "first" | "second"; tracking: VideoMeasurement | null }) {
     const a = result.analysis;
     return (
@@ -989,6 +1078,9 @@ export default function MatchEyePage() {
             )}
           </div>
         )}
+
+        {/* Tactical Academy cross-reference */}
+        <TacticalAcademyCallout analysis={a} />
 
         {/* Coaching points */}
         {(a.key_coaching_points?.length ?? 0) > 0 && (
