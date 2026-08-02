@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
 import { FOOTBALL_POSITION_DRILLS } from "@/lib/drill-data";
+import { TACTICAL_PRINCIPLES } from "@/lib/thuto-tactics-knowledge";
 
 // Compact catalog injected into the Gemini prompt so it recommends real drill IDs
 const DRILL_CATALOG = Object.values(FOOTBALL_POSITION_DRILLS)
@@ -11,6 +12,14 @@ const DRILL_CATALOG = Object.values(FOOTBALL_POSITION_DRILLS)
     positions: d.position_tags,
     benefit:   d.football_benefit.split(".")[0].slice(0, 100),
   }));
+
+// Compact tactics catalog — injected so Gemini can link turnovers to Tactical Academy principles
+const TACTICS_CATALOG = TACTICAL_PRINCIPLES.map((p) => ({
+  id:       p.id,
+  title:    p.title,
+  category: p.category,
+  summary:  p.summary.split(".")[0].slice(0, 100),
+}));
 
 export const maxDuration = 600;
 export const runtime = "nodejs";
@@ -28,6 +37,17 @@ interface DrillRecommendation {
   frequency: string;
 }
 
+interface TurnoverMoment {
+  time:            string;
+  decision:        string;
+  consequence:     string;
+  principle_id:    string;
+  principle_title: string;
+  principle_fix:   string;
+  safety_flag:     boolean;
+  safety_note?:    string;
+}
+
 interface PlayerAnalysis {
   overall_rating: number;
   performance_summary: string;
@@ -38,6 +58,7 @@ interface PlayerAnalysis {
   physical_assessment: string;
   tactical_understanding: string;
   drill_recommendations: DrillRecommendation[];
+  turnover_moments?: TurnoverMoment[];
   scout_note: string;
 }
 
@@ -123,6 +144,18 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
     { "drill_id": "eng_st_01", "drill": "Lions' Den Central Turning", "why": "Why this drill addresses what was seen", "frequency": "3x per week" },
     { "drill_id": null, "drill": "Generic drill if no catalog match", "why": "Why", "frequency": "Daily" }
   ],
+  "turnover_moments": [
+    {
+      "time": "34:15",
+      "decision": "Dribbled into a congested area with three defenders surrounding them instead of playing the ball early",
+      "consequence": "Ball was lost in a dangerous midfield position, triggering a counter-attack",
+      "principle_id": "pass-and-move",
+      "principle_title": "Pass and Move",
+      "principle_fix": "Releasing the ball earlier and making a supporting run would have kept possession and opened space",
+      "safety_flag": true,
+      "safety_note": "Being dispossessed while surrounded in a tight space increases collision risk — scan before receiving and know your exit pass"
+    }
+  ],
   "scout_note": "One sentence a scout would write — honest, professional, specific to what was seen"
 }
 
@@ -130,10 +163,14 @@ overall_rating: 1 (very poor) to 10 (exceptional). Be honest — most grassroots
 key_moments: include 3-6 moments with accurate timestamps.
 technical_strengths and areas_to_improve: 3-5 items each — specific to THIS player in THIS video.
 drill_recommendations: 2-4 drills. For each weakness you identify, pick the BEST matching drill from the catalog below by ID. Set drill_id to that ID and drill to that drill's name. If no catalog drill fits the weakness, set drill_id to null and invent a suitable drill name.
+turnover_moments: identify 0-3 moments where a poor decision directly caused a loss of possession. For each, describe the exact decision and its consequence, then pick the MOST relevant principle from the TACTICS CATALOG by ID. Set safety_flag to true only when the player was dispossessed under heavy physical pressure in a tight area (collision risk). If no clear turnovers are visible, return an empty array [].
 Base everything on what you actually see in the video.
 
 DRILL CATALOG — match weaknesses to these drills by ID:
-${JSON.stringify(DRILL_CATALOG)}`;
+${JSON.stringify(DRILL_CATALOG)}
+
+TACTICS CATALOG — match turnover decisions to these principles by ID:
+${JSON.stringify(TACTICS_CATALOG)}`;
 
     const geminiText = await callGemini(
       googleKey,

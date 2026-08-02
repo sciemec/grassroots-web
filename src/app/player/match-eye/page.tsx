@@ -34,6 +34,17 @@ interface DrillRecommendation {
   frequency: string;
 }
 
+interface TurnoverMoment {
+  time:            string;
+  decision:        string;
+  consequence:     string;
+  principle_id:    string;
+  principle_title: string;
+  principle_fix:   string;
+  safety_flag:     boolean;
+  safety_note?:    string;
+}
+
 interface PlayerAnalysis {
   overall_rating: number;
   performance_summary: string;
@@ -44,6 +55,7 @@ interface PlayerAnalysis {
   physical_assessment: string;
   tactical_understanding: string;
   drill_recommendations: DrillRecommendation[];
+  turnover_moments?: TurnoverMoment[];
   scout_note: string;
 }
 
@@ -145,6 +157,120 @@ function PlayerSafetyExposureNotes({ analysis }: { analysis: PlayerAnalysis }) {
         </div>
         <p style={{ fontSize: 10, color: "#b45309", fontStyle: "italic", marginTop: 8, lineHeight: 1.4 }}>
           This is a coaching observation, not a medical assessment.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Turnover → Tactical Academy ────────────────────────────────────────────────
+
+function TurnoverInsights({ analysis }: { analysis: PlayerAnalysis }) {
+  const moments = (analysis.turnover_moments ?? []).filter(
+    (m) => m.decision && m.principle_title
+  );
+  if (moments.length === 0) return null;
+
+  return (
+    <div style={{ borderRadius: 14, border: "1px solid #fca5a5", overflow: "hidden" }}>
+      <div style={{
+        background: "#dc2626", padding: "8px 14px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          Turnover Analysis
+        </span>
+        <Link
+          href="/player/tactics"
+          style={{ fontSize: 10, fontWeight: 700, color: "#fca5a5", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+        >
+          Tactics Academy →
+        </Link>
+      </div>
+      <div style={{ background: "#fff5f5", padding: "10px 14px 14px" }}>
+        <p style={{ fontSize: 11, color: "#7f1d1d", lineHeight: 1.5, marginBottom: 12 }}>
+          Possession was lost through decision-making that a tactical principle could address.
+          Study these in the Tactics Academy before your next session.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {moments.map((m, i) => (
+            <div key={i} style={{
+              background: "#fff", borderRadius: 10,
+              border: `1px solid ${m.safety_flag ? "#fca5a5" : "#e5e7eb"}`,
+              overflow: "hidden",
+            }}>
+              {/* Time + safety badge row */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "7px 12px",
+                background: m.safety_flag ? "#fef2f2" : "#f9fafb",
+                borderBottom: "1px solid #f3f4f6",
+              }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 800, color: "#fff",
+                  background: "#374151", borderRadius: 6, padding: "2px 6px",
+                }}>
+                  {m.time}
+                </span>
+                {m.safety_flag && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, color: "#fff",
+                    background: "#dc2626", borderRadius: 6, padding: "2px 7px",
+                    textTransform: "uppercase", letterSpacing: "0.05em",
+                  }}>
+                    ⚡ Contact Risk
+                  </span>
+                )}
+              </div>
+              <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                {/* Decision & consequence */}
+                <p style={{ fontSize: 12, color: "#111", fontWeight: 600, lineHeight: 1.4, margin: 0 }}>
+                  {m.decision}
+                </p>
+                <p style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.4, margin: 0 }}>
+                  → {m.consequence}
+                </p>
+                {/* Safety note when applicable */}
+                {m.safety_flag && m.safety_note && (
+                  <div style={{
+                    background: "#fef2f2", borderRadius: 8, padding: "6px 10px",
+                    border: "1px solid #fca5a5", fontSize: 11, color: "#991b1b", lineHeight: 1.4,
+                  }}>
+                    🛡 {m.safety_note}
+                  </div>
+                )}
+                {/* Tactical principle link */}
+                <div style={{
+                  background: "#f0fdf4", borderRadius: 8, padding: "8px 10px",
+                  border: "1px solid #bbf7d0",
+                }}>
+                  <p style={{ fontSize: 10, fontWeight: 800, color: "#15803d", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>
+                    Tactics Academy Fix
+                  </p>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: "#1a5c2a", marginBottom: 3 }}>
+                    {m.principle_title}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#166534", lineHeight: 1.4, marginBottom: 6 }}>
+                    {m.principle_fix}
+                  </p>
+                  <Link
+                    href="/player/tactics"
+                    style={{
+                      fontSize: 10, fontWeight: 800, color: "#fff",
+                      background: "#1a5c2a", borderRadius: 6, padding: "4px 10px",
+                      textDecoration: "none", display: "inline-block",
+                      textTransform: "uppercase", letterSpacing: "0.05em",
+                    }}
+                  >
+                    Study in Tactics Academy →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 10, color: "#b91c1c", fontStyle: "italic", marginTop: 10, lineHeight: 1.4 }}>
+          Turnover moments are identified from Gemini&apos;s video analysis — verify against your own footage.
         </p>
       </div>
     </div>
@@ -259,6 +385,9 @@ function ResultsPanel({ analysis, narrative }: { analysis: PlayerAnalysis; narra
 
       {/* Safety & Injury Exposure Notes */}
       <PlayerSafetyExposureNotes analysis={analysis} />
+
+      {/* Turnover → Tactical Academy */}
+      <TurnoverInsights analysis={analysis} />
 
       {/* Detailed breakdowns */}
       {analysis.positioning_analysis && (
