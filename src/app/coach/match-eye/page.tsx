@@ -740,12 +740,26 @@ export default function MatchEyePage() {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-        {/* Header stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 10 }}>
-          <StatBox label="Drill Type"  value={a.drill_type || drillType} />
-          <StatBox label="Intensity"   value={`${a.intensity_rating ?? "—"}/10`} />
-          {a.duration_observed && <StatBox label="Duration" value={a.duration_observed} />}
-          {a.player_count != null && <StatBox label="Players" value={String(a.player_count)} />}
+        {/* Header stats — intensity circle + stat boxes */}
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+          {a.intensity_rating != null && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: "50%",
+                background: a.intensity_rating >= 7 ? "#15803d" : a.intensity_rating >= 5 ? "#d97706" : "#dc2626",
+                color: "#fff", fontSize: 22, fontWeight: 900,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                {a.intensity_rating}
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Intensity /10</span>
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 10 }}>
+            <StatBox label="Drill Type" value={a.drill_type || drillType} />
+            {a.duration_observed && <StatBox label="Duration" value={a.duration_observed} />}
+            {a.player_count != null && <StatBox label="Players" value={String(a.player_count)} />}
+          </div>
         </div>
 
         {/* YOLOv8 tracking panel */}
@@ -763,15 +777,29 @@ export default function MatchEyePage() {
           </div>
         )}
 
-        {/* What's working */}
-        {(a.positives?.length ?? 0) > 0 && (
-          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#15803d", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-              <Zap size={13} style={{ color: "#16a34a" }} /> What&apos;s Working
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16 }}>
-              {a.positives.map((p, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{p}</li>)}
-            </ul>
+        {/* What's Working vs Technical Issues — side by side */}
+        {((a.positives?.length ?? 0) > 0 || (a.technical_issues?.length ?? 0) > 0) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {(a.positives?.length ?? 0) > 0 && (
+              <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#15803d", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Zap size={13} style={{ color: "#16a34a" }} /> What&apos;s Working
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {a.positives.map((p, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{p}</li>)}
+                </ul>
+              </div>
+            )}
+            {(a.technical_issues?.length ?? 0) > 0 && (
+              <div style={{ background: "#fff7ed", border: "1.5px solid #fed7aa", borderRadius: 12, padding: "16px 18px" }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#c2410c", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Shield size={13} style={{ color: "#dc2626" }} /> Technical Issues
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {a.technical_issues.map((t, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{t}</li>)}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
@@ -787,27 +815,15 @@ export default function MatchEyePage() {
           </div>
         )}
 
-        {/* Technical issues + next progression */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
-          {(a.technical_issues?.length ?? 0) > 0 && (
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <Shield size={13} style={{ color: "#dc2626" }} /> Technical Issues
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {a.technical_issues.map((t, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{t}</li>)}
-              </ul>
+        {/* Next progression */}
+        {a.drill_progression && (
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1e40af", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <Target size={13} style={{ color: "#2563eb" }} /> Next Progression
             </div>
-          )}
-          {a.drill_progression && (
-            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 12, padding: "16px 18px" }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#1e40af", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <Target size={13} style={{ color: "#2563eb" }} /> Next Progression
-              </div>
-              <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{a.drill_progression}</div>
-            </div>
-          )}
-        </div>
+            <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{a.drill_progression}</div>
+          </div>
+        )}
 
         {/* Individual player feedback */}
         {(a.individual_feedback?.length ?? 0) > 0 && (
@@ -914,39 +930,43 @@ export default function MatchEyePage() {
           </div>
         )}
 
-        {/* Three columns: tactical / defensive / attacking */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
-          {(a.tactical_patterns?.length ?? 0) > 0 && (
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <Target size={13} style={{ color: "#2563eb" }} /> Tactical Patterns
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {a.tactical_patterns.map((p, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{p}</li>)}
-              </ul>
+        {/* Tactical patterns — full width */}
+        {(a.tactical_patterns?.length ?? 0) > 0 && (
+          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <Target size={13} style={{ color: "#2563eb" }} /> Tactical Patterns
             </div>
-          )}
-          {(a.defensive_issues?.length ?? 0) > 0 && (
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <Shield size={13} style={{ color: "#dc2626" }} /> Defensive Issues
+            <ul style={{ margin: 0, paddingLeft: 16 }}>
+              {a.tactical_patterns.map((p, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{p}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {/* Attacking Strengths vs Defensive Issues — side by side */}
+        {((a.attacking_strengths?.length ?? 0) > 0 || (a.defensive_issues?.length ?? 0) > 0) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {(a.attacking_strengths?.length ?? 0) > 0 && (
+              <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#15803d", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Zap size={13} style={{ color: "#16a34a" }} /> Attacking Strengths
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {a.attacking_strengths.map((s, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{s}</li>)}
+                </ul>
               </div>
-              <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {a.defensive_issues.map((d, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{d}</li>)}
-              </ul>
-            </div>
-          )}
-          {(a.attacking_strengths?.length ?? 0) > 0 && (
-            <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <Zap size={13} style={{ color: "#d97706" }} /> Attacking Strengths
+            )}
+            {(a.defensive_issues?.length ?? 0) > 0 && (
+              <div style={{ background: "#fff7ed", border: "1.5px solid #fed7aa", borderRadius: 12, padding: "16px 18px" }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#c2410c", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Shield size={13} style={{ color: "#dc2626" }} /> Defensive Issues
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {a.defensive_issues.map((d, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{d}</li>)}
+                </ul>
               </div>
-              <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {a.attacking_strengths.map((s, i) => <li key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4 }}>{s}</li>)}
-              </ul>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Coaching points */}
         {(a.key_coaching_points?.length ?? 0) > 0 && (
