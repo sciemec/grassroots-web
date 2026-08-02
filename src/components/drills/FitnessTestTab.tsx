@@ -105,7 +105,7 @@ const TESTS: {
   {
     id: "sprint", label: "Sprint Test", emoji: "💨",
     icon: <Wind size={18} />, colour: "#2563eb", optional: false, videoTest: true,
-    drillType: "sprinting",
+    drillType: "sprint",
     duration: "20 seconds",
     whatToDo: "Sprint in a straight line as fast as you can for 20 metres, 3 times. Walk back between each run. Give maximum effort on every sprint.",
     howToRecord: [
@@ -394,6 +394,13 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
             ? `HTTP ${xhr.status} from ${endpoint}`
             : `No response from ${endpoint} — CORS, cold start, or env var missing`;
           reject(new Error(detail));
+        };
+        // 270 s matches the server-side AbortController so the server error
+        // message always arrives before the browser's own timeout fires.
+        xhr.timeout = 270_000;
+        xhr.ontimeout = () => {
+          clearInterval(ticker);
+          reject(new Error("Analysis timed out — please try a shorter clip (under 60 seconds)"));
         };
         xhr.open("POST", endpoint);
         xhr.send(formData);

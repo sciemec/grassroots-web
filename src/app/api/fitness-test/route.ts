@@ -35,20 +35,32 @@ export async function POST(req: NextRequest) {
   const body        = await req.arrayBuffer();
   const contentType = req.headers.get("content-type") ?? "multipart/form-data";
 
+  // Abort after 270 s — gives MediaPipe up to 4.5 min, safely under the
+  // Next.js maxDuration=300 cap, so the browser always gets a clear error
+  // instead of a silent connection drop.
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), 270_000);
+
   let pyRes: Response;
   try {
     pyRes = await fetch(targetUrl, {
       method: "POST",
       headers: { "Content-Type": contentType },
       body,
+      signal: controller.signal,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    clearTimeout(timeoutId);
+    const isTimeout = err instanceof Error && err.name === "AbortError";
+    const msg       = err instanceof Error ? err.message : String(err);
     return Response.json(
-      { detail: `Could not reach AI service: ${msg}` },
-      { status: 502 }
+      { detail: isTimeout
+          ? "AI analysis timed out — please try a shorter clip (under 60 seconds)"
+          : `Could not reach AI service: ${msg}` },
+      { status: isTimeout ? 504 : 502 }
     );
   }
+  clearTimeout(timeoutId);
 
   const text        = await pyRes.text();
   const resType     = pyRes.headers.get("content-type") ?? "application/json";
