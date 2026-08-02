@@ -907,25 +907,47 @@ export default function MatchEyePage() {
         {/* Key events */}
         {(a.key_events?.length ?? 0) > 0 && (
           <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "18px 20px" }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
               <Clock size={15} style={{ color: "#1a5c2a" }} /> Key Events
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {a.key_events.map((ev, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#1a5c2a", minWidth: 46, flexShrink: 0 }}>{ev.time}</span>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, flexShrink: 0,
-                    background: ev.team === "home" ? "#dbeafe" : ev.team === "away" ? "#fee2e2" : "#f3f4f6",
-                    color:      ev.team === "home" ? "#1d4ed8" : ev.team === "away" ? "#dc2626" : "#374151",
-                  }}>
-                    {ev.team === "home" ? homeTeam : ev.team === "away" ? awayTeam : "–"}
-                  </span>
-                  <span style={{ fontSize: 13, color: "#374151" }}>
-                    <strong>{ev.type}</strong> — {ev.description}
-                  </span>
-                </div>
+            {/* Legend */}
+            <div style={{ display: "flex", gap: 14, marginBottom: 12, flexWrap: "wrap" }}>
+              {([
+                { color: "#1d4ed8", label: homeTeam || "Home" },
+                { color: "#dc2626", label: awayTeam || "Away" },
+                { color: "#9ca3af", label: "Neutral" },
+              ] as { color: string; label: string }[]).map(({ color, label }) => (
+                <span key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#4b5563" }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0, display: "inline-block" }} />
+                  {label}
+                </span>
               ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {a.key_events.map((ev, i) => {
+                const teamColor = ev.team === "home" ? "#1d4ed8" : ev.team === "away" ? "#dc2626" : "#9ca3af";
+                const teamBg    = ev.team === "home" ? "#dbeafe" : ev.team === "away" ? "#fee2e2" : "#f3f4f6";
+                const teamText  = ev.team === "home" ? "#1d4ed8" : ev.team === "away" ? "#dc2626" : "#374151";
+                return (
+                  <div key={i} style={{
+                    display: "flex", gap: 10, alignItems: "flex-start",
+                    borderLeft: `3px solid ${teamColor}`, paddingLeft: 10, paddingTop: 3, paddingBottom: 3,
+                  }}>
+                    {ev.time && (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: teamColor, minWidth: 46, flexShrink: 0 }}>{ev.time}</span>
+                    )}
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, flexShrink: 0,
+                      background: teamBg, color: teamText,
+                    }}>
+                      {ev.team === "home" ? (homeTeam || "Home") : ev.team === "away" ? (awayTeam || "Away") : "–"}
+                    </span>
+                    <span style={{ fontSize: 13, color: "#374151" }}>
+                      <strong>{ev.type}</strong> — {ev.description}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
