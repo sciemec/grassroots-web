@@ -3,11 +3,11 @@
 // Position-aware Tactics Academy for players
 // Free: 4-3-3 + 4-4-2, 3 simulations | Pro: all formations + unlimited sims
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import { Lock, ChevronLeft, ChevronDown, ChevronUp, Layers, Zap, CheckCircle2, XCircle } from "lucide-react";
-import { FORMATION_LIBRARY } from "@/lib/thuto-tactics-knowledge";
+import { FORMATION_LIBRARY, TACTICAL_PRINCIPLES } from "@/lib/thuto-tactics-knowledge";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -600,6 +600,13 @@ const FREE_SIM_COUNT = 3;
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD = "#f0b429";
 
+const CATEGORY_COLORS: Record<string, string> = {
+  attack:     "#d97706",
+  defence:    "#1d4ed8",
+  transition: "#7c3aed",
+  set_piece:  "#0891b2",
+};
+
 // ── SVG Pitch component ────────────────────────────────────────────────────────
 
 function PitchSVG({
@@ -697,6 +704,33 @@ export default function PlayerTacticsPage() {
   const [activeTab, setActiveTab] = useState<"position" | "simulate">("position");
   const [selectedFormation, setSelectedFormation] = useState("4-3-3");
   const [intelOpen, setIntelOpen] = useState(false);
+
+  // Tactical Principles — deep-link via ?principle=<id>
+  const [highlightPrincipleId, setHighlightPrincipleId] = useState<string | null>(null);
+  const [openPrinciples, setOpenPrinciples] = useState<string[]>([]);
+  const principleRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("principle");
+    if (p) {
+      setHighlightPrincipleId(p);
+      setOpenPrinciples([p]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!highlightPrincipleId) return;
+    const el = principleRefs.current[highlightPrincipleId];
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 350);
+    }
+  }, [highlightPrincipleId]);
+
+  function togglePrinciple(id: string) {
+    setOpenPrinciples((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   // Simulation state
   const [simIndex, setSimIndex] = useState(0);
@@ -1092,6 +1126,116 @@ export default function PlayerTacticsPage() {
             )}
           </div>
         )}
+
+        {/* ── Tactical Principles ── */}
+        <div className="mt-10">
+          <p className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">
+            Tactical Principles
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {TACTICAL_PRINCIPLES.map((p) => {
+              const isOpen = openPrinciples.includes(p.id);
+              const isHighlighted = highlightPrincipleId === p.id;
+              return (
+                <div
+                  key={p.id}
+                  ref={(el) => { principleRefs.current[p.id] = el; }}
+                  style={{
+                    background: "#fff",
+                    borderRadius: 14,
+                    border: isHighlighted
+                      ? `2px solid ${GRS_GREEN}`
+                      : "1px solid #e5e7eb",
+                    overflow: "hidden",
+                  }}
+                >
+                  {isHighlighted && (
+                    <div style={{
+                      background: GRS_GREEN, padding: "5px 14px",
+                      fontSize: 10, fontWeight: 800, color: "#fff",
+                      letterSpacing: "0.06em", textTransform: "uppercase",
+                    }}>
+                      ⚡ Recommended by Match Eye
+                    </div>
+                  )}
+                  <button
+                    onClick={() => togglePrinciple(p.id)}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center",
+                      justifyContent: "space-between", padding: "14px 16px",
+                      background: "none", border: "none", cursor: "pointer", textAlign: "left",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, textTransform: "uppercase",
+                        letterSpacing: "0.1em", color: CATEGORY_COLORS[p.category] ?? "#6b7280",
+                      }}>
+                        {p.category.replace("_", " ")}
+                      </span>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#111", marginTop: 2 }}>
+                        {p.title}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#6b7280", marginTop: 2, lineHeight: 1.4 }}>
+                        {p.summary}
+                      </p>
+                    </div>
+                    {isOpen
+                      ? <ChevronUp size={16} color="#9ca3af" style={{ flexShrink: 0 }} />
+                      : <ChevronDown size={16} color="#9ca3af" style={{ flexShrink: 0 }} />
+                    }
+                  </button>
+
+                  {isOpen && (
+                    <div style={{ borderTop: "1px solid #f3f4f6", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+                      <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.6 }}>
+                        {p.detail}
+                      </p>
+
+                      {p.keyPoints.length > 0 && (
+                        <div>
+                          <p style={{ fontSize: 10, fontWeight: 800, color: GRS_GREEN, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                            Key Points
+                          </p>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            {p.keyPoints.map((kp, i) => (
+                              <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                                <span style={{ color: GRS_GREEN, fontWeight: 800, flexShrink: 0, fontSize: 13 }}>•</span>
+                                <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.5, margin: 0 }}>{kp}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {p.zimbabweApplication && (
+                        <div style={{ background: "#f0fdf4", borderRadius: 10, border: "1px solid #bbf7d0", padding: "10px 12px" }}>
+                          <p style={{ fontSize: 10, fontWeight: 800, color: "#15803d", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                            Zimbabwe Application
+                          </p>
+                          <p style={{ fontSize: 12, color: "#166534", lineHeight: 1.5, margin: 0 }}>
+                            {p.zimbabweApplication}
+                          </p>
+                        </div>
+                      )}
+
+                      {p.drill && (
+                        <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: "10px 12px" }}>
+                          <p style={{ fontSize: 10, fontWeight: 800, color: "#374151", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                            Drill to Practice This
+                          </p>
+                          <p style={{ fontSize: 12, color: "#374151", lineHeight: 1.5, margin: 0 }}>
+                            {p.drill}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Bottom link */}
         <div className="mt-8 text-center">

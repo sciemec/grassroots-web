@@ -254,7 +254,7 @@ function TurnoverInsights({ analysis }: { analysis: PlayerAnalysis }) {
                     {m.principle_fix}
                   </p>
                   <Link
-                    href="/player/tactics"
+                    href={`/player/tactics?principle=${m.principle_id}`}
                     style={{
                       fontSize: 10, fontWeight: 800, color: "#fff",
                       background: "#1a5c2a", borderRadius: 6, padding: "4px 10px",
