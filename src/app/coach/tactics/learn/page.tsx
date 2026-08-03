@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft, BookOpen, Target, GraduationCap,
@@ -218,8 +218,8 @@ const CATEGORY_COLOR: Record<TacticalPrinciple["category"], { bg: string; text: 
   set_piece:  { bg: "#f3e8ff", text: "#7c3aed", label: "Set Piece" },
 };
 
-function PrincipleCard({ p }: { p: TacticalPrinciple }) {
-  const [open, setOpen] = useState(false);
+function PrincipleCard({ p, defaultOpen = false }: { p: TacticalPrinciple; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   const cat = CATEGORY_COLOR[p.category];
 
   return (
@@ -509,15 +509,27 @@ function CourseModuleCard({
 type Tab = "formations" | "principles" | "education";
 
 export default function TacticsLearnPage() {
-  const router       = useRouter();
-  const searchParams = useSearchParams();
-  const paramTab     = searchParams?.get("tab");
+  const router          = useRouter();
+  const searchParams    = useSearchParams();
+  const paramTab        = searchParams?.get("tab");
+  const paramPrinciple  = searchParams?.get("principle");
+  const principleRefs   = useRef<Record<string, HTMLDivElement | null>>({});
+
   const [tab, setTab] = useState<Tab>(
     paramTab === "formations" || paramTab === "principles" || paramTab === "education"
       ? paramTab
-      : "formations"
+      : paramPrinciple ? "principles" : "formations"
   );
   const [badges, setBadges] = useState<Set<string>>(new Set());
+
+  // Scroll to the highlighted principle after render
+  useEffect(() => {
+    if (!paramPrinciple) return;
+    const el = principleRefs.current[paramPrinciple];
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 350);
+    }
+  }, [paramPrinciple]);
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "formations", label: "Formations", icon: <Target       size={15} /> },
@@ -594,7 +606,20 @@ export default function TacticsLearnPage() {
               The 6 core tactical principles every Zimbabwean coach should know — with drills and Zimbabwe-specific coaching tips.
             </p>
             {TACTICAL_PRINCIPLES.map((p) => (
-              <PrincipleCard key={p.id} p={p} />
+              <div
+                key={p.id}
+                ref={(el) => { principleRefs.current[p.id] = el; }}
+              >
+                {paramPrinciple === p.id && (
+                  <div
+                    className="text-xs font-semibold px-3 py-1.5 rounded-t-xl flex items-center gap-1.5"
+                    style={{ background: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0", borderBottom: "none" }}
+                  >
+                    ⚡ Recommended by Match Eye
+                  </div>
+                )}
+                <PrincipleCard p={p} defaultOpen={paramPrinciple === p.id} />
+              </div>
             ))}
           </>
         )}

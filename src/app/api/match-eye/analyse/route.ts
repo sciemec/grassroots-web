@@ -1,8 +1,28 @@
 import { NextRequest } from "next/server";
 import { waitForGeminiFile, callGemini } from "@/lib/gemini-api";
+import { TACTICAL_PRINCIPLES } from "@/lib/thuto-tactics-knowledge";
 
 export const maxDuration = 600;
 export const runtime = "nodejs";
+
+// Compact tactics catalog injected into Gemini prompt so it can link turnovers to principles by ID
+const TACTICS_CATALOG = TACTICAL_PRINCIPLES.map((p) => ({
+  id:       p.id,
+  title:    p.title,
+  category: p.category,
+  summary:  p.summary.split(".")[0].slice(0, 100),
+}));
+
+interface TeamTurnoverMoment {
+  time:            string;
+  pattern:         string;
+  consequence:     string;
+  principle_id:    string;
+  principle_title: string;
+  principle_fix:   string;
+  safety_flag:     boolean;
+  safety_note?:    string;
+}
 
 interface MatchEvent {
   time: string;
@@ -44,6 +64,7 @@ interface MatchAnalysis {
   halftime_recommendation: string;
   key_coaching_points: string[];
   player_tracking?: PlayerTrackingResult[];
+  turnover_moments?: TeamTurnoverMoment[];
 }
 
 function extractJSON(text: string): MatchAnalysis | null {
@@ -242,13 +263,29 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
   "key_coaching_points": [
     "Defensive line needs to step up 5 metres when opponent goalkeeper has the ball",
     "Set pieces — near-post runs are being missed"
+  ],
+  "turnover_moments": [
+    {
+      "time": "34:15",
+      "pattern": "Midfield repeatedly received the ball facing their own goal and dribbled into pressure instead of turning or playing early",
+      "consequence": "Ball lost in a dangerous central midfield zone on three separate occasions, each leading to a counter-attack",
+      "principle_id": "pass-and-move",
+      "principle_title": "Pass and Move",
+      "principle_fix": "Midfielders should scan before receiving, know their exit pass, and release the ball earlier when facing pressure",
+      "safety_flag": true,
+      "safety_note": "Players were tackled while surrounded in tight areas — high collision risk in central zones"
+    }
   ]
 }
 
 For possession: estimate based on which team controlled the ball across the full match.
 For events: include all significant events visible in the video with accurate timestamps.
 For formations: identify from player positioning throughout the full match.
-Be specific and professional. Base everything on what you observe in the video.${playerTrackingPrompt}`;
+turnover_moments: identify 0-3 recurring team-level patterns where a collective decision or habit directly caused repeated possession loss. Describe the team behaviour and its consequence, then pick the MOST relevant principle from the TACTICS CATALOG by ID. Set safety_flag to true only when players were tackled under heavy physical pressure in tight areas (collision risk). If no clear turnover patterns are visible, return an empty array [].
+Be specific and professional. Base everything on what you observe in the video.
+
+TACTICS CATALOG — match turnover patterns to these principles by ID:
+${JSON.stringify(TACTICS_CATALOG)}${playerTrackingPrompt}`;
 
     const geminiText = await callGemini(
       googleKey,

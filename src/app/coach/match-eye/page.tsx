@@ -53,6 +53,16 @@ interface MatchAnalysis {
     rating: number;
     improvement: string;
   }>;
+  turnover_moments?: Array<{
+    time:            string;
+    pattern:         string;
+    consequence:     string;
+    principle_id:    string;
+    principle_title: string;
+    principle_fix:   string;
+    safety_flag:     boolean;
+    safety_note?:    string;
+  }>;
 }
 
 interface HalfResult {
@@ -912,6 +922,77 @@ export default function MatchEyePage() {
     };
   }
 
+  function TeamTurnoverInsights({ analysis }: { analysis: MatchAnalysis }) {
+    const moments = analysis.turnover_moments ?? [];
+    if (moments.length === 0) return null;
+
+    return (
+      <div style={{ border: "1.5px solid #fecaca", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+        {/* Header */}
+        <div style={{ background: "#fef2f2", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: "#dc2626", display: "flex", alignItems: "center", gap: 6 }}>
+            <ShieldAlert size={14} style={{ color: "#dc2626" }} />
+            Team Turnover Patterns
+          </div>
+          <a
+            href="/coach/tactics/learn?tab=principles"
+            style={{ fontSize: 11, color: "#1a5c2a", fontWeight: 600, textDecoration: "none" }}
+          >
+            Tactics Academy →
+          </a>
+        </div>
+
+        {/* Moments */}
+        <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+          {moments.map((m, i) => (
+            <div key={i} style={{ borderTop: i > 0 ? "1px solid #f3f4f6" : "none", paddingTop: i > 0 ? 14 : 0 }}>
+              {/* Time + safety badge */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, background: "#fee2e2", color: "#dc2626", padding: "2px 8px", borderRadius: 20 }}>
+                  {m.time}
+                </span>
+                {m.safety_flag && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "#dc2626", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>
+                    ⚡ Collision Risk
+                  </span>
+                )}
+              </div>
+
+              {/* Pattern → consequence */}
+              <p style={{ fontSize: 12, color: "#374151", margin: "0 0 4px" }}>
+                <strong>Pattern:</strong> {m.pattern}
+              </p>
+              <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 8px" }}>
+                <strong>Result:</strong> {m.consequence}
+              </p>
+
+              {/* Safety note */}
+              {m.safety_flag && m.safety_note && (
+                <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", marginBottom: 8, fontSize: 11, color: "#b91c1c" }}>
+                  ⚠️ {m.safety_note}
+                </div>
+              )}
+
+              {/* Tactics fix */}
+              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ fontWeight: 700, fontSize: 11, color: "#15803d", marginBottom: 4 }}>
+                  {m.principle_title} — Tactics Academy Fix
+                </div>
+                <p style={{ fontSize: 12, color: "#374151", margin: "0 0 8px" }}>{m.principle_fix}</p>
+                <a
+                  href={`/coach/tactics/learn?principle=${m.principle_id}`}
+                  style={{ fontSize: 11, fontWeight: 700, color: "#1a5c2a", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+                >
+                  <GraduationCap size={12} /> Study in Tactics Academy →
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   function TacticalAcademyCallout({ analysis }: { analysis: MatchAnalysis }) {
     const refs = matchTacticalRef(analysis);
     if (refs.principles.length === 0 && refs.formations.length === 0) return null;
@@ -1206,6 +1287,9 @@ export default function MatchEyePage() {
 
         {/* Tactical Academy cross-reference */}
         <TacticalAcademyCallout analysis={a} />
+
+        {/* Team Turnover Patterns → Tactics Academy links */}
+        <TeamTurnoverInsights analysis={a} />
 
         {/* Coaching points */}
         {(a.key_coaching_points?.length ?? 0) > 0 && (
