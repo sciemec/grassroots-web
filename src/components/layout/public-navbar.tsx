@@ -19,6 +19,7 @@ export function PublicNavbar() {
     { href: "/scout", label: "Scout Hub" },
     { href: "/school-hub", label: "School Hub" },
     { href: "/arena", label: "The Arena" },
+    { href: "/analyst", label: "Analyst Hub" },
   ];
 
   return (

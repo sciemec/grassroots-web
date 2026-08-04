@@ -3,7 +3,7 @@
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Users, Dumbbell, Eye, Heart, Activity, Shield, Loader2 } from "lucide-react";
+import { Users, Dumbbell, Eye, Heart, Activity, Shield, BarChart2, Loader2 } from "lucide-react";
 
 const ROLES = [
   { 
@@ -53,6 +53,14 @@ const ROLES = [
     icon: Shield,
     href: "/register/guardian",
     color: "from-teal-600 to-green-800"
+  },
+  {
+    role: "analyst",
+    title: "Data Analyst",
+    description: "xG, pass maps, heatmaps, tactical AI reports",
+    icon: BarChart2,
+    href: "/register/analyst",
+    color: "from-sky-600 to-blue-800"
   },
 ];
 
