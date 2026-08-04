@@ -664,6 +664,16 @@ export interface CoachHalfAnalysis {
   man_of_match_candidate: string;
   halftime_recommendation: string;
   key_coaching_points: string[];
+  turnover_moments?: Array<{
+    time:            string;
+    pattern:         string;
+    consequence:     string;
+    principle_id:    string;
+    principle_title: string;
+    principle_fix:   string;
+    safety_flag:     boolean;
+    safety_note?:    string;
+  }>;
 }
 
 export interface CoachHalfResult {
@@ -1091,12 +1101,133 @@ export function downloadCoachHalfPdf(
     y += 4;
   }
 
-  // ── Coaching points ───────────────────────────────────────────────────────
+  // ── Study in Tactical Academy ─────────────────────────────────────────────
+  if ((a.turnover_moments?.length ?? 0) > 0) {
+    const seen = new Set<string>();
+    const uniquePrinciples = a.turnover_moments!.filter(m => {
+      if (seen.has(m.principle_id)) return false;
+      seen.add(m.principle_id);
+      return true;
+    });
+    y = checkPage(doc, y, uniquePrinciples.length * (LH + 2) + 14, type, date);
+    y = sectionLabel(doc, 'Study in Tactical Academy', y);
+    for (const p of uniquePrinciples) {
+      y = checkPage(doc, y, LH + 2, type, date);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+      doc.text(`${p.principle_title} →`, ML + 4, y);
+      y += LH + 2;
+    }
+    y += 4;
+  }
+
+  // ── Team Turnover Patterns ────────────────────────────────────────────────
+  if ((a.turnover_moments?.length ?? 0) > 0) {
+    y = checkPage(doc, y, 14, type, date);
+    doc.setFillColor(254, 242, 242);
+    doc.roundedRect(ML, y, UW, 8, 2, 2, 'F');
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(220, 38, 38);
+    doc.text('Team Turnover Patterns', ML + 4, y + 5.5);
+    y += 12;
+
+    for (const m of a.turnover_moments!) {
+      y = checkPage(doc, y, 12, type, date);
+
+      // Time badge
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(220, 38, 38);
+      doc.text(m.time, ML, y);
+      if (m.safety_flag) {
+        doc.setFillColor(220, 38, 38);
+        doc.roundedRect(ML + 14, y - 4, 26, 5.5, 1, 1, 'F');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('Collision Risk', ML + 15, y);
+      }
+      y += LH + 1;
+
+      // Pattern
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(MID[0], MID[1], MID[2]);
+      doc.text('Pattern:', ML, y);
+      doc.setFont('helvetica', 'normal');
+      const patLines = doc.splitTextToSize(m.pattern, UW - 20) as string[];
+      patLines.forEach((l, i) => doc.text(l, ML + 16, y + i * LH));
+      y += Math.max(patLines.length, 1) * LH + 2;
+
+      // Consequence
+      y = checkPage(doc, y, LH + 2, type, date);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(MID[0], MID[1], MID[2]);
+      doc.text('Result:', ML, y);
+      doc.setFont('helvetica', 'normal');
+      const conLines = doc.splitTextToSize(m.consequence, UW - 20) as string[];
+      conLines.forEach((l, i) => doc.text(l, ML + 16, y + i * LH));
+      y += Math.max(conLines.length, 1) * LH + 2;
+
+      // Safety note
+      if (m.safety_flag && m.safety_note) {
+        const snLines = doc.splitTextToSize(`⚠ ${m.safety_note}`, UW - 8) as string[];
+        const snH     = snLines.length * LH + 6;
+        y = checkPage(doc, y, snH, type, date);
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(ML, y, UW, snH, 2, 2, 'F');
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(185, 28, 28);
+        snLines.forEach((l, i) => doc.text(l, ML + 4, y + 4 + i * LH));
+        y += snH + 3;
+      }
+
+      // Tactics fix green box
+      const fixLines = doc.splitTextToSize(m.principle_fix, UW - 8) as string[];
+      const fixH     = fixLines.length * LH + 14;
+      y = checkPage(doc, y, fixH, type, date);
+      doc.setFillColor(240, 253, 244);
+      doc.roundedRect(ML, y, UW, fixH, 2, 2, 'F');
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+      doc.text(`${m.principle_title} — Tactics Academy Fix`, ML + 4, y + 5);
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(MID[0], MID[1], MID[2]);
+      fixLines.forEach((l, i) => doc.text(l, ML + 4, y + 10 + i * LH));
+      y += fixH + 4;
+    }
+    y += 2;
+  }
+
+  // ── Session Recommendations ───────────────────────────────────────────────
   if ((a.key_coaching_points?.length ?? 0) > 0) {
     y = checkPage(doc, y, a.key_coaching_points.length * (LH + 1) + 14, type, date);
-    y = sectionLabel(doc, 'Coaching Points', y);
+    y = sectionLabel(doc, 'Session Recommendations', y);
     y = bulletList(doc, a.key_coaching_points, ML, y, UW, GREEN_TEXT, GRS_GREEN);
     y += 4;
+  }
+
+  // ── Man of the Match ──────────────────────────────────────────────────────
+  if (a.man_of_match_candidate) {
+    const motmLines = doc.splitTextToSize(a.man_of_match_candidate, UW - 8) as string[];
+    const motmH     = motmLines.length * LH + 12;
+    y = checkPage(doc, y, motmH + 8, type, date);
+    doc.setFillColor(254, 243, 199);
+    doc.roundedRect(ML, y, UW, motmH, 2, 2, 'F');
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(146, 64, 14);
+    doc.text('MAN OF THE MATCH', ML + 4, y + 5.5);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(MID[0], MID[1], MID[2]);
+    motmLines.forEach((l, i) => doc.text(l, ML + 4, y + 10 + i * LH));
+    y += motmH + 6;
   }
 
   // ── Halftime recommendation (first half only) ─────────────────────────────
