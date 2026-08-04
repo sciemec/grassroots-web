@@ -79,7 +79,7 @@ interface HalfUploadState {
   jobId: string;
 }
 
-type PageStage = "setup" | "confirm" | "analysing" | "results" | "error";
+type PageStage = "setup" | "confirm" | "results" | "error";
 
 const SPORTS = ["Football", "Rugby", "Netball", "Basketball", "Cricket", "Hockey"];
 
@@ -137,6 +137,10 @@ export default function AnalystMatchEye() {
   // Super Engine local tracking
   const [firstTracking,  setFirstTracking]  = useState<VideoMeasurement | null>(null);
   const [secondTracking, setSecondTracking] = useState<VideoMeasurement | null>(null);
+
+  // Per-half analysis in-progress flags
+  const [firstAnalysing,  setFirstAnalysing]  = useState(false);
+  const [secondAnalysing, setSecondAnalysing] = useState(false);
 
   // File inputs
   const firstRef  = useRef<HTMLInputElement>(null);
@@ -252,27 +256,34 @@ export default function AnalystMatchEye() {
     return () => clearInterval(interval);
   }, [firstHalf, secondHalf]);
 
-  // ── Auto-navigate once both large-file halves complete ────────────────────
+  // ── Auto-navigate once a large-file half completes ────────────────────────
 
   useEffect(() => {
-    if (
-      pageStage === "setup" &&
-      firstResult !== null && secondResult !== null &&
-      firstHalf.stage === "uploaded" && secondHalf.stage === "uploaded"
-    ) {
+    if (pageStage !== "setup") return;
+    if (firstResult !== null && activeTab !== "first") {
       setPageStage("results");
       setActiveTab("first");
+    } else if (secondResult !== null) {
+      setPageStage("results");
+      setActiveTab("second");
     }
-  }, [pageStage, firstResult, secondResult, firstHalf.stage, secondHalf.stage]);
+  }, [pageStage, firstResult, secondResult, activeTab]);
 
-  // ── Analyse (small-file path) ──────────────────────────────────────────────
+  // ── Analyse — per-half, independent ───────────────────────────────────────
 
-  const analyse = useCallback(async () => {
-    if (firstHalf.stage !== "uploaded" || secondHalf.stage !== "uploaded") return;
-    setPageStage("analysing");
+  const analyseIndependent = useCallback(async (which: "first" | "second") => {
+    const half      = which === "first" ? firstHalf       : secondHalf;
+    const setAnal   = which === "first" ? setFirstAnalysing : setSecondAnalysing;
+    const setResult = which === "first" ? setFirstResult   : setSecondResult;
+    const label     = which === "first" ? "First Half"     : "Second Half";
+
+    if (half.stage !== "uploaded") return;
+    setAnal(true);
     setGlobalError("");
+    setPageStage("results");
+    setActiveTab(which);
 
-    const analyseHalf = async (half: HalfUploadState, label: string): Promise<HalfResult> => {
+    try {
       const res = await fetch("/api/match-eye/analyse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -287,21 +298,12 @@ export default function AnalystMatchEye() {
         const err = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error ?? `Analysis failed (${res.status})`);
       }
-      return res.json() as Promise<HalfResult>;
-    };
-
-    try {
-      const [first, second] = await Promise.all([
-        analyseHalf(firstHalf, "First Half"),
-        analyseHalf(secondHalf, "Second Half"),
-      ]);
-      setFirstResult(first);
-      setSecondResult(second);
-      setPageStage("results");
-      setActiveTab("first");
+      const result = await res.json() as HalfResult;
+      setResult(result);
     } catch (err) {
-      setGlobalError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
-      setPageStage("error");
+      setGlobalError(err instanceof Error ? err.message : `${label} analysis failed. Please try again.`);
+    } finally {
+      setAnal(false);
     }
   }, [firstHalf, secondHalf, homeTeam, awayTeam, competition, sport]);
 
@@ -700,8 +702,8 @@ export default function AnalystMatchEye() {
 
   // ── canAnalyse guard ───────────────────────────────────────────────────────
 
-  const canAnalyse = firstHalf.stage === "uploaded" && secondHalf.stage === "uploaded" &&
-    !firstResult && !secondResult && homeTeam && awayTeam;
+  const canAnalyseFirst  = firstHalf.stage  === "uploaded" && !firstResult  && !firstAnalysing  && homeTeam && awayTeam;
+  const canAnalyseSecond = secondHalf.stage === "uploaded" && !secondResult && !secondAnalysing && homeTeam && awayTeam;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -764,19 +766,45 @@ export default function AnalystMatchEye() {
               {homeTeam && awayTeam && (
                 <div style={{ background: D.card, borderRadius: 14, border: `1px solid ${D.border}`, padding: "20px", marginBottom: 16 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 4 }}>Upload Match Footage</div>
-                  <div style={{ fontSize: 13, color: D.dim, marginBottom: 16 }}>Videos upload directly to Google — no file size limit. Upload both halves, then click Analyse.</div>
+                  <div style={{ fontSize: 13, color: D.dim, marginBottom: 16 }}>Upload each half independently — analyse as soon as each is ready. You don&apos;t need to wait for both.</div>
                   <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                    <DUploadZone label="First Half (0–45 min)"   half={firstHalf}  inputRef={firstRef}  onChange={(f) => confirmHalf(f, "first")} />
-                    <DUploadZone label="Second Half (45–90 min)" half={secondHalf} inputRef={secondRef} onChange={(f) => confirmHalf(f, "second")} />
+
+                    {/* First half */}
+                    <div style={{ flex: 1, minWidth: 220 }}>
+                      <DUploadZone label="First Half (0–45 min)" half={firstHalf} inputRef={firstRef} onChange={(f) => confirmHalf(f, "first")} />
+                      {canAnalyseFirst && (
+                        <button onClick={() => analyseIndependent("first")}
+                          style={{ width: "100%", marginTop: 8, background: D.green, color: "#030712", border: "none", borderRadius: 8, padding: "11px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                          <Eye size={14} /> Analyse First Half
+                        </button>
+                      )}
+                      {firstAnalysing && (
+                        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: D.greenBg, border: `1px solid ${D.greenBd}`, borderRadius: 8, fontSize: 12, color: D.green }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", flexShrink: 0 }} />
+                          Gemini is analysing first half...
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Second half */}
+                    <div style={{ flex: 1, minWidth: 220 }}>
+                      <DUploadZone label="Second Half (45–90 min)" half={secondHalf} inputRef={secondRef} onChange={(f) => confirmHalf(f, "second")} />
+                      {canAnalyseSecond && (
+                        <button onClick={() => analyseIndependent("second")}
+                          style={{ width: "100%", marginTop: 8, background: D.green, color: "#030712", border: "none", borderRadius: 8, padding: "11px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                          <Eye size={14} /> Analyse Second Half
+                        </button>
+                      )}
+                      {secondAnalysing && (
+                        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: D.greenBg, border: `1px solid ${D.greenBd}`, borderRadius: 8, fontSize: 12, color: D.green }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", flexShrink: 0 }} />
+                          Gemini is analysing second half...
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                 </div>
-              )}
-
-              {/* Analyse button */}
-              {canAnalyse && (
-                <button onClick={analyse} style={{ width: "100%", background: D.green, color: "#030712", border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                  <Eye size={18} /> Analyse Full Match with Gemini AI
-                </button>
               )}
             </>
           )}
@@ -829,32 +857,12 @@ export default function AnalystMatchEye() {
             </div>
           )}
 
-          {/* ── ANALYSING ──────────────────────────────────────────────────── */}
-          {pageStage === "analysing" && (
-            <div style={{ background: D.card, borderRadius: 14, border: `1px solid ${D.border}`, padding: "48px 24px", textAlign: "center" }}>
-              <Eye size={44} style={{ color: D.green, marginBottom: 16 }} />
-              <div style={{ fontWeight: 800, fontSize: 18, color: D.text, marginBottom: 8 }}>Gemini is watching the match...</div>
-              <div style={{ fontSize: 13, color: D.muted, marginBottom: 32, maxWidth: 380, margin: "0 auto 32px" }}>
-                {homeTeam} vs {awayTeam} — both halves are being analysed simultaneously. This takes 2–5 minutes.
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 340, margin: "0 auto" }}>
-                {["First Half", "Second Half"].map((label) => (
-                  <div key={label} style={{ background: D.card2, borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 9, height: 9, borderRadius: "50%", background: D.green, flexShrink: 0, animation: "analyst-pulse 1.5s ease-in-out infinite" }} />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: D.text }}>{label}</span>
-                    <span style={{ marginLeft: "auto", fontSize: 12, color: D.dim }}>Analysing...</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* ── ERROR ──────────────────────────────────────────────────────── */}
           {pageStage === "error" && (
             <div style={{ background: D.card, borderRadius: 14, border: `1.5px solid ${D.redBd}`, padding: "36px 24px", textAlign: "center" }}>
               <AlertTriangle size={36} style={{ color: D.red, marginBottom: 12 }} />
               <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 8 }}>{globalError}</div>
-              <button onClick={() => { setPageStage("setup"); setGlobalError(""); setFirstHalf(initHalf()); setSecondHalf(initHalf()); }}
+              <button onClick={() => { setPageStage("setup"); setGlobalError(""); }}
                 style={{ background: D.green, color: "#030712", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", marginTop: 8 }}>
                 Try Again
               </button>
@@ -862,7 +870,7 @@ export default function AnalystMatchEye() {
           )}
 
           {/* ── RESULTS ────────────────────────────────────────────────────── */}
-          {pageStage === "results" && firstResult && secondResult && (
+          {pageStage === "results" && (firstResult || secondResult || firstAnalysing || secondAnalysing) && (
             <div>
               {/* Match banner */}
               <div style={{ background: D.greenBg, border: `1px solid ${D.greenBd}`, borderRadius: 14, padding: "16px 20px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -875,15 +883,52 @@ export default function AnalystMatchEye() {
 
               {/* Tabs */}
               <div style={{ display: "flex", gap: 4, background: D.card, borderRadius: 10, padding: 4, border: `1px solid ${D.border}`, marginBottom: 16 }}>
-                {(["first", "second", "summary"] as const).map((t) => (
-                  <button key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: "9px 6px", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: activeTab === t ? D.green : "transparent", color: activeTab === t ? "#030712" : D.muted, transition: "background 0.15s" }}>
-                    {t === "first" ? "First Half" : t === "second" ? "Second Half" : "Full Match"}
-                  </button>
-                ))}
+                {(["first", "second", "summary"] as const).map((t) => {
+                  const summaryDisabled = t === "summary" && (!firstResult || !secondResult);
+                  return (
+                    <button key={t}
+                      onClick={() => { if (!summaryDisabled) setActiveTab(t); }}
+                      style={{ flex: 1, padding: "9px 6px", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: summaryDisabled ? "not-allowed" : "pointer", background: activeTab === t ? D.green : "transparent", color: activeTab === t ? "#030712" : summaryDisabled ? D.dim : D.muted, transition: "background 0.15s", opacity: summaryDisabled ? 0.45 : 1 }}>
+                      {t === "first" ? "First Half" : t === "second" ? "Second Half" : "Full Match"}
+                    </button>
+                  );
+                })}
               </div>
 
-              {activeTab === "first"  && <DHalfReport result={firstResult}  half="first"  tracking={firstTracking}  />}
-              {activeTab === "second" && <DHalfReport result={secondResult} half="second" tracking={secondTracking} />}
+              {activeTab === "first" && (
+                firstAnalysing
+                  ? <div style={{ background: D.card, borderRadius: 12, padding: "48px 24px", textAlign: "center" }}>
+                      <div style={{ width: 12, height: 12, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", margin: "0 auto 16px" }} />
+                      <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 6 }}>Gemini is analysing the first half...</div>
+                      <div style={{ fontSize: 12, color: D.dim }}>This takes 2–5 minutes. You can upload and analyse the second half while you wait.</div>
+                    </div>
+                  : firstResult
+                    ? <DHalfReport result={firstResult} half="first" tracking={firstTracking} />
+                    : <div style={{ background: D.card, borderRadius: 12, padding: "36px 24px", textAlign: "center" }}>
+                        <div style={{ fontSize: 13, color: D.dim, marginBottom: 12 }}>First half not yet analysed.</div>
+                        <button onClick={() => setPageStage("setup")}
+                          style={{ background: D.green, color: "#030712", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                          Go back to upload
+                        </button>
+                      </div>
+              )}
+              {activeTab === "second" && (
+                secondAnalysing
+                  ? <div style={{ background: D.card, borderRadius: 12, padding: "48px 24px", textAlign: "center" }}>
+                      <div style={{ width: 12, height: 12, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", margin: "0 auto 16px" }} />
+                      <div style={{ fontWeight: 700, fontSize: 15, color: D.text, marginBottom: 6 }}>Gemini is analysing the second half...</div>
+                      <div style={{ fontSize: 12, color: D.dim }}>This takes 2–5 minutes.</div>
+                    </div>
+                  : secondResult
+                    ? <DHalfReport result={secondResult} half="second" tracking={secondTracking} />
+                    : <div style={{ background: D.card, borderRadius: 12, padding: "36px 24px", textAlign: "center" }}>
+                        <div style={{ fontSize: 13, color: D.dim, marginBottom: 12 }}>Second half not yet analysed.</div>
+                        <button onClick={() => setPageStage("setup")}
+                          style={{ background: D.green, color: "#030712", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                          Go back to upload
+                        </button>
+                      </div>
+              )}
 
               {activeTab === "summary" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
