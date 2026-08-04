@@ -376,6 +376,10 @@ export default function BallTrackerPage() {
             try {
               const res = await fetch(`${AI_URL}/job/${jobId}`);
               if (!res.ok) {
+                if (res.status === 404) {
+                  // Job not on this worker yet (multi-worker race or cold start) — keep polling
+                  return;
+                }
                 clearInterval(pollRef.current!);
                 reject(new Error(`Poll error ${res.status}`));
                 return;
