@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   User,
@@ -130,7 +130,16 @@ export default function PlayerProfilePage() {
   const [selectedSport, setSelectedSport] = useState<SportKey>("football");
   const [photoUrl, setPhotoUrl]         = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const photoInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef  = useRef<HTMLInputElement>(null);
+
+  // ── Crop modal ────────────────────────────────────────────────────────────
+  const cropCanvasRef   = useRef<HTMLCanvasElement>(null);
+  const cropImageRef    = useRef<HTMLImageElement | null>(null);
+  const [cropSrc,       setCropSrc]       = useState<string | null>(null);
+  const [cropScale,     setCropScale]     = useState(1);
+  const [cropOffset,    setCropOffset]    = useState({ x: 0, y: 0 });
+  const [cropDragging,  setCropDragging]  = useState(false);
+  const [cropDragStart, setCropDragStart] = useState({ x: 0, y: 0 });
 
   // Invite Parent state
   const [showInvitePanel, setShowInvitePanel] = useState(false);
@@ -272,27 +281,118 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     setTimeout(() => setInviteCopied(false), 2500);
   };
 
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Open crop modal instead of uploading directly
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Photo must be under 5MB.");
+    if (file.size > 15 * 1024 * 1024) {
+      setError("Photo must be under 15MB.");
       return;
     }
-    setUploadingPhoto(true);
-    const preview = URL.createObjectURL(file);
-    setPhotoUrl(preview);
-    const formData = new FormData();
-    formData.append("photo", file);
-    try {
-      const res = await api.post("/profile/photo", formData);
-      setPhotoUrl(res.data.photo_url ?? preview);
-    } catch {
-      setError("Photo upload failed. Please try again.");
-      setPhotoUrl(null);
-    } finally {
-      setUploadingPhoto(false);
-    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setCropSrc(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  // Draw the crop preview onto the canvas
+  const drawCrop = useCallback(() => {
+    const canvas = cropCanvasRef.current;
+    const img    = cropImageRef.current;
+    if (!canvas || !img) return;
+    const ctx  = canvas.getContext("2d");
+    if (!ctx) return;
+    const size = canvas.width;
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = "#0c1f10";
+    ctx.fillRect(0, 0, size, size);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+    ctx.clip();
+    const scaledW = img.naturalWidth  * cropScale;
+    const scaledH = img.naturalHeight * cropScale;
+    ctx.drawImage(
+      img,
+      (size - scaledW) / 2 + cropOffset.x,
+      (size - scaledH) / 2 + cropOffset.y,
+      scaledW, scaledH,
+    );
+    ctx.restore();
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
+    ctx.stroke();
+  }, [cropScale, cropOffset]);
+
+  // Load image when cropSrc is set; auto-fit scale to fill the circle
+  useEffect(() => {
+    if (!cropSrc) return;
+    const img  = new Image();
+    img.onload = () => {
+      cropImageRef.current = img;
+      const size     = 280;
+      const fitScale = Math.max(size / img.naturalWidth, size / img.naturalHeight);
+      setCropScale(fitScale);
+      setCropOffset({ x: 0, y: 0 });
+    };
+    img.src = cropSrc;
+  }, [cropSrc]);
+
+  // Redraw whenever scale or offset changes
+  useEffect(() => { drawCrop(); }, [drawCrop]);
+
+  const onCropMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setCropDragging(true);
+    setCropDragStart({ x: e.clientX - cropOffset.x, y: e.clientY - cropOffset.y });
+  };
+  const onCropMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!cropDragging) return;
+    setCropOffset({ x: e.clientX - cropDragStart.x, y: e.clientY - cropDragStart.y });
+  };
+  const onCropMouseUp = () => setCropDragging(false);
+  const onCropWheel   = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    setCropScale((s) => Math.min(4, Math.max(0.3, s - e.deltaY * 0.001)));
+  };
+  const onCropTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const t = e.touches[0];
+    setCropDragging(true);
+    setCropDragStart({ x: t.clientX - cropOffset.x, y: t.clientY - cropOffset.y });
+  };
+  const onCropTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length !== 1 || !cropDragging) return;
+    const t = e.touches[0];
+    setCropOffset({ x: t.clientX - cropDragStart.x, y: t.clientY - cropDragStart.y });
+  };
+
+  // Export cropped canvas blob and upload
+  const handleCropSave = () => {
+    const canvas = cropCanvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      setCropSrc(null);
+      setUploadingPhoto(true);
+      const preview = URL.createObjectURL(blob);
+      setPhotoUrl(preview);
+      const formData = new FormData();
+      formData.append("photo", blob, "profile.jpg");
+      try {
+        const res = await api.post("/profile/photo", formData, {
+          headers: { "Content-Type": undefined },
+        });
+        setPhotoUrl((res.data as { photo_url?: string }).photo_url ?? preview);
+      } catch {
+        setError("Photo upload failed. Please try again.");
+        setPhotoUrl(null);
+      } finally {
+        setUploadingPhoto(false);
+      }
+    }, "image/jpeg", 0.92);
   };
 
   if (loading) {
@@ -345,6 +445,67 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
   return (
     <div className="flex h-screen bg-background">
+
+      {/* ── Photo Crop Modal ───────────────────────────────────────────────── */}
+      {cropSrc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-xs rounded-2xl bg-[#1a3d26] p-5 shadow-2xl border border-white/10">
+            <h3 className="mb-4 text-center text-sm font-semibold text-white">Crop your photo</h3>
+            <div className="flex justify-center mb-4">
+              <canvas
+                ref={cropCanvasRef}
+                width={280}
+                height={280}
+                style={{
+                  borderRadius: "50%",
+                  cursor: cropDragging ? "grabbing" : "grab",
+                  touchAction: "none",
+                }}
+                onMouseDown={onCropMouseDown}
+                onMouseMove={onCropMouseMove}
+                onMouseUp={onCropMouseUp}
+                onMouseLeave={onCropMouseUp}
+                onWheel={onCropWheel}
+                onTouchStart={onCropTouchStart}
+                onTouchMove={onCropTouchMove}
+                onTouchEnd={() => setCropDragging(false)}
+              />
+            </div>
+            <div className="mb-5 px-1">
+              <label className="mb-1 block text-xs text-white/50">Zoom</label>
+              <input
+                type="range"
+                min={0.1}
+                max={4}
+                step={0.05}
+                value={cropScale}
+                onChange={(e) => setCropScale(parseFloat(e.target.value))}
+                className="w-full accent-[#f0b429]"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => { setCropSrc(null); setCropScale(1); setCropOffset({ x: 0, y: 0 }); }}
+                className="flex-1 rounded-lg border border-white/20 py-2.5 text-sm text-white/70 hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCropSave}
+                className="flex-1 rounded-lg bg-[#f0b429] py-2.5 text-sm font-semibold text-[#1a3a1a] hover:bg-[#f5c542] transition-colors"
+              >
+                Save Photo
+              </button>
+            </div>
+            <p className="mt-3 text-center text-xs text-white/30">
+              Drag to reposition · Scroll or slide to zoom
+            </p>
+          </div>
+        </div>
+      )}
+
       <Sidebar />
       <main className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-2xl">
