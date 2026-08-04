@@ -757,6 +757,31 @@ export function downloadCoachMatchEyePdf(
     doc.text(`${a.formation_home} vs ${a.formation_away}`, PW - 14, y + 6, { align: 'right' });
     y += 13;
 
+    // ── Per-half stats row ──────────────────────────────────────────────────
+    const statCells = [
+      { label: 'Possession (Home)', value: `${a.possession_home ?? '—'}%`, sub: `Away ${a.possession_away ?? '—'}%` },
+      { label: 'Shots (Home)',      value: String(a.shots_home ?? '—'),      sub: `On target: ${a.shots_on_target_home ?? '—'}` },
+      { label: 'Shots (Away)',      value: String(a.shots_away ?? '—'),      sub: `On target: ${a.shots_on_target_away ?? '—'}` },
+      { label: 'Fouls Detected',   value: String(a.fouls_detected ?? '—') },
+    ];
+    const sw4 = (UW - 12) / 4;
+    y = checkPage(doc, y, 26, type, date);
+    doc.setFillColor(248, 250, 248);
+    doc.roundedRect(ML, y, UW, 22, 2, 2, 'F');
+    statCells.forEach((s, i) => {
+      const cx = ML + i * (sw4 + 4) + sw4 / 2;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+      doc.text(s.value, cx, y + 8, { align: 'center' });
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      doc.text(s.label, cx, y + 13.5, { align: 'center' });
+      if (s.sub) doc.text(s.sub, cx, y + 18, { align: 'center' });
+    });
+    y += 26;
+
     if (result.narrative) {
       const nLines = doc.splitTextToSize(result.narrative, UW) as string[];
       y = checkPage(doc, y, nLines.length * LH + 10, type, date);
@@ -1151,6 +1176,31 @@ export function downloadCoachHalfPdf(
   doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
   doc.text(`${a.formation_home} vs ${a.formation_away}`, PW - 14, y + 6, { align: 'right' });
   y += 13;
+
+  // ── Per-half stats row ────────────────────────────────────────────────────
+  const statCells = [
+    { label: 'Possession (Home)', value: `${a.possession_home ?? '—'}%`, sub: `Away ${a.possession_away ?? '—'}%` },
+    { label: 'Shots (Home)',      value: String(a.shots_home ?? '—'),      sub: `On target: ${a.shots_on_target_home ?? '—'}` },
+    { label: 'Shots (Away)',      value: String(a.shots_away ?? '—'),      sub: `On target: ${a.shots_on_target_away ?? '—'}` },
+    { label: 'Fouls Detected',   value: String(a.fouls_detected ?? '—') },
+  ];
+  const sw4 = (UW - 12) / 4;
+  y = checkPage(doc, y, 26, type, date);
+  doc.setFillColor(248, 250, 248);
+  doc.roundedRect(ML, y, UW, 22, 2, 2, 'F');
+  statCells.forEach((s, i) => {
+    const cx = ML + i * (sw4 + 4) + sw4 / 2;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+    doc.text(s.value, cx, y + 8, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(s.label, cx, y + 13.5, { align: 'center' });
+    if (s.sub) doc.text(s.sub, cx, y + 18, { align: 'center' });
+  });
+  y += 26;
 
   // ── Narrative ─────────────────────────────────────────────────────────────
   if (result.narrative) {
