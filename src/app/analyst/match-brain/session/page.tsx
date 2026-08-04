@@ -112,7 +112,7 @@ function MatchBrainSession() {
   const [toPlayer, setToPlayer]       = useState(2);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const historyAppendedRef = useRef(false);
+  const appendedPeriodsRef = useRef<Set<number>>(new Set());
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const globalMin = PERIOD_OFFSETS[period - 1] + Math.floor(periodSec / 60);
@@ -164,23 +164,26 @@ function MatchBrainSession() {
     } catch { /* storage full */ }
   }, [events, homeTeam, awayTeam, sport, formation]);
 
-  // ── Append to Season Intelligence history once when match ends ────────────────
+  // ── Append to Season Intelligence history at the end of each half/quarter ─────
   useEffect(() => {
-    if (phase !== "ended" || historyAppendedRef.current) return;
-    historyAppendedRef.current = true;
+    if ((phase !== "break" && phase !== "ended") || appendedPeriodsRef.current.has(period)) return;
+    appendedPeriodsRef.current.add(period);
 
-    const shotEvs = events.filter((e): e is ShotEv => e.type === "shot");
-    const homeXg = shotEvs.filter((e) => e.team === "home").reduce((s, e) => s + e.xg, 0);
-    const awayXg = shotEvs.filter((e) => e.team === "away").reduce((s, e) => s + e.xg, 0);
+    const periodLabel = periodsN === 4 ? `Q${period}` : period === 1 ? "H1" : "H2";
+
+    const shotEvs = events.filter((e): e is ShotEv => e.type === "shot" && e.period === period);
+    const homeXg   = shotEvs.filter((e) => e.team === "home").reduce((s, e) => s + e.xg, 0);
+    const awayXg   = shotEvs.filter((e) => e.team === "away").reduce((s, e) => s + e.xg, 0);
     const homeGoals = shotEvs.filter((e) => e.team === "home" && e.isGoal).length;
     const awayGoals = shotEvs.filter((e) => e.team === "away" && e.isGoal).length;
 
     const record = {
-      id: `mb-${Date.now()}`,
+      id: `mb-${Date.now()}-p${period}`,
       date: new Date().toISOString().slice(0, 10),
-      homeTeam, awayTeam,
-      homeXg: Math.round(homeXg * 100) / 100,
-      awayXg: Math.round(awayXg * 100) / 100,
+      homeTeam: `${homeTeam} (${periodLabel})`,
+      awayTeam,
+      homeXg:   Math.round(homeXg * 100) / 100,
+      awayXg:   Math.round(awayXg * 100) / 100,
       homeGoals,
       awayGoals,
     };
@@ -192,7 +195,7 @@ function MatchBrainSession() {
     } catch {
       localStorage.setItem("gs_touch_tracker_history", JSON.stringify([record]));
     }
-  }, [phase, events, homeTeam, awayTeam]);
+  }, [phase, period, events, homeTeam, awayTeam, periodsN]);
 
   // ── Phase transitions ────────────────────────────────────────────────────────
   function handleStartPeriod() {
