@@ -390,11 +390,12 @@ export default function BallTrackerPage() {
                 error?: string;
               };
 
-              tick = Math.min(tick + 4, 94);
+              tick = tick < 80 ? Math.min(tick + 4, 80) : Math.min(tick + 1, 98);
               setProgress(tick);
               if (tick < 65)      setStatusMsg("Detecting ball & players…");
               else if (tick < 80) setStatusMsg("Tracking ball path…");
-              else                setStatusMsg("Detecting events…");
+              else if (tick < 92) setStatusMsg("Detecting ball events…");
+              else                setStatusMsg("Finalising results… large videos can take 2–5 min");
 
               if (job.status === "complete" && job.result) {
                 clearInterval(pollRef.current!);
