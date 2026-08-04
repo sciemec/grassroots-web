@@ -73,6 +73,7 @@ HEATMAP_ROWS = 13
 SAMPLE_FPS = 1
 PERSON_CLASS_ID = 0
 BALL_CLASS_ID = 32  # COCO sports ball class
+MAX_INTERP_GAP = 5  # seconds — gaps longer than this are not interpolated (ball out of play)
 
 TRACKER_CONFIG = sv.ByteTrackerArgs(
     track_activation_threshold=0.25,
@@ -228,6 +229,60 @@ def calculate_speeds(positions: list[tuple[float, float]]) -> list[float]:
         dist_m = (dx**2 + dy**2) ** 0.5
         speeds.append(round(dist_m * 3.6, 1))
     return speeds
+
+
+# ---------------------------------------------------------------------------
+# Ball position interpolation (post-processing — no model changes)
+# ---------------------------------------------------------------------------
+
+def interpolate_ball_positions(
+    detected: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Fill gaps between detected ball positions using linear interpolation.
+
+    Only fills gaps of MAX_INTERP_GAP seconds or fewer — longer gaps
+    indicate the ball was genuinely out of frame (throw-in, set-piece delay,
+    ball out of play). Detected positions carry no extra flag; interpolated
+    positions carry interpolated=True so consumers can distinguish them.
+
+    This does NOT improve event detection accuracy — shots and passes
+    between samples are still invisible. It purely smooths heatmap paths
+    and possession estimates during brief occlusions.
+    """
+    if len(detected) < 2:
+        return detected
+
+    sorted_det = sorted(detected, key=lambda d: d["second"])
+    by_second: set[int] = {d["second"] for d in sorted_det}
+
+    result: list[dict[str, Any]] = list(sorted_det)
+
+    for i in range(len(sorted_det) - 1):
+        s1 = sorted_det[i]["second"]
+        x1 = sorted_det[i]["x"]
+        y1 = sorted_det[i]["y"]
+        s2 = sorted_det[i + 1]["second"]
+        x2 = sorted_det[i + 1]["x"]
+        y2 = sorted_det[i + 1]["y"]
+
+        gap = s2 - s1
+        if gap <= 1 or gap > MAX_INTERP_GAP:
+            continue  # no gap to fill, or gap too wide to trust
+
+        for s in range(s1 + 1, s2):
+            if s in by_second:
+                continue  # already have a detection at this second
+            t = (s - s1) / (s2 - s1)
+            result.append({
+                "second": s,
+                "x": round(x1 + t * (x2 - x1), 3),
+                "y": round(y1 + t * (y2 - y1), 3),
+                "interpolated": True,
+            })
+
+    result.sort(key=lambda d: d["second"])
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +482,12 @@ def _run_tracking(video_path: str, squad_map: dict[str, str]) -> dict[str, Any]:
 
     cap.release()
 
+    # Post-processing: interpolate ball positions to smooth gaps ≤ MAX_INTERP_GAP seconds
+    raw_ball_count = len(ball_positions)
+    if len(ball_positions) >= 2:
+        ball_positions = interpolate_ball_positions(ball_positions)
+    interpolated_count = len(ball_positions) - raw_ball_count
+
     # Build per-player output with speed data
     players_out: list[dict[str, Any]] = []
     for tid, positions in player_positions.items():
@@ -474,7 +535,8 @@ def _run_tracking(video_path: str, squad_map: dict[str, str]) -> dict[str, Any]:
             "possession_away": poss_away,
             "duration_seconds": second,
             "frames_processed": frames_processed,
-            "ball_detected_frames": len(ball_positions),
+            "ball_detected_frames": raw_ball_count,
+            "ball_interpolated_frames": interpolated_count,
         },
         "video": {
             "width": width,

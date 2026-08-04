@@ -16,6 +16,7 @@ export default function MatchBrainSetupPage() {
   const [awayTeam, setAwayTeam] = useState("");
   const [selectedSport, setSelectedSport] = useState("football");
   const [selectedFormation, setSelectedFormation] = useState("4-3-3");
+  const [periods, setPeriods] = useState<2 | 4>(2);
   const [error, setError] = useState("");
 
   const handleCreateSession = (e: React.FormEvent) => {
@@ -27,7 +28,7 @@ export default function MatchBrainSetupPage() {
     setError("");
     
     // Pass choices safely down to session tracker
-    router.push(`/analyst/match-brain/session?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&sport=${selectedSport}&formation=${selectedFormation}`);
+    router.push(`/analyst/match-brain/session?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}&sport=${selectedSport}&formation=${selectedFormation}&periods=${periods}`);
   };
 
   return (
@@ -147,6 +148,32 @@ export default function MatchBrainSetupPage() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Match Period Structure */}
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-700">Match Period Structure</p>
+              <div className="flex gap-2">
+                {([2, 4] as const).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPeriods(n)}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                      periods === n
+                        ? "bg-[#1a5c2a] border-[#1a5c2a] text-white shadow-sm"
+                        : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {n === 2 ? "2 Halves" : "4 Quarters"}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-gray-500">
+                {periods === 2
+                  ? "45 min per half — standard football / rugby structure"
+                  : "~22 min per quarter — basketball / netball / cricket T20 structure"}
+              </p>
             </div>
 
             {error && (
