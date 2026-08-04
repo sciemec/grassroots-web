@@ -6,7 +6,7 @@ import { ArrowLeft, CircleDot, Upload, CheckCircle2, ChevronDown, ChevronUp, Use
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
 
-const AI_URL = process.env.NEXT_PUBLIC_AI_URL ?? "https://grassroots-ai-tracker.onrender.com";
+const AI_URL = process.env.NEXT_PUBLIC_AI_URL ?? "https://grassroots-ai-service.onrender.com";
 
 // ── types ────────────────────────────────────────────────────────────────────
 
