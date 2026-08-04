@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TACTICAL_PRINCIPLES, FORMATION_LIBRARY, type TacticalPrinciple, type FormationDetail } from "@/lib/thuto-tactics-knowledge";
-import { downloadCoachMatchEyePdf } from "@/lib/generate-analysis-pdf";
+import { downloadCoachMatchEyePdf, downloadCoachHalfPdf } from "@/lib/generate-analysis-pdf";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
@@ -903,7 +903,17 @@ export default function AnalystMatchEye() {
                       <div style={{ fontSize: 12, color: D.dim }}>This takes 2–5 minutes. You can upload and analyse the second half while you wait.</div>
                     </div>
                   : firstResult
-                    ? <DHalfReport result={firstResult} half="first" tracking={firstTracking} />
+                    ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <DHalfReport result={firstResult} half="first" tracking={firstTracking} />
+                          <button
+                            onClick={() => downloadCoachHalfPdf(firstResult, "First Half", homeTeam, awayTeam, sport, competition)}
+                            style={{ flex: 1, background: D.green, color: "#030712", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                          >
+                            <Download size={16} /> Download First Half PDF
+                          </button>
+                        </div>
+                      )
                     : <div style={{ background: D.card, borderRadius: 12, padding: "36px 24px", textAlign: "center" }}>
                         <div style={{ fontSize: 13, color: D.dim, marginBottom: 12 }}>First half not yet analysed.</div>
                         <button onClick={() => setPageStage("setup")}
@@ -920,7 +930,17 @@ export default function AnalystMatchEye() {
                       <div style={{ fontSize: 12, color: D.dim }}>This takes 2–5 minutes.</div>
                     </div>
                   : secondResult
-                    ? <DHalfReport result={secondResult} half="second" tracking={secondTracking} />
+                    ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <DHalfReport result={secondResult} half="second" tracking={secondTracking} />
+                          <button
+                            onClick={() => downloadCoachHalfPdf(secondResult, "Second Half", homeTeam, awayTeam, sport, competition)}
+                            style={{ flex: 1, background: D.green, color: "#030712", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                          >
+                            <Download size={16} /> Download Second Half PDF
+                          </button>
+                        </div>
+                      )
                     : <div style={{ background: D.card, borderRadius: 12, padding: "36px 24px", textAlign: "center" }}>
                         <div style={{ fontSize: 13, color: D.dim, marginBottom: 12 }}>Second half not yet analysed.</div>
                         <button onClick={() => setPageStage("setup")}

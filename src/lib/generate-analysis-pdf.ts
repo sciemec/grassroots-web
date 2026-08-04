@@ -995,3 +995,130 @@ export function downloadCoachDrillPdf(
   drawFooter(doc);
   doc.save(`grassroots-drill-${(a.drill_type || drillType).replace(/\s+/g, '-').toLowerCase()}-${date.replace(/ /g, '-')}.pdf`);
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// 6.  COACH MATCH EYE — SINGLE HALF
+// ════════════════════════════════════════════════════════════════════════════
+
+export function downloadCoachHalfPdf(
+  result: CoachHalfResult,
+  halfLabel: string,
+  homeTeam: string,
+  awayTeam: string,
+  sport: string,
+  competition: string,
+): void {
+  const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const type = `Coach Match Eye — ${sport} — ${halfLabel}`;
+
+  drawHeader(doc, type, date);
+  let y = 30;
+
+  const a = result.analysis;
+
+  // ── Match title banner ────────────────────────────────────────────────────
+  const bannerH = 16;
+  doc.setFillColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+  doc.roundedRect(ML, y, UW, bannerH, 3, 3, 'F');
+  if (competition) {
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${competition} — ${halfLabel}`, ML + 4, y + 5.5);
+  }
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text(`${homeTeam} vs ${awayTeam}`, ML + 4, y + 12);
+  y += bannerH + 10;
+
+  // ── Half sub-header ───────────────────────────────────────────────────────
+  doc.setFillColor(240, 253, 244);
+  doc.roundedRect(ML, y, UW, 9, 2, 2, 'F');
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+  doc.text(halfLabel, ML + 4, y + 6);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text(`${a.formation_home} vs ${a.formation_away}`, PW - 14, y + 6, { align: 'right' });
+  y += 13;
+
+  // ── Narrative ─────────────────────────────────────────────────────────────
+  if (result.narrative) {
+    const nLines = doc.splitTextToSize(result.narrative, UW) as string[];
+    y = checkPage(doc, y, nLines.length * LH + 10, type, date);
+    y = addText(doc, result.narrative, ML, y, UW, 8.5, 'normal', MID);
+    y += 6;
+  }
+
+  // ── Key events ────────────────────────────────────────────────────────────
+  if ((a.key_events?.length ?? 0) > 0) {
+    y = checkPage(doc, y, 16, type, date);
+    y = sectionLabel(doc, 'Key Events', y);
+    for (const ev of a.key_events.slice(0, 8)) {
+      const evLines = doc.splitTextToSize(`${ev.type} — ${ev.description}`, UW - 30) as string[];
+      y = checkPage(doc, y, evLines.length * LH + 3, type, date);
+      const teamColor: readonly [number, number, number] =
+        ev.team === 'home' ? [29, 78, 216] : ev.team === 'away' ? [220, 38, 38] : MUTED;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(GRS_GREEN[0], GRS_GREEN[1], GRS_GREEN[2]);
+      doc.text(ev.time, ML, y);
+      doc.setTextColor(teamColor[0], teamColor[1], teamColor[2]);
+      doc.text(ev.team === 'home' ? homeTeam : ev.team === 'away' ? awayTeam : '–', ML + 12, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(MID[0], MID[1], MID[2]);
+      evLines.forEach((l, li) => doc.text(l, ML + 30, y + li * LH));
+      y += Math.max(evLines.length * LH, LH) + 2;
+    }
+    y += 3;
+  }
+
+  // ── Tactical / defensive / attacking lists ────────────────────────────────
+  const lists: Array<[string, string[], readonly [number, number, number]]> = [
+    ['Tactical Patterns',   a.tactical_patterns   ?? [], MID],
+    ['Defensive Issues',    a.defensive_issues    ?? [], [180, 40, 40]],
+    ['Attacking Strengths', a.attacking_strengths ?? [], GREEN_TEXT],
+  ];
+  for (const [title, items, color] of lists) {
+    if (!items.length) continue;
+    y = checkPage(doc, y, items.length * (LH + 1) + 14, type, date);
+    y = sectionLabel(doc, title, y);
+    y = bulletList(doc, items, ML, y, UW, color, color);
+    y += 4;
+  }
+
+  // ── Coaching points ───────────────────────────────────────────────────────
+  if ((a.key_coaching_points?.length ?? 0) > 0) {
+    y = checkPage(doc, y, a.key_coaching_points.length * (LH + 1) + 14, type, date);
+    y = sectionLabel(doc, 'Coaching Points', y);
+    y = bulletList(doc, a.key_coaching_points, ML, y, UW, GREEN_TEXT, GRS_GREEN);
+    y += 4;
+  }
+
+  // ── Halftime recommendation (first half only) ─────────────────────────────
+  if (halfLabel === 'First Half' && a.halftime_recommendation) {
+    const htLines = doc.splitTextToSize(a.halftime_recommendation, UW - 8) as string[];
+    const htH     = htLines.length * LH + 10;
+    y = checkPage(doc, y, htH + 8, type, date);
+    doc.setFillColor(239, 246, 255);
+    doc.roundedRect(ML, y, UW, htH, 2, 2, 'F');
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 64, 175);
+    doc.text('HALFTIME RECOMMENDATION', ML + 4, y + 5.5);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(MID[0], MID[1], MID[2]);
+    htLines.forEach((l, i) => doc.text(l, ML + 4, y + 10 + i * LH));
+    y += htH + 6;
+  }
+
+  drawFooter(doc);
+  const halfSlug = halfLabel.toLowerCase().replace(/\s+/g, '-');
+  const slug     = `${homeTeam.replace(/\s+/g, '-')}-vs-${awayTeam.replace(/\s+/g, '-')}`;
+  doc.save(`grassroots-coach-${halfSlug}-${slug}-${date.replace(/ /g, '-')}.pdf`);
+}

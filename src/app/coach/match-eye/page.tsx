@@ -7,7 +7,7 @@ import {
   BookOpen, Clock, Target, Shield, Zap, Users, Download, GraduationCap, ShieldAlert,
 } from "lucide-react";
 import { FORMATION_LIBRARY, TACTICAL_PRINCIPLES, type FormationDetail, type TacticalPrinciple } from "@/lib/thuto-tactics-knowledge";
-import { downloadCoachMatchEyePdf, downloadCoachDrillPdf } from "@/lib/generate-analysis-pdf";
+import { downloadCoachMatchEyePdf, downloadCoachDrillPdf, downloadCoachHalfPdf } from "@/lib/generate-analysis-pdf";
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
@@ -1831,7 +1831,17 @@ export default function MatchEyePage() {
 
             {activeTab === "first" && (
               firstResult
-                ? <HalfReport result={firstResult} half="first" tracking={firstTracking} />
+                ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <HalfReport result={firstResult} half="first" tracking={firstTracking} />
+                      <button
+                        onClick={() => downloadCoachHalfPdf(firstResult, "First Half", homeTeam, awayTeam, sport, competition)}
+                        style={{ background: "#1a5c2a", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                      >
+                        <Download size={16} /> Download First Half PDF
+                      </button>
+                    </div>
+                  )
                 : firstAnalysing
                   ? (
                     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "48px 24px", textAlign: "center" }}>
@@ -1861,7 +1871,17 @@ export default function MatchEyePage() {
             )}
             {activeTab === "second" && (
               secondResult
-                ? <HalfReport result={secondResult} half="second" tracking={secondTracking} />
+                ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <HalfReport result={secondResult} half="second" tracking={secondTracking} />
+                      <button
+                        onClick={() => downloadCoachHalfPdf(secondResult, "Second Half", homeTeam, awayTeam, sport, competition)}
+                        style={{ background: "#1a5c2a", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                      >
+                        <Download size={16} /> Download Second Half PDF
+                      </button>
+                    </div>
+                  )
                 : secondAnalysing
                   ? (
                     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "48px 24px", textAlign: "center" }}>
