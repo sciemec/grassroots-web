@@ -57,6 +57,19 @@ const PITCH_ZONES = [
   "Left Channel", "Right Channel", "Penalty Area",
 ];
 
+// Map Match Brain zone display labels → xG Analysis zone IDs
+const ZONE_LABEL_TO_ID: Record<string, string> = {
+  "Six-Yard Box": "six_yard",
+  "Penalty Spot": "penalty_spot",
+  "Central Box":  "central_box",
+  "Wide Box L":   "wide_box_left",
+  "Wide Box R":   "wide_box_right",
+  "Edge Centre":  "edge_centre",
+  "Edge Left":    "edge_wide_left",
+  "Edge Right":   "edge_wide_right",
+  "Long Range":   "long_range",
+};
+
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -99,6 +112,7 @@ function MatchBrainSession() {
   const [toPlayer, setToPlayer]       = useState(2);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const historyAppendedRef = useRef(false);
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const globalMin = PERIOD_OFFSETS[period - 1] + Math.floor(periodSec / 60);
@@ -133,7 +147,52 @@ function MatchBrainSession() {
       events,
     };
     localStorage.setItem("gs_match_brain_events", JSON.stringify(session));
+
+    // Mirror shot events → xG Analysis (gs_touch_tracker) live
+    const shots = events
+      .filter((e): e is ShotEv => e.type === "shot")
+      .map((e) => ({
+        id: e.id,
+        team: e.team,
+        zone: ZONE_LABEL_TO_ID[e.zone] ?? "long_range",
+        xg: e.xg,
+        isGoal: e.isGoal,
+        minute: e.min,
+      }));
+    try {
+      localStorage.setItem("gs_touch_tracker", JSON.stringify({ homeTeam, awayTeam, shots }));
+    } catch { /* storage full */ }
   }, [events, homeTeam, awayTeam, sport, formation]);
+
+  // ── Append to Season Intelligence history once when match ends ────────────────
+  useEffect(() => {
+    if (phase !== "ended" || historyAppendedRef.current) return;
+    historyAppendedRef.current = true;
+
+    const shotEvs = events.filter((e): e is ShotEv => e.type === "shot");
+    const homeXg = shotEvs.filter((e) => e.team === "home").reduce((s, e) => s + e.xg, 0);
+    const awayXg = shotEvs.filter((e) => e.team === "away").reduce((s, e) => s + e.xg, 0);
+    const homeGoals = shotEvs.filter((e) => e.team === "home" && e.isGoal).length;
+    const awayGoals = shotEvs.filter((e) => e.team === "away" && e.isGoal).length;
+
+    const record = {
+      id: `mb-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 10),
+      homeTeam, awayTeam,
+      homeXg: Math.round(homeXg * 100) / 100,
+      awayXg: Math.round(awayXg * 100) / 100,
+      homeGoals,
+      awayGoals,
+    };
+
+    try {
+      const prev = JSON.parse(localStorage.getItem("gs_touch_tracker_history") ?? "[]");
+      const updated = [record, ...(Array.isArray(prev) ? prev : [])].slice(0, 20);
+      localStorage.setItem("gs_touch_tracker_history", JSON.stringify(updated));
+    } catch {
+      localStorage.setItem("gs_touch_tracker_history", JSON.stringify([record]));
+    }
+  }, [phase, events, homeTeam, awayTeam]);
 
   // ── Phase transitions ────────────────────────────────────────────────────────
   function handleStartPeriod() {
@@ -291,6 +350,18 @@ function MatchBrainSession() {
               className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/10 py-3.5 text-sm font-bold text-gray-300 hover:bg-white/5 transition-all"
             >
               <Target size={14} /> Open xG Analysis
+            </button>
+            <button
+              onClick={() => router.push("/analyst/season")}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/10 py-3.5 text-sm font-bold text-gray-300 hover:bg-white/5 transition-all"
+            >
+              <ChevronRight size={14} /> Open Season Intelligence
+            </button>
+            <button
+              onClick={() => router.push("/analyst/heatmaps")}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/10 py-3.5 text-sm font-bold text-gray-300 hover:bg-white/5 transition-all"
+            >
+              <ChevronRight size={14} /> Open Heatmaps
             </button>
             <button
               onClick={() => router.push("/analyst/match-brain")}
