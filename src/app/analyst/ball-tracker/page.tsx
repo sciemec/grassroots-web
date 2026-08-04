@@ -287,7 +287,9 @@ export default function BallTrackerPage() {
 
     try {
       // ── Phase 1: upload (0 → 50%) via XHR for progress events ──────────
-      const jobId = await new Promise<string>((resolve, reject) => {
+      // Try the async endpoint first. If it returns 404 (service not yet
+      // redeployed), job_id will be null and we fall through to the sync path.
+      const jobId = await new Promise<string | null>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `${AI_URL}/track-ball-async`);
 
@@ -306,6 +308,9 @@ export default function BallTrackerPage() {
             } catch {
               reject(new Error("Invalid response from tracker"));
             }
+          } else if (xhr.status === 404) {
+            // Async endpoint not deployed yet — signal sync fallback
+            resolve(null);
           } else {
             try {
               const body = JSON.parse(xhr.responseText) as { detail?: string };
@@ -319,46 +324,88 @@ export default function BallTrackerPage() {
         xhr.send(formData);
       });
 
-      // ── Phase 2: poll GET /job/{jobId} every 3 s (50 → 95%) ───────────
-      setProgress(50);
-      setStatusMsg("Detecting ball & players…");
-      let tick = 50;
+      let trackResult: TrackResult;
 
-      const trackResult = await new Promise<TrackResult>((resolve, reject) => {
-        pollRef.current = setInterval(async () => {
-          try {
-            const res = await fetch(`${AI_URL}/job/${jobId}`);
-            if (!res.ok) {
-              clearInterval(pollRef.current!);
-              reject(new Error(`Poll error ${res.status}`));
-              return;
+      if (jobId === null) {
+        // ── Fallback: sync /track-ball (old behaviour) ─────────────────
+        setProgress(50);
+        setStatusMsg("Detecting ball & players…");
+        trackResult = await new Promise<TrackResult>((resolve, reject) => {
+          const xhr2 = new XMLHttpRequest();
+          xhr2.open("POST", `${AI_URL}/track-ball`);
+
+          let tick = 50;
+          xhr2.onreadystatechange = () => {
+            if (xhr2.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+              const id = setInterval(() => {
+                tick = Math.min(tick + 3, 92);
+                setProgress(tick);
+                if (tick < 65)      setStatusMsg("Detecting ball & players…");
+                else if (tick < 80) setStatusMsg("Tracking ball path…");
+                else                setStatusMsg("Detecting events…");
+                if (tick >= 92) clearInterval(id);
+              }, 900);
             }
-            const job = await res.json() as {
-              status: string;
-              result?: TrackResult;
-              error?: string;
-            };
+          };
 
-            // Advance fake progress bar each tick
-            tick = Math.min(tick + 4, 94);
-            setProgress(tick);
-            if (tick < 65)      setStatusMsg("Detecting ball & players…");
-            else if (tick < 80) setStatusMsg("Tracking ball path…");
-            else                setStatusMsg("Detecting events…");
-
-            if (job.status === "complete" && job.result) {
-              clearInterval(pollRef.current!);
-              resolve(job.result);
-            } else if (job.status === "failed") {
-              clearInterval(pollRef.current!);
-              reject(new Error(job.error ?? "Ball tracking failed"));
+          xhr2.onload = () => {
+            setProgress(100);
+            if (xhr2.status >= 200 && xhr2.status < 300) {
+              try { resolve(JSON.parse(xhr2.responseText)); }
+              catch { reject(new Error("Invalid response from tracker")); }
+            } else {
+              try {
+                const body = JSON.parse(xhr2.responseText) as { detail?: string };
+                reject(new Error(body.detail ?? `Tracker error ${xhr2.status}`));
+              } catch {
+                reject(new Error(`Tracker error ${xhr2.status}`));
+              }
             }
-          } catch (err) {
-            clearInterval(pollRef.current!);
-            reject(err);
-          }
-        }, 3000);
-      });
+          };
+          xhr2.onerror = () => reject(new Error("Network error — is the AI service running?"));
+          xhr2.send(formData);
+        });
+      } else {
+        // ── Phase 2: poll GET /job/{jobId} every 3 s (50 → 95%) ─────────
+        setProgress(50);
+        setStatusMsg("Detecting ball & players…");
+        let tick = 50;
+
+        trackResult = await new Promise<TrackResult>((resolve, reject) => {
+          pollRef.current = setInterval(async () => {
+            try {
+              const res = await fetch(`${AI_URL}/job/${jobId}`);
+              if (!res.ok) {
+                clearInterval(pollRef.current!);
+                reject(new Error(`Poll error ${res.status}`));
+                return;
+              }
+              const job = await res.json() as {
+                status: string;
+                result?: TrackResult;
+                error?: string;
+              };
+
+              tick = Math.min(tick + 4, 94);
+              setProgress(tick);
+              if (tick < 65)      setStatusMsg("Detecting ball & players…");
+              else if (tick < 80) setStatusMsg("Tracking ball path…");
+              else                setStatusMsg("Detecting events…");
+
+              if (job.status === "complete" && job.result) {
+                clearInterval(pollRef.current!);
+                resolve(job.result);
+              } else if (job.status === "failed") {
+                clearInterval(pollRef.current!);
+                reject(new Error(job.error ?? "Ball tracking failed"));
+              }
+            } catch (err) {
+              clearInterval(pollRef.current!);
+              reject(err);
+            }
+          }, 3000);
+        });
+      }
 
       setProgress(100);
       setResult(trackResult);
