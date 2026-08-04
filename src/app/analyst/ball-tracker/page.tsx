@@ -215,6 +215,7 @@ export default function BallTrackerPage() {
   const [result, setResult] = useState<TrackResult | null>(null);
   const [error, setError] = useState("");
   const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
+  const [xgSaved, setXgSaved] = useState(false);
 
   // ── drag & drop ──────────────────────────────────────────────────────────
 
@@ -307,6 +308,7 @@ export default function BallTrackerPage() {
 
       setResult(data);
       setPhase("results");
+      saveToAnalystTools(data, homeTeam, awayTeam);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
       setPhase("setup");
@@ -321,6 +323,76 @@ export default function BallTrackerPage() {
       next.has(i) ? next.delete(i) : next.add(i);
       return next;
     });
+  }
+
+  // ── save kick events → xG Analysis + Season Intelligence ─────────────────
+
+  const XG_VALUES: Record<string, number> = {
+    six_yard: 0.76, penalty_spot: 0.45, central_box: 0.35,
+    wide_box_left: 0.12, wide_box_right: 0.12,
+    edge_centre: 0.18, edge_wide_left: 0.07, edge_wide_right: 0.07,
+    long_range: 0.04,
+  };
+
+  function kickToZone(x: number, y: number, attackingRight: boolean): string {
+    const rx = attackingRight ? (1 - x) : x; // distance from attacking goal
+    const dy = Math.abs(y - 0.5);
+    if (rx < 0.05 && dy < 0.11) return "six_yard";
+    if (rx < 0.18 && dy < 0.08) return "penalty_spot";
+    if (rx < 0.25 && dy < 0.16) return "central_box";
+    if (rx < 0.25 && y < 0.34)  return "wide_box_left";
+    if (rx < 0.25 && y > 0.66)  return "wide_box_right";
+    if (rx < 0.40 && dy < 0.12) return "edge_centre";
+    if (rx < 0.40 && y < 0.38)  return "edge_wide_left";
+    if (rx < 0.40 && y > 0.62)  return "edge_wide_right";
+    return "long_range";
+  }
+
+  function saveToAnalystTools(trackResult: TrackResult, home: string, away: string) {
+    // Only kick events in the attacking third count as shots
+    const shots = trackResult.ball_events
+      .filter((ev) => ev.type === "kick" && (ev.x > 0.6 || ev.x < 0.4))
+      .map((ev, i) => {
+        const isHome = ev.x > 0.6; // home attacks right side by convention
+        const zone = kickToZone(ev.x, ev.y, isHome);
+        return {
+          id: `bt-${i}`,
+          team: isHome ? ("home" as const) : ("away" as const),
+          zone,
+          xg: XG_VALUES[zone] ?? 0.04,
+          isGoal: false,
+          minute: Math.floor(ev.time_s / 60),
+        };
+      });
+
+    // Write to xG Analysis
+    localStorage.setItem(
+      "gs_touch_tracker",
+      JSON.stringify({ homeTeam: home || "Home", awayTeam: away || "Away", shots }),
+    );
+
+    // Append record to Season Intelligence history
+    const homeXg = shots.filter((s) => s.team === "home").reduce((sum, s) => sum + s.xg, 0);
+    const awayXg = shots.filter((s) => s.team === "away").reduce((sum, s) => sum + s.xg, 0);
+    const record = {
+      id: `bt-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 10),
+      homeTeam: home || "Home",
+      awayTeam: away || "Away",
+      homeXg: Math.round(homeXg * 100) / 100,
+      awayXg: Math.round(awayXg * 100) / 100,
+      homeGoals: 0,
+      awayGoals: 0,
+    };
+    try {
+      const prev = JSON.parse(localStorage.getItem("gs_touch_tracker_history") ?? "[]");
+      const updated = [record, ...(Array.isArray(prev) ? prev : [])].slice(0, 20);
+      localStorage.setItem("gs_touch_tracker_history", JSON.stringify(updated));
+    } catch {
+      localStorage.setItem("gs_touch_tracker_history", JSON.stringify([record]));
+    }
+
+    setXgSaved(true);
   }
 
   // ── setup phase ───────────────────────────────────────────────────────────
@@ -534,6 +606,24 @@ export default function BallTrackerPage() {
             <h1 className="text-lg font-black text-gray-900">
               {homeTeam || "Home"} vs {awayTeam || "Away"}
             </h1>
+            {xgSaved && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Link
+                  href="/analyst/xg-analysis"
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
+                  style={{ backgroundColor: "#16a34a" }}
+                >
+                  <CheckCircle2 size={9} /> Saved to xG Analysis →
+                </Link>
+                <Link
+                  href="/analyst/season"
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
+                  style={{ backgroundColor: "#1a5c2a" }}
+                >
+                  <CheckCircle2 size={9} /> Saved to Season Intelligence →
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
