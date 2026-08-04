@@ -199,6 +199,15 @@ export default function PassMapPage() {
     } catch { /* silent */ }
   };
 
+  // Auto-load Match Eye data on mount when no Match Brain session is active
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("gs_match_brain_events")) return; // Match Brain takes priority
+      if (localStorage.getItem("gs_match_eye_last")) loadFromMatchEye();
+    } catch { /* silent */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const maxMinute = mbSession
     ? Math.max(90, ...mbSession.events.map(e => e.min))
     : 90;

@@ -263,6 +263,40 @@ export default function MatchMapPage() {
   useEffect(() => { try { localStorage.setItem(LS_SHOTS,  JSON.stringify(shots));  } catch {} }, [shots]);
   useEffect(() => { try { localStorage.setItem(LS_PASSES, JSON.stringify(passes)); } catch {} }, [passes]);
 
+  // Auto-populate shots from Match Eye key_events on mount (only when map is empty)
+  useEffect(() => {
+    if (shots.length > 0) return;
+    try {
+      const raw = localStorage.getItem("gs_match_eye_last");
+      if (!raw) return;
+      const me = JSON.parse(raw) as {
+        analysis?: {
+          key_events?: Array<{ time?: string; team?: string; type?: string }>;
+        };
+      };
+      const keyEvents = me.analysis?.key_events ?? [];
+      const shotEvents = keyEvents.filter(ev => /shot|goal/i.test(ev.type ?? ""));
+      if (!shotEvents.length) return;
+
+      const mapped: ShotMarker[] = shotEvents.map((ev, i) => {
+        const isGoal = /goal/i.test(ev.type ?? "");
+        const team: "home" | "away" = ev.team === "away" ? "away" : "home";
+        const min = parseInt((ev.time ?? "0").replace(/\D/g, "")) || i + 1;
+        const zone = ZONES.find(z => z.id === (isGoal ? "penalty_spot" : "central_box"))!;
+        return {
+          id: crypto.randomUUID(),
+          team, zoneId: zone.id, zoneLabel: zone.label,
+          xg: zone.xg, minute: min, isGoal,
+          svgX: zone.x + zone.w / 2,
+          svgY: zone.y + zone.h / 2,
+        };
+      });
+
+      setShots(mapped);
+    } catch { /* silent */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handlePitchClick = (x: number, y: number) => {
     if (mode === "shot") {
       const zone = getZoneAt(x, y);

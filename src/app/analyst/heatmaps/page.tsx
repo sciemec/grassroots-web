@@ -57,10 +57,10 @@ export default function HeatmapsPage() {
     try { localStorage.removeItem(LS_KEY + "_data"); } catch {}
   };
 
-  const importFromMatchEye = () => {
+  const importFromMatchEye = (silent = false) => {
     try {
       const raw = localStorage.getItem("gs_match_eye_last");
-      if (!raw) { alert("No Match Eye analysis found. Run a match video first."); return; }
+      if (!raw) { if (!silent) alert("No Match Eye analysis found. Run a match video first."); return; }
       const me = JSON.parse(raw) as {
         homeTeam?: string; awayTeam?: string;
         trackingData?: {
@@ -68,7 +68,7 @@ export default function HeatmapsPage() {
         };
       };
       const players = me.trackingData?.players;
-      if (!players?.length) { alert("No player tracking data in Match Eye session. Run the Player Tracking tab first."); return; }
+      if (!players?.length) { if (!silent) alert("No player tracking data in Match Eye session. Run the Player Tracking tab first."); return; }
 
       const newMaps: Record<number, number[]> = {};
       const newSquadLines: string[] = [];
@@ -189,6 +189,14 @@ export default function HeatmapsPage() {
       alert("Could not read Match Brain data. Run a match and try again.");
     }
   };
+
+  // Auto-load Match Eye tracking data on mount (silent — no alerts)
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("gs_match_eye_last")) importFromMatchEye(true);
+    } catch { /* silent */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalClicks = currentMap.reduce((s, v) => s + v, 0);
 
