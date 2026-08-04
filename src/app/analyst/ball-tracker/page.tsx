@@ -39,10 +39,34 @@ interface PlayerStat {
   avg_speed_kmh: number;
 }
 
+interface PlayerPosition {
+  player_id: number;
+  second: number;
+  x: number;
+  y: number;
+  team: "home" | "away";
+}
+
+interface PassEvent {
+  from_player_id: number;
+  to_player_id: number;
+  from_team: "home" | "away";
+  to_team: "home" | "away";
+  from_name?: string;
+  to_name?: string;
+  time_s: number;
+  from_x: number;
+  from_y: number;
+  to_x: number;
+  to_y: number;
+}
+
 interface TrackResult {
   players: PlayerStat[];
   ball: BallPosition[];
   ball_events: BallEvent[];
+  player_positions?: PlayerPosition[];
+  pass_events?: PassEvent[];
   stats: {
     home_possession: number;
     away_possession: number;
@@ -216,6 +240,8 @@ export default function BallTrackerPage() {
   const [error, setError] = useState("");
   const [expandedEvents, setExpandedEvents] = useState<Set<number>>(new Set());
   const [xgSaved, setXgSaved] = useState(false);
+  const [heatmapsSaved, setHeatmapsSaved] = useState(false);
+  const [passMapSaved, setPassMapSaved] = useState(false);
 
   // ── drag & drop ──────────────────────────────────────────────────────────
 
@@ -245,6 +271,9 @@ export default function BallTrackerPage() {
     setProgress(0);
     setError("");
     setResult(null);
+    setXgSaved(false);
+    setHeatmapsSaved(false);
+    setPassMapSaved(false);
 
     const squad = parseSquad(squadText);
     const formData = new FormData();
@@ -393,6 +422,70 @@ export default function BallTrackerPage() {
     }
 
     setXgSaved(true);
+
+    // ── Heatmaps ─────────────────────────────────────────────────────────────
+    // Convert player_positions flat array → 6×10 zone grid per player
+    const positions = trackResult.player_positions ?? [];
+    if (positions.length > 0) {
+      const HCOLS = 6, HROWS = 10, HTOTAL = HCOLS * HROWS;
+      const grids: Record<number, number[]> = {};
+      const playerLabels: string[] = [];
+      const seenIdx: Record<number, number> = {};
+
+      for (const pos of positions) {
+        if (!(pos.player_id in seenIdx)) {
+          const idx = playerLabels.length;
+          seenIdx[pos.player_id] = idx;
+          const p = trackResult.players.find((pl) => pl.id === pos.player_id);
+          const label = p?.name
+            ? p.name
+            : p?.jersey
+            ? `#${p.jersey} (${pos.team})`
+            : `P${pos.player_id} (${pos.team})`;
+          playerLabels.push(label);
+          grids[idx] = Array(HTOTAL).fill(0) as number[];
+        }
+        const idx = seenIdx[pos.player_id];
+        const col = Math.min(Math.floor(pos.x * HCOLS), HCOLS - 1);
+        const row = Math.min(Math.floor(pos.y * HROWS), HROWS - 1);
+        grids[idx][row * HCOLS + col] = (grids[idx][row * HCOLS + col] ?? 0) + 1;
+      }
+
+      try {
+        localStorage.setItem("gs_heatmaps_data",  JSON.stringify(grids));
+        localStorage.setItem("gs_heatmaps_squad", playerLabels.join("\n"));
+        setHeatmapsSaved(true);
+      } catch { /* storage full — skip */ }
+    }
+
+    // ── Pass Map ─────────────────────────────────────────────────────────────
+    // Convert pass_events → MBSession format that Pass Map "Movement" tab reads
+    const passEvs = trackResult.pass_events ?? [];
+    if (passEvs.length > 0) {
+      const mbEvents = passEvs.map((pe, i) => ({
+        id: `bt-pass-${i}`,
+        type: "pass" as const,
+        team: pe.from_team,
+        fromPlayer: pe.from_player_id,
+        toPlayer: pe.to_player_id,
+        passType: "pass" as const,
+        min: Math.floor(pe.time_s / 60),
+      }));
+
+      const mbSession = {
+        homeTeam: home || "Home",
+        awayTeam: away || "Away",
+        sport: "football",
+        formation: "4-3-3",
+        date: new Date().toISOString(),
+        events: mbEvents,
+      };
+
+      try {
+        localStorage.setItem("gs_match_brain_events", JSON.stringify(mbSession));
+        setPassMapSaved(true);
+      } catch { /* storage full — skip */ }
+    }
   }
 
   // ── setup phase ───────────────────────────────────────────────────────────
@@ -606,22 +699,44 @@ export default function BallTrackerPage() {
             <h1 className="text-lg font-black text-gray-900">
               {homeTeam || "Home"} vs {awayTeam || "Away"}
             </h1>
-            {xgSaved && (
+            {(xgSaved || heatmapsSaved || passMapSaved) && (
               <div className="flex flex-wrap gap-2 mt-2">
-                <Link
-                  href="/analyst/xg-analysis"
-                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
-                  style={{ backgroundColor: "#16a34a" }}
-                >
-                  <CheckCircle2 size={9} /> Saved to xG Analysis →
-                </Link>
-                <Link
-                  href="/analyst/season"
-                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
-                  style={{ backgroundColor: "#1a5c2a" }}
-                >
-                  <CheckCircle2 size={9} /> Saved to Season Intelligence →
-                </Link>
+                {xgSaved && (
+                  <Link
+                    href="/analyst/xg-analysis"
+                    className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
+                    style={{ backgroundColor: "#16a34a" }}
+                  >
+                    <CheckCircle2 size={9} /> Saved to xG Analysis →
+                  </Link>
+                )}
+                {xgSaved && (
+                  <Link
+                    href="/analyst/season"
+                    className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
+                    style={{ backgroundColor: "#1a5c2a" }}
+                  >
+                    <CheckCircle2 size={9} /> Saved to Season Intelligence →
+                  </Link>
+                )}
+                {heatmapsSaved && (
+                  <Link
+                    href="/analyst/heatmaps"
+                    className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
+                    style={{ backgroundColor: "#0369a1" }}
+                  >
+                    <CheckCircle2 size={9} /> Saved to Heatmaps →
+                  </Link>
+                )}
+                {passMapSaved && (
+                  <Link
+                    href="/analyst/pass-map"
+                    className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-white"
+                    style={{ backgroundColor: "#7c3aed" }}
+                  >
+                    <CheckCircle2 size={9} /> Saved to Pass Map →
+                  </Link>
+                )}
               </div>
             )}
           </div>
@@ -779,7 +894,7 @@ export default function BallTrackerPage() {
         {/* New tracking button */}
         <div className="pb-6">
           <button
-            onClick={() => { setPhase("setup"); setResult(null); setFile(null); setExpandedEvents(new Set()); }}
+            onClick={() => { setPhase("setup"); setResult(null); setFile(null); setExpandedEvents(new Set()); setXgSaved(false); setHeatmapsSaved(false); setPassMapSaved(false); }}
             className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors shadow-sm"
           >
             ← Track another clip
