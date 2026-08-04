@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Activity, Camera, Brain, Target, BarChart2, FileText,
   Network, Map, TrendingUp, Layers, Scan, Radio, ChevronRight,
-  ShieldCheck, GraduationCap, Zap, Trophy,
+  ShieldCheck, GraduationCap, Zap, Trophy, CircleDot,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import SyncStatusBadge from "@/components/ui/SyncStatusBadge";
@@ -97,6 +97,13 @@ const FEATURES = [
     iconBg: "#ecfdf5", iconColor: "#059669",
     label: "Team Biomechanics",
     desc: "YOLOv8 + MediaPipe Â· Performance Index Â· Resilience Index Â· PDF",
+  },
+  {
+    href: "/analyst/ball-tracker",
+    icon: CircleDot,
+    iconBg: "#fef9c3", iconColor: "#ca8a04",
+    label: "Ball Tracker",
+    desc: "5 fps ball path Â· kick / deflection / stop events Â· player speeds",
   },
 ];
 
