@@ -14,6 +14,7 @@ import {
   Flame, ListChecks, Swords
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { useStreakStore } from "@/lib/streak-store";
 
 // ── Feature flags — set false to hide features without deleting code ────────
 const FEATURES = {
@@ -151,8 +152,17 @@ export function Sidebar() {
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const logout      = useAuthStore((s) => s.logout);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const streakActive  = useStreakStore((s) => s.activeToday);
+  const streakCount   = useStreakStore((s) => s.dailyStreak);
+  const fetchStreak   = useStreakStore((s) => s.fetch);
 
   useEffect(() => { setIsMobileOpen(false); }, [pathname]);
+
+  // Fetch streak once when the sidebar mounts (only for players)
+  useEffect(() => {
+    if (user?.role === "player") fetchStreak();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role]);
 
   if (!hasHydrated) return null;
 
@@ -245,6 +255,11 @@ export function Sidebar() {
               >
                 {item.icon}
                 {item.label}
+                {/* Streak reminder dot — shown on Player Hub when player hasn't trained today */}
+                {item.href === "/player" && streakCount > 0 && !streakActive && (
+                  <span className="ml-auto w-2 h-2 rounded-full animate-pulse shrink-0"
+                    style={{ backgroundColor: "#f97316" }} />
+                )}
               </Link>
             ))}
           </div>

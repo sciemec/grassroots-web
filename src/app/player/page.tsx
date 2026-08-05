@@ -212,6 +212,7 @@ export default function PlayerDashboardHome() {
   const { activeSport, setActiveSport } = useSport();
   const [sessionCount,  setSessionCount]  = useState<number | null>(null);
   const [streak,        setStreak]        = useState<number | null>(null);
+  const [activeToday,   setActiveToday]   = useState<boolean>(false);
   const [aqScore,       setAqScore]       = useState<number | null>(null);
   const [todayDone,     setTodayDone]     = useState(false);
   const [athleticScore, setAthleteScore]  = useState<number | null>(null);
@@ -259,10 +260,11 @@ export default function PlayerDashboardHome() {
     setStreak(getCurrentStreak());
     api.get("/streak")
       .then((res) => {
-        const backendStreak: number = res.data?.daily_streak ?? 0;
+        const backendStreak: number  = res.data?.daily_streak ?? 0;
+        const backendActive: boolean = res.data?.active_today ?? false;
         const localStreak  = getCurrentStreak();
-        // Use whichever is higher — localStorage Goal Engine or backend training streak
         setStreak(Math.max(backendStreak, localStreak));
+        setActiveToday(backendActive);
       })
       .catch(() => { /* backend streak unavailable — localStorage value stays */ });
 
@@ -362,16 +364,23 @@ export default function PlayerDashboardHome() {
 
             {/* Stat tiles */}
             <div className="grid grid-cols-3 gap-2.5 mt-5">
-              {[
-                { label: "Sessions",    value: sessionCount !== null ? String(sessionCount) : "â€”", Icon: Activity },
-                { label: "Day Streak",  value: streak       !== null ? `${streak}d`         : "â€”", Icon: Flame },
-                { label: "THUTO Score", value: aqScore      !== null ? String(aqScore)       : "â€”", Icon: Star },
-              ].map(({ label, value, Icon }) => (
-                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
-                  style={{ backgroundColor: "rgba(240,180,41,0.07)", border: "1px solid rgba(240,180,41,0.15)" }}>
-                  <Icon size={11} className="mx-auto mb-1" style={{ color: "rgba(240,180,41,0.55)" }} />
-                  <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
-                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
+              {(() => {
+                const flameColor = (streak !== null && streak > 0)
+                  ? (activeToday ? “#f0b429” : “#f97316”)
+                  : “rgba(240,180,41,0.55)”;
+                return [
+                  { label: “Sessions”,    value: sessionCount !== null ? String(sessionCount) : “—“, Icon: Activity, iconColor: “rgba(240,180,41,0.55)” },
+                  { label: “Day Streak”,  value: streak       !== null ? `${streak}d`         : “—“, Icon: Flame,    iconColor: flameColor },
+                  { label: “THUTO Score”, value: aqScore      !== null ? String(aqScore)       : “—“, Icon: Star,     iconColor: “rgba(240,180,41,0.55)” },
+                ];
+              })().map(({ label, value, Icon, iconColor }) => (
+                <div key={label} className=”rounded-xl px-3 py-2.5 text-center”
+                  style={{ backgroundColor: “rgba(240,180,41,0.07)”, border: “1px solid rgba(240,180,41,0.15)” }}>
+                  <Icon size={11}
+                    className={`mx-auto mb-1${label === “Day Streak” && streak !== null && streak > 0 && !activeToday ? “ animate-pulse” : “”}`}
+                    style={{ color: iconColor }} />
+                  <p className=”text-base font-black leading-none” style={{ color: “#f0b429” }}>{value}</p>
+                  <p className=”text-[9px] uppercase tracking-wide mt-0.5” style={{ color: “rgba(240,180,41,0.55)” }}>{label}</p>
                 </div>
               ))}
             </div>
@@ -392,6 +401,80 @@ export default function PlayerDashboardHome() {
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             SECTION 1 â€” MY PATHWAY
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        {/* ── Training streak card ──────────────────────────────────────────── */}
+        {user && (() => {
+          const hoursLeft = Math.max(0, Math.floor(
+            (new Date(new Date().setHours(24, 0, 0, 0)).getTime() - Date.now()) / 3_600_000
+          ));
+
+          if (streak === null || streak === 0) {
+            return (
+              <Link href="/player/sessions/new"
+                className="group flex items-center justify-between rounded-2xl p-4 border border-gray-200 bg-white shadow-sm hover:border-[#1a5c2a] transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#f4f4f5" }}>
+                    <Flame size={17} style={{ color: "#9ca3af" }} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-gray-900">Start your training streak</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Log a session today — even 20 minutes counts</p>
+                  </div>
+                </div>
+                <ArrowRight size={13} className="text-gray-300 group-hover:text-[#1a5c2a] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </Link>
+            );
+          }
+
+          if (activeToday) {
+            return (
+              <div className="flex items-center justify-between rounded-2xl p-4 border shadow-sm"
+                style={{ backgroundColor: "#1a3d26", borderColor: "rgba(240,180,41,0.35)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: "rgba(240,180,41,0.12)" }}>
+                    <Flame size={17} style={{ color: "#f0b429" }} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black" style={{ color: "#f0b429" }}>
+                      {streak}-day streak — done for today
+                    </p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "rgba(240,180,41,0.6)" }}>
+                      Train again tomorrow to keep it going
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-black px-2.5 py-1 rounded-full"
+                  style={{ backgroundColor: "rgba(240,180,41,0.15)", color: "#f0b429" }}>
+                  Done
+                </span>
+              </div>
+            );
+          }
+
+          return (
+            <Link href="/player/sessions/new"
+              className="group flex items-center justify-between rounded-2xl p-4 border shadow-sm hover:opacity-95 transition-all"
+              style={{ backgroundColor: "#431407", borderColor: "#f97316" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 animate-pulse"
+                  style={{ backgroundColor: "rgba(249,115,22,0.2)" }}>
+                  <Flame size={17} style={{ color: "#f97316" }} />
+                </div>
+                <div>
+                  <p className="text-xs font-black" style={{ color: "#f97316" }}>
+                    {streak}-day streak — train today!
+                  </p>
+                  <p className="text-[11px] mt-0.5" style={{ color: "rgba(249,115,22,0.7)" }}>
+                    Streak breaks in {hoursLeft}h — tap to log a session
+                  </p>
+                </div>
+              </div>
+              <ArrowRight size={13} style={{ color: "#f97316" }}
+                className="group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </Link>
+          );
+        })()}
+
         <section>
           <SectionLabel>1 Â· My Pathway</SectionLabel>
           {/* Stage progress bar */}
