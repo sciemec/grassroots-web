@@ -246,3 +246,22 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
+
+// ── Web Push — streak reminders ──────────────────────────────────────────────
+// Fired by the Laravel backend when a streak is at risk of breaking.
+self.addEventListener("push", (event) => {
+  let data = { title: "Time to train! 🔥", body: "Keep your streak alive. Log a session today.", url: "/player/sessions/new" };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch { /* malformed payload — use defaults */ }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body:    data.body,
+      icon:    "/icons/icon-192x192.png",
+      badge:   "/icons/icon-72x72.png",
+      data:    { url: data.url },
+      vibrate: [200, 100, 200],
+    })
+  );
+});

@@ -255,7 +255,16 @@ export default function PlayerDashboardHome() {
       }
     } catch { /* storage unavailable */ }
 
+    // Seed from localStorage immediately, then override with backend value
     setStreak(getCurrentStreak());
+    api.get("/streak")
+      .then((res) => {
+        const backendStreak: number = res.data?.daily_streak ?? 0;
+        const localStreak  = getCurrentStreak();
+        // Use whichever is higher — localStorage Goal Engine or backend training streak
+        setStreak(Math.max(backendStreak, localStreak));
+      })
+      .catch(() => { /* backend streak unavailable — localStorage value stays */ });
 
     api.get("/sessions")
       .then((res) => {

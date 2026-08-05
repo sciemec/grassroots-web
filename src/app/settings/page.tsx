@@ -99,6 +99,35 @@ export default function SettingsPage() {
     if (typeof Notification === "undefined") return;
     const perm = await Notification.requestPermission();
     setNotifPermission(perm);
+
+    // If permission granted, create a Web Push subscription and save it to the backend
+    if (perm === "granted" && "serviceWorker" in navigator && "PushManager" in window) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!vapidKey) return;
+
+        const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
+        const base64 = (vapidKey + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawKey = window.atob(base64);
+        const uint8Key = new Uint8Array(rawKey.length);
+        for (let i = 0; i < rawKey.length; i++) uint8Key[i] = rawKey.charCodeAt(i);
+
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: uint8Key,
+        });
+
+        const json = sub.toJSON();
+        await api.post("/streak/push-subscribe", {
+          endpoint: json.endpoint,
+          p256dh:   json.keys?.p256dh,
+          auth:     json.keys?.auth,
+        });
+      } catch {
+        // Subscription failed — browser unsupported or VAPID key not set yet
+      }
+    }
   };
 
   const notifForm = useForm<NotifForm>({
