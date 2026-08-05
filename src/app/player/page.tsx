@@ -37,11 +37,11 @@ const WIRE = [
   "Teach for Zimbabwe Mobile Lab activated for Hwange District schools",
 ];
 
-// Pathway stages â€” a player progresses through these over their career
+// Pathway stages – a player progresses through these over their career
 const PATHWAY_STAGES = [
-  { id: "primary",    label: "Primary",    sub: "U10â€“U12", ageGroups: ["u10", "u11", "u12"] },
-  { id: "secondary",  label: "Secondary",  sub: "U13â€“U16", ageGroups: ["u13", "u14", "u15", "u16"] },
-  { id: "junior_pro", label: "Junior Pro", sub: "U17â€“U19", ageGroups: ["u17", "u18", "u19"] },
+  { id: "primary",    label: "Primary",    sub: "U10–U12", ageGroups: ["u10", "u11", "u12"] },
+  { id: "secondary",  label: "Secondary",  sub: "U13–U16", ageGroups: ["u13", "u14", "u15", "u16"] },
+  { id: "junior_pro", label: "Junior Pro", sub: "U17–U19", ageGroups: ["u17", "u18", "u19"] },
   { id: "senior",     label: "Senior",     sub: "20+",     ageGroups: ["senior", "open"] },
   { id: "pro",        label: "Pro / Scholarship", sub: "Goal",  ageGroups: [] },
 ];
@@ -300,7 +300,7 @@ export default function PlayerDashboardHome() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
 
-      {/* â”€â”€ Brand header â”€â”€ */}
+      {/* â"€â"€ Brand header â"€â"€ */}
       <div style={{ backgroundColor: "#1a5c2a", borderBottom: "3px solid #f0b429" }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -322,7 +322,7 @@ export default function PlayerDashboardHome() {
         </div>
       </div>
 
-      {/* â”€â”€ Live wire ticker â”€â”€ */}
+      {/* â"€â"€ Live wire ticker â"€â"€ */}
       <div style={{ backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a" }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-3">
           <span className="shrink-0 inline-flex items-center gap-1 rounded text-[9px] font-black uppercase tracking-widest px-2 py-0.5 text-white"
@@ -333,7 +333,7 @@ export default function PlayerDashboardHome() {
         </div>
       </div>
 
-      {/* â”€â”€ Sport switcher bar â”€â”€ */}
+      {/* â"€â"€ Sport switcher bar â"€â"€ */}
       <div style={{ backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5">
           <SportSwitcher activeSport={activeSport} onSelect={setActiveSport} size="sm" />
@@ -342,7 +342,7 @@ export default function PlayerDashboardHome() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-7">
 
-        {/* â”€â”€ Hero card â”€â”€ */}
+        {/* â"€â"€ Hero card â"€â"€ */}
         <div className="rounded-2xl overflow-hidden shadow-sm">
           <div className="relative px-5 pt-6 pb-5" style={{ background: "#1a5c2a" }}>
             <div className="flex items-start justify-between gap-4">
@@ -366,19 +366,19 @@ export default function PlayerDashboardHome() {
             </div>
 
             {/* Stat tiles */}
-            <div className=”grid grid-cols-3 gap-2.5 mt-5”>
+            <div className="grid grid-cols-3 gap-2.5 mt-5">
               {[
-                { label: “Sessions”,    value: sessionCount !== null ? String(sessionCount) : “-”, Icon: Activity, iconColor: “rgba(240,180,41,0.55)” },
-                { label: “Day Streak”,  value: streak       !== null ? `${streak}d`         : “-”, Icon: Flame,    iconColor: flameColor },
-                { label: “THUTO Score”, value: aqScore      !== null ? String(aqScore)       : “-”, Icon: Star,     iconColor: “rgba(240,180,41,0.55)” },
+                { label: "Sessions",    value: sessionCount !== null ? String(sessionCount) : "-", Icon: Activity, iconColor: "rgba(240,180,41,0.55)" },
+                { label: "Day Streak",  value: streak       !== null ? `${streak}d`         : "-", Icon: Flame,    iconColor: flameColor },
+                { label: "THUTO Score", value: aqScore      !== null ? String(aqScore)       : "-", Icon: Star,     iconColor: "rgba(240,180,41,0.55)" },
               ].map(({ label, value, Icon, iconColor }) => (
-                <div key={label} className=”rounded-xl px-3 py-2.5 text-center”
-                  style={{ backgroundColor: “rgba(240,180,41,0.07)”, border: “1px solid rgba(240,180,41,0.15)” }}>
+                <div key={label} className="rounded-xl px-3 py-2.5 text-center"
+                  style={{ backgroundColor: "rgba(240,180,41,0.07)", border: "1px solid rgba(240,180,41,0.15)" }}>
                   <Icon size={11}
-                    className={`mx-auto mb-1${label === “Day Streak” && streak !== null && streak > 0 && !activeToday ? “ animate-pulse” : “”}`}
+                    className={`mx-auto mb-1${label === "Day Streak" && streak !== null && streak > 0 && !activeToday ? " animate-pulse" : ""}`}
                     style={{ color: iconColor }} />
-                  <p className=”text-base font-black leading-none” style={{ color: “#f0b429” }}>{value}</p>
-                  <p className=”text-[9px] uppercase tracking-wide mt-0.5” style={{ color: “rgba(240,180,41,0.55)” }}>{label}</p>
+                  <p className="text-base font-black leading-none" style={{ color: "#f0b429" }}>{value}</p>
+                  <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: "rgba(240,180,41,0.55)" }}>{label}</p>
                 </div>
               ))}
             </div>
@@ -397,7 +397,7 @@ export default function PlayerDashboardHome() {
           </div>
         </div>
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 1 â€” MY PATHWAY
+            SECTION 1 – MY PATHWAY
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {/* ── Training streak card ──────────────────────────────────────────── */}
         {user && (() => {
@@ -526,7 +526,7 @@ export default function PlayerDashboardHome() {
                 style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
                 <ArrowRight size={13} style={{ color: "#1a5c2a" }} />
                 <p className="text-[11px] font-bold text-green-800">
-                  Next stage: <span className="font-black">{nextStage.label}</span> ({nextStage.sub}) â€” keep training and logging sessions to progress.
+                  Next stage: <span className="font-black">{nextStage.label}</span> ({nextStage.sub}) – keep training and logging sessions to progress.
                 </p>
               </div>
             )}
@@ -534,7 +534,7 @@ export default function PlayerDashboardHome() {
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 2 â€” TODAY
+            SECTION 2 – TODAY
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section>
           <SectionLabel>2 Â· Today</SectionLabel>
@@ -550,7 +550,7 @@ export default function PlayerDashboardHome() {
                 </span>
               </div>
               <p className="text-xs text-gray-500 leading-snug">
-                {todayDone ? "Well done â€” you logged today." : "Tap to log your daily actions and mood."}
+                {todayDone ? "Well done – you logged today." : "Tap to log your daily actions and mood."}
               </p>
             </Link>
             {/* Start training */}
@@ -585,14 +585,14 @@ export default function PlayerDashboardHome() {
                 <Brain size={15} style={{ color: "#7c3aed" }} />
                 <span className="text-[10px] font-black uppercase tracking-wider text-purple-700">THUTO AI Coach</span>
               </div>
-              <p className="text-xs text-gray-500 leading-snug">Ask THUTO anything â€” technique, tactics, nutrition, mental game.</p>
+              <p className="text-xs text-gray-500 leading-snug">Ask THUTO anything – technique, tactics, nutrition, mental game.</p>
               <ArrowRight size={12} className="text-purple-400 mt-auto group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 3 â€” MY DRILLS
+            SECTION 3 – MY DRILLS
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section>
           <SectionLabel>3 Â· My Drills</SectionLabel>
@@ -617,7 +617,7 @@ export default function PlayerDashboardHome() {
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 4 â€” AI ANALYSIS
+            SECTION 4 – AI ANALYSIS
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section>
           <SectionLabel>4 Â· AI Analysis</SectionLabel>
@@ -648,7 +648,7 @@ export default function PlayerDashboardHome() {
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 4b â€” SKILL LAB (sport-specific)
+            SECTION 4b – SKILL LAB (sport-specific)
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section>
           <SectionLabel>4b Â· Skill Lab</SectionLabel>
@@ -662,7 +662,7 @@ export default function PlayerDashboardHome() {
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 5 â€” MY ACADEMICS
+            SECTION 5 – MY ACADEMICS
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section>
           <SectionLabel>5 Â· My Academics</SectionLabel>
@@ -723,7 +723,7 @@ export default function PlayerDashboardHome() {
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 6 â€” MY SHOWCASE
+            SECTION 6 – MY SHOWCASE
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section>
           <SectionLabel>6 Â· My Showcase</SectionLabel>
@@ -763,7 +763,7 @@ export default function PlayerDashboardHome() {
         </section>
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SECTION 7 â€” MY STORY
+            SECTION 7 – MY STORY
         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <section>
           <SectionLabel>7 Â· My Story</SectionLabel>
@@ -783,7 +783,7 @@ export default function PlayerDashboardHome() {
           </div>
         </section>
 
-        {/* â”€â”€ 8 Â· Guardian Access â”€â”€ */}
+        {/* â"€â"€ 8 Â· Guardian Access â"€â"€ */}
         <section>
           <SectionLabel>8 Â· Guardian</SectionLabel>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -794,13 +794,13 @@ export default function PlayerDashboardHome() {
           </div>
         </section>
 
-        {/* â”€â”€ Weekly Challenges â”€â”€ */}
+        {/* â"€â"€ Weekly Challenges â"€â"€ */}
         <WeeklyChallenges
           playerAqScore={aqScore ?? 0}
           playerSessionCount={sessionCount ?? 0}
         />
 
-        {/* â”€â”€ Identity footer â”€â”€ */}
+        {/* â"€â"€ Identity footer â"€â"€ */}
         <div className="rounded-2xl bg-white border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px]"
