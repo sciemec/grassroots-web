@@ -293,6 +293,9 @@ export default function PlayerDashboardHome() {
   const stageIndex  = getPathwayStage((user as unknown as Record<string, string> | null)?.age_group);
   const currentStage = PATHWAY_STAGES[stageIndex];
   const nextStage    = PATHWAY_STAGES[stageIndex + 1];
+  const flameColor  = (streak !== null && streak > 0)
+    ? (activeToday ? "#f0b429" : "#f97316")
+    : "rgba(240,180,41,0.55)";
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f4f2ee" }}>
@@ -363,17 +366,12 @@ export default function PlayerDashboardHome() {
             </div>
 
             {/* Stat tiles */}
-            <div className="grid grid-cols-3 gap-2.5 mt-5">
-              {(() => {
-                const flameColor = (streak !== null && streak > 0)
-                  ? (activeToday ? “#f0b429” : “#f97316”)
-                  : “rgba(240,180,41,0.55)”;
-                return [
-                  { label: “Sessions”,    value: sessionCount !== null ? String(sessionCount) : “—“, Icon: Activity, iconColor: “rgba(240,180,41,0.55)” },
-                  { label: “Day Streak”,  value: streak       !== null ? `${streak}d`         : “—“, Icon: Flame,    iconColor: flameColor },
-                  { label: “THUTO Score”, value: aqScore      !== null ? String(aqScore)       : “—“, Icon: Star,     iconColor: “rgba(240,180,41,0.55)” },
-                ];
-              })().map(({ label, value, Icon, iconColor }) => (
+            <div className=”grid grid-cols-3 gap-2.5 mt-5”>
+              {[
+                { label: “Sessions”,    value: sessionCount !== null ? String(sessionCount) : “-”, Icon: Activity, iconColor: “rgba(240,180,41,0.55)” },
+                { label: “Day Streak”,  value: streak       !== null ? `${streak}d`         : “-”, Icon: Flame,    iconColor: flameColor },
+                { label: “THUTO Score”, value: aqScore      !== null ? String(aqScore)       : “-”, Icon: Star,     iconColor: “rgba(240,180,41,0.55)” },
+              ].map(({ label, value, Icon, iconColor }) => (
                 <div key={label} className=”rounded-xl px-3 py-2.5 text-center”
                   style={{ backgroundColor: “rgba(240,180,41,0.07)”, border: “1px solid rgba(240,180,41,0.15)” }}>
                   <Icon size={11}
