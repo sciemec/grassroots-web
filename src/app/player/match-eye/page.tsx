@@ -782,6 +782,9 @@ export default function PlayerMatchEyePage() {
                 <p style={{ fontSize: 12, color: "#9ca3af", textAlign: "center" }}>
                   Drag & drop or tap to choose · MP4, MOV, AVI supported
                 </p>
+                <p style={{ fontSize: 11, color: "#9ca3af", textAlign: "center", marginTop: 4 }}>
+                  Keep camera steady — avoid panning for best ball tracking
+                </p>
                 <input ref={fileRef} type="file" accept="video/*" onChange={handleFilePick} style={{ display: "none" }} />
               </div>
             ) : (

@@ -385,6 +385,7 @@ export default function AnalystMatchEye() {
             <Upload size={26} style={{ color: D.dim, marginBottom: 8 }} />
             <div style={{ fontSize: 13, color: D.muted, fontWeight: 600 }}>Click to upload</div>
             <div style={{ fontSize: 11, color: D.dim, marginTop: 3 }}>MP4, MOV, AVI — any size</div>
+            <div style={{ fontSize: 11, color: D.dim, marginTop: 2 }}>Keep camera steady — avoid panning for best ball tracking</div>
             {half.error && <div style={{ marginTop: 8, fontSize: 12, color: D.red }}>{half.error}</div>}
           </div>
         )}

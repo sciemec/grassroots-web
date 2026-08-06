@@ -630,6 +630,7 @@ export default function CoachDrillAnalysisPage() {
                 <Upload size={28} className="mx-auto mb-3 text-white/30" />
                 <p className="text-sm font-semibold text-white/60">Tap to choose video or drag it here</p>
                 <p className="text-[11px] text-white/30 mt-1">mp4 or mov · under 200MB · max 60 seconds</p>
+                <p className="text-[11px] text-white/30 mt-1">Keep camera steady — avoid panning for best ball tracking</p>
                 <button
                   className="mt-4 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
                   style={{ backgroundColor: "#1a5c2a" }}

@@ -596,6 +596,7 @@ export default function MatchEyePage() {
             <div style={{ fontSize: 13, color: "#555", fontWeight: 600 }}>Click to upload</div>
             <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>MP4, MOV, AVI — any size</div>
             <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>Tip: record at 720p for fastest upload</div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>Keep camera steady — avoid panning for best ball tracking</div>
             {half.error && <div style={{ marginTop: 8, fontSize: 12, color: "#ef4444" }}>{half.error}</div>}
           </div>
         )}
