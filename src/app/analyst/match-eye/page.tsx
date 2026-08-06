@@ -121,6 +121,14 @@ export default function AnalystMatchEye() {
   const [competition, setCompetition] = useState("");
   const [sport,       setSport]       = useState("Football");
 
+  // Kit colours for supervised team classification
+  const [homeKitColor,  setHomeKitColor]  = useState("#ffffff");
+  const [awayKitColor,  setAwayKitColor]  = useState("#0000ff");
+  const [homeGkColor,   setHomeGkColor]   = useState("#ffff00");
+  const [awayGkColor,   setAwayGkColor]   = useState("#00ffff");
+  const [refereeColor,  setRefereeColor]  = useState("#000000");
+  const [showKitColors, setShowKitColors] = useState(false);
+
   // Page flow
   const [pageStage,   setPageStage]   = useState<PageStage>("setup");
   const [activeTab,   setActiveTab]   = useState<"first" | "second" | "summary">("first");
@@ -213,7 +221,11 @@ export default function AnalystMatchEye() {
       const jobRes = await fetch(`${API}/match-eye/analyse-full`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
-        body: JSON.stringify({ r2_key: key, half: which, home_team: homeTeam, away_team: awayTeam, competition, sport }),
+        body: JSON.stringify({
+          r2_key: key, half: which,
+          home_team: homeTeam, away_team: awayTeam, competition, sport,
+          team_colors: { home: homeKitColor, away: awayKitColor, home_gk: homeGkColor, away_gk: awayGkColor, referee: refereeColor },
+        }),
       });
       if (!jobRes.ok) {
         const err = await jobRes.json().catch(() => ({})) as { message?: string };
@@ -747,7 +759,7 @@ export default function AnalystMatchEye() {
                       style={{ width: "100%", background: D.card2, border: `1.5px solid ${D.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 14, outline: "none", boxSizing: "border-box", color: D.text }} />
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: D.muted, display: "block", marginBottom: 4 }}>Competition</label>
                     <input value={competition} onChange={(e) => setCompetition(e.target.value)} placeholder="e.g. Premier League"
@@ -760,6 +772,36 @@ export default function AnalystMatchEye() {
                       {SPORTS.map((s) => <option key={s}>{s}</option>)}
                     </select>
                   </div>
+                </div>
+
+                {/* Kit colours — optional */}
+                <div style={{ borderTop: `1px solid ${D.border}`, paddingTop: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowKitColors((v) => !v)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: showKitColors ? 12 : 0 }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 700, color: D.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Kit Colours</span>
+                    <span style={{ fontSize: 11, color: D.dim, fontWeight: 500 }}>optional — improves player classification accuracy</span>
+                    <span style={{ fontSize: 10, color: D.dim, marginLeft: "auto" }}>{showKitColors ? "▲" : "▼"}</span>
+                  </button>
+                  {showKitColors && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      {[
+                        { label: "Home Kit",        value: homeKitColor, set: setHomeKitColor },
+                        { label: "Away Kit",         value: awayKitColor, set: setAwayKitColor },
+                        { label: "Home Goalkeeper",  value: homeGkColor,  set: setHomeGkColor  },
+                        { label: "Away Goalkeeper",  value: awayGkColor,  set: setAwayGkColor  },
+                        { label: "Referee Kit",      value: refereeColor, set: setRefereeColor },
+                      ].map(({ label, value, set }) => (
+                        <label key={label} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                          <input type="color" value={value} onChange={(e) => set(e.target.value)}
+                            style={{ height: 32, width: 48, borderRadius: 6, border: `1.5px solid ${D.border}`, cursor: "pointer", padding: 2, background: D.card2 }} />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: D.text }}>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

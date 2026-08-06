@@ -139,6 +139,14 @@ export default function MatchEyePage() {
   const [homeTeam,       setHomeTeam]       = useState("");
   const [awayTeam,       setAwayTeam]       = useState("");
   const [competition,    setCompetition]    = useState("");
+
+  // Kit colours for supervised team classification
+  const [homeKitColor,   setHomeKitColor]   = useState("#ffffff");
+  const [awayKitColor,   setAwayKitColor]   = useState("#0000ff");
+  const [homeGkColor,    setHomeGkColor]    = useState("#ffff00");
+  const [awayGkColor,    setAwayGkColor]    = useState("#00ffff");
+  const [refereeColor,   setRefereeColor]   = useState("#000000");
+  const [showKitColors,  setShowKitColors]  = useState(false);
   const [sport,          setSport]          = useState("Football");
   const [trackedPlayers, setTrackedPlayers] = useState<TrackedPlayer[]>([{ jersey: "", name: "", position: "" }]);
 
@@ -302,6 +310,13 @@ export default function MatchEyePage() {
           competition,
           sport,
           tracked_players: trackedPlayers.filter((p) => p.jersey || p.name),
+          team_colors: {
+            home:    homeKitColor,
+            away:    awayKitColor,
+            home_gk: homeGkColor,
+            away_gk: awayGkColor,
+            referee: refereeColor,
+          },
         }),
       });
       if (!jobRes.ok) {
@@ -1463,7 +1478,7 @@ export default function MatchEyePage() {
                       />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 4 }}>Competition</label>
                       <input
@@ -1481,6 +1496,40 @@ export default function MatchEyePage() {
                         {SPORTS.map((s) => <option key={s}>{s}</option>)}
                       </select>
                     </div>
+                  </div>
+
+                  {/* Kit colours — optional, improves team classification */}
+                  <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowKitColors((v) => !v)}
+                      style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: showKitColors ? 12 : 0 }}
+                    >
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em" }}>Kit Colours</span>
+                      <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>optional — improves player classification accuracy</span>
+                      <span style={{ fontSize: 10, color: "#9ca3af", marginLeft: "auto" }}>{showKitColors ? "▲" : "▼"}</span>
+                    </button>
+                    {showKitColors && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        {[
+                          { label: "Home Kit",        value: homeKitColor, set: setHomeKitColor },
+                          { label: "Away Kit",         value: awayKitColor, set: setAwayKitColor },
+                          { label: "Home Goalkeeper",  value: homeGkColor,  set: setHomeGkColor  },
+                          { label: "Away Goalkeeper",  value: awayGkColor,  set: setAwayGkColor  },
+                          { label: "Referee Kit",      value: refereeColor, set: setRefereeColor },
+                        ].map(({ label, value, set }) => (
+                          <label key={label} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                            <input
+                              type="color"
+                              value={value}
+                              onChange={(e) => set(e.target.value)}
+                              style={{ height: 32, width: 48, borderRadius: 6, border: "1.5px solid #e5e7eb", cursor: "pointer", padding: 2 }}
+                            />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (

@@ -226,6 +226,14 @@ export default function BallTrackerPage() {
   const [homeTeam, setHomeTeam] = useState("");
   const [awayTeam, setAwayTeam] = useState("");
   const [squadText, setSquadText] = useState("");
+
+  // Kit colours for supervised team classification
+  const [homeKitColor,  setHomeKitColor]  = useState("#ffffff");
+  const [awayKitColor,  setAwayKitColor]  = useState("#0000ff");
+  const [homeGkColor,   setHomeGkColor]   = useState("#ffff00");
+  const [awayGkColor,   setAwayGkColor]   = useState("#00ffff");
+  const [refereeColor,  setRefereeColor]  = useState("#000000");
+  const [showKitColors, setShowKitColors] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -284,6 +292,13 @@ export default function BallTrackerPage() {
     if (Object.keys(squad).length) {
       formData.append("squad", JSON.stringify(squad));
     }
+    formData.append("team_colors", JSON.stringify({
+      home:     homeKitColor,
+      away:     awayKitColor,
+      home_gk:  homeGkColor,
+      away_gk:  awayGkColor,
+      referee:  refereeColor,
+    }));
 
     try {
       // ── Phase 1: upload (0 → 50%) via XHR for progress events ──────────
@@ -639,6 +654,48 @@ export default function BallTrackerPage() {
                 className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-mono text-gray-900 placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-[#1a5c2a] focus:border-[#1a5c2a] resize-none"
               />
               <p className="mt-1 text-[10px] text-gray-400">One entry per line: jersey=Name. Used to label the players table.</p>
+            </div>
+
+            {/* Kit colours */}
+            <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowKitColors((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+              >
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-600">Kit Colours</span>
+                  <span className="ml-2 text-[10px] text-gray-400 font-medium normal-case tracking-normal">optional — improves team classification accuracy</span>
+                </div>
+                <ChevronDown size={14} className={`text-gray-400 transition-transform ${showKitColors ? "rotate-180" : ""}`} />
+              </button>
+              {showKitColors && (
+                <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+                  <p className="text-[10px] text-gray-400 mb-3 leading-relaxed">
+                    Pick each kit colour from a frame of the video. The AI will match players to the nearest colour
+                    instead of guessing. Referees are always excluded from team stats.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { label: "Home Kit",       value: homeKitColor,  set: setHomeKitColor  },
+                      { label: "Away Kit",        value: awayKitColor,  set: setAwayKitColor  },
+                      { label: "Home Goalkeeper", value: homeGkColor,   set: setHomeGkColor   },
+                      { label: "Away Goalkeeper", value: awayGkColor,   set: setAwayGkColor   },
+                      { label: "Referee Kit",     value: refereeColor,  set: setRefereeColor  },
+                    ].map(({ label, value, set }) => (
+                      <label key={label} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="color"
+                          value={value}
+                          onChange={(e) => set(e.target.value)}
+                          className="h-9 w-14 rounded-lg border border-gray-200 cursor-pointer p-0.5"
+                        />
+                        <span className="text-xs font-semibold text-gray-700">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Drop zone */}
