@@ -28,36 +28,63 @@ const MAX_RETRIES = 3;
 const RETRY_DELAYS_MS = [5_000, 15_000, 30_000] as const;
 
 /**
- * Returns the appropriate chunk size for the current device and network.
+ * Returns the appropriate chunk size for the current device and network,
+ * and logs the decision to the console for field diagnostics.
  *
- * Mobile (iPhone / Android / iPad):
- *   8 MB  — each chunk takes ~8 s on 4G, far shorter window for a drop to hit.
- *   A 25 MB chunk on mobile data takes 25–65 s, which regularly hits tower
- *   handoffs and triggers xhr.onerror.  8 MB fixed this on field tests.
+ * Priority order:
+ *   1. navigator.connection.effectiveType (Android Chrome) — most accurate
+ *   2. User-agent mobile detection (iOS / unknown) — safe fallback
+ *   3. Desktop — maximum throughput
  *
- * 2G / slow-2G (navigator.connection, Android Chrome only):
- *   4 MB  — further reduces exposure on very weak connections.
+ * effectiveType values (Network Information API, Android Chrome only):
+ *   "slow-2g" / "2g"  → 4 MB  — very slow; minimise per-chunk transfer time
+ *   "3g"              → 8 MB  — moderate; 8 MB ≈ 8–25 s, safe handoff window
+ *   "4g"              → 25 MB — fast data; treat same as WiFi desktop
  *
- * Desktop (WiFi):
- *   25 MB — fewer proxy round trips, original behaviour preserved.
+ * iOS Safari does NOT expose navigator.connection, so we fall back to 8 MB
+ * for any mobile user agent where connection quality is unknowable.
  *
  * DO NOT merge mobile and desktop back to a single chunk size without
  * confirming the mobile upload failure is solved by another mechanism.
+ * DO NOT lower the "4g" threshold without field-testing — Android "4g" covers
+ * everything from LTE Cat-1 (~10 Mbps) to 5G (>100 Mbps).
  */
 function getChunkSize(): number {
-  if (typeof navigator === "undefined") return LARGE_CHUNK_BYTES; // SSR — default to desktop
-  // navigator.connection is non-standard but available on Android Chrome
+  if (typeof navigator === "undefined") {
+    // SSR — no browser APIs available
+    console.log("[upload] chunk=25MB reason=ssr");
+    return LARGE_CHUNK_BYTES;
+  }
+
   const conn = (navigator as Navigator & {
     connection?: { effectiveType?: string };
   }).connection;
-  if (conn?.effectiveType === "2g" || conn?.effectiveType === "slow-2g") {
-    return 4 * 1024 * 1024; // 4 MB on very slow connections
+
+  if (conn?.effectiveType) {
+    // Android Chrome: use actual measured network quality
+    switch (conn.effectiveType) {
+      case "slow-2g":
+      case "2g":
+        console.log("[upload] chunk=4MB reason=android-2g");
+        return 4 * 1024 * 1024;
+      case "3g":
+        console.log("[upload] chunk=8MB reason=android-3g");
+        return CHUNK_BYTES;
+      default:
+        // "4g" or any future value — treat as fast connection
+        console.log(`[upload] chunk=25MB reason=android-${conn.effectiveType}`);
+        return LARGE_CHUNK_BYTES;
+    }
   }
-  // iOS Safari does not expose navigator.connection — fall back to user agent
+
+  // navigator.connection absent — iOS Safari or older Android WebView
   if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-    return CHUNK_BYTES; // 8 MB on mobile
+    console.log("[upload] chunk=8MB reason=ios-default");
+    return CHUNK_BYTES; // 8 MB — safe default when signal quality is unknowable
   }
-  return LARGE_CHUNK_BYTES; // 25 MB on desktop
+
+  console.log("[upload] chunk=25MB reason=desktop");
+  return LARGE_CHUNK_BYTES;
 }
 
 // ── Upload Advisory ─────────────────────────────────────────────────────────
@@ -223,8 +250,13 @@ export async function uploadVideoInChunks(
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       if (attempt > 0) {
+        const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? 30_000;
+        console.log(
+          `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
+          `delay=${delayMs / 1000}s err="${lastError?.message}"`,
+        );
         // Mobile-safe backoff: 5 s then 15 s — gives mobile data time to recover
-        await new Promise<void>((r) => setTimeout(r, RETRY_DELAYS_MS[attempt - 1] ?? 30_000));
+        await new Promise<void>((r) => setTimeout(r, delayMs));
       }
 
       try {
@@ -308,8 +340,13 @@ export async function uploadVideoInChunksParallel(
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       if (attempt > 0) {
+        const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? 30_000;
+        console.log(
+          `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
+          `delay=${delayMs / 1000}s err="${lastError?.message}"`,
+        );
         // Mobile-safe backoff: 5 s then 15 s — gives mobile data time to recover
-        await new Promise<void>((r) => setTimeout(r, RETRY_DELAYS_MS[attempt - 1] ?? 30_000));
+        await new Promise<void>((r) => setTimeout(r, delayMs));
       }
 
       try {
