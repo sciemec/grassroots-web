@@ -14,8 +14,51 @@
  */
 
 const CHUNK_BYTES       = 8  * 1024 * 1024; // 8 MB  — matches Google's resumable upload chunk granularity
-const LARGE_CHUNK_BYTES = 25 * 1024 * 1024; // 25 MB — fewer proxy round trips (still a multiple of 256 KB)
+const LARGE_CHUNK_BYTES = 25 * 1024 * 1024; // 25 MB — fewer proxy round trips on desktop (still a multiple of 256 KB)
 const MAX_RETRIES = 3;
+
+/**
+ * Retry delays between chunk upload attempts.
+ * 5 s / 15 s gives mobile data time to recover after a tower handoff or brief
+ * signal drop. Desktop on WiFi rarely needs more than the first attempt.
+ *
+ * DO NOT reduce these back to `attempt * 1000` (1 s / 2 s) — that timing was
+ * confirmed too short for mobile data recovery on field tests (July 2026).
+ */
+const RETRY_DELAYS_MS = [5_000, 15_000, 30_000] as const;
+
+/**
+ * Returns the appropriate chunk size for the current device and network.
+ *
+ * Mobile (iPhone / Android / iPad):
+ *   8 MB  — each chunk takes ~8 s on 4G, far shorter window for a drop to hit.
+ *   A 25 MB chunk on mobile data takes 25–65 s, which regularly hits tower
+ *   handoffs and triggers xhr.onerror.  8 MB fixed this on field tests.
+ *
+ * 2G / slow-2G (navigator.connection, Android Chrome only):
+ *   4 MB  — further reduces exposure on very weak connections.
+ *
+ * Desktop (WiFi):
+ *   25 MB — fewer proxy round trips, original behaviour preserved.
+ *
+ * DO NOT merge mobile and desktop back to a single chunk size without
+ * confirming the mobile upload failure is solved by another mechanism.
+ */
+function getChunkSize(): number {
+  if (typeof navigator === "undefined") return LARGE_CHUNK_BYTES; // SSR — default to desktop
+  // navigator.connection is non-standard but available on Android Chrome
+  const conn = (navigator as Navigator & {
+    connection?: { effectiveType?: string };
+  }).connection;
+  if (conn?.effectiveType === "2g" || conn?.effectiveType === "slow-2g") {
+    return 4 * 1024 * 1024; // 4 MB on very slow connections
+  }
+  // iOS Safari does not expose navigator.connection — fall back to user agent
+  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+    return CHUNK_BYTES; // 8 MB on mobile
+  }
+  return LARGE_CHUNK_BYTES; // 25 MB on desktop
+}
 
 // ── Upload Advisory ─────────────────────────────────────────────────────────
 // Typical sustained throughput per connection type (conservative estimates):
@@ -132,6 +175,11 @@ function sendChunkXhr(
       reject(new Error("Network error during upload — check your connection and try again"));
 
     xhr.open("POST", `/api/match-eye/upload?${params.toString()}`);
+    // 90 s per chunk — prevents an infinite hang when mobile data stalls.
+    // Without this, a stalled (not dropped) connection hangs until the OS kills it.
+    xhr.timeout = 90_000;
+    xhr.ontimeout = () =>
+      reject(new Error("Upload timed out — check your connection and try again"));
     xhr.setRequestHeader("Content-Type", chunk.type || "video/mp4");
     // Thread the Google resumable-session URL so the server continues the same session
     if (sessionUrl) xhr.setRequestHeader("X-Upload-Session-Url", sessionUrl);
@@ -175,8 +223,8 @@ export async function uploadVideoInChunks(
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       if (attempt > 0) {
-        // Exponential backoff: 1 s, 2 s before retrying
-        await new Promise<void>((r) => setTimeout(r, attempt * 1000));
+        // Mobile-safe backoff: 5 s then 15 s — gives mobile data time to recover
+        await new Promise<void>((r) => setTimeout(r, RETRY_DELAYS_MS[attempt - 1] ?? 30_000));
       }
 
       try {
@@ -219,31 +267,33 @@ export async function uploadVideoInChunks(
 }
 
 /**
- * Faster variant — uses 25 MB chunks instead of 8 MB.
- * Reduces proxy round trips by ~3× for large files.
+ * Adaptive-chunk variant — uses 25 MB on desktop, 8 MB on mobile.
  *
- * Example: 200 MB file
- *   uploadVideoInChunks         → 25 chunks × ~500 ms proxy overhead ≈ 12 s overhead
- *   uploadVideoInChunksParallel →  8 chunks × ~500 ms proxy overhead ≈  4 s overhead
+ * Desktop (WiFi):  25 MB chunks — fewer proxy round trips (~3× vs 8 MB).
+ * Mobile (4G/3G):   8 MB chunks — shorter transfer window per chunk, far less
+ *   exposure to tower handoffs that trigger xhr.onerror on mobile data.
+ *   Field-confirmed fix: 25 MB chunks took 25–65 s on mobile data, regularly
+ *   hitting connection drops.  8 MB chunks cut the window to 8–25 s.
  *
  * Google resumable upload is still sequential (required by the protocol).
- * The speed gain comes from amortising the per-round-trip latency over more data.
  *
- * Use this instead of uploadVideoInChunks on /player/analyse.
- * The original is preserved for backwards compatibility.
+ * Use this instead of uploadVideoInChunks on /player/analyse, /coach/match-eye,
+ * /analyst/match-eye.  The original uploadVideoInChunks is preserved for
+ * backwards compatibility.
  */
 export async function uploadVideoInChunksParallel(
   file:       File,
   onProgress: (pct: number) => void,
 ): Promise<ChunkUploadResult> {
   const totalSize   = file.size;
-  const totalChunks = Math.ceil(totalSize / LARGE_CHUNK_BYTES);
+  const chunkSize   = getChunkSize(); // 8 MB on mobile, 25 MB on desktop
+  const totalChunks = Math.ceil(totalSize / chunkSize);
   let   sessionUrl: string | null = null;
   let   bytesUploaded = 0;
 
   for (let i = 0; i < totalChunks; i++) {
-    const start  = i * LARGE_CHUNK_BYTES;
-    const end    = Math.min(start + LARGE_CHUNK_BYTES, totalSize);
+    const start  = i * chunkSize;
+    const end    = Math.min(start + chunkSize, totalSize);
     const chunk  = file.slice(start, end);
     const isLast = i === totalChunks - 1;
 
@@ -258,7 +308,8 @@ export async function uploadVideoInChunksParallel(
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       if (attempt > 0) {
-        await new Promise<void>((r) => setTimeout(r, attempt * 1000));
+        // Mobile-safe backoff: 5 s then 15 s — gives mobile data time to recover
+        await new Promise<void>((r) => setTimeout(r, RETRY_DELAYS_MS[attempt - 1] ?? 30_000));
       }
 
       try {
