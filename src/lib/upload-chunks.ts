@@ -207,7 +207,10 @@ function sendChunkXhr(
     xhr.timeout = 90_000;
     xhr.ontimeout = () =>
       reject(new Error("Upload timed out — check your connection and try again"));
-    xhr.setRequestHeader("Content-Type", chunk.type || "video/mp4");
+    // chunk.type is always populated for File objects and MediaRecorder blobs.
+    // Fallback to octet-stream (not video/mp4) so audio files are never mislabelled
+    // to Gemini when chunk.type is unexpectedly empty.
+    xhr.setRequestHeader("Content-Type", chunk.type || "application/octet-stream");
     // Thread the Google resumable-session URL so the server continues the same session
     if (sessionUrl) xhr.setRequestHeader("X-Upload-Session-Url", sessionUrl);
     xhr.send(chunk);
