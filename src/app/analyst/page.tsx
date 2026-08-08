@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Activity, Camera, Brain, Target, BarChart2, FileText,
   Network, Map, TrendingUp, Layers, Scan, Radio, ChevronRight,
-  ShieldCheck, GraduationCap, Zap, Trophy, CircleDot,
+  ShieldCheck, GraduationCap, Zap, Trophy, CircleDot, Mic,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import SyncStatusBadge from "@/components/ui/SyncStatusBadge";
@@ -104,6 +104,13 @@ const FEATURES = [
     iconBg: "#fef9c3", iconColor: "#ca8a04",
     label: "Ball Tracker",
     desc: "5 fps ball path Â· kick / deflection / stop events Â· player speeds",
+  },
+  {
+    href: "/analyst/commentary",
+    icon: Mic,
+    iconBg: "#fff1f2", iconColor: "#e11d48",
+    label: "Commentary Analysis",
+    desc: "Record speech · Gemini extracts events · timestamped timeline",
   },
 ];
 
