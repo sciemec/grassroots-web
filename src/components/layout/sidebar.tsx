@@ -11,7 +11,7 @@ import {
   BarChart3, Medal, Globe, Trophy, Briefcase,
   Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send, Shield, Brain,
   Bell, User, Calendar, Star, DollarSign, CheckSquare, ClipboardList, MessageCircle,
-  Flame, ListChecks, Swords
+  Flame, ListChecks, Swords, Mic
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useStreakStore } from "@/lib/streak-store";
@@ -130,6 +130,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/analyst/xg-analysis",       label: "xG Analysis",        icon: <Target size={18} />,      roles: ["analyst","admin","coach"] },
   { href: "/analyst/tactical-report",   label: "Tactical Report",    icon: <Crosshair size={18} />,   roles: ["analyst","admin","coach"] },
   { href: "/analyst/season",            label: "Season Intelligence", icon: <TrendingUp size={18} />,  roles: ["analyst","admin","coach"] },
+  { href: "/analyst/commentary",        label: "Commentary Analysis", icon: <Mic size={18} />,          roles: ["analyst","admin","coach"] },
 
   // ── Shared: Arena + World Cup ─────────────────────────────────────────────
   { href: "/arena",             label: "The Arena",       icon: <Globe size={18} />,       roles: ["player","athlete","coach","scout","fan"], feature: "arena"   },
