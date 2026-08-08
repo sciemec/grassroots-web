@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, BookOpen, Dumbbell, Calendar,
   Brain, TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -203,6 +203,7 @@ export default function CoachHubPage() {
           <HubCard href="/analyst/tactical-report"   icon={Crosshair}  iconBg="#ede9fe" iconColor="#7c3aed" label="Tactical Report"     desc="AI-generated match report"  />
           <HubCard href="/analyst/team-biomechanics" icon={Activity}   iconBg="#fef3c7" iconColor="#d97706" label="Team Biomechanics"   desc="Movement & load data"       />
           <HubCard href="/analyst/season"            icon={TrendingUp} iconBg="#dcfce7" iconColor="#059669" label="Season Intelligence" desc="Season-wide trends"         />
+          <HubCard href="/analyst/commentary"        icon={Mic}        iconBg="#fff1f2" iconColor="#e11d48" label="Commentary Analysis" desc="Record speech · Gemini extracts events" badge="ai" />
         </div>
 
         {/* ── 6. AI & Network ────────────────────────────────────────── */}
