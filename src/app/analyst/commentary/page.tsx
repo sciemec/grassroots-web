@@ -8,10 +8,10 @@
  * extracts a structured event timeline, tactical observations, and match summary.
  *
  * Pipeline:
- *   Browser MediaRecorder → WebM blob
- *   → uploadVideoInChunksParallel (reuses Match Eye proxy)
- *   → POST /api/v1/commentary/analyse  { fileUri, fileName, mimeType, ... }
- *   → Poll /api/v1/commentary/status/{jobId} every 5s
+ *   Browser MediaRecorder → WebM blob (or pre-recorded file upload)
+ *   → uploadVideoInChunksParallel (Match Eye proxy → Gemini Files API)
+ *   → POST /api/analyse-commentary  (Next.js server route, maxDuration=300)
+ *   → Gemini 2.0 Flash transcribes + extracts structured data
  *   → Render events timeline + tactical observations + summary
  */
 
@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter }                   from "next/navigation";
 import {
   Mic, MicOff, Upload, Loader2, CheckCircle, XCircle,
-  Clock, Users, ChevronRight, AlertCircle, Target, BarChart3,
+  Clock, Users, ChevronRight, Target, BarChart3,
   ArrowRight, TrendingUp,
 } from "lucide-react";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
@@ -90,7 +90,7 @@ interface CommentaryResult {
   match_summary:         string;
 }
 
-type Phase = "setup" | "recording" | "upload" | "polling" | "done" | "error";
+type Phase = "setup" | "recording" | "upload" | "analysing" | "done" | "error";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -113,8 +113,7 @@ function formatTime(seconds: number): string {
 
 export default function CommentaryPage() {
   const router  = useRouter();
-  const token   = useAuthStore((s) => s.token);
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const token = useAuthStore((s) => s.token);
 
   // Setup form
   const [homeTeam, setHomeTeam] = useState("");
@@ -126,7 +125,6 @@ export default function CommentaryPage() {
   const [phase,          setPhase]         = useState<Phase>("setup");
   const [recordSecs,     setRecordSecs]    = useState(0);
   const [uploadPct,      setUploadPct]     = useState(0);
-  const [statusMsg,      setStatusMsg]     = useState("");
   const [errorMsg,       setErrorMsg]      = useState("");
   const [result,         setResult]        = useState<CommentaryResult | null>(null);
   const [pushed,         setPushed]        = useState(false);
@@ -134,12 +132,10 @@ export default function CommentaryPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef        = useRef<Blob[]>([]);
   const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollRef          = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cleanup on unmount
   useEffect(() => () => {
     timerRef.current && clearInterval(timerRef.current);
-    pollRef.current  && clearInterval(pollRef.current);
   }, []);
 
   // ── Recording ──────────────────────────────────────────────────────────────
@@ -188,9 +184,7 @@ export default function CommentaryPage() {
       );
 
       setUploadPct(100);
-      setStatusMsg("Audio uploaded — starting analysis…");
-
-      await submitJob({ fileUri, fileName, mimeType, durationSeconds: recordSecs });
+      await runAnalysis({ fileUri, fileName, mimeType });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Upload failed");
       setPhase("error");
@@ -213,70 +207,47 @@ export default function CommentaryPage() {
       );
 
       setUploadPct(100);
-      setStatusMsg("File uploaded — starting analysis…");
 
-      await submitJob({ fileUri, fileName, mimeType, durationSeconds: undefined });
+      await runAnalysis({ fileUri, fileName, mimeType });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Upload failed");
       setPhase("error");
     }
   }
 
-  // ── Submit to backend ─────────────────────────────────────────────────────
+  // ── Call Next.js route directly — no queue, no polling ───────────────────
 
-  async function submitJob(params: {
-    fileUri: string; fileName: string; mimeType: string; durationSeconds?: number;
-  }) {
-    const res = await fetch(`${apiBase}/commentary/analyse`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body:    JSON.stringify({
-        gemini_file_uri:  params.fileUri,
-        gemini_file_name: params.fileName,
-        mime_type:        params.mimeType,
-        home_team:        homeTeam || "Home",
-        away_team:        awayTeam || "Away",
-        sport,
-        half,
-        duration_seconds: params.durationSeconds ?? null,
-      }),
-    });
+  async function runAnalysis(params: { fileUri: string; fileName: string; mimeType: string }) {
+    setPhase("analysing");
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { message?: string };
-      throw new Error(body.message ?? `Server error ${res.status}`);
-    }
+    try {
+      const res = await fetch("/api/analyse-commentary", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          fileUri:  params.fileUri,
+          fileName: params.fileName,
+          mimeType: params.mimeType,
+          homeTeam: homeTeam || "Home",
+          awayTeam: awayTeam || "Away",
+          sport,
+          half,
+          token,
+        }),
+      });
 
-    const { job_id } = await res.json() as { job_id: string };
-    setPhase("polling");
-    setStatusMsg("Gemini is analysing your commentary…");
-    pollStatus(job_id);
-  }
+      const data = await res.json() as { result?: CommentaryResult; error?: string };
 
-  // ── Poll status ───────────────────────────────────────────────────────────
-
-  function pollStatus(jobId: string) {
-    pollRef.current = setInterval(async () => {
-      try {
-        const res  = await fetch(`${apiBase}/commentary/status/${jobId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json() as { status: string; result?: CommentaryResult; error?: string };
-
-        if (data.status === "done" && data.result) {
-          clearInterval(pollRef.current!);
-          setResult(data.result);
-          setPhase("done");
-        } else if (data.status === "failed") {
-          clearInterval(pollRef.current!);
-          setErrorMsg(data.error ?? "Analysis failed");
-          setPhase("error");
-        }
-        // pending / processing — keep polling
-      } catch {
-        // network blip — keep polling
+      if (!res.ok || !data.result) {
+        throw new Error(data.error ?? `Analysis failed (${res.status})`);
       }
-    }, 5000);
+
+      setResult(data.result);
+      setPhase("done");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Analysis failed");
+      setPhase("error");
+    }
   }
 
   // ── Push all extracted data into the 5 analyst hub localStorage keys ─────
@@ -490,12 +461,12 @@ export default function CommentaryPage() {
           </div>
         )}
 
-        {/* ── Phase: Polling ── */}
-        {phase === "polling" && (
+        {/* ── Phase: Analysing ── */}
+        {phase === "analysing" && (
           <div style={{ backgroundColor: "white", borderRadius: 12, padding: 32, textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
             <Loader2 size={40} color="#1a5c2a" style={{ margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
             <p style={{ fontWeight: 600, color: "#1a1a1a", marginBottom: 4 }}>Gemini is analysing your commentary</p>
-            <p style={{ color: "#888", fontSize: 13 }}>This usually takes 30–90 seconds. You can leave this tab open.</p>
+            <p style={{ color: "#888", fontSize: 13 }}>This usually takes 30–90 seconds. Please keep this tab open.</p>
           </div>
         )}
 
