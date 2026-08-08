@@ -34,36 +34,7 @@ Commentary:`;
     const result = await llmModel.generateContent(prompt);
     const commentary = result.response.text().trim();
 
-    // Step 2: Convert to speech with Gemini 2.5 Flash TTS
-    const ttsModel = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash-preview-tts'
-    });
-
-    // Add vocal directions for natural emotion
-    const ttsInput = addVocalDirections(commentary, event.type);
-
-    const audioResponse = await ttsModel.generateContent({
-      contents: [{ role: 'user', parts: [{ text: ttsInput }] }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 500,
-      }
-    });
-
-    // Extract audio data from response
-    const audioData = (audioResponse.response.candidates?.[0]?.content?.parts?.[0] as { inlineData?: { data?: string } })?.inlineData?.data;
-    
-    if (!audioData) {
-      throw new Error('No audio data generated');
-    }
-
-    // Return audio for streaming
-    return new Response(audioData, {
-      headers: {
-        'Content-Type': 'audio/wav',
-        'X-Commentary': encodeURIComponent(commentary),
-      }
-    });
+    return NextResponse.json({ commentary });
 
   } catch (error) {
     console.error('Commentary generation error:', error);
@@ -72,17 +43,4 @@ Commentary:`;
       { status: 500 }
     );
   }
-}
-
-function addVocalDirections(commentary: string, eventType: string): string {
-  const directions: Record<string, string> = {
-    'GOAL': `[excitement] GOAL! ${commentary} [cheerful]`,
-    'PENALTY': `[excitement] ${commentary}`,
-    'CARD': `[serious] ${commentary}`,
-    'SHOT': `[normal] ${commentary} [slight excitement]`,
-    'SUBSTITUTION': `[normal] ${commentary}`,
-    'HALF_TIME': `[calm] ${commentary}`,
-    'FULL_TIME': `[excitement] ${commentary} [cheerful]`,
-  };
-  return directions[eventType] || `[normal] ${commentary}`;
 }
