@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * /analyst/commentary — Record-then-Upload Commentary Analysis
+ * /analyst/commentary — Per-Half Commentary Analysis
  *
- * Analyst speaks naturally during a match (their own commentary / observations).
- * After the match they upload the audio recording — Gemini transcribes it and
- * extracts a structured event timeline, tactical observations, and match summary.
+ * Three independent tabs (1st Half / 2nd Half / Full Match).
+ * Each tab has its own record / upload / Gemini analysis / results state.
+ * Match details (home team, away team, sport) are shared at the top.
  *
- * Pipeline:
+ * Pipeline (per tab):
  *   Browser MediaRecorder → WebM blob (or pre-recorded file upload)
  *   → uploadVideoInChunksParallel (Match Eye proxy → Gemini Files API)
  *   → POST /api/analyse-commentary  (Next.js server route, maxDuration=300)
@@ -15,15 +15,15 @@
  *   → Render events timeline + tactical observations + summary
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter }                   from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Mic, MicOff, Upload, Loader2, CheckCircle, XCircle,
   Clock, Users, ChevronRight, Target, BarChart3,
   ArrowRight, TrendingUp, Play, Pause,
 } from "lucide-react";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
-import { useAuthStore }                from "@/lib/auth-store";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +91,21 @@ interface CommentaryResult {
   match_summary:         string;
 }
 
-type Phase = "setup" | "recording" | "upload" | "analysing" | "done" | "error";
+type Phase   = "setup" | "recording" | "upload" | "analysing" | "done" | "error";
+type HalfKey = "first" | "second" | "full";
+
+interface HalfState {
+  phase:      Phase;
+  recordSecs: number;
+  uploadPct:  number;
+  errorMsg:   string;
+  result:     CommentaryResult | null;
+  pushed:     boolean;
+  audioUrl:   string | null;
+  playing:    boolean;
+  audioCur:   number;
+  audioDur:   number;
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -102,6 +116,10 @@ const XG_ZONE_XG: Record<string, number> = {
   long_range: 0.04,
 };
 
+const HALF_LABELS: Record<HalfKey, string> = {
+  first: "1st Half", second: "2nd Half", full: "Full Match",
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatTime(seconds: number): string {
@@ -110,146 +128,136 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
+function initHalf(): HalfState {
+  return {
+    phase: "setup", recordSecs: 0, uploadPct: 0, errorMsg: "",
+    result: null, pushed: false, audioUrl: null,
+    playing: false, audioCur: 0, audioDur: 0,
+  };
+}
+
+const HALVES: HalfKey[] = ["first", "second", "full"];
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function CommentaryPage() {
-  const router  = useRouter();
-  const token = useAuthStore((s) => s.token);
+  const router = useRouter();
+  const token  = useAuthStore((s) => s.token);
 
-  // Setup form
-  const [homeTeam, setHomeTeam] = useState("");
-  const [awayTeam, setAwayTeam] = useState("");
-  const [sport,    setSport]    = useState("Football");
-  const [half,     setHalf]     = useState<"first" | "second" | "full">("first");
+  // Shared match details
+  const [homeTeam,  setHomeTeam]  = useState("");
+  const [awayTeam,  setAwayTeam]  = useState("");
+  const [sport,     setSport]     = useState("Football");
+  const [activeTab, setActiveTab] = useState<HalfKey>("first");
 
-  // Recording state
-  const [phase,          setPhase]         = useState<Phase>("setup");
-  const [recordSecs,     setRecordSecs]    = useState(0);
-  const [uploadPct,      setUploadPct]     = useState(0);
-  const [errorMsg,       setErrorMsg]      = useState("");
-  const [result,         setResult]        = useState<CommentaryResult | null>(null);
-  const [pushed,         setPushed]        = useState(false);
+  // Per-tab state
+  const [tabs, setTabs] = useState<Record<HalfKey, HalfState>>({
+    first: initHalf(), second: initHalf(), full: initHalf(),
+  });
 
+  // Shared recording refs (only one tab records at a time)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef        = useRef<Blob[]>([]);
   const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
-  const audioBlobRef     = useRef<Blob | null>(null);
-  const audioRef         = useRef<HTMLAudioElement>(null);
-  const eventRefsMap     = useRef<(HTMLDivElement | null)[]>([]);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [playing,  setPlaying]  = useState(false);
-  const [audioCur, setAudioCur] = useState(0);
-  const [audioDur, setAudioDur] = useState(0);
 
-  // Cleanup on unmount
-  useEffect(() => () => {
-    timerRef.current && clearInterval(timerRef.current);
+  // Per-tab refs
+  const audioBlobRefs = useRef<Partial<Record<HalfKey, Blob | File>>>({});
+  const audioRefs     = useRef<Record<HalfKey, HTMLAudioElement | null>>({ first: null, second: null, full: null });
+  const eventRefsMaps = useRef<Record<HalfKey, (HTMLDivElement | null)[]>>({ first: [], second: [], full: [] });
+
+  // Cleanup timer on unmount
+  useEffect(() => () => { timerRef.current && clearInterval(timerRef.current); }, []);
+
+  // Helper: update one half's state
+  const setTab = useCallback((key: HalfKey, patch: Partial<HalfState>) => {
+    setTabs((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
   }, []);
 
-  // Revoke audio object URL when it changes to avoid memory leaks
-  useEffect(() => () => { if (audioUrl) URL.revokeObjectURL(audioUrl); }, [audioUrl]);
+  const cur = tabs[activeTab];
 
-  // Index of the currently-active event (largest audio_time_seconds ≤ playback position)
+  // Synced event index for the active tab
   const activeEventIdx = useMemo(() => {
-    const evs = Array.isArray(result?.events_timeline) ? result!.events_timeline : [];
+    const evs = cur.result?.events_timeline ?? [];
     let idx = -1;
     evs.forEach((ev, i) => {
-      if (ev.audio_time_seconds != null && ev.audio_time_seconds <= audioCur) idx = i;
+      if (ev.audio_time_seconds != null && ev.audio_time_seconds <= cur.audioCur) idx = i;
     });
     return idx;
-  }, [result, audioCur]);
+  }, [cur.result, cur.audioCur, activeTab]);
 
   // Auto-scroll the active event into view
   useEffect(() => {
     if (activeEventIdx >= 0) {
-      eventRefsMap.current[activeEventIdx]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      eventRefsMaps.current[activeTab][activeEventIdx]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [activeEventIdx]);
+  }, [activeEventIdx, activeTab]);
+
+  // True if any tab is currently recording (block tab switching + form editing)
+  const anyRecording = HALVES.some((k) => tabs[k].phase === "recording");
 
   // ── Recording ──────────────────────────────────────────────────────────────
 
-  async function startRecording() {
+  async function startRecording(halfKey: HalfKey) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr     = new MediaRecorder(stream, { mimeType: "audio/webm" });
       mediaRecorderRef.current = mr;
       chunksRef.current        = [];
-
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      mr.start(1000); // collect every 1s so we can show live size
-
-      setRecordSecs(0);
-      timerRef.current = setInterval(() => setRecordSecs((s) => s + 1), 1000);
-      setPhase("recording");
+      mr.start(1000);
+      setTab(halfKey, { phase: "recording", recordSecs: 0 });
+      timerRef.current = setInterval(() => {
+        setTabs((prev) => ({
+          ...prev,
+          [halfKey]: { ...prev[halfKey], recordSecs: prev[halfKey].recordSecs + 1 },
+        }));
+      }, 1000);
     } catch {
-      setErrorMsg("Microphone access denied. Please allow microphone in your browser settings.");
-      setPhase("error");
+      setTab(halfKey, { phase: "error", errorMsg: "Microphone access denied. Please allow microphone in your browser settings." });
     }
   }
 
-  async function stopRecordingAndUpload() {
+  async function stopRecordingAndUpload(halfKey: HalfKey) {
     const mr = mediaRecorderRef.current;
     if (!mr) return;
-
-    // Stop recording
     timerRef.current && clearInterval(timerRef.current);
     mr.stop();
     mr.stream.getTracks().forEach((t) => t.stop());
-
-    // Wait for the last ondataavailable
     await new Promise<void>((resolve) => { mr.onstop = () => resolve(); });
 
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-    audioBlobRef.current = blob;
-    const file = new File([blob], "commentary.webm", { type: "audio/webm" });
-
-    setPhase("upload");
-    setUploadPct(0);
-
+    audioBlobRefs.current[halfKey] = blob;
+    const file = new File([blob], `commentary-${halfKey}.webm`, { type: "audio/webm" });
+    setTab(halfKey, { phase: "upload", uploadPct: 0 });
     try {
-      const { fileUri, fileName, mimeType } = await uploadVideoInChunksParallel(
-        file,
-        (pct) => setUploadPct(pct),
-      );
-
-      setUploadPct(100);
-      await runAnalysis({ fileUri, fileName, mimeType });
+      const r = await uploadVideoInChunksParallel(file, (pct) => setTab(halfKey, { uploadPct: pct }));
+      setTab(halfKey, { uploadPct: 100 });
+      await runAnalysis(halfKey, r);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Upload failed");
-      setPhase("error");
+      setTab(halfKey, { phase: "error", errorMsg: err instanceof Error ? err.message : "Upload failed" });
     }
   }
 
-  // ── File upload (pre-recorded file) ───────────────────────────────────────
+  // ── File upload (pre-recorded) ─────────────────────────────────────────────
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(halfKey: HalfKey, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    audioBlobRef.current = file;
-
-    setPhase("upload");
-    setUploadPct(0);
-
+    audioBlobRefs.current[halfKey] = file;
+    setTab(halfKey, { phase: "upload", uploadPct: 0 });
     try {
-      const { fileUri, fileName, mimeType } = await uploadVideoInChunksParallel(
-        file,
-        (pct) => setUploadPct(pct),
-      );
-
-      setUploadPct(100);
-
-      await runAnalysis({ fileUri, fileName, mimeType });
+      const r = await uploadVideoInChunksParallel(file, (pct) => setTab(halfKey, { uploadPct: pct }));
+      setTab(halfKey, { uploadPct: 100 });
+      await runAnalysis(halfKey, r);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Upload failed");
-      setPhase("error");
+      setTab(halfKey, { phase: "error", errorMsg: err instanceof Error ? err.message : "Upload failed" });
     }
   }
 
-  // ── Call Next.js route directly — no queue, no polling ───────────────────
+  // ── Gemini analysis ────────────────────────────────────────────────────────
 
-  async function runAnalysis(params: { fileUri: string; fileName: string; mimeType: string }) {
-    setPhase("analysing");
-
+  async function runAnalysis(halfKey: HalfKey, params: { fileUri: string; fileName: string; mimeType: string }) {
+    setTab(halfKey, { phase: "analysing" });
     try {
       const res = await fetch("/api/analyse-commentary", {
         method:  "POST",
@@ -261,31 +269,23 @@ export default function CommentaryPage() {
           homeTeam: homeTeam || "Home",
           awayTeam: awayTeam || "Away",
           sport,
-          half,
+          half:     halfKey,
           token,
         }),
       });
-
       const data = await res.json() as { result?: CommentaryResult; error?: string };
-
-      if (!res.ok || !data.result) {
-        throw new Error(data.error ?? `Analysis failed (${res.status})`);
-      }
-
-      setResult(data.result);
-      if (audioBlobRef.current) {
-        setAudioUrl(URL.createObjectURL(audioBlobRef.current));
-      }
-      setPhase("done");
+      if (!res.ok || !data.result) throw new Error(data.error ?? `Analysis failed (${res.status})`);
+      const blob     = audioBlobRefs.current[halfKey];
+      const audioUrl = blob ? URL.createObjectURL(blob) : null;
+      setTab(halfKey, { result: data.result, audioUrl, phase: "done" });
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Analysis failed");
-      setPhase("error");
+      setTab(halfKey, { phase: "error", errorMsg: err instanceof Error ? err.message : "Analysis failed" });
     }
   }
 
-  // ── Push all extracted data into the 5 analyst hub localStorage keys ─────
+  // ── Push to Analysis Hub ───────────────────────────────────────────────────
 
-  function pushToAnalysisHub(r: CommentaryResult) {
+  function pushToAnalysisHub(halfKey: HalfKey, r: CommentaryResult) {
     const home  = homeTeam || "Home";
     const away  = awayTeam || "Away";
     const today = new Date().toISOString().split("T")[0];
@@ -311,7 +311,6 @@ export default function CommentaryPage() {
       if (safeArr(p.active_zones).length > 0) {
         heatData[idx] = p.active_zones;
       } else {
-        // Derive primary zone from pitch_x/y if Gemini didn't output zones
         const col  = Math.min(5, Math.floor((p.pitch_y ?? 50) / 100 * 6));
         const row  = Math.min(9, Math.floor((p.pitch_x ?? 50) / 100 * 10));
         const zone = row * 6 + col;
@@ -327,7 +326,6 @@ export default function CommentaryPage() {
       playerNumMap[p.name] = num;
       return { number: num, x: p.pitch_x ?? 50, y: p.pitch_y ?? 50 };
     });
-    // Register any extra names from pass_combinations
     safeArr(r.pass_combinations).forEach((pc) => {
       [{ name: pc.from_name, num: pc.from_number }, { name: pc.to_name, num: pc.to_number }].forEach(({ name, num }) => {
         if (name && !playerNumMap[name]) {
@@ -366,21 +364,25 @@ export default function CommentaryPage() {
     let history: unknown[] = [];
     try { history = JSON.parse(localStorage.getItem("gs_touch_tracker_history") ?? "[]"); } catch { history = []; }
     history.push({
-      id:        `cmt-${Date.now()}`,
-      date:       today,
-      homeTeam:   home,
-      awayTeam:   away,
-      homeXg:     Math.round(homeXg * 100) / 100,
-      awayXg:     Math.round(awayXg * 100) / 100,
-      homeGoals:  mi.home_score ?? 0,
-      awayGoals:  mi.away_score ?? 0,
+      id:       `cmt-${Date.now()}`,
+      date:      today,
+      homeTeam:  home,
+      awayTeam:  away,
+      homeXg:    Math.round(homeXg * 100) / 100,
+      awayXg:    Math.round(awayXg * 100) / 100,
+      homeGoals: mi.home_score ?? 0,
+      awayGoals: mi.away_score ?? 0,
     });
     localStorage.setItem("gs_touch_tracker_history", JSON.stringify(history));
 
-    setPushed(true);
+    setTab(halfKey, { pushed: true });
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────
+
+  // Shorthand for the current active half key
+  const half = activeTab;
+  const s    = cur;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee" }}>
@@ -393,89 +395,137 @@ export default function CommentaryPage() {
         <span style={{ color: "white", fontWeight: 600, fontSize: 14 }}>Commentary Analysis</span>
       </nav>
 
+      {/* Hidden audio elements — one per half, always in DOM when audioUrl is set */}
+      {HALVES.map((h) =>
+        tabs[h].audioUrl ? (
+          <audio
+            key={h}
+            ref={(el) => { audioRefs.current[h] = el; }}
+            src={tabs[h].audioUrl!}
+            onTimeUpdate={() => setTab(h, { audioCur: audioRefs.current[h]?.currentTime ?? 0 })}
+            onDurationChange={() => setTab(h, { audioDur: audioRefs.current[h]?.duration ?? 0 })}
+            onEnded={() => setTab(h, { playing: false })}
+            onPlay={() => setTab(h, { playing: true })}
+            onPause={() => setTab(h, { playing: false })}
+            style={{ display: "none" }}
+          />
+        ) : null
+      )}
+
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 16px" }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1a5c2a", marginBottom: 4 }}>Commentary Analysis</h1>
-        <p style={{ color: "#666", marginBottom: 32, fontSize: 14 }}>
-          Speak naturally during the match — record or upload afterward. Gemini extracts a full event timeline.
+        <p style={{ color: "#666", marginBottom: 24, fontSize: 14 }}>
+          Speak naturally during the match — record or upload afterward per half. Gemini extracts a full event timeline.
         </p>
 
-        {/* ── Phase: Setup ── */}
-        {(phase === "setup" || phase === "recording") && (
-          <div style={{ backgroundColor: "white", borderRadius: 12, padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 24 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: "#1a1a1a" }}>Match Details</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Home Team</label>
-                <input
-                  value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}
-                  placeholder="e.g. Dynamos FC"
-                  disabled={phase === "recording"}
-                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Away Team</label>
-                <input
-                  value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)}
-                  placeholder="e.g. Highlanders FC"
-                  disabled={phase === "recording"}
-                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Sport</label>
-                <select
-                  value={sport} onChange={(e) => setSport(e.target.value)}
-                  disabled={phase === "recording"}
-                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
-                >
-                  {["Football","Rugby","Netball","Basketball","Cricket","Hockey","Volleyball","Athletics","Swimming","Tennis"].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Period</label>
-                <select
-                  value={half} onChange={(e) => setHalf(e.target.value as "first" | "second" | "full")}
-                  disabled={phase === "recording"}
-                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
-                >
-                  <option value="first">First Half</option>
-                  <option value="second">Second Half</option>
-                  <option value="full">Full Match</option>
-                </select>
-              </div>
+        {/* ── Shared Match Details ── */}
+        <div style={{ backgroundColor: "white", borderRadius: 12, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: "#555", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Match Details</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Home Team</label>
+              <input
+                value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}
+                placeholder="e.g. Dynamos FC"
+                disabled={anyRecording}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
+              />
             </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Away Team</label>
+              <input
+                value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)}
+                placeholder="e.g. Highlanders FC"
+                disabled={anyRecording}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>Sport</label>
+              <select
+                value={sport} onChange={(e) => setSport(e.target.value)}
+                disabled={anyRecording}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
+              >
+                {["Football","Rugby","Netball","Basketball","Cricket","Hockey","Volleyball","Athletics","Swimming","Tennis"].map((sp) => (
+                  <option key={sp}>{sp}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
 
-            {/* Recording controls */}
-            {phase === "setup" && (
+        {/* ── Tab Bar ── */}
+        <div style={{ display: "flex", gap: 4, marginBottom: 20, backgroundColor: "white", borderRadius: 10, padding: 4, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+          {HALVES.map((h) => {
+            const isActive  = activeTab === h;
+            const hasResult = !!tabs[h].result;
+            const recThis   = tabs[h].phase === "recording";
+            return (
+              <button
+                key={h}
+                onClick={() => !anyRecording && setActiveTab(h)}
+                style={{
+                  flex: 1, padding: "10px 8px", borderRadius: 8, border: "none",
+                  cursor: anyRecording && !recThis ? "not-allowed" : "pointer",
+                  backgroundColor: isActive ? "#1a5c2a" : "transparent",
+                  color: isActive ? "white" : "#666",
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: 13,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  transition: "all 0.15s",
+                }}
+              >
+                {HALF_LABELS[h]}
+                {hasResult && (
+                  <CheckCircle size={13} color={isActive ? "white" : "#16a34a"} />
+                )}
+                {recThis && (
+                  <span style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    backgroundColor: isActive ? "white" : "#e11d48",
+                    display: "inline-block", animation: "pulse 1s infinite",
+                  }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Phase: Setup / Recording ── */}
+        {(s.phase === "setup" || s.phase === "recording") && (
+          <div style={{ backgroundColor: "white", borderRadius: 12, padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 24 }}>
+            <p style={{ fontSize: 13, color: "#888", marginBottom: 16 }}>
+              {HALF_LABELS[half]} commentary — record live or upload a saved audio file.
+            </p>
+            {s.phase === "setup" && (
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <button
-                  onClick={startRecording}
-                  style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "#e11d48", color: "white", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", fontSize: 14 }}
+                  onClick={() => startRecording(half)}
+                  disabled={anyRecording}
+                  style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: anyRecording ? "#ccc" : "#e11d48", color: "white", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: anyRecording ? "not-allowed" : "pointer", fontSize: 14 }}
                 >
                   <Mic size={16} /> Start Recording
                 </button>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "#1a5c2a", color: "white", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", fontSize: 14 }}>
                   <Upload size={16} /> Upload Audio File
-                  <input type="file" accept="audio/*,video/webm,video/mp4" onChange={handleFileUpload} style={{ display: "none" }} />
+                  <input type="file" accept="audio/*,video/webm,video/mp4" onChange={(e) => handleFileUpload(half, e)} style={{ display: "none" }} />
                 </label>
               </div>
             )}
-
-            {phase === "recording" && (
+            {s.phase === "recording" && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                   <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: "#e11d48", animation: "pulse 1s infinite" }} />
-                  <span style={{ fontWeight: 700, color: "#e11d48", fontSize: 18 }}>REC {formatTime(recordSecs)}</span>
+                  <span style={{ fontWeight: 700, color: "#e11d48", fontSize: 18 }}>REC {formatTime(s.recordSecs)}</span>
+                  <span style={{ fontSize: 13, color: "#888" }}>— {HALF_LABELS[half]}</span>
                 </div>
                 <p style={{ color: "#666", fontSize: 13, marginBottom: 12 }}>Speak naturally — describe what you see happening in the match.</p>
                 <button
-                  onClick={stopRecordingAndUpload}
+                  onClick={() => stopRecordingAndUpload(half)}
                   style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "#1a5c2a", color: "white", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", fontSize: 14 }}
                 >
-                  <MicOff size={16} /> Stop & Analyse
+                  <MicOff size={16} /> Stop &amp; Analyse
                 </button>
               </div>
             )}
@@ -483,36 +533,36 @@ export default function CommentaryPage() {
         )}
 
         {/* ── Phase: Upload ── */}
-        {phase === "upload" && (
+        {s.phase === "upload" && (
           <div style={{ backgroundColor: "white", borderRadius: 12, padding: 32, textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
             <Upload size={40} color="#1a5c2a" style={{ margin: "0 auto 16px" }} />
-            <p style={{ fontWeight: 600, color: "#1a1a1a", marginBottom: 8 }}>Uploading audio…</p>
+            <p style={{ fontWeight: 600, color: "#1a1a1a", marginBottom: 8 }}>Uploading {HALF_LABELS[half]} audio…</p>
             <div style={{ backgroundColor: "#f0f0f0", borderRadius: 8, height: 10, marginBottom: 8 }}>
-              <div style={{ width: `${uploadPct}%`, height: "100%", backgroundColor: "#1a5c2a", borderRadius: 8, transition: "width 0.3s" }} />
+              <div style={{ width: `${s.uploadPct}%`, height: "100%", backgroundColor: "#1a5c2a", borderRadius: 8, transition: "width 0.3s" }} />
             </div>
-            <p style={{ color: "#888", fontSize: 13 }}>{uploadPct}%</p>
+            <p style={{ color: "#888", fontSize: 13 }}>{s.uploadPct}%</p>
           </div>
         )}
 
         {/* ── Phase: Analysing ── */}
-        {phase === "analysing" && (
+        {s.phase === "analysing" && (
           <div style={{ backgroundColor: "white", borderRadius: 12, padding: 32, textAlign: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
             <Loader2 size={40} color="#1a5c2a" style={{ margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
-            <p style={{ fontWeight: 600, color: "#1a1a1a", marginBottom: 4 }}>Gemini is analysing your commentary</p>
+            <p style={{ fontWeight: 600, color: "#1a1a1a", marginBottom: 4 }}>Gemini is analysing your {HALF_LABELS[half]} commentary</p>
             <p style={{ color: "#888", fontSize: 13 }}>This usually takes 30–90 seconds. Please keep this tab open.</p>
           </div>
         )}
 
         {/* ── Phase: Error ── */}
-        {phase === "error" && (
+        {s.phase === "error" && (
           <div style={{ backgroundColor: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 12, padding: 24 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
               <XCircle size={24} color="#e11d48" style={{ flexShrink: 0, marginTop: 2 }} />
               <div>
                 <p style={{ fontWeight: 600, color: "#991b1b", marginBottom: 4 }}>Analysis failed</p>
-                <p style={{ color: "#7f1d1d", fontSize: 13, marginBottom: 12 }}>{errorMsg}</p>
+                <p style={{ color: "#7f1d1d", fontSize: 13, marginBottom: 12 }}>{s.errorMsg}</p>
                 <button
-                  onClick={() => { setPhase("setup"); setErrorMsg(""); }}
+                  onClick={() => setTab(half, { phase: "setup", errorMsg: "" })}
                   style={{ backgroundColor: "#e11d48", color: "white", border: "none", borderRadius: 6, padding: "8px 16px", cursor: "pointer", fontWeight: 600, fontSize: 13 }}
                 >
                   Try Again
@@ -523,78 +573,68 @@ export default function CommentaryPage() {
         )}
 
         {/* ── Phase: Done ── */}
-        {phase === "done" && result && (() => {
-          const mi        = result.match_info ?? {} as MatchInfo;
+        {s.phase === "done" && s.result && (() => {
+          const r         = s.result;
+          const mi        = r.match_info ?? {} as MatchInfo;
           const home      = homeTeam || "Home";
           const away      = awayTeam || "Away";
-          const shots     = Array.isArray(result.shots)             ? result.shots             : [];
-          const positions = Array.isArray(result.player_positions)  ? result.player_positions  : [];
-          const passes    = Array.isArray(result.pass_combinations) ? result.pass_combinations : [];
-          const events    = Array.isArray(result.events_timeline)   ? result.events_timeline   : [];
-          const obs       = result.tactical?.observations ?? [];
-          const strengths = result.tactical?.strengths    ?? [];
-          const weaknesses= result.tactical?.weaknesses   ?? [];
-          const homeXg    = mi.home_xg ?? shots.filter((s) => s.team.toLowerCase().includes(home.toLowerCase())).reduce((a, s) => a + (s.xg ?? 0), 0);
-          const awayXg    = mi.away_xg ?? shots.filter((s) => !s.team.toLowerCase().includes(home.toLowerCase())).reduce((a, s) => a + (s.xg ?? 0), 0);
-          const maxXg     = Math.max(homeXg, awayXg, 0.1);
+          const shots     = Array.isArray(r.shots)             ? r.shots             : [];
+          const positions = Array.isArray(r.player_positions)  ? r.player_positions  : [];
+          const passes    = Array.isArray(r.pass_combinations) ? r.pass_combinations : [];
+          const events    = Array.isArray(r.events_timeline)   ? r.events_timeline   : [];
+          const obs       = r.tactical?.observations ?? [];
+          const strengths = r.tactical?.strengths    ?? [];
+          const weaknesses= r.tactical?.weaknesses   ?? [];
+          const homeXg    = mi.home_xg ?? shots.filter((sh) => sh.team.toLowerCase().includes(home.toLowerCase())).reduce((a, sh) => a + (sh.xg ?? 0), 0);
+          const awayXg    = mi.away_xg ?? shots.filter((sh) => !sh.team.toLowerCase().includes(home.toLowerCase())).reduce((a, sh) => a + (sh.xg ?? 0), 0);
 
           return (
             <div>
               {/* ── Audio Player ── */}
-              {audioUrl && (
-                <>
-                  <audio
-                    ref={audioRef}
-                    src={audioUrl}
-                    onTimeUpdate={() => setAudioCur(audioRef.current?.currentTime ?? 0)}
-                    onDurationChange={() => setAudioDur(audioRef.current?.duration ?? 0)}
-                    onEnded={() => setPlaying(false)}
-                    onPlay={() => setPlaying(true)}
-                    onPause={() => setPlaying(false)}
-                    style={{ display: "none" }}
+              {s.audioUrl && (
+                <div style={{ backgroundColor: "white", borderRadius: 12, padding: "12px 16px", marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
+                  <button
+                    onClick={() => {
+                      const el = audioRefs.current[half];
+                      if (!el) return;
+                      if (s.playing) el.pause(); else void el.play();
+                    }}
+                    style={{ flexShrink: 0, width: 40, height: 40, borderRadius: "50%", backgroundColor: "#1a5c2a", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    {s.playing ? <Pause size={18} color="white" /> : <Play size={18} color="white" />}
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={s.audioDur || 1}
+                    step={0.5}
+                    value={s.audioCur}
+                    onChange={(e) => {
+                      const t = parseFloat(e.target.value);
+                      setTab(half, { audioCur: t });
+                      const el = audioRefs.current[half];
+                      if (el) el.currentTime = t;
+                    }}
+                    style={{ flex: 1, accentColor: "#1a5c2a", cursor: "pointer" }}
                   />
-                  <div style={{ backgroundColor: "white", borderRadius: 12, padding: "12px 16px", marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
-                    <button
-                      onClick={() => {
-                        const el = audioRef.current;
-                        if (!el) return;
-                        if (playing) { el.pause(); } else { void el.play(); }
-                      }}
-                      style={{ flexShrink: 0, width: 40, height: 40, borderRadius: "50%", backgroundColor: "#1a5c2a", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                    >
-                      {playing ? <Pause size={18} color="white" /> : <Play size={18} color="white" />}
-                    </button>
-                    <input
-                      type="range"
-                      min={0}
-                      max={audioDur || 1}
-                      step={0.5}
-                      value={audioCur}
-                      onChange={(e) => {
-                        const t = parseFloat(e.target.value);
-                        setAudioCur(t);
-                        if (audioRef.current) audioRef.current.currentTime = t;
-                      }}
-                      style={{ flex: 1, accentColor: "#1a5c2a", cursor: "pointer" }}
-                    />
-                    <span style={{ flexShrink: 0, fontSize: 12, color: "#666", fontVariantNumeric: "tabular-nums", minWidth: 90, textAlign: "right" }}>
-                      {formatTime(audioCur)} / {formatTime(audioDur)}
-                    </span>
-                  </div>
-                </>
+                  <span style={{ flexShrink: 0, fontSize: 12, color: "#666", fontVariantNumeric: "tabular-nums", minWidth: 90, textAlign: "right" }}>
+                    {formatTime(s.audioCur)} / {formatTime(s.audioDur)}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#c8962a", fontWeight: 600, flexShrink: 0 }}>{HALF_LABELS[half]}</span>
+                </div>
               )}
 
               {/* ── Push to Hub CTA ── */}
-              {!pushed ? (
+              {!s.pushed ? (
                 <div style={{ backgroundColor: "#1a5c2a", borderRadius: 12, padding: 20, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
                   <div>
-                    <p style={{ color: "white", fontWeight: 700, fontSize: 15, margin: 0 }}>Push to Analysis Hub</p>
+                    <p style={{ color: "white", fontWeight: 700, fontSize: 15, margin: 0 }}>Push {HALF_LABELS[half]} to Analysis Hub</p>
                     <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, margin: "4px 0 0" }}>
                       Loads xG data, heatmaps, pass map, tactical form &amp; season record into the analyst pages
                     </p>
                   </div>
                   <button
-                    onClick={() => pushToAnalysisHub(result)}
+                    onClick={() => pushToAnalysisHub(half, r)}
                     style={{ backgroundColor: "#c8962a", color: "white", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 700, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
                   >
                     <TrendingUp size={15} /> Push All Data <ArrowRight size={14} />
@@ -633,7 +673,7 @@ export default function CommentaryPage() {
                     <div style={{ fontSize: 32, fontWeight: 900, color: "#1a5c2a", letterSpacing: 4 }}>
                       {mi.home_score ?? "–"} : {mi.away_score ?? "–"}
                     </div>
-                    <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>{sport} · {half === "first" ? "1st Half" : half === "second" ? "2nd Half" : "Full Match"}</p>
+                    <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0" }}>{sport} · {HALF_LABELS[half]}</p>
                   </div>
                   <div style={{ textAlign: "center", flex: 1 }}>
                     <p style={{ fontWeight: 700, color: "#1a1a1a", margin: "0 0 4px" }}>{away}</p>
@@ -641,24 +681,20 @@ export default function CommentaryPage() {
                   </div>
                 </div>
 
-                {/* Stats row */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
                   {[
-                    { label: "Shots",    home: mi.shots_home,      away: mi.shots_away      },
-                    { label: "On Target",home: mi.on_target_home,  away: mi.on_target_away  },
-                    { label: "xG",       home: homeXg.toFixed(2),  away: awayXg.toFixed(2)  },
-                    { label: "Possession",home: mi.possession_home != null ? `${mi.possession_home}%` : null, away: mi.possession_home != null ? `${100 - mi.possession_home}%` : null },
+                    { label: "Shots",      home: mi.shots_home,     away: mi.shots_away     },
+                    { label: "On Target",  home: mi.on_target_home, away: mi.on_target_away  },
+                    { label: "xG",         home: homeXg.toFixed(2), away: awayXg.toFixed(2)  },
+                    { label: "Possession", home: mi.possession_home != null ? `${mi.possession_home}%` : null, away: mi.possession_home != null ? `${100 - mi.possession_home}%` : null },
                   ].map(({ label, home: h, away: a }) => (
                     <div key={label} style={{ textAlign: "center", backgroundColor: "#f8faf8", borderRadius: 8, padding: "8px 4px" }}>
                       <p style={{ fontSize: 10, color: "#888", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a", margin: 0 }}>
-                        {h ?? "–"} : {a ?? "–"}
-                      </p>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a", margin: 0 }}>{h ?? "–"} : {a ?? "–"}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* xG bar */}
                 {(homeXg > 0 || awayXg > 0) && (
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#666", marginBottom: 4 }}>
@@ -672,10 +708,8 @@ export default function CommentaryPage() {
                   </div>
                 )}
 
-                {result.match_summary && (
-                  <p style={{ fontSize: 13, color: "#555", margin: "12px 0 0", fontStyle: "italic" }}>{result.match_summary}</p>
-                )}
-                <p style={{ fontSize: 13, color: "#444", margin: "8px 0 0" }}>{result.summary}</p>
+                {r.match_summary && <p style={{ fontSize: 13, color: "#555", margin: "12px 0 0", fontStyle: "italic" }}>{r.match_summary}</p>}
+                <p style={{ fontSize: 13, color: "#444", margin: "8px 0 0" }}>{r.summary}</p>
               </div>
 
               {/* ── Shot Log ── */}
@@ -695,27 +729,26 @@ export default function CommentaryPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {shots.map((s, i) => (
-                          <tr key={i} style={{ borderBottom: "1px solid #f5f5f5", backgroundColor: s.is_goal ? "#f0fdf4" : "transparent" }}>
-                            <td style={{ padding: "6px 8px", color: "#666" }}>{s.minute ?? "–"}</td>
-                            <td style={{ padding: "6px 8px", fontWeight: 600, color: s.team.toLowerCase().includes(home.toLowerCase()) ? "#1a5c2a" : "#e11d48" }}>
-                              {s.team.toLowerCase().includes(home.toLowerCase()) ? home : away}
+                        {shots.map((sh, i) => (
+                          <tr key={i} style={{ borderBottom: "1px solid #f5f5f5", backgroundColor: sh.is_goal ? "#f0fdf4" : "transparent" }}>
+                            <td style={{ padding: "6px 8px", color: "#666" }}>{sh.minute ?? "–"}</td>
+                            <td style={{ padding: "6px 8px", fontWeight: 600, color: sh.team.toLowerCase().includes(home.toLowerCase()) ? "#1a5c2a" : "#e11d48" }}>
+                              {sh.team.toLowerCase().includes(home.toLowerCase()) ? home : away}
                             </td>
-                            <td style={{ padding: "6px 8px" }}>{s.player ?? "–"}</td>
-                            <td style={{ padding: "6px 8px", color: "#555" }}>{s.zone_label || s.zone_id}</td>
-                            <td style={{ padding: "6px 8px", fontWeight: 700, color: "#c8962a" }}>{(s.xg ?? 0).toFixed(2)}</td>
-                            <td style={{ padding: "6px 8px" }}>{s.is_goal && <span style={{ backgroundColor: "#1a5c2a", color: "white", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>GOAL</span>}</td>
+                            <td style={{ padding: "6px 8px" }}>{sh.player ?? "–"}</td>
+                            <td style={{ padding: "6px 8px", color: "#555" }}>{sh.zone_label || sh.zone_id}</td>
+                            <td style={{ padding: "6px 8px", fontWeight: 700, color: "#c8962a" }}>{(sh.xg ?? 0).toFixed(2)}</td>
+                            <td style={{ padding: "6px 8px" }}>{sh.is_goal && <span style={{ backgroundColor: "#1a5c2a", color: "white", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>GOAL</span>}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  {/* xG per zone summary */}
                   <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {Object.entries(
-                      shots.reduce<Record<string, number>>((acc, s) => {
-                        const z = s.zone_label || s.zone_id;
-                        acc[z] = (acc[z] ?? 0) + (s.xg ?? 0);
+                      shots.reduce<Record<string, number>>((acc, sh) => {
+                        const z = sh.zone_label || sh.zone_id;
+                        acc[z] = (acc[z] ?? 0) + (sh.xg ?? 0);
                         return acc;
                       }, {})
                     ).sort((a, b) => b[1] - a[1]).map(([zone, xg]) => (
@@ -747,7 +780,7 @@ export default function CommentaryPage() {
                       <div>
                         <p style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 6px" }}>Strengths</p>
                         <ul style={{ margin: 0, paddingLeft: 16 }}>
-                          {strengths.map((s, i) => <li key={i} style={{ color: "#166534", fontSize: 13, marginBottom: 4 }}>{s}</li>)}
+                          {strengths.map((st, i) => <li key={i} style={{ color: "#166534", fontSize: 13, marginBottom: 4 }}>{st}</li>)}
                         </ul>
                       </div>
                     )}
@@ -773,24 +806,18 @@ export default function CommentaryPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {passes.sort((a, b) => b.count - a.count).map((pc, i) => (
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-                        <span style={{ fontWeight: 600, color: pc.team.toLowerCase().includes(home.toLowerCase()) ? "#1a5c2a" : "#e11d48", minWidth: 90 }}>
-                          {pc.from_name}
-                        </span>
+                        <span style={{ fontWeight: 600, color: pc.team.toLowerCase().includes(home.toLowerCase()) ? "#1a5c2a" : "#e11d48", minWidth: 90 }}>{pc.from_name}</span>
                         <ArrowRight size={12} color="#999" />
-                        <span style={{ fontWeight: 600, color: pc.team.toLowerCase().includes(home.toLowerCase()) ? "#1a5c2a" : "#e11d48", flex: 1 }}>
-                          {pc.to_name}
-                        </span>
-                        <span style={{ backgroundColor: "#dbeafe", color: "#1d4ed8", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>
-                          ×{pc.count}
-                        </span>
+                        <span style={{ fontWeight: 600, color: pc.team.toLowerCase().includes(home.toLowerCase()) ? "#1a5c2a" : "#e11d48", flex: 1 }}>{pc.to_name}</span>
+                        <span style={{ backgroundColor: "#dbeafe", color: "#1d4ed8", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>×{pc.count}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* ── Players Mentioned ── */}
-              {(result.key_players_mentioned?.length > 0 || positions.length > 0) && (
+              {/* ── Players Identified ── */}
+              {(r.key_players_mentioned?.length > 0 || positions.length > 0) && (
                 <div style={{ backgroundColor: "white", borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <Users size={16} color="#1a5c2a" />
@@ -811,7 +838,7 @@ export default function CommentaryPage() {
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {result.key_players_mentioned.map((p, i) => (
+                      {r.key_players_mentioned.map((p, i) => (
                         <span key={i} style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 16, padding: "3px 10px", fontSize: 13, color: "#166534" }}>{p}</span>
                       ))}
                     </div>
@@ -825,12 +852,12 @@ export default function CommentaryPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <Clock size={16} color="#1a5c2a" />
                     <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a1a" }}>Event Timeline ({events.length})</span>
-                    {audioUrl && <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>● synced · click event to seek</span>}
+                    {s.audioUrl && <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>● synced · click event to seek</span>}
                   </div>
                   <div style={{ maxHeight: 340, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
                     {events.map((ev, i) => {
-                      const isActive   = i === activeEventIdx;
-                      const hasTiming  = ev.audio_time_seconds != null;
+                      const isActive  = i === activeEventIdx;
+                      const hasTiming = ev.audio_time_seconds != null;
                       const borderColor = isActive
                         ? "#c8962a"
                         : ev.event_type === "goal"        ? "#16a34a"
@@ -840,12 +867,15 @@ export default function CommentaryPage() {
                       return (
                         <div
                           key={i}
-                          ref={(el) => { eventRefsMap.current[i] = el; }}
+                          ref={(el) => { eventRefsMaps.current[half][i] = el; }}
                           onClick={() => {
-                            if (hasTiming && audioRef.current) {
-                              audioRef.current.currentTime = ev.audio_time_seconds!;
-                              setAudioCur(ev.audio_time_seconds!);
-                              void audioRef.current.play();
+                            if (hasTiming) {
+                              const el = audioRefs.current[half];
+                              if (el) {
+                                el.currentTime = ev.audio_time_seconds!;
+                                setTab(half, { audioCur: ev.audio_time_seconds! });
+                                void el.play();
+                              }
                             }
                           }}
                           style={{
@@ -883,14 +913,14 @@ export default function CommentaryPage() {
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <button
-                  onClick={() => { setPhase("setup"); setResult(null); setRecordSecs(0); setUploadPct(0); setPushed(false); }}
+                  onClick={() => setTab(half, { phase: "setup", result: null, audioUrl: null, recordSecs: 0, uploadPct: 0, pushed: false, playing: false, audioCur: 0, audioDur: 0 })}
                   style={{ backgroundColor: "#1a5c2a", color: "white", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", fontSize: 14 }}
                 >
                   New Analysis
                 </button>
-                {!pushed && (
+                {!s.pushed && (
                   <button
-                    onClick={() => pushToAnalysisHub(result)}
+                    onClick={() => pushToAnalysisHub(half, r)}
                     style={{ backgroundColor: "white", color: "#1a5c2a", border: "2px solid #1a5c2a", borderRadius: 8, padding: "10px 20px", fontWeight: 600, cursor: "pointer", fontSize: 14 }}
                   >
                     Push to Hub
