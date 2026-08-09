@@ -25,7 +25,7 @@ import {
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 import { useAuthStore } from "@/lib/auth-store";
 import { SUPPORTED_FORMATIONS } from "@/lib/commentary-zones";
-import MatchZonePitch from "@/components/analyst/MatchZonePitch";
+import CommentaryPitchBoard from "@/components/analyst/CommentaryPitchBoard";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -531,6 +531,16 @@ export default function CommentaryPage() {
           })}
         </div>
 
+        {/* ── Permanent Tactical Pitch Board ── */}
+        <CommentaryPitchBoard
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          positions={Array.isArray(s.result?.player_positions) ? s.result.player_positions : []}
+          events={Array.isArray(s.result?.events_timeline) ? s.result.events_timeline : []}
+          audioCur={s.audioCur}
+          phase={s.phase}
+        />
+
         {/* ── Phase: Setup / Recording ── */}
         {(s.phase === "setup" || s.phase === "recording") && (
           <div style={{ backgroundColor: "white", borderRadius: 12, padding: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", marginBottom: 24 }}>
@@ -662,14 +672,6 @@ export default function CommentaryPage() {
                   <span style={{ fontSize: 11, color: "#c8962a", fontWeight: 600, flexShrink: 0 }}>{HALF_LABELS[half]}</span>
                 </div>
               )}
-
-              {/* ── Zone Pitch Visualisation ── */}
-              <MatchZonePitch
-                events={events}
-                audioCur={s.audioCur}
-                homeTeam={home}
-                awayTeam={away}
-              />
 
               {/* ── Push to Hub CTA ── */}
               {!s.pushed ? (
