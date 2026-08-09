@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GEMINI_VISION_MODEL } from '@/lib/gemini';
+import { buildFormationZoneText, SUPPORTED_FORMATIONS } from '@/lib/commentary-zones';
 
 // POST /api/analyse-commentary
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,25 +27,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let fileUri  = '';
-  let fileName = '';
-  let mimeType = 'audio/webm';
-  let homeTeam = 'Home';
-  let awayTeam = 'Away';
-  let sport    = 'Football';
-  let half     = 'first';
-  let token    = '';
+  let fileUri       = '';
+  let fileName      = '';
+  let mimeType      = 'audio/webm';
+  let homeTeam      = 'Home';
+  let awayTeam      = 'Away';
+  let sport         = 'Football';
+  let half          = 'first';
+  let token         = '';
+  let homeFormation = '';
+  let awayFormation = '';
 
   try {
     const body  = await req.json() as Record<string, string>;
-    fileUri  = body.fileUri  ?? '';
-    fileName = body.fileName ?? '';
-    mimeType = body.mimeType ?? 'audio/webm';
-    homeTeam = body.homeTeam || 'Home';
-    awayTeam = body.awayTeam || 'Away';
-    sport    = body.sport    || 'Football';
-    half     = body.half     || 'first';
-    token    = body.token    ?? '';
+    fileUri       = body.fileUri       ?? '';
+    fileName      = body.fileName      ?? '';
+    mimeType      = body.mimeType      ?? 'audio/webm';
+    homeTeam      = body.homeTeam      || 'Home';
+    awayTeam      = body.awayTeam      || 'Away';
+    sport         = body.sport         || 'Football';
+    half          = body.half          || 'first';
+    token         = body.token         ?? '';
+    homeFormation = SUPPORTED_FORMATIONS.includes(body.homeFormation ?? '')
+      ? body.homeFormation
+      : '';
+    awayFormation = SUPPORTED_FORMATIONS.includes(body.awayFormation ?? '')
+      ? body.awayFormation
+      : '';
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
@@ -82,8 +91,22 @@ export async function POST(req: NextRequest) {
   // ── XG zone reference for Gemini ─────────────────────────────────────────
   const halfLabel = half === 'first' ? '1st Half' : half === 'second' ? '2nd Half' : 'Full Match';
 
+  // ── Formation zone defaults (Football only) ───────────────────────────────
+  const isFootball = sport.toLowerCase() === 'football';
+  const formationZoneBlock = (isFootball && (homeFormation || awayFormation))
+    ? `\n\nFORMATION DEFAULT ZONES (Football only — 3×3 grid from home team's perspective):\n${
+        homeFormation
+          ? buildFormationZoneText(homeFormation, homeTeam, false)
+          : ''
+      }${homeFormation && awayFormation ? '\n' : ''}${
+        awayFormation
+          ? buildFormationZoneText(awayFormation, awayTeam, true)
+          : ''
+      }\nZone grid (top = home attacking third, bot = home defensive third):\n  top_left | top_center | top_right\n  mid_left | mid_center | mid_right\n  bot_left | bot_center | bot_right`
+    : '';
+
   // ── Structured extraction prompt ──────────────────────────────────────────
-  const prompt = `You are a professional football analyst AI. You are given an audio recording of spoken match commentary recorded by an analyst during a ${sport} match: ${homeTeam} vs ${awayTeam} (${halfLabel}).
+  const prompt = `You are a professional football analyst AI. You are given an audio recording of spoken match commentary recorded by an analyst during a ${sport} match: ${homeTeam} vs ${awayTeam} (${halfLabel}).${formationZoneBlock}
 
 Listen carefully to all speech. Extract every event, shot, player name, and tactical observation mentioned. Be thorough — do not omit any named player, mentioned shot, or described event.
 
@@ -146,7 +169,9 @@ Return ONLY valid JSON — no markdown fences, no extra text:
       "event_type": "<goal|yellow_card|red_card|substitution|corner|free_kick|penalty|injury|var_check|other>",
       "team": "<${homeTeam} or ${awayTeam} or null>",
       "player": "<player name or null>",
-      "description": "<one sentence>"
+      "description": "<one sentence>",
+      "zone": "<one of: top_left|top_center|top_right|mid_left|mid_center|mid_right|bot_left|bot_center|bot_right — or null. Use home team's perspective: top=home attacking third, bot=home defensive third, left/center/right=pitch channel>",
+      "zone_source": "<spatial_cue if zone inferred from spoken words (e.g. 'left wing', 'edge of the box', 'own half', 'switches play', 'long ball down the middle'), formation_default if estimated from player role in their formation, or null>"
     }
   ],
   "key_players_mentioned": ["<every player name mentioned by the commentator>"],
@@ -160,7 +185,9 @@ Rules:
 - Every player name spoken must appear in key_players_mentioned.
 - For pass_combinations, only include combinations explicitly described or clearly implied.
 - For tactical observations, capture all coaching points made.
-- For audio_time_seconds, use your audio analysis to estimate when in the recording each event was spoken (not when it occurred in the match). Use the audio file's own timestamps.`;
+- For audio_time_seconds, use your audio analysis to estimate when in the recording each event was spoken (not when it occurred in the match). Use the audio file's own timestamps.
+- For zone in events_timeline: first listen for spatial language in the commentary — words like "left channel", "right wing", "down the middle", "edge of the box", "in the penalty area", "own half", "their half", "switches play to the right", "deep", "long ball". Map these to the nearest 3×3 zone. If no spatial cue is spoken but a player is named and their formation position is known, use their formation default zone and set zone_source to "formation_default". If neither applies, use null.
+- Zone spatial cue examples: "left wing" / "down the left" → *_left; "right channel" / "right flank" → *_right; "centre" / "middle" → *_center; "edge of box" / "top of the area" → top_center (if home attacking) or bot_center (if home defending); "own half" / "back line" → bot_*; "their half" / "final third" → top_*.`;
 
   // ── Generate analysis ─────────────────────────────────────────────────────
   const genRes = await fetch(
@@ -175,7 +202,7 @@ Rules:
             { text: prompt },
           ],
         }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 3000 },
+        generationConfig: { temperature: 0.1, maxOutputTokens: 4000 },
       }),
       signal: AbortSignal.timeout(120_000),
     }

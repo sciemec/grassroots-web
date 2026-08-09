@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 import { useAuthStore } from "@/lib/auth-store";
+import { SUPPORTED_FORMATIONS } from "@/lib/commentary-zones";
+import MatchZonePitch from "@/components/analyst/MatchZonePitch";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -77,6 +79,8 @@ interface TimelineEvent {
   team:               string | null;
   player:             string | null;
   description:        string;
+  zone?:              string | null;
+  zone_source?:       string | null;
 }
 
 interface CommentaryResult {
@@ -145,10 +149,12 @@ export default function CommentaryPage() {
   const token  = useAuthStore((s) => s.token);
 
   // Shared match details
-  const [homeTeam,  setHomeTeam]  = useState("");
-  const [awayTeam,  setAwayTeam]  = useState("");
-  const [sport,     setSport]     = useState("Football");
-  const [activeTab, setActiveTab] = useState<HalfKey>("first");
+  const [homeTeam,      setHomeTeam]      = useState("");
+  const [awayTeam,      setAwayTeam]      = useState("");
+  const [sport,         setSport]         = useState("Football");
+  const [homeFormation, setHomeFormation] = useState("4-4-2");
+  const [awayFormation, setAwayFormation] = useState("4-4-2");
+  const [activeTab,     setActiveTab]     = useState<HalfKey>("first");
 
   // Per-tab state
   const [tabs, setTabs] = useState<Record<HalfKey, HalfState>>({
@@ -263,14 +269,16 @@ export default function CommentaryPage() {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          fileUri:  params.fileUri,
-          fileName: params.fileName,
-          mimeType: params.mimeType,
-          homeTeam: homeTeam || "Home",
-          awayTeam: awayTeam || "Away",
+          fileUri:       params.fileUri,
+          fileName:      params.fileName,
+          mimeType:      params.mimeType,
+          homeTeam:      homeTeam || "Home",
+          awayTeam:      awayTeam || "Away",
           sport,
-          half:     halfKey,
+          half:          halfKey,
           token,
+          homeFormation: sport === "Football" ? homeFormation : "",
+          awayFormation: sport === "Football" ? awayFormation : "",
         }),
       });
       const data = await res.json() as { result?: CommentaryResult; error?: string };
@@ -453,6 +461,37 @@ export default function CommentaryPage() {
               </select>
             </div>
           </div>
+          {/* Formation selects — Football only */}
+          {sport === "Football" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>
+                  {homeTeam || "Home"} Formation
+                </label>
+                <select
+                  value={homeFormation}
+                  onChange={(e) => setHomeFormation(e.target.value)}
+                  disabled={anyRecording}
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
+                >
+                  {SUPPORTED_FORMATIONS.map((f) => <option key={f}>{f}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>
+                  {awayTeam || "Away"} Formation
+                </label>
+                <select
+                  value={awayFormation}
+                  onChange={(e) => setAwayFormation(e.target.value)}
+                  disabled={anyRecording}
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, boxSizing: "border-box" }}
+                >
+                  {SUPPORTED_FORMATIONS.map((f) => <option key={f}>{f}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Tab Bar ── */}
@@ -623,6 +662,14 @@ export default function CommentaryPage() {
                   <span style={{ fontSize: 11, color: "#c8962a", fontWeight: 600, flexShrink: 0 }}>{HALF_LABELS[half]}</span>
                 </div>
               )}
+
+              {/* ── Zone Pitch Visualisation ── */}
+              <MatchZonePitch
+                events={events}
+                audioCur={s.audioCur}
+                homeTeam={home}
+                awayTeam={away}
+              />
 
               {/* ── Push to Hub CTA ── */}
               {!s.pushed ? (
