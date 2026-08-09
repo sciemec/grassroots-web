@@ -11,6 +11,8 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { TACTICAL_PRINCIPLES, FORMATION_LIBRARY, type TacticalPrinciple, type FormationDetail } from "@/lib/thuto-tactics-knowledge";
 import { downloadCoachMatchEyePdf, downloadCoachHalfPdf } from "@/lib/generate-analysis-pdf";
 import { useAuthStore } from "@/lib/auth-store";
+import { SUPPORTED_FORMATIONS } from "@/lib/commentary-zones";
+import MatchZonePitch from "@/components/analyst/MatchZonePitch";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
 import {
@@ -117,6 +119,8 @@ interface CmtTimelineEvent {
   team: string | null;
   player: string | null;
   description: string;
+  zone?: string | null;
+  zone_source?: string | null;
 }
 
 interface CommentaryResult {
@@ -177,6 +181,10 @@ export default function AnalystMatchEye() {
   // File inputs
   const firstRef  = useRef<HTMLInputElement>(null);
   const secondRef = useRef<HTMLInputElement>(null);
+
+  // Commentary formation state (Football only)
+  const [cmtHomeFormation, setCmtHomeFormation] = useState("4-4-2");
+  const [cmtAwayFormation, setCmtAwayFormation] = useState("4-4-2");
 
   // Commentary tab state
   const [cmtPhase,     setCmtPhase]     = useState<"idle" | "uploading" | "analysing" | "done" | "error">("idle");
@@ -311,7 +319,7 @@ export default function AnalystMatchEye() {
       const res = await fetch("/api/analyse-commentary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileUri, fileName, mimeType, homeTeam: homeTeam || "Home", awayTeam: awayTeam || "Away", sport, half: "full", token }),
+        body: JSON.stringify({ fileUri, fileName, mimeType, homeTeam: homeTeam || "Home", awayTeam: awayTeam || "Away", sport, half: "full", token, homeFormation: sport === "Football" ? cmtHomeFormation : "", awayFormation: sport === "Football" ? cmtAwayFormation : "" }),
       });
       const data = await res.json() as { result?: CommentaryResult; error?: string };
       if (!res.ok || !data.result) throw new Error(data.error || "Analysis failed.");
@@ -1064,14 +1072,35 @@ export default function AnalystMatchEye() {
 
                   {/* Upload area */}
                   {cmtPhase === "idle" && (
-                    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: D.card2, border: `2px dashed ${D.border2}`, borderRadius: 14, padding: "36px 20px", cursor: "pointer" }}>
-                      <Mic size={28} color={D.green} />
-                      <div style={{ fontWeight: 700, fontSize: 14, color: D.text }}>Upload Audio Commentary</div>
-                      <div style={{ fontSize: 12, color: D.muted, textAlign: "center" }}>Record your spoken commentary during the match, then upload here.<br />Gemini extracts every event, player, and tactical note.</div>
-                      <div style={{ fontSize: 11, color: D.dim }}>Accepts mp3, m4a, wav, webm, ogg</div>
-                      <input type="file" accept="audio/*" style={{ display: "none" }}
-                        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCommentary(f); e.target.value = ""; }} />
-                    </label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {/* Formation selects — Football only */}
+                      {sport === "Football" && (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          <div>
+                            <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: D.muted, marginBottom: 4 }}>{homeTeam || "Home"} Formation</label>
+                            <select value={cmtHomeFormation} onChange={(e) => setCmtHomeFormation(e.target.value)}
+                              style={{ width: "100%", padding: "8px 10px", background: D.card, border: `1px solid ${D.border}`, borderRadius: 8, fontSize: 13, color: D.text, boxSizing: "border-box" }}>
+                              {SUPPORTED_FORMATIONS.map((f) => <option key={f}>{f}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: D.muted, marginBottom: 4 }}>{awayTeam || "Away"} Formation</label>
+                            <select value={cmtAwayFormation} onChange={(e) => setCmtAwayFormation(e.target.value)}
+                              style={{ width: "100%", padding: "8px 10px", background: D.card, border: `1px solid ${D.border}`, borderRadius: 8, fontSize: 13, color: D.text, boxSizing: "border-box" }}>
+                              {SUPPORTED_FORMATIONS.map((f) => <option key={f}>{f}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                      <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: D.card2, border: `2px dashed ${D.border2}`, borderRadius: 14, padding: "36px 20px", cursor: "pointer" }}>
+                        <Mic size={28} color={D.green} />
+                        <div style={{ fontWeight: 700, fontSize: 14, color: D.text }}>Upload Audio Commentary</div>
+                        <div style={{ fontSize: 12, color: D.muted, textAlign: "center" }}>Record your spoken commentary during the match, then upload here.<br />Gemini extracts every event, player, and tactical note.</div>
+                        <div style={{ fontSize: 11, color: D.dim }}>Accepts mp3, m4a, wav, webm, ogg</div>
+                        <input type="file" accept="audio/*" style={{ display: "none" }}
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCommentary(f); e.target.value = ""; }} />
+                      </label>
+                    </div>
                   )}
 
                   {/* Uploading */}
@@ -1119,6 +1148,14 @@ export default function AnalystMatchEye() {
                           <span style={{ fontSize: 12, color: D.muted, whiteSpace: "nowrap" }}>{formatAudioTime(cmtAudioCur)} / {formatAudioTime(cmtAudioDur)}</span>
                         </div>
                       )}
+
+                      {/* Zone pitch tracker */}
+                      <MatchZonePitch
+                        events={cmtResult.events_timeline}
+                        audioCur={cmtAudioCur}
+                        homeTeam={homeTeam || "Home"}
+                        awayTeam={awayTeam || "Away"}
+                      />
 
                       {/* Match summary */}
                       {cmtResult.match_summary && (
