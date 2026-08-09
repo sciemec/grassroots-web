@@ -141,7 +141,8 @@ Return ONLY valid JSON — no markdown fences, no extra text:
   },
   "events_timeline": [
     {
-      "minute": <integer or null>,
+      "minute": <match minute as integer or null>,
+      "audio_time_seconds": <integer seconds into the audio recording when this event was spoken — e.g. 142 for 2 min 22 s into the file, or null if unclear>,
       "event_type": "<goal|yellow_card|red_card|substitution|corner|free_kick|penalty|injury|var_check|other>",
       "team": "<${homeTeam} or ${awayTeam} or null>",
       "player": "<player name or null>",
@@ -158,7 +159,8 @@ Rules:
 - If no shots are mentioned, return shots as an empty array [].
 - Every player name spoken must appear in key_players_mentioned.
 - For pass_combinations, only include combinations explicitly described or clearly implied.
-- For tactical observations, capture all coaching points made.`;
+- For tactical observations, capture all coaching points made.
+- For audio_time_seconds, use your audio analysis to estimate when in the recording each event was spoken (not when it occurred in the match). Use the audio file's own timestamps.`;
 
   // ── Generate analysis ─────────────────────────────────────────────────────
   const genRes = await fetch(

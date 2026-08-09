@@ -15,12 +15,12 @@
  *   → Render events timeline + tactical observations + summary
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter }                   from "next/navigation";
 import {
   Mic, MicOff, Upload, Loader2, CheckCircle, XCircle,
   Clock, Users, ChevronRight, Target, BarChart3,
-  ArrowRight, TrendingUp,
+  ArrowRight, TrendingUp, Play, Pause,
 } from "lucide-react";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 import { useAuthStore }                from "@/lib/auth-store";
@@ -71,11 +71,12 @@ interface MatchInfo {
 }
 
 interface TimelineEvent {
-  minute:      number | null;
-  event_type:  string;
-  team:        string | null;
-  player:      string | null;
-  description: string;
+  minute:             number | null;
+  audio_time_seconds: number | null;
+  event_type:         string;
+  team:               string | null;
+  player:             string | null;
+  description:        string;
 }
 
 interface CommentaryResult {
@@ -105,7 +106,7 @@ const XG_ZONE_XG: Record<string, number> = {
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const s = (seconds % 60).toString().padStart(2, "0");
+  const s = Math.floor(seconds % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 }
 
@@ -132,11 +133,38 @@ export default function CommentaryPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef        = useRef<Blob[]>([]);
   const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioBlobRef     = useRef<Blob | null>(null);
+  const audioRef         = useRef<HTMLAudioElement>(null);
+  const eventRefsMap     = useRef<(HTMLDivElement | null)[]>([]);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [playing,  setPlaying]  = useState(false);
+  const [audioCur, setAudioCur] = useState(0);
+  const [audioDur, setAudioDur] = useState(0);
 
   // Cleanup on unmount
   useEffect(() => () => {
     timerRef.current && clearInterval(timerRef.current);
   }, []);
+
+  // Revoke audio object URL when it changes to avoid memory leaks
+  useEffect(() => () => { if (audioUrl) URL.revokeObjectURL(audioUrl); }, [audioUrl]);
+
+  // Index of the currently-active event (largest audio_time_seconds ≤ playback position)
+  const activeEventIdx = useMemo(() => {
+    const evs = Array.isArray(result?.events_timeline) ? result!.events_timeline : [];
+    let idx = -1;
+    evs.forEach((ev, i) => {
+      if (ev.audio_time_seconds != null && ev.audio_time_seconds <= audioCur) idx = i;
+    });
+    return idx;
+  }, [result, audioCur]);
+
+  // Auto-scroll the active event into view
+  useEffect(() => {
+    if (activeEventIdx >= 0) {
+      eventRefsMap.current[activeEventIdx]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [activeEventIdx]);
 
   // ── Recording ──────────────────────────────────────────────────────────────
 
@@ -172,6 +200,7 @@ export default function CommentaryPage() {
     await new Promise<void>((resolve) => { mr.onstop = () => resolve(); });
 
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    audioBlobRef.current = blob;
     const file = new File([blob], "commentary.webm", { type: "audio/webm" });
 
     setPhase("upload");
@@ -196,6 +225,7 @@ export default function CommentaryPage() {
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    audioBlobRef.current = file;
 
     setPhase("upload");
     setUploadPct(0);
@@ -243,6 +273,9 @@ export default function CommentaryPage() {
       }
 
       setResult(data.result);
+      if (audioBlobRef.current) {
+        setAudioUrl(URL.createObjectURL(audioBlobRef.current));
+      }
       setPhase("done");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Analysis failed");
@@ -507,6 +540,50 @@ export default function CommentaryPage() {
 
           return (
             <div>
+              {/* ── Audio Player ── */}
+              {audioUrl && (
+                <>
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    onTimeUpdate={() => setAudioCur(audioRef.current?.currentTime ?? 0)}
+                    onDurationChange={() => setAudioDur(audioRef.current?.duration ?? 0)}
+                    onEnded={() => setPlaying(false)}
+                    onPlay={() => setPlaying(true)}
+                    onPause={() => setPlaying(false)}
+                    style={{ display: "none" }}
+                  />
+                  <div style={{ backgroundColor: "white", borderRadius: 12, padding: "12px 16px", marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
+                    <button
+                      onClick={() => {
+                        const el = audioRef.current;
+                        if (!el) return;
+                        if (playing) { el.pause(); } else { void el.play(); }
+                      }}
+                      style={{ flexShrink: 0, width: 40, height: 40, borderRadius: "50%", backgroundColor: "#1a5c2a", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                      {playing ? <Pause size={18} color="white" /> : <Play size={18} color="white" />}
+                    </button>
+                    <input
+                      type="range"
+                      min={0}
+                      max={audioDur || 1}
+                      step={0.5}
+                      value={audioCur}
+                      onChange={(e) => {
+                        const t = parseFloat(e.target.value);
+                        setAudioCur(t);
+                        if (audioRef.current) audioRef.current.currentTime = t;
+                      }}
+                      style={{ flex: 1, accentColor: "#1a5c2a", cursor: "pointer" }}
+                    />
+                    <span style={{ flexShrink: 0, fontSize: 12, color: "#666", fontVariantNumeric: "tabular-nums", minWidth: 90, textAlign: "right" }}>
+                      {formatTime(audioCur)} / {formatTime(audioDur)}
+                    </span>
+                  </div>
+                </>
+              )}
+
               {/* ── Push to Hub CTA ── */}
               {!pushed ? (
                 <div style={{ backgroundColor: "#1a5c2a", borderRadius: 12, padding: 20, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -742,33 +819,64 @@ export default function CommentaryPage() {
                 </div>
               )}
 
-              {/* ── Events Timeline ── */}
+              {/* ── Events Timeline (synced to audio playback) ── */}
               {events.length > 0 && (
                 <div style={{ backgroundColor: "white", borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <Clock size={16} color="#1a5c2a" />
                     <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a1a" }}>Event Timeline ({events.length})</span>
+                    {audioUrl && <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>● synced · click event to seek</span>}
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {events.map((ev, i) => (
-                      <div key={i} style={{
-                        display: "flex", gap: 10, alignItems: "flex-start",
-                        borderLeft: `3px solid ${ev.event_type === "goal" ? "#16a34a" : ev.event_type === "yellow_card" ? "#d97706" : ev.event_type === "red_card" ? "#dc2626" : "#d1d5db"}`,
-                        paddingLeft: 10, paddingTop: 4, paddingBottom: 4,
-                      }}>
-                        <span style={{ minWidth: 32, fontWeight: 700, color: "#1a5c2a", fontSize: 12 }}>
-                          {ev.minute != null ? `${ev.minute}′` : "–"}
-                        </span>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontWeight: 600, fontSize: 12, color: "#1a1a1a" }}>
-                            {ev.event_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                          </span>
-                          {ev.player && <span style={{ color: "#1a5c2a", fontWeight: 600, fontSize: 12 }}> · {ev.player}</span>}
-                          {ev.team && <span style={{ color: "#888", fontSize: 11 }}> ({ev.team})</span>}
-                          <p style={{ color: "#555", fontSize: 12, margin: "2px 0 0" }}>{ev.description}</p>
+                  <div style={{ maxHeight: 340, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                    {events.map((ev, i) => {
+                      const isActive   = i === activeEventIdx;
+                      const hasTiming  = ev.audio_time_seconds != null;
+                      const borderColor = isActive
+                        ? "#c8962a"
+                        : ev.event_type === "goal"        ? "#16a34a"
+                        : ev.event_type === "yellow_card" ? "#d97706"
+                        : ev.event_type === "red_card"    ? "#dc2626"
+                        : "#d1d5db";
+                      return (
+                        <div
+                          key={i}
+                          ref={(el) => { eventRefsMap.current[i] = el; }}
+                          onClick={() => {
+                            if (hasTiming && audioRef.current) {
+                              audioRef.current.currentTime = ev.audio_time_seconds!;
+                              setAudioCur(ev.audio_time_seconds!);
+                              void audioRef.current.play();
+                            }
+                          }}
+                          style={{
+                            display: "flex", gap: 10, alignItems: "flex-start",
+                            borderLeft: `3px solid ${borderColor}`,
+                            paddingLeft: 10, paddingTop: 6, paddingBottom: 6,
+                            borderRadius: "0 6px 6px 0",
+                            backgroundColor: isActive ? "#fffbeb" : "transparent",
+                            cursor: hasTiming ? "pointer" : "default",
+                            transition: "background-color 0.2s",
+                          }}
+                        >
+                          <div style={{ minWidth: 44, display: "flex", flexDirection: "column", gap: 1 }}>
+                            <span style={{ fontWeight: 700, color: "#1a5c2a", fontSize: 12 }}>
+                              {ev.minute != null ? `${ev.minute}′` : "–"}
+                            </span>
+                            {hasTiming && (
+                              <span style={{ fontSize: 10, color: "#aaa" }}>{formatTime(ev.audio_time_seconds!)}</span>
+                            )}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ fontWeight: 600, fontSize: 12, color: isActive ? "#92400e" : "#1a1a1a" }}>
+                              {ev.event_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </span>
+                            {ev.player && <span style={{ color: "#1a5c2a", fontWeight: 600, fontSize: 12 }}> · {ev.player}</span>}
+                            {ev.team && <span style={{ color: "#888", fontSize: 11 }}> ({ev.team})</span>}
+                            <p style={{ color: "#555", fontSize: 12, margin: "2px 0 0" }}>{ev.description}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
