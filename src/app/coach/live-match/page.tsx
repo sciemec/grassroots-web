@@ -27,6 +27,7 @@ import { LiveStatsSidebar } from "./_components/live-stats-sidebar";
 import { useCommentary } from "@/lib/use-commentary";
 import { SPORTS } from "@/config/sports";
 import { postToArena } from "@/lib/arena-poster";
+import MatchZonePitch from "@/components/analyst/MatchZonePitch";
 
 /** Formations / systems per sport — omitted for individual sports */
 const SPORT_FORMATIONS: Record<string, string[]> = {
@@ -44,6 +45,51 @@ const DEFAULT_SETUP: MatchSetup = {
   sport: "football",
   formation: "4-3-3",
 };
+
+/** Zone inference for live-logged events (no Gemini zone data available).
+ *  Home team attacks toward top_*, away team attacks toward bot_*. */
+const LIVE_EVENT_ZONE: Record<string, { home: string; away: string }> = {
+  goal:           { home: "top_center", away: "bot_center" },
+  shot_on_target: { home: "top_center", away: "bot_center" },
+  assist:         { home: "top_right",  away: "bot_left"   },
+  yellow_card:    { home: "mid_center", away: "mid_center" },
+  red_card:       { home: "mid_center", away: "mid_center" },
+  foul:           { home: "mid_center", away: "mid_center" },
+  injury:         { home: "mid_center", away: "mid_center" },
+  sub:            { home: "bot_center", away: "top_center" },
+};
+
+const LIVE_EVENT_TYPE_MAP: Record<string, string> = {
+  goal:           "goal",
+  shot_on_target: "other",
+  assist:         "other",
+  yellow_card:    "yellow_card",
+  red_card:       "red_card",
+  foul:           "free_kick",
+  injury:         "injury",
+  sub:            "substitution",
+};
+
+function toLiveZonedEvents(
+  events: MatchEvent[],
+  homeTeam: string,
+  awayTeam: string,
+) {
+  return events.map((e) => {
+    const isHome = e.team === "home";
+    const zones  = LIVE_EVENT_ZONE[e.type] ?? { home: "mid_center", away: "mid_center" };
+    return {
+      minute:             e.minute,
+      audio_time_seconds: e.minute * 60,
+      event_type:         LIVE_EVENT_TYPE_MAP[e.type] ?? "other",
+      team:               isHome ? homeTeam : awayTeam,
+      player:             e.player || null,
+      description:        `${e.player ? `${e.player} — ` : ""}${e.type.replace(/_/g, " ")} (${e.minute}')`,
+      zone:               isHome ? zones.home : zones.away,
+      zone_source:        "formation_default" as const,
+    };
+  });
+}
 
 /** Setup form before match starts. */
 function SetupForm({
@@ -546,6 +592,16 @@ export default function LiveMatchPage() {
                 </Link>
               </div>
 
+              {/* Zone pitch review */}
+              {events.length > 0 && (
+                <MatchZonePitch
+                  events={toLiveZonedEvents(events, setup.homeTeam, setup.awayTeam)}
+                  audioCur={Infinity}
+                  homeTeam={setup.homeTeam}
+                  awayTeam={setup.awayTeam}
+                />
+              )}
+
               {/* WhatsApp Report */}
               <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-5 space-y-3">
                 <div className="flex items-center gap-2">
@@ -621,7 +677,7 @@ export default function LiveMatchPage() {
                 </div>
               </div>
 
-              {/* Right: live stats */}
+              {/* Right: live stats + zone pitch */}
               <div className="space-y-4">
                 <LiveStatsSidebar
                   homeScore={homeScore}
@@ -631,6 +687,14 @@ export default function LiveMatchPage() {
                   events={events}
                   elapsedSeconds={elapsed}
                 />
+                {events.length > 0 && (
+                  <MatchZonePitch
+                    events={toLiveZonedEvents(events, setup.homeTeam, setup.awayTeam)}
+                    audioCur={elapsed}
+                    homeTeam={setup.homeTeam}
+                    awayTeam={setup.awayTeam}
+                  />
+                )}
               </div>
             </div>
           )}
