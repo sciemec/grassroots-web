@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Activity, Play, Pause, Square, Zap, BarChart2, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import MatchZonePitch from "@/components/analyst/MatchZonePitch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -252,6 +253,38 @@ function detectSequences(touches: Touch[]): PassSequence[] {
   }
 
   return sequences;
+}
+
+/** Convert touch-tracker ZoneEvents to the format expected by MatchZonePitch.
+ *  home_attack → top_center (home in final third)
+ *  home_defend → bot_center (away pressing home's box)
+ *  midfield    → mid_center */
+const TURNOVER_ZONE_MAP: Record<string, { pitchZone: string; isHome: boolean | null }> = {
+  home_attack: { pitchZone: "top_center", isHome: true  },
+  home_defend: { pitchZone: "bot_center", isHome: false },
+  midfield:    { pitchZone: "mid_center", isHome: null  },
+};
+
+function toZonedTurnovers(
+  zoneEvents: ZoneEvent[],
+  homeTeam: string,
+  awayTeam: string,
+) {
+  return zoneEvents
+    .filter((z) => z.zone !== "unclear" && TURNOVER_ZONE_MAP[z.zone])
+    .map((z) => {
+      const mapped = TURNOVER_ZONE_MAP[z.zone];
+      return {
+        minute:             null,
+        audio_time_seconds: Math.round(z.ts / 1000),
+        event_type:         "other" as const,
+        team:               mapped.isHome === true ? homeTeam : mapped.isHome === false ? awayTeam : null,
+        player:             null,
+        description:        z.description,
+        zone:               mapped.pitchZone,
+        zone_source:        "spatial_cue" as const,
+      };
+    });
 }
 
 function buildAiPrompt(
@@ -1220,6 +1253,18 @@ export default function TouchTrackerPage() {
                     {stats.zoneEvents.length === 0 && <p className="text-[10px] text-white/30">No turnover zones detected yet — log more touches</p>}
                   </div>
                 </div>
+
+                {/* Zone pitch — last turnover location */}
+                {stats.zoneEvents.filter(z => z.zone !== "unclear").length > 0 && (
+                  <MatchZonePitch
+                    events={toZonedTurnovers(stats.zoneEvents, homeTeam, awayTeam)}
+                    audioCur={elapsed / 1000}
+                    homeTeam={homeTeam}
+                    awayTeam={awayTeam}
+                    homeColor="#3b82f6"
+                    awayColor="#f97316"
+                  />
+                )}
 
                 {/* Top touchers */}
                 <div className="grid grid-cols-2 gap-3">
