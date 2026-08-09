@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Eye, Upload, CheckCircle2, AlertTriangle, BookOpen,
   Clock, Target, Shield, Zap, Download, GraduationCap, ShieldAlert,
-  Database, FileJson,
+  Database, FileJson, Play, Pause, Mic,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TACTICAL_PRINCIPLES, FORMATION_LIBRARY, type TacticalPrinciple, type FormationDetail } from "@/lib/thuto-tactics-knowledge";
@@ -108,6 +108,32 @@ const D = {
   blueBg:  "#0c1a3a",
 } as const;
 
+// ── Commentary types ────────────────────────────────────────────────────────
+
+interface CmtTimelineEvent {
+  minute: number | null;
+  audio_time_seconds: number | null;
+  event_type: string;
+  team: string | null;
+  player: string | null;
+  description: string;
+}
+
+interface CommentaryResult {
+  match_info: { home_score: number | null; away_score: number | null; home_formation: string | null; away_formation: string | null; possession_home: number | null; shots_home: number | null; shots_away: number | null; home_xg: number | null; away_xg: number | null; };
+  events_timeline: CmtTimelineEvent[];
+  key_players_mentioned: string[];
+  tactical: { observations: string[]; strengths: string[]; weaknesses: string[]; };
+  summary: string;
+  match_summary: string;
+}
+
+function formatAudioTime(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 // ── Analyst Match Eye ─────────────────────────────────────────────────────────
 
 export default function AnalystMatchEye() {
@@ -129,7 +155,7 @@ export default function AnalystMatchEye() {
 
   // Page flow
   const [pageStage,   setPageStage]   = useState<PageStage>("setup");
-  const [activeTab,   setActiveTab]   = useState<"first" | "second" | "summary">("first");
+  const [activeTab,   setActiveTab]   = useState<"first" | "second" | "summary" | "commentary">("first");
   const [globalError, setGlobalError] = useState("");
 
   // Half upload states
@@ -151,6 +177,19 @@ export default function AnalystMatchEye() {
   // File inputs
   const firstRef  = useRef<HTMLInputElement>(null);
   const secondRef = useRef<HTMLInputElement>(null);
+
+  // Commentary tab state
+  const [cmtPhase,     setCmtPhase]     = useState<"idle" | "uploading" | "analysing" | "done" | "error">("idle");
+  const [cmtUploadPct, setCmtUploadPct] = useState(0);
+  const [cmtResult,    setCmtResult]    = useState<CommentaryResult | null>(null);
+  const [cmtAudioUrl,  setCmtAudioUrl]  = useState("");
+  const [cmtPlaying,   setCmtPlaying]   = useState(false);
+  const [cmtAudioCur,  setCmtAudioCur]  = useState(0);
+  const [cmtAudioDur,  setCmtAudioDur]  = useState(0);
+  const [cmtError,     setCmtError]     = useState("");
+  const cmtAudioBlobRef = useRef<File | null>(null);
+  const cmtAudioRef     = useRef<HTMLAudioElement>(null);
+  const cmtEventRefsMap = useRef<Record<number, HTMLDivElement | null>>({});
 
   // Pre-upload advisory
   const [pendingHalf, setPendingHalf] = useState<"first" | "second" | null>(null);
@@ -198,6 +237,27 @@ export default function AnalystMatchEye() {
     }
   }, [pageStage, firstResult, secondResult, activeTab]);
 
+  // ── Commentary audio URL cleanup ──────────────────────────────────────────
+  useEffect(() => {
+    if (!cmtAudioUrl) return;
+    return () => URL.revokeObjectURL(cmtAudioUrl);
+  }, [cmtAudioUrl]);
+
+  const activeCommentaryEventIdx = useMemo(() => {
+    const evs = Array.isArray(cmtResult?.events_timeline) ? cmtResult!.events_timeline : [];
+    let idx = -1;
+    evs.forEach((ev, i) => {
+      if (ev.audio_time_seconds != null && ev.audio_time_seconds <= cmtAudioCur) idx = i;
+    });
+    return idx;
+  }, [cmtResult, cmtAudioCur]);
+
+  useEffect(() => {
+    if (activeCommentaryEventIdx >= 0) {
+      cmtEventRefsMap.current[activeCommentaryEventIdx]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [activeCommentaryEventIdx]);
+
   // ── Analyse — per-half, independent ───────────────────────────────────────
 
   const analyseIndependent = useCallback(async (which: "first" | "second") => {
@@ -235,6 +295,34 @@ export default function AnalystMatchEye() {
       setAnal(false);
     }
   }, [firstHalf, secondHalf, homeTeam, awayTeam, competition, sport]);
+
+  // ── Commentary upload + analysis ─────────────────────────────────────────
+  const uploadCommentary = useCallback(async (file: File) => {
+    setCmtPhase("uploading");
+    setCmtUploadPct(0);
+    setCmtError("");
+    cmtAudioBlobRef.current = file;
+    try {
+      const { fileUri, fileName, mimeType } = await uploadVideoInChunksParallel(
+        file,
+        (pct) => setCmtUploadPct(pct),
+      );
+      setCmtPhase("analysing");
+      const res = await fetch("/api/analyse-commentary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileUri, fileName, mimeType, homeTeam: homeTeam || "Home", awayTeam: awayTeam || "Away", sport, half: "full", token }),
+      });
+      const data = await res.json() as { result?: CommentaryResult; error?: string };
+      if (!res.ok || !data.result) throw new Error(data.error || "Analysis failed.");
+      setCmtResult(data.result);
+      setCmtAudioUrl(URL.createObjectURL(cmtAudioBlobRef.current!));
+      setCmtPhase("done");
+    } catch (err) {
+      setCmtError(err instanceof Error ? err.message : "Upload or analysis failed. Please try again.");
+      setCmtPhase("error");
+    }
+  }, [homeTeam, awayTeam, sport, token]);
 
   const reset = () => {
     setPageStage("setup");
@@ -829,13 +917,13 @@ export default function AnalystMatchEye() {
 
               {/* Tabs */}
               <div style={{ display: "flex", gap: 4, background: D.card, borderRadius: 10, padding: 4, border: `1px solid ${D.border}`, marginBottom: 16 }}>
-                {(["first", "second", "summary"] as const).map((t) => {
+                {(["first", "second", "summary", "commentary"] as const).map((t) => {
                   const summaryDisabled = t === "summary" && (!firstResult || !secondResult);
                   return (
                     <button key={t}
                       onClick={() => { if (!summaryDisabled) setActiveTab(t); }}
                       style={{ flex: 1, padding: "9px 6px", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: summaryDisabled ? "not-allowed" : "pointer", background: activeTab === t ? D.green : "transparent", color: activeTab === t ? "#030712" : summaryDisabled ? D.dim : D.muted, transition: "background 0.15s", opacity: summaryDisabled ? 0.45 : 1 }}>
-                      {t === "first" ? "First Half" : t === "second" ? "Second Half" : "Full Match"}
+                      {t === "first" ? "1st Half" : t === "second" ? "2nd Half" : t === "summary" ? "Full Match" : "Commentary"}
                     </button>
                   );
                 })}
@@ -961,6 +1049,153 @@ export default function AnalystMatchEye() {
                   <button onClick={reset} style={{ background: D.card2, color: D.muted, border: `1px solid ${D.border}`, borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                     Analyse Another Match
                   </button>
+                </div>
+              )}
+
+              {/* Commentary Tab */}
+              {activeTab === "commentary" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <audio ref={cmtAudioRef} src={cmtAudioUrl || undefined} style={{ display: "none" }}
+                    onTimeUpdate={() => setCmtAudioCur(cmtAudioRef.current?.currentTime ?? 0)}
+                    onDurationChange={() => setCmtAudioDur(cmtAudioRef.current?.duration ?? 0)}
+                    onEnded={() => setCmtPlaying(false)}
+                    onPlay={() => setCmtPlaying(true)}
+                    onPause={() => setCmtPlaying(false)} />
+
+                  {/* Upload area */}
+                  {cmtPhase === "idle" && (
+                    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: D.card2, border: `2px dashed ${D.border2}`, borderRadius: 14, padding: "36px 20px", cursor: "pointer" }}>
+                      <Mic size={28} color={D.green} />
+                      <div style={{ fontWeight: 700, fontSize: 14, color: D.text }}>Upload Audio Commentary</div>
+                      <div style={{ fontSize: 12, color: D.muted, textAlign: "center" }}>Record your spoken commentary during the match, then upload here.<br />Gemini extracts every event, player, and tactical note.</div>
+                      <div style={{ fontSize: 11, color: D.dim }}>Accepts mp3, m4a, wav, webm, ogg</div>
+                      <input type="file" accept="audio/*" style={{ display: "none" }}
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCommentary(f); e.target.value = ""; }} />
+                    </label>
+                  )}
+
+                  {/* Uploading */}
+                  {cmtPhase === "uploading" && (
+                    <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, padding: "28px 20px", textAlign: "center" }}>
+                      <div style={{ fontSize: 13, color: D.muted, marginBottom: 12 }}>Uploading audio…</div>
+                      <div style={{ background: D.card2, borderRadius: 99, height: 6, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${cmtUploadPct}%`, background: D.green, transition: "width 0.3s" }} />
+                      </div>
+                      <div style={{ fontSize: 12, color: D.dim, marginTop: 8 }}>{cmtUploadPct}%</div>
+                    </div>
+                  )}
+
+                  {/* Analysing */}
+                  {cmtPhase === "analysing" && (
+                    <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
+                      <div style={{ width: 12, height: 12, borderRadius: "50%", background: D.green, animation: "analyst-pulse 1.5s ease-in-out infinite", margin: "0 auto 14px" }} />
+                      <div style={{ fontSize: 13, color: D.muted }}>Gemini is transcribing and extracting match events…</div>
+                      <div style={{ fontSize: 11, color: D.dim, marginTop: 6 }}>This takes 20–60 seconds</div>
+                    </div>
+                  )}
+
+                  {/* Error */}
+                  {cmtPhase === "error" && (
+                    <div style={{ background: D.redBg, border: `1px solid ${D.redBd}`, borderRadius: 12, padding: "16px 18px" }}>
+                      <div style={{ fontSize: 13, color: D.red, marginBottom: 10 }}>{cmtError}</div>
+                      <button onClick={() => setCmtPhase("idle")} style={{ background: D.card, color: D.muted, border: `1px solid ${D.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 12, cursor: "pointer" }}>Try Again</button>
+                    </div>
+                  )}
+
+                  {/* Results */}
+                  {cmtPhase === "done" && cmtResult && (
+                    <>
+                      {/* Audio player */}
+                      {cmtAudioUrl && (
+                        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                          <button
+                            onClick={() => { const el = cmtAudioRef.current; if (!el) return; cmtPlaying ? el.pause() : void el.play(); }}
+                            style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: D.green, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {cmtPlaying ? <Pause size={16} color="#030712" /> : <Play size={16} color="#030712" />}
+                          </button>
+                          <input type="range" min={0} max={cmtAudioDur || 1} step={0.5} value={cmtAudioCur}
+                            onChange={(e) => { const t = parseFloat(e.target.value); setCmtAudioCur(t); if (cmtAudioRef.current) cmtAudioRef.current.currentTime = t; }}
+                            style={{ flex: 1, accentColor: D.green }} />
+                          <span style={{ fontSize: 12, color: D.muted, whiteSpace: "nowrap" }}>{formatAudioTime(cmtAudioCur)} / {formatAudioTime(cmtAudioDur)}</span>
+                        </div>
+                      )}
+
+                      {/* Match summary */}
+                      {cmtResult.match_summary && (
+                        <div style={{ background: D.greenBg, border: `1.5px solid ${D.greenBd}`, borderRadius: 10, padding: "14px 16px" }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: D.green, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Match Summary</div>
+                          <div style={{ fontSize: 13, color: D.muted }}>{cmtResult.match_summary}</div>
+                        </div>
+                      )}
+
+                      {/* Stats row */}
+                      {cmtResult.match_info && (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(90px,1fr))", gap: 8 }}>
+                          {cmtResult.match_info.home_score != null && <DStatBox label="Score (Home)" value={String(cmtResult.match_info.home_score)} />}
+                          {cmtResult.match_info.away_score != null && <DStatBox label="Score (Away)" value={String(cmtResult.match_info.away_score)} />}
+                          {cmtResult.match_info.possession_home != null && <DStatBox label="Possession" value={`${cmtResult.match_info.possession_home}%`} sub="Home" />}
+                          {cmtResult.match_info.shots_home != null && <DStatBox label="Shots" value={`${cmtResult.match_info.shots_home}–${cmtResult.match_info.shots_away ?? "?"}`} sub="Home–Away" />}
+                          {cmtResult.match_info.home_xg != null && <DStatBox label="xG" value={`${cmtResult.match_info.home_xg}–${cmtResult.match_info.away_xg ?? "?"}`} sub="Home–Away" />}
+                        </div>
+                      )}
+
+                      {/* Synced event timeline */}
+                      {Array.isArray(cmtResult.events_timeline) && cmtResult.events_timeline.length > 0 && (
+                        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "14px 16px" }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: D.text, marginBottom: 10 }}>Events Timeline</div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 340, overflowY: "auto" }}>
+                            {cmtResult.events_timeline.map((ev, i) => {
+                              const isActive = i === activeCommentaryEventIdx;
+                              const canSeek = ev.audio_time_seconds != null && cmtAudioUrl;
+                              return (
+                                <div
+                                  key={i}
+                                  ref={(el) => { cmtEventRefsMap.current[i] = el; }}
+                                  onClick={() => { if (canSeek && cmtAudioRef.current) { cmtAudioRef.current.currentTime = ev.audio_time_seconds!; void cmtAudioRef.current.play(); } }}
+                                  style={{ display: "flex", gap: 10, alignItems: "flex-start", borderRadius: 8, padding: "8px 10px", background: isActive ? D.amberBg : "transparent", border: `1px solid ${isActive ? "#78350f" : "transparent"}`, cursor: canSeek ? "pointer" : "default", transition: "background 0.2s" }}>
+                                  <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                    {ev.minute != null && <span style={{ fontSize: 11, fontWeight: 700, color: D.green }}>{ev.minute}′</span>}
+                                    {ev.audio_time_seconds != null && <span style={{ fontSize: 10, color: D.dim }}>{formatAudioTime(ev.audio_time_seconds)}</span>}
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: D.amber, textTransform: "uppercase", letterSpacing: "0.04em" }}>{ev.event_type.replace(/_/g, " ")}{ev.player ? ` — ${ev.player}` : ""}</div>
+                                    <div style={{ fontSize: 12, color: D.muted, marginTop: 2 }}>{ev.description}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tactical observations */}
+                      {cmtResult.tactical?.observations?.length > 0 && (
+                        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "14px 16px" }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: D.text, marginBottom: 8 }}>Tactical Observations</div>
+                          <ul style={{ margin: 0, paddingLeft: 16 }}>
+                            {cmtResult.tactical.observations.map((o, i) => <li key={i} style={{ fontSize: 12, color: D.muted, marginBottom: 4 }}>{o}</li>)}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Players mentioned */}
+                      {cmtResult.key_players_mentioned?.length > 0 && (
+                        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "14px 16px" }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: D.text, marginBottom: 8 }}>Players Mentioned</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {cmtResult.key_players_mentioned.map((p, i) => (
+                              <span key={i} style={{ fontSize: 11, background: D.greenBg, color: D.green, border: `1px solid ${D.greenBd}`, borderRadius: 6, padding: "3px 8px" }}>{p}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <button onClick={() => { setCmtPhase("idle"); setCmtResult(null); setCmtAudioUrl(""); setCmtAudioCur(0); setCmtAudioDur(0); setCmtPlaying(false); }}
+                        style={{ background: D.card2, color: D.muted, border: `1px solid ${D.border}`, borderRadius: 10, padding: "11px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        Upload New Commentary
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
