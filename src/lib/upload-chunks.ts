@@ -338,9 +338,9 @@ export async function uploadVideoInChunks(
 }
 
 /**
- * Adaptive-chunk variant — uses 25 MB on desktop, 8 MB on mobile.
+ * Adaptive-chunk variant — uses 24 MB on desktop, 8 MB on mobile.
  *
- * Desktop (WiFi):  25 MB chunks — fewer proxy round trips (~3× vs 8 MB).
+ * Desktop (WiFi):  24 MB chunks (3 × 8 MiB granularity) — fewer proxy round trips.
  * Mobile (4G/3G):   8 MB chunks — shorter transfer window per chunk, far less
  *   exposure to tower handoffs that trigger xhr.onerror on mobile data.
  *   Field-confirmed fix: 25 MB chunks took 25–65 s on mobile data, regularly
