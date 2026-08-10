@@ -13,8 +13,13 @@
  * this pathway was broken multiple times on mobile before the proxy was stable.
  */
 
-const CHUNK_BYTES       = 8  * 1024 * 1024; // 8 MB  — matches Google's resumable upload chunk granularity
-const LARGE_CHUNK_BYTES = 25 * 1024 * 1024; // 25 MB — fewer proxy round trips on desktop (still a multiple of 256 KB)
+// Google resumable uploads require non-final chunks to be exact multiples of
+// 8,388,608 bytes (8 MiB = 1 × Google granularity unit).
+// Valid sizes: 8 MB, 16 MB, 24 MB, 32 MB …
+// 25 MB (26,214,400) is NOT a valid multiple — confirmed error Aug 2026.
+const GOOGLE_CHUNK_GRANULARITY = 8_388_608; // 8 MiB — Google's required granularity
+const CHUNK_BYTES       = 1 * GOOGLE_CHUNK_GRANULARITY; //  8 MB — mobile default (1×)
+const LARGE_CHUNK_BYTES = 3 * GOOGLE_CHUNK_GRANULARITY; // 24 MB — desktop (3×), was 25 MB (invalid)
 const MAX_RETRIES = 3;
 
 /**
@@ -28,6 +33,31 @@ const MAX_RETRIES = 3;
 const RETRY_DELAYS_MS = [5_000, 15_000, 30_000] as const;
 
 /**
+ * Guard: throws before any chunk reaches the network if the size violates
+ * Google's resumable-upload chunk granularity rule.
+ *
+ * Google requirement: every non-final chunk MUST be an exact multiple of
+ * 8,388,608 bytes (GOOGLE_CHUNK_GRANULARITY). The final chunk may be any size.
+ *
+ * Call this immediately before sendChunkXhr — it is the single enforcement
+ * point for this rule across ALL chunk-size paths (mobile, desktop, adaptive).
+ *
+ * @throws Error with a descriptive message if the size is invalid.
+ */
+export function assertValidChunkSize(bytes: number, isFinalChunk: boolean): void {
+  if (isFinalChunk) return; // final chunk: any size is accepted by Google
+  if (bytes % GOOGLE_CHUNK_GRANULARITY !== 0) {
+    throw new Error(
+      `Invalid chunk size: ${bytes} bytes is not a multiple of ` +
+      `${GOOGLE_CHUNK_GRANULARITY} (Google resumable upload granularity). ` +
+      `Valid sizes: 8 MB (${GOOGLE_CHUNK_GRANULARITY}), ` +
+      `16 MB (${2 * GOOGLE_CHUNK_GRANULARITY}), ` +
+      `24 MB (${3 * GOOGLE_CHUNK_GRANULARITY}), etc.`
+    );
+  }
+}
+
+/**
  * Returns the appropriate chunk size for the current device and network,
  * and logs the decision to the console for field diagnostics.
  *
@@ -37,9 +67,9 @@ const RETRY_DELAYS_MS = [5_000, 15_000, 30_000] as const;
  *   3. Desktop — maximum throughput
  *
  * effectiveType values (Network Information API, Android Chrome only):
- *   "slow-2g" / "2g"  → 4 MB  — very slow; minimise per-chunk transfer time
+ *   "slow-2g" / "2g"  → 8 MB  — 4 MB is NOT a valid Google multiple; 8 MB is minimum
  *   "3g"              → 8 MB  — moderate; 8 MB ≈ 8–25 s, safe handoff window
- *   "4g"              → 25 MB — fast data; treat same as WiFi desktop
+ *   "4g"              → 24 MB — fast data; treat same as WiFi desktop (was 25 MB — invalid)
  *
  * iOS Safari does NOT expose navigator.connection, so we fall back to 8 MB
  * for any mobile user agent where connection quality is unknowable.
@@ -52,7 +82,7 @@ const RETRY_DELAYS_MS = [5_000, 15_000, 30_000] as const;
 function getChunkSize(): number {
   if (typeof navigator === "undefined") {
     // SSR — no browser APIs available
-    console.log("[upload] chunk=25MB reason=ssr");
+    console.log("[upload] chunk=24MB reason=ssr");
     return LARGE_CHUNK_BYTES;
   }
 
@@ -65,14 +95,15 @@ function getChunkSize(): number {
     switch (conn.effectiveType) {
       case "slow-2g":
       case "2g":
-        console.log("[upload] chunk=4MB reason=android-2g");
-        return 4 * 1024 * 1024;
+        // 4 MB (4,194,304) is NOT a valid Google chunk multiple — use 8 MB minimum.
+        console.log("[upload] chunk=8MB reason=android-2g");
+        return CHUNK_BYTES; // 8 MB — smallest valid Google chunk size
       case "3g":
         console.log("[upload] chunk=8MB reason=android-3g");
         return CHUNK_BYTES;
       default:
         // "4g" or any future value — treat as fast connection
-        console.log(`[upload] chunk=25MB reason=android-${conn.effectiveType}`);
+        console.log(`[upload] chunk=24MB reason=android-${conn.effectiveType}`);
         return LARGE_CHUNK_BYTES;
     }
   }
@@ -83,7 +114,7 @@ function getChunkSize(): number {
     return CHUNK_BYTES; // 8 MB — safe default when signal quality is unknowable
   }
 
-  console.log("[upload] chunk=25MB reason=desktop");
+  console.log("[upload] chunk=24MB reason=desktop");
   return LARGE_CHUNK_BYTES;
 }
 
@@ -249,6 +280,11 @@ export async function uploadVideoInChunks(
       last:   String(isLast),
     });
 
+    // Guard: enforce Google's chunk granularity before anything hits the network.
+    // This throws immediately with a clear message if the chunk size is wrong,
+    // preventing the cryptic "not a multiple of 8388608" error from Google.
+    assertValidChunkSize(chunk.size, isLast);
+
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -338,6 +374,9 @@ export async function uploadVideoInChunksParallel(
       offset: String(start),
       last:   String(isLast),
     });
+
+    // Guard: same rule as uploadVideoInChunks — enforce before anything hits the network.
+    assertValidChunkSize(chunk.size, isLast);
 
     let lastError: Error | null = null;
 
