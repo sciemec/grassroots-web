@@ -191,6 +191,64 @@ interface ServerChunkResponse {
   error?:      string;
 }
 
+// ── Upload Error Classification ───────────────────────────────────────────────
+// XHR provides zero additional error code on Android Chrome (onerror fires with
+// a plain ProgressEvent and no `.error` property).  We classify by HTTP status
+// code and XHR event type so callers see an actionable message instead of a
+// generic "Network error".
+
+type UploadErrorKind =
+  | "connection-dropped" // xhr.onerror  — TCP connection actively terminated by OS or carrier
+  | "timeout"            // xhr.ontimeout — no response within 90 s (stalled, not dropped)
+  | "session-expired"    // HTTP 410/499  — Google resumable session URL expired
+  | "bad-request"        // HTTP 400      — chunk-size violation or malformed parameters
+  | "server-error"       // HTTP 5xx      — proxy or Google transient server error
+  | "parse-error"        // unparseable JSON returned by proxy
+  | "unknown";           // any other HTTP error code
+
+class UploadError extends Error {
+  constructor(message: string, public readonly kind: UploadErrorKind) {
+    super(message);
+    this.name = "UploadError";
+  }
+}
+
+/**
+ * Returns true when retrying the same chunk may succeed.
+ * "connection-dropped" and "timeout" are transient network conditions.
+ * "server-error" (5xx) is a transient Google/proxy condition.
+ * Everything else (session-expired, bad-request, parse-error) is fatal — retrying will not help.
+ */
+function isRetryable(kind: UploadErrorKind): boolean {
+  return kind === "connection-dropped" || kind === "timeout" || kind === "server-error";
+}
+
+// ── Screen Wake Lock ─────────────────────────────────────────────────────────
+// Prevents Android / iOS from dimming the screen and killing the XHR connection
+// mid-upload.  Samsung One UI's aggressive battery management has been confirmed
+// to fire xhr.onerror at 3 % on 4G by killing the TCP socket when the screen
+// dims (field-tested July 2026).
+// Chrome 84+ / Samsung Internet 11+ support this API; it silently no-ops on
+// other browsers — no polyfill needed.
+
+type WakeLockHandle = { release(): Promise<void> } | null;
+
+async function acquireWakeLock(): Promise<WakeLockHandle> {
+  if (typeof navigator === "undefined") return null;
+  const nav = navigator as Navigator & {
+    wakeLock?: { request(type: "screen"): Promise<{ release(): Promise<void> }> };
+  };
+  if (!nav.wakeLock) return null;
+  try {
+    const lock = await nav.wakeLock.request("screen");
+    console.log("[upload] wake-lock acquired");
+    return lock;
+  } catch {
+    // Permission denied or API not available — upload continues without it
+    return null;
+  }
+}
+
 /**
  * Send a single chunk to our Render proxy via XHR (so onprogress fires for
  * accurate progress bars) and resolve with the JSON response.
@@ -213,31 +271,84 @@ function sendChunkXhr(
     };
 
     xhr.onload = () => {
+      // ── Session expired — fatal, no point retrying the same session URL ──
+      if (xhr.status === 410 || xhr.status === 499) {
+        reject(new UploadError(
+          `Upload session expired (${xhr.status}) — please start the upload again.`,
+          "session-expired",
+        ));
+        return;
+      }
+
+      // ── Bad request — fatal, retrying the same chunk will keep failing ───
+      if (xhr.status === 400) {
+        let msg = `Upload rejected (400) — invalid chunk size or parameters.`;
+        try {
+          const body = JSON.parse(xhr.responseText) as { error?: string };
+          if (body.error) msg = body.error;
+        } catch { /* ignore */ }
+        reject(new UploadError(msg, "bad-request"));
+        return;
+      }
+
+      // ── Server error — transient, worth retrying ─────────────────────────
+      if (xhr.status >= 500) {
+        let msg = `Server error (${xhr.status}) — retrying.`;
+        try {
+          const body = JSON.parse(xhr.responseText) as { error?: string };
+          if (body.error) msg = body.error;
+        } catch { /* ignore */ }
+        reject(new UploadError(msg, "server-error"));
+        return;
+      }
+
+      // ── Success ───────────────────────────────────────────────────────────
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           resolve(JSON.parse(xhr.responseText) as ServerChunkResponse);
         } catch {
-          reject(new Error("Unexpected response from upload server"));
+          reject(new UploadError(
+            "Unexpected response from upload server — could not parse JSON.",
+            "parse-error",
+          ));
         }
-      } else {
-        let msg = `Upload chunk failed (${xhr.status})`;
-        try {
-          const body = JSON.parse(xhr.responseText) as { error?: string };
-          if (body.error) msg = body.error;
-        } catch { /* ignore parse error, use generic msg */ }
-        reject(new Error(msg));
+        return;
       }
+
+      // ── Other non-2xx ─────────────────────────────────────────────────────
+      let msg = `Upload chunk failed (${xhr.status})`;
+      try {
+        const body = JSON.parse(xhr.responseText) as { error?: string };
+        if (body.error) msg = body.error;
+      } catch { /* ignore */ }
+      reject(new UploadError(msg, "unknown"));
     };
 
-    xhr.onerror = () =>
-      reject(new Error("Network error during upload — check your connection and try again"));
+    // ── Connection dropped (mobile tower handoff / Samsung battery manager) ─
+    // Android Chrome fires onerror with no additional error code when the OS
+    // terminates the TCP socket.  We log network state for field diagnostics.
+    xhr.onerror = () => {
+      const conn = (navigator as Navigator & {
+        connection?: { effectiveType?: string; downlink?: number; rtt?: number };
+      }).connection;
+      const netInfo = conn
+        ? ` [net: ${conn.effectiveType ?? "?"}, ↓${conn.downlink ?? "?"}Mbps, rtt ${conn.rtt ?? "?"}ms]`
+        : "";
+      reject(new UploadError(
+        `Connection dropped during upload${netInfo} — will retry automatically.`,
+        "connection-dropped",
+      ));
+    };
 
     xhr.open("POST", `/api/match-eye/upload?${params.toString()}`);
     // 90 s per chunk — prevents an infinite hang when mobile data stalls.
     // Without this, a stalled (not dropped) connection hangs until the OS kills it.
     xhr.timeout = 90_000;
     xhr.ontimeout = () =>
-      reject(new Error("Upload timed out — check your connection and try again"));
+      reject(new UploadError(
+        "Upload chunk timed out (90 s) — connection too slow or stalled. Will retry.",
+        "timeout",
+      ));
     // chunk.type is always populated for File objects and MediaRecorder blobs.
     // Fallback to octet-stream (not video/mp4) so audio files are never mislabelled
     // to Gemini when chunk.type is unexpectedly empty.
@@ -267,71 +378,86 @@ export async function uploadVideoInChunks(
   let   sessionUrl: string | null = null;
   let   bytesUploaded = 0;
 
-  for (let i = 0; i < totalChunks; i++) {
-    const start  = i * CHUNK_BYTES;
-    const end    = Math.min(start + CHUNK_BYTES, totalSize);
-    const chunk  = file.slice(start, end);
-    const isLast = i === totalChunks - 1;
+  // Prevent Android/iOS from dimming the screen mid-upload (which kills the
+  // XHR socket on Samsung One UI's aggressive battery management).
+  const wakeLock = await acquireWakeLock();
+  try {
+    for (let i = 0; i < totalChunks; i++) {
+      const start  = i * CHUNK_BYTES;
+      const end    = Math.min(start + CHUNK_BYTES, totalSize);
+      const chunk  = file.slice(start, end);
+      const isLast = i === totalChunks - 1;
 
-    const params = new URLSearchParams({
-      size:   String(totalSize),
-      chunk:  String(chunk.size),
-      offset: String(start),
-      last:   String(isLast),
-    });
+      const params = new URLSearchParams({
+        size:   String(totalSize),
+        chunk:  String(chunk.size),
+        offset: String(start),
+        last:   String(isLast),
+      });
 
-    // Guard: enforce Google's chunk granularity before anything hits the network.
-    // This throws immediately with a clear message if the chunk size is wrong,
-    // preventing the cryptic "not a multiple of 8388608" error from Google.
-    assertValidChunkSize(chunk.size, isLast);
+      // Guard: enforce Google's chunk granularity before anything hits the network.
+      // This throws immediately with a clear message if the chunk size is wrong,
+      // preventing the cryptic "not a multiple of 8388608" error from Google.
+      assertValidChunkSize(chunk.size, isLast);
 
-    let lastError: Error | null = null;
+      let lastError: Error | null = null;
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      if (attempt > 0) {
-        const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? 30_000;
-        console.log(
-          `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
-          `delay=${delayMs / 1000}s err="${lastError?.message}"`,
-        );
-        // Mobile-safe backoff: 5 s then 15 s — gives mobile data time to recover
-        await new Promise<void>((r) => setTimeout(r, delayMs));
-      }
-
-      try {
-        const res = await sendChunkXhr(
-          chunk,
-          params,
-          sessionUrl,
-          (loaded) => {
-            // Report cumulative progress across all chunks, capped at 95%
-            onProgress(Math.round(((bytesUploaded + loaded) / totalSize) * 95));
-          },
-        );
-
-        if (res.error) throw new Error(res.error);
-
-        // Thread the session URL forward to subsequent chunk requests
-        if (res.sessionUrl) sessionUrl = res.sessionUrl;
-
-        if (isLast) {
-          if (!res.fileUri) throw new Error("Upload server did not return a file URI");
-          return {
-            fileUri:  res.fileUri,
-            fileName: res.fileName ?? "",
-            mimeType: res.mimeType ?? file.type,
-          };
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+          const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? 30_000;
+          console.log(
+            `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
+            `delay=${delayMs / 1000}s err="${lastError?.message}"`,
+          );
+          // Mobile-safe backoff: 5 s / 15 s / 30 s — gives mobile data time to recover
+          await new Promise<void>((r) => setTimeout(r, delayMs));
         }
 
-        bytesUploaded = end;
-        lastError = null;
-        break; // chunk succeeded — advance to next chunk
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error("Unknown upload error");
+        try {
+          const res = await sendChunkXhr(
+            chunk,
+            params,
+            sessionUrl,
+            (loaded) => {
+              // Report cumulative progress across all chunks, capped at 95%
+              onProgress(Math.round(((bytesUploaded + loaded) / totalSize) * 95));
+            },
+          );
+
+          if (res.error) throw new Error(res.error);
+
+          // Thread the session URL forward to subsequent chunk requests
+          if (res.sessionUrl) sessionUrl = res.sessionUrl;
+
+          if (isLast) {
+            if (!res.fileUri) throw new Error("Upload server did not return a file URI");
+            return {
+              fileUri:  res.fileUri,
+              fileName: res.fileName ?? "",
+              mimeType: res.mimeType ?? file.type,
+            };
+          }
+
+          bytesUploaded = end;
+          lastError = null;
+          break; // chunk succeeded — advance to next chunk
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error("Unknown upload error");
+          // Don't waste retry attempts on fatal errors (session-expired, bad-request)
+          // where the same chunk will never succeed.
+          if (lastError instanceof UploadError && !isRetryable(lastError.kind)) break;
+        }
+      }
+
+      if (lastError) {
+        const pct = Math.round((bytesUploaded / totalSize) * 100);
+        lastError.message =
+          `${lastError.message} (chunk ${i + 1}/${totalChunks}, ${pct}% had uploaded)`;
+        throw lastError;
       }
     }
-
-    if (lastError) throw lastError;
+  } finally {
+    if (wakeLock) await wakeLock.release().catch(() => { /* ignore release errors */ });
   }
 
   throw new Error("Upload completed but no file URI was returned");
@@ -362,66 +488,81 @@ export async function uploadVideoInChunksParallel(
   let   sessionUrl: string | null = null;
   let   bytesUploaded = 0;
 
-  for (let i = 0; i < totalChunks; i++) {
-    const start  = i * chunkSize;
-    const end    = Math.min(start + chunkSize, totalSize);
-    const chunk  = file.slice(start, end);
-    const isLast = i === totalChunks - 1;
+  // Prevent Android/iOS from dimming the screen mid-upload (which kills the
+  // XHR socket on Samsung One UI's aggressive battery management).
+  const wakeLock = await acquireWakeLock();
+  try {
+    for (let i = 0; i < totalChunks; i++) {
+      const start  = i * chunkSize;
+      const end    = Math.min(start + chunkSize, totalSize);
+      const chunk  = file.slice(start, end);
+      const isLast = i === totalChunks - 1;
 
-    const params = new URLSearchParams({
-      size:   String(totalSize),
-      chunk:  String(chunk.size),
-      offset: String(start),
-      last:   String(isLast),
-    });
+      const params = new URLSearchParams({
+        size:   String(totalSize),
+        chunk:  String(chunk.size),
+        offset: String(start),
+        last:   String(isLast),
+      });
 
-    // Guard: same rule as uploadVideoInChunks — enforce before anything hits the network.
-    assertValidChunkSize(chunk.size, isLast);
+      // Guard: same rule as uploadVideoInChunks — enforce before anything hits the network.
+      assertValidChunkSize(chunk.size, isLast);
 
-    let lastError: Error | null = null;
+      let lastError: Error | null = null;
 
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      if (attempt > 0) {
-        const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? 30_000;
-        console.log(
-          `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
-          `delay=${delayMs / 1000}s err="${lastError?.message}"`,
-        );
-        // Mobile-safe backoff: 5 s then 15 s — gives mobile data time to recover
-        await new Promise<void>((r) => setTimeout(r, delayMs));
-      }
-
-      try {
-        const res = await sendChunkXhr(
-          chunk,
-          params,
-          sessionUrl,
-          (loaded) => {
-            onProgress(Math.round(((bytesUploaded + loaded) / totalSize) * 95));
-          },
-        );
-
-        if (res.error) throw new Error(res.error);
-        if (res.sessionUrl) sessionUrl = res.sessionUrl;
-
-        if (isLast) {
-          if (!res.fileUri) throw new Error("Upload server did not return a file URI");
-          return {
-            fileUri:  res.fileUri,
-            fileName: res.fileName ?? "",
-            mimeType: res.mimeType ?? file.type,
-          };
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+          const delayMs = RETRY_DELAYS_MS[attempt - 1] ?? 30_000;
+          console.log(
+            `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
+            `delay=${delayMs / 1000}s err="${lastError?.message}"`,
+          );
+          // Mobile-safe backoff: 5 s / 15 s / 30 s — gives mobile data time to recover
+          await new Promise<void>((r) => setTimeout(r, delayMs));
         }
 
-        bytesUploaded = end;
-        lastError = null;
-        break;
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error("Unknown upload error");
+        try {
+          const res = await sendChunkXhr(
+            chunk,
+            params,
+            sessionUrl,
+            (loaded) => {
+              onProgress(Math.round(((bytesUploaded + loaded) / totalSize) * 95));
+            },
+          );
+
+          if (res.error) throw new Error(res.error);
+          if (res.sessionUrl) sessionUrl = res.sessionUrl;
+
+          if (isLast) {
+            if (!res.fileUri) throw new Error("Upload server did not return a file URI");
+            return {
+              fileUri:  res.fileUri,
+              fileName: res.fileName ?? "",
+              mimeType: res.mimeType ?? file.type,
+            };
+          }
+
+          bytesUploaded = end;
+          lastError = null;
+          break;
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error("Unknown upload error");
+          // Don't waste retry attempts on fatal errors (session-expired, bad-request)
+          // where the same chunk will never succeed.
+          if (lastError instanceof UploadError && !isRetryable(lastError.kind)) break;
+        }
+      }
+
+      if (lastError) {
+        const pct = Math.round((bytesUploaded / totalSize) * 100);
+        lastError.message =
+          `${lastError.message} (chunk ${i + 1}/${totalChunks}, ${pct}% had uploaded)`;
+        throw lastError;
       }
     }
-
-    if (lastError) throw lastError;
+  } finally {
+    if (wakeLock) await wakeLock.release().catch(() => { /* ignore release errors */ });
   }
 
   throw new Error("Upload completed but no file URI was returned");
