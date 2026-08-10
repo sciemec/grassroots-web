@@ -87,6 +87,24 @@ export async function POST(req: Request) {
       uploadUrl = sessionUrl;
     }
 
+    // Guard: reject non-final chunks whose size is not a multiple of Google's
+    // 8 MiB granularity before a single byte reaches Google's API.
+    // Final chunks may be any size (remainder of the file).
+    if (!isLast) {
+      const GOOGLE_GRANULARITY = 8_388_608;
+      const chunkBytes = parseInt(chunkSize, 10);
+      if (isNaN(chunkBytes) || chunkBytes % GOOGLE_GRANULARITY !== 0) {
+        return Response.json(
+          {
+            error: `Invalid chunk size: ${chunkSize} bytes is not a multiple of ` +
+              `${GOOGLE_GRANULARITY} (Google resumable upload granularity). ` +
+              `Valid sizes: 8 MB (${GOOGLE_GRANULARITY}), 16 MB, 24 MB, 32 MB.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Upload this chunk's bytes to Google
     const uploadCommand = isLast ? "upload, finalize" : "upload";
     const uploadRes = await fetch(uploadUrl, {

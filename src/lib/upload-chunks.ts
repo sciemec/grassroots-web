@@ -357,7 +357,7 @@ export async function uploadVideoInChunksParallel(
   onProgress: (pct: number) => void,
 ): Promise<ChunkUploadResult> {
   const totalSize   = file.size;
-  const chunkSize   = getChunkSize(); // 8 MB on mobile, 25 MB on desktop
+  const chunkSize   = getChunkSize(); // 8 MB on mobile, 24 MB on desktop
   const totalChunks = Math.ceil(totalSize / chunkSize);
   let   sessionUrl: string | null = null;
   let   bytesUploaded = 0;
