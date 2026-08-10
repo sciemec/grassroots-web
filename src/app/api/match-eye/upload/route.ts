@@ -90,7 +90,10 @@ export async function POST(req: Request) {
     // Guard: reject non-final chunks whose size is not a multiple of Google's
     // 8 MiB granularity before a single byte reaches Google's API.
     // Final chunks may be any size (remainder of the file).
-    if (!isLast) {
+    // Resume slices (after a 308) start from a partial boundary — their size is
+    // inherently non-aligned, so the guard is skipped for them (?resume=1).
+    const isResume = params.get("resume") === "1";
+    if (!isLast && !isResume) {
       const GOOGLE_GRANULARITY = 8_388_608;
       const chunkBytes = parseInt(chunkSize, 10);
       if (isNaN(chunkBytes) || chunkBytes % GOOGLE_GRANULARITY !== 0) {
@@ -119,6 +122,20 @@ export async function POST(req: Request) {
       body:   req.body,
       duplex: "half",
     } as RequestInit);
+
+    // 308 Resume Incomplete — Google accepted partial bytes.
+    // Read the Range header to find the last confirmed byte, then tell the
+    // client where to resume so it can re-slice and retry from that position.
+    if (uploadRes.status === 308) {
+      const range = uploadRes.headers.get("Range"); // e.g. "bytes=0-4194303"
+      const confirmedOffset = range
+        ? parseInt(range.split("-")[1] ?? "0", 10) + 1
+        : parseInt(offset, 10);
+      console.log(
+        `[match-eye] 308 Resume Incomplete — Range: ${range ?? "none"} → confirmedOffset: ${confirmedOffset}`,
+      );
+      return Response.json({ sessionUrl: uploadUrl, confirmedOffset });
+    }
 
     if (!uploadRes.ok) {
       const errText = await uploadRes.text();

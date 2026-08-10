@@ -184,11 +184,14 @@ export interface ChunkUploadResult {
 }
 
 interface ServerChunkResponse {
-  sessionUrl?: string;
-  fileUri?:    string;
-  fileName?:   string;
-  mimeType?:   string;
-  error?:      string;
+  sessionUrl?:     string;
+  fileUri?:        string;
+  fileName?:       string;
+  mimeType?:       string;
+  error?:          string;
+  /** Set by proxy when Google returns 308 Resume Incomplete.
+   *  The next PUT must start at this byte offset (everything before was accepted). */
+  confirmedOffset?: number;
 }
 
 // ── Upload Error Classification ───────────────────────────────────────────────
@@ -385,9 +388,11 @@ export async function uploadVideoInChunks(
     for (let i = 0; i < totalChunks; i++) {
       const start  = i * CHUNK_BYTES;
       const end    = Math.min(start + CHUNK_BYTES, totalSize);
-      const chunk  = file.slice(start, end);
       const isLast = i === totalChunks - 1;
 
+      // `chunk` and params are mutable — a 308 Resume Incomplete response updates
+      // them mid-loop so the next attempt resumes from the confirmed byte offset.
+      let chunk  = file.slice(start, end);
       const params = new URLSearchParams({
         size:   String(totalSize),
         chunk:  String(chunk.size),
@@ -428,6 +433,22 @@ export async function uploadVideoInChunks(
 
           // Thread the session URL forward to subsequent chunk requests
           if (res.sessionUrl) sessionUrl = res.sessionUrl;
+
+          // 308 Resume Incomplete — Google partially accepted this chunk.
+          // Re-slice from the confirmed byte offset and retry the remainder.
+          // The proxy skips the granularity check for resume slices (?resume=1).
+          if (res.confirmedOffset !== undefined) {
+            const resumeFrom = res.confirmedOffset;
+            console.log(
+              `[upload] 308 resume chunk=${i + 1}/${totalChunks} offset=${resumeFrom}`,
+            );
+            chunk = file.slice(resumeFrom, end);
+            params.set("offset", String(resumeFrom));
+            params.set("chunk",  String(chunk.size));
+            params.set("resume", "1");
+            lastError = null;
+            continue; // retry attempt loop with updated slice
+          }
 
           if (isLast) {
             if (!res.fileUri) throw new Error("Upload server did not return a file URI");
@@ -495,9 +516,11 @@ export async function uploadVideoInChunksParallel(
     for (let i = 0; i < totalChunks; i++) {
       const start  = i * chunkSize;
       const end    = Math.min(start + chunkSize, totalSize);
-      const chunk  = file.slice(start, end);
       const isLast = i === totalChunks - 1;
 
+      // `chunk` and params are mutable — a 308 Resume Incomplete response updates
+      // them mid-loop so the next attempt resumes from the confirmed byte offset.
+      let chunk  = file.slice(start, end);
       const params = new URLSearchParams({
         size:   String(totalSize),
         chunk:  String(chunk.size),
@@ -533,6 +556,22 @@ export async function uploadVideoInChunksParallel(
 
           if (res.error) throw new Error(res.error);
           if (res.sessionUrl) sessionUrl = res.sessionUrl;
+
+          // 308 Resume Incomplete — Google partially accepted this chunk.
+          // Re-slice from the confirmed byte offset and retry the remainder.
+          // The proxy skips the granularity check for resume slices (?resume=1).
+          if (res.confirmedOffset !== undefined) {
+            const resumeFrom = res.confirmedOffset;
+            console.log(
+              `[upload] 308 resume chunk=${i + 1}/${totalChunks} offset=${resumeFrom}`,
+            );
+            chunk = file.slice(resumeFrom, end);
+            params.set("offset", String(resumeFrom));
+            params.set("chunk",  String(chunk.size));
+            params.set("resume", "1");
+            lastError = null;
+            continue; // retry attempt loop with updated slice
+          }
 
           if (isLast) {
             if (!res.fileUri) throw new Error("Upload server did not return a file URI");
