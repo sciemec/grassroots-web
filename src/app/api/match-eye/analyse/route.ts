@@ -188,7 +188,7 @@ Be specific and practical. Reference what you actually see — jersey colours, p
         googleKey,
         [
           { text: drillPrompt },
-          { file_data: { mime_type: mimeType, file_uri: fileUri } },
+          { file_data: { mime_type: mimeType, file_uri: fileUri }, video_metadata: { fps: 0.5 } },
           { text: "Now provide your complete JSON analysis of this training drill video." },
         ],
         { temperature: 0.2, maxOutputTokens: 3000 }
@@ -287,11 +287,17 @@ Be specific and professional. Base everything on what you observe in the video.
 TACTICS CATALOG — match turnover patterns to these principles by ID:
 ${JSON.stringify(TACTICS_CATALOG)}${playerTrackingPrompt}`;
 
+    // video_metadata.fps halves the frame-sampling rate → doubles the ~67-min ceiling to ~134 min
+    const videoFilePart = {
+      file_data:      { mime_type: mimeType, file_uri: fileUri },
+      video_metadata: { fps: 0.5 },
+    };
+
     const geminiText = await callGemini(
       googleKey,
       [
         { text: systemPrompt },
-        { file_data: { mime_type: mimeType, file_uri: fileUri } },
+        videoFilePart,
         { text: "Now provide your complete JSON analysis of this full match video." },
       ],
       { temperature: 0.2, maxOutputTokens: 4096 }
@@ -336,6 +342,13 @@ Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference 
     return Response.json({ analysis, narrative });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    // Gemini token-limit error — video is too long to analyse at 0.5 fps
+    if (message.includes("input token count") || message.includes("1048576")) {
+      return Response.json(
+        { error: "Video is too long for AI analysis. Trim to under 60 minutes and try again." },
+        { status: 422 }
+      );
+    }
     return Response.json({ error: message }, { status: 500 });
   }
 }
