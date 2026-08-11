@@ -299,6 +299,7 @@ export default function AnalystMatchEye() {
       setResult(result);
     } catch (err) {
       setGlobalError(err instanceof Error ? err.message : `${label} analysis failed. Please try again.`);
+      setPageStage("error");
     } finally {
       setAnal(false);
     }
