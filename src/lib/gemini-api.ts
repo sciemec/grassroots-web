@@ -2,8 +2,15 @@ import { GEMINI_VISION_MODEL } from "@/lib/gemini";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com";
 
+export interface GeminiVideoMetadata {
+  fps?: number;
+  startOffset?: { seconds: number; nanos?: number };
+  endOffset?:   { seconds: number; nanos?: number };
+}
+
 export interface GeminiFilePart {
-  file_data: { mime_type: string; file_uri: string };
+  file_data:      { mime_type: string; file_uri: string };
+  videoMetadata?: GeminiVideoMetadata;
 }
 export interface GeminiTextPart {
   text: string;

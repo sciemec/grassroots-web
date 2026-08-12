@@ -188,7 +188,7 @@ Be specific and practical. Reference what you actually see — jersey colours, p
         googleKey,
         [
           { text: drillPrompt },
-          { file_data: { mime_type: mimeType, file_uri: fileUri }, video_metadata: { fps: 0.5 } },
+          { file_data: { mime_type: mimeType, file_uri: fileUri }, videoMetadata: { fps: 0.5 } },
           { text: "Now provide your complete JSON analysis of this training drill video." },
         ],
         { temperature: 0.2, maxOutputTokens: 3000 }
@@ -287,10 +287,11 @@ Be specific and professional. Base everything on what you observe in the video.
 TACTICS CATALOG — match turnover patterns to these principles by ID:
 ${JSON.stringify(TACTICS_CATALOG)}${playerTrackingPrompt}`;
 
-    // video_metadata.fps halves the frame-sampling rate → doubles the ~67-min ceiling to ~134 min
+    // videoMetadata.fps halves the frame-sampling rate → doubles the ~67-min ceiling to ~134 min
+    // Must use camelCase — Gemini REST API ignores the snake_case video_metadata field name
     const videoFilePart = {
-      file_data:      { mime_type: mimeType, file_uri: fileUri },
-      video_metadata: { fps: 0.5 },
+      file_data:     { mime_type: mimeType, file_uri: fileUri },
+      videoMetadata: { fps: 0.5 },
     };
 
     const geminiText = await callGemini(
