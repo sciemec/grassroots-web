@@ -150,6 +150,9 @@ export default function ArenaPage() {
   // ── Social feed state (from Document 15) ──────────────────────────────────
   const [posts,             setPosts]             = useState<Post[]>([]);
   const [loadingPosts,      setLoadingPosts]       = useState(true);
+  const [feedPage,          setFeedPage]           = useState(1);
+  const [feedHasMore,       setFeedHasMore]        = useState(false);
+  const [loadingMorePosts,  setLoadingMorePosts]   = useState(false);
   const [newPostBody,       setNewPostBody]        = useState("");
   const [submitting,        setSubmitting]         = useState(false);
   const [expandedComments,  setExpandedComments]   = useState<Record<string, Comment[]>>({});
@@ -230,6 +233,8 @@ export default function ArenaPage() {
   const fetchPosts = useCallback(async () => {
     if (activeTab === "videos" || activeTab === "pathways") return;
     setLoadingPosts(true);
+    setFeedPage(1);
+    setFeedHasMore(false);
     try {
       const urlMap: Record<string, string> = {
         "for-you":     `${API}/arena/feed`,
@@ -237,16 +242,43 @@ export default function ArenaPage() {
         "connections": `${API}/arena/feed/connections`,
       };
       const base = urlMap[activeTab];
-      const url = activityFilter !== "all" ? `${base}?type=${activityFilter}` : base;
+      const params = new URLSearchParams({ page: "1" });
+      if (activityFilter !== "all") params.set("type", activityFilter);
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const res = await fetch(url, { headers });
+      const res = await fetch(`${base}?${params}`, { headers });
       if (!res.ok) throw new Error();
       const json = await res.json();
       setPosts(safeArray<Post>(json.data ?? json));
+      setFeedHasMore((json.current_page ?? 1) < (json.last_page ?? 1));
     } catch {}
     setLoadingPosts(false);
   }, [activeTab, activityFilter, authToken]);
+
+  const loadMorePosts = async () => {
+    if (loadingMorePosts || !feedHasMore) return;
+    const nextPage = feedPage + 1;
+    setLoadingMorePosts(true);
+    try {
+      const urlMap: Record<string, string> = {
+        "for-you":     `${API}/arena/feed`,
+        "following":   `${API}/arena/feed/following`,
+        "connections": `${API}/arena/feed/connections`,
+      };
+      const base = urlMap[activeTab];
+      const params = new URLSearchParams({ page: String(nextPage) });
+      if (activityFilter !== "all") params.set("type", activityFilter);
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const res = await fetch(`${base}?${params}`, { headers });
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      setPosts(prev => [...prev, ...safeArray<Post>(json.data ?? json)]);
+      setFeedPage(nextPage);
+      setFeedHasMore((json.current_page ?? nextPage) < (json.last_page ?? nextPage));
+    } catch {}
+    setLoadingMorePosts(false);
+  };
 
   // ── Fetch video feed — /showcase/discover (public endpoint) ──────────────
   const fetchVideos = useCallback(async () => {
@@ -329,7 +361,8 @@ export default function ArenaPage() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      fetchPosts(); // refresh comment_count on the post card
+      // Update comment_count on the post card without a full refetch
+      setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, comment_count: Math.max(0, p.comment_count - 1) }));
     } catch {
       // If it fails, re-fetch page 1 to restore state
       const headers: HeadersInit = {};
@@ -411,7 +444,8 @@ export default function ArenaPage() {
         setCommentTotals(prev => ({ ...prev, [postId]: (prev[postId] ?? 0) + 1 }));
       }
       setNewComment(prev => ({ ...prev, [postId]: "" }));
-      fetchPosts();
+      // Update comment_count on the post card without a full refetch
+      setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, comment_count: p.comment_count + 1 }));
     } catch {}
     setSubmittingComment(prev => ({ ...prev, [postId]: false }));
   };
@@ -543,9 +577,16 @@ export default function ArenaPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.message || `${res.status}`);
       }
+      const json = await res.json();
       setNewPostBody("");
       clearMedia();
-      fetchPosts();
+      // Prepend the new post so pagination state is preserved
+      const created: Post = json.post ?? json.data ?? { ...json, liked: 0, like_count: 0, comment_count: 0, created_at: new Date().toISOString() };
+      if (created?.id) {
+        setPosts(prev => [created, ...prev]);
+      } else {
+        fetchPosts();
+      }
     } catch (e) { alert(`Could not create post: ${e instanceof Error ? e.message : "please try again"}`); }
     setSubmitting(false);
   };
@@ -1357,6 +1398,19 @@ export default function ArenaPage() {
                   </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Load more posts */}
+            {feedHasMore && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={loadMorePosts}
+                  disabled={loadingMorePosts}
+                  className="px-6 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+                >
+                  {loadingMorePosts ? "Loading…" : "Load more posts"}
+                </button>
               </div>
             )}
           </>
