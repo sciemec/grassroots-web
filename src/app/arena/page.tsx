@@ -154,6 +154,8 @@ export default function ArenaPage() {
   const [submitting,        setSubmitting]         = useState(false);
   const [expandedComments,  setExpandedComments]   = useState<Record<string, Comment[]>>({});
   const [loadingComments,   setLoadingComments]    = useState<Record<string, boolean>>({});
+  const [commentPages,      setCommentPages]       = useState<Record<string, number>>({});
+  const [commentTotals,     setCommentTotals]      = useState<Record<string, number>>({});
   const [newComment,        setNewComment]         = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment]  = useState<Record<string, boolean>>({});
   const [editingComment,    setEditingComment]     = useState<string | null>(null);
@@ -284,13 +286,34 @@ export default function ArenaPage() {
     try {
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const res = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
+      const res = await fetch(`${API}/arena/posts/${postId}/comments?page=1`, { headers });
       if (!res.ok) throw new Error();
       const json = await res.json();
       setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(json.data ?? json) }));
+      setCommentPages(prev => ({ ...prev, [postId]: 1 }));
+      setCommentTotals(prev => ({ ...prev, [postId]: json.total ?? 0 }));
     } catch {
       // leave as [] — section stays open with "No comments yet" + input box
     }
+    setLoadingComments(prev => ({ ...prev, [postId]: false }));
+  };
+
+  const loadMoreComments = async (postId: string) => {
+    const nextPage = (commentPages[postId] ?? 1) + 1;
+    setLoadingComments(prev => ({ ...prev, [postId]: true }));
+    try {
+      const headers: HeadersInit = {};
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      const res = await fetch(`${API}/arena/posts/${postId}/comments?page=${nextPage}`, { headers });
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      setExpandedComments(prev => ({
+        ...prev,
+        [postId]: [...(prev[postId] ?? []), ...safeArray<Comment>(json.data ?? json)],
+      }));
+      setCommentPages(prev => ({ ...prev, [postId]: nextPage }));
+      setCommentTotals(prev => ({ ...prev, [postId]: json.total ?? prev[postId] ?? 0 }));
+    } catch {}
     setLoadingComments(prev => ({ ...prev, [postId]: false }));
   };
 
@@ -300,6 +323,7 @@ export default function ArenaPage() {
       ...prev,
       [postId]: (prev[postId] ?? []).filter(c => c.id !== commentId),
     }));
+    setCommentTotals(prev => ({ ...prev, [postId]: Math.max(0, (prev[postId] ?? 1) - 1) }));
     try {
       await fetch(`${API}/arena/posts/${postId}/comments/${commentId}`, {
         method: "DELETE",
@@ -307,13 +331,15 @@ export default function ArenaPage() {
       });
       fetchPosts(); // refresh comment_count on the post card
     } catch {
-      // If it fails, re-fetch to restore state
+      // If it fails, re-fetch page 1 to restore state
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const cr = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
+      const cr = await fetch(`${API}/arena/posts/${postId}/comments?page=1`, { headers });
       if (cr.ok) {
         const cj = await cr.json();
         setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(cj.data ?? cj) }));
+        setCommentPages(prev => ({ ...prev, [postId]: 1 }));
+        setCommentTotals(prev => ({ ...prev, [postId]: cj.total ?? 0 }));
       }
     }
   };
@@ -334,13 +360,15 @@ export default function ArenaPage() {
         body: JSON.stringify({ body }),
       });
     } catch {
-      // Revert on failure by re-fetching
+      // Revert on failure by re-fetching page 1
       const headers: HeadersInit = {};
       if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const cr = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
+      const cr = await fetch(`${API}/arena/posts/${postId}/comments?page=1`, { headers });
       if (cr.ok) {
         const cj = await cr.json();
         setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(cj.data ?? cj) }));
+        setCommentPages(prev => ({ ...prev, [postId]: 1 }));
+        setCommentTotals(prev => ({ ...prev, [postId]: cj.total ?? 0 }));
       }
     }
   };
@@ -365,18 +393,22 @@ export default function ArenaPage() {
     if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
     setSubmittingComment(prev => ({ ...prev, [postId]: true }));
     try {
-      await fetch(`${API}/arena/posts/${postId}/comments`, {
+      const res = await fetch(`${API}/arena/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ body }),
       });
-      // Re-fetch comments directly (don't call loadComments — it toggles/collapses if already open)
-      const headers: HeadersInit = {};
-      if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      const cr = await fetch(`${API}/arena/posts/${postId}/comments`, { headers });
-      if (cr.ok) {
-        const cj = await cr.json();
-        setExpandedComments(prev => ({ ...prev, [postId]: safeArray<Comment>(cj.data ?? cj) }));
+      if (res.ok) {
+        const json = await res.json();
+        // Optimistically append — avoids a full re-fetch which would reset to page 1
+        const newC: Comment = json.comment ?? {
+          id: crypto.randomUUID(),
+          body,
+          created_at: new Date().toISOString(),
+          user: { id: user.id, name: user.name, role: user.role },
+        };
+        setExpandedComments(prev => ({ ...prev, [postId]: [...(prev[postId] ?? []), newC] }));
+        setCommentTotals(prev => ({ ...prev, [postId]: (prev[postId] ?? 0) + 1 }));
       }
       setNewComment(prev => ({ ...prev, [postId]: "" }));
       fetchPosts();
@@ -1292,6 +1324,20 @@ export default function ArenaPage() {
                             );
                           })
                         )}
+                        {(() => {
+                          const loaded = expandedComments[post.id]?.length ?? 0;
+                          const total  = commentTotals[post.id] ?? 0;
+                          if (loaded >= total || total === 0) return null;
+                          return (
+                            <button
+                              onClick={() => loadMoreComments(post.id)}
+                              disabled={loadingComments[post.id]}
+                              className="w-full text-xs text-[#1a5c2a] font-semibold py-1.5 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
+                            >
+                              {loadingComments[post.id] ? "Loading..." : `Load more comments (${total - loaded} remaining)`}
+                            </button>
+                          );
+                        })()}
                         {user && (
                           <div className="flex gap-2 mt-2">
                             <input type="text" value={newComment[post.id] || ""}
