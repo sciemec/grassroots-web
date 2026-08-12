@@ -249,6 +249,5 @@ export default function PlayerNotificationsPage() {
           )}
         </div>
       </div>
-    </div>
   );
 }
