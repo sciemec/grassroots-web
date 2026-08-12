@@ -1906,7 +1906,7 @@ Passwords are bcrypt-hashed automatically by the User model's `'password' => 'ha
 
 | Email | Password | Role | Dashboard |
 |---|---|---|---|
-| admin@grassrootssports.live | Admin123! | admin | /admin |
+| admin@grassrootssports.live | GRS@Admin2026! | admin | /admin |
 | player@grassrootssports.live | Player123! | player | /player |
 | coach@grassrootssports.live | Coach123! | coach | /coach |
 | scout@grassrootssports.live | Scout123! | scout | /scout |
@@ -7929,7 +7929,7 @@ R2_BUCKET = grassroots-videos
 R2_PUBLIC_URL = [SET ✅]
 🔑 TEST CREDENTIALS
 Email	Password	Role
-admin@grassrootssports.live	Admin123!	admin
+admin@grassrootssports.live	GRS@Admin2026!	admin
 player@grassrootssports.live	Player123!	player
 coach@grassrootssports.live	Coach123!	coach
 scout@grassrootssports.live	Scout123!	scout
