@@ -188,7 +188,7 @@ Be specific and practical. Reference what you actually see — jersey colours, p
         googleKey,
         [
           { text: drillPrompt },
-          { file_data: { mime_type: mimeType, file_uri: fileUri }, videoMetadata: { fps: 0.5 } },
+          { file_data: { mime_type: mimeType, file_uri: fileUri }, videoMetadata: { fps: 0.5, endOffset: { seconds: 3600 } } },
           { text: "Now provide your complete JSON analysis of this training drill video." },
         ],
         { temperature: 0.2, maxOutputTokens: 3000 }
@@ -287,11 +287,12 @@ Be specific and professional. Base everything on what you observe in the video.
 TACTICS CATALOG — match turnover patterns to these principles by ID:
 ${JSON.stringify(TACTICS_CATALOG)}${playerTrackingPrompt}`;
 
-    // videoMetadata.fps halves the frame-sampling rate → doubles the ~67-min ceiling to ~134 min
-    // Must use camelCase — Gemini REST API ignores the snake_case video_metadata field name
+    // videoMetadata.endOffset caps the segment Gemini processes to 60 minutes max.
+    // At 1 fps that is 60×60×258 = 932,400 tokens — safely under the 1,048,576 limit.
+    // fps:0.5 is included as an additional hint; if Gemini honours it the count halves.
     const videoFilePart = {
       file_data:     { mime_type: mimeType, file_uri: fileUri },
-      videoMetadata: { fps: 0.5 },
+      videoMetadata: { fps: 0.5, endOffset: { seconds: 3600 } },
     };
 
     const geminiText = await callGemini(
@@ -343,10 +344,10 @@ Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference 
     return Response.json({ analysis, narrative });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    // Gemini token-limit error — video is too long to analyse at 0.5 fps
+    // Gemini token-limit error — video segment still too long (endOffset may not be recognised)
     if (message.includes("input token count") || message.includes("1048576")) {
       return Response.json(
-        { error: "Video is too long for AI analysis. Trim to under 60 minutes and try again." },
+        { error: "Video is too long. Upload each half separately — first half in the First Half slot, second half in the Second Half slot (each must be under 60 minutes)." },
         { status: 422 }
       );
     }
