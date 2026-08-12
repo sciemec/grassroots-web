@@ -7,7 +7,6 @@ import {
   Info, CheckCircle2, AlertTriangle, AlertCircle, Trash2, Star,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 interface Notification {
@@ -109,10 +108,8 @@ export default function PlayerNotificationsPage() {
   const groups = groupByDate(visible);
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-2xl">
+    <div className="p-6">
+      <div className="mx-auto max-w-2xl">
 
           {/* Header */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -251,7 +248,7 @@ export default function PlayerNotificationsPage() {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

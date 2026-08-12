@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Check, CheckCheck, Filter, Users, Trophy, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
-import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 
 interface Notification {
@@ -62,9 +61,7 @@ export default function CoachNotificationsPage() {
   const visible = filter === "unread" ? notifications.filter((n) => !n.read) : notifications;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
+    <div className="p-6">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -164,7 +161,6 @@ export default function CoachNotificationsPage() {
             })}
           </div>
         )}
-      </main>
     </div>
   );
 }
