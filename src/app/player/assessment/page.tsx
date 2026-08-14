@@ -658,6 +658,16 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                             <span>🎽 No equipment needed</span>
                           )}
                         </div>
+                        {drill.coachingPoints.length > 0 && (
+                          <ul className="mb-2 space-y-0.5">
+                            {drill.coachingPoints.map((pt, j) => (
+                              <li key={j} className="flex items-start gap-1.5 text-xs text-white/70">
+                                <span className="mt-0.5 text-green-400 shrink-0">›</span>
+                                {pt}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                         <div className="flex flex-wrap gap-1.5">
                           {drill.focusCategories.slice(0, 3).map((cat) => (
                             <span key={cat} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-white/60 capitalize">
