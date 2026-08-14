@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Dumbbell, Award,
   ArrowLeft, GraduationCap,
-  AlertTriangle, Download, Flame, Filter, X, Bell
+  AlertTriangle, Download, Flame, Filter, X, Bell, BookmarkCheck, Trash2
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import WeeklyChallenges from "@/components/challenges/WeeklyChallenges";
@@ -22,6 +22,24 @@ import {
 import { getSportDrills, SPORT_POSITION_MAP } from "@/lib/sport-drills";
 import FitnessTestTab from "@/components/drills/FitnessTestTab";
 import SportSwitcher from "@/components/ui/SportSwitcher";
+
+interface SavedDrillEntry {
+  domain:         string;
+  percentile:     number;
+  targetPhase:    string;
+  name:           string;
+  description:    string;
+  duration:       string;
+  equipment:      string[];
+  coachingPoints: string[];
+}
+
+interface SavedDrillPlan {
+  id:        number;
+  savedAt:   string;
+  position:  string;
+  drills:    SavedDrillEntry[];
+}
 
 const TIER_CONFIG: Record<number, { label: string; color: string; bg: string; source: string; flag: string }> = {
   1: { label: "Spark",   color: "#888780", bg: "#f1efe8", source: "GRS Original",             flag: "🇿🇼" },
@@ -70,7 +88,16 @@ export default function FootballDrillsLabPage() {
   const [completedDrills, setCompletedDrills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving,  setIsSaving]  = useState(false);
-  const [activeTab, setActiveTab] = useState<"drills" | "challenges" | "coach" | "fitness">("drills");
+  const [activeTab, setActiveTab] = useState<"drills" | "challenges" | "coach" | "fitness" | "saved">("drills");
+  const [savedPlans, setSavedPlans] = useState<SavedDrillPlan[]>([]);
+
+  useEffect(() => {
+    if (activeTab !== "saved") return;
+    try {
+      const raw = localStorage.getItem("gs_saved_drill_plans");
+      setSavedPlans(raw ? JSON.parse(raw) : []);
+    } catch { setSavedPlans([]); }
+  }, [activeTab]);
   const [tierProgress, setTierProgress] = useState<TierProgress | null>(null);
   const [expandedDrill, setExpandedDrill] = useState<string | null>(null);
   const [highlightId,   setHighlightId]   = useState<string | null>(null);
@@ -541,7 +568,7 @@ export default function FootballDrillsLabPage() {
 
         {/* Tabs */}
         <div className="max-w-5xl mx-auto flex mt-3">
-          {(["drills", "challenges", "coach", "fitness"] as const).map((tab, i) => (
+          {(["drills", "challenges", "coach", "fitness", "saved"] as const).map((tab, i) => (
             <button key={tab}
               onClick={() => { setActiveTab(tab); if (tab === "coach") fetchCoachTip(); }}
               className="flex-1 py-2.5 text-xs font-black uppercase tracking-wider transition-all"
@@ -551,7 +578,7 @@ export default function FootballDrillsLabPage() {
                 color: activeTab === tab ? "#1c3d22" : "rgba(255,255,255,0.6)",
                 border: "none", cursor: "pointer",
               }}>
-              {tab === "drills" ? "My drills" : tab === "challenges" ? "Challenges" : tab === "coach" ? "My coach" : "⚡ Fitness"}
+              {tab === "drills" ? "My drills" : tab === "challenges" ? "Challenges" : tab === "coach" ? "My coach" : tab === "fitness" ? "⚡ Fitness" : "🔖 Saved"}
             </button>
           ))}
         </div>
@@ -935,6 +962,79 @@ export default function FootballDrillsLabPage() {
         )}
 
         {/* ── TAB: MY COACH ── */}
+        {/* ── TAB: SAVED DRILL PLANS ── */}
+        {activeTab === "saved" && (
+          <div className="space-y-5">
+            {savedPlans.length === 0 ? (
+              <div className="rounded-2xl border border-[#1c3d22] bg-[#f1efe8] p-10 text-center">
+                <BookmarkCheck className="mx-auto mb-3 h-10 w-10 text-[#1c3d22]/30" />
+                <p className="font-black text-[#1c3d22]">No saved plans yet</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Complete the field tests on the <a href="/player/assessment" className="underline text-[#1c3d22]">Assessment page</a> and save a drill plan.
+                </p>
+              </div>
+            ) : (
+              savedPlans.map((plan) => (
+                <div key={plan.id} className="rounded-2xl border border-[#1c3d22]/20 bg-white overflow-hidden shadow-sm">
+                  {/* Plan header */}
+                  <div className="flex items-center justify-between bg-[#1c3d22] px-5 py-3">
+                    <div>
+                      <p className="font-black text-white capitalize">{plan.position} Drill Plan</p>
+                      <p className="text-xs text-white/60">
+                        Saved {new Date(plan.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const updated = savedPlans.filter((p) => p.id !== plan.id);
+                        setSavedPlans(updated);
+                        localStorage.setItem("gs_saved_drill_plans", JSON.stringify(updated));
+                      }}
+                      className="rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                      title="Delete plan"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Drills */}
+                  <div className="divide-y divide-gray-100">
+                    {plan.drills.map((drill, i) => (
+                      <div key={i} className="p-4">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#c8962a]/15 px-2 py-0.5 text-xs font-bold text-[#c8962a] capitalize">
+                            {drill.domain.replace(/([A-Z])/g, " $1").trim()}
+                          </span>
+                          <span className="rounded-full bg-[#1c3d22]/10 px-2 py-0.5 text-xs font-medium text-[#1c3d22] capitalize">
+                            {drill.targetPhase} phase
+                          </span>
+                          <span className="ml-auto text-xs text-gray-400">{drill.percentile}% vs benchmark</span>
+                        </div>
+                        <p className="mb-1 font-bold text-[#1c3d22]">{drill.name}</p>
+                        <p className="mb-2 text-sm text-gray-600">{drill.description}</p>
+                        <div className="mb-2 flex flex-wrap gap-3 text-xs text-gray-500">
+                          <span>⏱ {drill.duration}</span>
+                          <span>🎽 {drill.equipment.length > 0 ? drill.equipment.join(", ") : "No equipment needed"}</span>
+                        </div>
+                        {drill.coachingPoints.length > 0 && (
+                          <ul className="space-y-0.5">
+                            {drill.coachingPoints.map((pt, j) => (
+                              <li key={j} className="flex items-start gap-1.5 text-xs text-gray-600">
+                                <span className="mt-0.5 text-[#1c3d22] shrink-0">›</span>
+                                {pt}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         {activeTab === "coach" && (
           <div className="space-y-4">
 
