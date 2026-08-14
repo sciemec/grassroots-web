@@ -649,6 +649,15 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                         </div>
                         <h4 className="mb-1 font-semibold text-white">{drill.name}</h4>
                         <p className="mb-2 text-sm text-muted-foreground">{drill.description}</p>
+                        <div className="mb-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span>⏱ {drill.duration}</span>
+                          {drill.requiresEquipment && drill.requiresEquipment.length > 0 && (
+                            <span>🎽 {drill.requiresEquipment.join(", ")}</span>
+                          )}
+                          {(!drill.requiresEquipment || drill.requiresEquipment.length === 0) && (
+                            <span>🎽 No equipment needed</span>
+                          )}
+                        </div>
                         <div className="flex flex-wrap gap-1.5">
                           {drill.focusCategories.slice(0, 3).map((cat) => (
                             <span key={cat} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-white/60 capitalize">
