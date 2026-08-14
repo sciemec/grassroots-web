@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Target, Play, CheckCircle2, Brain, Loader2, TrendingUp,
   Activity, ChevronRight, Star, Zap, AlertCircle, Trophy,
-  Upload, X, Video, Camera,
+  Upload, X, Video, Camera, Bookmark, BookmarkCheck,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
@@ -266,6 +266,7 @@ export default function AssessmentPage() {
   const [results, setResults]             = useState<Record<string, string>>({});
   const [aiReport, setAiReport]           = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
+  const [drillPlanSaved, setDrillPlanSaved] = useState(false);
 
   // Match stats state
   const [matchStats, setMatchStats]             = useState<MatchStat[]>([]);
@@ -402,6 +403,30 @@ export default function AssessmentPage() {
     const gaps     = selectFocusGaps(domains, pos, ageGrp, 4);
     return getDrillsForGaps(gaps, pos, ageGrp);
   })();
+
+  const saveDrillPlan = () => {
+    const plan = {
+      id:        Date.now(),
+      savedAt:   new Date().toISOString(),
+      position:  positionGroup,
+      drills:    drillRecs.map(({ gap, drill, targetPhase }) => ({
+        domain:      gap.domain,
+        percentile:  gap.percentile,
+        targetPhase,
+        name:        drill.name,
+        description: drill.description,
+        duration:    drill.duration,
+        equipment:   drill.requiresEquipment ?? [],
+        coachingPoints: drill.coachingPoints,
+      })),
+    };
+    // Persist locally
+    const existing = JSON.parse(localStorage.getItem("gs_saved_drill_plans") ?? "[]");
+    localStorage.setItem("gs_saved_drill_plans", JSON.stringify([plan, ...existing]));
+    // Non-blocking backend sync (silent fail)
+    api.post("/player/drill-plans", plan).catch(() => {});
+    setDrillPlanSaved(true);
+  };
 
   const getReport = async () => {
     setLoadingReport(true);
@@ -573,7 +598,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                           step="0.1"
                           placeholder={`Enter result (${test.unit})`}
                           value={val}
-                          onChange={(e) => setResults((r) => ({ ...r, [test.name]: e.target.value }))}
+                          onChange={(e) => { setResults((r) => ({ ...r, [test.name]: e.target.value })); setDrillPlanSaved(false); }}
                           className="flex-1 rounded-lg border border-[#f0b429]/15 bg-black/20 px-3 py-2 text-sm text-[#f0b429] outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-[#f0b429]"
                         />
                         <span className="text-xs text-muted-foreground">{test.unit}</span>
@@ -681,6 +706,20 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   <p className="mt-3 text-xs text-green-300/60">
                     Drills selected for your weakest position-weighted gaps — calibrated to your current level.
                   </p>
+                  <button
+                    onClick={saveDrillPlan}
+                    disabled={drillPlanSaved}
+                    className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
+                      drillPlanSaved
+                        ? "bg-green-500/20 text-green-300 cursor-default"
+                        : "bg-green-500/15 text-green-300 hover:bg-green-500/25"
+                    }`}
+                  >
+                    {drillPlanSaved
+                      ? <><BookmarkCheck className="h-4 w-4" /> Drill plan saved!</>
+                      : <><Bookmark className="h-4 w-4" /> Save this drill plan</>
+                    }
+                  </button>
                 </div>
               )}
 
