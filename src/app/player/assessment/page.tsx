@@ -18,6 +18,11 @@ import api from "@/lib/api";
 import { safeArray } from "@/lib/safe-array";
 import { FIELD_META_LABELS } from "@/config/sports";
 import { measureFromVideo, type VideoMeasurement, type TestType } from "@/lib/super-engine";
+import {
+  selectFocusGaps, resolveAgeGroup,
+  type DomainScores, type TestPercentile, type Position, type AgeGroup,
+} from "@/lib/grs-engine";
+import { getDrillsForGaps, type DrillRecommendation } from "@/lib/drill-selector";
 
 // ── Test definitions ──────────────────────────────────────────────────────────
 
@@ -139,6 +144,62 @@ const RESULT_LABEL: Record<string, string> = {
   D: "Draw",
   L: "Loss",
 };
+
+// ── Drill recommendation bridge ───────────────────────────────────────────────
+// Maps each field test name → the GRS domain it exercises.
+
+const TEST_DOMAIN_MAP: Record<string, keyof DomainScores> = {
+  // Goalkeeper
+  "Reaction save":         "cognitiveSpeed",
+  "Distribution accuracy": "ballMastery",
+  "Dive reach (left)":     "explosivePower",
+  "Dive reach (right)":    "explosivePower",
+  // Defender
+  "40m sprint":            "linearSpeed",
+  "1v1 tackle success":    "cognitiveSpeed",
+  "Clearance distance":    "explosivePower",
+  "Pass accuracy":         "ballMastery",
+  // Midfielder
+  "20m sprint":            "linearSpeed",
+  "Passing accuracy":      "ballMastery",
+  "Ball retention (1v1)":  "cognitiveSpeed",
+  "Yo-Yo endurance":       "endurance",
+  // Forward
+  "10m sprint":            "linearSpeed",
+  "Shooting accuracy":     "ballMastery",
+  "Dribble + finish":      "cognitiveSpeed",
+  "Aerial duel wins":      "explosivePower",
+};
+
+function buildDomainScoresFromTests(
+  tests: { name: string; benchmark: string; unit: string }[],
+  testResults: Record<string, string>,
+): DomainScores {
+  const blank = (): TestPercentile => ({ raw: 0, rawScore: "", percentile: 50, label: "", tested: false });
+  const domains: DomainScores = {
+    explosivePower: blank(),
+    linearSpeed:    blank(),
+    balance:        blank(),
+    cognitiveSpeed: blank(),
+    endurance:      blank(),
+    ballMastery:    blank(),
+  };
+  for (const test of tests) {
+    const val = testResults[test.name];
+    if (!val?.trim()) continue;
+    const domain = TEST_DOMAIN_MAP[test.name];
+    if (!domain) continue;
+    const pct = calcBenchmarkScore(test.benchmark, val, test.unit);
+    if (domains[domain].tested) {
+      // Multiple tests mapping to the same domain — average them
+      domains[domain].percentile = Math.round((domains[domain].percentile + pct) / 2);
+    } else {
+      domains[domain].percentile = pct;
+      domains[domain].tested     = true;
+    }
+  }
+  return domains;
+}
 
 // ── Video test definitions ─────────────────────────────────────────────────────
 
@@ -330,6 +391,17 @@ export default function AssessmentPage() {
   const overallScore = radarData.length
     ? Math.round(radarData.reduce((s, d) => s + d.score, 0) / radarData.length)
     : 0;
+
+  // Drill recommendations — synchronous, recomputed when results change
+  const drillRecs: DrillRecommendation[] = (() => {
+    if (!positionGroup || !allFilled) return [];
+    const pos      = (positionGroup === "forward" ? "striker" : positionGroup) as Position;
+    const age      = (user as { age?: number } | null)?.age ?? 15;
+    const ageGrp   = resolveAgeGroup(age);
+    const domains  = buildDomainScoresFromTests(currentTests, results);
+    const gaps     = selectFocusGaps(domains, pos, ageGrp);
+    return getDrillsForGaps(gaps, pos, ageGrp);
+  })();
 
   const getReport = async () => {
     setLoadingReport(true);
@@ -575,6 +647,47 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#f0b429]/85">
                     {aiReport}
                   </div>
+                </div>
+              )}
+
+              {drillRecs.length > 0 && (
+                <div className="mt-5 rounded-xl border border-green-500/30 bg-green-500/5 p-5">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-green-400" />
+                    <h3 className="font-semibold text-green-400">Recommended Drills</h3>
+                    <span className="ml-auto rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-300">
+                      Based on your gaps
+                    </span>
+                  </div>
+                  <div className="space-y-4">
+                    {drillRecs.map(({ gap, drill, targetPhase }, i) => (
+                      <div key={i} className="rounded-lg border border-green-500/20 bg-black/20 p-4">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#f0b429]/15 px-2 py-0.5 text-xs font-bold text-[#f0b429] capitalize">
+                            {gap.domain.replace(/([A-Z])/g, " $1").trim()}
+                          </span>
+                          <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-300 capitalize">
+                            {targetPhase} phase
+                          </span>
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            {gap.percentile}% vs benchmark
+                          </span>
+                        </div>
+                        <h4 className="mb-1 font-semibold text-white">{drill.name}</h4>
+                        <p className="mb-2 text-sm text-muted-foreground">{drill.description}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {drill.focusCategories.slice(0, 3).map((cat) => (
+                            <span key={cat} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-white/60 capitalize">
+                              {cat.replace(/_/g, " ")}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs text-green-300/60">
+                    Drills selected for your weakest position-weighted gaps — calibrated to your current level.
+                  </p>
                 </div>
               )}
             </div>
