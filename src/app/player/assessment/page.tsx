@@ -201,6 +201,24 @@ function buildDomainScoresFromTests(
   return domains;
 }
 
+// ── Video → domain bridge ─────────────────────────────────────────────────────
+
+const VIDEO_TEST_DOMAIN_MAP: Record<TestType, keyof DomainScores> = {
+  sprint:       "linearSpeed",
+  jump:         "explosivePower",
+  ball_mastery: "ballMastery",
+};
+
+function vmToPrimaryScore(vm: VideoMeasurement, testType: TestType): number {
+  const scores = vmToScores(vm, testType);
+  if (scores.length === 0) return 50;
+  if (testType === "jump") {
+    const h = scores.find((s) => s.label === "Jump Height");
+    return h ? h.value : Math.round(scores.reduce((a, s) => a + s.value, 0) / scores.length);
+  }
+  return Math.round(scores.reduce((a, s) => a + s.value, 0) / scores.length);
+}
+
 // ── Video test definitions ─────────────────────────────────────────────────────
 
 interface VideoTestDef {
@@ -267,6 +285,7 @@ export default function AssessmentPage() {
   const [aiReport, setAiReport]           = useState("");
   const [loadingReport, setLoadingReport] = useState(false);
   const [drillPlanSaved, setDrillPlanSaved] = useState(false);
+  const [videoDomainScores, setVideoDomainScores] = useState<Partial<Record<keyof DomainScores, number>>>({});
 
   // Match stats state
   const [matchStats, setMatchStats]             = useState<MatchStat[]>([]);
@@ -370,6 +389,10 @@ export default function AssessmentPage() {
       }
       setVideoMeasure(vm);
       setVideoPhase("results");
+      // Feed measurement into drill recommendation engine
+      const vDomain = VIDEO_TEST_DOMAIN_MAP[videoTest.testType];
+      const vScore  = vmToPrimaryScore(vm, videoTest.testType);
+      setVideoDomainScores((prev) => ({ ...prev, [vDomain]: vScore }));
       fetchVideoNote(vm, videoTest);
     } catch {
       setVideoError("Analysis failed. Try a shorter clip (under 30 seconds) with good lighting.");
@@ -393,14 +416,23 @@ export default function AssessmentPage() {
     ? Math.round(radarData.reduce((s, d) => s + d.score, 0) / radarData.length)
     : 0;
 
-  // Drill recommendations — synchronous, recomputed when results change
+  // Drill recommendations — synchronous, recomputed when results or video scores change
+  const hasVideoDomains = Object.keys(videoDomainScores).length > 0;
   const drillRecs: DrillRecommendation[] = (() => {
-    if (!positionGroup || !allFilled) return [];
-    const pos      = (positionGroup === "forward" ? "striker" : positionGroup) as Position;
+    const activePos = positionGroup || videoPosGroup;
+    if (!activePos) return [];
+    if (!allFilled && !hasVideoDomains) return [];
+    const pos      = (activePos === "forward" ? "striker" : activePos) as Position;
     const age      = (user as { age?: number } | null)?.age ?? 15;
     const ageGrp   = resolveAgeGroup(age);
     const domains  = buildDomainScoresFromTests(currentTests, results);
-    const gaps     = selectFocusGaps(domains, pos, ageGrp, 4);
+    // Override with video-measured scores where available
+    for (const [dom, pct] of Object.entries(videoDomainScores)) {
+      const key = dom as keyof DomainScores;
+      domains[key].percentile = pct;
+      domains[key].tested     = true;
+    }
+    const gaps = selectFocusGaps(domains, pos, ageGrp, 4);
     return getDrillsForGaps(gaps, pos, ageGrp);
   })();
 
@@ -561,7 +593,7 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-bold capitalize" style={{ color: "#f0b429" }}>{positionGroup} Tests</h2>
                 <button
-                  onClick={() => { setStarted(false); setResults({}); setAiReport(""); }}
+                  onClick={() => { setStarted(false); setResults({}); setAiReport(""); setVideoDomainScores({}); }}
                   className="text-xs text-muted-foreground hover:text-[#f0b429]"
                 >
                   ← Change position
@@ -654,6 +686,11 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   <div className="mb-4 flex items-center gap-2">
                     <Zap className="h-4 w-4 text-green-400" />
                     <h3 className="font-semibold text-green-400">Recommended Drills</h3>
+                    {hasVideoDomains && (
+                      <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-xs font-bold text-blue-300">
+                        📹 Video data
+                      </span>
+                    )}
                     <span className="ml-auto rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-300">
                       Based on your gaps
                     </span>
