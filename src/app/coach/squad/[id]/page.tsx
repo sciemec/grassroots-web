@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Activity, Target, Trophy, TrendingUp, AlertTriangle,
-  Brain, Loader2, Calendar, Shield, Dumbbell,
+  Brain, Loader2, Calendar, Shield, Dumbbell, Users, Phone,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -29,6 +29,21 @@ interface PlayerStats {
   streak_days: number;
 }
 
+interface Guardian {
+  id: string;
+  guardian_name: string;
+  guardian_whatsapp: string | null;
+  age_group: string | null;
+  linked_at: string | null;
+  whatsapp_reports: boolean;
+  addon_active: boolean;
+}
+
+interface GuardiansPayload {
+  player_on_platform: boolean;
+  guardians: Guardian[];
+}
+
 export default function CoachPlayerDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -38,6 +53,7 @@ export default function CoachPlayerDetailPage() {
   const [member, setMember] = useState<SquadMember | null>(null);
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [guardiansPayload, setGuardiansPayload] = useState<GuardiansPayload | null>(null);
   const [aiReport, setAiReport] = useState("");
   const [loadingAi, setLoadingAi] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -48,10 +64,14 @@ export default function CoachPlayerDetailPage() {
       api.get(`/coach/squad/${memberId}`),
       api.get(`/coach/squad/${memberId}/sessions`).catch(() => ({ data: [] })),
       api.get(`/coach/squad/${memberId}/stats`).catch(() => ({ data: null })),
-    ]).then(([memberRes, sessionsRes, statsRes]) => {
+      api.get(`/coach/squad/${memberId}/guardians`).catch(() => ({ data: null })),
+    ]).then(([memberRes, sessionsRes, statsRes, guardiansRes]) => {
       setMember(memberRes.data?.data ?? memberRes.data);
       setSessions(sessionsRes.data?.data ?? sessionsRes.data ?? []);
       setStats(statsRes.data?.data ?? statsRes.data);
+      if (guardiansRes.data) {
+        setGuardiansPayload(guardiansRes.data);
+      }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [user, router, memberId]);
 
@@ -129,6 +149,61 @@ export default function CoachPlayerDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Parents / Guardians */}
+            {guardiansPayload?.player_on_platform && (
+              <div className="rounded-xl border bg-card p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  <h2 className="font-semibold text-sm">Parent / Guardian Contacts</h2>
+                  {guardiansPayload.guardians.length === 0 && (
+                    <span className="ml-auto text-xs text-muted-foreground">None registered</span>
+                  )}
+                </div>
+                {guardiansPayload.guardians.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No parent or guardian has linked to this player&apos;s account yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {guardiansPayload.guardians.map((g) => (
+                      <div key={g.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15 shrink-0">
+                            <Users className="h-3.5 w-3.5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold">{g.guardian_name}</p>
+                            {g.linked_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Linked {new Date(g.linked_at).toLocaleDateString("en-ZW")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {g.age_group && (
+                            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                              {g.age_group}
+                            </span>
+                          )}
+                          {g.guardian_whatsapp && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Phone className="h-3 w-3" /> {g.guardian_whatsapp}
+                            </span>
+                          )}
+                          {g.whatsapp_reports && (
+                            <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                              WA reports on
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Stats grid */}
             {stats && (
