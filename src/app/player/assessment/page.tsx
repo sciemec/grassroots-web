@@ -399,7 +399,7 @@ export default function AssessmentPage() {
     const age      = (user as { age?: number } | null)?.age ?? 15;
     const ageGrp   = resolveAgeGroup(age);
     const domains  = buildDomainScoresFromTests(currentTests, results);
-    const gaps     = selectFocusGaps(domains, pos, ageGrp);
+    const gaps     = selectFocusGaps(domains, pos, ageGrp, 4);
     return getDrillsForGaps(gaps, pos, ageGrp);
   })();
 
