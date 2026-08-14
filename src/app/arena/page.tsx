@@ -102,6 +102,7 @@ interface Post {
   has_video?: boolean;
   activity_type?: string;
   activity_data?: Record<string, string | number | boolean | null | undefined>;
+  share_token?: string;
   user?: { id: string; name: string; role: string; sport?: string; province?: string };
 }
 
@@ -166,6 +167,7 @@ export default function ArenaPage() {
   const [reportingComment,  setReportingComment]   = useState<string | null>(null);
   const [reportedComments,  setReportedComments]   = useState<Set<string>>(new Set());
   const [showLoginPrompt,   setShowLoginPrompt]    = useState(false);
+  const [copiedShare,       setCopiedShare]        = useState<Record<string, boolean>>({});
   const [mediaFile,         setMediaFile]          = useState<File | null>(null);
   const [mediaPreview,      setMediaPreview]       = useState<string | null>(null);
   const [mediaType,         setMediaType]          = useState<"image" | "video" | null>(null);
@@ -634,9 +636,41 @@ export default function ArenaPage() {
   };
 
   const handleShare = async (postId: string) => {
-    if (!user) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
-    navigator.clipboard.writeText(`${window.location.origin}/arena/post/${postId}`);
-    alert("Link copied to clipboard!");
+    // If the post already has a share_token cached locally, use it immediately
+    const cached = posts.find(p => p.id === postId)?.share_token;
+    if (cached) {
+      const url = `${window.location.origin}/v/${cached}`;
+      await navigator.clipboard.writeText(url);
+      setCopiedShare(prev => ({ ...prev, [postId]: true }));
+      setTimeout(() => setCopiedShare(prev => ({ ...prev, [postId]: false })), 2500);
+      return;
+    }
+
+    // No cached token — request one from the backend (requires auth)
+    if (!authToken) { setShowLoginPrompt(true); setTimeout(() => setShowLoginPrompt(false), 3000); return; }
+
+    try {
+      const res = await fetch(`${API}/arena/posts/${postId}/share`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      const token: string = json.share_token;
+      const url = `${window.location.origin}/v/${token}`;
+
+      // Cache the token on the local post so future clicks are instant
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, share_token: token } : p));
+
+      await navigator.clipboard.writeText(url);
+      setCopiedShare(prev => ({ ...prev, [postId]: true }));
+      setTimeout(() => setCopiedShare(prev => ({ ...prev, [postId]: false })), 2500);
+    } catch {
+      // Fallback: copy the standard (auth-required) Arena URL
+      await navigator.clipboard.writeText(`${window.location.origin}/arena`);
+      setCopiedShare(prev => ({ ...prev, [postId]: true }));
+      setTimeout(() => setCopiedShare(prev => ({ ...prev, [postId]: false })), 2500);
+    }
   };
 
   // ── Video actions (Document 14) ───────────────────────────────────────────
@@ -1256,8 +1290,8 @@ export default function ArenaPage() {
                         <MessageCircle size={16} /> Comment
                       </button>
                       <button onClick={() => handleShare(post.id)}
-                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-500 transition">
-                        <Share2 size={16} /> Share
+                        className={`flex items-center gap-2 text-sm transition ${copiedShare[post.id] ? "text-green-600 font-semibold" : "text-gray-500 hover:text-blue-500"}`}>
+                        <Share2 size={16} /> {copiedShare[post.id] ? "Copied!" : "Share"}
                       </button>
                     </div>
 
