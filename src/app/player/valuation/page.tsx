@@ -75,7 +75,7 @@ Base your valuation on Zimbabwe grassroots market realities (Division 1/2 transf
     if (!aiResult) return;
     setSaving(true);
     try {
-      await api.post("/profile/valuation", { ...form, ai_result: aiResult });
+      await api.post("/player/valuation", { ...form, ai_result: aiResult });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {

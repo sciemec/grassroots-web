@@ -209,7 +209,7 @@ export default function PlayerVerificationPage() {
     formData.append("document", file);          // backend expects "document"
     formData.append("selfie_image", selfieBlob, "selfie.jpg");
     try {
-      await api.post("/verification/upload-document", formData);
+      await api.post("/verification/submit", formData);
       setSubmitted(true);
       setVerif((v) => v ? { ...v, status: "pending", document_type: docType, created_at: new Date().toISOString() } : v);
     } catch (e: unknown) {
