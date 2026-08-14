@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Download, Loader2, Sparkles, GraduationCap,
-  Copy, Check, Plus, Trash2, BookOpen, RefreshCw, Share2,
+  Copy, Check, Plus, Trash2, BookOpen, RefreshCw, Share2, ShieldCheck,
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
@@ -68,6 +68,14 @@ interface Endorsement {
   quote: string;
 }
 
+interface ProvenanceRecord {
+  organisation_name: string;
+  sport: string | null;
+  position: string | null;
+  registered_at: string;
+  confirmed_at: string | null;
+}
+
 // ─── Rating bar helper ─────────────────────────────────────────────────────────
 function RatingBar({ value, max = 10 }: { value: number; max?: number }) {
   const pct = (value / max) * 100;
@@ -103,6 +111,7 @@ export default function PassportPage() {
   });
   const [endorsements, setEndorsements] = useState<Endorsement[]>([]);
   const [aiSummary, setAiSummary] = useState("");
+  const [provenance, setProvenance] = useState<ProvenanceRecord[]>([]);
   const [reel, setReel] = useState<ReelState>(EMPTY_REEL);
 
   type SkillReading = { score: number; grade: string; recorded_at?: string } | null;
@@ -144,7 +153,8 @@ export default function PassportPage() {
     Promise.all([
       api.get("/profile").catch(() => null),
       api.get("/player/showcase").catch(() => null),
-    ]).then(([profRes, clipsRes]) => {
+      api.get("/player/provenance").catch(() => null),
+    ]).then(([profRes, clipsRes, provRes]) => {
       if (profRes) {
         const p = profRes.data?.profile ?? profRes.data;
         setProfile(p);
@@ -168,6 +178,10 @@ export default function PassportPage() {
       if (clipsRes) {
         const c = clipsRes.data?.data ?? clipsRes.data ?? [];
         setClips(Array.isArray(c) ? c.slice(0, 6) : []);
+      }
+      if (provRes) {
+        const records = provRes.data?.data ?? provRes.data ?? [];
+        setProvenance(Array.isArray(records) ? records : []);
       }
     }).finally(() => setLoading(false));
   }, []);
@@ -507,6 +521,37 @@ Output exactly 3 sentences. No bullet points. No headers.`,
               </div>
             </div>
           </div>
+
+          {/* ── Provenance Records ── */}
+          {provenance.length > 0 && (
+            <div className="rounded-2xl border border-emerald-700/40 bg-emerald-950/20 p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20">
+                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Verified Registration History</h3>
+                  <p className="text-xs text-zinc-400">Coaches who registered you — confirmed &amp; added to your passport</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {provenance.map((rec, i) => (
+                  <div key={i} className="flex items-start justify-between rounded-xl border border-emerald-800/40 bg-emerald-950/30 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-300">{rec.organisation_name}</p>
+                      <p className="text-xs text-zinc-400">
+                        {[rec.sport, rec.position].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider">Confirmed</p>
+                      <p className="text-[11px] text-zinc-500">{rec.confirmed_at ?? rec.registered_at}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── Share link banner ── */}
           <div className="flex items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3">

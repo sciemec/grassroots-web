@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, BookOpen, Dumbbell, Calendar,
   Brain, TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -153,11 +153,12 @@ export default function CoachHubPage() {
         {/* ── 1. Squad & Players ─────────────────────────────────────── */}
         <SectionLabel>1 · Squad &amp; Players</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/squad"           icon={Users}      iconBg="#dcfce7" iconColor="#16a34a" label="My Squad"        desc="View & manage all players"    badge="core" />
-          <HubCard href="/coach/talent-id"       icon={Target}     iconBg="#dbeafe" iconColor="#2563eb" label="Talent ID"       desc="AI player identification"      />
-          <HubCard href="/coach/recruitment"     icon={Shield}     iconBg="#ede9fe" iconColor="#7c3aed" label="Recruitment"     desc="Track recruitment targets"     />
-          <HubCard href="/coach/scouting"        icon={UserSearch} iconBg="#fef3c7" iconColor="#d97706" label="Scouting"        desc="Scout discovery feed"          />
-          <HubCard href="/coach/technical-staff" icon={Users}      iconBg="#f3f4f6" iconColor="#6b7280" label="Technical Staff" desc="Manage your coaching team"     />
+          <HubCard href="/coach/squad"               icon={Users}      iconBg="#dcfce7" iconColor="#16a34a" label="My Squad"        desc="View & manage all players"    badge="core" />
+          <HubCard href="/coach/registered-players"  icon={UserCheck}  iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Registry" desc="Register players · build talent passports" badge="new" />
+          <HubCard href="/coach/talent-id"           icon={Target}     iconBg="#dbeafe" iconColor="#2563eb" label="Talent ID"       desc="AI player identification"      />
+          <HubCard href="/coach/recruitment"         icon={Shield}     iconBg="#ede9fe" iconColor="#7c3aed" label="Recruitment"     desc="Track recruitment targets"     />
+          <HubCard href="/coach/scouting"            icon={UserSearch} iconBg="#fef3c7" iconColor="#d97706" label="Scouting"        desc="Scout discovery feed"          />
+          <HubCard href="/coach/technical-staff"     icon={Users}      iconBg="#f3f4f6" iconColor="#6b7280" label="Technical Staff" desc="Manage your coaching team"     />
         </div>
 
         {/* ── 2. Match & Tactics ─────────────────────────────────────── */}
