@@ -624,34 +624,8 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                 </div>
               )}
 
-              {allFilled && !aiReport && (
-                <button
-                  onClick={getReport}
-                  disabled={loadingReport}
-                  className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6c3483] px-4 py-3 text-sm font-bold text-white hover:bg-[#6c3483]/80 disabled:opacity-50 transition-colors"
-                >
-                  {loadingReport ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Generating AI report…</>
-                  ) : (
-                    <><Brain className="h-4 w-4" /> Get AI performance report</>
-                  )}
-                </button>
-              )}
-
-              {aiReport && (
-                <div className="rounded-xl border border-[#6c3483]/40 bg-[#6c3483]/10 p-5">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-[#a855f7]" />
-                    <h3 className="font-semibold text-[#a855f7]">AI Performance Report</h3>
-                  </div>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#f0b429]/85">
-                    {aiReport}
-                  </div>
-                </div>
-              )}
-
               {drillRecs.length > 0 && (
-                <div className="mt-5 rounded-xl border border-green-500/30 bg-green-500/5 p-5">
+                <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/5 p-5">
                   <div className="mb-4 flex items-center gap-2">
                     <Zap className="h-4 w-4 text-green-400" />
                     <h3 className="font-semibold text-green-400">Recommended Drills</h3>
@@ -688,6 +662,32 @@ Provide a brief analysis: overall rating out of 10, 2 key strengths, 2 areas to 
                   <p className="mt-3 text-xs text-green-300/60">
                     Drills selected for your weakest position-weighted gaps — calibrated to your current level.
                   </p>
+                </div>
+              )}
+
+              {allFilled && !aiReport && (
+                <button
+                  onClick={getReport}
+                  disabled={loadingReport}
+                  className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6c3483] px-4 py-3 text-sm font-bold text-white hover:bg-[#6c3483]/80 disabled:opacity-50 transition-colors"
+                >
+                  {loadingReport ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Generating AI report…</>
+                  ) : (
+                    <><Brain className="h-4 w-4" /> Get AI performance report</>
+                  )}
+                </button>
+              )}
+
+              {aiReport && (
+                <div className="rounded-xl border border-[#6c3483]/40 bg-[#6c3483]/10 p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-[#a855f7]" />
+                    <h3 className="font-semibold text-[#a855f7]">AI Performance Report</h3>
+                  </div>
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#f0b429]/85">
+                    {aiReport}
+                  </div>
                 </div>
               )}
             </div>
