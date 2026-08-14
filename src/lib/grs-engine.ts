@@ -38,6 +38,14 @@ export interface DrillSuggestion {
   id: string; name: string; duration: string; reason: string;
 }
 
+export interface FocusGap {
+  domain:           keyof DomainScores;
+  percentile:       number;
+  positionWeight:   number;
+  weightedPriority: number;
+  focusTags:        string[];
+}
+
 export interface RawTestInputs {
   playerName:    string;
   age:           number;
@@ -88,6 +96,7 @@ export interface GRSResult {
   balanceAsymmetry: number | null; injuryRiskFlag: boolean;
   rank: PlayerRank; drillTierUnlocked: 1|2|3|4|5;
   suggestedDrills: DrillSuggestion[];
+  focusGaps: FocusGap[];
   scoutNarrative: string; coachRecommendation: string;
   verifiedBy: string; coachVerified: boolean;
   testsCompleted: number; warnings: string[]; errors: string[];
@@ -249,6 +258,7 @@ export function evaluate(inputs: RawTestInputs, pastSessions: PastSession[] = []
   const rank = resolveRank(aq, pastSessions.length + 1, dq);
   const drillTier = resolveDrillTier(rank, aq);
   const suggestedDrills = selectDrills(resolved.position, tier);
+  const focusGaps = selectFocusGaps(domains, resolved.position, ageGroup);
   const aiCoach: 'THUTO' | 'Amara' = gender === 'female' ? 'Amara' : 'THUTO';
 
   return {
@@ -257,7 +267,7 @@ export function evaluate(inputs: RawTestInputs, pastSessions: PastSession[] = []
     sessionId: generateId(), sessionDate: resolved.sessionDate, testedAt: new Date().toISOString(),
     aq, tier, domains, pq, dq, dqLabel,
     balanceAsymmetry: asymmetry, injuryRiskFlag: injuryRisk,
-    rank, drillTierUnlocked: drillTier, suggestedDrills,
+    rank, drillTierUnlocked: drillTier, suggestedDrills, focusGaps,
     scoutNarrative: buildScoutNarrative(resolved, domains, aq, dq, pq, tier),
     coachRecommendation: buildCoachRecommendation(domains, dq, injuryRisk),
     verifiedBy: resolved.verifiedBy, coachVerified: resolved.coachVerified,
@@ -514,6 +524,54 @@ function selectDrills(position: Position, tier: Tier): DrillSuggestion[] {
   };
 
   return [t1, t2, t3, t4, t5, t6];
+}
+
+// ── Smart gap-based drill selection ───────────────────────────────────────
+//
+// AGE_SKIP_DOMAINS: physical domains where development expectations are
+// inappropriate for age. We don't flag a 7-year-old's endurance as a "gap".
+//
+const AGE_SKIP_DOMAINS: Partial<Record<AgeGroup, Array<keyof DomainScores>>> = {
+  '6-9':   ['explosivePower', 'endurance'],
+  '10-12': [],
+};
+
+// Maps each GRS domain to the football-drill-matrix focusCategories that
+// develop the corresponding physical quality. Used by getDrillsForGaps()
+// in drill-selector.ts to filter the drill library.
+export const DOMAIN_FOCUS_TAGS: Record<keyof DomainScores, string[]> = {
+  explosivePower: ['agility', 'change_of_direction', 'closing_space', 'defensive_movement'],
+  linearSpeed:    ['agility', 'change_of_direction', 'transition_speed', 'counter_attack'],
+  balance:        ['body_shape', 'agility', 'defensive_movement', '1v1_defending'],
+  cognitiveSpeed: ['decision_making', 'scanning', 'spatial_awareness', 'quick_decisions'],
+  endurance:      ['pressing_mechanics', 'pressing_triggers', 'defensive_work_rate'],
+  ballMastery:    ['ball_familiarity', 'first_touch', 'turning_mechanics', 'dribbling', 'first_touch_quality'],
+};
+
+// Ranks all tested domains by priority: lowest percentile relative to
+// position weight bubbles to the top. Returns at most maxGaps gaps.
+// Caller passes result directly to getDrillsForGaps() in drill-selector.ts.
+export function selectFocusGaps(
+  domains: DomainScores,
+  position: Position,
+  ageGroup: AgeGroup,
+  maxGaps = 2,
+): FocusGap[] {
+  const skip = AGE_SKIP_DOMAINS[ageGroup] ?? [];
+  const posWeights = POSITION_WEIGHTS[position];
+
+  return (Object.entries(domains) as [keyof DomainScores, TestPercentile][])
+    .filter(([d, s]) => s.tested && !skip.includes(d))
+    .map(([d, s]) => ({
+      domain:           d,
+      percentile:       s.percentile,
+      positionWeight:   posWeights[d],
+      // Lower ratio = more urgent: weak domain that matters for the position
+      weightedPriority: s.percentile / Math.max(0.01, posWeights[d]),
+      focusTags:        DOMAIN_FOCUS_TAGS[d],
+    }))
+    .sort((a, b) => a.weightedPriority - b.weightedPriority)
+    .slice(0, maxGaps);
 }
 
 export function validateInputs(inputs: RawTestInputs): ValidationResult {
