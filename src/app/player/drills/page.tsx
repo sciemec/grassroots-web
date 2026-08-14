@@ -89,14 +89,36 @@ export default function FootballDrillsLabPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving,  setIsSaving]  = useState(false);
   const [activeTab, setActiveTab] = useState<"drills" | "challenges" | "coach" | "fitness" | "saved">("drills");
-  const [savedPlans, setSavedPlans] = useState<SavedDrillPlan[]>([]);
+  const [savedPlans,        setSavedPlans]        = useState<SavedDrillPlan[]>([]);
+  const [savedPlansLoading, setSavedPlansLoading] = useState(false);
 
   useEffect(() => {
     if (activeTab !== "saved") return;
-    try {
-      const raw = localStorage.getItem("gs_saved_drill_plans");
-      setSavedPlans(raw ? JSON.parse(raw) : []);
-    } catch { setSavedPlans([]); }
+    setSavedPlansLoading(true);
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/drill-plans`, {
+      headers: { Authorization: `Bearer ${token ?? ""}` },
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((json) => {
+        const plans: SavedDrillPlan[] = (json?.data ?? []).map(
+          (p: { id: string | number; saved_at?: string; savedAt?: string; position: string; drills: SavedDrillEntry[] | string }) => ({
+            id:       p.id,
+            savedAt:  p.saved_at ?? p.savedAt ?? "",
+            position: p.position,
+            drills:   typeof p.drills === "string" ? JSON.parse(p.drills) : p.drills,
+          }),
+        );
+        setSavedPlans(plans);
+      })
+      .catch(() => {
+        // API failed — fall back to localStorage
+        try {
+          const raw = localStorage.getItem("gs_saved_drill_plans");
+          setSavedPlans(raw ? JSON.parse(raw) : []);
+        } catch { setSavedPlans([]); }
+      })
+      .finally(() => setSavedPlansLoading(false));
   }, [activeTab]);
   const [tierProgress, setTierProgress] = useState<TierProgress | null>(null);
   const [expandedDrill, setExpandedDrill] = useState<string | null>(null);
@@ -965,7 +987,11 @@ export default function FootballDrillsLabPage() {
         {/* ── TAB: SAVED DRILL PLANS ── */}
         {activeTab === "saved" && (
           <div className="space-y-5">
-            {savedPlans.length === 0 ? (
+            {savedPlansLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#1c3d22] border-t-transparent" />
+              </div>
+            ) : savedPlans.length === 0 ? (
               <div className="rounded-2xl border border-[#1c3d22] bg-[#f1efe8] p-10 text-center">
                 <BookmarkCheck className="mx-auto mb-3 h-10 w-10 text-[#1c3d22]/30" />
                 <p className="font-black text-[#1c3d22]">No saved plans yet</p>

@@ -436,27 +436,29 @@ export default function AssessmentPage() {
     return getDrillsForGaps(gaps, pos, ageGrp);
   })();
 
-  const saveDrillPlan = () => {
+  const saveDrillPlan = async () => {
     const plan = {
-      id:        Date.now(),
       savedAt:   new Date().toISOString(),
-      position:  positionGroup,
+      position:  positionGroup || videoPosGroup,
       drills:    drillRecs.map(({ gap, drill, targetPhase }) => ({
-        domain:      gap.domain,
-        percentile:  gap.percentile,
+        domain:         gap.domain,
+        percentile:     gap.percentile,
         targetPhase,
-        name:        drill.name,
-        description: drill.description,
-        duration:    drill.duration,
-        equipment:   drill.requiresEquipment ?? [],
+        name:           drill.name,
+        description:    drill.description,
+        duration:       drill.duration,
+        equipment:      drill.requiresEquipment ?? [],
         coachingPoints: drill.coachingPoints,
       })),
     };
-    // Persist locally
-    const existing = JSON.parse(localStorage.getItem("gs_saved_drill_plans") ?? "[]");
-    localStorage.setItem("gs_saved_drill_plans", JSON.stringify([plan, ...existing]));
-    // Non-blocking backend sync (silent fail)
-    api.post("/player/drill-plans", plan).catch(() => {});
+    try {
+      // Cloud first — persists across devices
+      await api.post("/player/drill-plans", plan);
+    } catch {
+      // Cloud failed — fall back to localStorage so data isn't lost
+      const existing = JSON.parse(localStorage.getItem("gs_saved_drill_plans") ?? "[]");
+      localStorage.setItem("gs_saved_drill_plans", JSON.stringify([plan, ...existing]));
+    }
     setDrillPlanSaved(true);
   };
 
