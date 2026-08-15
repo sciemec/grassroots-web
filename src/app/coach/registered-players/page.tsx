@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Plus, CheckCircle2, Clock, X, UserCheck,
-  Loader2, Trash2, ShieldCheck, AlertCircle,
+  Loader2, Trash2, ShieldCheck, AlertCircle, Download,
 } from "lucide-react";
 import api from "@/lib/api";
+import jsPDF from "jspdf";
+import { useAuthStore } from "@/lib/auth-store";
 
 interface Registration {
   id: string;
@@ -46,12 +48,171 @@ function StatusBadge({ status }: { status: Registration["match_status"] }) {
   );
 }
 
+function generateCertificate(reg: Registration, coachName: string) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = 210;
+
+  // ── Green header ──────────────────────────────────────────────────────────
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, 0, W, 32, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text("GRASSROOTS SPORTS ZIMBABWE", W / 2, 13, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("Zimbabwe's AI-Powered Sports Platform  ·  grassrootssports.live", W / 2, 21, { align: "center" });
+
+  // Gold accent line
+  doc.setFillColor(200, 150, 42);
+  doc.rect(0, 32, W, 2, "F");
+
+  // ── Title ─────────────────────────────────────────────────────────────────
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(17);
+  doc.setTextColor(26, 92, 42);
+  doc.text("PLAYER REGISTRATION CERTIFICATE", W / 2, 50, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(110, 110, 110);
+  doc.text("Official Provenance Record — GrassRoots Sports Platform", W / 2, 57, { align: "center" });
+
+  // ── Player details box ────────────────────────────────────────────────────
+  let y = 67;
+  doc.setFillColor(240, 247, 242);
+  doc.setDrawColor(26, 92, 42);
+  doc.setLineWidth(0.3);
+  doc.rect(15, y, W - 30, 50, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(26, 92, 42);
+  doc.text("PLAYER DETAILS", 20, y + 8);
+
+  const playerName = `${reg.first_name} ${reg.surname}`;
+  const dob = new Date(reg.date_of_birth).toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
+  const playerFields: [string, string][] = [
+    ["Full Name",     playerName],
+    ["Date of Birth", dob],
+    ["Sport",         reg.sport ? reg.sport.charAt(0).toUpperCase() + reg.sport.slice(1) : "Not specified"],
+    ["Position",      reg.position || "Not specified"],
+  ];
+
+  playerFields.forEach(([label, value], i) => {
+    const fy = y + 16 + i * 9;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(label + ":", 22, fy);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(17, 17, 17);
+    doc.text(value, 78, fy);
+  });
+
+  // ── Registration details box ───────────────────────────────────────────────
+  y = 126;
+  doc.setFillColor(240, 247, 242);
+  doc.rect(15, y, W - 30, 60, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(26, 92, 42);
+  doc.text("REGISTRATION DETAILS", 20, y + 8);
+
+  const registrationDate = new Date(reg.created_at).toLocaleString("en-GB", {
+    day: "numeric", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+  }) + " UTC";
+
+  const confirmedDate = reg.confirmed_at
+    ? new Date(reg.confirmed_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+
+  const statusLabel =
+    reg.match_status === "confirmed"
+      ? `Linked to Talent Passport${confirmedDate ? ` (${confirmedDate})` : ""}`
+      : reg.match_status === "pending_confirmation"
+      ? "Pending Coach Confirmation"
+      : "Awaiting Player Registration";
+
+  const refShort = reg.id.toUpperCase().slice(0, 8);
+
+  const regFields: [string, string][] = [
+    ["Academy / Club",  reg.organisation_name],
+    ["Registered by",   coachName],
+    ["Date Registered", registrationDate],
+    ["Status",          statusLabel],
+    ["GRS Reference",   `GRS-${refShort}`],
+  ];
+
+  regFields.forEach(([label, value], i) => {
+    const fy = y + 16 + i * 9;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(label + ":", 22, fy);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(17, 17, 17);
+    doc.text(value, 78, fy);
+  });
+
+  // ── Provenance statement ───────────────────────────────────────────────────
+  y = 196;
+  doc.setFillColor(255, 253, 235);
+  doc.setDrawColor(200, 150, 42);
+  doc.setLineWidth(0.4);
+  doc.rect(15, y, W - 30, 46, "FD");
+
+  doc.setFont("helvetica", "bolditalic");
+  doc.setFontSize(8.5);
+  doc.setTextColor(70, 50, 0);
+  const lines = [
+    `This document certifies that ${playerName}, born ${dob},`,
+    `was first registered and trained under ${reg.organisation_name}`,
+    `on ${registrationDate}.`,
+    "This timestamp is stored on GrassRoots Sports Zimbabwe servers",
+    "and constitutes the official provenance record for this athlete.",
+  ];
+  lines.forEach((line, i) => {
+    doc.text(line, W / 2, y + 10 + i * 7, { align: "center" });
+  });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(26, 92, 42);
+  doc.text(`Verify: grassrootssports.live/verify/${reg.id}`, W / 2, y + 41, { align: "center" });
+
+  // ── Footer ────────────────────────────────────────────────────────────────
+  doc.setFillColor(200, 150, 42);
+  doc.rect(0, 268, W, 1.5, "F");
+  doc.setFillColor(26, 92, 42);
+  doc.rect(0, 269.5, W, 27.5, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text("GrassRoots Sports Zimbabwe  ·  Empowering Athletes Across Zimbabwe", W / 2, 279, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(160, 210, 175);
+  const genDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  doc.text(`Certificate generated: ${genDate}  ·  This is an official GrassRoots Sports document`, W / 2, 287, { align: "center" });
+
+  doc.save(`GRS-Certificate-${reg.first_name}-${reg.surname}.pdf`);
+}
+
 export default function RegisteredPlayersPage() {
   const [regs, setRegs]         = useState<Registration[]>([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actionId, setActionId]     = useState<string | null>(null);
+
+  const user      = useAuthStore((s) => s.user);
+  const coachName = (user as { name?: string } | null)?.name ?? "Coach";
 
   const [form, setForm] = useState({
     first_name: "", surname: "", date_of_birth: "",
@@ -301,6 +462,7 @@ export default function RegisteredPlayersPage() {
                   onConfirm={handleConfirm}
                   onReject={handleReject}
                   onDelete={handleDelete}
+                  onCertificate={() => generateCertificate(r, coachName)}
                 />
               ))}
             </div>
@@ -322,6 +484,7 @@ export default function RegisteredPlayersPage() {
                   onConfirm={handleConfirm}
                   onReject={handleReject}
                   onDelete={handleDelete}
+                  onCertificate={() => generateCertificate(r, coachName)}
                 />
               ))}
             </div>
@@ -343,6 +506,7 @@ export default function RegisteredPlayersPage() {
                   onConfirm={handleConfirm}
                   onReject={handleReject}
                   onDelete={handleDelete}
+                  onCertificate={() => generateCertificate(r, coachName)}
                 />
               ))}
             </div>
@@ -354,13 +518,14 @@ export default function RegisteredPlayersPage() {
 }
 
 function RegistrationCard({
-  reg, actionId, onConfirm, onReject, onDelete,
+  reg, actionId, onConfirm, onReject, onDelete, onCertificate,
 }: {
   reg: Registration;
   actionId: string | null;
   onConfirm: (id: string) => void;
   onReject: (id: string) => void;
   onDelete: (id: string) => void;
+  onCertificate: () => void;
 }) {
   const busy = actionId === reg.id;
 
@@ -387,15 +552,24 @@ function RegistrationCard({
             <p className="mt-1.5 text-[11px] italic text-gray-500">"{reg.notes}"</p>
           )}
         </div>
-        {reg.match_status !== "confirmed" && (
+        <div className="flex items-center gap-1 flex-shrink-0">
           <button
-            onClick={() => onDelete(reg.id)}
-            disabled={busy}
-            className="flex-shrink-0 rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-400 transition-colors disabled:opacity-40"
+            onClick={onCertificate}
+            title="Download Provenance Certificate"
+            className="rounded-lg p-1.5 text-gray-300 hover:bg-green-50 hover:text-green-600 transition-colors"
           >
-            <Trash2 size={13} />
+            <Download size={13} />
           </button>
-        )}
+          {reg.match_status !== "confirmed" && (
+            <button
+              onClick={() => onDelete(reg.id)}
+              disabled={busy}
+              className="rounded-lg p-1.5 text-gray-300 hover:bg-red-50 hover:text-red-400 transition-colors disabled:opacity-40"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Pending confirmation actions */}
