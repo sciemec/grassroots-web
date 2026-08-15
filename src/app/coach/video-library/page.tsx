@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   Play, Trash2, Film, RefreshCw, Library, Upload, Share2, Check,
-  Loader2, Link as LinkIcon, ExternalLink, Video,
+  Loader2, Link as LinkIcon, Download, Video,
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
@@ -109,6 +109,7 @@ function MatchVideosTab({ token }: { token: string | null }) {
   const [postingId, setPostingId] = useState<string | null>(null);
   const [copiedId, setCopiedId]   = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -314,9 +315,9 @@ function MatchVideosTab({ token }: { token: string | null }) {
       <div style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: "12px 16px", marginBottom: 24 }}>
         <p style={{ margin: "0 0 3px", fontWeight: 700, fontSize: 12, color: "#92400e" }}>How to share with parents and players</p>
         <p style={{ margin: 0, fontSize: 12, color: "#78350f", lineHeight: 1.6 }}>
-          Upload → <b>Post to Arena</b> (parents and players see it in their feed and can comment) →
-          <b> Copy Link</b> and paste into the team WhatsApp group. Parents need a free account —
-          send them to <b>grassrootssports.live/register</b> to sign up as a Fan.
+          Upload → <b>Play it back</b> to review → click <b>Post to Arena</b> when you&apos;re ready to share.
+          Parents and players will see it in The Arena feed and can comment. Share the link on WhatsApp —
+          parents need a free Fan account at <b>grassrootssports.live/register</b>.
         </p>
       </div>
 
@@ -353,6 +354,12 @@ function MatchVideosTab({ token }: { token: string | null }) {
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                {/* Play / Collapse */}
+                <button onClick={() => setPlayingId(playingId === v.id ? null : v.id)}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: playingId === v.id ? "#1a3d26" : "#1a5c2a", color: "white", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
+                  <Play size={11} fill="white" /> {playingId === v.id ? "Close" : "Play"}
+                </button>
+
                 {v.arena_post_id ? (
                   <Link href="/arena"
                     style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: "#f0fdf4", color: "#1a5c2a", borderRadius: 7, fontSize: 12, fontWeight: 700, textDecoration: "none", border: "1px solid #bbf7d0" }}>
@@ -360,21 +367,33 @@ function MatchVideosTab({ token }: { token: string | null }) {
                   </Link>
                 ) : (
                   <button onClick={() => handlePostToArena(v)} disabled={postingId === v.id}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: "#1a5c2a", color: "white", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}>
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "1px solid #e5e7eb", cursor: postingId === v.id ? "not-allowed" : "pointer" }}>
                     {postingId === v.id ? <><Loader2 size={11} className="animate-spin" /> Posting…</> : <><Share2 size={11} /> Post to Arena</>}
                   </button>
                 )}
+
+                <a href={v.video_url} download target="_blank" rel="noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: 7, fontSize: 12, fontWeight: 700, textDecoration: "none", border: "1px solid #e5e7eb" }}>
+                  <Download size={11} /> Download
+                </a>
 
                 <button onClick={() => handleCopyLink(v.id)}
                   style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: copiedId === v.id ? "#f0fdf4" : "#f3f4f6", color: copiedId === v.id ? "#1a5c2a" : "#374151", borderRadius: 7, fontSize: 12, fontWeight: 700, border: "1px solid #e5e7eb", cursor: "pointer" }}>
                   {copiedId === v.id ? <><Check size={11} /> Copied!</> : <><LinkIcon size={11} /> Copy Link</>}
                 </button>
-
-                <Link href={`/watch/${v.id}`} target="_blank"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: 7, fontSize: 12, fontWeight: 700, textDecoration: "none", border: "1px solid #e5e7eb" }}>
-                  <ExternalLink size={11} /> Preview
-                </Link>
               </div>
+
+              {/* Inline video player */}
+              {playingId === v.id && v.video_url && (
+                <div style={{ marginTop: 14 }}>
+                  <video
+                    controls
+                    autoPlay
+                    src={v.video_url}
+                    style={{ width: "100%", borderRadius: 10, backgroundColor: "#000", maxHeight: 420 }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
