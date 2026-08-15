@@ -166,6 +166,8 @@ export default function ArenaPage() {
   const [editCommentBody,   setEditCommentBody]    = useState<string>("");
   const [reportingComment,  setReportingComment]   = useState<string | null>(null);
   const [reportedComments,  setReportedComments]   = useState<Set<string>>(new Set());
+  const [reportingPost,     setReportingPost]      = useState<string | null>(null);
+  const [reportedPosts,     setReportedPosts]      = useState<Set<string>>(new Set());
   const [showLoginPrompt,   setShowLoginPrompt]    = useState(false);
   const [copiedShare,       setCopiedShare]        = useState<Record<string, boolean>>({});
   const [mediaFile,         setMediaFile]          = useState<File | null>(null);
@@ -413,6 +415,20 @@ export default function ArenaPage() {
     setReportedComments(prev => new Set(prev).add(commentId));
     try {
       await fetch(`${API}/arena/posts/${postId}/comments/${commentId}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ reason }),
+      });
+    } catch {
+      // Silent — UI already shows "Reported"
+    }
+  };
+
+  const submitPostReport = async (postId: string, reason: string) => {
+    setReportingPost(null);
+    setReportedPosts(prev => new Set(prev).add(postId));
+    try {
+      await fetch(`${API}/arena/posts/${postId}/report`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({ reason }),
@@ -1254,6 +1270,36 @@ export default function ArenaPage() {
                                 disabled={isDeleting}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 transition disabled:opacity-50">
                                 <Trash2 size={14} /> {isDeleting ? "Deleting…" : "Delete"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* 🚩 report button for non-owners */}
+                      {!isOwner && user && !isEditing && (
+                        <div className="relative flex-shrink-0">
+                          {reportedPosts.has(post.id) ? (
+                            <span className="text-[10px] text-red-400 font-semibold px-1">Reported</span>
+                          ) : (
+                            <button
+                              onClick={() => setReportingPost(reportingPost === post.id ? null : post.id)}
+                              title="Report post"
+                              className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
+                              <Flag size={14} />
+                            </button>
+                          )}
+                          {reportingPost === post.id && (
+                            <div className="absolute right-0 top-8 z-20 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1 text-xs">
+                              {(["offensive", "spam", "harassment", "misinformation", "other"] as const).map(reason => (
+                                <button key={reason}
+                                  onClick={() => submitPostReport(post.id, reason)}
+                                  className="w-full text-left px-3 py-2 text-gray-700 hover:bg-red-50 hover:text-red-700 capitalize transition">
+                                  {reason}
+                                </button>
+                              ))}
+                              <button onClick={() => setReportingPost(null)}
+                                className="w-full text-left px-3 py-2 text-gray-400 hover:bg-gray-50 transition border-t border-gray-100">
+                                Cancel
                               </button>
                             </div>
                           )}
