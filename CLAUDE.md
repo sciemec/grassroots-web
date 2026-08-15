@@ -10423,3 +10423,182 @@ WHATSAPP_VERIFY_TOKEN     — Vercel ✅
 | Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
 | `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+---
+
+## SESSION LOG — 14 August 2026
+
+### Theme — Coach Hub Audit, Chemistry Migration Fix, Talent Passport, Arena Video Architecture
+
+---
+
+### R2 VIDEO STORAGE — CONFIRMED WORKING (PERMANENT NOTE)
+
+Arena video upload works in production. This proves R2_* vars ARE set on Render.
+All older session log entries saying "R2_* NOT set" are WRONG — ignore them.
+
+Arena is the confirmed reference implementation for R2 video upload/storage going forward.
+
+- POST /arena/posts/share-video creates ArenaPost with video_url (R2 URL), thumbnail_url, duration_sec, video_source enum (player_upload/whatsapp/test_session/analysis), visibility (public/school)
+- GET /arena/videos returns auth-gated paginated discovery feed, filterable by province/position/sport
+- NO unauthenticated shareable link exists yet — all Arena video browsing requires a logged-in account
+
+### CHEMISTRY MIGRATIONS — APPLIED (14 August 2026)
+
+5 chemistry migrations from 7 May 2026 had never been applied to Render PostgreSQL.
+Fixed via empty commit cf44b25 to bhora-ai master, which triggered a Render deploy where start.sh ran php artisan migrate --force.
+
+Tables now created: style_fingerprints, style_fingerprint_history, style_similarities, chemistry_data_access_log, plus add_chemistry_columns_to_player_profiles_table.
+
+/coach/chemistry should no longer 500 for coaches.
+
+### WHAT STILL NEEDS DOING (14 August 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| GROQ_API_KEY on Render | status unknown | Check if THUTO chat works live; set from console.groq.com if not |
+| Talent Passport — coach provenance | NOT BUILT | Coach registers unregistered player, record appears on Talent Passport. Matching: name+DOB+coach confirmation. |
+| Arena video — unauthenticated shareable link | NOT BUILT | Add share_token to arena_posts and a public route for parents/scouts without accounts |
+| Coach Hub — Parents view | NOT BUILT | Surface GET /guardian/linked in Coach Hub Player Detail so coach can see active parent links |
+
+---
+
+## SESSION LOG — 15 August 2026
+
+### Theme — Match Video Upload + Parent Sharing System
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Match Videos Tab in Video Library — FULLY BUILT ✅
+
+**File:** `src/app/coach/video-library/page.tsx`
+
+Added a two-tab system to the existing page:
+- **Match Videos** tab (default) — upload form + video management list
+- **Media Library** tab — existing context-filtered media archive (preserved unchanged)
+
+Tab switcher: pill-style toggle at top of content area. `mainTab` state defaults to `"match"`.
+
+`MatchVideosTab` component (added above the export default):
+- Upload form: title, match_date, opponent, competition, file input
+- XHR-based upload with progress bar: `POST /api/upload/presigned` → PUT to R2
+- Save metadata: `POST /api/v1/coach/match-videos`
+- **Post to Arena** button: `POST /api/v1/arena/posts` (direct fetch to capture `arena_post_id`) → `PATCH /api/v1/coach/match-videos/{id}/arena`
+- Once posted: button replaced with green "Posted to Arena" link → `/arena`
+- **Copy Link** button: copies `${origin}/watch/${videoId}` to clipboard
+- **Preview** link: opens `/watch/${videoId}` in new tab
+- **Delete** button: `DELETE /api/v1/coach/match-videos/{id}`
+- Tip box explaining parent onboarding flow (register at `/register` as Fan)
+
+---
+
+#### 2. Watch Page — FULLY BUILT ✅
+
+**File:** `src/app/watch/[videoId]/page.tsx`
+
+Shareable watch page — any authenticated role (coach/player/fan/parent).
+
+- Fetches video metadata: `GET /api/v1/coach/match-videos/{id}` (increments view_count for non-owners)
+- HTML5 `<video>` player with controls, `preload="metadata"`
+- Match info card: title, date, vs opponent, competition, view count
+- If `arena_post_id` exists: loads comments from `GET /api/v1/arena/posts/{arena_post_id}/comments`
+- Add comment form: `POST /api/v1/arena/posts/{arena_post_id}/comments`, Enter to submit
+- Unauthenticated state: shows sign-in prompt + "Register as Fan" CTA instead of comments
+- Nav breadcrumb: The Arena → video title
+
+---
+
+#### 3. Team Videos Page — FULLY BUILT ✅
+
+**File:** `src/app/team-videos/[coachId]/page.tsx`
+
+Public archive of all Arena-posted match videos for a specific coach.
+
+- Fetches coach profile: `GET /api/v1/coaches/{coachId}` (existing public endpoint)
+- Fetches videos: `GET /api/v1/coaches/{coachId}/match-videos` (new public endpoint — Arena-posted only)
+- Shows coach avatar, name, sport, province + video count
+- Video cards: play icon, title, date, opponent, competition, view count, timeAgo
+- **Authenticated** → card links to `/watch/{videoId}`
+- **Unauthenticated** → yellow "Register Free / Sign In" banner + cards redirect to `/login`
+- Loading skeleton (header + 3 card placeholders), empty state, error state
+- Linked from Coach Hub Network section: **Team Videos** card → `/team-videos/${user.id}`
+
+---
+
+#### 4. Coach Hub — Team Videos Card ✅
+
+**File:** `src/app/coach/page.tsx`
+
+Added to Network section (§6), after Video Library:
+```tsx
+<HubCard href={`/team-videos/${user?.id ?? ""}`} icon={Play} iconBg="#fff7ed" iconColor="#c2410c" label="Team Videos" desc="Public match archive for parents & players" />
+```
+
+---
+
+### BACKEND FILES (bhora-ai repo — committed `0fe9bdc` + `4182697`)
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_08_15_000001_create_coach_match_videos_table.php` | `coach_match_videos` table |
+| `app/Models/CoachMatchVideo.php` | UUID PK, no auto-increment, date cast |
+| `app/Http/Controllers/Api/Coach/CoachMatchVideoController.php` | index, store, show, linkArena, destroy, teamVideos |
+
+**`coach_match_videos` schema:**
+```sql
+id UUID PK (gen_random_uuid()), coach_id UUID, title, match_date DATE,
+opponent VARCHAR(150), competition VARCHAR(150), video_url TEXT,
+r2_key VARCHAR, duration_seconds INT, arena_post_id UUID, view_count INT DEFAULT 0
+```
+
+**Routes added to `routes/api.php`:**
+```
+// role:coach,admin
+GET    /coach/match-videos                — index
+POST   /coach/match-videos                — store
+PATCH  /coach/match-videos/{id}/arena     — linkArena
+DELETE /coach/match-videos/{id}           — destroy
+
+// auth:sanctum (any role — parents/players/fans)
+GET    /coach/match-videos/{id}           — show (increments view_count for non-owners)
+
+// public (no auth)
+GET    /coaches/{coachId}/match-videos    — teamVideos (Arena-posted only)
+```
+
+---
+
+### ALL BUILT ROUTES — ADDITIONS (15 August 2026)
+
+```
+/coach/video-library    Updated — two-tab: Match Videos (upload/share) + Media Library
+/watch/[videoId]        Shareable match video watch page — HTML5 player + Arena comments
+/team-videos/[coachId]  Public match video archive per coach — for parents & players
+```
+
+---
+
+### PARENT / FAN SHARING FLOW (CONFIRMED DESIGN)
+
+```
+Coach uploads match video → /coach/video-library → Match Videos tab
+  → clicks "Post to Arena"  → video appears in parents'/players' Arena feed
+  → clicks "Copy Link"      → pastes /watch/{id} into WhatsApp group
+  → or shares /team-videos/{coachId} as permanent team archive link
+
+Parent taps link:
+  → Not logged in: sees sign-in prompt on /watch/{id} or banner on /team-videos/{coachId}
+  → Registers at /register as Fan (free)
+  → Can watch video + comment (comments appear on the Arena post)
+
+Coach can see comments from The Arena → /arena feed
+```
+
+---
+
+### MIGRATION STATUS (15 August 2026)
+
+| Migration | Status |
+|---|---|
+| `coach_match_videos` (2026_08_15_000001) | Committed to bhora-ai master — will run on next Render deploy via `start.sh` |
