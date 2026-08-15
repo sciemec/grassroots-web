@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import type { ExerciseCard, ExerciseCategory, EquipmentTier } from "@/lib/conditioning/types";
 import { SEED_CARDS } from "@/lib/conditioning/seed-cards";
+import api from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ export default function CoachConditioningPage() {
       .catch(() => {});
   }, []);
 
-  // Load saved assignments and week plan from localStorage
+  // Load saved assignments and week plan — localStorage first, then sync from API
   useEffect(() => {
     try {
       const saved = localStorage.getItem(ASSIGNMENTS_KEY);
@@ -142,6 +143,20 @@ export default function CoachConditioningPage() {
       const week = localStorage.getItem(WEEK_TEMPLATE_KEY);
       if (week) setWeekPlan(JSON.parse(week));
     } catch { /* ignore */ }
+
+    api.get("/coach/conditioning")
+      .then((res) => {
+        const d = res.data?.data ?? res.data;
+        if (d?.assignments) {
+          setAssignments(d.assignments as Assignment[]);
+          localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(d.assignments));
+        }
+        if (d?.week_plan) {
+          setWeekPlan(d.week_plan as WeekPlan);
+          localStorage.setItem(WEEK_TEMPLATE_KEY, JSON.stringify(d.week_plan));
+        }
+      })
+      .catch(() => {/* stay with localStorage */});
   }, []);
 
   // ── Filtered cards ───────────────────────────────────────────────────────────
@@ -198,6 +213,7 @@ export default function CoachConditioningPage() {
     const next = [assignment, ...assignments];
     setAssignments(next);
     localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(next));
+    api.put("/coach/conditioning", { assignments: next, week_plan: weekPlan }).catch(() => {});
 
     // Store under player key so their THUTO picks can surface it
     const storeKey = target === "team"
@@ -218,6 +234,7 @@ export default function CoachConditioningPage() {
       const merged   = Array.from(new Set([...existing, ...cardIds]));
       const next     = { ...prev, [day]: merged };
       localStorage.setItem(WEEK_TEMPLATE_KEY, JSON.stringify(next));
+      api.put("/coach/conditioning", { assignments, week_plan: next }).catch(() => {});
       return next;
     });
     setDayPickerOpen(null);
@@ -227,6 +244,7 @@ export default function CoachConditioningPage() {
     setWeekPlan((prev) => {
       const next = { ...prev, [day]: (prev[day] ?? []).filter((id) => id !== cardId) };
       localStorage.setItem(WEEK_TEMPLATE_KEY, JSON.stringify(next));
+      api.put("/coach/conditioning", { assignments, week_plan: next }).catch(() => {});
       return next;
     });
   }
@@ -235,6 +253,7 @@ export default function CoachConditioningPage() {
     setWeekPlan((prev) => {
       const next = { ...prev, [day]: [] };
       localStorage.setItem(WEEK_TEMPLATE_KEY, JSON.stringify(next));
+      api.put("/coach/conditioning", { assignments, week_plan: next }).catch(() => {});
       return next;
     });
   }
@@ -252,6 +271,7 @@ export default function CoachConditioningPage() {
     setAssignments(next);
     localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(next));
     localStorage.setItem("gs_coach_team_week", JSON.stringify(weekPlan));
+    api.put("/coach/conditioning", { assignments: next, week_plan: weekPlan }).catch(() => {});
     showToast("Week plan assigned to full squad");
   }
 
