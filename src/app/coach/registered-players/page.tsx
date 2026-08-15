@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Plus, CheckCircle2, Clock, X, UserCheck,
-  Loader2, Trash2, ShieldCheck, AlertCircle, Download,
+  Loader2, Trash2, ShieldCheck, AlertCircle, Download, Play, ChevronUp,
 } from "lucide-react";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
@@ -20,6 +20,7 @@ interface Registration {
   position: string | null;
   phone: string | null;
   notes: string | null;
+  video_url: string | null;
   linked_user_id: string | null;
   match_status: "unmatched" | "pending_confirmation" | "confirmed" | "rejected" | "standalone_confirmed";
   match_flagged_at: string | null;
@@ -219,7 +220,7 @@ export default function RegisteredPlayersPage() {
 
   const [form, setForm] = useState({
     first_name: "", surname: "", date_of_birth: "",
-    sport: "", position: "", phone: "", notes: "",
+    sport: "", position: "", phone: "", notes: "", video_url: "",
   });
 
   useEffect(() => { load(); }, []);
@@ -242,13 +243,14 @@ export default function RegisteredPlayersPage() {
     try {
       const res = await api.post("/coach/registered-players", {
         ...form,
-        sport:    form.sport    || undefined,
-        position: form.position || undefined,
-        phone:    form.phone    || undefined,
-        notes:    form.notes    || undefined,
+        sport:     form.sport     || undefined,
+        position:  form.position  || undefined,
+        phone:     form.phone     || undefined,
+        notes:     form.notes     || undefined,
+        video_url: form.video_url || undefined,
       });
       setRegs((prev) => [res.data.data, ...prev]);
-      setForm({ first_name: "", surname: "", date_of_birth: "", sport: "", position: "", phone: "", notes: "" });
+      setForm({ first_name: "", surname: "", date_of_birth: "", sport: "", position: "", phone: "", notes: "", video_url: "" });
       setShowForm(false);
     } catch {
       // silent — keep form open
@@ -435,6 +437,18 @@ export default function RegisteredPlayersPage() {
                   placeholder="e.g. Excellent pace, needs work on left foot"
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Highlight Clip URL (optional)</label>
+                <input
+                  value={form.video_url}
+                  onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#1a5c2a] focus:outline-none"
+                  placeholder="Paste video URL from your Video Library"
+                />
+                <p className="mt-0.5 text-[10px] text-gray-400">
+                  Upload to your <Link href="/coach/video-library" className="underline">Video Library</Link> first, then paste the link here.
+                </p>
+              </div>
               <button
                 type="submit"
                 disabled={submitting}
@@ -547,6 +561,7 @@ function RegistrationCard({
   onCertificate: () => void;
 }) {
   const busy = actionId === reg.id;
+  const [playing, setPlaying] = useState(false);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -572,6 +587,16 @@ function RegistrationCard({
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          {reg.video_url && (
+            <button
+              onClick={() => setPlaying((p) => !p)}
+              title={playing ? "Close video" : "Play highlight clip"}
+              className="rounded-lg p-1.5 transition-colors"
+              style={{ color: playing ? "#1a5c2a" : "#9ca3af", backgroundColor: playing ? "#f0fdf4" : "transparent" }}
+            >
+              {playing ? <ChevronUp size={13} /> : <Play size={13} />}
+            </button>
+          )}
           <button
             onClick={onCertificate}
             title="Download Provenance Certificate"
@@ -590,6 +615,27 @@ function RegistrationCard({
           )}
         </div>
       </div>
+
+      {/* Inline video player */}
+      {playing && reg.video_url && (
+        <div style={{ marginTop: 12 }}>
+          <video
+            controls
+            autoPlay
+            src={reg.video_url}
+            style={{ width: "100%", display: "block", borderRadius: 10, backgroundColor: "#000", maxHeight: 320 }}
+          />
+          <a
+            href={reg.video_url}
+            download
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 6, fontSize: 11, fontWeight: 700, color: "#374151", backgroundColor: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 6, padding: "3px 10px", textDecoration: "none" }}
+          >
+            <Download size={10} /> Download clip
+          </a>
+        </div>
+      )}
 
       {/* Pending confirmation actions */}
       {reg.match_status === "pending_confirmation" && (
