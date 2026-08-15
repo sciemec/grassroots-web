@@ -10602,3 +10602,92 @@ Coach can see comments from The Arena → /arena feed
 | Migration | Status |
 |---|---|
 | `coach_match_videos` (2026_08_15_000001) | Committed to bhora-ai master — will run on next Render deploy via `start.sh` |
+
+---
+
+## SESSION LOG — 16 August 2026
+
+### Theme — Match Video Library: Inline Playback + Download + Corrected Upload Flow
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Video Library — Inline Player + Download + Corrected Flow ✅
+
+**File:** `src/app/coach/video-library/page.tsx` (commit `0879d9b`)
+
+**Problem:** The original design had "Post to Arena" as the primary CTA immediately after upload.
+Coach had no way to play the video back in the library before deciding to share it.
+
+**Changes made to `MatchVideosTab`:**
+
+| Change | Detail |
+|---|---|
+| Play button | Toggles an inline `<video controls autoPlay src={v.video_url}>` on the card. `playingId` state — only one plays at a time. Click again to collapse. |
+| Download button | `<a href={v.video_url} download>` — native browser download, no extra code needed. |
+| Post to Arena restyled | Changed from green (primary CTA) to grey (secondary) — deliberate action after review. |
+| Removed "Preview" link | `/watch/[id]` preview link removed — replaced by the inline Play button. |
+| Updated tip banner | "Upload → Play it back to review → click Post to Arena when you're ready to share." |
+
+**Correct upload flow (now matches intended design):**
+```
+Upload video → saved to R2 + coach_match_videos table → appears in library list
+             → coach clicks Play → inline <video> player expands on card
+             → coach reviews the footage
+             → coach clicks Post to Arena when ready
+             → parents/players see it in their Arena feed and can comment
+```
+
+**Buttons per card (in order):**
+```
+[Play / Close]  [Post to Arena / Posted to Arena]  [Download]  [Copy Link]  [Delete]
+```
+
+---
+
+#### 2. Watch Page — Inline Player Matching Library Style + Download ✅
+
+**File:** `src/app/watch/[videoId]/page.tsx` (commit `2503356`)
+
+| Before | After |
+|---|---|
+| `<video><source src=...></video>` | `<video src={video.video_url} autoPlay />` (direct src) |
+| `preload="metadata"` | `autoPlay` — plays immediately when parent opens the link |
+| Black container `<div>` wrapping player | `borderRadius + backgroundColor` on `<video>` directly |
+| No download button | Download button in match info card |
+| "View on The Arena" plain link | Restyled as green pill button (consistent with Download) |
+
+---
+
+### VIDEO PLAYER STYLE SPEC (permanent reference — use for any new player)
+
+```tsx
+<video
+  controls
+  autoPlay
+  src={videoUrl}
+  style={{
+    width: "100%",
+    display: "block",
+    borderRadius: 12,        // 10 on card-level players, 12 on dedicated pages
+    backgroundColor: "#000",
+    maxHeight: 420,          // 480 on full watch page
+  }}
+/>
+```
+
+Rules:
+- Always `src` directly on `<video>` — never use `<source>` child element
+- Always `autoPlay` — video plays immediately when revealed or page loads
+- Always `backgroundColor: "#000"` — black letterbox for any aspect ratio
+- `borderRadius: 10` on inline card players, `12` on dedicated watch pages
+
+---
+
+### ALL BUILT ROUTES — UPDATES (16 August 2026)
+
+```
+/coach/video-library   UPDATED — Play button, Download, corrected Post-to-Arena flow
+/watch/[videoId]       UPDATED — autoPlay inline player (direct src), Download button
+```
