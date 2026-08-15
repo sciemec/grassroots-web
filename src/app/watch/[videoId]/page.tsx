@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
-import { ArrowLeft, MessageCircle, Send, Loader2, Play } from "lucide-react";
+import { ArrowLeft, MessageCircle, Send, Loader2, Play, Download } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -143,18 +143,16 @@ export default function WatchMatchVideoPage() {
         ) : video ? (
           <>
             {/* Video player */}
-            <div style={{ backgroundColor: "#000", borderRadius: 14, overflow: "hidden", marginBottom: 20, position: "relative" }}>
+            <div style={{ marginBottom: 20 }}>
               {video.video_url ? (
                 <video
                   controls
-                  style={{ width: "100%", display: "block", maxHeight: 480 }}
-                  preload="metadata"
-                >
-                  <source src={video.video_url} type="video/mp4" />
-                  Your browser does not support video playback.
-                </video>
+                  autoPlay
+                  src={video.video_url}
+                  style={{ width: "100%", display: "block", borderRadius: 12, backgroundColor: "#000", maxHeight: 480 }}
+                />
               ) : (
-                <div style={{ height: 280, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
+                <div style={{ height: 280, backgroundColor: "#000", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
                   <Play size={48} color="#374151" style={{ marginBottom: 12 }} />
                   <p style={{ margin: 0, fontSize: 14 }}>Video processing — check back shortly.</p>
                 </div>
@@ -182,11 +180,19 @@ export default function WatchMatchVideoPage() {
                 </span>
               </div>
 
-              {video.arena_post_id && (
-                <Link href="/arena" style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, fontSize: 12, color: "#1a5c2a", textDecoration: "none", fontWeight: 600 }}>
-                  <MessageCircle size={13} /> View on The Arena
-                </Link>
-              )}
+              <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
+                {video.video_url && (
+                  <a href={video.video_url} download target="_blank" rel="noreferrer"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: 7, fontSize: 12, fontWeight: 700, textDecoration: "none", border: "1px solid #e5e7eb" }}>
+                    <Download size={11} /> Download
+                  </a>
+                )}
+                {video.arena_post_id && (
+                  <Link href="/arena" style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", fontSize: 12, color: "#1a5c2a", textDecoration: "none", fontWeight: 700, backgroundColor: "#f0fdf4", borderRadius: 7, border: "1px solid #bbf7d0" }}>
+                    <MessageCircle size={11} /> View on The Arena
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* Not signed in CTA */}
