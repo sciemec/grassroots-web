@@ -205,6 +205,7 @@ export default function CoachHubPage() {
           <HubCard href="/arena"             icon={Globe}      iconBg="#dbeafe" iconColor="#2563eb" label="The Arena"    desc="Professional sports network"   />
           <HubCard href="/arena/recruitment" icon={UserSearch} iconBg="#ede9fe" iconColor="#7c3aed" label="Talent Board" desc="Open positions & talent wants" />
           <HubCard href="/coach/video-library" icon={Film}     iconBg="#f3f4f6" iconColor="#6b7280" label="Video Library" desc="All recorded & uploaded clips" />
+          <HubCard href={`/team-videos/${user?.id ?? ""}`} icon={Play} iconBg="#fff7ed" iconColor="#c2410c" label="Team Videos"   desc="Public match archive for parents & players" />
         </div>
 
         {/* ── 7. School Programme ────────────────────────────────────── */}
