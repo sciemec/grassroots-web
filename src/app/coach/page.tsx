@@ -5,8 +5,8 @@
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
 import {
-  Users, Target, Activity, Zap, BookOpen, Dumbbell, Calendar,
-  Brain, TrendingUp, TrendingDown, BarChart3, Award, Video,
+  Users, Target, Activity, Zap, Dumbbell, Calendar,
+  TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
   ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck,
 } from "lucide-react";
@@ -153,35 +153,29 @@ export default function CoachHubPage() {
         {/* ── 1. Squad & Players ─────────────────────────────────────── */}
         <SectionLabel>1 · Squad &amp; Players</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/squad"               icon={Users}      iconBg="#dcfce7" iconColor="#16a34a" label="My Squad"        desc="View & manage all players"    badge="core" />
-          <HubCard href="/coach/registered-players"  icon={UserCheck}  iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Registry" desc="Register players · build talent passports" badge="new" />
-          <HubCard href="/coach/talent-id"           icon={Target}     iconBg="#dbeafe" iconColor="#2563eb" label="Talent ID"       desc="AI player identification"      />
-          <HubCard href="/coach/recruitment"         icon={Shield}     iconBg="#ede9fe" iconColor="#7c3aed" label="Recruitment"     desc="Track recruitment targets"     />
-          <HubCard href="/coach/scouting"            icon={UserSearch} iconBg="#fef3c7" iconColor="#d97706" label="Scouting"        desc="Scout discovery feed"          />
-          <HubCard href="/coach/technical-staff"     icon={Users}      iconBg="#f3f4f6" iconColor="#6b7280" label="Technical Staff" desc="Manage your coaching team"     />
+          <HubCard href="/coach/squad"              icon={Users}      iconBg="#dcfce7" iconColor="#16a34a" label="My Squad"        desc="View & manage all players"    badge="core" />
+          <HubCard href="/coach/registered-players" icon={UserCheck}  iconBg="#f0fdf4" iconColor="#1a5c2a" label="Player Registry" desc="Register players · build talent passports" badge="new" />
+          <HubCard href="/coach/recruitment"        icon={Shield}     iconBg="#ede9fe" iconColor="#7c3aed" label="Recruitment"     desc="Track recruitment targets"     />
+          <HubCard href="/coach/scouting"           icon={UserSearch} iconBg="#fef3c7" iconColor="#d97706" label="Scouting"        desc="Scout discovery feed"          />
         </div>
 
         {/* ── 2. Match & Tactics ─────────────────────────────────────── */}
         <SectionLabel>2 · Match &amp; Tactics</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/matches"           icon={Calendar}   iconBg="#f3f4f6" iconColor="#6b7280" label="Matches"            desc="Fixtures & results"           />
-          <HubCard href="/coach/tactics/board"    icon={Layers}     iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"     badge="new" />
-          <HubCard href="/coach/tactical-analysis" icon={Crosshair}  iconBg="#fef3c7" iconColor="#d97706" label="Tactical Analysis"  desc="Post-match breakdown"          />
-          <HubCard href="/coach/set-pieces"        icon={Video}      iconBg="#fdf4ff" iconColor="#a21caf" label="Set Piece Lab"      desc="Upload clips · Gemini Vision"  badge="ai" />
-          <HubCard href="/coach/match-eye"         icon={Eye}        iconBg="#fee2e2" iconColor="#dc2626" label="Match Eye"          desc="Full match video analysis"     badge="ai" />
-          <HubCard href="/coach/general-analysis" icon={Film} iconBg="#f0fdf4" iconColor="#1a5c2a" label="General Analysis" desc="Any football footage - open AI feedback" badge="ai" />
-          <HubCard href="/coach/patterns"          icon={TrendingUp} iconBg="#dcfce7" iconColor="#059669" label="Strategic Patterns" desc="Identify winning patterns"     />
-          <HubCard href="/coach/tactics/learn"     icon={GraduationCap} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Tactics Academy"   desc="Formations, principles & badges" badge="new" />
+          <HubCard href="/coach/matches"            icon={Calendar}      iconBg="#f3f4f6" iconColor="#6b7280" label="Matches"            desc="Fixtures & results"           />
+          <HubCard href="/coach/tactics/board"      icon={Layers}        iconBg="#dbeafe" iconColor="#2563eb" label="Intelligence Board" desc="XG map, formations & drag"     badge="new" />
+          <HubCard href="/coach/tactical-analysis"  icon={Crosshair}     iconBg="#fef3c7" iconColor="#d97706" label="Tactical Analysis"  desc="Post-match breakdown"          />
+          <HubCard href="/coach/set-pieces"         icon={Video}         iconBg="#fdf4ff" iconColor="#a21caf" label="Set Pieces"         desc="Clip analysis + scoring lab"   badge="ai" />
+          <HubCard href="/coach/video-analysis"     icon={Eye}           iconBg="#fee2e2" iconColor="#dc2626" label="Video Analysis"     desc="Match Eye · Drill · General · Player" badge="ai" />
+          <HubCard href="/coach/patterns"           icon={TrendingUp}    iconBg="#dcfce7" iconColor="#059669" label="Strategic Patterns" desc="Identify winning patterns"     />
+          <HubCard href="/coach/tactics/learn"      icon={GraduationCap} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Tactics Academy"   desc="Formations, principles & badges" badge="new" />
         </div>
 
         {/* ── 3. Training ────────────────────────────────────────────── */}
         <SectionLabel>3 · Training</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/training-plans"  icon={Calendar} iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans"  desc="Build & assign plans"        badge="core" />
-          <HubCard href="/coach/drills"          icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb" label="Drills Library"  desc="Browse all drills"           />
-          <HubCard href="/coach/drill-analysis"    icon={Video}    iconBg="#ede9fe" iconColor="#7c3aed" label="Drill Analysis"  desc="Analyse training footage"    />
-          <HubCard href="/coach/player-analysis" icon={Activity} iconBg="#fee2e2" iconColor="#dc2626" label="Player Analysis" desc="4-type biomechanics hub"      badge="ai" />
-          <HubCard href="/coach/session-library" icon={BookOpen} iconBg="#fef3c7" iconColor="#d97706" label="Session Library" desc="Saved session templates"     />
+          <HubCard href="/coach/training-plans" icon={Calendar} iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans" desc="Build & assign plans"     badge="core" />
+          <HubCard href="/coach/drill-library"  icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb" label="Drill Library"  desc="Drills · sessions · AI drill analysis" />
         </div>
 
         {/* ── 4. Performance & Health ────────────────────────────────── */}
@@ -190,7 +184,6 @@ export default function CoachHubPage() {
           <HubCard href="/coach/injury-hub" icon={Activity}     iconBg="#fee2e2" iconColor="#dc2626" label="Injury Hub"      desc="Track & manage injuries"    badge="core" />
           <HubCard href="/coach/fatigue"    icon={TrendingDown} iconBg="#fef3c7" iconColor="#d97706" label="Fatigue Monitor" desc="Player load & recovery"     />
           <HubCard href="/coach/chemistry"  icon={Zap}          iconBg="#dbeafe" iconColor="#2563eb" label="Squad Chemistry" desc="Team bonding & cohesion"    />
-          <HubCard href="/coach/biometrics" icon={BarChart3}    iconBg="#dcfce7" iconColor="#059669" label="Biometrics"      desc="Physical performance data"  />
           <HubCard href="/coach/stats"      icon={BarChart2}    iconBg="#f3f4f6" iconColor="#6b7280" label="Team Stats"      desc="Season statistics overview" />
           <HubCard href="/coach/success"    icon={Award}        iconBg="#fdf4ff" iconColor="#a21caf" label="Success Tracker" desc="Goals, wins & achievements" />
         </div>
@@ -202,26 +195,24 @@ export default function CoachHubPage() {
           <HubCard href="/analyst/live-match"        icon={Flame}      iconBg="#fee2e2" iconColor="#dc2626" label="Live Collector"      desc="Log events in real time"    />
           <HubCard href="/analyst/xg-analysis"       icon={Target}     iconBg="#dbeafe" iconColor="#2563eb" label="xG Analysis"         desc="Expected goals breakdown"   />
           <HubCard href="/analyst/tactical-report"   icon={Crosshair}  iconBg="#ede9fe" iconColor="#7c3aed" label="Tactical Report"     desc="AI-generated match report"  />
-          <HubCard href="/analyst/team-biomechanics" icon={Activity}   iconBg="#fef3c7" iconColor="#d97706" label="Team Biomechanics"   desc="Movement & load data"       />
           <HubCard href="/analyst/season"            icon={TrendingUp} iconBg="#dcfce7" iconColor="#059669" label="Season Intelligence" desc="Season-wide trends"         />
           <HubCard href="/analyst/commentary"        icon={Mic}        iconBg="#fff1f2" iconColor="#e11d48" label="Commentary Analysis" desc="Record speech · Gemini extracts events" badge="ai" />
         </div>
 
-        {/* ── 6. AI & Network ────────────────────────────────────────── */}
-        <SectionLabel>6 · AI &amp; Network</SectionLabel>
+        {/* ── 6. Network ─────────────────────────────────────────────── */}
+        <SectionLabel>6 · Network</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/ai-insights" icon={BookOpen}   iconBg="#dcfce7" iconColor="#16a34a" label="AI Insights"  desc="THUTO coaching intelligence"   badge="ai" />
           <HubCard href="/arena"             icon={Globe}      iconBg="#dbeafe" iconColor="#2563eb" label="The Arena"    desc="Professional sports network"   />
           <HubCard href="/arena/recruitment" icon={UserSearch} iconBg="#ede9fe" iconColor="#7c3aed" label="Talent Board" desc="Open positions & talent wants" />
+          <HubCard href="/coach/video-library" icon={Film}     iconBg="#f3f4f6" iconColor="#6b7280" label="Video Library" desc="All recorded & uploaded clips" />
         </div>
 
         {/* ── 7. School Programme ────────────────────────────────────── */}
         <SectionLabel>7 · School Programme</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          <HubCard href="/coach/school"    icon={Users}          iconBg="#dcfce7" iconColor="#16a34a" label="School Coach"    desc="Teams, fixtures & coaching tools" badge="new" />
-          <HubCard href="/school-hub"      icon={School}         iconBg="#f0fdf4" iconColor="#1a5c2a" label="School Hub"      desc="NASH teams, fixtures & notices"   badge="nash" />
-          <HubCard href="/school-hub"      icon={GraduationCap}  iconBg="#ede9fe" iconColor="#7c3aed" label="Academy"         desc="Age-group football programmes"    />
-          <HubCard href="/school-leagues"  icon={Trophy}         iconBg="#fffbeb" iconColor="#c8962a" label="School Leagues"  desc="NASH / NAPH tournament tables"    />
+          <HubCard href="/coach/school"    icon={Users}         iconBg="#dcfce7" iconColor="#16a34a" label="School Coach"   desc="Teams, fixtures & coaching tools" badge="new" />
+          <HubCard href="/school-hub"      icon={School}        iconBg="#f0fdf4" iconColor="#1a5c2a" label="School Hub"     desc="NASH teams, fixtures & notices"   badge="nash" />
+          <HubCard href="/school-leagues"  icon={Trophy}        iconBg="#fffbeb" iconColor="#c8962a" label="School Leagues" desc="NASH / NAPH tournament tables"    />
         </div>
 
       </div>
