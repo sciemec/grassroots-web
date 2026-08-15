@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft, Target, Move, Brain, ChevronRight, Info, Pencil,
-  RotateCcw, Share2, Users, X, Shield, GitBranch,
+  RotateCcw, Share2, Users, X, Shield, GitBranch, Save,
 } from "lucide-react";
 import { getRoleConfig } from "@/config/coaching-staff";
 import { useAuthStore } from "@/lib/auth-store";
@@ -297,6 +297,7 @@ function BoardPageInner() {
   const [shareCopied, setShareCopied]     = useState(false);
   const [shareLink, setShareLink]         = useState<string | null>(null);
   const [linkCopied, setLinkCopied]       = useState(false);
+  const [saveStatus, setSaveStatus]       = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -320,6 +321,48 @@ function BoardPageInner() {
       })
       .catch(() => {});
   }, [authToken]);
+
+  // Load saved board state on mount
+  useEffect(() => {
+    if (!authToken) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach/tactics`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(res => {
+        const saved = res?.data;
+        if (!saved) return;
+        const f = saved.formation as Formation;
+        if (f && FORMATIONS[f]) setFormation(f);
+        if (saved.lineup) {
+          try {
+            const lineup = typeof saved.lineup === "string" ? JSON.parse(saved.lineup) : saved.lineup;
+            if (Array.isArray(lineup.players) && lineup.players.length > 0) setPlayers(lineup.players);
+            else if (f && FORMATIONS[f]) setPlayers(FORMATIONS[f].map((p, i) => ({ id: `p${i}`, ...p })));
+            if (Array.isArray(lineup.arrows)) setArrows(lineup.arrows);
+            if (Array.isArray(lineup.opponents)) setOpponents(lineup.opponents);
+            if (typeof lineup.showOpponents === "boolean") setShowOpponents(lineup.showOpponents);
+          } catch { /* ignore */ }
+        }
+      })
+      .catch(() => {});
+  }, [authToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveBoard = useCallback(() => {
+    if (!authToken) return;
+    setSaveStatus("saving");
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach/tactics/save`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        formation,
+        lineup: { players, arrows, opponents, showOpponents },
+      }),
+    })
+      .then(r => r.ok ? setSaveStatus("saved") : setSaveStatus("error"))
+      .catch(() => setSaveStatus("error"))
+      .finally(() => { setTimeout(() => setSaveStatus("idle"), 3000); });
+  }, [authToken, formation, players, arrows, opponents, showOpponents]);
 
   const assignPlayer = useCallback((tokenId: string, sp: SquadPlayer) => {
     const firstName = sp.first_name ?? sp.name?.split(" ")[0] ?? "";
@@ -647,6 +690,18 @@ function BoardPageInner() {
                   <RotateCcw size={9} /> Reset opponents
                 </button>
               )}
+              <button
+                onClick={saveBoard}
+                disabled={saveStatus === "saving"}
+                className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold border transition-all disabled:opacity-50"
+                style={
+                  saveStatus === "saved"  ? { backgroundColor: "#f0fdf4", color: "#16a34a", borderColor: "#bbf7d0" } :
+                  saveStatus === "error"  ? { backgroundColor: "#fef2f2", color: "#dc2626", borderColor: "#fecaca" } :
+                  { backgroundColor: "#1a5c2a", color: "white", borderColor: "#1a5c2a" }
+                }>
+                <Save size={10} />
+                {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Board Saved!" : saveStatus === "error" ? "Save Failed" : "Save Board"}
+              </button>
             </div>
 
             {/* Zone detail panel — desktop sidebar */}
