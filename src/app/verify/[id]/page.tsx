@@ -9,7 +9,7 @@ interface VerifyData {
   position: string | null;
   organisation_name: string;
   registered_at: string;
-  match_status: "unmatched" | "pending_confirmation" | "confirmed";
+  match_status: "unmatched" | "pending_confirmation" | "confirmed" | "standalone_confirmed";
   confirmed_at: string | null;
 }
 
@@ -59,7 +59,8 @@ export default async function VerifyPage({
     notFound();
   }
 
-  const isConfirmed = reg.match_status === "confirmed";
+  const isConfirmed = reg.match_status === "confirmed" || reg.match_status === "standalone_confirmed";
+  const isStandalone = reg.match_status === "standalone_confirmed";
   const isPending = reg.match_status === "pending_confirmation";
 
   return (
@@ -170,7 +171,9 @@ export default async function VerifyPage({
                 marginBottom: 4,
               }}
             >
-              {isConfirmed
+              {isStandalone
+                ? "Confirmed by Academy"
+                : isConfirmed
                 ? "Verified — Identity Linked"
                 : isPending
                 ? "Registered — Awaiting Confirmation"
@@ -187,7 +190,9 @@ export default async function VerifyPage({
                 lineHeight: 1.5,
               }}
             >
-              {isConfirmed
+              {isStandalone
+                ? `This registration has been manually confirmed by ${reg.organisation_name}. The record is complete and the certificate is valid.`
+                : isConfirmed
                 ? "This player's registration has been verified and their identity confirmed on the GrassRoots Sports platform."
                 : isPending
                 ? "This registration is awaiting final confirmation from the registering coach."
@@ -283,7 +288,9 @@ export default async function VerifyPage({
                 letterSpacing: "0.05em",
               }}
             >
-              {isConfirmed
+              {isStandalone
+                ? "● Academy Confirmed"
+                : isConfirmed
                 ? "● Confirmed"
                 : isPending
                 ? "● Pending"

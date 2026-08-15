@@ -21,17 +21,18 @@ interface Registration {
   phone: string | null;
   notes: string | null;
   linked_user_id: string | null;
-  match_status: "unmatched" | "pending_confirmation" | "confirmed" | "rejected";
+  match_status: "unmatched" | "pending_confirmation" | "confirmed" | "rejected" | "standalone_confirmed";
   match_flagged_at: string | null;
   confirmed_at: string | null;
   created_at: string;
 }
 
 const STATUS_CONFIG = {
-  unmatched:            { label: "Not yet on platform", color: "#6b7280", bg: "#f3f4f6",    icon: Clock },
+  unmatched:            { label: "Not yet on platform",  color: "#6b7280", bg: "#f3f4f6",    icon: Clock },
   pending_confirmation: { label: "Match found — confirm?", color: "#d97706", bg: "#fef3c7", icon: AlertCircle },
-  confirmed:            { label: "Linked to Passport",  color: "#16a34a", bg: "#dcfce7",    icon: CheckCircle2 },
-  rejected:             { label: "Match rejected",      color: "#dc2626", bg: "#fee2e2",     icon: X },
+  confirmed:            { label: "Linked to Passport",   color: "#16a34a", bg: "#dcfce7",    icon: CheckCircle2 },
+  rejected:             { label: "Match rejected",       color: "#dc2626", bg: "#fee2e2",    icon: X },
+  standalone_confirmed: { label: "Confirmed by academy", color: "#0369a1", bg: "#e0f2fe",    icon: ShieldCheck },
 };
 
 function StatusBadge({ status }: { status: Registration["match_status"] }) {
@@ -134,6 +135,8 @@ function generateCertificate(reg: Registration, coachName: string) {
   const statusLabel =
     reg.match_status === "confirmed"
       ? `Linked to Talent Passport${confirmedDate ? ` (${confirmedDate})` : ""}`
+      : reg.match_status === "standalone_confirmed"
+      ? `Confirmed by Academy${confirmedDate ? ` (${confirmedDate})` : ""}`
       : reg.match_status === "pending_confirmation"
       ? "Pending Coach Confirmation"
       : "Awaiting Player Registration";
@@ -266,6 +269,18 @@ export default function RegisteredPlayersPage() {
     }
   }
 
+  async function handleStandaloneConfirm(id: string) {
+    setActionId(id);
+    try {
+      const res = await api.post(`/coach/registered-players/${id}/standalone-confirm`);
+      setRegs((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
+    } catch {
+      // silent
+    } finally {
+      setActionId(null);
+    }
+  }
+
   async function handleReject(id: string) {
     setActionId(id);
     try {
@@ -292,7 +307,7 @@ export default function RegisteredPlayersPage() {
   }
 
   const pending   = regs.filter((r) => r.match_status === "pending_confirmation");
-  const confirmed = regs.filter((r) => r.match_status === "confirmed");
+  const confirmed = regs.filter((r) => r.match_status === "confirmed" || r.match_status === "standalone_confirmed");
   const unmatched = regs.filter((r) => r.match_status === "unmatched");
 
   return (
@@ -462,6 +477,7 @@ export default function RegisteredPlayersPage() {
                   onConfirm={handleConfirm}
                   onReject={handleReject}
                   onDelete={handleDelete}
+                  onStandaloneConfirm={handleStandaloneConfirm}
                   onCertificate={() => generateCertificate(r, coachName)}
                 />
               ))}
@@ -484,6 +500,7 @@ export default function RegisteredPlayersPage() {
                   onConfirm={handleConfirm}
                   onReject={handleReject}
                   onDelete={handleDelete}
+                  onStandaloneConfirm={handleStandaloneConfirm}
                   onCertificate={() => generateCertificate(r, coachName)}
                 />
               ))}
@@ -506,6 +523,7 @@ export default function RegisteredPlayersPage() {
                   onConfirm={handleConfirm}
                   onReject={handleReject}
                   onDelete={handleDelete}
+                  onStandaloneConfirm={handleStandaloneConfirm}
                   onCertificate={() => generateCertificate(r, coachName)}
                 />
               ))}
@@ -518,13 +536,14 @@ export default function RegisteredPlayersPage() {
 }
 
 function RegistrationCard({
-  reg, actionId, onConfirm, onReject, onDelete, onCertificate,
+  reg, actionId, onConfirm, onReject, onDelete, onStandaloneConfirm, onCertificate,
 }: {
   reg: Registration;
   actionId: string | null;
   onConfirm: (id: string) => void;
   onReject: (id: string) => void;
   onDelete: (id: string) => void;
+  onStandaloneConfirm: (id: string) => void;
   onCertificate: () => void;
 }) {
   const busy = actionId === reg.id;
@@ -600,10 +619,35 @@ function RegistrationCard({
         </div>
       )}
 
-      {/* Confirmed state */}
+      {/* Confirmed — linked to platform */}
       {reg.match_status === "confirmed" && reg.confirmed_at && (
         <p className="mt-2 text-[10px] text-green-600">
           ✓ Passport linked on {new Date(reg.confirmed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+        </p>
+      )}
+
+      {/* Unmatched — offer standalone confirm */}
+      {reg.match_status === "unmatched" && (
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3">
+          <p className="text-[11px] text-gray-400 leading-snug">
+            Player hasn&apos;t joined yet?{" "}
+            <span className="text-gray-500">Mark as confirmed to close this record.</span>
+          </p>
+          <button
+            onClick={() => onStandaloneConfirm(reg.id)}
+            disabled={busy}
+            className="flex flex-shrink-0 items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-40 transition-colors"
+          >
+            {busy ? <Loader2 size={11} className="animate-spin" /> : <ShieldCheck size={11} />}
+            Mark Confirmed
+          </button>
+        </div>
+      )}
+
+      {/* Standalone confirmed state */}
+      {reg.match_status === "standalone_confirmed" && reg.confirmed_at && (
+        <p className="mt-2 text-[10px] text-blue-600">
+          ✓ Confirmed by academy on {new Date(reg.confirmed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · Certificate valid
         </p>
       )}
     </div>
