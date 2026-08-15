@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star } from "lucide-react";
+import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -103,6 +103,8 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
   const [loading, setLoading]           = useState(true);
   const [notFound, setNotFound]         = useState(false);
   const [expandNarrative, setExpand]    = useState(false);
+  const [reportingPost, setReportingPost] = useState<string | null>(null);
+  const [reportedPosts, setReportedPosts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -129,6 +131,18 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
       method: prev ? "DELETE" : "POST",
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => setIsFollowing(prev));
+  };
+
+  const submitPostReport = async (postId: string, reason: string) => {
+    setReportingPost(null);
+    setReportedPosts((prev) => new Set(prev).add(postId));
+    try {
+      await fetch(`${API}/arena/posts/${postId}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reason }),
+      });
+    } catch { /* silent */ }
   };
 
   const sendConnect = async () => {
@@ -261,17 +275,47 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
             <div className="space-y-3">
               {posts.map((post) => (
                 <div key={post.id} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                  {post.post_type !== "standard" && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium mr-2"
-                      style={{ background: post.post_type === "achievement" ? "#f0fdf4" : "#fffbeb", color: post.post_type === "achievement" ? GRS_GREEN : GOLD }}>
-                      {post.post_type}
-                    </span>
-                  )}
-                  <p className="text-sm text-gray-700 mt-1 line-clamp-2">{post.body}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                    <span className="flex items-center gap-1"><Heart size={11} />{post.like_count}</span>
-                    <span className="flex items-center gap-1"><MessageSquare size={11} />{post.comment_count}</span>
-                    <span>{timeAgo(post.created_at)}</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      {post.post_type !== "standard" && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium mr-2"
+                          style={{ background: post.post_type === "achievement" ? "#f0fdf4" : "#fffbeb", color: post.post_type === "achievement" ? GRS_GREEN : GOLD }}>
+                          {post.post_type}
+                        </span>
+                      )}
+                      <p className="text-sm text-gray-700 mt-1 line-clamp-2">{post.body}</p>
+                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                        <span className="flex items-center gap-1"><Heart size={11} />{post.like_count}</span>
+                        <span className="flex items-center gap-1"><MessageSquare size={11} />{post.comment_count}</span>
+                        <span>{timeAgo(post.created_at)}</span>
+                      </div>
+                    </div>
+                    {!isOwnProfile && (
+                      <div className="relative flex-shrink-0">
+                        {reportedPosts.has(post.id) ? (
+                          <span className="text-xs text-gray-400">Reported</span>
+                        ) : reportingPost === post.id ? (
+                          <div className="absolute right-0 top-0 z-10 bg-white border border-gray-200 rounded-xl shadow-lg p-2 w-44">
+                            <p className="text-xs text-gray-500 mb-1.5 px-1">Report reason</p>
+                            {(["offensive", "spam", "harassment", "misinformation", "other"] as const).map((r) => (
+                              <button key={r} onClick={() => submitPostReport(post.id, r)}
+                                className="w-full text-left text-xs px-2 py-1.5 rounded-lg hover:bg-gray-50 text-gray-700 capitalize">
+                                {r}
+                              </button>
+                            ))}
+                            <button onClick={() => setReportingPost(null)}
+                              className="w-full text-left text-xs px-2 py-1.5 rounded-lg hover:bg-gray-50 text-gray-400 mt-1">
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setReportingPost(post.id)}
+                            className="p-1 rounded-full hover:bg-gray-100 text-gray-300 hover:text-gray-500 transition-colors">
+                            <Flag size={12} />
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
