@@ -83,6 +83,48 @@ function extractJSON(text: string): MatchAnalysis | null {
   }
 }
 
+// ── Merge helpers ─────────────────────────────────────────────────────────────
+
+function mergePlayerTracking(players: PlayerTrackingResult[]): PlayerTrackingResult[] {
+  const byJersey = new Map<string, PlayerTrackingResult>();
+  for (const p of players) {
+    const key = p.jersey || p.name;
+    if (!key) continue;
+    const existing = byJersey.get(key);
+    if (!existing) {
+      byJersey.set(key, { ...p, key_moments: [...(p.key_moments ?? [])] });
+    } else {
+      existing.key_moments = [...existing.key_moments, ...(p.key_moments ?? [])];
+      existing.rating = Math.round((existing.rating + p.rating) / 2);
+    }
+  }
+  return [...byJersey.values()];
+}
+
+function mergeSegments(segments: MatchAnalysis[]): MatchAnalysis {
+  if (segments.length === 1) return segments[0];
+  const last = segments[segments.length - 1];
+  return {
+    formation_home:          segments[0].formation_home,
+    formation_away:          segments[0].formation_away,
+    possession_home:         Math.round(segments.reduce((s, r) => s + (r.possession_home ?? 50), 0) / segments.length),
+    possession_away:         Math.round(segments.reduce((s, r) => s + (r.possession_away ?? 50), 0) / segments.length),
+    shots_home:              segments.reduce((s, r) => s + (r.shots_home ?? 0), 0),
+    shots_away:              segments.reduce((s, r) => s + (r.shots_away ?? 0), 0),
+    shots_on_target_home:    segments.reduce((s, r) => s + (r.shots_on_target_home ?? 0), 0),
+    shots_on_target_away:    segments.reduce((s, r) => s + (r.shots_on_target_away ?? 0), 0),
+    fouls_detected:          segments.reduce((s, r) => s + (r.fouls_detected ?? 0), 0),
+    key_events:              segments.flatMap((r) => r.key_events ?? []),
+    tactical_patterns:       [...new Set(segments.flatMap((r) => r.tactical_patterns ?? []))],
+    defensive_issues:        [...new Set(segments.flatMap((r) => r.defensive_issues ?? []))],
+    attacking_strengths:     [...new Set(segments.flatMap((r) => r.attacking_strengths ?? []))],
+    key_coaching_points:     [...new Set(segments.flatMap((r) => r.key_coaching_points ?? []))],
+    man_of_match_candidate:  last.man_of_match_candidate,
+    halftime_recommendation: last.halftime_recommendation,
+    turnover_moments:        segments.flatMap((r) => r.turnover_moments ?? []).slice(0, 3),
+    player_tracking:         mergePlayerTracking(segments.flatMap((r) => r.player_tracking ?? [])),
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -188,7 +230,7 @@ Be specific and practical. Reference what you actually see — jersey colours, p
         googleKey,
         [
           { text: drillPrompt },
-          { file_data: { mime_type: mimeType, file_uri: fileUri }, videoMetadata: { fps: 0.5, endOffset: { seconds: 3600 } } },
+          { file_data: { mime_type: mimeType, file_uri: fileUri }, videoMetadata: { endOffset: { seconds: 3600 } } },
           { text: "Now provide your complete JSON analysis of this training drill video." },
         ],
         { temperature: 0.2, maxOutputTokens: 3000 }
@@ -287,31 +329,56 @@ Be specific and professional. Base everything on what you observe in the video.
 TACTICS CATALOG — match turnover patterns to these principles by ID:
 ${JSON.stringify(TACTICS_CATALOG)}${playerTrackingPrompt}`;
 
-    // videoMetadata.endOffset caps the segment Gemini processes to 60 minutes max.
-    // At 1 fps that is 60×60×258 = 932,400 tokens — safely under the 1,048,576 limit.
-    // fps:0.5 is included as an additional hint; if Gemini honours it the count halves.
-    const videoFilePart = {
-      file_data:     { mime_type: mimeType, file_uri: fileUri },
-      videoMetadata: { fps: 0.5, endOffset: { seconds: 3600 } },
-    };
+    // ── Server-side segmentation: 3 × 15-minute sequential calls ────────────
+    // Gemini processes video at 1 fps by default. Each 15-min segment = 900 frames × 258
+    // tokens ≈ 234K tokens — 4.5× headroom under the 1,048,576 token limit.
+    // Only startOffset/endOffset are valid videoMetadata fields in the Gemini REST API.
+    // The fps field is NOT part of the REST API schema and is silently ignored by Gemini.
+    const SEGMENTS: Array<{ startSeconds: number; endSeconds: number; label: string; offsetMins: number }> = [
+      { startSeconds: 0,    endSeconds: 900,  label: "minutes 0-15",  offsetMins: 0  },
+      { startSeconds: 900,  endSeconds: 1800, label: "minutes 15-30", offsetMins: 15 },
+      { startSeconds: 1800, endSeconds: 2700, label: "minutes 30-45", offsetMins: 30 },
+    ];
 
-    const geminiText = await callGemini(
-      googleKey,
-      [
-        { text: systemPrompt },
-        videoFilePart,
-        { text: "Now provide your complete JSON analysis of this full match video." },
-      ],
-      { temperature: 0.2, maxOutputTokens: 4096 }
-    );
-    const analysis = extractJSON(geminiText);
+    const segmentResults: (MatchAnalysis | null)[] = [];
 
-    if (!analysis) {
+    for (const seg of SEGMENTS) {
+      const timeNote = seg.offsetMins > 0
+        ? `\n\nANALYSIS WINDOW: You are viewing ${seg.label} of the match. Add ${seg.offsetMins} minutes to all timestamps you observe — e.g. if you see 3:00 in this clip, report it as "${seg.offsetMins + 3}:00".`
+        : `\n\nANALYSIS WINDOW: You are viewing the opening ${seg.label} of the match. Report timestamps exactly as you observe them.`;
+
+      try {
+        const segText = await callGemini(
+          googleKey,
+          [
+            { text: systemPrompt + timeNote },
+            {
+              file_data:     { mime_type: mimeType, file_uri: fileUri },
+              videoMetadata: {
+                startOffset: { seconds: seg.startSeconds },
+                endOffset:   { seconds: seg.endSeconds },
+              },
+            },
+            { text: `Provide your complete JSON analysis of the ${seg.label} segment.` },
+          ],
+          { temperature: 0.2, maxOutputTokens: 4096 }
+        );
+        segmentResults.push(extractJSON(segText));
+      } catch {
+        segmentResults.push(null);
+      }
+    }
+
+    const validResults = segmentResults.filter((r): r is MatchAnalysis => r !== null);
+
+    if (validResults.length === 0) {
       return Response.json(
-        { error: "Gemini returned unreadable analysis", raw: geminiText.slice(0, 500) },
+        { error: "Gemini could not analyse any segment of this video. The file may still be processing — wait 30 seconds and try again." },
         { status: 502 }
       );
     }
+
+    const analysis = mergeSegments(validResults);
 
     // ── Call Gemini for tactical narrative ────────────────────────────────────────
     let narrative = "";
