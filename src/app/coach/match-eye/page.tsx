@@ -80,7 +80,7 @@ interface HalfUploadState {
   error: string;
 }
 
-type PageStage = "setup" | "confirm" | "analysing" | "results" | "error";
+type PageStage = "setup" | "trim" | "confirm" | "analysing" | "results" | "error";
 
 const SPORTS = ["Football", "Rugby", "Netball", "Basketball", "Cricket", "Hockey"];
 
@@ -152,6 +152,27 @@ function formatAudioTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// ── Trim helpers ───────────────────────────────────────────────────────────────
+
+function parseMMSS(value: string): number {
+  const parts = value.trim().split(":").map(Number);
+  if (parts.length === 2) return (parts[0] || 0) * 60 + (parts[1] || 0);
+  return Number(parts[0]) || 0;
+}
+
+function secondsToMMSS(s: number): string {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+function secondsToFFmpegTime(s: number): string {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = Math.floor(s % 60);
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function MatchEyePage() {
@@ -202,8 +223,9 @@ export default function MatchEyePage() {
   const [secondTracking, setSecondTracking] = useState<VideoMeasurement | null>(null);
 
   // File inputs
-  const firstRef  = useRef<HTMLInputElement>(null);
-  const secondRef = useRef<HTMLInputElement>(null);
+  const firstRef    = useRef<HTMLInputElement>(null);
+  const secondRef   = useRef<HTMLInputElement>(null);
+  const trimVideoRef = useRef<HTMLVideoElement>(null);
 
   // Commentary tab state
   const [cmtPhase,     setCmtPhase]     = useState<"idle" | "uploading" | "analysing" | "done" | "error">("idle");
@@ -223,9 +245,17 @@ export default function MatchEyePage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
 
-  // ── Pre-upload advisory check ────────────────────────────────────────────────
+  // Trim state
+  const [trimStart,         setTrimStart]         = useState("0:00");
+  const [trimEnd,           setTrimEnd]           = useState("");
+  const [trimming,          setTrimming]          = useState(false);
+  const [trimProgress,      setTrimProgress]      = useState("");
+  const [videoPreviewUrl,   setVideoPreviewUrl]   = useState("");
+  const [trimVideoDuration, setTrimVideoDuration] = useState(0);
 
-  const confirmHalf = useCallback((file: File, which: "first" | "second") => {
+  // ── Pre-upload advisory check (called after trim, or "use full video") ────────
+
+  const proceedToAdvisory = useCallback((file: File, which: "first" | "second") => {
     const adv = getUploadAdvisory(file);
     if (adv.limitError) { setGlobalError(adv.limitError); return; }
     setPendingFile(file);
@@ -233,6 +263,84 @@ export default function MatchEyePage() {
     setAdvisory(adv);
     setPageStage("confirm");
   }, []);
+
+  // ── Show trim dialog first, then advisory ────────────────────────────────────
+
+  const confirmHalf = useCallback((file: File, which: "first" | "second") => {
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    const url = URL.createObjectURL(file);
+    setVideoPreviewUrl(url);
+    setPendingFile(file);
+    setPendingHalf(which);
+    setTrimStart("0:00");
+    setTrimEnd("");
+    setTrimVideoDuration(0);
+    setPageStage("trim");
+  }, [videoPreviewUrl]);
+
+  // ── Trim with FFmpeg.wasm then proceed ───────────────────────────────────────
+
+  const handleTrim = useCallback(async () => {
+    if (!pendingFile || !pendingHalf) return;
+
+    const startSec = parseMMSS(trimStart);
+    const endSec   = parseMMSS(trimEnd) || trimVideoDuration;
+
+    if (endSec <= startSec) {
+      setGlobalError("End time must be after start time.");
+      return;
+    }
+
+    setTrimming(true);
+    setTrimProgress("Loading video trimmer...");
+
+    try {
+      const { FFmpeg }              = await import("@ffmpeg/ffmpeg");
+      const { fetchFile, toBlobURL } = await import("@ffmpeg/util");
+
+      const ffmpeg = new FFmpeg();
+      const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+
+      setTrimProgress("Downloading trim engine (~30 MB, first use only)...");
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`,   "text/javascript"),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+      });
+
+      setTrimProgress("Trimming...");
+      const ext    = pendingFile.name.split(".").pop() || "mp4";
+      const inName = `input.${ext}`;
+      const outName = `trimmed.${ext}`;
+
+      await ffmpeg.writeFile(inName, await fetchFile(pendingFile));
+      await ffmpeg.exec([
+        "-ss", secondsToFFmpegTime(startSec),
+        "-to", secondsToFFmpegTime(endSec),
+        "-i",  inName,
+        "-c",  "copy",
+        outName,
+      ]);
+
+      const data = await ffmpeg.readFile(outName);
+      const blob = new Blob([(data as Uint8Array).buffer], { type: pendingFile.type || "video/mp4" });
+      const trimmedFile = new File([blob], `trimmed_${pendingFile.name}`, { type: pendingFile.type || "video/mp4" });
+
+      await ffmpeg.deleteFile(inName).catch(() => undefined);
+      await ffmpeg.deleteFile(outName).catch(() => undefined);
+
+      // Cleanup preview
+      URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl("");
+      setTrimming(false);
+      setTrimProgress("");
+
+      proceedToAdvisory(trimmedFile, pendingHalf);
+    } catch (err) {
+      setTrimming(false);
+      setTrimProgress("");
+      setGlobalError(err instanceof Error ? err.message : "Trim failed. Use full video instead.");
+    }
+  }, [pendingFile, pendingHalf, trimStart, trimEnd, trimVideoDuration, videoPreviewUrl, proceedToAdvisory]);
 
   // ── Upload one half directly to Gemini ──────────────────────────────────────
 
@@ -470,6 +578,13 @@ export default function MatchEyePage() {
     setPendingFile(null);
     setPendingHalf(null);
     setAdvisory(null);
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    setVideoPreviewUrl("");
+    setTrimStart("0:00");
+    setTrimEnd("");
+    setTrimVideoDuration(0);
+    setTrimming(false);
+    setTrimProgress("");
   };
 
   // ── Sub-components ───────────────────────────────────────────────────────────
@@ -1624,6 +1739,121 @@ export default function MatchEyePage() {
               </button>
             )}
           </>
+        )}
+
+        {/* ── TRIM VIDEO ──────────────────────────────────────────────────────── */}
+        {pageStage === "trim" && pendingFile && pendingHalf && (
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "24px", maxWidth: 520, margin: "0 auto" }}>
+            <div style={{ fontWeight: 800, fontSize: 17, color: "#1a1a1a", marginBottom: 4 }}>Trim Video (Optional)</div>
+            <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+              Cut out warm-up, injuries, or dead time before uploading. Trim is instant — no re-encoding.
+            </div>
+
+            {/* Video preview */}
+            <video
+              ref={trimVideoRef}
+              src={videoPreviewUrl}
+              controls
+              playsInline
+              muted
+              onLoadedMetadata={() => {
+                const dur = Math.floor(trimVideoRef.current?.duration ?? 0);
+                setTrimVideoDuration(dur);
+                setTrimEnd((prev) => prev || secondsToMMSS(dur));
+              }}
+              style={{ width: "100%", borderRadius: 10, marginBottom: 12, background: "#000", maxHeight: 260, display: "block" }}
+            />
+
+            {trimVideoDuration > 0 && (
+              <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 14, textAlign: "center" }}>
+                Full duration: {secondsToMMSS(trimVideoDuration)}
+              </div>
+            )}
+
+            {/* Start / End inputs */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 6 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Start Time</label>
+                <input
+                  type="text"
+                  value={trimStart}
+                  onChange={(e) => setTrimStart(e.target.value)}
+                  placeholder="0:00"
+                  disabled={trimming}
+                  style={{ width: "100%", border: "1.5px solid #d1d5db", borderRadius: 8, padding: "8px 12px", fontSize: 14, boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>End Time</label>
+                <input
+                  type="text"
+                  value={trimEnd}
+                  onChange={(e) => setTrimEnd(e.target.value)}
+                  placeholder={trimVideoDuration ? secondsToMMSS(trimVideoDuration) : "45:00"}
+                  disabled={trimming}
+                  style={{ width: "100%", border: "1.5px solid #d1d5db", borderRadius: 8, padding: "8px 12px", fontSize: 14, boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 16 }}>
+              Format: M:SS — e.g. 2:30 = 2 min 30 sec
+            </div>
+
+            {trimProgress && (
+              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#15803d" }}>
+                {trimProgress}
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                onClick={handleTrim}
+                disabled={trimming}
+                style={{
+                  padding: "12px 0", borderRadius: 8, border: "none",
+                  background: trimming ? "#9ca3af" : "#1a5c2a",
+                  color: "#fff", fontWeight: 700, fontSize: 14,
+                  cursor: trimming ? "not-allowed" : "pointer",
+                }}
+              >
+                {trimming ? (trimProgress || "Trimming...") : "✂ Trim & Continue"}
+              </button>
+
+              <button
+                disabled={trimming}
+                onClick={() => {
+                  URL.revokeObjectURL(videoPreviewUrl);
+                  setVideoPreviewUrl("");
+                  proceedToAdvisory(pendingFile!, pendingHalf!);
+                }}
+                style={{
+                  padding: "11px 0", borderRadius: 8, border: "1px solid #d1d5db",
+                  background: "#fff", fontWeight: 600, fontSize: 14, color: "#374151",
+                  cursor: trimming ? "not-allowed" : "pointer", opacity: trimming ? 0.5 : 1,
+                }}
+              >
+                Use Full Video — Skip Trimming
+              </button>
+
+              <button
+                disabled={trimming}
+                onClick={() => {
+                  URL.revokeObjectURL(videoPreviewUrl);
+                  setVideoPreviewUrl("");
+                  setPendingFile(null);
+                  setPendingHalf(null);
+                  setPageStage("setup");
+                }}
+                style={{
+                  padding: "10px 0", borderRadius: 8, border: "none",
+                  background: "transparent", fontWeight: 500, fontSize: 13, color: "#9ca3af",
+                  cursor: trimming ? "not-allowed" : "pointer",
+                }}
+              >
+                Cancel — Choose a Different File
+              </button>
+            </div>
+          </div>
         )}
 
         {/* ── CONFIRM UPLOAD ──────────────────────────────────────────────────── */}
