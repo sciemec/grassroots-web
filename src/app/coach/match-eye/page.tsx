@@ -414,6 +414,7 @@ export default function MatchEyePage() {
       setResult(await res.json() as HalfResult);
     } catch (err) {
       setGlobalError(err instanceof Error ? err.message : `${label} analysis failed. Please try again.`);
+      setPageStage("error");
     } finally {
       setAnalysing(false);
     }

@@ -345,7 +345,14 @@ Write as a UEFA A-licence coach. Be specific, direct, and actionable. Reference 
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     // Gemini token-limit error — video segment still too long (endOffset may not be recognised)
-    if (message.includes("input token count") || message.includes("1048576")) {
+    if (
+      message.includes("input token count") ||
+      message.includes("1048576") ||
+      message.includes("token limit") ||
+      message.includes("context limit") ||
+      message.includes("too long for model") ||
+      message.includes("exceeds the maximum")
+    ) {
       return Response.json(
         { error: "Video is too long. Upload each half separately — first half in the First Half slot, second half in the Second Half slot (each must be under 60 minutes)." },
         { status: 422 }
