@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Upload, CheckCircle2, AlertTriangle, Eye,
   BookOpen, Clock, Target, Shield, Zap, Users, Download, GraduationCap, ShieldAlert,
-  Play, Pause, Mic,
+  Play, Pause, Mic, Scissors, X,
 } from "lucide-react";
 import { FORMATION_LIBRARY, TACTICAL_PRINCIPLES, type FormationDetail, type TacticalPrinciple } from "@/lib/thuto-tactics-knowledge";
 import { downloadCoachMatchEyePdf, downloadCoachDrillPdf, downloadCoachHalfPdf } from "@/lib/generate-analysis-pdf";
@@ -1743,116 +1743,167 @@ export default function MatchEyePage() {
 
         {/* ── TRIM VIDEO ──────────────────────────────────────────────────────── */}
         {pageStage === "trim" && pendingFile && pendingHalf && (
-          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "24px", maxWidth: 520, margin: "0 auto" }}>
-            <div style={{ fontWeight: 800, fontSize: 17, color: "#1a1a1a", marginBottom: 4 }}>Trim Video (Optional)</div>
-            <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
-              Cut out warm-up, injuries, or dead time before uploading. Trim is instant — no re-encoding.
+          <div style={{ maxWidth: 540, margin: "0 auto" }}>
+            <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #e5e7eb", overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
+
+              {/* Header */}
+              <div style={{ background: "linear-gradient(135deg, #1a5c2a 0%, #2d7a40 100%)", padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Scissors size={20} color="#fff" />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>Trim Video</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", marginTop: 2 }}>Cut out warm-up, injuries or dead time — no re-encoding</div>
+                </div>
+              </div>
+
+              <div style={{ padding: "20px 24px" }}>
+
+                {/* File info pill */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px", marginBottom: 16 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 7, background: "#1a5c2a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Play size={12} color="#fff" fill="#fff" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pendingFile.name}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>
+                      {(pendingFile.size / (1024 * 1024)).toFixed(1)} MB &middot; {pendingHalf === "first" ? "First Half" : "Second Half"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Video preview */}
+                <div style={{ borderRadius: 10, overflow: "hidden", background: "#000", marginBottom: 12 }}>
+                  <video
+                    ref={trimVideoRef}
+                    src={videoPreviewUrl}
+                    controls
+                    playsInline
+                    muted
+                    onLoadedMetadata={() => {
+                      const dur = Math.floor(trimVideoRef.current?.duration ?? 0);
+                      setTrimVideoDuration(dur);
+                      setTrimEnd((prev) => prev || secondsToMMSS(dur));
+                    }}
+                    style={{ width: "100%", display: "block", maxHeight: 240 }}
+                  />
+                </div>
+
+                {/* Duration badge */}
+                {trimVideoDuration > 0 && (
+                  <div style={{ textAlign: "center", marginBottom: 18 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "#15803d", fontWeight: 600 }}>
+                      <Clock size={11} /> Full duration: {secondsToMMSS(trimVideoDuration)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Time inputs */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 32px 1fr", gap: 8, alignItems: "end", marginBottom: 6 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>Start</label>
+                    <input
+                      type="text"
+                      value={trimStart}
+                      onChange={(e) => setTrimStart(e.target.value)}
+                      placeholder="0:00"
+                      disabled={trimming}
+                      style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 8, padding: "10px 12px", fontSize: 16, fontWeight: 700, color: "#111", textAlign: "center", boxSizing: "border-box" as const, fontFamily: "monospace" }}
+                    />
+                  </div>
+                  <div style={{ textAlign: "center", paddingBottom: 10, color: "#d1d5db", fontSize: 16 }}>→</div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" as const, letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>End</label>
+                    <input
+                      type="text"
+                      value={trimEnd}
+                      onChange={(e) => setTrimEnd(e.target.value)}
+                      placeholder={trimVideoDuration ? secondsToMMSS(trimVideoDuration) : "45:00"}
+                      disabled={trimming}
+                      style={{ width: "100%", border: "2px solid #e5e7eb", borderRadius: 8, padding: "10px 12px", fontSize: 16, fontWeight: 700, color: "#111", textAlign: "center", boxSizing: "border-box" as const, fontFamily: "monospace" }}
+                    />
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "#9ca3af", textAlign: "center", marginBottom: 20 }}>
+                  Format: M:SS &nbsp;&mdash;&nbsp; e.g. 2:30 = 2 min 30 sec
+                </div>
+
+                {/* Progress bar */}
+                {trimProgress && (
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#15803d", marginBottom: 8 }}>{trimProgress}</div>
+                    <div style={{ height: 4, background: "#e5e7eb", borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{
+                        height: "100%", width: "40%", borderRadius: 4,
+                        background: "linear-gradient(90deg, #1a5c2a, #22c55e)",
+                        animation: "grs-indeterminate 1.4s ease-in-out infinite",
+                      }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Buttons */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button
+                    onClick={handleTrim}
+                    disabled={trimming}
+                    style={{
+                      padding: "13px 0", borderRadius: 10, border: "none",
+                      background: trimming ? "#9ca3af" : "linear-gradient(135deg, #1a5c2a 0%, #2d7a40 100%)",
+                      color: "#fff", fontWeight: 700, fontSize: 15,
+                      cursor: trimming ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      boxShadow: trimming ? "none" : "0 2px 10px rgba(26,92,42,0.28)",
+                    }}
+                  >
+                    <Scissors size={15} />
+                    {trimming ? "Trimming…" : "Trim & Continue"}
+                  </button>
+
+                  <button
+                    disabled={trimming}
+                    onClick={() => {
+                      URL.revokeObjectURL(videoPreviewUrl);
+                      setVideoPreviewUrl("");
+                      proceedToAdvisory(pendingFile!, pendingHalf!);
+                    }}
+                    style={{
+                      padding: "12px 0", borderRadius: 10, border: "2px solid #e5e7eb",
+                      background: "#fff", fontWeight: 600, fontSize: 14, color: "#374151",
+                      cursor: trimming ? "not-allowed" : "pointer", opacity: trimming ? 0.5 : 1,
+                    }}
+                  >
+                    Use Full Video — Skip Trimming
+                  </button>
+
+                  <button
+                    disabled={trimming}
+                    onClick={() => {
+                      URL.revokeObjectURL(videoPreviewUrl);
+                      setVideoPreviewUrl("");
+                      setPendingFile(null);
+                      setPendingHalf(null);
+                      setPageStage("setup");
+                    }}
+                    style={{
+                      padding: "9px 0", borderRadius: 10, border: "none",
+                      background: "transparent", fontWeight: 500, fontSize: 13, color: "#9ca3af",
+                      cursor: trimming ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    }}
+                  >
+                    <X size={13} /> Cancel — Choose a Different File
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* Video preview */}
-            <video
-              ref={trimVideoRef}
-              src={videoPreviewUrl}
-              controls
-              playsInline
-              muted
-              onLoadedMetadata={() => {
-                const dur = Math.floor(trimVideoRef.current?.duration ?? 0);
-                setTrimVideoDuration(dur);
-                setTrimEnd((prev) => prev || secondsToMMSS(dur));
-              }}
-              style={{ width: "100%", borderRadius: 10, marginBottom: 12, background: "#000", maxHeight: 260, display: "block" }}
-            />
-
-            {trimVideoDuration > 0 && (
-              <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 14, textAlign: "center" }}>
-                Full duration: {secondsToMMSS(trimVideoDuration)}
-              </div>
-            )}
-
-            {/* Start / End inputs */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 6 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>Start Time</label>
-                <input
-                  type="text"
-                  value={trimStart}
-                  onChange={(e) => setTrimStart(e.target.value)}
-                  placeholder="0:00"
-                  disabled={trimming}
-                  style={{ width: "100%", border: "1.5px solid #d1d5db", borderRadius: 8, padding: "8px 12px", fontSize: 14, boxSizing: "border-box" }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 4 }}>End Time</label>
-                <input
-                  type="text"
-                  value={trimEnd}
-                  onChange={(e) => setTrimEnd(e.target.value)}
-                  placeholder={trimVideoDuration ? secondsToMMSS(trimVideoDuration) : "45:00"}
-                  disabled={trimming}
-                  style={{ width: "100%", border: "1.5px solid #d1d5db", borderRadius: 8, padding: "8px 12px", fontSize: 14, boxSizing: "border-box" }}
-                />
-              </div>
-            </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 16 }}>
-              Format: M:SS — e.g. 2:30 = 2 min 30 sec
-            </div>
-
-            {trimProgress && (
-              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#15803d" }}>
-                {trimProgress}
-              </div>
-            )}
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                onClick={handleTrim}
-                disabled={trimming}
-                style={{
-                  padding: "12px 0", borderRadius: 8, border: "none",
-                  background: trimming ? "#9ca3af" : "#1a5c2a",
-                  color: "#fff", fontWeight: 700, fontSize: 14,
-                  cursor: trimming ? "not-allowed" : "pointer",
-                }}
-              >
-                {trimming ? (trimProgress || "Trimming...") : "✂ Trim & Continue"}
-              </button>
-
-              <button
-                disabled={trimming}
-                onClick={() => {
-                  URL.revokeObjectURL(videoPreviewUrl);
-                  setVideoPreviewUrl("");
-                  proceedToAdvisory(pendingFile!, pendingHalf!);
-                }}
-                style={{
-                  padding: "11px 0", borderRadius: 8, border: "1px solid #d1d5db",
-                  background: "#fff", fontWeight: 600, fontSize: 14, color: "#374151",
-                  cursor: trimming ? "not-allowed" : "pointer", opacity: trimming ? 0.5 : 1,
-                }}
-              >
-                Use Full Video — Skip Trimming
-              </button>
-
-              <button
-                disabled={trimming}
-                onClick={() => {
-                  URL.revokeObjectURL(videoPreviewUrl);
-                  setVideoPreviewUrl("");
-                  setPendingFile(null);
-                  setPendingHalf(null);
-                  setPageStage("setup");
-                }}
-                style={{
-                  padding: "10px 0", borderRadius: 8, border: "none",
-                  background: "transparent", fontWeight: 500, fontSize: 13, color: "#9ca3af",
-                  cursor: trimming ? "not-allowed" : "pointer",
-                }}
-              >
-                Cancel — Choose a Different File
-              </button>
-            </div>
+            <style>{`
+              @keyframes grs-indeterminate {
+                0%   { transform: translateX(-150%); }
+                100% { transform: translateX(400%); }
+              }
+            `}</style>
           </div>
         )}
 
