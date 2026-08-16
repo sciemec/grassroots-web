@@ -270,16 +270,16 @@ export default function CoachDrillAnalysisPage() {
           }),
         });
         if (!presignRes.ok) return;
-        const { upload_url, public_url } = await presignRes.json() as { upload_url: string; public_url: string };
+        const { uploadUrl, publicUrl } = await presignRes.json() as { uploadUrl: string; publicUrl: string };
         await new Promise<void>((resolve) => {
           const r2xhr = new XMLHttpRequest();
-          r2xhr.open("PUT", upload_url);
+          r2xhr.open("PUT", uploadUrl);
           r2xhr.setRequestHeader("Content-Type", file.type);
           r2xhr.onload  = () => resolve();
           r2xhr.onerror = () => resolve();
           r2xhr.send(file);
         });
-        setR2VideoUrl(public_url);
+        setR2VideoUrl(publicUrl);
       } catch { /* best-effort — never blocks analysis */ }
     };
     uploadToR2();
