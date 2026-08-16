@@ -34,7 +34,19 @@ export async function POST(req: Request) {
       return Response.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
     }
 
-    const contentType = req.headers.get("content-type") || "video/mp4";
+    // Normalise to a Gemini-supported MIME type.
+    // Mobile browsers often send "application/octet-stream" (empty file.type fallback),
+    // "video/x-matroska" (.mkv on Chrome), or "video/mp2t" (.ts) — none of which
+    // Gemini accepts. Anything not on this allowlist is treated as video/mp4.
+    // Note: "video/3gpp" and "video/3gpp2" (.3gp — common on low-end Android) ARE
+    // supported by Gemini and are intentionally kept in the allowlist as-is.
+    const GEMINI_VIDEO_TYPES = new Set([
+      "video/mp4", "video/mpeg", "video/mpg", "video/quicktime", "video/mov",
+      "video/avi", "video/x-flv", "video/webm", "video/wmv", "video/x-ms-wmv",
+      "video/3gpp", "video/3gpp2",
+    ]);
+    const rawType     = req.headers.get("content-type") ?? "";
+    const contentType = GEMINI_VIDEO_TYPES.has(rawType) ? rawType : "video/mp4";
     const params      = new URL(req.url).searchParams;
 
     // Total file size — used when starting a new Google resumable session
