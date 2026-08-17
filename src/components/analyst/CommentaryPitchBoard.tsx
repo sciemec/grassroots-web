@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Loader2 } from "lucide-react";
 
-type Phase = "setup" | "recording" | "upload" | "analysing" | "done" | "error";
+type Phase = "setup" | "recording" | "confirm" | "upload" | "analysing" | "done" | "error";
 
 interface PlayerPosition {
   name:    string;

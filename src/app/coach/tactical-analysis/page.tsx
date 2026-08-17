@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Brain, Send, Loader2, Target } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { queryAI } from "@/lib/ai-query";
+import api from "@/lib/api";
 
 interface MatchRecord {
   id: string;
@@ -125,7 +125,6 @@ function ResponseCard({ item }: { item: TacticalResponse }) {
 }
 
 export default function TacticalAnalysisPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [matches, setMatches] = useState<MatchRecord[]>([]);
   const [responses, setResponses] = useState<TacticalResponse[]>([]);
@@ -135,16 +134,22 @@ export default function TacticalAnalysisPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user) { setMatches([]); return; } // guests allowed
-    const saved = localStorage.getItem("coach_matches");
-    if (saved) {
+    const localMatches: MatchRecord[] = (() => {
       try {
-        setMatches(JSON.parse(saved) as MatchRecord[]);
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }, [user, router]);
+        const saved = localStorage.getItem("coach_matches");
+        return saved ? (JSON.parse(saved) as MatchRecord[]) : [];
+      } catch { return []; }
+    })();
+
+    api.get("/matches")
+      .then((res) => {
+        const raw = res.data?.data ?? res.data;
+        const apiMatches: MatchRecord[] = Array.isArray(raw) ? raw : [];
+        const apiIds = new Set(apiMatches.map((m) => String(m.id)));
+        setMatches([...apiMatches, ...localMatches.filter((m) => !apiIds.has(String(m.id)))]);
+      })
+      .catch(() => setMatches(localMatches));
+  }, [user]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

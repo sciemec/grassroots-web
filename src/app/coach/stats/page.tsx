@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BarChart2 } from "lucide-react";
 import {
@@ -17,6 +16,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { PitchHeatmap, HeatmapPoint } from "@/components/analytics/pitch-heatmap";
 import { DefensiveAlerts } from "@/components/analytics/defensive-alerts";
+import api from "@/lib/api";
 
 interface MatchRecord {
   id: string;
@@ -168,21 +168,26 @@ function generateAttackZonePoints(goalsFor: number): HeatmapPoint[] {
 }
 
 export default function StatsPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [matches, setMatches] = useState<MatchRecord[]>([]);
 
   useEffect(() => {
-    if (!user) { setMatches([]); return; } // guests allowed
-    const saved = localStorage.getItem("coach_matches");
-    if (saved) {
+    const localMatches: MatchRecord[] = (() => {
       try {
-        setMatches(JSON.parse(saved) as MatchRecord[]);
-      } catch {
-        // ignore parse errors
-      }
-    }
-  }, [user, router]);
+        const saved = localStorage.getItem("coach_matches");
+        return saved ? (JSON.parse(saved) as MatchRecord[]) : [];
+      } catch { return []; }
+    })();
+
+    api.get("/matches")
+      .then((res) => {
+        const raw = res.data?.data ?? res.data;
+        const apiMatches: MatchRecord[] = Array.isArray(raw) ? raw : [];
+        const apiIds = new Set(apiMatches.map((m) => String(m.id)));
+        setMatches([...apiMatches, ...localMatches.filter((m) => !apiIds.has(String(m.id)))]);
+      })
+      .catch(() => setMatches(localMatches));
+  }, [user]);
 
 
   const goalsFor = matches.reduce((s, m) => s + m.our_score, 0);

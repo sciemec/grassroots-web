@@ -14,6 +14,7 @@ import {
   hasSeenAdjustmentThisWeek, saveAdjustmentSeen, getWeeklyReportData,
   getTodayCheckIn, hasCheckedInToday, type Goal,
 } from "@/lib/success/storage";
+import api from "@/lib/api";
 import {
   getCurrentStreak, calculateSuccessProbability,
   getDaysRemaining, weeklyRate, getWeekGrid,
@@ -191,7 +192,7 @@ function CoachGoalSetup({ onSave }: { onSave: () => void }) {
     setSaving(true);
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + days);
-    saveCoachGoal({
+    const goalPayload: Goal = {
       id:             crypto.randomUUID(),
       goalText:       goalText.trim(),
       whyText:        whyText.trim(),
@@ -200,7 +201,9 @@ function CoachGoalSetup({ onSave }: { onSave: () => void }) {
       actions:        getCoachActionsForGoal(goalText.trim()),
       reminderHour:   hour,
       reminderMinute: minute,
-    });
+    };
+    saveCoachGoal(goalPayload);
+    api.post("/coach/goal", goalPayload).catch(() => {/* localStorage is source of truth */});
     const granted = await requestNotificationPermission();
     if (granted) await scheduleDailyReminder(hour, minute);
     setSaving(false);
@@ -501,8 +504,19 @@ export default function CoachSuccessPage() {
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
-    setGoal(getCoachGoal());
+    const local = getCoachGoal();
+    setGoal(local);
     setLoaded(true);
+    // Sync from backend in background — restores goal across devices
+    api.get("/coach/goal")
+      .then((res) => {
+        const g = res.data?.data ?? res.data;
+        if (g?.id) {
+          saveCoachGoal(g as Goal);
+          setGoal(g as Goal);
+        }
+      })
+      .catch(() => {/* localStorage stays as source of truth */});
   }, []);
 
   const handleClear = () => {
@@ -510,6 +524,7 @@ export default function CoachSuccessPage() {
     setClearing(true);
     clearCoachGoal();
     setGoal(null);
+    api.delete("/coach/goal").catch(() => {});
     setClearing(false);
   };
 

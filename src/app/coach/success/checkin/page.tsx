@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, Flame, ArrowLeft, Loader2 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { type Goal } from "@/lib/success/storage";
+import api from "@/lib/api";
 
 const COACH_GOAL_KEY = "thuto_coach_goal";
 const COACH_CI_KEY   = "thuto_coach_checkins";
@@ -110,7 +111,7 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
     }
 
     const today = new Date().toISOString().split("T")[0];
-    saveCoachCheckIn({
+    const ciPayload: CoachCheckIn = {
       date:         today,
       action1:      a1,
       action2:      a2,
@@ -120,7 +121,9 @@ Write ONE short motivational line for the coach (max 15 words). End with a Shona
       mood,
       moodNote:     moodNote.trim() || undefined,
       thutoMessage: message,
-    });
+    };
+    saveCoachCheckIn(ciPayload);
+    api.post("/coach/checkin", ciPayload).catch(() => {/* localStorage is source of truth */});
 
     setThutoMsg(message ?? null);
     setSaving(false);
