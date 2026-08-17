@@ -342,8 +342,20 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
           xhr.upload.addEventListener("progress", (ev) => {
             if (ev.lengthComputable) setProgress(Math.round((ev.loaded / ev.total) * 100));
           });
-          xhr.addEventListener("load", () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject());
-          xhr.addEventListener("error", reject);
+          xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              const msg = `R2 upload failed (${xhr.status}): ${xhr.responseText}`;
+              console.error("[VideoLibrary] R2 PUT error:", msg);
+              reject(new Error(msg));
+            }
+          });
+          xhr.addEventListener("error", () => {
+            const msg = "Network error during upload — connection may have dropped";
+            console.error("[VideoLibrary] XHR network error:", msg);
+            reject(new Error(msg));
+          });
           xhr.open("PUT", uploadUrl);
           xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
           xhr.send(file);
@@ -368,8 +380,10 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
         if (fileRef.current) fileRef.current.value = "";
         setOpen(false);
       }
-    } catch {
-      setUploadError("Upload failed. Please try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed. Please try again.";
+      console.error("[VideoLibrary] Upload error:", err);
+      setUploadError(msg);
     } finally {
       setUploading(false);
       setProgress(0);
