@@ -10,6 +10,9 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import { postToArena } from "@/lib/arena-poster";
 import api from "@/lib/api";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 function round1(n: number) { return Math.round(n * 10) / 10; }
 
@@ -136,6 +139,8 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
     file: null, title: "", tag: "Skills", description: "",
     progress: 0, uploading: false, error: "", dragging: false,
   });
+  const [gateProbing, setGateProbing]   = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const set = (patch: Partial<UploadState>) =>
@@ -162,7 +167,7 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
     if (file) acceptFile(file);
   }
 
-  async function handleUpload() {
+  async function doUpload() {
     if (!state.file || !state.title.trim()) {
       set({ error: "Please add a title." });
       return;
@@ -251,6 +256,23 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         "Upload failed. Please try again.";
       set({ uploading: false, error: msg });
+    }
+  }
+
+  async function handleUpload() {
+    if (!state.file || !state.title.trim()) { set({ error: "Please add a title." }); return; }
+    setGateProbing(true);
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      if (strategy.mode === "live") {
+        void doUpload();
+      } else {
+        setGateStrategy(strategy);
+      }
+    } catch {
+      setGateProbing(false);
+      void doUpload(); // probe failed — attempt anyway
     }
   }
 
@@ -350,17 +372,33 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         </div>
       )}
 
-      <button
-        onClick={handleUpload}
-        disabled={state.uploading || !state.file}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-      >
-        {state.uploading ? (
-          <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</>
-        ) : (
-          <><Upload className="h-4 w-4" /> Upload Video</>
-        )}
-      </button>
+      {gateProbing || gateStrategy ? (
+        <div className="mt-4">
+          <UploadGate
+            strategy={gateStrategy}
+            probing={gateProbing}
+            onForceUpload={() => { setGateStrategy(null); flushQueue(); void doUpload(); }}
+            onQueue={() => {
+              setGateStrategy(null);
+              set({ error: "Connection too weak for video upload. Connect to WiFi and tap Upload again." });
+            }}
+          />
+        </div>
+      ) : (
+        <button
+          onClick={handleUpload}
+          disabled={state.uploading || !state.file}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {state.uploading ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</>
+          ) : gateProbing ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Checking connection…</>
+          ) : (
+            <><Upload className="h-4 w-4" /> Upload Video</>
+          )}
+        </button>
+      )}
     </div>
   );
 }

@@ -27,6 +27,9 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -677,6 +680,10 @@ export default function FootballSkillAnalysisPage() {
   const [practiceTicks,    setPracticeTicks]    = useState<boolean[]>([]);
   const [practiceComplete, setPracticeComplete] = useState(false);
 
+  // Connection quality gate
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
+
   // ── Refs ──
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1140,27 +1147,58 @@ export default function FootballSkillAnalysisPage() {
                       <p className="text-xs text-gray-400">{(selectedFile.size / (1024 * 1024)).toFixed(1)} MB</p>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setSelectedFile(null)}
-                      className="flex-1 rounded-xl border py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                      style={{ borderColor: "#e5e5e5" }}
-                    >
-                      Change
-                    </button>
-                    <button
-                      onClick={() => {
+                  {gateProbing || gateStrategy ? (
+                    <UploadGate
+                      strategy={gateStrategy}
+                      probing={gateProbing}
+                      onForceUpload={() => {
                         if (!selectedFile) return;
+                        setGateStrategy(null);
+                        flushQueue();
                         setScreen("uploading");
                         handleUploadAndAnalyse(selectedFile);
                       }}
-                      className="flex-[2] flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-all active:scale-95"
-                      style={{ backgroundColor: "#1a5c2a" }}
-                    >
-                      <Upload className="h-4 w-4" />
-                      Analyse with THUTO
-                    </button>
-                  </div>
+                      onQueue={() => {
+                        setGateStrategy(null);
+                        setErrorMsg("Connection too weak. Connect to WiFi and try again — your video is still selected.");
+                      }}
+                    />
+                  ) : (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setSelectedFile(null)}
+                        className="flex-1 rounded-xl border py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                        style={{ borderColor: "#e5e5e5" }}
+                      >
+                        Change
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!selectedFile) return;
+                          setGateProbing(true);
+                          try {
+                            const strategy = await getUploadStrategy();
+                            setGateProbing(false);
+                            if (strategy.mode === "live") {
+                              setScreen("uploading");
+                              handleUploadAndAnalyse(selectedFile);
+                            } else {
+                              setGateStrategy(strategy);
+                            }
+                          } catch {
+                            setGateProbing(false);
+                            setScreen("uploading");
+                            handleUploadAndAnalyse(selectedFile);
+                          }
+                        }}
+                        className="flex-[2] flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-all active:scale-95"
+                        style={{ backgroundColor: "#1a5c2a" }}
+                      >
+                        {gateProbing ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Upload className="h-4 w-4" />}
+                        {gateProbing ? "Checking…" : "Analyse with THUTO"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* No file yet — big upload button */

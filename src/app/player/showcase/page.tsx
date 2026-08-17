@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Camera, Plus, Eye, Star, ChevronRight, Upload,
   Loader2, Video, X, ToggleLeft, ToggleRight,
@@ -11,6 +11,9 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { postToArena } from "@/lib/arena-poster";
 import { extractFrames } from "@/lib/extract-frames";
 import api from "@/lib/api";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -117,6 +120,8 @@ export default function ShowcasePage() {
   const [progress, setProgress]         = useState(0);
   const [errorMsg, setErrorMsg]         = useState("");
   const [shareClipId, setShareClipId]   = useState<string | null>(null);
+  const [gateProbing, setGateProbing]   = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,6 +163,8 @@ export default function ShowcasePage() {
     setPhase("idle");
     setProgress(0);
     setErrorMsg("");
+    setGateProbing(false);
+    setGateStrategy(null);
   };
 
   // ── File validation ────────────────────────────────────────────────────────
@@ -194,14 +201,14 @@ export default function ShowcasePage() {
 
   // ── Main analysis flow ─────────────────────────────────────────────────────
 
-  const handleAnalyse = async () => {
-    if (!selectedSkill || !videoFile || !user) return;
+  const doAnalyse = useCallback(async (file: File) => {
+    if (!selectedSkill || !user) return;
 
     try {
       // 1 — Extract frames
       setPhase("extracting");
       setProgress(0);
-      const frames = await extractFrames(videoFile, (pct) =>
+      const frames = await extractFrames(file, (pct) =>
         setProgress(Math.round(pct * 0.4)),
       );
 
@@ -214,8 +221,8 @@ export default function ShowcasePage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            filename:    videoFile.name,
-            contentType: videoFile.type,
+            filename:    file.name,
+            contentType: file.type,
             source:      "showcase",
           }),
         });
@@ -223,8 +230,8 @@ export default function ShowcasePage() {
           const { uploadUrl, publicUrl } = await presignRes.json();
           await fetch(uploadUrl, {
             method:  "PUT",
-            body:    videoFile,
-            headers: { "Content-Type": videoFile.type },
+            body:    file,
+            headers: { "Content-Type": file.type },
           });
           videoUrl = publicUrl;
         }
@@ -246,8 +253,8 @@ export default function ShowcasePage() {
         const initRes = await fetch("/api/match-eye/upload", {
           method:  "POST",
           headers: {
-            "x-upload-content-type":   videoFile.type,
-            "x-upload-content-length": String(videoFile.size),
+            "x-upload-content-type":   file.type,
+            "x-upload-content-length": String(file.size),
           },
         });
 
@@ -259,7 +266,7 @@ export default function ShowcasePage() {
             (resolve, reject) => {
               const xhr = new XMLHttpRequest();
               xhr.open("PUT", uploadUrl);
-              xhr.setRequestHeader("Content-Type", videoFile.type);
+              xhr.setRequestHeader("Content-Type", file.type);
               xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable)
                   setProgress(60 + Math.round((e.loaded / e.total) * 18));
@@ -273,7 +280,7 @@ export default function ShowcasePage() {
                 }
               };
               xhr.onerror = () => reject(new Error("network"));
-              xhr.send(videoFile);
+              xhr.send(file);
             },
           );
 
@@ -402,7 +409,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
             scout_note:       analysis.scout_note,
             development_flag: analysis.development_flag,
           },
-          size_bytes: videoFile?.size,
+          size_bytes: file.size,
         });
         newClip.id = saved.data?.data?.id ?? saved.data?.id ?? newClip.id;
       } catch { /* backend not ready — localStorage only */ }
@@ -425,7 +432,26 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
       );
       setPhase("error");
     }
-  };
+  }, [selectedSkill, user, clips]);
+
+  // ── Gate wrapper ───────────────────────────────────────────────────────────
+
+  const handleAnalyse = useCallback(async () => {
+    if (!selectedSkill || !videoFile) return;
+    setGateProbing(true);
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      if (strategy.mode === "live") {
+        void doAnalyse(videoFile);
+      } else {
+        setGateStrategy(strategy);
+      }
+    } catch {
+      setGateProbing(false);
+      void doAnalyse(videoFile); // probe failed — attempt anyway
+    }
+  }, [selectedSkill, videoFile, doAnalyse]);
 
   // ── Clip actions ───────────────────────────────────────────────────────────
 
@@ -651,13 +677,64 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                     <p className="mt-2 text-xs text-red-400">{errorMsg}</p>
                   )}
 
-                  <button
-                    onClick={handleAnalyse}
-                    disabled={!selectedSkill || !videoFile}
-                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-3 text-sm font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ChevronRight className="h-4 w-4" /> Analyse with AI
-                  </button>
+                  {gateProbing || gateStrategy ? (
+                    <div className="mt-5">
+                      <UploadGate
+                        strategy={gateStrategy}
+                        probing={gateProbing}
+                        onForceUpload={() => {
+                          const f = videoFile!;
+                          setGateStrategy(null);
+                          flushQueue();
+                          void doAnalyse(f);
+                        }}
+                        onQueue={() => {
+                          const f = videoFile!;
+                          setGateStrategy(null);
+                          setPhase("uploading");
+                          enqueueUpload(f, setProgress)
+                            .then(async ({ fileUri, fileName }) => {
+                              setPhase("analysing");
+                              const token = typeof window !== "undefined"
+                                ? localStorage.getItem("auth_token") ?? ""
+                                : "";
+                              const mimeType = f.type || "video/mp4";
+                              let analysis: AIAnalysis = { ...FALLBACK };
+                              try {
+                                const res = await fetch("/api/analyse-from-uri", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ fileUri, fileName, mimeType, sport: "football", drill: selectedSkill, position: "player", token }),
+                                });
+                                if (res.ok) {
+                                  const { feedback } = await res.json() as { feedback?: string };
+                                  const m = feedback?.match(/\{[\s\S]*\}/);
+                                  if (m) {
+                                    const p = JSON.parse(m[0]) as Partial<AIAnalysis>;
+                                    analysis = { skill_rating: Number(p.skill_rating) || FALLBACK.skill_rating, top_strength: p.top_strength || FALLBACK.top_strength, position_fit: p.position_fit || FALLBACK.position_fit, scout_note: p.scout_note || FALLBACK.scout_note, development_flag: p.development_flag || FALLBACK.development_flag };
+                                  }
+                                }
+                              } catch { /* use fallback */ }
+                              const newClip: ShowcaseClip = { id: Date.now().toString(), skill_type: selectedSkill!, video_url: "", ai_rating: analysis.skill_rating, top_strength: analysis.top_strength, position_fit: analysis.position_fit, scout_note: analysis.scout_note, development_flag: analysis.development_flag, open_for_scouting: true, view_count: 0, created_at: new Date().toISOString() };
+                              try { const saved = await api.post("/media", { r2_key: `local/showcase/${Date.now()}`, r2_url: fileUri, media_type: "video", title: `${selectedSkill} showcase`, context: "showcase", visibility: "scout_visible", metadata: { skill_type: selectedSkill, ...analysis } }); newClip.id = saved.data?.data?.id ?? saved.data?.id ?? newClip.id; } catch { /* ok */ }
+                              const updated = [newClip, ...clips];
+                              setClips(updated);
+                              saveLocalClips(updated);
+                              setPhase("done");
+                            })
+                            .catch(() => { setErrorMsg("Upload failed. Please try again."); setPhase("error"); });
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleAnalyse}
+                      disabled={!selectedSkill || !videoFile}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#f0b429] py-3 text-sm font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {gateProbing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4" />} Analyse with AI
+                    </button>
+                  )}
                 </>
               )}
 

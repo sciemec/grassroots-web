@@ -6,6 +6,9 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Film, Upload, X, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useSubscription } from "@/lib/use-subscription";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -62,6 +65,11 @@ export default function ScholarshipReelPage() {
   const [toast,        setToast]        = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Upload gate state
+  const [pendingFile,  setPendingFile]  = useState<File | null>(null);
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
+
   // Auth guard
   useEffect(() => {
     if (!hasHydrated) return;
@@ -90,8 +98,8 @@ export default function ScholarshipReelPage() {
     setTimeout(() => setToast(""), 3000);
   };
 
-  // Upload file to R2 via presigned URL
-  const handleFileUpload = async (file: File) => {
+  // Upload file to R2 via presigned URL (real upload — called after gate clears)
+  const doFileUpload = async (file: File) => {
     setUploading(true);
     setUploadPct(0);
     setFormError("");
@@ -123,6 +131,26 @@ export default function ScholarshipReelPage() {
       setFormError(err.message ?? "Upload failed");
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Gate-checking entry point — called when user picks a file
+  const handleFileUpload = async (file: File) => {
+    setGateProbing(true);
+    setPendingFile(file);
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      if (strategy.mode === "live") {
+        setPendingFile(null);
+        void doFileUpload(file);
+      } else {
+        setGateStrategy(strategy);
+      }
+    } catch {
+      setGateProbing(false);
+      setPendingFile(null);
+      void doFileUpload(file);
     }
   };
 
@@ -318,7 +346,23 @@ export default function ScholarshipReelPage() {
                 <div>
                   <input ref={fileRef} type="file" accept="video/*" style={{ display: "none" }}
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }} />
-                  {!videoUrl ? (
+                  {gateProbing || gateStrategy ? (
+                    <UploadGate
+                      strategy={gateStrategy}
+                      probing={gateProbing}
+                      onForceUpload={() => {
+                        const f = pendingFile;
+                        setGateStrategy(null);
+                        setPendingFile(null);
+                        if (f) { flushQueue(); void doFileUpload(f); }
+                      }}
+                      onQueue={() => {
+                        setGateStrategy(null);
+                        setPendingFile(null);
+                        showToast("Connection too weak — connect to WiFi and tap Upload again");
+                      }}
+                    />
+                  ) : !videoUrl ? (
                     <button
                       onClick={() => fileRef.current?.click()}
                       disabled={uploading}
