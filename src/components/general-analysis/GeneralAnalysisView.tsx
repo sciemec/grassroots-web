@@ -9,6 +9,9 @@ import {
 import { uploadVideoInChunksParallel } from '@/lib/upload-chunks';
 import { useAuthStore } from '@/lib/auth-store';
 import { downloadGeneralAnalysisPdf } from '@/lib/generate-analysis-pdf';
+import { getUploadStrategy, type UploadStrategyResult } from '@/lib/use-upload-strategy';
+import { enqueueUpload, flushQueue } from '@/lib/upload-queue';
+import UploadGate from '@/components/upload/UploadGate';
 
 interface GeneralAnalysisParticipants {
   estimated_count: number;
@@ -87,6 +90,8 @@ export default function GeneralAnalysisView({ backHref }: Props) {
   const [analysis, setAnalysis] = useState<GeneralAnalysis | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [freeTrial, setFreeTrial] = useState(false);
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -95,14 +100,13 @@ export default function GeneralAnalysisView({ backHref }: Props) {
     if (f) setFile(f);
   }, []);
 
-  const handleAnalyse = useCallback(async () => {
-    if (!file) return;
+  const doAnalyse = useCallback(async (fileToUpload: File) => {
     setStatus('uploading');
     setProgress(0);
     setErrorMsg('');
 
     try {
-      const uploaded = await uploadVideoInChunksParallel(file, (pct) => setProgress(pct));
+      const uploaded = await uploadVideoInChunksParallel(fileToUpload, (pct) => setProgress(pct));
       setStatus('analysing');
 
       const res = await fetch('/api/analyse-general', {
@@ -141,7 +145,24 @@ export default function GeneralAnalysisView({ backHref }: Props) {
       setErrorMsg(err instanceof Error ? err.message : 'Upload failed. Check your connection.');
       setStatus('error');
     }
-  }, [file, userNote, token]);
+  }, [userNote, token]);
+
+  const handleAnalyseClick = useCallback(async () => {
+    if (!file) return;
+    setGateProbing(true);
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      if (strategy.mode === 'live') {
+        void doAnalyse(file);
+      } else {
+        setGateStrategy(strategy);
+      }
+    } catch {
+      setGateProbing(false);
+      void doAnalyse(file);
+    }
+  }, [file, doAnalyse]);
 
   const reset = () => {
     setFile(null);
@@ -150,6 +171,7 @@ export default function GeneralAnalysisView({ backHref }: Props) {
     setProgress(0);
     setAnalysis(null);
     setErrorMsg('');
+    setGateStrategy(null);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -238,14 +260,70 @@ export default function GeneralAnalysisView({ backHref }: Props) {
               </div>
             )}
 
-            <button
-              onClick={handleAnalyse}
-              disabled={!file}
-              className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity disabled:opacity-40"
-              style={{ backgroundColor: '#1a5c2a' }}
-            >
-              Analyse with AI
-            </button>
+            {(gateProbing || gateStrategy) ? (
+              <UploadGate
+                strategy={gateStrategy}
+                probing={gateProbing}
+                onForceUpload={() => {
+                  const f = file!;
+                  setGateStrategy(null);
+                  flushQueue();
+                  void doAnalyse(f);
+                }}
+                onQueue={() => {
+                  const f = file!;
+                  setGateStrategy(null);
+                  setStatus('uploading');
+                  enqueueUpload(f, (pct) => setProgress(pct))
+                    .then(async ({ fileUri, fileName, mimeType }) => {
+                      if (!fileUri) throw new Error('Upload did not return a file URI');
+                      setStatus('analysing');
+                      const res = await fetch('/api/analyse-general', {
+                        method:  'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          fileUri,
+                          fileName,
+                          mimeType,
+                          userNote: userNote.trim(),
+                          token:    token ?? '',
+                        }),
+                      });
+                      const data = await res.json() as {
+                        analysis?:   GeneralAnalysis;
+                        free_trial?: boolean;
+                        error?:      string;
+                        message?:    string;
+                      };
+                      if (!res.ok) {
+                        setErrorMsg(
+                          data.error === 'free_trial_used'
+                            ? (data.message ?? 'Free trial used. Upgrade to Pro for unlimited analysis.')
+                            : (data.error ?? 'Analysis failed. Please try again.')
+                        );
+                        setStatus('error');
+                        return;
+                      }
+                      setAnalysis(data.analysis ?? null);
+                      setFreeTrial(data.free_trial ?? false);
+                      setStatus('done');
+                    })
+                    .catch((err: unknown) => {
+                      setErrorMsg(err instanceof Error ? err.message : 'Upload failed. Check your connection.');
+                      setStatus('error');
+                    });
+                }}
+              />
+            ) : (
+              <button
+                onClick={handleAnalyseClick}
+                disabled={!file}
+                className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity disabled:opacity-40"
+                style={{ backgroundColor: '#1a5c2a' }}
+              >
+                Analyse with AI
+              </button>
+            )}
           </div>
         )}
 

@@ -49,6 +49,14 @@ export async function POST(req: Request) {
     const contentType = GEMINI_VIDEO_TYPES.has(rawType) ? rawType : "video/mp4";
     const params      = new URL(req.url).searchParams;
 
+    // ?probe=1 — speed-probe path used by iOS / no-Connection-API browsers.
+    // Drain the body so the browser can measure the full transfer time, then
+    // return immediately without starting a Gemini upload session.
+    if (params.get("probe") === "1") {
+      await req.arrayBuffer(); // drain — do not process
+      return Response.json({ ok: true });
+    }
+
     // Total file size — used when starting a new Google resumable session
     const totalSize = params.get("size") ?? "0";
     // Byte length of this specific chunk (Content-Length we send to Google)

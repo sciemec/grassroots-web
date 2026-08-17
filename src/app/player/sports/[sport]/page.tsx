@@ -10,6 +10,9 @@ import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import UploadGate from "@/components/upload/UploadGate";
 
 interface StatEntry {
   [key: string]: string | number;
@@ -302,6 +305,8 @@ function VideoTalentSection({
   const [feedback, setFeedback] = useState("");
   const [savedToShowcase, setSavedToShowcase] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -310,25 +315,23 @@ function VideoTalentSection({
     setFile(f);
     setVideoUrl(URL.createObjectURL(f));
     setFeedback(""); setSavedToShowcase(false); setErrorMsg(""); setStage("idle");
+    setGateStrategy(null);
   };
 
-  const analyse = async () => {
-    if (!file) return;
+  const doAnalyse = async (fileToUpload: File) => {
     setStage("uploading"); setProgress(0); setErrorMsg("");
     try {
-      // Upload via Render proxy (mobile-safe chunked upload)
-      const uploaded = await uploadVideoInChunksParallel(file, (pct) => {
+      const uploaded = await uploadVideoInChunksParallel(fileToUpload, (pct) => {
         setProgress(Math.round(pct * 0.85));
       });
       const { fileUri, mimeType } = uploaded;
 
       setProgress(85); setStage("analysing");
 
-      // Step 3 — Gemini analysis
       const res = await fetch("/api/analyse-from-uri", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileUri, fileName: file.name, mimeType, sport: sportKey, drill, position: roleKey, token }),
+        body: JSON.stringify({ fileUri, fileName: fileToUpload.name, mimeType, sport: sportKey, drill, position: roleKey, token }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Analysis failed");
@@ -337,6 +340,23 @@ function VideoTalentSection({
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Analysis failed");
       setStage("error");
+    }
+  };
+
+  const handleAnalyseClick = async () => {
+    if (!file) return;
+    setGateProbing(true);
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      if (strategy.mode === "live") {
+        void doAnalyse(file);
+      } else {
+        setGateStrategy(strategy);
+      }
+    } catch {
+      setGateProbing(false);
+      void doAnalyse(file); // probe failed — attempt anyway
     }
   };
 
@@ -378,14 +398,49 @@ function VideoTalentSection({
       )}
 
       {file && stage !== "uploading" && stage !== "analysing" && (
-        <button
-          onClick={analyse}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition-colors"
-          style={{ backgroundColor: accentColor }}
-        >
-          <Brain className="h-4 w-4" />
-          Analyse with AI
-        </button>
+        gateProbing || gateStrategy ? (
+          <div className="mt-4">
+            <UploadGate
+              strategy={gateStrategy}
+              probing={gateProbing}
+              onForceUpload={() => {
+                setGateStrategy(null);
+                flushQueue();
+                void doAnalyse(file);
+              }}
+              onQueue={() => {
+                const f = file;
+                setGateStrategy(null);
+                setStage("uploading"); setProgress(0);
+                enqueueUpload(f, (pct) => setProgress(Math.round(pct * 0.85)))
+                  .then(async ({ fileUri, mimeType }) => {
+                    setProgress(85); setStage("analysing");
+                    const res = await fetch("/api/analyse-from-uri", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ fileUri, fileName: f.name, mimeType, sport: sportKey, drill, position: roleKey, token }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error ?? "Analysis failed");
+                    setFeedback(data.feedback ?? ""); setSavedToShowcase(true); setProgress(100); setStage("done");
+                  })
+                  .catch((err: unknown) => {
+                    setErrorMsg(err instanceof Error ? err.message : "Analysis failed");
+                    setStage("error");
+                  });
+              }}
+            />
+          </div>
+        ) : (
+          <button
+            onClick={handleAnalyseClick}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white transition-colors"
+            style={{ backgroundColor: accentColor }}
+          >
+            <Brain className="h-4 w-4" />
+            Analyse with AI
+          </button>
+        )
       )}
 
       {errorMsg && <p className="mt-3 text-xs text-destructive">{errorMsg}</p>}

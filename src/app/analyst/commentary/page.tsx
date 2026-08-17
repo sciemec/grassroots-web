@@ -23,6 +23,9 @@ import {
   ArrowRight, TrendingUp, Play, Pause,
 } from "lucide-react";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 import { useAuthStore } from "@/lib/auth-store";
 import { SUPPORTED_FORMATIONS } from "@/lib/commentary-zones";
 import CommentaryPitchBoard from "@/components/analyst/CommentaryPitchBoard";
@@ -95,7 +98,7 @@ interface CommentaryResult {
   match_summary:         string;
 }
 
-type Phase   = "setup" | "recording" | "upload" | "analysing" | "done" | "error";
+type Phase   = "setup" | "recording" | "confirm" | "upload" | "analysing" | "done" | "error";
 type HalfKey = "first" | "second" | "full";
 
 interface HalfState {
@@ -160,6 +163,12 @@ export default function CommentaryPage() {
   const [tabs, setTabs] = useState<Record<HalfKey, HalfState>>({
     first: initHalf(), second: initHalf(), full: initHalf(),
   });
+
+  // Gate state — for file upload path only (one upload at a time)
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
+  const [gateHalfKey,  setGateHalfKey]  = useState<HalfKey | null>(null);
+  const [gatePending,  setGatePending]  = useState<File | null>(null);
 
   // Shared recording refs (only one tab records at a time)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -244,19 +253,32 @@ export default function CommentaryPage() {
     }
   }
 
-  // ── File upload (pre-recorded) ─────────────────────────────────────────────
+  // ── File upload (pre-recorded) — gate checks connection first ──────────────
 
   async function handleFileUpload(halfKey: HalfKey, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     audioBlobRefs.current[halfKey] = file;
-    setTab(halfKey, { phase: "upload", uploadPct: 0 });
-    try {
-      const r = await uploadVideoInChunksParallel(file, (pct) => setTab(halfKey, { uploadPct: pct }));
-      setTab(halfKey, { uploadPct: 100 });
-      await runAnalysis(halfKey, r);
-    } catch (err) {
-      setTab(halfKey, { phase: "error", errorMsg: err instanceof Error ? err.message : "Upload failed" });
+    setGateHalfKey(halfKey);
+    setGatePending(file);
+    setGateStrategy(null);
+    setGateProbing(true);
+    setTab(halfKey, { phase: "confirm" });
+    const strategy = await getUploadStrategy();
+    setGateProbing(false);
+    if (strategy.mode === "queue") {
+      setGateStrategy(strategy);
+    } else {
+      setGateHalfKey(null);
+      setGatePending(null);
+      setTab(halfKey, { phase: "upload", uploadPct: 0 });
+      try {
+        const r = await uploadVideoInChunksParallel(file, (pct) => setTab(halfKey, { uploadPct: pct }));
+        setTab(halfKey, { uploadPct: 100 });
+        await runAnalysis(halfKey, r);
+      } catch (err) {
+        setTab(halfKey, { phase: "error", errorMsg: err instanceof Error ? err.message : "Upload failed" });
+      }
     }
   }
 
@@ -578,6 +600,33 @@ export default function CommentaryPage() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Phase: Confirm (connection gate — file upload only) ── */}
+        {s.phase === "confirm" && (gateProbing || gateStrategy) && gatePending && (
+          <div style={{ maxWidth: 400, margin: "0 auto", borderRadius: 16, padding: 16 }}>
+            <UploadGate
+              strategy={gateStrategy}
+              probing={gateProbing}
+              onForceUpload={() => {
+                const file = gatePending!; const hk = gateHalfKey!;
+                setGatePending(null); setGateStrategy(null); setGateHalfKey(null);
+                setTab(hk, { phase: "upload", uploadPct: 0 });
+                flushQueue();
+                uploadVideoInChunksParallel(file, (pct) => setTab(hk, { uploadPct: pct }))
+                  .then(async (r) => { setTab(hk, { uploadPct: 100 }); await runAnalysis(hk, r); })
+                  .catch((err) => setTab(hk, { phase: "error", errorMsg: err instanceof Error ? err.message : "Upload failed" }));
+              }}
+              onQueue={() => {
+                const file = gatePending!; const hk = gateHalfKey!;
+                setGatePending(null); setGateStrategy(null); setGateHalfKey(null);
+                setTab(hk, { phase: "upload", uploadPct: 0 });
+                enqueueUpload(file, (pct) => setTab(hk, { uploadPct: pct }), false)
+                  .then(async (r) => { setTab(hk, { uploadPct: 100 }); await runAnalysis(hk, r); })
+                  .catch((err) => setTab(hk, { phase: "error", errorMsg: err instanceof Error ? err.message : "Upload failed" }));
+              }}
+            />
           </div>
         )}
 

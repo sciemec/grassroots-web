@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { uploadVideoInChunksParallel } from '@/lib/upload-chunks';
+import { getUploadStrategy, type UploadStrategyResult } from '@/lib/use-upload-strategy';
+import { enqueueUpload, flushQueue } from '@/lib/upload-queue';
+import UploadGate from '@/components/upload/UploadGate';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -144,11 +147,15 @@ export default function PitchPage() {
     { label: 'Saving to Arena & Passport',           status: 'waiting' },
   ]);
 
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const mediaRef  = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
+
+  const videoRef        = useRef<HTMLVideoElement>(null);
+  const mediaRef        = useRef<MediaRecorder | null>(null);
+  const chunksRef       = useRef<Blob[]>([]);
+  const timerRef        = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef       = useRef<MediaStream | null>(null);
+  const isFromCameraRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -190,6 +197,7 @@ export default function PitchPage() {
       rec.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         const url  = URL.createObjectURL(blob);
+        isFromCameraRef.current = true;
         setVideoBlob(blob);
         setVideoUrl(url);
         stream.getTracks().forEach((t) => t.stop());
@@ -213,6 +221,8 @@ export default function PitchPage() {
     if (!file) return;
     if (!file.type.startsWith('video/')) { setError('Please select a video file.'); return; }
     if (file.size > 200 * 1024 * 1024) { setError('Video must be under 200 MB.'); return; }
+    isFromCameraRef.current = false;
+    setGateStrategy(null);
     setVideoBlob(file);
     setVideoUrl(URL.createObjectURL(file));
     setPhase('preview');
@@ -222,8 +232,8 @@ export default function PitchPage() {
     setSteps((prev) => prev.map((s, i) => i === idx ? { ...s, status } : s));
   }, []);
 
-  const analyse = useCallback(async () => {
-    if (!videoBlob || !drill) return;
+  const doAnalyse = useCallback(async (blobToAnalyse: Blob) => {
+    if (!drill) return;
     setError(null);
     setPhase('processing');
     setSteps([
@@ -234,7 +244,7 @@ export default function PitchPage() {
       { label: 'Saving to Arena & Passport',           status: 'waiting' },
     ]);
 
-    const mimeType = videoBlob.type || 'video/webm';
+    const mimeType = blobToAnalyse.type || 'video/webm';
     let r2Key    = '';
     let r2Url    = '';
     let fileUri  = '';
@@ -249,7 +259,7 @@ export default function PitchPage() {
       });
       if (presRes.ok) {
         const { uploadUrl, publicUrl, key } = await presRes.json() as { uploadUrl: string; publicUrl: string; key: string };
-        await fetch(uploadUrl, { method: 'PUT', body: videoBlob, headers: { 'Content-Type': mimeType } });
+        await fetch(uploadUrl, { method: 'PUT', body: blobToAnalyse, headers: { 'Content-Type': mimeType } });
         r2Key = key;
         r2Url = publicUrl;
       }
@@ -259,7 +269,7 @@ export default function PitchPage() {
     // Step 2: Gemini Files API (via Render proxy — mobile-safe)
     updateStep(1, 'running');
     try {
-      const uploaded = await uploadVideoInChunksParallel(videoBlob, () => {});
+      const uploaded = await uploadVideoInChunksParallel(blobToAnalyse, () => {});
       fileUri  = uploaded.fileUri;
       fileName = uploaded.fileName;
       updateStep(1, 'done');
@@ -348,7 +358,29 @@ export default function PitchPage() {
     setBenchmark(platformBenchmark);
     setArenaPostId(postId);
     setPhase('results');
-  }, [videoBlob, drill, token, updateStep]);
+  }, [drill, token, updateStep]);
+
+  const handleAnalyseClick = useCallback(async () => {
+    if (!videoBlob) return;
+    if (isFromCameraRef.current) {
+      // Camera blob is already in memory — bypass gate
+      void doAnalyse(videoBlob);
+      return;
+    }
+    setGateProbing(true);
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      if (strategy.mode === 'live') {
+        void doAnalyse(videoBlob);
+      } else {
+        setGateStrategy(strategy);
+      }
+    } catch {
+      setGateProbing(false);
+      void doAnalyse(videoBlob); // probe failed — attempt anyway
+    }
+  }, [videoBlob, doAnalyse]);
 
   const reset = useCallback(() => {
     if (videoUrl) URL.revokeObjectURL(videoUrl);
@@ -359,6 +391,8 @@ export default function PitchPage() {
     setArenaPostId(null);
     setError(null);
     setDrill(null);
+    setGateStrategy(null);
+    isFromCameraRef.current = false;
     setPhase('setup');
   }, [videoUrl]);
 
@@ -506,9 +540,50 @@ export default function PitchPage() {
               <video src={videoUrl} controls playsInline style={{ width: '100%', display: 'block', maxHeight: 400, objectFit: 'contain' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={analyse} style={{ backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <Zap size={18} /> Analyse Body Position
-              </button>
+              {gateProbing || gateStrategy ? (
+                <UploadGate
+                  strategy={gateStrategy}
+                  probing={gateProbing}
+                  onForceUpload={() => {
+                    const b = videoBlob!;
+                    setGateStrategy(null);
+                    flushQueue();
+                    void doAnalyse(b);
+                  }}
+                  onQueue={() => {
+                    const b = videoBlob!;
+                    const mt = b.type || 'video/webm';
+                    setGateStrategy(null);
+                    setPhase('processing');
+                    enqueueUpload(b instanceof File ? b : new File([b], `drill-${Date.now()}.webm`, { type: mt }), () => {})
+                      .then(async ({ fileUri, fileName }) => {
+                        if (!fileUri) throw new Error('Upload did not return a file URI');
+                        // Delegate to doAnalyse is not possible via queue (queue returns ChunkUploadResult)
+                        // so inline the Gemini step here
+                        updateStep(1, 'done');
+                        updateStep(2, 'running');
+                        const res = await fetch('/api/drill-analysis/analyse', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ fileUri, fileName, mimeType: mt, drillType: drill }),
+                        });
+                        if (!res.ok) { const e = await res.json() as { error?: string }; throw new Error(e.error ?? 'Analysis failed'); }
+                        const drillAnalysis = await res.json() as DrillAnalysis;
+                        updateStep(2, 'done');
+                        setAnalysis(drillAnalysis);
+                        setPhase('results');
+                      })
+                      .catch((err: unknown) => {
+                        setError(err instanceof Error ? err.message : 'Upload failed');
+                        setPhase('preview');
+                      });
+                  }}
+                />
+              ) : (
+                <button onClick={handleAnalyseClick} style={{ backgroundColor: '#1a5c2a', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 20px', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <Zap size={18} /> Analyse Body Position
+                </button>
+              )}
               <button onClick={reset} style={{ backgroundColor: '#fff', color: '#666', border: '1px solid #e5e5e5', borderRadius: 12, padding: '13px 20px', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <RotateCcw size={16} /> Start Over
               </button>

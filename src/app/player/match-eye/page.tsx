@@ -12,6 +12,9 @@ import { useAuthStore } from "@/lib/auth-store";
 import { compressVideo } from "@/lib/compress-video";
 import { downloadPlayerMatchEyePdf } from "@/lib/generate-analysis-pdf";
 import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 const GRS_GREEN = "#1a5c2a";
 const SPORTS = [
@@ -521,6 +524,8 @@ export default function PlayerMatchEyePage() {
   const [error,       setError]       = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -855,26 +860,65 @@ export default function PlayerMatchEyePage() {
                 ⚠️ {advisory.sizeWarning}
               </div>
             )}
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => { setPendingFile(null); setAdvisory(null); setPageStage("setup"); }}
-                style={{
-                  flex: 1, padding: "11px 0", borderRadius: 10, fontSize: 13, fontWeight: 600,
-                  background: "none", border: "1px solid #d1d5db", color: "#374151", cursor: "pointer",
+            {(gateProbing || gateStrategy?.mode === "queue") ? (
+              <UploadGate
+                strategy={gateStrategy}
+                probing={gateProbing}
+                onForceUpload={() => {
+                  const file = pendingFile!;
+                  setPendingFile(null); setAdvisory(null); setGateStrategy(null);
+                  setPageStage("setup");
+                  flushQueue();
+                  uploadVideo(file);
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => pendingFile && uploadVideo(pendingFile)}
-                style={{
-                  flex: 2, padding: "11px 0", borderRadius: 10, fontSize: 14, fontWeight: 800,
-                  background: GRS_GREEN, color: "#fff", border: "none", cursor: "pointer",
+                onQueue={() => {
+                  const file = pendingFile!;
+                  setPendingFile(null); setAdvisory(null); setGateStrategy(null);
+                  setPageStage("uploading");
+                  setUploadPct(0);
+                  enqueueUpload(file, (pct) => setUploadPct(Math.round(pct)), true)
+                    .then((data) => {
+                      setFileUri(data.fileUri); setFileName(data.fileName);
+                      setMimeType(data.mimeType); setUploadPct(100);
+                      setPageStage("uploaded");
+                    })
+                    .catch((err) => { setError(err instanceof Error ? err.message : "Upload failed"); setPageStage("error"); });
                 }}
-              >
-                Start Upload
-              </button>
-            </div>
+              />
+            ) : (
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => { setPendingFile(null); setAdvisory(null); setGateStrategy(null); setPageStage("setup"); }}
+                  style={{
+                    flex: 1, padding: "11px 0", borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    background: "none", border: "1px solid #d1d5db", color: "#374151", cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!pendingFile) return;
+                    setGateProbing(true);
+                    const strategy = await getUploadStrategy();
+                    setGateProbing(false);
+                    if (strategy.mode === "live") {
+                      const file = pendingFile;
+                      setPendingFile(null); setAdvisory(null);
+                      uploadVideo(file);
+                    } else {
+                      setGateStrategy(strategy);
+                    }
+                  }}
+                  style={{
+                    flex: 2, padding: "11px 0", borderRadius: 10, fontSize: 14, fontWeight: 800,
+                    background: GRS_GREEN, color: "#fff", border: "none", cursor: "pointer",
+                  }}
+                >
+                  Start Upload
+                </button>
+              </div>
+            )}
           </div>
         )}
 

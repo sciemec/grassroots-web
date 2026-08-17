@@ -18,6 +18,9 @@ import { useAuthStore } from '@/lib/auth-store';
 import { useSubscription } from '@/lib/use-subscription';
 import { postToArena } from '@/lib/arena-poster';
 import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from '@/lib/upload-chunks';
+import { getUploadStrategy, type UploadStrategyResult } from '@/lib/use-upload-strategy';
+import { enqueueUpload, flushQueue } from '@/lib/upload-queue';
+import UploadGate from '@/components/upload/UploadGate';
 import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,
@@ -434,6 +437,9 @@ export default function GeminiDrillsPage() {
   const [countdown, setCountdown]           = useState(30);
   const [previewUrl, setPreviewUrl]         = useState<string | null>(null);
   const [clipAdvisory, setClipAdvisory]     = useState<UploadAdvisory | null>(null);
+  const [gateProbing, setGateProbing]       = useState(false);
+  const [gateStrategy, setGateStrategy]     = useState<UploadStrategyResult | null>(null);
+  const [gatePending, setGatePending]       = useState(false);
 
   // Load best scores from localStorage
   useEffect(() => {
@@ -563,12 +569,32 @@ export default function GeminiDrillsPage() {
     if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
   }, []);
 
+  // Shared: run Gemini analysis after any upload (direct or queued)
+  const runDrillAnalysis = useCallback(async (uploadData: { fileUri?: string; fileName?: string }) => {
+    if (!selected) return;
+    const { fileUri, fileName } = uploadData;
+    if (!fileUri) throw new Error('Upload server did not return a file URI');
+    setUpload(prev => ({ ...prev, phase: 'processing', progress: 100 }));
+    const analyseRes = await fetch('/api/gemini-drill-analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileUri, fileName, drillId: selected.id }),
+    });
+    if (!analyseRes.ok) {
+      const err = await analyseRes.json().catch(() => ({ error: 'Analysis failed' }));
+      throw new Error((err as { error?: string }).error ?? 'Gemini analysis failed');
+    }
+    const result = await analyseRes.json() as DrillResult;
+    saveDrillResult(result);
+    setUpload({ phase: 'done', progress: 100, result, error: null });
+  }, [selected, saveDrillResult]);
+
+  // Camera recording → direct upload (live connection path)
   const handleUploadRecording = useCallback(async () => {
     if (!selected || recordedChunksRef.current.length === 0) return;
     const mimeType = recordedChunksRef.current[0]?.type ?? 'video/webm';
     const blob = new Blob(recordedChunksRef.current, { type: mimeType });
 
-    // Guard: reject clips that exceed Gemini's hard limit
     if (clipAdvisory?.limitError) {
       setUpload({ phase: 'error', progress: 0, result: null, error: clipAdvisory.limitError });
       return;
@@ -576,42 +602,46 @@ export default function GeminiDrillsPage() {
 
     setRecordingPhase('idle');
     setPreviewUrl(null);
-    setUpload({ phase: 'getting_url', progress: 0, result: null, error: null });
+    setUpload({ phase: 'uploading', progress: 0, result: null, error: null });
 
     try {
-      // Upload through proxy in chunks — avoids CORS block and survives mobile connection drops
-      setUpload(prev => ({ ...prev, phase: 'uploading', progress: 0 }));
       const videoFile = new File([blob], `drill-${Date.now()}.webm`, { type: blob.type || 'video/webm' });
       const uploadData = await uploadVideoInChunksParallel(
         videoFile,
         (pct) => setUpload(prev => ({ ...prev, progress: pct })),
       );
-      const fileUri  = uploadData.fileUri;
-      const fileName = uploadData.fileName;
-      if (!fileUri) throw new Error('Upload server did not return a file URI');
-
-      // Step 3: Analyse with Gemini
-      setUpload(prev => ({ ...prev, phase: 'processing', progress: 100 }));
-      const analyseRes = await fetch('/api/gemini-drill-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileUri, fileName, drillId: selected.id }),
-      });
-
-      if (!analyseRes.ok) {
-        const err = await analyseRes.json().catch(() => ({ error: 'Analysis failed' }));
-        throw new Error(err.error ?? 'Gemini analysis failed');
-      }
-
-      const result = await analyseRes.json() as DrillResult;
-      saveDrillResult(result);
-      setUpload({ phase: 'done', progress: 100, result, error: null });
-
+      await runDrillAnalysis(uploadData);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setUpload({ phase: 'error', progress: 0, result: null, error: message });
     }
-  }, [selected, saveDrillResult]);
+  }, [selected, clipAdvisory, runDrillAnalysis]);
+
+  // Gate check: called when user taps "Send to Gemini"
+  const handleGateSendToGemini = useCallback(async () => {
+    if (!selected || recordedChunksRef.current.length === 0) return;
+    if (clipAdvisory?.limitError) {
+      setUpload({ phase: 'error', progress: 0, result: null, error: clipAdvisory.limitError });
+      return;
+    }
+    setGateProbing(true);
+    setGatePending(true);
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      setGateStrategy(strategy);
+      if (strategy.mode === 'live') {
+        setGatePending(false);
+        setGateStrategy(null);
+        void handleUploadRecording();
+      }
+      // else: gate UI (UploadGate) shows, user chooses force/queue
+    } catch {
+      setGateProbing(false);
+      setGatePending(false);
+      void handleUploadRecording(); // probe failed — attempt upload anyway
+    }
+  }, [selected, clipAdvisory, handleUploadRecording]);
 
   const handleMediaPipeUpload = useCallback(async () => {
     if (!selected || !mpFile || !selected.mediapipe_drill_type) return;
@@ -687,6 +717,9 @@ export default function GeminiDrillsPage() {
     setPreviewUrl(null);
     setCountdown(30);
     setClipAdvisory(null);
+    setGateProbing(false);
+    setGateStrategy(null);
+    setGatePending(false);
     setMpFile(null);
     setAnalysisEngine('gemini');
     setPassportSaved(false);
@@ -1039,21 +1072,49 @@ export default function GeminiDrillsPage() {
                     ⚠️ {clipAdvisory.sizeWarning}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={() => { setRecordingPhase('idle'); setPreviewUrl(null); setClipAdvisory(null); recordedChunksRef.current = []; }}
-                    style={{ flex: 1, padding: '12px', borderRadius: 10, background: '#fff', color: '#555', fontWeight: 600, fontSize: 13, border: '1px solid #d1d5db', cursor: 'pointer' }}
-                  >
-                    Retake
-                  </button>
-                  <button
-                    onClick={handleUploadRecording}
-                    style={{ flex: 2, padding: '12px', borderRadius: 10, background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                  >
-                    <Video size={16} />
-                    Send to Gemini
-                  </button>
-                </div>
+                {gatePending && (gateProbing || gateStrategy) ? (
+                  <UploadGate
+                    strategy={gateStrategy}
+                    probing={gateProbing}
+                    onForceUpload={() => {
+                      setGatePending(false);
+                      setGateStrategy(null);
+                      flushQueue();
+                      void handleUploadRecording();
+                    }}
+                    onQueue={() => {
+                      const mt = recordedChunksRef.current[0]?.type ?? 'video/webm';
+                      const bl = new Blob(recordedChunksRef.current, { type: mt });
+                      const vf = new File([bl], `drill-${Date.now()}.webm`, { type: bl.type || 'video/webm' });
+                      setGatePending(false);
+                      setGateStrategy(null);
+                      setRecordingPhase('idle');
+                      setPreviewUrl(null);
+                      setUpload({ phase: 'uploading', progress: 0, result: null, error: null });
+                      enqueueUpload(vf, (pct) => setUpload(prev => ({ ...prev, progress: pct })))
+                        .then(runDrillAnalysis)
+                        .catch((err: unknown) => {
+                          setUpload({ phase: 'error', progress: 0, result: null, error: err instanceof Error ? err.message : 'Unknown error' });
+                        });
+                    }}
+                  />
+                ) : (
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => { setRecordingPhase('idle'); setPreviewUrl(null); setClipAdvisory(null); recordedChunksRef.current = []; }}
+                      style={{ flex: 1, padding: '12px', borderRadius: 10, background: '#fff', color: '#555', fontWeight: 600, fontSize: 13, border: '1px solid #d1d5db', cursor: 'pointer' }}
+                    >
+                      Retake
+                    </button>
+                    <button
+                      onClick={handleGateSendToGemini}
+                      style={{ flex: 2, padding: '12px', borderRadius: 10, background: GRS_GREEN, color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    >
+                      <Video size={16} />
+                      Send to Gemini
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

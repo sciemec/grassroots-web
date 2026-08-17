@@ -16,6 +16,9 @@ import {
 import { ALL_GEMINI_DRILLS, getDrillsBySport, getDrillById, DrillResult } from "@/config/gemini-drills";
 import { postToArena } from "@/lib/arena-poster";
 import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import UploadGate from "@/components/upload/UploadGate";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -181,6 +184,8 @@ export default function CoachGeminiDrillsPage() {
   const [errorMsg,    setErrorMsg]    = useState("");
   const [lang,        setLang]        = useState<"en" | "en-sn" | "en-nd">("en");
   const [playerResults, setPlayerResults] = useState<DrillResult[]>([]);
+  const [gateProbing,  setGateProbing]   = useState(false);
+  const [gateStrategy, setGateStrategy]  = useState<UploadStrategyResult | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -234,7 +239,7 @@ export default function CoachGeminiDrillsPage() {
     setErrorMsg("");
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeDrillId || !selectedPlayer) return;
     e.target.value = "";
@@ -242,51 +247,69 @@ export default function CoachGeminiDrillsPage() {
     if (adv.limitError) { setErrorMsg(adv.limitError); setUploadPhase("error"); return; }
     setPendingFile(file);
     setAdvisory(adv);
+    // Show confirm/gate UI while probing connection quality
+    setGateProbing(true);
     setUploadPhase("confirm");
+    try {
+      const strategy = await getUploadStrategy();
+      setGateProbing(false);
+      if (strategy.mode === "live") {
+        // Good connection — skip gate UI, upload immediately
+        setGateStrategy(null);
+        setPendingFile(null);
+        setAdvisory(null);
+        setUploadPhase("idle");
+        void doUploadAndAnalyse(file);
+      } else {
+        setGateStrategy(strategy);
+      }
+    } catch {
+      setGateProbing(false);
+      setGateStrategy(null);
+      // Probe failed — attempt upload anyway
+      setPendingFile(null);
+      setAdvisory(null);
+      setUploadPhase("idle");
+      void doUploadAndAnalyse(file);
+    }
+  };
+
+  // Shared: Gemini analysis after any upload (direct or queued)
+  const doGeminiAnalysisOnly = async (fileUri: string, fileName: string) => {
+    if (!activeDrillId) return;
+    setUploadPhase("processing");
+    const res = await fetch("/api/gemini-drill-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileUri, fileName, drillId: activeDrillId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { error?: string }).error ?? "Analysis failed");
+    }
+    const result: DrillResult = await res.json();
+    const nameKey = selectedName.toLowerCase().replace(/\s+/g, "_");
+    localStorage.setItem(`grs_gemini_drill_${activeDrillId}_${nameKey}`, JSON.stringify(result));
+    const allKey = `grs_gemini_all_drills_${nameKey}`;
+    const existing: DrillResult[] = JSON.parse(localStorage.getItem(allKey) ?? "[]");
+    const filtered = existing.filter(r => r.drillId !== activeDrillId);
+    localStorage.setItem(allKey, JSON.stringify([result, ...filtered]));
+    setPlayerResults([result, ...filtered]);
+    setDrillResult(result);
+    setUploadPhase("done");
+    const drill = getDrillById(activeDrillId);
+    postToArena(
+      `Analysed "${drill?.name ?? activeDrillId}" drill for ${selectedName} using Gemini AI.`,
+      { postType: "milestone", activityType: "drill_completion", activityData: { drillId: activeDrillId, playerName: selectedName } },
+    );
   };
 
   const doUploadAndAnalyse = async (file: File) => {
-    const activeDrill = getDrillById(activeDrillId ?? "");
-    if (!activeDrill || !activeDrillId) return;
-
+    if (!getDrillById(activeDrillId ?? "") || !activeDrillId) return;
     try {
       setUploadPhase("uploading");
       const { fileUri, fileName } = await uploadVideoInChunksParallel(file, (pct) => setUploadPct(pct));
-
-      // Step 3: Gemini analysis
-      setUploadPhase("processing");
-      const res = await fetch("/api/gemini-drill-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileUri, fileName, drillId: activeDrillId }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "Analysis failed");
-      }
-      const result: DrillResult = await res.json();
-
-      // Persist result to localStorage keyed by player name
-      const nameKey = selectedName.toLowerCase().replace(/\s+/g, "_");
-      const storageKey = `grs_gemini_drill_${activeDrillId}_${nameKey}`;
-      localStorage.setItem(storageKey, JSON.stringify(result));
-
-      // Update all-results list
-      const allKey = `grs_gemini_all_drills_${nameKey}`;
-      const existing: DrillResult[] = JSON.parse(localStorage.getItem(allKey) ?? "[]");
-      const filtered = existing.filter(r => r.drillId !== activeDrillId);
-      localStorage.setItem(allKey, JSON.stringify([result, ...filtered]));
-      setPlayerResults([result, ...filtered]);
-
-      setDrillResult(result);
-      setUploadPhase("done");
-
-      // Post to Arena feed (fire-and-forget)
-      const drill = getDrillById(activeDrillId);
-      postToArena(
-        `Analysed "${drill?.name ?? activeDrillId}" drill for ${selectedName} using Gemini AI.`,
-        { postType: "milestone", activityType: "drill_completion", activityData: { drillId: activeDrillId, playerName: selectedName } },
-      );
+      await doGeminiAnalysisOnly(fileUri!, fileName!);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Unknown error");
       setUploadPhase("error");
@@ -529,31 +552,36 @@ export default function CoachGeminiDrillsPage() {
                   </button>
                 )}
 
-                {uploadPhase === "confirm" && advisory && pendingFile && (
-                  <div style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 14px", border: "1px solid #e5e7eb" }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 6 }}>Ready to upload</div>
-                    <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
-                      {pendingFile.name}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: advisory.sizeWarning ? 8 : 12 }}>
-                      {advisory.sizeMB.toFixed(0)} MB · {advisory.estimatedTime}
-                    </div>
-                    {advisory.sizeWarning && (
-                      <div style={{ fontSize: 11, color: "#92400e", background: "#fffbeb", border: "1px solid #f0b429", borderRadius: 6, padding: "6px 8px", marginBottom: 10 }}>
-                        ⚠️ {advisory.sizeWarning}
-                      </div>
-                    )}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => { setPendingFile(null); setAdvisory(null); setUploadPhase("idle"); }}
-                        style={{ flex: 1, padding: "8px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "none", border: "1px solid #d1d5db", color: "#374151", cursor: "pointer" }}
-                      >Cancel</button>
-                      <button
-                        onClick={() => pendingFile && doUploadAndAnalyse(pendingFile)}
-                        style={{ flex: 2, padding: "8px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: GRS_GREEN, color: "#fff", border: "none", cursor: "pointer" }}
-                      >Start Upload</button>
-                    </div>
-                  </div>
+                {uploadPhase === "confirm" && pendingFile && (
+                  <UploadGate
+                    strategy={gateStrategy}
+                    probing={gateProbing}
+                    onForceUpload={() => {
+                      const file = pendingFile;
+                      setGateStrategy(null);
+                      setPendingFile(null);
+                      setAdvisory(null);
+                      setUploadPhase("idle");
+                      flushQueue();
+                      void doUploadAndAnalyse(file);
+                    }}
+                    onQueue={() => {
+                      const file = pendingFile;
+                      setGateStrategy(null);
+                      setPendingFile(null);
+                      setAdvisory(null);
+                      setUploadPhase("uploading");
+                      enqueueUpload(file, (pct) => setUploadPct(pct))
+                        .then(async ({ fileUri, fileName }) => {
+                          if (!fileUri) throw new Error("Upload did not return a file URI");
+                          await doGeminiAnalysisOnly(fileUri, fileName!);
+                        })
+                        .catch((err: unknown) => {
+                          setErrorMsg(err instanceof Error ? err.message : "Unknown error");
+                          setUploadPhase("error");
+                        });
+                    }}
+                  />
                 )}
 
                 {uploadPhase === "getting_url" && (

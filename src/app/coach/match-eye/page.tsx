@@ -13,6 +13,9 @@ import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
 import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -244,6 +247,10 @@ export default function MatchEyePage() {
   const [pendingHalf, setPendingHalf] = useState<"first" | "second" | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
+
+  // Connection-quality gate state
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
   // Trim state
   const [trimStart,         setTrimStart]         = useState("0:00");
@@ -1937,33 +1944,67 @@ export default function MatchEyePage() {
             )}
 
 
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => {
-                  setPageStage("setup");
-                  setPendingFile(null);
-                  setPendingHalf(null);
-                  setAdvisory(null);
-                              }}
-                style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 14, color: "#374151", cursor: "pointer" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const file = pendingFile!;
+            {/* Connection gate — probing or weak-connection queue card */}
+            {(gateProbing || gateStrategy?.mode === "queue") ? (
+              <UploadGate
+                strategy={gateStrategy}
+                probing={gateProbing}
+                onForceUpload={() => {
+                  const file  = pendingFile!;
                   const which = pendingHalf!;
-                  setPendingFile(null);
-                  setPendingHalf(null);
-                  setAdvisory(null);
+                  setPendingFile(null); setPendingHalf(null);
+                  setAdvisory(null); setGateStrategy(null);
                   setPageStage("setup");
+                  flushQueue();
                   uploadHalf(file, which);
                 }}
-                style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: "#1a5c2a", fontWeight: 700, fontSize: 14, color: "#fff", cursor: "pointer" }}
-              >
-                Start Upload
-              </button>
-            </div>
+                onQueue={() => {
+                  const file  = pendingFile!;
+                  const which = pendingHalf!;
+                  const setH  = which === "first" ? setFirstHalf : setSecondHalf;
+                  setPendingFile(null); setPendingHalf(null);
+                  setAdvisory(null); setGateStrategy(null);
+                  setPageStage("setup");
+                  setH((h) => ({ ...h, stage: "uploading", pct: 0, error: "" }));
+                  enqueueUpload(file, (pct) => setH((h) => ({ ...h, pct })), true)
+                    .then((data) => setH((h) => ({ ...h, stage: "uploaded", pct: 100, fileUri: data.fileUri, fileName: data.fileName, mimeType: data.mimeType })))
+                    .catch((err)  => setH((h) => ({ ...h, stage: "error", error: err instanceof Error ? err.message : "Upload failed" })));
+                }}
+              />
+            ) : (
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => {
+                    setPageStage("setup");
+                    setPendingFile(null); setPendingHalf(null);
+                    setAdvisory(null); setGateStrategy(null);
+                  }}
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", fontWeight: 600, fontSize: 14, color: "#374151", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    setGateProbing(true);
+                    const strategy = await getUploadStrategy();
+                    setGateProbing(false);
+                    if (strategy.mode === "live") {
+                      const file  = pendingFile!;
+                      const which = pendingHalf!;
+                      setPendingFile(null); setPendingHalf(null);
+                      setAdvisory(null);
+                      setPageStage("setup");
+                      uploadHalf(file, which);
+                    } else {
+                      setGateStrategy(strategy);
+                    }
+                  }}
+                  style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: "#1a5c2a", fontWeight: 700, fontSize: 14, color: "#fff", cursor: "pointer" }}
+                >
+                  Start Upload
+                </button>
+              </div>
+            )}
           </div>
         )}
 

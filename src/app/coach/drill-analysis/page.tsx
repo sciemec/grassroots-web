@@ -9,7 +9,10 @@ import {
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
-import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -215,7 +218,8 @@ export default function CoachDrillAnalysisPage() {
   const [playerName,   setPlayerName]   = useState("");
   const [uploadPct,    setUploadPct]    = useState(0);
   const [pendingFile,  setPendingFile]  = useState<File | null>(null);
-  const [advisory,     setAdvisory]     = useState<UploadAdvisory | null>(null);
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
   const [result,       setResult]       = useState<AnalysisResult | null>(null);
   const [errMsg,       setErrMsg]       = useState("");
   const [showGuide,    setShowGuide]    = useState(false);
@@ -233,21 +237,25 @@ export default function CoachDrillAnalysisPage() {
 
   // ── Upload + Analyse (3-step Gemini flow) ────────────────────────────────
 
-  const handleFilePick = (file: File) => {
+  const handleFilePick = async (file: File) => {
     if (!file.type.startsWith("video/")) {
       setErrMsg("Please choose a video file (mp4 or mov).");
       setStage("error");
       return;
     }
-    const adv = getUploadAdvisory(file);
-    if (adv.limitError) {
-      setErrMsg(adv.limitError);
-      setStage("error");
-      return;
-    }
     setPendingFile(file);
-    setAdvisory(adv);
+    setGateStrategy(null);
+    setGateProbing(true);
     setStage("confirm");
+    const strategy = await getUploadStrategy();
+    setGateProbing(false);
+    if (strategy.mode === "queue") {
+      setGateStrategy(strategy);
+    } else {
+      setPendingFile(null);
+      setStage("select");
+      handleFile(file);
+    }
   };
 
   const handleFile = useCallback(async (file: File) => {
@@ -643,36 +651,38 @@ export default function CoachDrillAnalysisPage() {
           </div>
         )}
 
-        {/* ── Stage: Confirm (pre-upload advisory) ───────────────────────── */}
-        {stage === "confirm" && advisory && pendingFile && (
-          <div className="max-w-md mx-auto mt-10 rounded-2xl bg-white/10 border border-white/20 p-6">
-            <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-              <Upload size={16} /> Ready to upload
-            </h2>
-            <div className="bg-white/5 rounded-xl p-3 mb-3 text-sm">
-              <p className="text-white font-semibold truncate">{pendingFile.name}</p>
-              <p className="text-white/50 mt-0.5">{advisory.sizeMB.toFixed(0)} MB · {advisory.estimatedTime}</p>
-            </div>
-            {advisory.sizeWarning && (
-              <div className="bg-amber-500/10 border border-amber-400/40 rounded-xl p-3 mb-4 text-xs text-amber-300">
-                ⚠️ {advisory.sizeWarning}
-              </div>
-            )}
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setPendingFile(null); setAdvisory(null); setStage("select"); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/70 border border-white/20 bg-transparent"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => pendingFile && handleFile(pendingFile)}
-                className="flex-[2] py-2.5 rounded-xl text-sm font-bold text-white"
-                style={{ background: "#1a5c2a" }}
-              >
-                Start Upload
-              </button>
-            </div>
+        {/* ── Stage: Confirm (connection gate) ───────────────────────────── */}
+        {stage === "confirm" && (gateProbing || gateStrategy) && pendingFile && (
+          <div className="max-w-md mx-auto mt-10 rounded-2xl p-6">
+            <UploadGate
+              strategy={gateStrategy}
+              probing={gateProbing}
+              onForceUpload={() => {
+                const file = pendingFile!;
+                setPendingFile(null); setGateStrategy(null); setStage("select");
+                flushQueue();
+                handleFile(file);
+              }}
+              onQueue={() => {
+                const file = pendingFile!;
+                const drill = drillId;
+                setPendingFile(null); setGateStrategy(null); setStage("upload");
+                setUploadPct(0); setResult(null);
+                enqueueUpload(file, (pct) => setUploadPct(Math.round(pct)), false)
+                  .then(async (uploadData) => {
+                    setStage("processing");
+                    const analysisRes = await fetch("/api/coach-drill-analysis", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ fileUri: uploadData.fileUri, fileName: uploadData.fileName, mimeType: uploadData.mimeType, drillId: drill }),
+                    });
+                    if (!analysisRes.ok) { const e = await analysisRes.json().catch(() => ({})) as { error?: string }; throw new Error(e.error ?? `Analysis failed (${analysisRes.status}).`); }
+                    const data = await analysisRes.json() as PlayerResult;
+                    setResult({ players: [data] }); setStage("results");
+                  })
+                  .catch((err) => { setErrMsg(err instanceof Error ? err.message : "Upload failed"); setStage("error"); });
+              }}
+            />
           </div>
         )}
 

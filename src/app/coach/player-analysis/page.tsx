@@ -10,6 +10,9 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { measureFromVideo, type TestType, type VideoMeasurement } from "@/lib/super-engine";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 const HISTORY_KEY = "gs_player_analysis_history";
@@ -93,7 +96,7 @@ interface HistoryEntry {
   metrics:           Record<string, number>;
 }
 
-type Stage  = "setup" | "source" | "uploading" | "processing" | "results" | "error";
+type Stage  = "setup" | "source" | "confirm" | "uploading" | "processing" | "results" | "error";
 type Source = "upload" | "camera";
 type Engine = "super" | "gemini" | null;
 
@@ -149,6 +152,9 @@ export default function PlayerAnalysisPage() {
   const [engine,        setEngine]        = useState<Engine>(null);
   const [enginesUsed,   setEnginesUsed]   = useState<string[]>([]);
   const [progressLabel, setProgressLabel] = useState("");
+  const [pendingFile,   setPendingFile]   = useState<File | null>(null);
+  const [gateProbing,   setGateProbing]   = useState(false);
+  const [gateStrategy,  setGateStrategy]  = useState<UploadStrategyResult | null>(null);
 
   // ── Refs ──────────────────────────────────────────────────────────────────
   const fileRef      = useRef<HTMLInputElement>(null);
@@ -225,6 +231,28 @@ export default function PlayerAnalysisPage() {
 
     return { metrics, performance_index, resilience_index, flags };
   }
+
+  // ── Gate: check connection before upload (file paths only) ──────────────
+  const handleFilePick = async (file: File) => {
+    if (!file.type.startsWith("video/")) {
+      setErrMsg("Please choose a video file (mp4 or mov).");
+      setStage("error");
+      return;
+    }
+    setPendingFile(file);
+    setGateStrategy(null);
+    setGateProbing(true);
+    setStage("confirm");
+    const strategy = await getUploadStrategy();
+    setGateProbing(false);
+    if (strategy.mode === "queue") {
+      setGateStrategy(strategy);
+    } else {
+      setPendingFile(null);
+      setStage("source");
+      void runAnalysis(file);
+    }
+  };
 
   // ── Core: Super Engine on-device first, fall back to Gemini ──────────────
   const runAnalysis = useCallback(async (file: File) => {
@@ -677,7 +705,7 @@ export default function PlayerAnalysisPage() {
                   className="rounded-xl border-2 border-dashed border-gray-300 p-10 text-center cursor-pointer hover:border-[#1a5c2a] hover:bg-[#f0fdf4] transition-all"
                   onClick={() => fileRef.current?.click()}
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void runAnalysis(f); }}
+                  onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void handleFilePick(f); }}
                 >
                   <Upload size={28} className="mx-auto mb-3 text-gray-300" />
                   <p className="text-sm font-semibold text-gray-600">Tap to choose video or drag it here</p>
@@ -694,7 +722,7 @@ export default function PlayerAnalysisPage() {
                   type="file"
                   accept="video/*"
                   className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void runAnalysis(f); }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFilePick(f); }}
                 />
               </div>
             ) : (
@@ -739,6 +767,41 @@ export default function PlayerAnalysisPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* ── Stage: Confirm (connection gate) ───────────────────────────── */}
+        {stage === "confirm" && (gateProbing || gateStrategy) && pendingFile && (
+          <div className="max-w-md mx-auto mt-10 rounded-2xl p-4">
+            <UploadGate
+              strategy={gateStrategy}
+              probing={gateProbing}
+              onForceUpload={() => {
+                const file = pendingFile!;
+                setPendingFile(null); setGateStrategy(null); setStage("source");
+                flushQueue();
+                void runAnalysis(file);
+              }}
+              onQueue={() => {
+                const file = pendingFile!;
+                const aid = analysisId;
+                setPendingFile(null); setGateStrategy(null);
+                setStage("uploading"); setUploadPct(0); setResult(null); setEngine("gemini");
+                enqueueUpload(file, (pct) => setUploadPct(Math.round(pct)), false)
+                  .then(async (uploadData) => {
+                    setStage("processing");
+                    const res = await fetch("/api/coach-drill-analysis", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ fileUri: uploadData.fileUri, fileName: uploadData.fileName, mimeType: uploadData.mimeType, drillId: aid }),
+                    });
+                    if (!res.ok) { const e = await res.json().catch(() => ({})) as { error?: string }; throw new Error(e.error ?? `Analysis failed (${res.status}).`); }
+                    const data = await res.json() as AnalysisResult;
+                    setResult(data); setStage("results");
+                  })
+                  .catch((err) => { setErrMsg(err instanceof Error ? err.message : "Upload failed"); setStage("error"); });
+              }}
+            />
+          </div>
         )}
 
         {/* ── Stage: Uploading / Pose scanning ───────────────────────────── */}

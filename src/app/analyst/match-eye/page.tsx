@@ -15,9 +15,10 @@ import { SUPPORTED_FORMATIONS } from "@/lib/commentary-zones";
 import MatchZonePitch from "@/components/analyst/MatchZonePitch";
 import { measureFromVideo, type VideoMeasurement } from "@/lib/super-engine";
 import { compressVideo } from "@/lib/compress-video";
-import {
-  uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory,
-} from "@/lib/upload-chunks";
+import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
+import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
+import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -199,20 +200,30 @@ export default function AnalystMatchEye() {
   const cmtAudioRef     = useRef<HTMLAudioElement>(null);
   const cmtEventRefsMap = useRef<Record<number, HTMLDivElement | null>>({});
 
-  // Pre-upload advisory
-  const [pendingHalf, setPendingHalf] = useState<"first" | "second" | null>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [advisory,    setAdvisory]    = useState<UploadAdvisory | null>(null);
+  // Gate state
+  const [pendingHalf,  setPendingHalf]  = useState<"first" | "second" | null>(null);
+  const [pendingFile,  setPendingFile]  = useState<File | null>(null);
+  const [gateProbing,  setGateProbing]  = useState(false);
+  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
-  // ── Pre-upload advisory ────────────────────────────────────────────────────
+  // ── Pre-upload gate ────────────────────────────────────────────────────────
 
-  const confirmHalf = useCallback((file: File, which: "first" | "second") => {
-    const adv = getUploadAdvisory(file);
-    if (adv.limitError) { setGlobalError(adv.limitError); return; }
+  const confirmHalf = useCallback(async (file: File, which: "first" | "second") => {
     setPendingFile(file);
     setPendingHalf(which);
-    setAdvisory(adv);
+    setGateStrategy(null);
+    setGateProbing(true);
     setPageStage("confirm");
+    const strategy = await getUploadStrategy();
+    setGateProbing(false);
+    if (strategy.mode === "queue") {
+      setGateStrategy(strategy);
+    } else {
+      setPendingFile(null);
+      setPendingHalf(null);
+      setPageStage("setup");
+      uploadHalf(file, which);
+    }
   }, []);
 
   // ── Small-file upload path (Gemini direct via proxy) ──────────────────────
@@ -339,7 +350,7 @@ export default function AnalystMatchEye() {
     setFirstResult(null); setSecondResult(null);
     setFirstTracking(null); setSecondTracking(null);
     setGlobalError(""); setHomeTeam(""); setAwayTeam(""); setCompetition(""); setSport("Football");
-    setPendingFile(null); setPendingHalf(null); setAdvisory(null);
+    setPendingFile(null); setPendingHalf(null); setGateStrategy(null);
   };
 
   // ── Analyst helpers ────────────────────────────────────────────────────────
@@ -858,45 +869,27 @@ export default function AnalystMatchEye() {
           )}
 
           {/* ── CONFIRM UPLOAD ─────────────────────────────────────────────── */}
-          {pageStage === "confirm" && advisory && pendingFile && pendingHalf && (
+          {pageStage === "confirm" && (gateProbing || gateStrategy) && pendingFile && pendingHalf && (
             <div style={{ background: D.card, borderRadius: 14, border: `1px solid ${D.border}`, padding: "32px 24px", maxWidth: 480, margin: "0 auto" }}>
-              <div style={{ fontWeight: 800, fontSize: 17, color: D.text, marginBottom: 4 }}>Ready to upload?</div>
-              <div style={{ fontSize: 13, color: D.muted, marginBottom: 20 }}>
-                {pendingHalf === "first" ? "First Half (0–45 min)" : "Second Half (45–90 min)"}
-              </div>
-              <div style={{ background: D.card2, borderRadius: 10, padding: "14px 16px", marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                  <span style={{ color: D.muted }}>File</span>
-                  <span style={{ fontWeight: 600, color: D.text, maxWidth: 260, textAlign: "right", wordBreak: "break-all" }}>{pendingFile.name}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                  <span style={{ color: D.muted }}>Size</span>
-                  <span style={{ fontWeight: 600, color: D.text }}>{advisory.sizeMB.toFixed(0)} MB</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                  <span style={{ color: D.muted }}>Est. upload time</span>
-                  <span style={{ fontWeight: 600, color: D.text }}>{advisory.estimatedTime}</span>
-                </div>
-              </div>
-              {advisory.sizeWarning && (
-                <div style={{ background: D.amberBg, border: `1px solid #92400e`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: D.amber }}>
-                  ⚠️ {advisory.sizeWarning}
-                </div>
-              )}
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => { setPageStage("setup"); setPendingFile(null); setPendingHalf(null); setAdvisory(null); }}
-                  style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: `1px solid ${D.border}`, background: D.card2, fontWeight: 600, fontSize: 14, color: D.muted, cursor: "pointer" }}>
-                  Cancel
-                </button>
-                <button onClick={() => {
+              <UploadGate
+                strategy={gateStrategy}
+                probing={gateProbing}
+                onForceUpload={() => {
                   const file = pendingFile!; const which = pendingHalf!;
-                  setPendingFile(null); setPendingHalf(null); setAdvisory(null); setPageStage("setup");
+                  setPendingFile(null); setPendingHalf(null); setGateStrategy(null); setPageStage("setup");
+                  flushQueue();
                   uploadHalf(file, which);
                 }}
-                  style={{ flex: 2, padding: "11px 0", borderRadius: 8, border: "none", background: D.green, fontWeight: 700, fontSize: 14, color: "#030712", cursor: "pointer" }}>
-                  Start Upload
-                </button>
-              </div>
+                onQueue={() => {
+                  const file = pendingFile!; const which = pendingHalf!;
+                  const setH = which === "first" ? setFirstHalf : setSecondHalf;
+                  setPendingFile(null); setPendingHalf(null); setGateStrategy(null); setPageStage("setup");
+                  setH((h) => ({ ...h, stage: "uploading", pct: 0 }));
+                  enqueueUpload(file, (pct) => setH((h) => ({ ...h, pct })), true)
+                    .then((data) => setH((h) => ({ ...h, stage: "uploaded", pct: 100, fileUri: data.fileUri, fileName: data.fileName, mimeType: data.mimeType })))
+                    .catch((err) => setH((h) => ({ ...h, stage: "error", error: err instanceof Error ? err.message : "Upload failed" })));
+                }}
+              />
             </div>
           )}
 
