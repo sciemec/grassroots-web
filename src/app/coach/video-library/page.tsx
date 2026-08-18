@@ -362,6 +362,9 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
         });
       }
 
+      if (!token) {
+        throw new Error("Your session expired — please refresh the page and log in again.");
+      }
       const saveRes = await fetch(`${API}/coach/match-videos`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
