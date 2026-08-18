@@ -373,6 +373,12 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
           r2_key: key || "",
         }),
       });
+      if (!saveRes.ok) {
+        const text = await saveRes.text().catch(() => "(no body)");
+        const msg = `Video uploaded to R2 ✓ but failed to save details (${saveRes.status}). The server may have been starting up — please wait 30 seconds and try submitting again.`;
+        console.error("[VideoLibrary] save failed:", saveRes.status, text.slice(0, 300));
+        throw new Error(msg);
+      }
       const saved = await saveRes.json();
       if (saved.data) {
         onUploaded({ ...saved.data, _source: "match" });
