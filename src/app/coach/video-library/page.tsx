@@ -375,7 +375,7 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
       });
       if (!saveRes.ok) {
         const text = await saveRes.text().catch(() => "(no body)");
-        const msg = `Video uploaded to R2 ✓ but failed to save details (${saveRes.status}). The server may have been starting up — please wait 30 seconds and try submitting again.`;
+        const msg = `Please wait 30 seconds and try submitting again.`;
         console.error("[VideoLibrary] save failed:", saveRes.status, text.slice(0, 300));
         throw new Error(msg);
       }
