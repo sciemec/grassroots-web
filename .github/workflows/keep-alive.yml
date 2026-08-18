@@ -1,0 +1,24 @@
+name: Keep Render services alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every 10 minutes
+  workflow_dispatch:            # allow manual trigger from GitHub UI
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Ping Laravel API (bhora-ai)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 \
+            https://bhora-ai.onrender.com/api/v1)
+          echo "Laravel status: $STATUS"
+
+      - name: Ping Next.js web app (grassroots-web)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 \
+            https://grassrootssports.live)
+          echo "Web app status: $STATUS"
