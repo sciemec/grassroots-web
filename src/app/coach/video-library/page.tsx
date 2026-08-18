@@ -381,13 +381,13 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
         if (status === 401) {
           msg = "Your session expired — please refresh the page, log in again, and retry.";
         } else if (status === 422) {
-          msg = `Validation error (422) — please check your entries and try again.`;
+          msg = "Validation error — please check your entries and try again.";
         } else if (status === 500) {
-          msg = `Server error (500) saving video details — please try again in a moment.`;
+          msg = "Could not save your video details — please try again in a moment.";
         } else if (status === 502 || status === 503 || status === 504) {
-          msg = `Server is starting up (${status}) — please wait 30 seconds and try submitting again.`;
+          msg = "Server is starting up — please wait 30 seconds and try submitting again.";
         } else {
-          msg = `Upload failed (${status}) — please try again.`;
+          msg = "Upload failed — please try again.";
         }
         throw new Error(msg);
       }
