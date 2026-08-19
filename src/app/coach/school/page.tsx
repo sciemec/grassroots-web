@@ -120,7 +120,7 @@ export default function SchoolCoachPage() {
 
   // Load data — API first, localStorage cache, seed fallback
   useEffect(() => {
-    const t = token ?? localStorage.getItem("auth_token") ?? "";
+    const t = token ?? "";
     const go = async () => {
       setLoading(true);
       await Promise.allSettled([

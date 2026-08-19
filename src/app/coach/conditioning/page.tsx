@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   Search,
   CheckCircle2,
@@ -111,7 +112,7 @@ export default function CoachConditioningPage() {
   // Load cards from API
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL;
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const token = useAuthStore.getState().token;
     if (!API || !token) return;
 
     fetch(`${API}/exercise-cards?per_page=100`)
@@ -123,7 +124,7 @@ export default function CoachConditioningPage() {
   // Load squad from API
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL;
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const token = useAuthStore.getState().token;
     if (!API || !token) return;
 
     fetch(`${API}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })

@@ -227,7 +227,7 @@ export default function CoachChemistryPage() {
     if (!selectedFpPlayer || activeTab !== "fingerprint") return;
     setFpLoading(true);
     setPlayerFingerprint(null);
-    const token = localStorage.getItem("auth_token") ?? "";
+    const token = useAuthStore.getState().token ?? "";
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemistry/fingerprint/${selectedFpPlayer}`, {
       headers: { Authorization: `Bearer ${token}` },
     })

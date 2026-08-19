@@ -26,6 +26,7 @@ import {
 import { Sidebar } from "@/components/layout/sidebar";
 import { ProGate } from "@/components/ui/pro-gate";
 import { findRelevantSessions } from "@/lib/football-knowledge";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   FORMATS_TABLE, FORMAT_COLORS, TRAINING_FORMATS, PATHWAY_STEPS,
   ECD_STAGES, THREE_V_THREE_RULES, THREE_V_THREE_COACHING_TIPS,
@@ -974,7 +975,7 @@ function AssignModal({
   const [sent, setSent]                 = useState(false);
 
   const api   = process.env.NEXT_PUBLIC_API_URL;
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const token = useAuthStore.getState().token;
 
   useEffect(() => {
     fetch(`${api}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
@@ -1158,7 +1159,7 @@ function AssignedTab({
   const [loading, setLoading] = useState(true);
 
   const api   = process.env.NEXT_PUBLIC_API_URL;
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const token = useAuthStore.getState().token;
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
