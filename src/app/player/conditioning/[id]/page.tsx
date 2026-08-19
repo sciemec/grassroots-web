@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   ChevronLeft,
   MessageCircle,
@@ -138,7 +139,7 @@ export default function ExerciseCardDetailPage() {
     });
 
     // Non-blocking API sync
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const token = useAuthStore.getState().token;
     if (token && process.env.NEXT_PUBLIC_API_URL) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/conditioning/sessions`, {
         method: "POST",

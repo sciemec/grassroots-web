@@ -145,7 +145,7 @@ export default function PotentialPage() {
 
     try {
       // Try real backend data first (requires APK training sessions)
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      const token = useAuthStore.getState().token;
       if (token && token !== "dev-token") {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/player/prediction`,

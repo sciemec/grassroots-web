@@ -6,6 +6,7 @@ import { CheckCircle2, ChevronRight, Clock, Flame, ThumbsUp } from "lucide-react
 import type { ExerciseCard, IntensityFelt, SessionType } from "@/lib/conditioning/types";
 import { SEED_CARDS } from "@/lib/conditioning/seed-cards";
 import { saveSession } from "@/lib/conditioning/storage";
+import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -108,7 +109,7 @@ function SessionRunner() {
     saveSession(session);
 
     // Also try API (non-blocking)
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const token = useAuthStore.getState().token;
     if (token) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/conditioning/sessions`, {
         method: "POST",

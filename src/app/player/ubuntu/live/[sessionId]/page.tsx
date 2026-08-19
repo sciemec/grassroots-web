@@ -294,7 +294,7 @@ export default function UbuntuLivePage() {
   // ── Persist leadership score to Laravel on session end ──────────────────────
   const submitScore = useCallback(async (points: number) => {
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = useAuthStore.getState().token;
       if (!token || token === "dev-token") return;
       await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/ubuntu/leadership-score`,

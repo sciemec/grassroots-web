@@ -241,9 +241,7 @@ export default function ShowcasePage() {
       // 3 — AI analysis: Gemini vision (3-step) → text-only fallback
       setPhase("analysing");
 
-      const token = typeof window !== "undefined"
-        ? localStorage.getItem("auth_token") ?? ""
-        : "";
+      const token = useAuthStore.getState().token ?? "";
 
       let analysis: AIAnalysis = { ...FALLBACK };
       let geminiSucceeded = false;
@@ -695,9 +693,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                           enqueueUpload(f, setProgress)
                             .then(async ({ fileUri, fileName }) => {
                               setPhase("analysing");
-                              const token = typeof window !== "undefined"
-                                ? localStorage.getItem("auth_token") ?? ""
-                                : "";
+                              const token = useAuthStore.getState().token ?? "";
                               const mimeType = f.type || "video/mp4";
                               let analysis: AIAnalysis = { ...FALLBACK };
                               try {

@@ -257,7 +257,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     setInviteLoading(true);
     setInviteError("");
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = useAuthStore.getState().token;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/guardian/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

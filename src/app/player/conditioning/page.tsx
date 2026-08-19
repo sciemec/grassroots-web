@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuthStore } from "@/lib/auth-store";
 import {
   Activity,
   ChevronRight,
@@ -128,7 +129,7 @@ export default function ConditioningLibraryPage() {
   // Load THUTO's personalised picks (auth required)
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL;
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const token = useAuthStore.getState().token;
     if (!API || !token) {
       setLoadingRec(false);
       return;
