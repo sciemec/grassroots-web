@@ -11,8 +11,7 @@ const api = axios.create({
 // Attach bearer token from auth store on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const user = useAuthStore.getState().user;
-    const token = user?.token;
+    const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
