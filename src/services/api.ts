@@ -3,12 +3,13 @@
 // Falls back to localStorage when the backend is unavailable (no internet / cold start).
 
 import { AttributeScore, PositionType, ScoutingProfile } from "@/types";
+import { useAuthStore } from "@/lib/auth-store";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
 function getToken(): string {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem("auth_token") ?? "";
+  return useAuthStore.getState().token ?? "";
 }
 
 async function request<T>(

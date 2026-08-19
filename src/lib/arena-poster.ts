@@ -2,6 +2,8 @@
 // Fire-and-forget utility — posts an activity to the Arena social feed.
 // Never throws; callers do not need to await or catch.
 
+import { useAuthStore } from "@/lib/auth-store";
+
 export async function postToArena(
   body: string,
   options?: {
@@ -12,7 +14,7 @@ export async function postToArena(
     videoUrl?: string;
   }
 ): Promise<void> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const token = typeof window !== "undefined" ? useAuthStore.getState().token : null;
   if (!token || token === "dev-token") return;
 
   const payload: Record<string, unknown> = {
