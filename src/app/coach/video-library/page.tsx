@@ -362,12 +362,15 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
         });
       }
 
-      if (!token) {
+      // Read token fresh from Zustand at the moment of POST — avoids stale closure
+      // capturing a null value from an earlier render before hydration completed.
+      const freshToken = useAuthStore.getState().token;
+      if (!freshToken) {
         throw new Error("Your session expired — please refresh the page and log in again.");
       }
       const saveRes = await fetch(`${API}/coach/match-videos`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${freshToken}`, "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({
           title, match_date: matchDate,
           opponent: opponent || null,
