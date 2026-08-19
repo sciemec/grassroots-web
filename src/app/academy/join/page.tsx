@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuthStore } from "@/lib/auth-store";
+import { useAuthStore, type AuthUser } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -11,8 +11,7 @@ export default function AcademyJoinPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const setUser = useAuthStore((s) => s.setUser);
-  const setToken = useAuthStore((s) => s.setToken);
+  const loginStore = useAuthStore((s) => s.login);
 
   const [form, setForm] = useState({
     name: "",
@@ -94,8 +93,7 @@ export default function AcademyJoinPage() {
         return;
       }
 
-      setToken(token);
-      setUser(authedUser);
+      loginStore({ ...authedUser, token } as AuthUser);
 
       // 3 — Save academy name to profile (non-blocking)
       fetch(`${API}/profile`, {
