@@ -26,6 +26,7 @@ import { getUploadStrategy } from "@/lib/use-upload-strategy";
 interface QueueEntry {
   file: File;
   onProgress: (pct: number) => void;
+  onWarning?: (msg: string) => void;
   compress: boolean;
   resolve: (result: ChunkUploadResult) => void;
   reject: (err: unknown) => void;
@@ -75,7 +76,7 @@ async function processQueue(forceFlush = false): Promise<void> {
     const entry = queue[0];
     try {
       const fileToUpload = await compressIfNeeded(entry.file, entry.compress);
-      const result = await uploadVideoInChunksParallel(fileToUpload, entry.onProgress);
+      const result = await uploadVideoInChunksParallel(fileToUpload, entry.onProgress, entry.onWarning);
       entry.resolve(result);
     } catch (err) {
       entry.reject(err);
@@ -121,9 +122,10 @@ export function enqueueUpload(
   file: File,
   onProgress: (pct: number) => void,
   compress = false,
+  onWarning?: (msg: string) => void,
 ): Promise<ChunkUploadResult> {
   return new Promise<ChunkUploadResult>((resolve, reject) => {
-    queue.push({ file, onProgress, compress, resolve, reject });
+    queue.push({ file, onProgress, onWarning, compress, resolve, reject });
     emitQueueChange();
     // Try to drain immediately — if connection is weak, processQueue() will bail.
     void processQueue();

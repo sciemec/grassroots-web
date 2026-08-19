@@ -90,8 +90,9 @@ export default function GeneralAnalysisView({ backHref }: Props) {
   const [analysis, setAnalysis] = useState<GeneralAnalysis | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [freeTrial, setFreeTrial] = useState(false);
-  const [gateProbing,  setGateProbing]  = useState(false);
-  const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
+  const [gateProbing,    setGateProbing]    = useState(false);
+  const [gateStrategy,   setGateStrategy]   = useState<UploadStrategyResult | null>(null);
+  const [uploadWarning,  setUploadWarning]  = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -106,7 +107,7 @@ export default function GeneralAnalysisView({ backHref }: Props) {
     setErrorMsg('');
 
     try {
-      const uploaded = await uploadVideoInChunksParallel(fileToUpload, (pct) => setProgress(pct));
+      const uploaded = await uploadVideoInChunksParallel(fileToUpload, (pct) => setProgress(pct), setUploadWarning);
       setStatus('analysing');
 
       const res = await fetch('/api/analyse-general', {
@@ -172,6 +173,7 @@ export default function GeneralAnalysisView({ backHref }: Props) {
     setAnalysis(null);
     setErrorMsg('');
     setGateStrategy(null);
+    setUploadWarning(null);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -274,7 +276,7 @@ export default function GeneralAnalysisView({ backHref }: Props) {
                   const f = file!;
                   setGateStrategy(null);
                   setStatus('uploading');
-                  enqueueUpload(f, (pct) => setProgress(pct))
+                  enqueueUpload(f, (pct) => setProgress(pct), false, setUploadWarning)
                     .then(async ({ fileUri, fileName, mimeType }) => {
                       if (!fileUri) throw new Error('Upload did not return a file URI');
                       setStatus('analysing');
@@ -343,6 +345,12 @@ export default function GeneralAnalysisView({ backHref }: Props) {
                 style={{ width: `${progress}%`, backgroundColor: '#1a5c2a' }}
               />
             </div>
+            {uploadWarning && (
+              <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+                <span className="text-amber-700 text-sm flex-1">{uploadWarning}</span>
+                <button onClick={() => setUploadWarning(null)} className="text-amber-400 hover:text-amber-600 text-xs flex-shrink-0 mt-0.5" aria-label="Dismiss">✕</button>
+              </div>
+            )}
           </div>
         )}
 

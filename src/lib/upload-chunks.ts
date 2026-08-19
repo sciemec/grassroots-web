@@ -241,13 +241,23 @@ async function acquireWakeLock(): Promise<WakeLockHandle> {
   const nav = navigator as Navigator & {
     wakeLock?: { request(type: "screen"): Promise<{ release(): Promise<void> }> };
   };
-  if (!nav.wakeLock) return null;
+  if (!nav.wakeLock) {
+    console.warn(
+      "[upload] wake-lock unavailable — Screen Wake Lock API not supported in this browser. " +
+      "Screen dimming may interrupt the upload on battery-managed devices (Samsung One UI, iOS).",
+    );
+    return null;
+  }
   try {
     const lock = await nav.wakeLock.request("screen");
     console.log("[upload] wake-lock acquired");
     return lock;
-  } catch {
-    // Permission denied or API not available — upload continues without it
+  } catch (err) {
+    console.warn(
+      "[upload] wake-lock denied —",
+      err instanceof Error ? err.message : String(err),
+      "— screen may dim and interrupt the upload.",
+    );
     return null;
   }
 }
@@ -329,18 +339,30 @@ function sendChunkXhr(
 
     // ── Connection dropped (mobile tower handoff / Samsung battery manager) ─
     // Android Chrome fires onerror with no additional error code when the OS
-    // terminates the TCP socket.  We log network state for field diagnostics.
+    // terminates the TCP socket. Log network state to console for diagnostics,
+    // but do NOT include it in the user-facing message — on Samsung, "4g / 12 Mbps"
+    // alongside a connection drop is misleading (signal is fine; battery manager
+    // killed the TCP socket when the screen dimmed, not a real network failure).
     xhr.onerror = () => {
       const conn = (navigator as Navigator & {
         connection?: { effectiveType?: string; downlink?: number; rtt?: number };
       }).connection;
-      const netInfo = conn
-        ? ` [net: ${conn.effectiveType ?? "?"}, ↓${conn.downlink ?? "?"}Mbps, rtt ${conn.rtt ?? "?"}ms]`
-        : "";
-      reject(new UploadError(
-        `Connection dropped during upload${netInfo} — will retry automatically.`,
-        "connection-dropped",
-      ));
+      if (conn) {
+        console.warn(
+          `[upload] connection-dropped — effectiveType=${conn.effectiveType ?? "?"} ` +
+          `downlink=${conn.downlink ?? "?"}Mbps rtt=${conn.rtt ?? "?"}ms`,
+        );
+      }
+      // Samsung battery-kill signature: strong 4G signal + onerror = battery manager
+      // severed the TCP socket. Surface a device-specific message with next steps.
+      const looksLikeBatteryKill = conn?.effectiveType === "4g" && (conn.downlink ?? 0) > 2;
+      const userMsg = looksLikeBatteryKill
+        ? "Upload stopped — your phone's battery saver interrupted the connection. " +
+          "Tap your screen to keep it awake and the upload will retry automatically. " +
+          "To stop this happening: Settings → Battery → App Battery Saver → disable for your browser."
+        : "Connection dropped — the upload will retry automatically. " +
+          "If this keeps happening, keep your screen on and disable battery saver for your browser.";
+      reject(new UploadError(userMsg, "connection-dropped"));
     };
 
     xhr.open("POST", `/api/match-eye/upload?${params.toString()}`);
@@ -375,6 +397,7 @@ function sendChunkXhr(
 export async function uploadVideoInChunks(
   file:       File,
   onProgress: (pct: number) => void,
+  onWarning?: (msg: string) => void,
 ): Promise<ChunkUploadResult> {
   const totalSize   = file.size;
   const totalChunks = Math.ceil(totalSize / CHUNK_BYTES);
@@ -384,6 +407,12 @@ export async function uploadVideoInChunks(
   // Prevent Android/iOS from dimming the screen mid-upload (which kills the
   // XHR socket on Samsung One UI's aggressive battery management).
   const wakeLock = await acquireWakeLock();
+  if (wakeLock === null && typeof navigator !== "undefined") {
+    onWarning?.(
+      "Keep your screen on during upload — your device could not lock the screen awake " +
+      "automatically. If the screen turns off, the upload may be interrupted.",
+    );
+  }
   try {
     for (let i = 0; i < totalChunks; i++) {
       const start  = i * CHUNK_BYTES;
@@ -414,6 +443,12 @@ export async function uploadVideoInChunks(
             `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
             `delay=${delayMs / 1000}s err="${lastError?.message}"`,
           );
+          if (lastError instanceof UploadError && lastError.kind === "connection-dropped") {
+            onWarning?.(
+              `Upload interrupted — tap your screen to keep it awake. ` +
+              `Retrying in ${Math.round(delayMs / 1000)} seconds…`,
+            );
+          }
           // Mobile-safe backoff: 5 s / 15 s / 30 s — gives mobile data time to recover
           await new Promise<void>((r) => setTimeout(r, delayMs));
         }
@@ -502,6 +537,7 @@ export async function uploadVideoInChunks(
 export async function uploadVideoInChunksParallel(
   file:       File,
   onProgress: (pct: number) => void,
+  onWarning?: (msg: string) => void,
 ): Promise<ChunkUploadResult> {
   const totalSize   = file.size;
   const chunkSize   = getChunkSize(); // 8 MB on mobile, 24 MB on desktop
@@ -512,6 +548,12 @@ export async function uploadVideoInChunksParallel(
   // Prevent Android/iOS from dimming the screen mid-upload (which kills the
   // XHR socket on Samsung One UI's aggressive battery management).
   const wakeLock = await acquireWakeLock();
+  if (wakeLock === null && typeof navigator !== "undefined") {
+    onWarning?.(
+      "Keep your screen on during upload — your device could not lock the screen awake " +
+      "automatically. If the screen turns off, the upload may be interrupted.",
+    );
+  }
   try {
     for (let i = 0; i < totalChunks; i++) {
       const start  = i * chunkSize;
@@ -540,6 +582,12 @@ export async function uploadVideoInChunksParallel(
             `[upload] retry chunk=${i + 1}/${totalChunks} attempt=${attempt + 1} ` +
             `delay=${delayMs / 1000}s err="${lastError?.message}"`,
           );
+          if (lastError instanceof UploadError && lastError.kind === "connection-dropped") {
+            onWarning?.(
+              `Upload interrupted — tap your screen to keep it awake. ` +
+              `Retrying in ${Math.round(delayMs / 1000)} seconds…`,
+            );
+          }
           // Mobile-safe backoff: 5 s / 15 s / 30 s — gives mobile data time to recover
           await new Promise<void>((r) => setTimeout(r, delayMs));
         }

@@ -227,7 +227,8 @@ export default function CoachDrillAnalysisPage() {
   const [thutoLoading, setThutoLoading] = useState(false);
   const [arenaPosted,  setArenaPosted]  = useState(false);
   const [expandedTips, setExpandedTips] = useState(false);
-  const [r2VideoUrl,   setR2VideoUrl]   = useState("");
+  const [r2VideoUrl,     setR2VideoUrl]     = useState("");
+  const [uploadWarning,  setUploadWarning]  = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -297,7 +298,7 @@ export default function CoachDrillAnalysisPage() {
     let fileName: string;
     let mimeType: string;
     try {
-      const uploadData = await uploadVideoInChunksParallel(file, (pct) => setUploadPct(pct));
+      const uploadData = await uploadVideoInChunksParallel(file, (pct) => setUploadPct(pct), setUploadWarning);
       fileUri  = uploadData.fileUri;
       fileName = uploadData.fileName;
       mimeType = uploadData.mimeType;
@@ -499,6 +500,7 @@ export default function CoachDrillAnalysisPage() {
     setArenaPosted(false);
     setErrMsg("");
     setUploadPct(0);
+    setUploadWarning(null);
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -668,7 +670,7 @@ export default function CoachDrillAnalysisPage() {
                 const drill = drillId;
                 setPendingFile(null); setGateStrategy(null); setStage("upload");
                 setUploadPct(0); setResult(null);
-                enqueueUpload(file, (pct) => setUploadPct(Math.round(pct)), false)
+                enqueueUpload(file, (pct) => setUploadPct(Math.round(pct)), false, setUploadWarning)
                   .then(async (uploadData) => {
                     setStage("processing");
                     const analysisRes = await fetch("/api/coach-drill-analysis", {
@@ -695,6 +697,12 @@ export default function CoachDrillAnalysisPage() {
               <div className="h-full bg-[#f0b429] transition-all duration-300 rounded-full" style={{ width: `${uploadPct}%` }} />
             </div>
             <p className="text-sm text-white/50">{uploadPct}% uploaded</p>
+            {uploadWarning && (
+              <div className="mt-3 flex items-start gap-2 rounded-xl bg-amber-500/20 border border-amber-500/30 px-3 py-2.5 text-left">
+                <span className="text-amber-300 text-sm flex-1">{uploadWarning}</span>
+                <button onClick={() => setUploadWarning(null)} className="text-amber-400/60 hover:text-amber-300 text-xs flex-shrink-0 mt-0.5" aria-label="Dismiss">✕</button>
+              </div>
+            )}
           </div>
         )}
 
