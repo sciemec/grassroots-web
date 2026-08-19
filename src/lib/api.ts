@@ -15,9 +15,6 @@ api.interceptors.request.use((config) => {
     const token = user?.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      // TEMPORARY DIAGNOSTIC — remove once Android auth root cause is confirmed
-      console.warn("[api] No token at request time — user:", user, "url:", config.url);
     }
   }
   return config;
