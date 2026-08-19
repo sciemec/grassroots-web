@@ -24,6 +24,7 @@ import {
   Zap, Wind, Activity, Target, Star,
 } from "lucide-react";
 import ReactionTest from "./ReactionTest";
+import { useAuthStore } from "@/lib/auth-store";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -474,7 +475,7 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
     setProfile(prof);
     setPositions(rankedPositions);
 
-    const token = localStorage.getItem("auth_token");
+    const token = useAuthStore.getState().token;
     if (token && token !== "dev-token") {
       try {
         // Save athletic profile

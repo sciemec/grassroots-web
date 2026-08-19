@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useAuthStore } from "@/lib/auth-store";
 
 interface LogProfileViewProps {
   playerId: string;
@@ -15,7 +16,7 @@ export function LogProfileView({ playerId }: LogProfileViewProps) {
   useEffect(() => {
     const token =
       typeof window !== "undefined"
-        ? localStorage.getItem("auth_token")
+        ? useAuthStore.getState().token
         : null;
 
     const headers: Record<string, string> = {

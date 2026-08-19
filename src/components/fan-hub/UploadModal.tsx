@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { X, Upload, CheckCircle2, AlertCircle, Film } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -84,7 +85,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
 
     try {
       // 1. Get presigned URL from Laravel
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      const token = typeof window !== "undefined" ? useAuthStore.getState().token : null;
       const presignRes = await fetch(`${API}/upload/presigned`, {
         method: "POST",
         headers: {
@@ -140,7 +141,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
     setErrorMsg("");
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      const token = typeof window !== "undefined" ? useAuthStore.getState().token : null;
       const res = await fetch(`${API}/media`, {
         method: "POST",
         headers: {
