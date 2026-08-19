@@ -11,8 +11,14 @@ const api = axios.create({
 // Attach bearer token from auth store on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = useAuthStore.getState().user?.token;
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    const user = useAuthStore.getState().user;
+    const token = user?.token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // TEMPORARY DIAGNOSTIC — remove once Android auth root cause is confirmed
+      console.warn("[api] No token at request time — user:", user, "url:", config.url);
+    }
   }
   return config;
 });
