@@ -148,7 +148,7 @@ export default function PotentialPage() {
       const token = useAuthStore.getState().token;
       if (token && token !== "dev-token") {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/player/prediction`,
+          `${process.env.NEXT_PUBLIC_API_URL}/players/${user?.id}/prediction`,
           { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } },
         );
         if (res.ok) {

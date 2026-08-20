@@ -297,7 +297,7 @@ export default function UbuntuLivePage() {
       const token = useAuthStore.getState().token;
       if (!token || token === "dev-token") return;
       await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/ubuntu/leadership-score`,
+        `${process.env.NEXT_PUBLIC_API_URL}/ubuntu/score`,
         {
           method: "POST",
           headers: {

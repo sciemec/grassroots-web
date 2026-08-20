@@ -318,7 +318,8 @@ function drawCard(
 }
 
 export default function MyCardPage() {
-  const { token, user } = useAuthStore();
+  const token = useAuthStore((s) => s.token);
+  const user  = useAuthStore((s) => s.user);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [playerData, setPlayerData] = useState<PlayerCardData | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<CardStyle>('gold');
