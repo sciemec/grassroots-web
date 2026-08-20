@@ -119,7 +119,7 @@ function VelocityBadge({ velocity }: { velocity: number }) {
 }
 
 export default function PotentialPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [form, setForm] = useState<PotentialForm>({
     age: "",
     position: "ST",

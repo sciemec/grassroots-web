@@ -65,7 +65,7 @@ const DOCUMENT_TYPES = [
 
 export default function PlayerVerificationPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const [verif, setVerif] = useState<VerificationData | null>(null);

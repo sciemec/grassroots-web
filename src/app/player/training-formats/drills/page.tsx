@@ -18,7 +18,7 @@ const DRILLS = [
 
 export default function DrillsFormatPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [selected, setSelected] = useState(DRILLS[0].id);
   const [results, setResults] = useState<Record<string, number[]>>({});
   const [timerMs, setTimerMs] = useState(0);

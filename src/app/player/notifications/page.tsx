@@ -68,7 +68,7 @@ function groupByDate(notifications: Notification[]): { label: string; items: Not
 }
 
 export default function PlayerNotificationsPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");

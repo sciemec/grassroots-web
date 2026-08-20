@@ -95,7 +95,7 @@ export default function FootballDrillsLabPage() {
   useEffect(() => {
     if (activeTab !== "saved") return;
     setSavedPlansLoading(true);
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const token = typeof window !== "undefined" ? useAuthStore.getState().token : null;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/drill-plans`, {
       headers: { Authorization: `Bearer ${token ?? ""}` },
     })
@@ -172,7 +172,7 @@ export default function FootballDrillsLabPage() {
 
         const playerId = user.id ?? "me";
         const tierRes = await fetch(`/api/drills?playerId=${playerId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (tierRes.ok) setTierProgress(await tierRes.json());
 
@@ -196,7 +196,7 @@ export default function FootballDrillsLabPage() {
         }
 
         // Load mastery counts from backend
-        const apiToken = localStorage.getItem("auth_token");
+        const apiToken = useAuthStore.getState().token;
         if (apiToken && apiToken !== "dev-token") {
           try {
             const masteryRes = await fetch(
@@ -322,11 +322,11 @@ export default function FootballDrillsLabPage() {
       if (justCompleted) {
         await fetch("/api/drills", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({ action: "complete", playerId, drillId: justCompleted }),
         });
         const tierRes = await fetch(`/api/drills?playerId=${playerId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (tierRes.ok) setTierProgress(await tierRes.json());
       }
@@ -351,7 +351,7 @@ export default function FootballDrillsLabPage() {
       setMasteryMap(prev => ({ ...prev, [drillId]: (prev[drillId] ?? 0) + 1 }));
 
       // Persist mastery to backend (fire-and-forget)
-      const apiToken = localStorage.getItem("auth_token");
+      const apiToken = useAuthStore.getState().token;
       if (apiToken && apiToken !== "dev-token" && drill) {
         fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/player/drill-completions/${drillId}`,

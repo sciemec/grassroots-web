@@ -829,7 +829,7 @@ function ShareToArenaModal({
 
 export default function PlayerVaultPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const [videos, setVideos] = useState<PlayerVideo[]>([]);
   const [storage, setStorage] = useState<StorageInfo>({ used_mb: 0, limit_mb: 500 });

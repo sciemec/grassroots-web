@@ -134,7 +134,7 @@ function ShootingGrid({ shots, onShot }: {
 export default function TrainingFormatSessionPage() {
   const { format = "" } = useParams<{ format: string }>() ?? {};
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const cfg = FORMAT_CONFIG[format as keyof typeof FORMAT_CONFIG];
   const timer = useTimer();
 

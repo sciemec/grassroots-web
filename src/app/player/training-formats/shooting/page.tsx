@@ -19,7 +19,7 @@ interface ZoneData { shots: number; goals: number }
 
 export default function ShootingFormatPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [zoneData, setZoneData] = useState<Record<string, ZoneData>>(() =>
     Object.fromEntries(ZONES.flat().map((z) => [z, { shots: 0, goals: 0 }]))
   );

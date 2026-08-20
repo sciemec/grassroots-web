@@ -43,7 +43,7 @@ function scoreLabel(score: number): string {
 }
 
 export default function SimilarPlayersPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [players, setPlayers]   = useState<SimilarPlayer[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);

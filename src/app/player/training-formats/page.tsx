@@ -56,7 +56,7 @@ const FORMATS = [
 
 export default function TrainingFormatsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     // guests allowed — no login redirect

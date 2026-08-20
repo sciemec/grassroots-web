@@ -109,7 +109,7 @@ const FALLBACK: AIAnalysis = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ShowcasePage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const [clips, setClips]               = useState<ShowcaseClip[]>([]);
   const [localMode, setLocalMode]       = useState(false);

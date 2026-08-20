@@ -12,7 +12,7 @@ const SHAPES = ["4v1", "5v2", "6v2", "6v3", "Position rondo"];
 
 export default function RondoPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [shape, setShape] = useState("5v2");
   const [metrics, setMetrics] = useState({ passes: 0, turnovers: 0, pressureWins: 0, successfulSequences: 0 });
   const [maxSequence, setMaxSequence] = useState(0);

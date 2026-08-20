@@ -30,7 +30,7 @@ interface Programme {
 
 export default function MilestonesPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [programme, setProgramme] = useState<Programme | null>(null);
   const [loading, setLoading] = useState(true);

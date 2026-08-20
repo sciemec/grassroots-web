@@ -36,7 +36,7 @@ interface StatEntry {
 }
 
 export default function PlayerStatsPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [entries, setEntries]   = useState<StatEntry[]>([]);
   const [loading, setLoading]   = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);

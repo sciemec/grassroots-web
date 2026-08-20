@@ -24,7 +24,7 @@ interface ValuationForm {
 }
 
 export default function ValuationPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [form, setForm] = useState<ValuationForm>({
     age: "",
     position: "ST",

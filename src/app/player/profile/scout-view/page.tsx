@@ -47,7 +47,7 @@ function loadLocalClips(): ShowcaseClip[] {
 }
 
 export default function ScoutViewPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [profile, setProfile]   = useState<Profile | null>(null);
   const [clips, setClips]       = useState<ShowcaseClip[]>([]);
   const [loading, setLoading]   = useState(true);

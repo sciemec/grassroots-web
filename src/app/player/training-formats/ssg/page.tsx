@@ -12,7 +12,7 @@ const FORMATS_SSG = ["3v3", "4v4", "5v5", "6v6", "7v7", "Attack vs Defence"];
 
 export default function SSGPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [format, setFormat] = useState("5v5");
   const [score, setScore] = useState({ team1: 0, team2: 0 });
   const [stats, setStats] = useState({

@@ -31,7 +31,7 @@ function formatTime(seconds: number) {
 
 export default function RecordDrillPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const videoRef    = useRef<HTMLVideoElement>(null);

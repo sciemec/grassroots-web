@@ -88,7 +88,7 @@ const PHASES = [
 
 export default function DevelopmentPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [expanded, setExpanded] = useState<string | null>("performance");
 
   useEffect(() => {

@@ -467,7 +467,7 @@ function VideoTalentSection({
 export default function SportStatsPage() {
   const { sport = "" } = useParams<{ sport: string }>() ?? {};
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const sportKey = sport as SportKey;
   const cfg = SPORT_MAP[sportKey];
 

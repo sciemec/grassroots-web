@@ -153,7 +153,7 @@ function formatTime(seconds: number): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PitchModePage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   // Setup
   const [phase, setPhase] = useState<Phase>("setup");

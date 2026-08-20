@@ -19,7 +19,7 @@ interface SportEntry {
 
 export default function MySportsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [entries, setEntries] = useState<SportEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -57,7 +57,7 @@ const HISTORY_KEY = "gs_player_session_history";
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PlayerSessionTrackerPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const router = useRouter();
 
   const [sessionType, setSessionType] = useState<SessionType>("rondo");

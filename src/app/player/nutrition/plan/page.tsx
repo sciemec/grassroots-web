@@ -19,7 +19,7 @@ interface MealPlan {
 }
 
 export default function NutritionPlanPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [plan, setPlan] = useState<MealPlan[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [goal, setGoal] = useState("performance");

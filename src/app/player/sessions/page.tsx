@@ -43,7 +43,7 @@ function scoreColor(s: number) {
 
 export default function SessionsPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [paged, setPaged] = useState<PaginatedSessions | null>(null);
   const [allCompleted, setAllCompleted] = useState<Session[]>([]);
   const [loading, setLoading] = useState(false);
