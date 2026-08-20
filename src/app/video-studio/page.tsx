@@ -186,7 +186,7 @@ export default function VideoStudioPage() {
         const errJson = await presignRes.json().catch(() => ({})) as { error?: string };
         throw new Error(errJson.error ?? `Presign failed (${presignRes.status})`);
       }
-      const { upload_url, public_url } = await presignRes.json() as { upload_url: string; public_url: string | null };
+      const { uploadUrl: upload_url, publicUrl: public_url } = await presignRes.json() as { uploadUrl: string; publicUrl: string | null };
 
       // Step 2 — PUT directly to R2 (XHR so we get progress events)
       await new Promise<void>((resolve, reject) => {

@@ -489,7 +489,7 @@ export default function GeminiDrillsPage() {
 
     // Persist to backend + Arena (fire-and-forget — never blocks the UI)
     // MediaPipe results skip auto-post: the user chooses via explicit buttons
-    const apiToken = localStorage.getItem('auth_token');
+    const apiToken = useAuthStore.getState().token;
     if (apiToken && apiToken !== 'dev-token' && result.engine !== 'mediapipe') {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/drills/${result.drillId}/analyze`, {
         method: 'POST',
@@ -1182,7 +1182,7 @@ export default function GeminiDrillsPage() {
                       <button
                         onClick={() => {
                           if (passportSaved || !upload.result) return;
-                          const apiToken = localStorage.getItem('auth_token');
+                          const apiToken = useAuthStore.getState().token;
                           if (apiToken && apiToken !== 'dev-token') {
                             fetch(`${process.env.NEXT_PUBLIC_API_URL}/drills/${upload.result.drillId}/analyze`, {
                               method: 'POST',

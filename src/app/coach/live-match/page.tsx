@@ -400,7 +400,7 @@ export default function LiveMatchPage() {
     } catch { /* non-critical — patterns will still work from coach_matches */ }
 
     // ── POST match to backend + coach gamification (fire-and-forget) ─────────
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = useAuthStore.getState().token;
     if (token && token !== 'dev-token') {
       const API = process.env.NEXT_PUBLIC_API_URL;
 

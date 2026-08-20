@@ -22,6 +22,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/lib/auth-store';
 
 const GRS_GREEN = '#1c3d22';
 
@@ -285,7 +286,7 @@ export function VideoVaultPage() {
 
   // Fetch vault on mount
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
+    const token = useAuthStore.getState().token;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/vault`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -297,7 +298,7 @@ export function VideoVaultPage() {
   const filtered = filter === 'all' ? videos : videos.filter(v => v.source === filter);
 
   const handleVisibilityChange = async (videoId: string, visibility: VideoVisibility) => {
-    const token = localStorage.getItem('auth_token');
+    const token = useAuthStore.getState().token;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/vault/${videoId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -307,7 +308,7 @@ export function VideoVaultPage() {
   };
 
   const handleShareToArena = async (video: VaultVideo, caption: string) => {
-    const token = localStorage.getItem('auth_token');
+    const token = useAuthStore.getState().token;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/arena/posts/share-video`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -325,7 +326,7 @@ export function VideoVaultPage() {
 
   const handleDelete = async (videoId: string) => {
     if (!confirm('Delete this video?')) return;
-    const token = localStorage.getItem('auth_token');
+    const token = useAuthStore.getState().token;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/vault/${videoId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },

@@ -99,10 +99,10 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
       });
 
       if (!presignRes.ok) throw new Error("Could not get upload URL. Please try again.");
-      const { upload_url, key, public_url } = await presignRes.json() as {
-        upload_url: string;
+      const { uploadUrl: upload_url, key, publicUrl: public_url } = await presignRes.json() as {
+        uploadUrl: string;
         key: string;
-        public_url: string;
+        publicUrl: string;
       };
 
       // 2. PUT directly to R2 with progress tracking

@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { QrCode, Copy, CheckCircle2, ExternalLink, Share2, ArrowLeft, Globe2, Video } from 'lucide-react';
+import { useAuthStore } from '@/lib/auth-store';
 
 const GRS_GREEN = '#1c3d22';
 const GRS_GOLD  = '#c8962a';
@@ -47,7 +48,7 @@ export default function PlayerPassportPage() {
     if (!playerId) { router.replace('/login'); return; }
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ''}` },
     })
       .then(r => r.ok ? r.json() : null)
       .then(d => {

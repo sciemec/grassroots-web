@@ -174,7 +174,7 @@ export default function SessionPage() {
     // Auto-mark weekly challenges based on what was completed this session
     autoMarkChallengesFromSession(state.partials);
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = useAuthStore.getState().token;
     if (!token || token === 'dev-token') return;
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/grs-test`, {

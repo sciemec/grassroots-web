@@ -16,6 +16,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/lib/auth-store';
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────
 // Keys match TalentPredictionService::LEVELS (backend)
@@ -165,9 +166,8 @@ export default function PotentialCard({ playerId, playerName, isPublicView = fal
           {
             headers: {
               'Accept': 'application/json',
-              ...(typeof window !== 'undefined' &&
-                localStorage.getItem('auth_token')
-                ? { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+              ...(useAuthStore.getState().token
+                ? { Authorization: `Bearer ${useAuthStore.getState().token}` }
                 : {}),
             },
             cache: 'no-store',

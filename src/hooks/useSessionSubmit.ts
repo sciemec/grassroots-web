@@ -16,6 +16,7 @@
 
 import { useState, useCallback } from 'react';
 import type { GRSResult } from '@/lib/grs-engine';
+import { useAuthStore } from '@/lib/auth-store';
 
 export interface SubmitResult {
   saved:          boolean;
@@ -55,7 +56,7 @@ export function useSessionSubmit() {
     let drillData: any = null;
 
     // Read auth token once — passed to all three proxy routes so Laravel can authenticate
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = useAuthStore.getState().token;
     const authHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(token && token !== 'dev-token' ? { Authorization: `Bearer ${token}` } : {}),

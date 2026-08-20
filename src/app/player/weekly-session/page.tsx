@@ -229,7 +229,7 @@ export default function WeeklySessionPage() {
     if (submittedRef.current) return;
     submittedRef.current = true;
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = useAuthStore.getState().token;
     if (!token || token === 'dev-token') return;
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/grs-test`, {

@@ -53,14 +53,14 @@ async function uploadPhotoToR2(file: File): Promise<string> {
     }),
   });
   if (!presignRes.ok) throw new Error("Could not get upload URL");
-  const { upload_url, public_url } = (await presignRes.json()) as {
-    upload_url: string;
-    public_url: string | null;
+  const { uploadUrl, publicUrl } = (await presignRes.json()) as {
+    uploadUrl: string;
+    publicUrl: string | null;
   };
-  if (!upload_url) throw new Error("Missing upload URL");
-  await fetch(upload_url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-  if (!public_url) throw new Error("No public URL returned");
-  return public_url;
+  if (!uploadUrl) throw new Error("Missing upload URL");
+  await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+  if (!publicUrl) throw new Error("No public URL returned");
+  return publicUrl;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────

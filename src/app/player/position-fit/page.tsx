@@ -378,7 +378,7 @@ export default function PositionFitPage() {
 
     // ── Auto-save to passport (non-blocking) ──────────────────────────────
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? '';
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = useAuthStore.getState().token;
     if (token && token !== 'dev-token') {
       setSaving(true);
       try {
@@ -409,7 +409,7 @@ export default function PositionFitPage() {
   const shareToArena = async () => {
     if (!result) return;
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? '';
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = useAuthStore.getState().token;
     if (!token || token === 'dev-token') return;
     const bestFitLabel = POS_CONFIG[result.pq.bestFit as PosKey]?.label ?? result.pq.bestFit;
     const bestFitPct   = Math.round(result.pq[cfg.pqKey]);
