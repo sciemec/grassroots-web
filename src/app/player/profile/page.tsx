@@ -92,6 +92,7 @@ const schema = z.object({
   school:         z.string().optional(),
   bio:            z.string().max(500).optional(),
   area:           z.string().max(100).optional(),
+  date_of_birth:  z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -110,7 +111,7 @@ function calcCompletion(data: Partial<FormData>): { count: number; total: number
   const fields = [
     data.sport, data.position, data.province, data.age_group,
     data.preferred_foot, data.height_cm, data.weight_kg,
-    data.club || data.school, data.bio,
+    data.date_of_birth, data.club || data.school, data.bio,
   ];
   const total = fields.length;
   const count = fields.filter(Boolean).length;
@@ -176,6 +177,7 @@ export default function PlayerProfilePage() {
           school:         res.data.school         ?? "",
           bio:            res.data.bio            ?? "",
           area:           res.data.area           ?? "",
+          date_of_birth:  res.data.date_of_birth  ?? "",
         });
       })
       .catch(() => {})
@@ -770,6 +772,15 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                   {...register("weight_kg")}
                   type="number"
                   placeholder="70"
+                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Date of Birth</label>
+                <input
+                  {...register("date_of_birth")}
+                  type="date"
+                  max={new Date().toISOString().split("T")[0]}
                   className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
