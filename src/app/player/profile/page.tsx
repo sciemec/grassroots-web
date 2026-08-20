@@ -170,7 +170,7 @@ export default function PlayerProfilePage() {
           province:       res.data.province       ?? "",
           age_group:      res.data.age_group      ?? "",
           gender:         res.data.gender         ?? "",
-          preferred_foot: res.data.preferred_foot ?? "",
+          preferred_foot: res.data.dominant_foot  ?? "",
           height_cm:      res.data.height_cm      ?? "",
           weight_kg:      res.data.weight_kg      ?? "",
           club:           res.data.club           ?? "",
@@ -188,7 +188,9 @@ export default function PlayerProfilePage() {
     setError("");
     setSaved(false);
     try {
-      const res = await api.patch("/profile", data);
+      const { preferred_foot, ...rest } = data;
+      const payload = { ...rest, dominant_foot: preferred_foot || undefined };
+      const res = await api.patch("/profile", payload);
       setProfile(res.data);
       reset(data);
       setSaved(true);
