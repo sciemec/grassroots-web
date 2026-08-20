@@ -268,7 +268,7 @@ export default function SchoolHubPage() {
 
   // ── Fetch from backend, fall back to localStorage, fall back to seed ─────────
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
+    const token = useAuthStore.getState().token;
     const h = { Authorization: `Bearer ${token}` };
 
     const tryFetch = async <T,>(path: string, lsKey: string, setter: (v: T[]) => void, seed: T[]) => {
@@ -312,7 +312,7 @@ export default function SchoolHubPage() {
     if (!replyBody.trim() || !activeMsg) return;
     setSending(true);
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = useAuthStore.getState().token;
       await fetch(`${API}/school/messages`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -336,7 +336,7 @@ export default function SchoolHubPage() {
     localStorage.setItem(LS.ANNS, JSON.stringify(updated));
     // Try API
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = useAuthStore.getState().token;
       await fetch(`${API}/school/announcements`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

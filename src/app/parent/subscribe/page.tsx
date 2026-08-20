@@ -8,6 +8,7 @@ import {
   ChevronLeft, CheckCircle2, AlertCircle, Loader2,
   Shield, Smartphone, Activity, MessageCircle, Zap,
 } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -52,7 +53,7 @@ export default function ParentSubscribePage() {
     setLoading(true);
     setError("");
 
-    const token = localStorage.getItem("auth_token");
+    const token = useAuthStore.getState().token;
     const res = await fetch(`${API}/guardian/addon/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -78,7 +79,7 @@ export default function ParentSubscribePage() {
   const startPolling = (url: string, reference: string) => {
     pollRef.current = setInterval(async () => {
       try {
-        const token = localStorage.getItem("auth_token");
+        const token = useAuthStore.getState().token;
         const res = await fetch(`${API}/guardian/addon/confirm`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

@@ -205,7 +205,7 @@ export default function ArenaPage() {
   const [pipedPlayers, setPipedPlayers] = useState<Set<string>>(new Set());
   const [showFilters,  setShowFilters]  = useState(false);
 
-  const authToken = token ?? (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
+  const authToken = token;
 
   // ── Build scholarship matches when pathways tab is opened ────────────────
   useEffect(() => {

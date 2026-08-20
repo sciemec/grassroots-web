@@ -5,6 +5,7 @@ import { Upload, Play, Cpu, TrendingUp, Eye, Globe, Film, RefreshCw, Zap, MapPin
 import VideoCard, { type FanHubVideo } from "@/components/fan-hub/VideoCard";
 import VideoPlayer from "@/components/fan-hub/VideoPlayer";
 import UploadModal from "@/components/fan-hub/UploadModal";
+import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -110,8 +111,8 @@ export default function FanHubPage() {
     setPage(1);
 
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const authHeaders = token && token !== "dev-token"
+      const token = useAuthStore.getState().token;
+      const authHeaders: HeadersInit = token && token !== "dev-token"
         ? { Authorization: `Bearer ${token}` }
         : {};
 

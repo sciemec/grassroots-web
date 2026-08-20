@@ -5,6 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 const GRS_GREEN = "#1a5c2a";
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -22,7 +23,7 @@ export default function ParentLinkPage() {
 
     setLoading(true); setError("");
 
-    const token = localStorage.getItem("auth_token");
+    const token = useAuthStore.getState().token;
     const res = await fetch(`${API}/guardian/link`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

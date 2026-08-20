@@ -8,6 +8,7 @@ import {
   ChevronLeft, AlertCircle, CheckCircle2,
   Activity, Zap, Shield, Trophy, MessageCircle,
 } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 const GRS_GREEN = "#1a5c2a";
 const GRS_GOLD  = "#c8962a";
@@ -67,7 +68,7 @@ export default function ParentDashboardPage() {
   const [addonRequired, setAddonRequired] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
+    const token = useAuthStore.getState().token;
     if (!token) { setError("Please log in."); setLoading(false); return; }
 
     fetch(`${API}/guardian/dashboard`, {

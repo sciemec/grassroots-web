@@ -106,7 +106,7 @@ export default function CommunityPage() {
   const [selectedArea, setSelectedArea] = useState("");
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const token = useAuthStore.getState().token;
     const headers: HeadersInit = token && token !== "dev-token" ? { Authorization: `Bearer ${token}` } : {};
 
     setFeedLoading(true);
@@ -175,7 +175,7 @@ export default function CommunityPage() {
     setFollowMsg("");
 
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = useAuthStore.getState().token;
       const res = await fetch(`${API}/fan/follow`, {
         method: "POST",
         headers: {
