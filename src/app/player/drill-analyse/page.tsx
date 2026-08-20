@@ -181,7 +181,7 @@ function DrillAnalysePage() {
     if (saving) return savedId;
     setSaving(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL!;
       const feedback = results ?? { text: geminiText };
       const res = await fetch(`${apiBase}/video-analyses`, {
         method: "POST",
@@ -210,7 +210,7 @@ function DrillAnalysePage() {
     if (!id) return;
     setSharing(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL!;
       await fetch(`${apiBase}/video-analyses/${id}/share-to-arena`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

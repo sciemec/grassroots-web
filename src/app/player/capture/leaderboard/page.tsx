@@ -92,7 +92,7 @@ function DrillLeaderboard() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL!;
 
   // ── Fetch leaderboard ──────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 // ── Score normalisation ──────────────────────────────────────────────────────
 

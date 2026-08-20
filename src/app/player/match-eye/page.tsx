@@ -629,7 +629,7 @@ export default function PlayerMatchEyePage() {
     if (!analysis || saving) return savedId;
     setSaving(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL!;
       const res = await fetch(`${apiBase}/video-analyses`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -657,7 +657,7 @@ export default function PlayerMatchEyePage() {
     if (!id) return;
     setSharing(true);
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL!;
       await fetch(`${apiBase}/video-analyses/${id}/share-to-arena`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

@@ -6,7 +6,7 @@ import { ArrowLeft, Camera, Upload, X, ChevronDown, ChevronUp, FileDown } from '
 import { useAuthStore } from '@/lib/auth-store';
 import { measureFromVideo, type VideoMeasurement, type TestType } from '@/lib/super-engine';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

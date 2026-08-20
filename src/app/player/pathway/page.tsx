@@ -94,7 +94,7 @@ const CHECKPOINTS = [
   { key: 'scholarship_applied',       label: 'Scholarship application submitted',     when: 'Form 6' },
 ];
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://bhora-ai.onrender.com/api/v1';
+const API = process.env.NEXT_PUBLIC_API_URL!;
 
 function authHeaders(token: string) {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };

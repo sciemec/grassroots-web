@@ -10,7 +10,7 @@ import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-s
 import { flushQueue } from "@/lib/upload-queue";
 import { UploadGate } from "@/components/upload/UploadGate";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
+const API = process.env.NEXT_PUBLIC_API_URL!;
 
 const CATEGORY_LABELS: Record<string, string> = {
   drill:     "Drill",
