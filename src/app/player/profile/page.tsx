@@ -111,7 +111,7 @@ function calcCompletion(data: Partial<FormData>): { count: number; total: number
   const fields = [
     data.sport, data.position, data.province, data.age_group,
     data.preferred_foot, data.height_cm, data.weight_kg,
-    data.date_of_birth, data.bio,
+    data.date_of_birth, data.club || data.school, data.bio,
   ];
   const total = fields.length;
   const count = fields.filter(Boolean).length;
