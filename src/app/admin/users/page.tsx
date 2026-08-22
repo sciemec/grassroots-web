@@ -2,10 +2,21 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Search, Loader2, Download, FileText, ExternalLink, ChevronDown } from "lucide-react";
+import { ArrowLeft, Search, Loader2, Download, FileText, ExternalLink, ChevronDown, MapPin } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/auth-store";
 import api from "@/lib/api";
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / 86_400_000);
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(months / 12)}yr ago`;
+}
 
 interface AdminUser {
   id: string;
@@ -18,6 +29,12 @@ interface AdminUser {
   created_at: string;
   is_active: boolean;
   verified_at: string | null;
+  last_active_at: string | null;
+}
+
+interface ProvinceCount {
+  province: string;
+  count: number;
 }
 
 interface UsersMeta {
@@ -189,6 +206,19 @@ export default function AdminUsersPage() {
     },
   });
 
+  const { data: provincesData } = useQuery<{ data: ProvinceCount[] }>({
+    queryKey: ["admin-users-provinces"],
+    queryFn: async () => {
+      const res = await api.get("/admin/users/provinces");
+      return res.data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 min — doesn't need to refresh on every render
+  });
+
+  const provinces = provincesData?.data ?? [];
+  const maxProvinceCount = provinces[0]?.count ?? 1;
+
   const users = data?.data ?? [];
   const meta = data?.meta;
 
@@ -251,6 +281,30 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+
+      {/* Province breakdown */}
+      {provinces.length > 0 && (
+        <div className="mb-5 rounded-xl border bg-card p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 text-accent" />
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Users by Province</p>
+          </div>
+          <div className="space-y-1.5">
+            {provinces.map((row) => (
+              <div key={row.province} className="flex items-center gap-3">
+                <span className="w-28 shrink-0 text-xs text-muted-foreground truncate">{row.province}</span>
+                <div className="flex-1 rounded-full bg-muted h-2 overflow-hidden">
+                  <div
+                    className="h-2 rounded-full bg-primary"
+                    style={{ width: `${Math.round((row.count / maxProvinceCount) * 100)}%` }}
+                  />
+                </div>
+                <span className="w-7 shrink-0 text-right text-xs font-semibold text-white">{row.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search + role filter */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -394,8 +448,11 @@ export default function AdminUsersPage() {
                   </td>
 
                   <td className="px-4 py-3 text-muted-foreground">{u.province || "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(u.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                  <td className="px-4 py-3">
+                    <span className="block text-sm font-medium text-white">
+                      {new Date(u.created_at).toLocaleDateString("en-ZW", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">{timeAgo(u.created_at)}</span>
                   </td>
 
                   {/* Status */}
