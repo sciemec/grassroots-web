@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
           <HubCard href="/admin/subscriptions" icon={CreditCard}  label="Subscriptions"     desc="Billing, plans & Stripe dashboard" accent />
           <HubCard href="/admin/stats"         icon={BarChart3}   label="Platform Stats"    desc="Users, sessions & engagement"      />
           <HubCard href="/notifications"       icon={Bell}        label="Push Notifications" desc="Send FCM alerts to all users"     />
-          <HubCard href="/talent-leaderboard"  icon={Database}    label="Talent Database"   desc="National rankings & THUTO scores"  />
+          <HubCard href="/admin/talent-database" icon={Database}    label="Talent Database"   desc="Registered players — profile & scout status" />
         </div>
 
         {/* ── 3. Content & Community ───────────────────────────────────── */}
