@@ -36,11 +36,32 @@ export default function AdminAnnouncementsPage() {
   const [broadcastResult, setBroadcastResult] = useState<{ sent_to?: number; ok: boolean } | null>(null);
 
   useEffect(() => {
+    // Show localStorage data instantly while backend loads
     try {
       const stored = localStorage.getItem(LS_KEY);
       if (stored) setAnnouncements(JSON.parse(stored));
     } catch {}
-  }, []);
+
+    if (!token) return;
+    fetch(`${API}/admin/announcements`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (!json?.data) return;
+        const fetched: Announcement[] = json.data.map((a: Record<string, unknown>) => ({
+          id:          a.id as string,
+          title:       a.title as string,
+          body:        a.body as string,
+          target_role: a.target_role as string,
+          created_at:  a.created_at as string,
+          is_active:   true,
+        }));
+        setAnnouncements(fetched);
+        try { localStorage.setItem(LS_KEY, JSON.stringify(fetched)); } catch {}
+      })
+      .catch(() => { /* keep localStorage data on network failure */ });
+  }, [token]);
 
   const persist = (updated: Announcement[]) => {
     setAnnouncements(updated);
@@ -101,8 +122,14 @@ export default function AdminAnnouncementsPage() {
     setSaving(false);
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     persist(announcements.filter((a) => a.id !== id));
+    try {
+      await fetch(`${API}/admin/announcements/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
+    } catch { /* best-effort — already removed from local state */ }
   };
 
   return (
