@@ -644,6 +644,8 @@ export default function PlayerDashboardHome() {
               label="My Valuation" desc="Estimated market value Â· Zimbabwe percentile" />
             <HubCard href="/player/dna" icon={Dna} iconBg="#ede9fe" iconColor="#7c3aed"
               label="Player DNA" desc="Playing style fingerprint Â· traits" />
+            <HubCard href="/player/attributes" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
+              label="Physical Attributes" desc="Percentile dashboard Â· weekly AI focus Â· log measurements" badge="new" />
           </div>
         </section>
 
