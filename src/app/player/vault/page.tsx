@@ -252,9 +252,9 @@ function UploadPanel({ onUploaded, localMode }: { onUploaded: (v: PlayerVideo) =
         if (inputRef.current) inputRef.current.value = "";
         return;
       }
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Upload failed. Please try again.";
+      const errData = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
+      const fieldError = errData?.errors ? Object.values(errData.errors).flat()[0] : undefined;
+      const msg = fieldError ?? errData?.message ?? "Upload failed. Please try again.";
       set({ uploading: false, error: msg });
     }
   }
@@ -627,10 +627,9 @@ function CreateReelModal({
       });
       onCreated(res.data.share_url, title);
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Failed to create reel.";
-      setError(msg);
+      const reelErrData = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
+      const reelFieldError = reelErrData?.errors ? Object.values(reelErrData.errors).flat()[0] : undefined;
+      setError(reelFieldError ?? reelErrData?.message ?? "Failed to create reel.");
       setCreating(false);
     }
   }

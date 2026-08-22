@@ -111,7 +111,7 @@ function calcCompletion(data: Partial<FormData>): { count: number; total: number
   const fields = [
     data.sport, data.position, data.province, data.age_group,
     data.preferred_foot, data.height_cm, data.weight_kg,
-    data.date_of_birth, data.club || data.school, data.bio,
+    data.date_of_birth, data.bio,
   ];
   const total = fields.length;
   const count = fields.filter(Boolean).length;
@@ -165,19 +165,19 @@ export default function PlayerProfilePage() {
         setPhotoUrl(res.data.photo_url ?? null);
         if (res.data.sport) setSelectedSport(res.data.sport as SportKey);
         reset({
-          sport:          res.data.sport          ?? "football",
-          position:       res.data.position       ?? "",
-          province:       res.data.province       ?? "",
-          age_group:      res.data.age_group      ?? "",
-          gender:         res.data.gender         ?? "",
-          preferred_foot: res.data.dominant_foot  ?? "",
-          height_cm:      res.data.height_cm      ?? "",
-          weight_kg:      res.data.weight_kg      ?? "",
-          club:           res.data.club           ?? "",
-          school:         res.data.school         ?? "",
-          bio:            res.data.bio            ?? "",
-          area:           res.data.area           ?? "",
-          date_of_birth:  res.data.date_of_birth  ?? "",
+          sport:          res.data.sport ?? res.data.profile?.sport ?? "football",
+          position:       res.data.profile?.position_primary ?? "",
+          province:       res.data.province                  ?? "",
+          age_group:      res.data.age_group                 ?? "",
+          gender:         res.data.profile?.gender           ?? "",
+          preferred_foot: res.data.profile?.dominant_foot    ?? "",
+          height_cm:      res.data.profile?.height_cm        ?? "",
+          weight_kg:      res.data.profile?.weight_kg        ?? "",
+          club:           res.data.profile?.club             ?? "",
+          school:         res.data.profile?.school           ?? "",
+          bio:            res.data.profile?.bio              ?? "",
+          area:           res.data.profile?.area             ?? "",
+          date_of_birth:  res.data.profile?.date_of_birth    ?? "",
         });
       })
       .catch(() => {})
@@ -188,8 +188,8 @@ export default function PlayerProfilePage() {
     setError("");
     setSaved(false);
     try {
-      const { preferred_foot, ...rest } = data;
-      const payload = { ...rest, dominant_foot: preferred_foot || undefined };
+      const { preferred_foot, position, ...rest } = data;
+      const payload = { ...rest, position_primary: position || undefined, dominant_foot: preferred_foot || undefined };
       const res = await api.patch("/profile", payload);
       setProfile(res.data);
       reset(data);
