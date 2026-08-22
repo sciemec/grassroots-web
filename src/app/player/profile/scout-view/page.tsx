@@ -59,7 +59,17 @@ export default function ScoutViewPage() {
       api.get("/profile").catch(() => null),
       api.get("/player/showcase").catch(() => null),
     ]).then(([profRes, clipRes]) => {
-      if (profRes) setProfile(profRes.data);
+      if (profRes) setProfile({
+        ...profRes.data,
+        sport:          profRes.data.sport ?? profRes.data.profile?.sport ?? "football",
+        position:       profRes.data.profile?.position_primary ?? "",
+        preferred_foot: profRes.data.profile?.dominant_foot    ?? "",
+        height_cm:      profRes.data.profile?.height_cm        ?? "",
+        weight_kg:      profRes.data.profile?.weight_kg        ?? "",
+        bio:            profRes.data.profile?.bio              ?? "",
+        club:           profRes.data.profile?.club             ?? "",
+        school:         profRes.data.profile?.school           ?? "",
+      });
       const apiClips: ShowcaseClip[] = clipRes?.data?.data ?? clipRes?.data ?? [];
       setClips(apiClips.length ? apiClips : loadLocalClips());
     }).finally(() => setLoading(false));
