@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, TrendingUp, TrendingDown, Minus, AlertTriangle,
   Plus, ChevronDown, ChevronUp, Loader2, CheckCircle2, X,
-  Zap, Activity,
+  Zap, Activity, Play,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -82,6 +82,59 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   balance:      { bg: "#ccfbf1", text: "#134e4a", border: "#5eead4" },
   coordination: { bg: "#f0fdf4", text: "#14532d", border: "#86efac" },
 };
+
+// ─── Yo-Yo IR1 Protocol ──────────────────────────────────────────────────────
+
+const YOYO_PROTOCOL = [
+  { level: 5,  speedKmh: 10.0, shuttles: 3 },
+  { level: 6,  speedKmh: 10.5, shuttles: 3 },
+  { level: 7,  speedKmh: 11.0, shuttles: 3 },
+  { level: 8,  speedKmh: 11.5, shuttles: 3 },
+  { level: 9,  speedKmh: 12.0, shuttles: 4 },
+  { level: 10, speedKmh: 12.5, shuttles: 4 },
+  { level: 11, speedKmh: 13.0, shuttles: 4 },
+  { level: 12, speedKmh: 13.5, shuttles: 5 },
+  { level: 13, speedKmh: 14.0, shuttles: 5 },
+  { level: 14, speedKmh: 14.5, shuttles: 5 },
+  { level: 15, speedKmh: 15.0, shuttles: 6 },
+  { level: 16, speedKmh: 15.5, shuttles: 6 },
+  { level: 17, speedKmh: 16.0, shuttles: 6 },
+  { level: 18, speedKmh: 16.5, shuttles: 7 },
+  { level: 19, speedKmh: 17.0, shuttles: 7 },
+  { level: 20, speedKmh: 17.5, shuttles: 7 },
+  { level: 21, speedKmh: 18.0, shuttles: 8 },
+  { level: 22, speedKmh: 18.5, shuttles: 8 },
+  { level: 23, speedKmh: 19.0, shuttles: 8 },
+];
+
+interface ShuttleEntry {
+  level: number;
+  shuttleNum: number;
+  totalInLevel: number;
+  globalShuttle: number;
+  startTime: number;
+  endTime: number;
+  recoveryEnd: number;
+}
+
+const YOYO_SCHEDULE: ShuttleEntry[] = (() => {
+  const entries: ShuttleEntry[] = [];
+  let t = 0;
+  let global = 0;
+  for (const { level, speedKmh, shuttles } of YOYO_PROTOCOL) {
+    const shuttleTime = 40 / (speedKmh / 3.6);
+    for (let s = 0; s < shuttles; s++) {
+      global++;
+      entries.push({
+        level, shuttleNum: s + 1, totalInLevel: shuttles,
+        globalShuttle: global,
+        startTime: t, endTime: t + shuttleTime, recoveryEnd: t + shuttleTime + 10,
+      });
+      t += shuttleTime + 10;
+    }
+  }
+  return entries;
+})();
 
 function categoryStyle(cat: string) {
   return CATEGORY_COLORS[cat] ?? { bg: "#f3f4f6", text: "#374151", border: "#d1d5db" };
@@ -261,14 +314,176 @@ function WeeklyFocusCard({
   );
 }
 
+// ─── Yo-Yo IR1 Test Modal ────────────────────────────────────────────────────
+
+function YoyoTestModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [phase, setPhase] = useState<"ready" | "playing" | "ended">("ready");
+  const [currentEntry, setCurrentEntry] = useState<ShuttleEntry>(YOYO_SCHEDULE[0]);
+  const [completedShuttles, setCompletedShuttles] = useState(0);
+  const [consecutiveMisses, setConsecutiveMisses] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const missedRef = useRef<Set<number>>(new Set());
+  const lastCompletedRef = useRef<number>(0);
+
+  const handleTimeUpdate = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const t = audio.currentTime;
+    let entry: ShuttleEntry | null = null;
+    for (let i = YOYO_SCHEDULE.length - 1; i >= 0; i--) {
+      if (YOYO_SCHEDULE[i].startTime <= t) { entry = YOYO_SCHEDULE[i]; break; }
+    }
+    if (!entry) return;
+    setCurrentEntry(entry);
+    if (t >= entry.endTime && lastCompletedRef.current < entry.globalShuttle) {
+      lastCompletedRef.current = entry.globalShuttle;
+      if (!missedRef.current.has(entry.globalShuttle)) {
+        setCompletedShuttles((n) => n + 1);
+        setConsecutiveMisses(0);
+      }
+    }
+  }, []);
+
+  const handleStart = () => { audioRef.current?.play(); setPhase("playing"); };
+
+  const handleMiss = () => {
+    if (phase !== "playing") return;
+    missedRef.current.add(currentEntry.globalShuttle);
+    const next = consecutiveMisses + 1;
+    setConsecutiveMisses(next);
+    if (next >= 2) { audioRef.current?.pause(); setPhase("ended"); }
+  };
+
+  const handleEnd = () => { audioRef.current?.pause(); setPhase("ended"); };
+
+  const handleSave = async () => {
+    const metres = completedShuttles * 40;
+    setSaving(true); setError("");
+    try {
+      await api.post("/attribute-measurements", {
+        attribute_id: status.attribute_id,
+        raw_value: metres,
+        unit: "metres",
+        measured_at: new Date().toISOString(),
+      });
+      setSaved(true);
+      setTimeout(() => { onSaved(); onClose(); }, 1000);
+    } catch {
+      setError("Failed to save. Please try again.");
+    } finally { setSaving(false); }
+  };
+
+  const score = completedShuttles * 40;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4" style={{ background: "#1a5c2a" }}>
+          <div>
+            <p className="font-bold text-white text-base">Yo-Yo IR Level 1</p>
+            <p className="text-xs text-green-200">Aerobic endurance test</p>
+          </div>
+          <button onClick={() => { audioRef.current?.pause(); onClose(); }}
+            className="rounded-full p-1.5 hover:bg-white/20 transition-colors">
+            <X className="h-4 w-4 text-white" />
+          </button>
+        </div>
+        <audio ref={audioRef} src="/audio/yoyo_ir1.mp3"
+          onTimeUpdate={handleTimeUpdate} onEnded={() => setPhase("ended")} preload="auto" />
+        <div className="p-5">
+          {phase === "ready" && (
+            <div className="flex flex-col items-center gap-5">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Run 40 m shuttles (A→B→A) in time with the beeps.
+                  Tap <strong>Miss</strong> each time you miss the beep.
+                  Test ends after 2 consecutive misses.</p>
+                <p className="text-xs text-gray-400 mt-2">Score = completed shuttles × 40 m</p>
+              </div>
+              <button onClick={handleStart}
+                className="w-full rounded-xl py-3.5 text-sm font-bold text-white"
+                style={{ background: "#1a5c2a" }}>Start Test</button>
+            </div>
+          )}
+          {phase === "playing" && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="rounded-lg px-3 py-2" style={{ background: "#dcfce7" }}>
+                  <p className="text-xs text-green-700 font-semibold">LEVEL</p>
+                  <p className="text-2xl font-bold" style={{ color: "#1a5c2a" }}>{currentEntry.level}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-400 font-semibold">SHUTTLE</p>
+                  <p className="text-xl font-bold text-gray-800">{currentEntry.shuttleNum} / {currentEntry.totalInLevel}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-400 font-semibold">DISTANCE</p>
+                  <p className="text-xl font-bold" style={{ color: "#1a5c2a" }}>{score} m</p>
+                </div>
+              </div>
+              {consecutiveMisses > 0 && (
+                <div className="rounded-lg px-3 py-2 text-center text-sm font-semibold"
+                  style={{ background: "#fee2e2", color: "#b91c1c" }}>
+                  {consecutiveMisses === 1 ? "⚠️ 1 miss — one more ends the test" : "Test ending..."}
+                </div>
+              )}
+              <button onClick={handleMiss}
+                className="w-full rounded-xl py-4 text-lg font-bold text-white active:scale-95 transition-transform"
+                style={{ background: "#dc2626" }}>Miss</button>
+              <button onClick={handleEnd} className="text-xs text-gray-400 hover:text-gray-600 transition-colors text-center">
+                End test early</button>
+            </div>
+          )}
+          {phase === "ended" && (
+            saved ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <CheckCircle2 className="h-10 w-10" style={{ color: "#16a34a" }} />
+                <p className="font-semibold text-gray-800">Saved!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="rounded-xl p-4 text-center" style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                  <p className="text-xs text-gray-500 mb-1">Final Score</p>
+                  <p className="text-4xl font-bold" style={{ color: "#1a5c2a" }}>{score} m</p>
+                  <p className="text-xs text-gray-400 mt-1">{completedShuttles} shuttles completed</p>
+                </div>
+                {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+                <button onClick={handleSave} disabled={saving}
+                  className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                  style={{ background: "#1a5c2a", opacity: saving ? 0.7 : 1 }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Save Result</button>
+                <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 text-center">Discard</button>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Attribute Card ──────────────────────────────────────────────────────────
 
 function AttributeCard({
   status,
   onLogClick,
+  onRunTest,
 }: {
   status: AttributeStatus;
   onLogClick: (attr: AttributeStatus) => void;
+  onRunTest?: (attr: AttributeStatus) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [history, setHistory] = useState<Measurement[]>([]);
@@ -362,6 +577,18 @@ function AttributeCard({
         >
           <Plus className="h-3.5 w-3.5" /> Log
         </button>
+        {onRunTest && (
+          <>
+            <div className="w-px" style={{ background: "#f3f4f6" }} />
+            <button
+              onClick={() => onRunTest(status)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors hover:bg-gray-50"
+              style={{ color: "#0369a1" }}
+            >
+              <Play className="h-3.5 w-3.5" /> Run Test
+            </button>
+          </>
+        )}
         <div className="w-px" style={{ background: "#f3f4f6" }} />
         <button
           onClick={handleExpand}
@@ -435,6 +662,7 @@ function LogMeasurementModal({
     sprint_10m: "seconds", sprint_30m: "seconds", sprint_40m: "seconds",
     max_sprint_speed_kmh: "km/h", reaction_time: "ms",
     beep_test_level: "level", vo2max_est: "ml/kg/min", yo_yo_test_distance: "m",
+    aerobic_endurance: "metres",
     recovery_heart_rate: "bpm", continuous_run_12min_m: "m",
     push_ups_60s: "reps", squat_reps_60s: "reps", plank_hold_seconds: "s",
     grip_strength_kg: "kg", pull_ups: "reps",
@@ -586,6 +814,7 @@ export default function PlayerAttributesPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [showModal, setShowModal] = useState(false);
   const [preselected, setPreselected] = useState<AttributeStatus | null>(null);
+  const [yoyoTestStatus, setYoyoTestStatus] = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -793,6 +1022,7 @@ export default function PlayerAttributesPage() {
                       key={s.attribute_id}
                       status={s}
                       onLogClick={handleLogClick}
+                      onRunTest={s.code === "aerobic_endurance" ? (attr) => setYoyoTestStatus(attr) : undefined}
                     />
                   ))}
                 </div>
@@ -809,6 +1039,15 @@ export default function PlayerAttributesPage() {
           preselected={preselected}
           onClose={() => { setShowModal(false); setPreselected(null); }}
           onSaved={handleModalSaved}
+        />
+      )}
+
+      {/* Yo-Yo IR1 Test Modal */}
+      {yoyoTestStatus && (
+        <YoyoTestModal
+          status={yoyoTestStatus}
+          onClose={() => setYoyoTestStatus(null)}
+          onSaved={() => { setYoyoTestStatus(null); loadData(); }}
         />
       )}
     </div>
