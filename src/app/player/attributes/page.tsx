@@ -12,7 +12,8 @@ import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { useYoyoPoseDetector } from "@/hooks/useYoyoPoseDetector";
 import { useSitUpDetector }     from "@/hooks/useSitUpDetector";
-import { useBroadJumpDetector } from "@/hooks/useBroadJumpDetector";
+import { useBroadJumpDetector }      from "@/hooks/useBroadJumpDetector";
+import { useFlamingoBalanceDetector } from "@/hooks/useFlamingoBalanceDetector";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1308,6 +1309,253 @@ function BroadJumpTestModal({
   );
 }
 
+// ─── EUROFIT FLB Flamingo Balance Test Modal ─────────────────────────────────
+
+function FlamingoBalanceModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  type Phase = "ready" | "testing" | "done";
+  const [phase, setPhase]           = useState<Phase>("ready");
+  const [standingFoot, setStandingFoot] = useState<"left" | "right">("left");
+  const [timeLeft, setTimeLeft]     = useState(60);
+  const [falls, setFalls]           = useState(0);
+  const [isFalling, setIsFalling]   = useState(false);
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState(false);
+
+  // Keep phase in a ref so timer callback can read it without stale closure
+  const phaseRef   = useRef<Phase>("ready");
+  const fallsRef   = useRef(0);
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
+  const syncFalls = (n: number) => { fallsRef.current = n; setFalls(n); };
+
+  const detector = useFlamingoBalanceDetector({
+    standingFoot,
+    onFallCounted: (total) => syncFalls(total),
+    onFallStateChange: (falling) => setIsFalling(falling),
+  });
+
+  // Start the test: camera + 60-second timer
+  const handleStart = async () => {
+    setCameraError(false);
+    const videoEl = detector.cameraVideoRef.current;
+    if (!videoEl) return;
+    const ok = await detector.start(videoEl);
+    if (!ok) {
+      setCameraError(true);
+      return;
+    }
+    syncPhase("testing");
+    syncFalls(0);
+    setTimeLeft(60);
+    setIsFalling(false);
+
+    // 60-second countdown
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        const next = t - 1;
+        if (next <= 0) {
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          detector.stop();
+          syncPhase("done");
+        }
+        return Math.max(0, next);
+      });
+    }, 1000);
+  };
+
+  // Manual tap fallback — player taps button each time they lose balance
+  const handleManualTap = () => {
+    if (phaseRef.current !== "testing") return;
+    const newTotal = fallsRef.current + 1;
+    syncFalls(newTotal);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await api.post("/attribute-measurements", {
+        attribute_id: status.attribute_id,
+        raw_value:    fallsRef.current,
+        unit:         "attempts_to_60s",
+        measured_at:  new Date().toISOString(),
+      });
+      onSaved();
+    } catch {
+      setError("Could not save result. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current ?? undefined);
+      detector.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const timerColor = timeLeft <= 10 ? "#dc2626" : timeLeft <= 20 ? "#d97706" : "#1a5c2a";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1a5c2a" }}>
+              EUROFIT FLB
+            </p>
+            <h2 className="text-base font-bold text-gray-900">Flamingo Balance Test</h2>
+          </div>
+          <button onClick={() => { detector.stop(); clearInterval(timerRef.current ?? undefined); onClose(); }}
+            className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Camera — always mounted so ref is ready */}
+        <div style={{ display: phase === "testing" ? "block" : "none", position: "relative" }}>
+          <video
+            ref={detector.cameraVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full"
+            style={{ aspectRatio: "3/4", objectFit: "cover", background: "#111" }}
+          />
+          {/* Fall flash overlay */}
+          {isFalling && (
+            <div className="absolute inset-0 flex items-center justify-center"
+              style={{ background: "rgba(239,68,68,0.25)" }}>
+              <span className="text-white text-2xl font-black tracking-widest drop-shadow-lg">
+                FOOT DOWN
+              </span>
+            </div>
+          )}
+          {/* Live stats overlay */}
+          <div className="absolute top-2 left-2 right-2 flex justify-between">
+            <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: "rgba(0,0,0,0.55)" }}>
+              <p className="text-white text-xs font-semibold">Time</p>
+              <p className="text-white text-xl font-black" style={{ color: timerColor }}>{timeLeft}s</p>
+            </div>
+            <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: "rgba(0,0,0,0.55)" }}>
+              <p className="text-white text-xs font-semibold">Falls</p>
+              <p className="text-white text-xl font-black">{falls}</p>
+            </div>
+          </div>
+          {/* Manual tap fallback */}
+          <button onClick={handleManualTap}
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full px-5 py-2 text-xs font-bold text-white"
+            style={{ background: "rgba(220,38,38,0.85)" }}>
+            + Tap on Fall
+          </button>
+        </div>
+
+        <div className="px-5 py-4 flex flex-col gap-4">
+
+          {/* ─── READY PHASE ─── */}
+          {phase === "ready" && (
+            <>
+              <div className="rounded-xl p-3 text-xs text-gray-600 leading-relaxed"
+                style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <p className="font-semibold text-gray-800 mb-1">EUROFIT Protocol</p>
+                Stand on your preferred foot on a flat surface (ideally a 50 cm beam).
+                Bend your other leg, holding the foot behind you with your hand.
+                Balance for 60 seconds. Each time you touch down = 1 fall.
+                <p className="mt-1 font-medium" style={{ color: "#1a5c2a" }}>
+                  Lower score = better balance.
+                </p>
+              </div>
+
+              {/* Foot selector */}
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-2">Which foot are you balancing ON?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["left", "right"] as const).map((f) => (
+                    <button key={f} onClick={() => setStandingFoot(f)}
+                      className="rounded-xl py-2.5 text-sm font-semibold border-2 transition-all capitalize"
+                      style={{
+                        borderColor: standingFoot === f ? "#1a5c2a" : "#e5e7eb",
+                        background:  standingFoot === f ? "#f0fdf4" : "white",
+                        color:       standingFoot === f ? "#1a5c2a" : "#374151",
+                      }}>
+                      {f} foot
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl p-3 text-xs" style={{ background: "#fef3c7", color: "#78350f" }}>
+                <span className="font-semibold">Camera tip:</span> Place your phone side-on so
+                your whole body is visible in profile. The AI tracks your ankle height to detect falls.
+              </div>
+
+              {cameraError && (
+                <p className="text-xs text-red-600 rounded-lg bg-red-50 px-3 py-2 text-center">
+                  Camera access failed. Allow camera permission and try again.
+                </p>
+              )}
+
+              <button onClick={handleStart}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a" }}>
+                <Play className="h-4 w-4" />
+                Start 60-Second Test
+              </button>
+            </>
+          )}
+
+          {/* ─── DONE PHASE ─── */}
+          {phase === "done" && (
+            <>
+              <div className="rounded-xl p-4 text-center"
+                style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                <p className="text-xs text-gray-500 mb-1">Falls in 60 seconds</p>
+                <p className="text-5xl font-black" style={{ color: "#1a5c2a" }}>{falls}</p>
+                <p className="text-xs text-gray-500 mt-1">attempts to complete 60 s</p>
+              </div>
+
+              <div className="rounded-xl p-3 text-xs text-gray-600 leading-relaxed"
+                style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                <p className="font-semibold text-gray-800 mb-0.5">What the score means</p>
+                <p>0–3 falls: Excellent balance &nbsp;·&nbsp; 4–8: Good &nbsp;·&nbsp; 9–15: Average &nbsp;·&nbsp; 15+: Needs work</p>
+              </div>
+
+              {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+
+              <button onClick={handleSave} disabled={saving}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a", opacity: saving ? 0.7 : 1 }}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {saving ? "Saving..." : "Save Result"}
+              </button>
+              <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 text-center">
+                Discard
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Attribute Card ──────────────────────────────────────────────────────────
 
 function AttributeCard({
@@ -1650,7 +1898,8 @@ export default function PlayerAttributesPage() {
   const [preselected, setPreselected] = useState<AttributeStatus | null>(null);
   const [yoyoTestStatus, setYoyoTestStatus]     = useState<AttributeStatus | null>(null);
   const [sitUpTestStatus, setSitUpTestStatus]   = useState<AttributeStatus | null>(null);
-  const [broadJumpTestStatus, setBroadJumpTestStatus] = useState<AttributeStatus | null>(null);
+  const [broadJumpTestStatus, setBroadJumpTestStatus]     = useState<AttributeStatus | null>(null);
+  const [flamingoTestStatus, setFlamingoTestStatus]       = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -1862,6 +2111,7 @@ export default function PlayerAttributesPage() {
                         s.code === "aerobic_endurance"                          ? (attr) => setYoyoTestStatus(attr) :
                         s.code === "core_stability"                             ? (attr) => setSitUpTestStatus(attr) :
                         s.code === "vertical_leap" || s.code === "broad_jump_cm" ? (attr) => setBroadJumpTestStatus(attr) :
+                        s.code === "balance"                                       ? (attr) => setFlamingoTestStatus(attr) :
                         undefined
                       }
                     />
@@ -1907,6 +2157,15 @@ export default function PlayerAttributesPage() {
           status={broadJumpTestStatus}
           onClose={() => setBroadJumpTestStatus(null)}
           onSaved={() => { setBroadJumpTestStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* EUROFIT FLB Flamingo Balance Test Modal */}
+      {flamingoTestStatus && (
+        <FlamingoBalanceModal
+          status={flamingoTestStatus}
+          onClose={() => setFlamingoTestStatus(null)}
+          onSaved={() => { setFlamingoTestStatus(null); loadData(); }}
         />
       )}
     </div>
