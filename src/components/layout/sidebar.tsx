@@ -49,6 +49,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/player/biomechanics", label: "Movement Scan",  icon: <Activity size={18} />,    roles: ["player"],                   },
   { href: "/player/nutrition",         label: "Nutrition",       icon: <TrendingUp size={18} />, roles: ["player"] },
   { href: "/player/nutrition/guides",  label: "Nutrition Guides",icon: <BookOpen size={18} />,   roles: ["player"] },
+  { href: "/player/warmup",        label: "Warmup Programmes", icon: <Dumbbell size={18} />,  roles: ["player"]                    },
   { href: "/player/drills",       label: "My Drills",       icon: <Dumbbell size={18} />,    roles: ["player"], feature: "drills"    },
   { href: "/player/drills/guides", label: "Drill Guides",    icon: <BookOpen size={18} />,    roles: ["player"], feature: "drills"    },
   { href: "/player/talent-id",  label: "Talent ID",       icon: <Target size={18} />,      roles: ["player"], feature: "passport"  },
