@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
+import { useYoyoPoseDetector } from "@/hooks/useYoyoPoseDetector";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -336,6 +337,46 @@ function YoyoTestModal({
   const missedRef = useRef<Set<number>>(new Set());
   const lastCompletedRef = useRef<number>(0);
 
+  // ── Camera mode ─────────────────────────────────────────────────────────
+  const [cameraMode, setCameraMode] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
+  // Ref mirrors cameraMode so rAF callbacks never read stale state
+  const cameraModeRef = useRef(false);
+  // Ref mirrors consecutiveMisses for camera callbacks (avoids stale closure)
+  const consecutiveMissesRef = useRef(0);
+
+  const getAudioTime = useCallback(() => audioRef.current?.currentTime ?? 0, []);
+
+  // Callbacks for the pose detector — stable refs, functional setState
+  const handleShuttleCompletedCamera = useCallback((globalShuttle: number) => {
+    if (missedRef.current.has(globalShuttle)) return;
+    setCompletedShuttles((n) => n + 1);
+    consecutiveMissesRef.current = 0;
+    setConsecutiveMisses(0);
+  }, []);
+
+  const handleMissCamera = useCallback((globalShuttle: number) => {
+    missedRef.current.add(globalShuttle);
+    consecutiveMissesRef.current += 1;
+    const next = consecutiveMissesRef.current;
+    setConsecutiveMisses(next);
+    if (next >= 2) {
+      audioRef.current?.pause();
+      setPhase("ended");
+    }
+  }, []);
+
+  const { cameraVideoRef, start: startCamera, stop: stopCamera } = useYoyoPoseDetector({
+    schedule: YOYO_SCHEDULE,
+    getAudioTime,
+    onShuttleCompleted: handleShuttleCompletedCamera,
+    onMissDetected: handleMissCamera,
+  });
+
+  // ── Audio timeline sync ─────────────────────────────────────────────────
+  // When cameraMode is active, camera is the sole source of truth —
+  // skip the timeupdate auto-completion path.
   const handleTimeUpdate = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -346,6 +387,8 @@ function YoyoTestModal({
     }
     if (!entry) return;
     setCurrentEntry(entry);
+    // Camera mode: skip auto-completion (handled by pose detector)
+    if (cameraModeRef.current) return;
     if (t >= entry.endTime && lastCompletedRef.current < entry.globalShuttle) {
       lastCompletedRef.current = entry.globalShuttle;
       if (!missedRef.current.has(entry.globalShuttle)) {
@@ -355,17 +398,48 @@ function YoyoTestModal({
     }
   }, []);
 
-  const handleStart = () => { audioRef.current?.play(); setPhase("playing"); };
+  // Stop camera whenever the test ends (from any source)
+  useEffect(() => {
+    if (phase === "ended") stopCamera();
+  }, [phase, stopCamera]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────
+  const handleToggleCamera = (on: boolean) => {
+    setCameraMode(on);
+    cameraModeRef.current = on;
+    if (!on) setCameraError(false);
+  };
+
+  const handleStart = async () => {
+    if (cameraMode) {
+      setCameraStarting(true);
+      const videoEl = cameraVideoRef.current;
+      if (videoEl) {
+        const ok = await startCamera(videoEl);
+        if (!ok) {
+          setCameraError(true);
+          setCameraMode(false);
+          cameraModeRef.current = false;
+        }
+      }
+      setCameraStarting(false);
+    }
+    audioRef.current?.play();
+    setPhase("playing");
+  };
 
   const handleMiss = () => {
     if (phase !== "playing") return;
     missedRef.current.add(currentEntry.globalShuttle);
-    const next = consecutiveMisses + 1;
+    consecutiveMissesRef.current += 1;
+    const next = consecutiveMissesRef.current;
     setConsecutiveMisses(next);
     if (next >= 2) { audioRef.current?.pause(); setPhase("ended"); }
   };
 
-  const handleEnd = () => { audioRef.current?.pause(); setPhase("ended"); };
+  const handleEnd = () => { audioRef.current?.pause(); stopCamera(); setPhase("ended"); };
+
+  const handleClose = () => { audioRef.current?.pause(); stopCamera(); onClose(); };
 
   const handleSave = async () => {
     const metres = completedShuttles * 40;
@@ -385,39 +459,118 @@ function YoyoTestModal({
   };
 
   const score = completedShuttles * 40;
+  // Derive sprint vs recovery from currentEntry + live audio time
+  const liveT = audioRef.current?.currentTime ?? 0;
+  const inSprint = phase === "playing" && liveT >= currentEntry.startTime && liveT < currentEntry.endTime;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.55)" }}>
       <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4" style={{ background: "#1a5c2a" }}>
           <div>
             <p className="font-bold text-white text-base">Yo-Yo IR Level 1</p>
             <p className="text-xs text-green-200">Aerobic endurance test</p>
           </div>
-          <button onClick={() => { audioRef.current?.pause(); onClose(); }}
+          <button onClick={handleClose}
             className="rounded-full p-1.5 hover:bg-white/20 transition-colors">
             <X className="h-4 w-4 text-white" />
           </button>
         </div>
+
+        {/* Hidden audio element */}
         <audio ref={audioRef} src="/audio/yoyo_ir1.mp3"
           onTimeUpdate={handleTimeUpdate} onEnded={() => setPhase("ended")} preload="auto" />
+
+        {/* Camera video element — always mounted so cameraVideoRef is valid before start() */}
+        <div style={{ display: phase === "playing" && cameraMode && !cameraError ? "block" : "none" }}>
+          <div className="relative bg-black" style={{ aspectRatio: "4/3" }}>
+            <video ref={cameraVideoRef} autoPlay playsInline muted
+              className="w-full h-full object-cover" />
+            {/* Zone labels */}
+            <div className="absolute inset-x-0 bottom-0 flex justify-between px-3 pb-2">
+              {(["A — 0 m", "B — 20 m"] as const).map((label) => (
+                <span key={label}
+                  className="rounded px-2 py-0.5 text-xs font-bold text-white"
+                  style={{ background: "rgba(0,0,0,0.5)" }}>
+                  {label}
+                </span>
+              ))}
+            </div>
+            {/* Phase badge */}
+            <div className="absolute top-2 right-2">
+              <span className="rounded-full px-2.5 py-1 text-xs font-bold text-white"
+                style={{ background: inSprint ? "#1a5c2a" : "#6b7280" }}>
+                {inSprint ? "SPRINT" : "RECOVERY"}
+              </span>
+            </div>
+            {/* Detection note */}
+            <div className="absolute top-2 left-2">
+              <span className="rounded px-2 py-0.5 text-xs text-white"
+                style={{ background: "rgba(0,0,0,0.45)" }}>
+                AI detecting
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div className="p-5">
+          {/* ── Ready phase ─────────────────────────────────────────────── */}
           {phase === "ready" && (
-            <div className="flex flex-col items-center gap-5">
+            <div className="flex flex-col gap-4">
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">Run 40 m shuttles (A→B→A) in time with the beeps.
-                  Tap <strong>Miss</strong> each time you miss the beep.
-                  Test ends after 2 consecutive misses.</p>
-                <p className="text-xs text-gray-400 mt-2">Score = completed shuttles × 40 m</p>
+                <p className="text-sm text-gray-600 mb-1">
+                  Run 40 m shuttles (A→B→A) in time with the beeps.
+                  Test ends after 2 consecutive misses.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Score = completed shuttles × 40 m</p>
               </div>
-              <button onClick={handleStart}
-                className="w-full rounded-xl py-3.5 text-sm font-bold text-white"
-                style={{ background: "#1a5c2a" }}>Start Test</button>
+
+              {/* Camera toggle */}
+              <div className="rounded-xl border p-3" style={{ borderColor: "#e5e7eb" }}>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">AI camera detection</p>
+                    <p className="text-xs text-gray-500">Auto-detects misses via your phone camera</p>
+                  </div>
+                  <button
+                    onClick={() => handleToggleCamera(!cameraMode)}
+                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                    style={{ background: cameraMode ? "#1a5c2a" : "#d1d5db" }}
+                    role="switch"
+                    aria-checked={cameraMode}
+                  >
+                    <span
+                      className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: cameraMode ? "translateX(1.375rem)" : "translateX(0.125rem)" }}
+                    />
+                  </button>
+                </div>
+                {cameraMode && (
+                  <p className="text-xs mt-2 rounded-lg px-2.5 py-2"
+                    style={{ background: "#f0fdf4", color: "#15803d" }}>
+                    Position camera face-on, wide enough so zones A (0 m), B (20 m) and the recovery area are all visible.
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleStart}
+                disabled={cameraStarting}
+                className="w-full rounded-xl py-3.5 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a", opacity: cameraStarting ? 0.7 : 1 }}>
+                {cameraStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {cameraStarting ? "Starting camera..." : "Start Test"}
+              </button>
             </div>
           )}
+
+          {/* ── Playing phase ────────────────────────────────────────────── */}
           {phase === "playing" && (
             <div className="flex flex-col gap-4">
+              {/* Stats row */}
               <div className="flex items-center justify-between">
                 <div className="rounded-lg px-3 py-2" style={{ background: "#dcfce7" }}>
                   <p className="text-xs text-green-700 font-semibold">LEVEL</p>
@@ -425,26 +578,59 @@ function YoyoTestModal({
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-gray-400 font-semibold">SHUTTLE</p>
-                  <p className="text-xl font-bold text-gray-800">{currentEntry.shuttleNum} / {currentEntry.totalInLevel}</p>
+                  <p className="text-xl font-bold text-gray-800">
+                    {currentEntry.shuttleNum} / {currentEntry.totalInLevel}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-400 font-semibold">DISTANCE</p>
                   <p className="text-xl font-bold" style={{ color: "#1a5c2a" }}>{score} m</p>
                 </div>
               </div>
+
+              {/* Miss warning */}
               {consecutiveMisses > 0 && (
                 <div className="rounded-lg px-3 py-2 text-center text-sm font-semibold"
                   style={{ background: "#fee2e2", color: "#b91c1c" }}>
-                  {consecutiveMisses === 1 ? "⚠️ 1 miss — one more ends the test" : "Test ending..."}
+                  {consecutiveMisses === 1
+                    ? "⚠️ 1 miss — one more ends the test"
+                    : "Test ending..."}
                 </div>
               )}
-              <button onClick={handleMiss}
-                className="w-full rounded-xl py-4 text-lg font-bold text-white active:scale-95 transition-transform"
-                style={{ background: "#dc2626" }}>Miss</button>
-              <button onClick={handleEnd} className="text-xs text-gray-400 hover:text-gray-600 transition-colors text-center">
-                End test early</button>
+
+              {/* Camera error fallback notice */}
+              {cameraError && (
+                <div className="rounded-lg px-3 py-1.5 text-xs text-center"
+                  style={{ background: "#fef3c7", color: "#92400e" }}>
+                  Camera unavailable — tap Miss manually
+                </div>
+              )}
+
+              {/* Miss button: shown in manual mode OR when camera errored */}
+              {(!cameraMode || cameraError) && (
+                <button onClick={handleMiss}
+                  className="w-full rounded-xl py-4 text-lg font-bold text-white active:scale-95 transition-transform"
+                  style={{ background: "#dc2626" }}>
+                  Miss
+                </button>
+              )}
+
+              {/* Camera active — no miss button needed */}
+              {cameraMode && !cameraError && (
+                <div className="rounded-lg px-3 py-2 text-center text-xs text-gray-500"
+                  style={{ background: "#f9fafb" }}>
+                  AI is counting misses automatically
+                </div>
+              )}
+
+              <button onClick={handleEnd}
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors text-center">
+                End test early
+              </button>
             </div>
           )}
+
+          {/* ── Ended phase ──────────────────────────────────────────────── */}
           {phase === "ended" && (
             saved ? (
               <div className="flex flex-col items-center gap-3 py-4">
@@ -453,7 +639,8 @@ function YoyoTestModal({
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                <div className="rounded-xl p-4 text-center" style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                <div className="rounded-xl p-4 text-center"
+                  style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
                   <p className="text-xs text-gray-500 mb-1">Final Score</p>
                   <p className="text-4xl font-bold" style={{ color: "#1a5c2a" }}>{score} m</p>
                   <p className="text-xs text-gray-400 mt-1">{completedShuttles} shuttles completed</p>
@@ -463,8 +650,12 @@ function YoyoTestModal({
                   className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
                   style={{ background: "#1a5c2a", opacity: saving ? 0.7 : 1 }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Save Result</button>
-                <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 text-center">Discard</button>
+                  Save Result
+                </button>
+                <button onClick={onClose}
+                  className="text-xs text-gray-400 hover:text-gray-600 text-center">
+                  Discard
+                </button>
               </div>
             )
           )}
