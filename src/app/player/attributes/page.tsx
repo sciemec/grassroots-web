@@ -11,6 +11,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { useYoyoPoseDetector } from "@/hooks/useYoyoPoseDetector";
+import { useSitUpDetector } from "@/hooks/useSitUpDetector";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -665,6 +666,295 @@ function YoyoTestModal({
   );
 }
 
+// ─── Sit-Up Test Modal ───────────────────────────────────────────────────────
+
+const SIT_UP_DURATION = 30; // seconds
+
+function SitUpTestModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [phase, setPhase]           = useState<"ready" | "active" | "ended">("ready");
+  const [repCount, setRepCount]     = useState(0);
+  const [timeLeft, setTimeLeft]     = useState(SIT_UP_DURATION);
+  const [cameraMode, setCameraMode] = useState(true);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraError, setCameraError]       = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
+  const [error, setError]   = useState("");
+
+  // Ref mirrors repCount for stable use inside the timer interval closure
+  const repCountRef = useRef(0);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const detector = useSitUpDetector({
+    onRepCounted: (n) => {
+      repCountRef.current = n;
+      setRepCount(n);
+    },
+  });
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
+
+  const startTimer = useCallback(() => {
+    stopTimer();
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          stopTimer();
+          detector.stop();
+          setPhase("ended");
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+  }, [stopTimer, detector]);
+
+  const handleStart = useCallback(async () => {
+    if (cameraMode) {
+      setCameraStarting(true);
+      const videoEl = detector.cameraVideoRef.current;
+      if (videoEl) {
+        const ok = await detector.start(videoEl);
+        if (!ok) {
+          setCameraError(true);
+          setCameraMode(false);
+        }
+      }
+      setCameraStarting(false);
+    }
+    repCountRef.current = 0;
+    setRepCount(0);
+    setTimeLeft(SIT_UP_DURATION);
+    startTimer();
+    setPhase("active");
+  }, [cameraMode, detector, startTimer]);
+
+  const handleManualRep = useCallback(() => {
+    repCountRef.current += 1;
+    setRepCount(repCountRef.current);
+  }, []);
+
+  const handleEnd = useCallback(() => {
+    stopTimer();
+    detector.stop();
+    setPhase("ended");
+  }, [stopTimer, detector]);
+
+  const handleClose = useCallback(() => {
+    stopTimer();
+    detector.stop();
+    onClose();
+  }, [stopTimer, detector, onClose]);
+
+  const handleSave = async () => {
+    setSaving(true); setError("");
+    try {
+      await api.post("/attribute-measurements", {
+        attribute_id: status.attribute_id,
+        raw_value: repCount,
+        unit: "reps_per_30s",
+        measured_at: new Date().toISOString(),
+      });
+      setSaved(true);
+      setTimeout(() => { onSaved(); onClose(); }, 1000);
+    } catch {
+      setError("Failed to save. Please try again.");
+    } finally { setSaving(false); }
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => () => { stopTimer(); }, [stopTimer]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4" style={{ background: "#1a5c2a" }}>
+          <div>
+            <p className="font-bold text-white text-base">Sit-Up Test (30 s)</p>
+            <p className="text-xs text-green-200">EUROFIT SUP — core stability</p>
+          </div>
+          <button onClick={handleClose}
+            className="rounded-full p-1.5 hover:bg-white/20 transition-colors">
+            <X className="h-4 w-4 text-white" />
+          </button>
+        </div>
+
+        {/* Camera video — always mounted so ref is valid before start() */}
+        <div style={{ display: phase === "active" && cameraMode && !cameraError ? "block" : "none" }}>
+          <div className="relative bg-black" style={{ aspectRatio: "3/4" }}>
+            <video ref={detector.cameraVideoRef} autoPlay playsInline muted
+              className="w-full h-full object-cover" />
+            <div className="absolute top-2 right-2">
+              <span className="rounded-full px-2.5 py-1 text-xs font-bold text-white"
+                style={{ background: "#1a5c2a" }}>
+                {repCount} reps
+              </span>
+            </div>
+            <div className="absolute top-2 left-2">
+              <span className="rounded px-2 py-0.5 text-xs text-white"
+                style={{ background: "rgba(0,0,0,0.45)" }}>
+                AI counting
+              </span>
+            </div>
+            <div className="absolute bottom-2 right-2">
+              <span className="rounded px-2 py-0.5 text-xs font-bold text-white"
+                style={{ background: timeLeft <= 5 ? "rgba(185,28,28,0.85)" : "rgba(0,0,0,0.45)" }}>
+                {timeLeft}s
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5">
+          {/* ── Ready phase ───────────────────────────────────────────── */}
+          {phase === "ready" && (
+            <div className="flex flex-col gap-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">
+                  Lie on your back, knees bent 90°, hands behind your neck.
+                  Do as many sit-ups as possible in 30 seconds.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Score = reps completed in 30 s</p>
+              </div>
+
+              {/* Camera toggle */}
+              <div className="rounded-xl border p-3" style={{ borderColor: "#e5e7eb" }}>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">AI camera counting</p>
+                    <p className="text-xs text-gray-500">Auto-counts reps via side-on camera</p>
+                  </div>
+                  <button
+                    onClick={() => { setCameraMode((m) => !m); setCameraError(false); }}
+                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                    style={{ background: cameraMode ? "#1a5c2a" : "#d1d5db" }}
+                    role="switch"
+                    aria-checked={cameraMode}
+                  >
+                    <span
+                      className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: cameraMode ? "translateX(1.375rem)" : "translateX(0.125rem)" }}
+                    />
+                  </button>
+                </div>
+                {cameraMode && (
+                  <p className="text-xs mt-2 rounded-lg px-2.5 py-2"
+                    style={{ background: "#f0fdf4", color: "#15803d" }}>
+                    Place your phone to one side so your full body is visible in profile.
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleStart}
+                disabled={cameraStarting}
+                className="w-full rounded-xl py-3.5 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a", opacity: cameraStarting ? 0.7 : 1 }}>
+                {cameraStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {cameraStarting ? "Starting camera..." : "Start Test"}
+              </button>
+            </div>
+          )}
+
+          {/* ── Active phase ──────────────────────────────────────────── */}
+          {phase === "active" && (
+            <div className="flex flex-col gap-4">
+              {/* Reps + timer */}
+              <div className="flex items-stretch gap-3">
+                <div className="flex-1 rounded-lg px-4 py-3 text-center"
+                  style={{ background: "#dcfce7" }}>
+                  <p className="text-xs text-green-700 font-semibold mb-0.5">REPS</p>
+                  <p className="text-5xl font-bold leading-none" style={{ color: "#1a5c2a" }}>{repCount}</p>
+                </div>
+                <div className="flex-1 rounded-lg px-4 py-3 text-center"
+                  style={{ background: timeLeft <= 5 ? "#fee2e2" : "#f3f4f6" }}>
+                  <p className="text-xs font-semibold mb-0.5"
+                    style={{ color: timeLeft <= 5 ? "#b91c1c" : "#6b7280" }}>TIME</p>
+                  <p className="text-5xl font-bold leading-none"
+                    style={{ color: timeLeft <= 5 ? "#b91c1c" : "#1f2937" }}>{timeLeft}<span className="text-xl">s</span></p>
+                </div>
+              </div>
+
+              {/* Camera error notice */}
+              {cameraError && (
+                <div className="rounded-lg px-3 py-1.5 text-xs text-center"
+                  style={{ background: "#fef3c7", color: "#92400e" }}>
+                  Camera unavailable — tap the button below to count reps manually
+                </div>
+              )}
+
+              {/* Manual rep button */}
+              {(!cameraMode || cameraError) && (
+                <button onClick={handleManualRep}
+                  className="w-full rounded-xl py-5 text-lg font-bold text-white active:scale-95 transition-transform"
+                  style={{ background: "#1a5c2a" }}>
+                  Tap to Count Rep
+                </button>
+              )}
+
+              {/* Camera active hint */}
+              {cameraMode && !cameraError && (
+                <div className="rounded-lg px-3 py-2 text-center text-xs text-gray-500"
+                  style={{ background: "#f9fafb" }}>
+                  AI is counting reps automatically
+                </div>
+              )}
+
+              <button onClick={handleEnd}
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors text-center">
+                End test early
+              </button>
+            </div>
+          )}
+
+          {/* ── Ended phase ───────────────────────────────────────────── */}
+          {phase === "ended" && (
+            saved ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <CheckCircle2 className="h-10 w-10" style={{ color: "#16a34a" }} />
+                <p className="font-semibold text-gray-800">Saved!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="rounded-xl p-4 text-center"
+                  style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                  <p className="text-xs text-gray-500 mb-1">Final Score</p>
+                  <p className="text-4xl font-bold" style={{ color: "#1a5c2a" }}>{repCount}</p>
+                  <p className="text-xs text-gray-400 mt-1">reps in 30 seconds</p>
+                </div>
+                {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+                <button onClick={handleSave} disabled={saving}
+                  className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                  style={{ background: "#1a5c2a", opacity: saving ? 0.7 : 1 }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Save Result
+                </button>
+                <button onClick={onClose}
+                  className="text-xs text-gray-400 hover:text-gray-600 text-center">
+                  Discard
+                </button>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Attribute Card ──────────────────────────────────────────────────────────
 
 function AttributeCard({
@@ -1006,6 +1296,7 @@ export default function PlayerAttributesPage() {
   const [showModal, setShowModal] = useState(false);
   const [preselected, setPreselected] = useState<AttributeStatus | null>(null);
   const [yoyoTestStatus, setYoyoTestStatus] = useState<AttributeStatus | null>(null);
+  const [sitUpTestStatus, setSitUpTestStatus] = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -1213,7 +1504,11 @@ export default function PlayerAttributesPage() {
                       key={s.attribute_id}
                       status={s}
                       onLogClick={handleLogClick}
-                      onRunTest={s.code === "aerobic_endurance" ? (attr) => setYoyoTestStatus(attr) : undefined}
+                      onRunTest={
+                        s.code === "aerobic_endurance" ? (attr) => setYoyoTestStatus(attr) :
+                        s.code === "core_stability"    ? (attr) => setSitUpTestStatus(attr) :
+                        undefined
+                      }
                     />
                   ))}
                 </div>
@@ -1239,6 +1534,15 @@ export default function PlayerAttributesPage() {
           status={yoyoTestStatus}
           onClose={() => setYoyoTestStatus(null)}
           onSaved={() => { setYoyoTestStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* EUROFIT SUP Sit-Up Test Modal */}
+      {sitUpTestStatus && (
+        <SitUpTestModal
+          status={sitUpTestStatus}
+          onClose={() => setSitUpTestStatus(null)}
+          onSaved={() => { setSitUpTestStatus(null); loadData(); }}
         />
       )}
     </div>
