@@ -2138,6 +2138,290 @@ function SitAndReachTestModal({
   );
 }
 
+// ─── Plate Tapping Test Modal ────────────────────────────────────────────────
+
+function PlateTappingTestModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  type Phase = "attempt1" | "rest" | "attempt2" | "ended";
+  const [phase, setPhase]       = useState<Phase>("attempt1");
+  const [attempt1, setAttempt1] = useState("");
+  const [attempt2, setAttempt2] = useState("");
+  const [attempt1Err, setA1Err] = useState<string | null>(null);
+  const [attempt2Err, setA2Err] = useState<string | null>(null);
+  const [restTime, setRestTime] = useState(30);
+  const [saving, setSaving]     = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const a1 = parseFloat(attempt1) || 0;
+  const a2 = parseFloat(attempt2) || 0;
+  // Lower time is better — best = minimum of the two
+  const best = (attempt1 !== "" && attempt2 !== "") ? Math.min(a1, a2) : (attempt1 !== "" ? a1 : a2);
+  const bestAttempt = (attempt1 !== "" && attempt2 !== "") ? (a1 <= a2 ? 1 : 2) : 1;
+
+  const validateSecs = (v: string): string | null => {
+    const n = parseFloat(v);
+    if (v === "" || isNaN(n)) return "Enter the stopwatch time in seconds.";
+    if (n < 3 || n > 60) return "Value must be between 3.0 and 60.0 seconds.";
+    return null;
+  };
+
+  const handleRecordAttempt1 = () => {
+    const err = validateSecs(attempt1);
+    if (err) { setA1Err(err); return; }
+    setA1Err(null);
+    setPhase("rest");
+    setRestTime(30);
+    timerRef.current = setInterval(() => {
+      setRestTime((t) => {
+        if (t <= 1) {
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          setPhase("attempt2");
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+  };
+
+  const handleSkipRest = () => {
+    clearInterval(timerRef.current ?? undefined);
+    timerRef.current = null;
+    setPhase("attempt2");
+  };
+
+  const handleRecordAttempt2 = () => {
+    const err = validateSecs(attempt2);
+    if (err) { setA2Err(err); return; }
+    setA2Err(null);
+    setPhase("ended");
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await api.post("/attribute-measurements", {
+        attribute_id: status.attribute_id,
+        raw_value:    best,
+        unit:         "seconds",
+        measured_at:  new Date().toISOString(),
+      });
+      onSaved();
+    } catch {
+      setError("Could not save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => { clearInterval(timerRef.current ?? undefined); };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#1a5c2a" }}>
+              EUROFIT PLT
+            </p>
+            <h2 className="text-base font-bold text-gray-900">Plate Tapping Test</h2>
+          </div>
+          <button onClick={() => { clearInterval(timerRef.current ?? undefined); onClose(); }}
+            className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 flex flex-col gap-4">
+
+          {/* ─── ATTEMPT 1 ─── */}
+          {phase === "attempt1" && (
+            <>
+              <div className="rounded-xl p-3 text-xs text-gray-600 leading-relaxed"
+                style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <p className="font-semibold text-gray-800 mb-1">EUROFIT Protocol</p>
+                Place two discs (or marked spots) 60 cm apart on a flat table, with a
+                rectangular plate centred between them. Player places non-preferred hand
+                on the centre plate, then taps alternate discs with the preferred hand as
+                fast as possible for <strong>25 complete cycles</strong> (50 taps total).
+                <p className="mt-1.5 font-medium" style={{ color: "#1a5c2a" }}>
+                  Start the stopwatch on &ldquo;Go&rdquo; — stop when the 25th disc tap is made.
+                  Record to the nearest 0.1 second. Lower time = better score.
+                </p>
+                <p className="mt-1 font-medium" style={{ color: "#1a5c2a" }}>
+                  You will do 2 attempts. Fastest time counts.
+                </p>
+              </div>
+
+              {/* Attempt 1 entry */}
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">Attempt 1 — stopwatch time</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    type="number"
+                    step="0.1"
+                    min="3"
+                    max="60"
+                    value={attempt1}
+                    onChange={(e) => { setAttempt1(e.target.value); setA1Err(null); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleRecordAttempt1()}
+                    placeholder="0.0"
+                    className="flex-1 rounded-xl border-2 px-4 py-3 text-3xl font-black text-center focus:outline-none"
+                    style={{ borderColor: attempt1Err ? "#ef4444" : "#e5e7eb", color: "#1a5c2a" }}
+                  />
+                  <span className="text-lg font-bold text-gray-400">sec</span>
+                </div>
+                {attempt1Err && <p className="text-xs text-red-600 mt-1">{attempt1Err}</p>}
+              </div>
+
+              <button onClick={handleRecordAttempt1}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white"
+                style={{ background: "#1a5c2a" }}>
+                Record Attempt 1 →
+              </button>
+            </>
+          )}
+
+          {/* ─── REST ─── */}
+          {phase === "rest" && (
+            <>
+              <div className="flex items-center gap-3 rounded-xl p-3"
+                style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl font-black"
+                  style={{ background: "#dcfce7", color: "#1a5c2a" }}>
+                  {restTime}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Attempt 1 complete</p>
+                  <p className="text-xs text-gray-500">Rest {restTime}s before Attempt 2.</p>
+                </div>
+                <div className="ml-auto text-right">
+                  <p className="text-xs text-gray-500">Attempt 1</p>
+                  <p className="text-lg font-black" style={{ color: "#1a5c2a" }}>{a1}s</p>
+                </div>
+              </div>
+
+              <div className="rounded-xl p-3 text-xs"
+                style={{ background: "#fef3c7", color: "#78350f" }}>
+                Shake out the wrist and fingers. Reset the stopwatch before Attempt 2.
+              </div>
+
+              <button onClick={handleSkipRest}
+                className="text-xs text-gray-400 hover:text-gray-600 text-center underline">
+                Skip rest — go to Attempt 2 now
+              </button>
+            </>
+          )}
+
+          {/* ─── ATTEMPT 2 ─── */}
+          {phase === "attempt2" && (
+            <>
+              <div className="flex items-center justify-between rounded-xl px-4 py-2.5"
+                style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <span className="text-xs text-gray-500">Attempt 1</span>
+                <span className="text-base font-black" style={{ color: "#1a5c2a" }}>{a1}s</span>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">Attempt 2 — stopwatch time</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    type="number"
+                    step="0.1"
+                    min="3"
+                    max="60"
+                    value={attempt2}
+                    onChange={(e) => { setAttempt2(e.target.value); setA2Err(null); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleRecordAttempt2()}
+                    placeholder="0.0"
+                    className="flex-1 rounded-xl border-2 px-4 py-3 text-3xl font-black text-center focus:outline-none"
+                    style={{ borderColor: attempt2Err ? "#ef4444" : "#e5e7eb", color: "#1a5c2a" }}
+                  />
+                  <span className="text-lg font-bold text-gray-400">sec</span>
+                </div>
+                {attempt2Err && <p className="text-xs text-red-600 mt-1">{attempt2Err}</p>}
+              </div>
+
+              <button onClick={handleRecordAttempt2}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white"
+                style={{ background: "#1a5c2a" }}>
+                Record Attempt 2 →
+              </button>
+            </>
+          )}
+
+          {/* ─── ENDED ─── */}
+          {phase === "ended" && (
+            <>
+              {/* Attempt cards — green border on LOWEST time */}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Attempt 1", value: a1, isBest: bestAttempt === 1 },
+                  { label: "Attempt 2", value: a2, isBest: bestAttempt === 2 },
+                ].map(({ label, value, isBest }) => (
+                  <div key={label} className="rounded-xl p-3 text-center"
+                    style={{
+                      background: isBest ? "#f0fdf4" : "#f9fafb",
+                      border: `2px solid ${isBest ? "#86efac" : "#e5e7eb"}`,
+                    }}>
+                    <p className="text-xs text-gray-500">{label}</p>
+                    <p className="text-2xl font-black mt-0.5"
+                      style={{ color: isBest ? "#1a5c2a" : "#374151" }}>
+                      {value}
+                      <span className="text-sm font-normal ml-0.5">s</span>
+                    </p>
+                    {isBest && (
+                      <span className="text-xs font-semibold" style={{ color: "#16a34a" }}>✓ Fastest</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Best result */}
+              <div className="rounded-xl p-4 text-center"
+                style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                <p className="text-xs text-gray-500 mb-1">Result (fastest of 2)</p>
+                <p className="text-4xl font-black" style={{ color: "#1a5c2a" }}>
+                  {best}<span className="text-lg font-normal ml-1">sec</span>
+                </p>
+              </div>
+
+              {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+
+              <button onClick={handleSave} disabled={saving}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a", opacity: saving ? 0.7 : 1 }}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {saving ? "Saving..." : "Save Fastest Time"}
+              </button>
+              <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 text-center">
+                Discard
+              </button>
+            </>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Attribute Card ──────────────────────────────────────────────────────────
 
 function AttributeCard({
@@ -2484,6 +2768,7 @@ export default function PlayerAttributesPage() {
   const [flamingoTestStatus, setFlamingoTestStatus]       = useState<AttributeStatus | null>(null);
   const [handgripTestStatus, setHandgripTestStatus]       = useState<AttributeStatus | null>(null);
   const [sitReachTestStatus, setSitReachTestStatus]       = useState<AttributeStatus | null>(null);
+  const [plateTapTestStatus, setPlateTapTestStatus]       = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -2698,6 +2983,7 @@ export default function PlayerAttributesPage() {
                         s.code === "balance"                                       ? (attr) => setFlamingoTestStatus(attr) :
                         s.code === "functional_strength"                           ? (attr) => setHandgripTestStatus(attr) :
                         s.code === "flexibility"                                   ? (attr) => setSitReachTestStatus(attr) :
+                        s.code === "limb_speed"                                    ? (attr) => setPlateTapTestStatus(attr) :
                         undefined
                       }
                     />
@@ -2770,6 +3056,15 @@ export default function PlayerAttributesPage() {
           status={sitReachTestStatus}
           onClose={() => setSitReachTestStatus(null)}
           onSaved={() => { setSitReachTestStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* EUROFIT PLT Plate Tapping Test Modal */}
+      {plateTapTestStatus && (
+        <PlateTappingTestModal
+          status={plateTapTestStatus}
+          onClose={() => setPlateTapTestStatus(null)}
+          onSaved={() => { setPlateTapTestStatus(null); loadData(); }}
         />
       )}
     </div>
