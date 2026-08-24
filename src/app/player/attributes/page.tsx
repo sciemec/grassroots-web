@@ -11,7 +11,8 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { useYoyoPoseDetector } from "@/hooks/useYoyoPoseDetector";
-import { useSitUpDetector } from "@/hooks/useSitUpDetector";
+import { useSitUpDetector }     from "@/hooks/useSitUpDetector";
+import { useBroadJumpDetector } from "@/hooks/useBroadJumpDetector";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -955,6 +956,358 @@ function SitUpTestModal({
   );
 }
 
+// ─── Standing Broad Jump Modal ───────────────────────────────────────────────
+
+type BroadJumpPhase =
+  | "ready"
+  | "attempt1_waiting" | "attempt1_entry"
+  | "attempt2_waiting" | "attempt2_entry"
+  | "ended";
+
+function BroadJumpTestModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [phase, setPhase]           = useState<BroadJumpPhase>("ready");
+  const [distances, setDistances]   = useState<[number | null, number | null]>([null, null]);
+  const [entry, setEntry]           = useState("");
+  const [isAirborne, setIsAirborne] = useState(false);
+  const [cameraMode, setCameraMode] = useState(true);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraError, setCameraError]       = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
+  const [error, setError]   = useState("");
+
+  const phaseRef = useRef<BroadJumpPhase>("ready");
+  const syncPhase = useCallback((p: BroadJumpPhase) => {
+    phaseRef.current = p;
+    setPhase(p);
+  }, []);
+
+  const detector = useBroadJumpDetector({
+    onAttemptCompleted: (n) => {
+      if (n === 1 && phaseRef.current === "attempt1_waiting") {
+        setIsAirborne(false);
+        setEntry("");
+        syncPhase("attempt1_entry");
+      } else if (n === 2 && phaseRef.current === "attempt2_waiting") {
+        setIsAirborne(false);
+        setEntry("");
+        syncPhase("attempt2_entry");
+        detector.stop();
+      }
+    },
+    onAirborneChange: (a) => setIsAirborne(a),
+  });
+
+  const handleStart = useCallback(async () => {
+    if (cameraMode) {
+      setCameraStarting(true);
+      const videoEl = detector.cameraVideoRef.current;
+      if (videoEl) {
+        const ok = await detector.start(videoEl);
+        if (!ok) { setCameraError(true); setCameraMode(false); }
+      }
+      setCameraStarting(false);
+    }
+    syncPhase("attempt1_waiting");
+  }, [cameraMode, detector, syncPhase]);
+
+  const handleMarkJumpDone = useCallback(() => {
+    if (phaseRef.current === "attempt1_waiting") {
+      setEntry("");
+      syncPhase("attempt1_entry");
+    } else if (phaseRef.current === "attempt2_waiting") {
+      setEntry("");
+      detector.stop();
+      syncPhase("attempt2_entry");
+    }
+  }, [detector, syncPhase]);
+
+  const handleConfirmEntry = useCallback(() => {
+    const cm = parseFloat(entry);
+    if (!cm || cm < 10 || cm > 400) { setError("Enter a valid distance (10–400 cm)"); return; }
+    setError("");
+    if (phase === "attempt1_entry") {
+      setDistances(([, d2]) => [cm, d2]);
+      setEntry("");
+      syncPhase("attempt2_waiting");
+    } else if (phase === "attempt2_entry") {
+      setDistances(([d1]) => {
+        const updated: [number | null, number | null] = [d1, cm];
+        return updated;
+      });
+      syncPhase("ended");
+    }
+  }, [entry, phase, syncPhase]);
+
+  const handleClose = useCallback(() => {
+    detector.stop();
+    onClose();
+  }, [detector, onClose]);
+
+  const bestDistance = Math.max(distances[0] ?? 0, distances[1] ?? 0);
+
+  const handleSave = async () => {
+    if (!bestDistance) return;
+    setSaving(true); setError("");
+    try {
+      await api.post("/attribute-measurements", {
+        attribute_id: status.attribute_id,
+        raw_value: bestDistance,
+        unit: "cm",
+        measured_at: new Date().toISOString(),
+      });
+      setSaved(true);
+      setTimeout(() => { onSaved(); onClose(); }, 1000);
+    } catch {
+      setError("Failed to save. Please try again.");
+    } finally { setSaving(false); }
+  };
+
+  const showCamera =
+    cameraMode &&
+    !cameraError &&
+    (phase === "attempt1_waiting" || phase === "attempt2_waiting");
+
+  const currentAttempt = phase.startsWith("attempt2") ? 2 : 1;
+  const waitingPhase = phase === "attempt1_waiting" || phase === "attempt2_waiting";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4" style={{ background: "#1a5c2a" }}>
+          <div>
+            <p className="font-bold text-white text-base">Standing Broad Jump</p>
+            <p className="text-xs text-green-200">EUROFIT SBJ — explosive leg power</p>
+          </div>
+          <button onClick={handleClose}
+            className="rounded-full p-1.5 hover:bg-white/20 transition-colors">
+            <X className="h-4 w-4 text-white" />
+          </button>
+        </div>
+
+        {/* Camera — always mounted */}
+        <div style={{ display: showCamera ? "block" : "none" }}>
+          <div className="relative bg-black" style={{ aspectRatio: "3/4" }}>
+            <video ref={detector.cameraVideoRef} autoPlay playsInline muted
+              className="w-full h-full object-cover" />
+            {/* Airborne indicator */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              {isAirborne && (
+                <span className="rounded-full px-4 py-2 text-lg font-bold text-white"
+                  style={{ background: "rgba(22,163,74,0.85)" }}>
+                  JUMP!
+                </span>
+              )}
+            </div>
+            <div className="absolute top-2 left-2">
+              <span className="rounded px-2 py-0.5 text-xs text-white"
+                style={{ background: "rgba(0,0,0,0.45)" }}>
+                Attempt {currentAttempt} of 2
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5">
+          {/* ── Ready ───────────────────────────────────────────────────── */}
+          {phase === "ready" && (
+            <div className="flex flex-col gap-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">
+                  Stand behind the line, feet shoulder-width apart. Jump as far as possible — arm swing allowed.
+                  You get <strong>2 attempts</strong>; the best counts.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Measure heel landing to take-off line in cm</p>
+              </div>
+
+              {/* Camera toggle */}
+              <div className="rounded-xl border p-3" style={{ borderColor: "#e5e7eb" }}>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">AI jump detector</p>
+                    <p className="text-xs text-gray-500">Auto-advances to distance entry on landing</p>
+                  </div>
+                  <button
+                    onClick={() => { setCameraMode((m) => !m); setCameraError(false); }}
+                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                    style={{ background: cameraMode ? "#1a5c2a" : "#d1d5db" }}
+                    role="switch"
+                    aria-checked={cameraMode}>
+                    <span className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: cameraMode ? "translateX(1.375rem)" : "translateX(0.125rem)" }} />
+                  </button>
+                </div>
+                {cameraMode && (
+                  <p className="text-xs mt-2 rounded-lg px-2.5 py-2"
+                    style={{ background: "#f0fdf4", color: "#15803d" }}>
+                    Place phone side-on so your full body is visible. Stand still for 1–2 s to calibrate.
+                  </p>
+                )}
+              </div>
+
+              <button onClick={handleStart} disabled={cameraStarting}
+                className="w-full rounded-xl py-3.5 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a", opacity: cameraStarting ? 0.7 : 1 }}>
+                {cameraStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {cameraStarting ? "Starting camera..." : "Start Test"}
+              </button>
+            </div>
+          )}
+
+          {/* ── Waiting for jump ─────────────────────────────────────────── */}
+          {waitingPhase && (
+            <div className="flex flex-col gap-4">
+              <div className="rounded-xl py-4 px-4 text-center"
+                style={{ background: isAirborne ? "#dcfce7" : "#f9fafb",
+                  border: isAirborne ? "2px solid #16a34a" : "2px solid #e5e7eb",
+                  transition: "all 0.15s" }}>
+                <p className="text-xs font-semibold mb-1"
+                  style={{ color: isAirborne ? "#15803d" : "#6b7280" }}>
+                  ATTEMPT {currentAttempt} OF 2
+                </p>
+                <p className="text-lg font-bold"
+                  style={{ color: isAirborne ? "#1a5c2a" : "#1f2937" }}>
+                  {isAirborne ? "IN THE AIR!" : cameraMode && !cameraError ? "Jump when ready" : "Perform jump now"}
+                </p>
+                {!isAirborne && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {cameraMode && !cameraError ? "AI will detect your landing automatically" : "Tap the button below after you land"}
+                  </p>
+                )}
+              </div>
+
+              {/* Previous attempts summary */}
+              {distances[0] !== null && (
+                <div className="rounded-lg px-3 py-2 text-center"
+                  style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                  <p className="text-xs text-green-700">Attempt 1: <strong>{distances[0]} cm</strong></p>
+                </div>
+              )}
+
+              {/* Manual button */}
+              {(!cameraMode || cameraError) && (
+                <button onClick={handleMarkJumpDone}
+                  className="w-full rounded-xl py-4 text-base font-bold text-white"
+                  style={{ background: "#1a5c2a" }}>
+                  Mark Jump Complete
+                </button>
+              )}
+
+              {cameraError && (
+                <p className="text-xs text-center" style={{ color: "#92400e" }}>
+                  Camera unavailable — tap button after each jump
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ── Distance entry ────────────────────────────────────────────── */}
+          {(phase === "attempt1_entry" || phase === "attempt2_entry") && (
+            <div className="flex flex-col gap-4">
+              <div className="text-center">
+                <p className="text-xs text-gray-500 mb-1">Attempt {currentAttempt} of 2</p>
+                <p className="text-sm font-semibold text-gray-800">Enter jump distance</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Measure from take-off line to nearest heel mark
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={10}
+                  max={400}
+                  step={0.5}
+                  value={entry}
+                  onChange={(e) => { setEntry(e.target.value); setError(""); }}
+                  placeholder="e.g. 185"
+                  className="flex-1 rounded-xl border px-4 py-3 text-2xl font-bold text-center focus:outline-none"
+                  style={{ borderColor: "#d1d5db", color: "#1f2937" }}
+                  autoFocus
+                />
+                <span className="text-lg font-semibold text-gray-500">cm</span>
+              </div>
+
+              {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+
+              <button onClick={handleConfirmEntry}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white"
+                style={{ background: "#1a5c2a" }}>
+                {phase === "attempt1_entry" ? "Confirm → Attempt 2" : "Confirm"}
+              </button>
+            </div>
+          )}
+
+          {/* ── Ended ────────────────────────────────────────────────────── */}
+          {phase === "ended" && (
+            saved ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <CheckCircle2 className="h-10 w-10" style={{ color: "#16a34a" }} />
+                <p className="font-semibold text-gray-800">Saved!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {/* Attempt summary */}
+                <div className="grid grid-cols-2 gap-2">
+                  {distances.map((d, i) => (
+                    <div key={i} className="rounded-xl p-3 text-center"
+                      style={{
+                        background: d === bestDistance ? "#f0fdf4" : "#f9fafb",
+                        border: d === bestDistance ? "2px solid #86efac" : "2px solid #e5e7eb",
+                      }}>
+                      <p className="text-xs text-gray-500 mb-0.5">Attempt {i + 1}</p>
+                      <p className="text-2xl font-bold" style={{ color: d === bestDistance ? "#1a5c2a" : "#374151" }}>
+                        {d ?? "—"}<span className="text-sm font-normal ml-0.5">cm</span>
+                      </p>
+                      {d === bestDistance && d !== null && (
+                        <p className="text-xs mt-0.5" style={{ color: "#15803d" }}>Best</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Best result */}
+                <div className="rounded-xl p-4 text-center"
+                  style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                  <p className="text-xs text-gray-500 mb-1">Result (best of 2)</p>
+                  <p className="text-4xl font-bold" style={{ color: "#1a5c2a" }}>
+                    {bestDistance}<span className="text-lg font-normal ml-1">cm</span>
+                  </p>
+                </div>
+
+                {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+
+                <button onClick={handleSave} disabled={saving || !bestDistance}
+                  className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                  style={{ background: "#1a5c2a", opacity: saving || !bestDistance ? 0.7 : 1 }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Save Best Result
+                </button>
+                <button onClick={onClose}
+                  className="text-xs text-gray-400 hover:text-gray-600 text-center">
+                  Discard
+                </button>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Attribute Card ──────────────────────────────────────────────────────────
 
 function AttributeCard({
@@ -1295,8 +1648,9 @@ export default function PlayerAttributesPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [showModal, setShowModal] = useState(false);
   const [preselected, setPreselected] = useState<AttributeStatus | null>(null);
-  const [yoyoTestStatus, setYoyoTestStatus] = useState<AttributeStatus | null>(null);
-  const [sitUpTestStatus, setSitUpTestStatus] = useState<AttributeStatus | null>(null);
+  const [yoyoTestStatus, setYoyoTestStatus]     = useState<AttributeStatus | null>(null);
+  const [sitUpTestStatus, setSitUpTestStatus]   = useState<AttributeStatus | null>(null);
+  const [broadJumpTestStatus, setBroadJumpTestStatus] = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -1505,8 +1859,9 @@ export default function PlayerAttributesPage() {
                       status={s}
                       onLogClick={handleLogClick}
                       onRunTest={
-                        s.code === "aerobic_endurance" ? (attr) => setYoyoTestStatus(attr) :
-                        s.code === "core_stability"    ? (attr) => setSitUpTestStatus(attr) :
+                        s.code === "aerobic_endurance"                          ? (attr) => setYoyoTestStatus(attr) :
+                        s.code === "core_stability"                             ? (attr) => setSitUpTestStatus(attr) :
+                        s.code === "vertical_leap" || s.code === "broad_jump_cm" ? (attr) => setBroadJumpTestStatus(attr) :
                         undefined
                       }
                     />
@@ -1543,6 +1898,15 @@ export default function PlayerAttributesPage() {
           status={sitUpTestStatus}
           onClose={() => setSitUpTestStatus(null)}
           onSaved={() => { setSitUpTestStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* EUROFIT SBJ Standing Broad Jump Modal */}
+      {broadJumpTestStatus && (
+        <BroadJumpTestModal
+          status={broadJumpTestStatus}
+          onClose={() => setBroadJumpTestStatus(null)}
+          onSaved={() => { setBroadJumpTestStatus(null); loadData(); }}
         />
       )}
     </div>
