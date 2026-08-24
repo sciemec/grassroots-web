@@ -2851,6 +2851,317 @@ function BentArmHangTestModal({
   );
 }
 
+// ─── EUROFIT ESR 20m Multi-Stage Beep Test ───────────────────────────────────
+
+// Léger et al. (1988) — intervalMs = 72000 / speedKmh
+const ESR_LEVELS = [
+  { level: 1,  shuttles: 7,  intervalMs: 8471 },
+  { level: 2,  shuttles: 8,  intervalMs: 8000 },
+  { level: 3,  shuttles: 8,  intervalMs: 7579 },
+  { level: 4,  shuttles: 9,  intervalMs: 7200 },
+  { level: 5,  shuttles: 9,  intervalMs: 6857 },
+  { level: 6,  shuttles: 10, intervalMs: 6545 },
+  { level: 7,  shuttles: 10, intervalMs: 6261 },
+  { level: 8,  shuttles: 11, intervalMs: 6000 },
+  { level: 9,  shuttles: 11, intervalMs: 5760 },
+  { level: 10, shuttles: 11, intervalMs: 5538 },
+  { level: 11, shuttles: 12, intervalMs: 5333 },
+  { level: 12, shuttles: 12, intervalMs: 5143 },
+  { level: 13, shuttles: 13, intervalMs: 4966 },
+  { level: 14, shuttles: 13, intervalMs: 4800 },
+  { level: 15, shuttles: 13, intervalMs: 4645 },
+  { level: 16, shuttles: 14, intervalMs: 4500 },
+  { level: 17, shuttles: 14, intervalMs: 4364 },
+  { level: 18, shuttles: 15, intervalMs: 4235 },
+  { level: 19, shuttles: 15, intervalMs: 4114 },
+  { level: 20, shuttles: 16, intervalMs: 4000 },
+  { level: 21, shuttles: 16, intervalMs: 3892 },
+];
+
+function playEsrTone(ctx: AudioContext, freq: number, delayS = 0) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.5, ctx.currentTime + delayS);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delayS + 0.12);
+  osc.start(ctx.currentTime + delayS);
+  osc.stop(ctx.currentTime + delayS + 0.15);
+}
+function playEsrShuttleBeep(ctx: AudioContext) { playEsrTone(ctx, 880); }
+function playEsrLevelBeep(ctx: AudioContext) {
+  playEsrTone(ctx, 1047, 0);
+  playEsrTone(ctx, 1047, 0.22);
+  playEsrTone(ctx, 1047, 0.44);
+}
+
+function BeepTestModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  type Phase = "ready" | "countdown" | "running" | "ended";
+  const [phase, setPhase]                   = useState<Phase>("ready");
+  const [countdownSec, setCountdownSec]     = useState(5);
+  const [displayLevel, setDisplayLevel]     = useState(1);
+  const [displayShuttle, setDisplayShuttle] = useState(0);
+  const [displayTotal, setDisplayTotal]     = useState(ESR_LEVELS[0].shuttles);
+  const [consecutiveMisses, setConsecutiveMisses] = useState(0);
+  const [lastLevel, setLastLevel]           = useState(0);
+  const [saving, setSaving]                 = useState(false);
+  const [error, setError]                   = useState("");
+
+  const runningRef           = useRef(false);
+  const levelIdxRef          = useRef(0);
+  const shuttleRef           = useRef(0);
+  const firstTickRef         = useRef(true);
+  const missedCurrentRef     = useRef(false);
+  const consecutiveMissesRef = useRef(0);
+  const lastLevelRef         = useRef(0);
+  const timeoutRef           = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const audioCtxRef          = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    return () => {
+      runningRef.current = false;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      audioCtxRef.current?.close();
+    };
+  }, []);
+
+  const tick = useCallback(() => {
+    if (!runningRef.current) return;
+
+    // Evaluate the previous shuttle (skip on very first tick)
+    if (!firstTickRef.current) {
+      if (missedCurrentRef.current) {
+        consecutiveMissesRef.current++;
+      } else {
+        consecutiveMissesRef.current = 0;
+        lastLevelRef.current = ESR_LEVELS[levelIdxRef.current].level;
+      }
+      setConsecutiveMisses(consecutiveMissesRef.current);
+
+      if (consecutiveMissesRef.current >= 2) {
+        runningRef.current = false;
+        setLastLevel(lastLevelRef.current);
+        setPhase("ended");
+        return;
+      }
+      missedCurrentRef.current = false;
+    }
+    firstTickRef.current = false;
+
+    // Advance to next shuttle
+    shuttleRef.current++;
+    const cur = ESR_LEVELS[levelIdxRef.current];
+    const ctx = audioCtxRef.current;
+
+    if (shuttleRef.current > cur.shuttles) {
+      // Level complete — move to next level
+      levelIdxRef.current++;
+      shuttleRef.current = 1;
+      if (levelIdxRef.current >= ESR_LEVELS.length) {
+        // Player finished all 21 levels
+        lastLevelRef.current = cur.level;
+        runningRef.current = false;
+        setLastLevel(cur.level);
+        setPhase("ended");
+        return;
+      }
+      if (ctx) playEsrLevelBeep(ctx);
+    } else {
+      if (ctx) playEsrShuttleBeep(ctx);
+    }
+
+    const next = ESR_LEVELS[levelIdxRef.current];
+    setDisplayLevel(next.level);
+    setDisplayShuttle(shuttleRef.current);
+    setDisplayTotal(next.shuttles);
+
+    timeoutRef.current = setTimeout(tick, next.intervalMs);
+  }, []);
+
+  const handleStart = useCallback(() => {
+    audioCtxRef.current = new AudioContext();
+    setPhase("countdown");
+    let sec = 5;
+    setCountdownSec(sec);
+
+    const cdInterval = setInterval(() => {
+      sec--;
+      setCountdownSec(sec);
+      if (sec <= 0) {
+        clearInterval(cdInterval);
+        if (audioCtxRef.current) playEsrLevelBeep(audioCtxRef.current);
+        runningRef.current = true;
+        levelIdxRef.current = 0;
+        shuttleRef.current = 0;
+        firstTickRef.current = true;
+        missedCurrentRef.current = false;
+        consecutiveMissesRef.current = 0;
+        lastLevelRef.current = 0;
+        setDisplayLevel(1);
+        setDisplayShuttle(0);
+        setDisplayTotal(ESR_LEVELS[0].shuttles);
+        setConsecutiveMisses(0);
+        setPhase("running");
+        timeoutRef.current = setTimeout(tick, ESR_LEVELS[0].intervalMs);
+      }
+    }, 1000);
+  }, [tick]);
+
+  const handleMissed = useCallback(() => {
+    missedCurrentRef.current = true;
+  }, []);
+
+  const handleStop = useCallback(() => {
+    runningRef.current = false;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setLastLevel(lastLevelRef.current);
+    setPhase("ended");
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!lastLevel) { setError("No level recorded yet."); return; }
+    setSaving(true);
+    setError("");
+    try {
+      await api.post("/attribute-measurements", {
+        attribute_id: status.attribute_id,
+        raw_value: lastLevel,
+        unit: "stage_reached",
+      });
+      onSaved();
+    } catch {
+      setError("Failed to save. Please try again.");
+      setSaving(false);
+    }
+  }, [lastLevel, status.attribute_id, onSaved]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "#f3f4f6" }}>
+          <div>
+            <p className="font-bold text-gray-900 text-sm">ESR — 20m Beep Test</p>
+            <p className="text-xs text-gray-500 mt-0.5">{status.display_name}</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="px-5 py-5 flex flex-col gap-4">
+
+          {/* Ready — protocol note + start button */}
+          {phase === "ready" && (
+            <>
+              <div className="rounded-xl p-3 text-xs" style={{ background: "#f0fdf4", color: "#14532d" }}>
+                <p className="font-semibold mb-1">Setup</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>Mark two lines 20 m apart on flat ground</li>
+                  <li>Player runs 20 m shuttles in time with the beeps</li>
+                  <li>Tap <strong>Mark Missed</strong> each time they fail to reach the line</li>
+                  <li>2 consecutive misses ends the test automatically</li>
+                  <li>Score = last fully completed level</li>
+                </ul>
+              </div>
+              <button onClick={handleStart}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white"
+                style={{ background: "#1a5c2a" }}>
+                Start Beep Test
+              </button>
+            </>
+          )}
+
+          {/* Countdown */}
+          {phase === "countdown" && (
+            <div className="flex flex-col items-center gap-2 py-6">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Starting in</p>
+              <p className="text-7xl font-black tabular-nums" style={{ color: "#1a5c2a" }}>
+                {countdownSec}
+              </p>
+              <p className="text-xs text-gray-400">Get to the start line</p>
+            </div>
+          )}
+
+          {/* Running */}
+          {phase === "running" && (
+            <>
+              <div className="rounded-2xl p-4 text-center" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                <p className="text-xs text-gray-500 mb-1">Current level</p>
+                <p className="text-5xl font-black" style={{ color: "#1a5c2a" }}>{displayLevel}</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Shuttle{" "}
+                  <span className="font-bold text-gray-700">{displayShuttle}</span>
+                  {" / "}
+                  {displayTotal}
+                </p>
+              </div>
+
+              {consecutiveMisses > 0 && (
+                <div className="rounded-xl px-3 py-2 text-center text-xs font-semibold"
+                  style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}>
+                  ⚠ {consecutiveMisses} consecutive miss{consecutiveMisses > 1 ? "es" : ""} — 2 ends the test
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button onClick={handleMissed}
+                  className="flex-1 rounded-xl py-3 text-sm font-bold"
+                  style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}>
+                  ✗ Mark Missed
+                </button>
+                <button onClick={handleStop}
+                  className="flex-1 rounded-xl py-3 text-sm font-bold text-white"
+                  style={{ background: "#dc2626" }}>
+                  Stop Test
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 text-center">
+                Tap Stop if the player cannot continue
+              </p>
+            </>
+          )}
+
+          {/* Ended */}
+          {phase === "ended" && (
+            <div className="flex flex-col gap-4">
+              <div className="rounded-2xl p-5 text-center" style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                <p className="text-xs text-gray-500 mb-1">Last completed level</p>
+                <p className="text-6xl font-black" style={{ color: "#1a5c2a" }}>{lastLevel || "—"}</p>
+                <p className="text-xs text-gray-400 mt-1">stage reached</p>
+              </div>
+
+              {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+
+              <button onClick={handleSave} disabled={saving || !lastLevel}
+                className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a", opacity: saving || !lastLevel ? 0.7 : 1 }}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {saving ? "Saving..." : "Save Result"}
+              </button>
+              <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 text-center">
+                Discard
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Attribute Card ──────────────────────────────────────────────────────────
 
 function AttributeCard({
@@ -3200,6 +3511,7 @@ export default function PlayerAttributesPage() {
   const [plateTapTestStatus, setPlateTapTestStatus]       = useState<AttributeStatus | null>(null);
   const [shuttleRunTestStatus, setShuttleRunTestStatus]   = useState<AttributeStatus | null>(null);
   const [bentArmHangTestStatus, setBentArmHangTestStatus] = useState<AttributeStatus | null>(null);
+  const [beepTestStatus, setBeepTestStatus]               = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -3417,6 +3729,7 @@ export default function PlayerAttributesPage() {
                         s.code === "limb_speed"                                    ? (attr) => setPlateTapTestStatus(attr) :
                         s.code === "change_of_direction"                           ? (attr) => setShuttleRunTestStatus(attr) :
                         s.code === "arm_shoulder_endurance"                         ? (attr) => setBentArmHangTestStatus(attr) :
+                        s.code === "endurance_stamina"                              ? (attr) => setBeepTestStatus(attr) :
                         undefined
                       }
                     />
@@ -3516,6 +3829,15 @@ export default function PlayerAttributesPage() {
           status={bentArmHangTestStatus}
           onClose={() => setBentArmHangTestStatus(null)}
           onSaved={() => { setBentArmHangTestStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* EUROFIT ESR 20m Beep Test Modal */}
+      {beepTestStatus && (
+        <BeepTestModal
+          status={beepTestStatus}
+          onClose={() => setBeepTestStatus(null)}
+          onSaved={() => { setBeepTestStatus(null); loadData(); }}
         />
       )}
     </div>
