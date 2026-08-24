@@ -2704,6 +2704,153 @@ function ShuttleRunTestModal({
   );
 }
 
+// ─── EUROFIT BAH Bent Arm Hang Test Modal ────────────────────────────────────
+
+function BentArmHangTestModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  type Phase = "ready" | "timing" | "ended";
+  const [phase, setPhase] = useState<Phase>("ready");
+  const [elapsed, setElapsed] = useState(0); // tenths of a second
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const handleStart = () => {
+    setElapsed(0);
+    setPhase("timing");
+    timerRef.current = setInterval(() => {
+      setElapsed((e) => e + 1);
+    }, 100);
+  };
+
+  const handleStop = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setPhase("ended");
+  };
+
+  const handleRedo = () => {
+    setElapsed(0);
+    setPhase("ready");
+    setError("");
+  };
+
+  const handleSave = async () => {
+    const seconds = parseFloat((elapsed / 10).toFixed(1));
+    setSaving(true);
+    setError("");
+    try {
+      await api.post("/attribute-measurements", {
+        attribute_id: status.attribute_id,
+        raw_value: seconds,
+        unit: "seconds",
+        measured_at: new Date().toISOString(),
+      });
+      onSaved();
+    } catch {
+      setError("Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const displayTime = (elapsed / 10).toFixed(1);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 flex flex-col gap-4"
+        style={{ maxHeight: "90vh", overflowY: "auto" }}>
+
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: "#dcfce7", color: "#166534" }}>EUROFIT · BAH</span>
+            <h2 className="text-base font-bold text-gray-900 mt-1">Bent Arm Hang Test</h2>
+            <p className="text-xs text-gray-500">Arm &amp; Shoulder Endurance</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+        </div>
+
+        {/* Protocol box */}
+        <div className="rounded-xl p-3 text-xs text-gray-600 space-y-1"
+          style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+          <p className="font-semibold text-gray-700">Protocol</p>
+          <p>Player grips bar overhand with arms bent so chin is above bar.</p>
+          <p>Start timer when player is in position. Stop when chin drops below bar or arms straighten.</p>
+          <p className="font-medium" style={{ color: "#166534" }}>Longer hold = better score. One attempt only.</p>
+        </div>
+
+        {/* Timer display */}
+        <div className="rounded-xl p-5 text-center"
+          style={{
+            background: phase === "timing" ? "#f0fdf4" : "#f8fafc",
+            border: `1px solid ${phase === "timing" ? "#86efac" : "#e2e8f0"}`,
+          }}>
+          <p className="text-xs text-gray-500 mb-1">
+            {phase === "ready" ? "Ready to start" : phase === "timing" ? "Timing..." : "Hold time"}
+          </p>
+          <p className="text-5xl font-black tabular-nums" style={{ color: "#1a5c2a" }}>
+            {displayTime}<span className="text-xl font-normal ml-1">sec</span>
+          </p>
+          {phase === "timing" && (
+            <p className="text-xs mt-1 animate-pulse" style={{ color: "#16a34a" }}>● Live</p>
+          )}
+        </div>
+
+        {/* Controls */}
+        {phase === "ready" && (
+          <button onClick={handleStart}
+            className="w-full rounded-xl py-3 text-sm font-bold text-white"
+            style={{ background: "#1a5c2a" }}>
+            Start Timer
+          </button>
+        )}
+
+        {phase === "timing" && (
+          <button onClick={handleStop}
+            className="w-full rounded-xl py-3 text-sm font-bold text-white"
+            style={{ background: "#dc2626" }}>
+            Stop — Chin Below Bar
+          </button>
+        )}
+
+        {phase === "ended" && (
+          <>
+            {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+            <div className="flex gap-2">
+              <button onClick={handleRedo}
+                className="flex-1 rounded-xl py-3 text-sm font-semibold border"
+                style={{ borderColor: "#d1d5db", color: "#374151" }}>
+                Redo
+              </button>
+              <button onClick={handleSave} disabled={saving}
+                className="flex-1 rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+                style={{ background: "#1a5c2a", opacity: saving ? 0.7 : 1 }}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {saving ? "Saving..." : "Save Time"}
+              </button>
+            </div>
+            <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 text-center">
+              Discard
+            </button>
+          </>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 // ─── Attribute Card ──────────────────────────────────────────────────────────
 
 function AttributeCard({
@@ -3052,6 +3199,7 @@ export default function PlayerAttributesPage() {
   const [sitReachTestStatus, setSitReachTestStatus]       = useState<AttributeStatus | null>(null);
   const [plateTapTestStatus, setPlateTapTestStatus]       = useState<AttributeStatus | null>(null);
   const [shuttleRunTestStatus, setShuttleRunTestStatus]   = useState<AttributeStatus | null>(null);
+  const [bentArmHangTestStatus, setBentArmHangTestStatus] = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -3268,6 +3416,7 @@ export default function PlayerAttributesPage() {
                         s.code === "flexibility"                                   ? (attr) => setSitReachTestStatus(attr) :
                         s.code === "limb_speed"                                    ? (attr) => setPlateTapTestStatus(attr) :
                         s.code === "change_of_direction"                           ? (attr) => setShuttleRunTestStatus(attr) :
+                        s.code === "arm_shoulder_endurance"                         ? (attr) => setBentArmHangTestStatus(attr) :
                         undefined
                       }
                     />
@@ -3358,6 +3507,15 @@ export default function PlayerAttributesPage() {
           status={shuttleRunTestStatus}
           onClose={() => setShuttleRunTestStatus(null)}
           onSaved={() => { setShuttleRunTestStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* EUROFIT BAH Bent Arm Hang Test Modal */}
+      {bentArmHangTestStatus && (
+        <BentArmHangTestModal
+          status={bentArmHangTestStatus}
+          onClose={() => setBentArmHangTestStatus(null)}
+          onSaved={() => { setBentArmHangTestStatus(null); loadData(); }}
         />
       )}
     </div>
