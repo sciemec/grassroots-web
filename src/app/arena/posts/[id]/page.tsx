@@ -122,6 +122,10 @@ export default function ArenaPostDetailPage() {
   const [editBody, setEditBody]   = useState("");
   const [saving, setSaving]       = useState(false);
 
+  const [editingCommentId, setEditingCommentId]     = useState<string | null>(null);
+  const [editingCommentBody, setEditingCommentBody] = useState("");
+  const [savingComment, setSavingComment]           = useState(false);
+
   const [reportedComments, setReportedComments] = useState<Set<string>>(new Set());
   const [reportMenuId, setReportMenuId]         = useState<string | null>(null);
 
@@ -253,6 +257,35 @@ export default function ArenaPostDetailPage() {
       });
     } catch {
       // keep optimistic state
+    }
+  };
+
+  // ── Edit comment ───────────────────────────────────────────────────────────
+
+  const startEditComment = (c: Comment) => {
+    setEditingCommentId(c.id);
+    setEditingCommentBody(c.body);
+  };
+
+  const saveEditComment = async (commentId: string) => {
+    if (!post || !editingCommentBody.trim() || savingComment) return;
+    setSavingComment(true);
+    try {
+      const r = await fetch(`${API}/arena/posts/${post.id}/comments/${commentId}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ body: editingCommentBody.trim() }),
+      });
+      const d = await r.json();
+      const updated: Comment = d.comment ?? d.data ?? d;
+      setComments((prev) =>
+        prev.map((c) => c.id === commentId ? { ...c, body: updated.body ?? editingCommentBody.trim() } : c)
+      );
+      setEditingCommentId(null);
+    } catch {
+      // keep editor open so user doesn't lose their edit
+    } finally {
+      setSavingComment(false);
     }
   };
 
@@ -686,7 +719,17 @@ export default function ArenaPostDetailPage() {
                             )}
                           </div>
                         )}
-                        {canDeleteComment(c) && (
+                        {/* Edit — comment author only */}
+                        {user && c.user?.id === user.id && editingCommentId !== c.id && (
+                          <button
+                            onClick={() => startEditComment(c)}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex", alignItems: "center" }}
+                            title="Edit comment"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                        )}
+                        {canDeleteComment(c) && editingCommentId !== c.id && (
                           <button
                             onClick={() => deleteComment(c.id)}
                             style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex", alignItems: "center" }}
@@ -696,7 +739,44 @@ export default function ArenaPostDetailPage() {
                           </button>
                         )}
                       </div>
-                      <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: 1.5, wordBreak: "break-word" }}>{c.body}</p>
+
+                      {/* Inline editor or body */}
+                      {editingCommentId === c.id ? (
+                        <div style={{ marginTop: 6 }}>
+                          <textarea
+                            value={editingCommentBody}
+                            onChange={(e) => setEditingCommentBody(e.target.value.slice(0, 280))}
+                            maxLength={280}
+                            rows={2}
+                            autoFocus
+                            style={{ width: "100%", resize: "vertical", border: "1px solid #d1d5db", borderRadius: 8, padding: "7px 10px", fontSize: 13, fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box", outline: "none" }}
+                          />
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+                            <span style={{ fontSize: 10, color: editingCommentBody.length > 250 ? "#ef4444" : "#9ca3af" }}>
+                              {editingCommentBody.length}/280
+                            </span>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button
+                                onClick={() => setEditingCommentId(null)}
+                                disabled={savingComment}
+                                style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", background: "none", border: "1px solid #d1d5db", borderRadius: 6, padding: "3px 10px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
+                              >
+                                <X size={11} /> Cancel
+                              </button>
+                              <button
+                                onClick={() => saveEditComment(c.id)}
+                                disabled={!editingCommentBody.trim() || savingComment}
+                                style={{ fontSize: 11, fontWeight: 700, color: "#fff", backgroundColor: editingCommentBody.trim() && !savingComment ? GRS_GREEN : "#9ca3af", border: "none", borderRadius: 6, padding: "3px 10px", cursor: editingCommentBody.trim() && !savingComment ? "pointer" : "default", display: "inline-flex", alignItems: "center", gap: 4 }}
+                              >
+                                {savingComment ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                {savingComment ? "Saving…" : "Save"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: 1.5, wordBreak: "break-word" }}>{c.body}</p>
+                      )}
                     </div>
                   </div>
                 );
