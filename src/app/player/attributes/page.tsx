@@ -10,7 +10,7 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
-import { useYoyoPoseDetector } from "@/hooks/useYoyoPoseDetector";
+import { useYoyoPoseDetector, type YoyoPhase } from "@/hooks/useYoyoPoseDetector";
 import { useSitUpDetector }     from "@/hooks/useSitUpDetector";
 import { useBroadJumpDetector }      from "@/hooks/useBroadJumpDetector";
 import { useFlamingoBalanceDetector } from "@/hooks/useFlamingoBalanceDetector";
@@ -344,6 +344,7 @@ function YoyoTestModal({
   const [cameraMode, setCameraMode] = useState(false);
   const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraError, setCameraError] = useState(false);
+  const [cameraPhase, setCameraPhase] = useState<YoyoPhase>("IDLE");
   // Ref mirrors cameraMode so rAF callbacks never read stale state
   const cameraModeRef = useRef(false);
   // Ref mirrors consecutiveMisses for camera callbacks (avoids stale closure)
@@ -375,6 +376,7 @@ function YoyoTestModal({
     getAudioTime,
     onShuttleCompleted: handleShuttleCompletedCamera,
     onMissDetected: handleMissCamera,
+    onPhaseChange: setCameraPhase,
   });
 
   // ── Audio timeline sync ─────────────────────────────────────────────────
@@ -462,9 +464,7 @@ function YoyoTestModal({
   };
 
   const score = completedShuttles * 40;
-  // Derive sprint vs recovery from currentEntry + live audio time
-  const liveT = audioRef.current?.currentTime ?? 0;
-  const inSprint = phase === "playing" && liveT >= currentEntry.startTime && liveT < currentEntry.endTime;
+  // (inSprint no longer needed — camera phase driven by onPhaseChange callback)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -502,11 +502,15 @@ function YoyoTestModal({
                 </span>
               ))}
             </div>
-            {/* Phase badge */}
+            {/* Phase badge — driven by pose detector via onPhaseChange */}
             <div className="absolute top-2 right-2">
               <span className="rounded-full px-2.5 py-1 text-xs font-bold text-white"
-                style={{ background: inSprint ? "#1a5c2a" : "#6b7280" }}>
-                {inSprint ? "SPRINT" : "RECOVERY"}
+                style={{
+                  background:
+                    cameraPhase === "RUN"      ? "#1a5c2a" :
+                    cameraPhase === "RECOVERY" ? "#d97706" : "#6b7280",
+                }}>
+                {cameraPhase === "RUN" ? "SPRINT ➜ B" : cameraPhase === "RECOVERY" ? "RETURN ➜ A" : "REST"}
               </span>
             </div>
             {/* Detection note */}
