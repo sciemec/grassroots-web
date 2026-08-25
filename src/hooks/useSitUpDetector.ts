@@ -66,14 +66,19 @@ function calcAngleDeg(
 
 // -- Public types ------------------------------------------------------------
 
+/** Current position in the sit-up movement cycle. */
+export type SitUpPhase = "DOWN" | "UP";
+
 export interface UseSitUpDetectorOptions {
   /** Fired each time a full rep (down -> up -> down) is completed. */
   onRepCounted: (totalReps: number) => void;
+  /** Optional: called when the detected movement phase changes. */
+  onPhaseChange?: (phase: SitUpPhase) => void;
 }
 
 // -- Hook --------------------------------------------------------------------
 
-export function useSitUpDetector({ onRepCounted }: UseSitUpDetectorOptions) {
+export function useSitUpDetector({ onRepCounted, onPhaseChange }: UseSitUpDetectorOptions) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const landmarkerRef = useRef<any>(null);
   const streamRef     = useRef<MediaStream | null>(null);
@@ -85,9 +90,11 @@ export function useSitUpDetector({ onRepCounted }: UseSitUpDetectorOptions) {
   const phaseRef    = useRef<"down" | "up">("down");
   const repCountRef = useRef(0);
 
-  // Callback ref -- keeps rAF closure from holding a stale function reference
-  const cbRepRef = useRef(onRepCounted);
-  useEffect(() => { cbRepRef.current = onRepCounted; }, [onRepCounted]);
+  // Callback refs -- keep rAF closure from holding stale function references
+  const cbRepRef   = useRef(onRepCounted);
+  const cbPhaseRef = useRef(onPhaseChange);
+  useEffect(() => { cbRepRef.current   = onRepCounted;  }, [onRepCounted]);
+  useEffect(() => { cbPhaseRef.current = onPhaseChange; }, [onPhaseChange]);
 
   // -- CDN + model -----------------------------------------------------------
 
@@ -169,8 +176,10 @@ export function useSitUpDetector({ onRepCounted }: UseSitUpDetectorOptions) {
     // State machine: DOWN -> UP -> DOWN = 1 rep
     if (phaseRef.current === "down" && angle < UP_ANGLE) {
       phaseRef.current = "up";
+      cbPhaseRef.current?.("UP");
     } else if (phaseRef.current === "up" && angle > DOWN_ANGLE) {
       phaseRef.current = "down";
+      cbPhaseRef.current?.("DOWN");
       repCountRef.current += 1;
       cbRepRef.current(repCountRef.current);
     }

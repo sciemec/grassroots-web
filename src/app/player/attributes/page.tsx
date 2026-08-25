@@ -11,7 +11,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
 import { useYoyoPoseDetector, type YoyoPhase } from "@/hooks/useYoyoPoseDetector";
-import { useSitUpDetector }     from "@/hooks/useSitUpDetector";
+import { useSitUpDetector, type SitUpPhase } from "@/hooks/useSitUpDetector";
 import { useBroadJumpDetector }      from "@/hooks/useBroadJumpDetector";
 import { useFlamingoBalanceDetector } from "@/hooks/useFlamingoBalanceDetector";
 
@@ -691,6 +691,7 @@ function SitUpTestModal({
   const [cameraMode, setCameraMode] = useState(true);
   const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraError, setCameraError]       = useState(false);
+  const [sitUpPhase, setSitUpPhase]         = useState<SitUpPhase>("DOWN");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved]   = useState(false);
   const [error, setError]   = useState("");
@@ -704,6 +705,7 @@ function SitUpTestModal({
       repCountRef.current = n;
       setRepCount(n);
     },
+    onPhaseChange: setSitUpPhase,
   });
 
   const stopTimer = useCallback(() => {
@@ -819,6 +821,13 @@ function SitUpTestModal({
               <span className="rounded px-2 py-0.5 text-xs font-bold text-white"
                 style={{ background: timeLeft <= 5 ? "rgba(185,28,28,0.85)" : "rgba(0,0,0,0.45)" }}>
                 {timeLeft}s
+              </span>
+            </div>
+            {/* Movement phase badge — driven by onPhaseChange callback */}
+            <div className="absolute bottom-2 left-2">
+              <span className="rounded-full px-2.5 py-1 text-xs font-bold text-white"
+                style={{ background: sitUpPhase === "UP" ? "#d97706" : "#6b7280" }}>
+                {sitUpPhase === "UP" ? "↑ UP" : "↓ DOWN"}
               </span>
             </div>
           </div>
