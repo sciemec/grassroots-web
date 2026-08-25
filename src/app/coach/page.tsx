@@ -176,7 +176,8 @@ export default function CoachHubPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/coach/training-plans" icon={Calendar} iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans" desc="Build & assign plans"     badge="core" />
           <HubCard href="/coach/drill-library"  icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb" label="Drill Library"  desc="Drills · sessions · AI drill analysis" />
-          <HubCard href="/warmup"              icon={Wind}    iconBg="#f0fdf4" iconColor="#1a5c2a" label="Warm-Up"        desc="Injury-prevention routines · The 11+" />
+          <HubCard href="/warmup/the-11-plus" icon={Wind}       iconBg="#f0fdf4" iconColor="#1a5c2a" label="FIFA 11+"     desc="20 min · 3 parts · injury prevention · F-MARC" badge="new" />
+          <HubCard href="/warmup"           icon={Activity}   iconBg="#fee2e2" iconColor="#dc2626" label="Warm-Up Hub"  desc="All injury-prevention programmes" />
         </div>
 
         {/* ── 4. Performance & Health ────────────────────────────────── */}
