@@ -111,6 +111,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/announcements",    label: "Announcements",   icon: <Bell size={18} />,          roles: ["admin"] },
   { href: "/admin/scout-requests",   label: "Scout Requests",  icon: <UserSearch size={18} />,    roles: ["admin"] },
   { href: "/admin/verifications",    label: "Verifications",   icon: <CheckSquare size={18} />,   roles: ["admin"] },
+  { href: "/admin/reports",          label: "Content Reports", icon: <Flag size={18} />,          roles: ["admin"] },
   { href: "/admin/subscriptions",    label: "Subscriptions",   icon: <CreditCard size={18} />,    roles: ["admin"] },
   { href: "/admin/tournaments",      label: "Tournaments",     icon: <Trophy size={18} />,        roles: ["admin"] },
   { href: "/admin/community",        label: "Community",       icon: <Globe size={18} />,         roles: ["admin"] },
