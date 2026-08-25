@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { useSidebarStore } from "@/lib/sidebar-store";
 import { CoachSidebar } from "@/components/layout/CoachSidebar";
+import CoachBottomNav from "@/components/layout/CoachBottomNav";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
 import dynamic from "next/dynamic";
@@ -51,6 +52,7 @@ export default function CoachLayout({
           </main>
         </div>
       </div>
+      <CoachBottomNav />
       <ThutoChatCoach />
       <GrassrootsNewsTicker />
     </GuestGateProvider>
