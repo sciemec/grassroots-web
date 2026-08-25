@@ -773,61 +773,99 @@ function PartGuidanceCard({
 
 // ── Inline exercise illustrations ─────────────────────────────────────────────
 
-function SquatIllustration() {
+function AnimatedSquat() {
+  // 7 keyframes: stand → squat → hold squat → stand → toe-raise → hold → stand → loop
+  const DUR = "3.4s";
+  const REP = "indefinite";
+  const KT  = "0;0.25;0.44;0.6;0.74;0.87;1";
+
   return (
     <svg
-      width="100%"
-      viewBox="0 0 680 360"
+      width="100%" viewBox="0 0 400 295"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="Squats with toe raise — start position, correct squat, and knee fault to avoid"
+      aria-label="Animated squat with calf raise — body lowers into squat, rises, then toe raise, repeating"
       style={{ display: "block", backgroundColor: "#fff" }}
     >
-      {/* Position 1: Standing start */}
-      <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="110" cy="90" r="16" fill="#1a5c2a" stroke="none" />
-        <line x1="110" y1="106" x2="110" y2="190" />
-        <line x1="110" y1="130" x2="80"  y2="160" />
-        <line x1="110" y1="130" x2="140" y2="160" />
-        <line x1="110" y1="190" x2="90"  y2="260" />
-        <line x1="110" y1="190" x2="130" y2="260" />
-        <line x1="90"  y1="260" x2="90"  y2="268" />
-        <line x1="130" y1="260" x2="130" y2="268" />
-      </g>
-      <text x="110" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">Start</text>
+      {/* Floor */}
+      <line x1="110" y1="252" x2="290" y2="252" stroke="#d1d5db" strokeWidth="1.5" />
 
-      {/* Position 2: Squat bottom, correct */}
       <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="340" cy="140" r="16" fill="#1a5c2a" stroke="none" />
-        <line x1="340" y1="156" x2="340" y2="220" />
-        <line x1="340" y1="170" x2="300" y2="150" />
-        <line x1="340" y1="170" x2="380" y2="150" />
-        <line x1="340" y1="220" x2="305" y2="255" />
-        <line x1="305" y1="255" x2="315" y2="270" />
-        <line x1="340" y1="220" x2="375" y2="255" />
-        <line x1="375" y1="255" x2="365" y2="270" />
-      </g>
-      <text x="340" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">Squat — correct</text>
-      <text x="340" y="318" fontSize="12" fill="#5F5E5A" textAnchor="middle" fontFamily="sans-serif">knees track over toes</text>
 
-      {/* Position 3: Squat bottom, incorrect (knees buckling in) */}
-      <g stroke="#993c1d" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="565" cy="140" r="16" fill="#993c1d" stroke="none" />
-        <line x1="565" y1="156" x2="565" y2="220" />
-        <line x1="565" y1="170" x2="525" y2="150" />
-        <line x1="565" y1="170" x2="605" y2="150" />
-        <line x1="565" y1="220" x2="555" y2="255" />
-        <line x1="555" y1="255" x2="530" y2="270" />
-        <line x1="565" y1="220" x2="575" y2="255" />
-        <line x1="575" y1="255" x2="600" y2="270" />
+        {/* Head */}
+        <circle cx="200" cy="55" r="14" fill="#1a5c2a" stroke="none">
+          <animate attributeName="cy" values="55;110;110;55;47;47;55" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </circle>
+
+        {/* Spine (neck → hip) */}
+        <line x1="200" y1="69" x2="200" y2="138">
+          <animate attributeName="y1" values="69;124;124;69;63;63;69" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="138;193;193;138;138;138;138" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Left upper arm (shoulder → elbow) */}
+        <line x1="175" y1="78" x2="160" y2="116">
+          <animate attributeName="y1" values="78;133;133;78;78;78;78" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="x2" values="160;144;144;160;160;160;160" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="116;155;155;116;116;116;116" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Left forearm (elbow → hand) */}
+        <line x1="160" y1="116" x2="156" y2="148">
+          <animate attributeName="x1" values="160;144;144;160;160;160;160" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y1" values="116;155;155;116;116;116;116" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="x2" values="156;120;120;156;156;156;156" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="148;170;170;148;148;148;148" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Right upper arm */}
+        <line x1="225" y1="78" x2="240" y2="116">
+          <animate attributeName="y1" values="78;133;133;78;78;78;78" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="x2" values="240;256;256;240;240;240;240" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="116;155;155;116;116;116;116" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Right forearm */}
+        <line x1="240" y1="116" x2="244" y2="148">
+          <animate attributeName="x1" values="240;256;256;240;240;240;240" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y1" values="116;155;155;116;116;116;116" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="x2" values="244;280;280;244;244;244;244" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="148;170;170;148;148;148;148" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Left thigh (hip → knee) */}
+        <line x1="200" y1="138" x2="183" y2="195">
+          <animate attributeName="y1" values="138;193;193;138;138;138;138" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="x2" values="183;163;163;183;183;183;183" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="195;228;228;195;195;195;195" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Left shin (knee → foot) */}
+        <line x1="183" y1="195" x2="177" y2="250">
+          <animate attributeName="x1" values="183;163;163;183;183;183;183" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y1" values="195;228;228;195;195;195;195" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="250;250;250;250;236;236;250" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Right thigh */}
+        <line x1="200" y1="138" x2="217" y2="195">
+          <animate attributeName="y1" values="138;193;193;138;138;138;138" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="x2" values="217;237;237;217;217;217;217" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="195;228;228;195;195;195;195" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
+        {/* Right shin */}
+        <line x1="217" y1="195" x2="223" y2="250">
+          <animate attributeName="x1" values="217;237;237;217;217;217;217" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y1" values="195;228;228;195;195;195;195" keyTimes={KT} dur={DUR} repeatCount={REP} />
+          <animate attributeName="y2" values="250;250;250;250;236;236;250" keyTimes={KT} dur={DUR} repeatCount={REP} />
+        </line>
+
       </g>
-      {/* Inward-pointing arrows marking the fault */}
-      <g stroke="#993c1d" strokeWidth="2" fill="none">
-        <line x1="540" y1="235" x2="555" y2="255" />
-        <line x1="590" y1="235" x2="575" y2="255" />
-      </g>
-      <text x="565" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">Squat — avoid</text>
-      <text x="565" y="318" fontSize="12" fill="#993c1d" textAnchor="middle" fontFamily="sans-serif">knees buckling inward</text>
+
+      <text x="200" y="278" fontSize="12" fill="#9ca3af" textAnchor="middle" fontFamily="sans-serif">
+        squat · hold · rise · calf raise · repeat
+      </text>
     </svg>
   );
 }
