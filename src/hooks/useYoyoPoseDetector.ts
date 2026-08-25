@@ -1,30 +1,24 @@
 "use client";
 
 /**
- * useYoyoPoseDetector
+ * useYoyoPoseDetector — v2
  *
- * Live-camera MediaPipe hook for Yo-Yo IR1 automated miss detection.
+ * Phase-correct MediaPipe hook for Yo-Yo IR1 automated detection.
+ *
+ * Protocol phases per shuttle:
+ *   RUN      startTime → endTime      Player must reach B (20 m mark)
+ *   RECOVERY endTime → recoveryEnd    Player must return to A (10 s window)
+ *   IDLE     recoveryEnd → next start Rest between shuttles
+ *
+ * Completion: reachedB (in RUN) + returnedA (in RECOVERY) → onShuttleCompleted
+ * Miss A:     endTime reached without reachedB             → onMissDetected
+ * Miss B:     recoveryEnd reached; reachedB but no return  → onMissDetected
  *
  * Setup:
- *   - Camera must be face-on, wide, with zones A (0 m), B (20 m), and C
- *     (recovery) all visible.
+ *   - Camera must be face-on, wide, with zones A (0 m) and B (20 m) visible.
  *   - MediaPipe pose landmarker (lite) loaded from CDN at runtime.
- *
- * Detection strategy:
- *   - Hip X position = average of L_HIP (idx 23) and R_HIP (idx 24)
- *     normalised landmarks (0–1).
- *   - "Reached B" = peak displacement from shuttle-start X ≥ 0.22 (22 %
- *     of frame width).
- *   - "Reversed" = displacement drops to ≤ 65 % of peak after reaching B.
- *   - Completion fires once when BOTH conditions are met within the sprint
- *     window defined by the audio schedule.
- *   - Miss fires on the first frame where t ≥ entry.endTime and the shuttle
- *     was not already marked completed.
- *   - Each shuttle is evaluated exactly once (evaluated Set guard).
- *
- * Audio sync:
- *   - getAudioTime() callback is called every rAF frame to get current
- *     audio position — used as the source of truth for which shuttle is live.
+ *   - Hip X (avg of L_HIP + R_HIP landmarks) is used for lateral tracking.
+ *   - Frames where hip visibility < MIN_VISIBILITY are skipped.
  */
 
 import { useRef, useCallback, useEffect } from "react";
@@ -50,17 +44,23 @@ const REACH_B_THRESHOLD = 0.22;
 
 /**
  * Displacement must drop to ≤ this fraction of the peak before we call it
- * a confirmed reversal (player back at A).
+ * a confirmed return to A (player back at start).
  */
 const REVERSAL_RATIO = 0.65;
 
+/** Skip frames where either hip landmark has visibility below this score. */
+const MIN_VISIBILITY = 0.60;
+
 // ── Public types ──────────────────────────────────────────────────────────────
+
+export type YoyoPhase    = "RUN" | "RECOVERY" | "IDLE";
+export type YoyoProtocol = "yo_yo_ir1" | "eurofit_esr";
 
 export interface YoyoScheduleEntry {
   globalShuttle: number;
-  startTime: number;   // seconds — sprint window opens
-  endTime: number;     // seconds — sprint window closes (miss if not completed by here)
-  recoveryEnd: number; // seconds — next shuttle startTime
+  startTime:    number; // seconds — RUN phase opens (must reach B by endTime)
+  endTime:      number; // seconds — RUN phase closes
+  recoveryEnd:  number; // seconds — RECOVERY phase closes (must return by here)
 }
 
 export interface UseYoyoPoseDetectorOptions {
@@ -68,10 +68,14 @@ export interface UseYoyoPoseDetectorOptions {
   schedule: YoyoScheduleEntry[];
   /** Returns the audio element's currentTime in seconds. */
   getAudioTime: () => number;
-  /** Called once when the player completes a shuttle (reached B and reversed). */
+  /** Called once when the player completes a shuttle (reached B + returned to A). */
   onShuttleCompleted: (globalShuttle: number) => void;
-  /** Called once when the sprint window closes without a completion. */
+  /** Called once on Miss-A (no B reached) or Miss-B (B reached, no return). */
   onMissDetected: (globalShuttle: number) => void;
+  /** Optional: called when the detected phase changes (for live coaching cues). */
+  onPhaseChange?: (phase: YoyoPhase) => void;
+  /** Protocol in use — informational, defaults to yo_yo_ir1. */
+  protocol?: YoyoProtocol;
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -81,39 +85,55 @@ export function useYoyoPoseDetector({
   getAudioTime,
   onShuttleCompleted,
   onMissDetected,
+  onPhaseChange,
+  protocol = "yo_yo_ir1",
 }: UseYoyoPoseDetectorOptions) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const landmarkerRef = useRef<any>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const rafRef = useRef<number>(0);
-  const runningRef = useRef(false);
+  const landmarkerRef  = useRef<any>(null);
+  const streamRef      = useRef<MediaStream | null>(null);
+  const videoRef       = useRef<HTMLVideoElement | null>(null);
+  const rafRef         = useRef<number>(0);
+  const runningRef     = useRef(false);
 
   // Per-shuttle tracking (refs only — never useState inside rAF callbacks)
-  const lastGlobalRef = useRef<number>(0);      // last globalShuttle seen
-  const evaluatedRef = useRef<Set<number>>(new Set());
-  const startXRef = useRef<number | null>(null); // hip X at shuttle start
-  const peakRef = useRef<number>(0);             // max displacement seen this shuttle
-  const reachedBRef = useRef<boolean>(false);
-  const reversedRef = useRef<boolean>(false);
+  const lastGlobalRef  = useRef<number>(-1);
+  const evaluatedRef   = useRef<Set<number>>(new Set()); // shuttles fully resolved
+  const recovEvalRef   = useRef<Set<number>>(new Set()); // recovery phase resolved
+  const startXRef      = useRef<number | null>(null);    // hip X at RUN start
+  const peakRef        = useRef<number>(0);              // max displacement this shuttle
+  const reachedBRef    = useRef<boolean>(false);
+  const returnedARef   = useRef<boolean>(false);
 
-  // Callback refs — keeps the rAF closure from holding stale function refs
+  // Phase tracking
+  const currentPhaseRef    = useRef<YoyoPhase>("IDLE");
+  const completedRepsRef   = useRef<number>(0);
+
+  // Callback refs — keep rAF closure from capturing stale functions
   const cbCompletedRef = useRef(onShuttleCompleted);
-  const cbMissRef = useRef(onMissDetected);
-  const getTimeRef = useRef(getAudioTime);
-  const scheduleRef = useRef(schedule);
+  const cbMissRef      = useRef(onMissDetected);
+  const cbPhaseRef     = useRef(onPhaseChange);
+  const getTimeRef     = useRef(getAudioTime);
+  const scheduleRef    = useRef(schedule);
 
   useEffect(() => { cbCompletedRef.current = onShuttleCompleted; }, [onShuttleCompleted]);
   useEffect(() => { cbMissRef.current = onMissDetected; }, [onMissDetected]);
+  useEffect(() => { cbPhaseRef.current = onPhaseChange; }, [onPhaseChange]);
   useEffect(() => { getTimeRef.current = getAudioTime; }, [getAudioTime]);
   useEffect(() => { scheduleRef.current = schedule; }, [schedule]);
+
+  // ── Phase helper ──────────────────────────────────────────────────────────
+
+  const setPhase = useCallback((p: YoyoPhase) => {
+    if (currentPhaseRef.current === p) return;
+    currentPhaseRef.current = p;
+    cbPhaseRef.current?.(p);
+  }, []);
 
   // ── CDN + model ──────────────────────────────────────────────────────────
 
   const loadModel = useCallback(async (): Promise<boolean> => {
     if (landmarkerRef.current) return true;
     try {
-      // Inject CDN script if not already present
       if (!document.querySelector(`script[src="${MP_CDN}"]`)) {
         await new Promise<void>((resolve, reject) => {
           const s = document.createElement("script");
@@ -123,7 +143,7 @@ export function useYoyoPoseDetector({
           document.head.appendChild(s);
         });
       } else {
-        // Script tag exists but may not be fully loaded yet — wait for PoseLandmarker
+        // Script tag exists but may not be fully initialised yet
         await new Promise<void>((resolve) => {
           const deadline = Date.now() + 6000;
           const poll = setInterval(() => {
@@ -138,14 +158,11 @@ export function useYoyoPoseDetector({
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const w = window as any;
-      const PoseLandmarker = w.PoseLandmarker;
-      const FilesetResolver = w.FilesetResolver;
-      if (!PoseLandmarker || !FilesetResolver) {
-        throw new Error("PoseLandmarker / FilesetResolver not on window after CDN load");
-      }
+      if (!w.PoseLandmarker || !w.FilesetResolver)
+        throw new Error("PoseLandmarker / FilesetResolver missing after CDN load");
 
-      const filesetResolver = await FilesetResolver.forVisionTasks(WASM_PATH);
-      landmarkerRef.current = await PoseLandmarker.createFromOptions(filesetResolver, {
+      const filesetResolver = await w.FilesetResolver.forVisionTasks(WASM_PATH);
+      landmarkerRef.current = await w.PoseLandmarker.createFromOptions(filesetResolver, {
         baseOptions: { modelAssetPath: MODEL_URL, delegate: "GPU" },
         runningMode: "VIDEO",
         numPoses: 1,
@@ -160,92 +177,122 @@ export function useYoyoPoseDetector({
   // ── Per-frame logic ──────────────────────────────────────────────────────
 
   const processFrame = useCallback(() => {
-    const video = videoRef.current;
+    const video      = videoRef.current;
     const landmarker = landmarkerRef.current;
     if (!video || !landmarker || video.readyState < 2) return;
 
-    const t = getTimeRef.current();
+    const t     = getTimeRef.current();
     const sched = scheduleRef.current;
 
-    // Find current shuttle entry (last entry whose startTime ≤ t)
+    // Find current schedule entry (last entry whose startTime ≤ t)
     let entry: YoyoScheduleEntry | null = null;
     for (let i = sched.length - 1; i >= 0; i--) {
       if (sched[i].startTime <= t) { entry = sched[i]; break; }
     }
-    if (!entry) return;
+    if (!entry) { setPhase("IDLE"); return; }
 
-    const { globalShuttle, startTime, endTime } = entry;
-    const inSprint = t >= startTime && t < endTime;
+    const { globalShuttle, startTime, endTime, recoveryEnd } = entry;
 
-    // Reset per-shuttle state when shuttle index advances
+    // ── Determine current phase ────────────────────────────────────────────
+    const inRun      = t >= startTime && t < endTime;
+    const inRecovery = t >= endTime   && t < recoveryEnd;
+
+    if      (inRun)      setPhase("RUN");
+    else if (inRecovery) setPhase("RECOVERY");
+    else                 setPhase("IDLE");
+
+    // ── Reset state when a new shuttle begins ──────────────────────────────
     if (globalShuttle !== lastGlobalRef.current) {
       lastGlobalRef.current = globalShuttle;
-      startXRef.current = null;
-      peakRef.current = 0;
-      reachedBRef.current = false;
-      reversedRef.current = false;
+      startXRef.current     = null;
+      peakRef.current       = 0;
+      reachedBRef.current   = false;
+      returnedARef.current  = false;
     }
 
-    // Miss detection: sprint window closed without a completion
-    if (!inSprint && t >= endTime && !evaluatedRef.current.has(globalShuttle)) {
+    // ── Miss-A: sprint window closed, player never reached B ──────────────
+    if (
+      !inRun && t >= endTime &&
+      !reachedBRef.current &&
+      !evaluatedRef.current.has(globalShuttle)
+    ) {
       evaluatedRef.current.add(globalShuttle);
+      recovEvalRef.current.add(globalShuttle); // skip recovery eval
       cbMissRef.current(globalShuttle);
       return;
     }
 
-    // Only run expensive pose detection during the sprint window
-    if (!inSprint) return;
+    // ── Miss-B: recovery window closed, reached B but never returned to A ──
+    if (
+      !inRecovery && t >= recoveryEnd &&
+      reachedBRef.current && !returnedARef.current &&
+      !recovEvalRef.current.has(globalShuttle)
+    ) {
+      recovEvalRef.current.add(globalShuttle);
+      if (!evaluatedRef.current.has(globalShuttle)) {
+        evaluatedRef.current.add(globalShuttle);
+        cbMissRef.current(globalShuttle);
+      }
+      return;
+    }
+
+    // ── Only run pose detection during active phases ───────────────────────
+    if (!inRun && !inRecovery) return;
     if (evaluatedRef.current.has(globalShuttle)) return;
 
-    // Run MediaPipe pose detection
+    // Run MediaPipe
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: any;
     try {
       result = landmarker.detectForVideo(video, performance.now());
-    } catch {
-      return;
-    }
+    } catch { return; }
 
     const landmarks = result?.landmarks?.[0];
     if (!landmarks || landmarks.length < 25) return;
 
-    // Hip X = average of left and right hip (normalised 0–1)
+    // Visibility gate — skip low-confidence frames
+    const lVis = landmarks[L_HIP].visibility ?? 1;
+    const rVis = landmarks[R_HIP].visibility ?? 1;
+    if (lVis < MIN_VISIBILITY || rVis < MIN_VISIBILITY) return;
+
     const hipX = (landmarks[L_HIP].x + landmarks[R_HIP].x) / 2;
 
-    // Capture shuttle start X on the first good frame
+    // Capture shuttle start X on the first good frame of RUN phase only
     if (startXRef.current === null) {
-      startXRef.current = hipX;
+      if (inRun) { startXRef.current = hipX; }
       return;
     }
 
     const disp = Math.abs(hipX - startXRef.current);
 
-    // Track peak displacement
-    if (disp > peakRef.current) peakRef.current = disp;
-
-    // Check "reached B"
-    if (!reachedBRef.current && peakRef.current >= REACH_B_THRESHOLD) {
-      reachedBRef.current = true;
+    // ── RUN phase: track reach-B ───────────────────────────────────────────
+    if (inRun) {
+      if (disp > peakRef.current) peakRef.current = disp;
+      if (!reachedBRef.current && peakRef.current >= REACH_B_THRESHOLD) {
+        reachedBRef.current = true;
+      }
     }
 
-    // Check reversal (displacement dropped to ≤ REVERSAL_RATIO × peak after B)
+    // ── RECOVERY phase: track return-to-A ─────────────────────────────────
+    if (inRecovery && reachedBRef.current && !returnedARef.current) {
+      if (disp <= peakRef.current * REVERSAL_RATIO) {
+        returnedARef.current = true;
+      }
+    }
+
+    // ── Completion: reached B (RUN) + returned to A (RECOVERY) ────────────
     if (
-      reachedBRef.current &&
-      !reversedRef.current &&
-      peakRef.current > REACH_B_THRESHOLD &&
-      disp <= peakRef.current * REVERSAL_RATIO
+      reachedBRef.current && returnedARef.current &&
+      !evaluatedRef.current.has(globalShuttle)
     ) {
-      reversedRef.current = true;
-    }
-
-    // Completion: reached B AND reversed
-    if (reachedBRef.current && reversedRef.current && !evaluatedRef.current.has(globalShuttle)) {
       evaluatedRef.current.add(globalShuttle);
+      recovEvalRef.current.add(globalShuttle);
+      completedRepsRef.current += 1;
       cbCompletedRef.current(globalShuttle);
     }
-  }, []);
+  }, [setPhase]);
 
-  // ── rAF loop ─────────────────────────────────────────────────────────────
+  // ── rAF loop ──────────────────────────────────────────────────────────────
 
   const loop = useCallback(() => {
     if (!runningRef.current) return;
@@ -257,7 +304,6 @@ export function useYoyoPoseDetector({
 
   /**
    * Start camera + pose detection loop.
-   * Pass the HTMLVideoElement that will display the camera feed.
    * Returns true on success, false if camera permission denied or model failed.
    */
   const start = useCallback(async (videoEl: HTMLVideoElement): Promise<boolean> => {
@@ -269,11 +315,7 @@ export function useYoyoPoseDetector({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-        },
+        video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
       });
       streamRef.current = stream;
       videoEl.srcObject = stream;
@@ -284,12 +326,15 @@ export function useYoyoPoseDetector({
     }
 
     // Reset all tracking state
-    lastGlobalRef.current = 0;
-    evaluatedRef.current = new Set();
-    startXRef.current = null;
-    peakRef.current = 0;
-    reachedBRef.current = false;
-    reversedRef.current = false;
+    lastGlobalRef.current    = -1;
+    evaluatedRef.current     = new Set();
+    recovEvalRef.current     = new Set();
+    startXRef.current        = null;
+    peakRef.current          = 0;
+    reachedBRef.current      = false;
+    returnedARef.current     = false;
+    completedRepsRef.current = 0;
+    currentPhaseRef.current  = "IDLE";
 
     runningRef.current = true;
     rafRef.current = requestAnimationFrame(loop);
@@ -305,8 +350,18 @@ export function useYoyoPoseDetector({
     if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => () => { stop(); }, [stop]);
 
-  return { cameraVideoRef: videoRef, start, stop };
+  return {
+    cameraVideoRef: videoRef,
+    start,
+    stop,
+    /** Protocol in use — informational for the caller. */
+    protocol,
+    /**
+     * Running count of completed reps (completedReps × 40 m = total distance).
+     * Read `.current` directly — updates in the rAF loop without re-renders.
+     */
+    completedRepsRef,
+  };
 }
