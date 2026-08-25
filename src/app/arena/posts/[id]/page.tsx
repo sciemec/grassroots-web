@@ -7,8 +7,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import {
-  ArrowLeft, Heart, MessageCircle, Send, Trash2, Flag,
-  Trophy, Zap, Star, Video, Globe, Eye, Loader2, ChevronDown,
+  ArrowLeft, Heart, MessageCircle, Send, Trash2, Flag, Pencil,
+  Trophy, Zap, Star, Video, Globe, Eye, Loader2, ChevronDown, Check, X,
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
@@ -115,6 +115,10 @@ export default function ArenaPostDetailPage() {
 
   const [commentBody, setCommentBody]   = useState("");
   const [submitting, setSubmitting]     = useState(false);
+
+  const [editing, setEditing]     = useState(false);
+  const [editBody, setEditBody]   = useState("");
+  const [saving, setSaving]       = useState(false);
 
   const [reportedComments, setReportedComments] = useState<Set<string>>(new Set());
   const [reportMenuId, setReportMenuId]         = useState<string | null>(null);
@@ -247,6 +251,34 @@ export default function ArenaPostDetailPage() {
     }
   };
 
+  // ── Edit post ──────────────────────────────────────────────────────────────
+
+  const startEdit = () => {
+    if (!post) return;
+    setEditBody(post.body);
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!post || !editBody.trim() || saving) return;
+    setSaving(true);
+    try {
+      const r = await fetch(`${API}/arena/posts/${post.id}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ body: editBody.trim() }),
+      });
+      const d = await r.json();
+      const updated: Post = d.post ?? d.data ?? d;
+      setPost((prev) => prev ? { ...prev, body: updated.body ?? editBody.trim() } : prev);
+      setEditing(false);
+    } catch {
+      // keep editor open so user doesn't lose their changes
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // ── Report comment ─────────────────────────────────────────────────────────
 
   const reportComment = async (commentId: string, reason: string) => {
@@ -364,6 +396,17 @@ export default function ArenaPostDetailPage() {
                   {post.province && <span style={{ fontSize: 11, color: "#6b7280" }}>· {post.province}</span>}
                 </div>
               </div>
+
+              {/* Edit button — owner only, hidden while editing */}
+              {isOwner && !editing && (
+                <button
+                  onClick={startEdit}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center", flexShrink: 0 }}
+                  title="Edit post"
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
             </div>
 
             {/* Milestone label */}
@@ -373,10 +416,45 @@ export default function ArenaPostDetailPage() {
               </div>
             )}
 
-            {/* Body */}
-            <p style={{ fontSize: 15, color: "#111", lineHeight: 1.6, margin: "0 0 14px", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-              {post.body}
-            </p>
+            {/* Body / Inline editor */}
+            {editing ? (
+              <div style={{ marginBottom: 14 }}>
+                <textarea
+                  value={editBody}
+                  onChange={(e) => setEditBody(e.target.value.slice(0, 280))}
+                  maxLength={280}
+                  rows={4}
+                  autoFocus
+                  style={{ width: "100%", resize: "vertical", border: "1px solid #d1d5db", borderRadius: 10, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box", outline: "none" }}
+                />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
+                  <span style={{ fontSize: 11, color: editBody.length > 250 ? "#ef4444" : "#9ca3af" }}>
+                    {editBody.length}/280
+                  </span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => setEditing(false)}
+                      disabled={saving}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#6b7280", background: "none", border: "1px solid #d1d5db", borderRadius: 8, padding: "5px 12px", cursor: "pointer" }}
+                    >
+                      <X size={12} /> Cancel
+                    </button>
+                    <button
+                      onClick={saveEdit}
+                      disabled={!editBody.trim() || saving}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 700, color: "#fff", backgroundColor: editBody.trim() && !saving ? GRS_GREEN : "#9ca3af", border: "none", borderRadius: 8, padding: "5px 12px", cursor: editBody.trim() && !saving ? "pointer" : "default" }}
+                    >
+                      {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                      {saving ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p style={{ fontSize: 15, color: "#111", lineHeight: 1.6, margin: "0 0 14px", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                {post.body}
+              </p>
+            )}
           </div>
 
           {/* Video */}
