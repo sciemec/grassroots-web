@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import {
-  ArrowLeft, Heart, MessageCircle, Send, Trash2,
+  ArrowLeft, Heart, MessageCircle, Send, Trash2, Flag,
   Trophy, Zap, Star, Video, Globe, Eye, Loader2, ChevronDown,
 } from "lucide-react";
 
@@ -116,6 +116,9 @@ export default function ArenaPostDetailPage() {
   const [commentBody, setCommentBody]   = useState("");
   const [submitting, setSubmitting]     = useState(false);
 
+  const [reportedComments, setReportedComments] = useState<Set<string>>(new Set());
+  const [reportMenuId, setReportMenuId]         = useState<string | null>(null);
+
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
   const authHeaders = useCallback(() => ({
@@ -221,6 +224,23 @@ export default function ArenaPostDetailPage() {
     } catch {
       // Re-load comments if delete failed
       loadComments(1, post.id);
+    }
+  };
+
+  // ── Report comment ─────────────────────────────────────────────────────────
+
+  const reportComment = async (commentId: string, reason: string) => {
+    if (!post) return;
+    setReportMenuId(null);
+    setReportedComments((prev) => new Set(prev).add(commentId));
+    try {
+      await fetch(`${API}/arena/posts/${post.id}/comments/${commentId}/report`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ reason }),
+      });
+    } catch {
+      // keep optimistic "Reported" state — user already saw the confirmation
     }
   };
 
@@ -445,6 +465,37 @@ export default function ArenaPostDetailPage() {
                           {c.user?.role ?? "player"}
                         </span>
                         <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: "auto" }}>{timeAgo(c.created_at)}</span>
+                        {/* Report button — only for other users' comments */}
+                        {user && c.user?.id !== user.id && (
+                          <div style={{ position: "relative" }}>
+                            {reportedComments.has(c.id) ? (
+                              <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600 }}>Reported</span>
+                            ) : (
+                              <button
+                                onClick={() => setReportMenuId(reportMenuId === c.id ? null : c.id)}
+                                style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex", alignItems: "center" }}
+                                title="Report comment"
+                              >
+                                <Flag size={12} />
+                              </button>
+                            )}
+                            {reportMenuId === c.id && (
+                              <div style={{ position: "absolute", right: 0, top: 18, zIndex: 50, backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.12)", minWidth: 150, overflow: "hidden" }}>
+                                {(["offensive", "spam", "harassment", "other"] as const).map((reason) => (
+                                  <button
+                                    key={reason}
+                                    onClick={() => reportComment(c.id, reason)}
+                                    style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 14px", fontSize: 12, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer", textTransform: "capitalize", borderBottom: reason === "other" ? "none" : "1px solid #f3f4f6" }}
+                                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#f9fafb"; }}
+                                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
+                                  >
+                                    {reason}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {canDeleteComment(c) && (
                           <button
                             onClick={() => deleteComment(c.id)}
