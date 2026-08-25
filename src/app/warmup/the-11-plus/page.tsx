@@ -613,9 +613,100 @@ function SquatIllustration() {
   );
 }
 
+function SingleLegStanceIllustration() {
+  return (
+    <svg
+      width="100%"
+      viewBox="0 0 680 320"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Single-leg stance — balance on one leg with standing knee soft, not locked"
+      style={{ display: "block", backgroundColor: "#fff" }}
+    >
+      {/* Floor line */}
+      <line x1="240" y1="270" x2="440" y2="270" stroke="#B4B2A9" strokeWidth="2" />
+
+      <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="340" cy="90" r="16" fill="#1a5c2a" stroke="none" />
+        <line x1="340" y1="106" x2="340" y2="190" />
+        {/* Arms holding ball */}
+        <line x1="340" y1="130" x2="300" y2="150" />
+        <line x1="340" y1="130" x2="380" y2="150" />
+        <circle cx="340" cy="160" r="14" stroke="#c8962a" strokeWidth="3" />
+        {/* Standing leg */}
+        <line x1="340" y1="190" x2="345" y2="270" />
+        <line x1="345" y1="270" x2="345" y2="278" />
+        {/* Lifted bent leg */}
+        <line x1="340" y1="190" x2="310" y2="220" />
+        <line x1="310" y1="220" x2="330" y2="240" />
+      </g>
+
+      <text x="340" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">
+        Hold 30 seconds each leg — standing knee soft, not locked
+      </text>
+    </svg>
+  );
+}
+
+function StandingBroadJumpIllustration() {
+  return (
+    <svg
+      width="100%"
+      viewBox="0 0 680 300"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Standing broad jump — crouched takeoff, flight arc, two-foot landing"
+      style={{ display: "block", backgroundColor: "#fff" }}
+    >
+      {/* Floor line */}
+      <line x1="60" y1="230" x2="620" y2="230" stroke="#B4B2A9" strokeWidth="2" />
+      {/* Takeoff line */}
+      <line x1="140" y1="215" x2="140" y2="230" stroke="#2C2C2A" strokeWidth="3" />
+      <text x="140" y="205" fontSize="12" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">takeoff line</text>
+
+      {/* Crouch / takeoff figure */}
+      <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="140" cy="150" r="15" fill="#1a5c2a" stroke="none" />
+        <line x1="140" y1="165" x2="150" y2="195" />
+        <line x1="140" y1="175" x2="105" y2="165" />
+        <line x1="150" y1="195" x2="130" y2="225" />
+        <line x1="130" y1="225" x2="115" y2="230" />
+        <line x1="150" y1="195" x2="175" y2="225" />
+        <line x1="175" y1="225" x2="165" y2="230" />
+      </g>
+
+      {/* Flight arc */}
+      <path d="M 155 165 Q 340 60 480 165" fill="none" stroke="#c8962a" strokeWidth="2" strokeDasharray="6 6" />
+
+      {/* Landing figure */}
+      <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="480" cy="150" r="15" fill="#1a5c2a" stroke="none" />
+        <line x1="480" y1="165" x2="480" y2="190" />
+        <line x1="480" y1="170" x2="450" y2="150" />
+        <line x1="480" y1="170" x2="510" y2="150" />
+        <line x1="480" y1="190" x2="450" y2="225" />
+        <line x1="480" y1="190" x2="500" y2="225" />
+      </g>
+
+      {/* Distance measurement */}
+      <line x1="140" y1="250" x2="450" y2="250" stroke="#c8962a" strokeWidth="1.5" />
+      <line x1="140" y1="245" x2="140" y2="255" stroke="#c8962a" strokeWidth="1.5" />
+      <line x1="450" y1="245" x2="450" y2="255" stroke="#c8962a" strokeWidth="1.5" />
+      <text x="295" y="270" fontSize="12" fill="#c8962a" textAnchor="middle" fontFamily="sans-serif">distance measured to nearest heel</text>
+
+      <text x="340" y="30" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">
+        Bend knees, swing arms, jump forward — land on both feet
+      </text>
+    </svg>
+  );
+}
+
 /** Map mediaAssetId → illustration component. Add more as illustrations are created. */
 const EXERCISE_SVG: Partial<Record<string, React.ReactNode>> = {
-  "11plus_p2_05_squat_l1": <SquatIllustration />,
+  "11plus_p2_04_balance_l1": <SingleLegStanceIllustration />,
+  "11plus_p2_04_balance_l2": <SingleLegStanceIllustration />,
+  "11plus_p2_05_squat_l1":   <SquatIllustration />,
+  "11plus_p2_06_jump_l2":    <StandingBroadJumpIllustration />,
 };
 
 // ── Exercise card (expandable) ────────────────────────────────────────────────
