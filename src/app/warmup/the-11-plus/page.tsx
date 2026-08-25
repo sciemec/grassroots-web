@@ -449,6 +449,12 @@ export default function ElevenPlusPage() {
   const guidanceForPart = (part: 1 | 2 | 3): AgeGuidance | undefined =>
     ageGuidance.find((g) => g.part_number === part);
 
+  // Auto-select the recommended Part 2 level when guidance loads
+  useEffect(() => {
+    const part2 = ageGuidance.find((g) => g.part_number === 2);
+    if (part2?.recommended_level) setPart2Level(part2.recommended_level);
+  }, [ageGuidance]);
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", fontFamily: "system-ui, -apple-system, sans-serif" }}>
 
@@ -490,7 +496,8 @@ export default function ElevenPlusPage() {
         {/* Part 2 */}
         <PartSection number={2} title="Strength, Plyometrics & Balance" subtitle="Select your level below · ~10 min"
           guidance={guidanceForPart(2)} guidanceLoading={guidanceLoading && !!ageBand}>
-          <LevelTabs level={part2Level} onSelect={setPart2Level} />
+          <LevelTabs level={part2Level} onSelect={setPart2Level}
+            recommendedLevel={guidanceForPart(2)?.recommended_level ?? undefined} />
           {PART2[part2Level].map((ex) => <ExerciseCard key={ex.id} exercise={ex} />)}
         </PartSection>
 
@@ -598,12 +605,19 @@ function PartSection({
 
 // ── Level tabs (Part 2 only) ──────────────────────────────────────────────────
 
-function LevelTabs({ level, onSelect }: { level: 1 | 2 | 3; onSelect: (l: 1 | 2 | 3) => void }) {
+function LevelTabs({
+  level, onSelect, recommendedLevel,
+}: {
+  level: 1 | 2 | 3;
+  onSelect: (l: 1 | 2 | 3) => void;
+  recommendedLevel?: 1 | 2 | 3;
+}) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
       {([1, 2, 3] as const).map((l) => {
         const s = LEVEL_STYLES[l];
         const active = l === level;
+        const isRecommended = l === recommendedLevel;
         return (
           <button
             key={l}
@@ -624,6 +638,12 @@ function LevelTabs({ level, onSelect }: { level: 1 | 2 | 3; onSelect: (l: 1 | 2 
             <p style={{ margin: 0, fontSize: 10, color: active ? s.color : "#9ca3af", marginTop: 2 }}>
               {s.sub}
             </p>
+            {isRecommended && (
+              <p style={{ margin: "4px 0 0", fontSize: 9, fontWeight: 700, color: "#1a5c2a",
+                textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                ✓ For your age
+              </p>
+            )}
           </button>
         );
       })}
