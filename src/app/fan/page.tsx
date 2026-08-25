@@ -7,7 +7,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import {
   Star, Heart, Trophy, Users, Radio, Video,
   Globe, Briefcase, Building2, User, Bell, Flame,
-  MessageCircle, Target, TrendingUp,
+  MessageCircle, Target, TrendingUp, Wind, Activity,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -114,6 +114,8 @@ export default function FanHubPage() {
           <HubCard href="/streaming"           icon={Video}      label="Live Matches"      desc="Watch live broadcasts"              />
           <HubCard href="/world-cup"           icon={Trophy}     label="World Cup"         desc="Tournament updates & fixtures"      />
           <HubCard href="/school-leagues"      icon={TrendingUp} label="School Leagues"    desc="NASH & NAPH tournament tables"      />
+          <HubCard href="/warmup/the-11-plus"  icon={Wind}       label="FIFA 11+"          desc="20 min · 3 parts · injury prevention" accent />
+          <HubCard href="/warmup"              icon={Activity}   label="Warm-Up Hub"       desc="All injury-prevention programmes"   />
         </div>
 
         {/* ── 3. Community & Network ────────────────────────────────────── */}
