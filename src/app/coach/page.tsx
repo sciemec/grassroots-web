@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, Dumbbell, Calendar,
   TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard, Wind,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -176,6 +176,7 @@ export default function CoachHubPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/coach/training-plans" icon={Calendar} iconBg="#dcfce7" iconColor="#16a34a" label="Training Plans" desc="Build & assign plans"     badge="core" />
           <HubCard href="/coach/drill-library"  icon={Dumbbell} iconBg="#dbeafe" iconColor="#2563eb" label="Drill Library"  desc="Drills · sessions · AI drill analysis" />
+          <HubCard href="/warmup"              icon={Wind}    iconBg="#f0fdf4" iconColor="#1a5c2a" label="Warm-Up"        desc="Injury-prevention routines · The 11+" />
         </div>
 
         {/* ── 4. Performance & Health ────────────────────────────────── */}

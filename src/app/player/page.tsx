@@ -613,6 +613,8 @@ export default function PlayerDashboardHome() {
               label="Conditioning" desc="Fitness plans Â· endurance Â· speed work" />
             <HubCard href="/player/tactics" icon={Layers} iconBg="#f0fdf4" iconColor="#1a5c2a"
               label="Tactics Academy" desc="Formations Â· your role Â· simulations" />
+            <HubCard href="/warmup" icon={Wind} iconBg="#f0fdf4" iconColor="#1a5c2a"
+              label="Warm-Up" desc="Injury-prevention routines Â· The 11+" />
           </div>
         </section>
 
