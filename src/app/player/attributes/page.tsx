@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, TrendingUp, TrendingDown, Minus, AlertTriangle,
   Plus, ChevronDown, ChevronUp, Loader2, CheckCircle2, X,
-  Zap, Activity, Play,
+  Zap, Activity, Play, Square,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -3489,6 +3489,250 @@ function LogMeasurementModal({
   );
 }
 
+// ─── Sprint Timing Modal (shared base) ───────────────────────────────────────
+// Used by both Explosiveness (0–10 m) and Top-End Speed (30–40 m) tests.
+
+function SprintTimingModal({
+  status,
+  title,
+  subtitle,
+  distanceLabel,
+  protocol,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  title: string;
+  subtitle: string;
+  distanceLabel: string;
+  protocol: string[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const token = useAuthStore((s) => s.token);
+
+  type Phase = "idle" | "running" | "done";
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const startTimeRef = useRef<number>(0);
+  const rafRef = useRef<number>(0);
+
+  const tick = () => {
+    setElapsedMs(Date.now() - startTimeRef.current);
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  const handleStart = () => {
+    setElapsedMs(0);
+    startTimeRef.current = Date.now();
+    setPhase("running");
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  const handleStop = () => {
+    cancelAnimationFrame(rafRef.current);
+    setPhase("done");
+  };
+
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
+
+  const seconds = (elapsedMs / 1000).toFixed(2);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await api.post(
+        "/attribute-measurements",
+        {
+          attribute_id: status.attribute_id,
+          value: parseFloat(seconds),
+          unit: "seconds",
+          measured_at: new Date().toISOString().split("T")[0],
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      onSaved();
+    } catch {
+      setError("Failed to save. Please try again.");
+      setSaving(false);
+    }
+  };
+
+  const handleRetry = () => {
+    cancelAnimationFrame(rafRef.current);
+    setElapsedMs(0);
+    setPhase("idle");
+    setError("");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.55)" }}>
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4" style={{ background: "#1a5c2a" }}>
+          <div>
+            <h2 className="text-base font-bold text-white">{title}</h2>
+            <p className="text-xs text-green-200 mt-0.5">{subtitle}</p>
+          </div>
+          <button onClick={onClose} className="text-green-200 hover:text-white">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* Protocol */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 space-y-1.5">
+            <p className="text-xs font-semibold text-amber-800">Protocol</p>
+            <ul className="space-y-1">
+              {protocol.map((step, i) => (
+                <li key={i} className="flex gap-2 text-xs text-amber-700">
+                  <span className="font-bold shrink-0">{i + 1}.</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Stopwatch display */}
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="flex items-center justify-center rounded-2xl w-full py-6"
+              style={{ background: phase === "running" ? "#f0fdf4" : "#f8fafc", border: "2px solid", borderColor: phase === "running" ? "#86efac" : "#e2e8f0" }}
+            >
+              <span
+                className="font-mono text-5xl font-bold tabular-nums"
+                style={{ color: phase === "running" ? "#15803d" : "#1a5c2a" }}
+              >
+                {phase === "idle" ? "0.00" : seconds}
+              </span>
+              <span className="ml-2 text-sm font-medium text-gray-400 self-end pb-2">sec</span>
+            </div>
+            <p className="text-xs text-gray-500 text-center">{distanceLabel}</p>
+          </div>
+
+          {/* Controls */}
+          {phase === "idle" && (
+            <button
+              onClick={handleStart}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white"
+              style={{ background: "#1a5c2a" }}
+            >
+              <Play className="h-4 w-4 fill-white" />
+              Start Timer
+            </button>
+          )}
+
+          {phase === "running" && (
+            <button
+              onClick={handleStop}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white"
+              style={{ background: "#dc2626" }}
+            >
+              <Square className="h-4 w-4 fill-white" />
+              Stop Timer
+            </button>
+          )}
+
+          {phase === "done" && (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-center">
+                <p className="text-xs text-green-700 font-medium">Time recorded</p>
+                <p className="text-2xl font-bold text-green-800 font-mono mt-1">{seconds}s</p>
+              </div>
+
+              {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={handleRetry}
+                  className="flex-1 rounded-xl py-3 text-sm font-semibold text-gray-700 border border-gray-200 hover:bg-gray-50"
+                >
+                  Retry
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white disabled:opacity-60"
+                  style={{ background: "#1a5c2a" }}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  {saving ? "Saving…" : "Save Time"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Explosiveness 0–10 m Sprint Modal ────────────────────────────────────────
+
+function Explosiveness0to10mModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  return (
+    <SprintTimingModal
+      status={status}
+      title="0–10 m Explosiveness Sprint"
+      subtitle="Acceleration phase — lower time = better score"
+      distanceLabel="Time to cover the first 10 metres from a standing start"
+      protocol={[
+        "Mark a start line and a 10 m finish line on flat, firm ground.",
+        "Stand still behind the start line — no rocking or pre-lean.",
+        "Tap START the instant you push off.",
+        "Sprint flat-out through the 10 m mark.",
+        "Tap STOP the instant you cross the 10 m line.",
+        "Rest 3 minutes and take the best of 3 attempts.",
+      ]}
+      onClose={onClose}
+      onSaved={onSaved}
+    />
+  );
+}
+
+// ─── Top-End Speed (30–40 m flying sprint) Modal ─────────────────────────────
+
+function TopEndSpeedModal({
+  status,
+  onClose,
+  onSaved,
+}: {
+  status: AttributeStatus;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  return (
+    <SprintTimingModal
+      status={status}
+      title="Top-End Speed Sprint (30–40 m)"
+      subtitle="Peak velocity segment — lower time = faster"
+      distanceLabel="Time to cover metres 30–40 of a flying sprint"
+      protocol={[
+        "Mark cones at 0 m, 30 m, and 40 m on flat, firm ground.",
+        "Start running from 0 m — build up speed over the first 30 m.",
+        "Tap START when you pass the 30 m cone at full speed.",
+        "Sprint flat-out through the 40 m cone.",
+        "Tap STOP the instant you pass the 40 m cone.",
+        "Rest 4 minutes between attempts. Take the best of 3.",
+      ]}
+      onClose={onClose}
+      onSaved={onSaved}
+    />
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function PlayerAttributesPage() {
@@ -3512,6 +3756,8 @@ export default function PlayerAttributesPage() {
   const [shuttleRunTestStatus, setShuttleRunTestStatus]   = useState<AttributeStatus | null>(null);
   const [bentArmHangTestStatus, setBentArmHangTestStatus] = useState<AttributeStatus | null>(null);
   const [beepTestStatus, setBeepTestStatus]               = useState<AttributeStatus | null>(null);
+  const [explosiveness0to10mStatus, setExplosiveness0to10mStatus] = useState<AttributeStatus | null>(null);
+  const [topEndSpeedStatus, setTopEndSpeedStatus]                 = useState<AttributeStatus | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -3730,6 +3976,8 @@ export default function PlayerAttributesPage() {
                         s.code === "change_of_direction"                           ? (attr) => setShuttleRunTestStatus(attr) :
                         s.code === "arm_shoulder_endurance"                         ? (attr) => setBentArmHangTestStatus(attr) :
                         s.code === "endurance_stamina"                              ? (attr) => setBeepTestStatus(attr) :
+                        s.code === "explosiveness_0_10m"                            ? (attr) => setExplosiveness0to10mStatus(attr) :
+                        s.code === "top_end_speed"                                  ? (attr) => setTopEndSpeedStatus(attr) :
                         undefined
                       }
                     />
@@ -3838,6 +4086,24 @@ export default function PlayerAttributesPage() {
           status={beepTestStatus}
           onClose={() => setBeepTestStatus(null)}
           onSaved={() => { setBeepTestStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* 0–10 m Explosiveness Sprint Timer Modal */}
+      {explosiveness0to10mStatus && (
+        <Explosiveness0to10mModal
+          status={explosiveness0to10mStatus}
+          onClose={() => setExplosiveness0to10mStatus(null)}
+          onSaved={() => { setExplosiveness0to10mStatus(null); loadData(); }}
+        />
+      )}
+
+      {/* Top-End Speed Sprint Timer Modal */}
+      {topEndSpeedStatus && (
+        <TopEndSpeedModal
+          status={topEndSpeedStatus}
+          onClose={() => setTopEndSpeedStatus(null)}
+          onSaved={() => { setTopEndSpeedStatus(null); loadData(); }}
         />
       )}
     </div>
