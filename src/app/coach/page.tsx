@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, Dumbbell, Calendar,
   TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -204,8 +204,9 @@ export default function CoachHubPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/arena"             icon={Globe}      iconBg="#dbeafe" iconColor="#2563eb" label="The Arena"    desc="Professional sports network"   />
           <HubCard href="/arena/recruitment" icon={UserSearch} iconBg="#ede9fe" iconColor="#7c3aed" label="Talent Board" desc="Open positions & talent wants" />
-          <HubCard href="/coach/video-library" icon={Film}     iconBg="#f3f4f6" iconColor="#6b7280" label="Video Library" desc="All recorded & uploaded clips" />
-          <HubCard href={`/team-videos/${user?.id ?? ""}`} icon={Play} iconBg="#fff7ed" iconColor="#c2410c" label="Team Videos"   desc="Public match archive for parents & players" />
+          <HubCard href="/coach/match-videos"                   icon={Clapperboard} iconBg="#f0fdf4" iconColor="#1a5c2a" label="Match Videos"  desc="Upload · share watch links with parents" badge="new" />
+          <HubCard href="/coach/video-library"                icon={Film}         iconBg="#f3f4f6" iconColor="#6b7280" label="Video Library" desc="All recorded & uploaded clips" />
+          <HubCard href={`/team-videos/${user?.id ?? ""}`}    icon={Play}         iconBg="#fff7ed" iconColor="#c2410c" label="Team Videos"   desc="Public match archive for parents & players" />
         </div>
 
         {/* ── 7. School Programme ────────────────────────────────────── */}
