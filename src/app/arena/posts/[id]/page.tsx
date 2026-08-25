@@ -416,7 +416,7 @@ export default function ArenaPostDetailPage() {
         </div>
       </header>
 
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 16px 72px" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 16px 100px" }}>
 
         {/* ── Post card ─────────────────────────────────────────────────── */}
         <div style={{
@@ -476,9 +476,9 @@ export default function ArenaPostDetailPage() {
 
             {/* Delete confirmation banner */}
             {deleteConfirm && (
-              <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#991b1b" }}>Delete this post? This cannot be undone.</span>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={() => setDeleteConfirm(false)}
                     disabled={deleting}
@@ -630,41 +630,6 @@ export default function ArenaPostDetailPage() {
         {/* ── Comments ──────────────────────────────────────────────────── */}
         <div style={{ backgroundColor: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
 
-          {/* Add comment */}
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid #f3f4f6" }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: GRS_GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>
-                  {user ? (user.name ?? "?")[0].toUpperCase() : "?"}
-                </span>
-              </div>
-              <div style={{ flex: 1, position: "relative" }}>
-                <textarea
-                  ref={commentInputRef}
-                  value={commentBody}
-                  onChange={(e) => setCommentBody(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
-                  placeholder="Write a comment…"
-                  rows={1}
-                  style={{ width: "100%", resize: "none", border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 38px 8px 12px", fontSize: 13, outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box" }}
-                  onInput={(e) => {
-                    const t = e.currentTarget;
-                    t.style.height = "auto";
-                    t.style.height = `${t.scrollHeight}px`;
-                  }}
-                />
-                <button
-                  onClick={submitComment}
-                  disabled={!commentBody.trim() || submitting}
-                  style={{ position: "absolute", right: 8, bottom: 8, background: "none", border: "none", cursor: commentBody.trim() ? "pointer" : "default", padding: 0, color: commentBody.trim() ? GRS_GREEN : "#d1d5db" }}
-                >
-                  {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                </button>
-              </div>
-            </div>
-            <p style={{ fontSize: 11, color: "#9ca3af", margin: "6px 0 0 42px" }}>Enter to post · Shift+Enter for new line</p>
-          </div>
-
           {/* Comment list */}
           {comments.length === 0 && !commentsLoading ? (
             <div style={{ padding: "28px 16px", textAlign: "center" }}>
@@ -682,62 +647,69 @@ export default function ArenaPostDetailPage() {
                       <span style={{ fontSize: 10, fontWeight: 800, color: "#fff" }}>{cInit}</span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                        <span style={{ fontWeight: 700, fontSize: 12, color: "#111" }}>{cName}</span>
-                        <span style={{ fontSize: 9, fontWeight: 700, color: cRoleColor, backgroundColor: `${cRoleColor}18`, padding: "0 5px", borderRadius: 10, textTransform: "capitalize" }}>
+                      {/* Row 1 — name + role badge */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, marginBottom: 2 }}>
+                        <span style={{ fontWeight: 700, fontSize: 12, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cName}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, color: cRoleColor, backgroundColor: `${cRoleColor}18`, padding: "0 5px", borderRadius: 10, textTransform: "capitalize", flexShrink: 0 }}>
                           {c.user?.role ?? "player"}
                         </span>
-                        <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: "auto" }}>{timeAgo(c.created_at)}</span>
-                        {/* Report button — only for other users' comments */}
-                        {user && c.user?.id !== user.id && (
-                          <div style={{ position: "relative" }}>
-                            {reportedComments.has(c.id) ? (
-                              <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600 }}>Reported</span>
-                            ) : (
-                              <button
-                                onClick={() => setReportMenuId(reportMenuId === c.id ? null : c.id)}
-                                style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex", alignItems: "center" }}
-                                title="Report comment"
-                              >
-                                <Flag size={12} />
-                              </button>
-                            )}
-                            {reportMenuId === c.id && (
-                              <div style={{ position: "absolute", right: 0, top: 18, zIndex: 50, backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.12)", minWidth: 150, overflow: "hidden" }}>
-                                {(["offensive", "spam", "harassment", "other"] as const).map((reason) => (
-                                  <button
-                                    key={reason}
-                                    onClick={() => reportComment(c.id, reason)}
-                                    style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 14px", fontSize: 12, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer", textTransform: "capitalize", borderBottom: reason === "other" ? "none" : "1px solid #f3f4f6" }}
-                                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#f9fafb"; }}
-                                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
-                                  >
-                                    {reason}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {/* Edit — comment author only */}
-                        {user && c.user?.id === user.id && editingCommentId !== c.id && (
-                          <button
-                            onClick={() => startEditComment(c)}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex", alignItems: "center" }}
-                            title="Edit comment"
-                          >
-                            <Pencil size={12} />
-                          </button>
-                        )}
-                        {canDeleteComment(c) && editingCommentId !== c.id && (
-                          <button
-                            onClick={() => deleteComment(c.id)}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex", alignItems: "center" }}
-                            title="Delete comment"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        )}
+                      </div>
+                      {/* Row 2 — timestamp + action buttons */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, color: "#9ca3af" }}>{timeAgo(c.created_at)}</span>
+                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+                          {/* Report — only for other users' comments */}
+                          {user && c.user?.id !== user.id && (
+                            <div style={{ position: "relative" }}>
+                              {reportedComments.has(c.id) ? (
+                                <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600 }}>Reported</span>
+                              ) : (
+                                <button
+                                  onClick={() => setReportMenuId(reportMenuId === c.id ? null : c.id)}
+                                  style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                                  title="Report comment"
+                                >
+                                  <Flag size={13} />
+                                </button>
+                              )}
+                              {reportMenuId === c.id && (
+                                <div style={{ position: "absolute", right: 0, top: 24, zIndex: 50, backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.12)", minWidth: 150, overflow: "hidden" }}>
+                                  {(["offensive", "spam", "harassment", "other"] as const).map((reason) => (
+                                    <button
+                                      key={reason}
+                                      onClick={() => reportComment(c.id, reason)}
+                                      style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer", textTransform: "capitalize", borderBottom: reason === "other" ? "none" : "1px solid #f3f4f6" }}
+                                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#f9fafb"; }}
+                                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
+                                    >
+                                      {reason}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {/* Edit — comment author only */}
+                          {user && c.user?.id === user.id && editingCommentId !== c.id && (
+                            <button
+                              onClick={() => startEditComment(c)}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                              title="Edit comment"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                          )}
+                          {/* Delete */}
+                          {canDeleteComment(c) && editingCommentId !== c.id && (
+                            <button
+                              onClick={() => deleteComment(c.id)}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                              title="Delete comment"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       {/* Inline editor or body */}
@@ -803,6 +775,52 @@ export default function ArenaPostDetailPage() {
               )}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── Fixed bottom comment bar ───────────────────────────────────────── */}
+      <style>{`
+        .arena-comment-bar {
+          padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+        }
+      `}</style>
+      <div
+        className="arena-comment-bar"
+        style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+          backgroundColor: "#fff", borderTop: "1px solid #e5e7eb",
+          padding: "10px 16px 10px",
+        }}
+      >
+        <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", gap: 10, alignItems: "flex-end" }}>
+          <div style={{ width: 34, height: 34, borderRadius: "50%", backgroundColor: GRS_GREEN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>
+              {user ? (user.name ?? "?")[0].toUpperCase() : "?"}
+            </span>
+          </div>
+          <div style={{ flex: 1, position: "relative" }}>
+            <textarea
+              ref={commentInputRef}
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
+              placeholder="Write a comment…"
+              rows={1}
+              style={{ width: "100%", resize: "none", border: "1px solid #e5e7eb", borderRadius: 22, padding: "9px 40px 9px 14px", fontSize: 14, outline: "none", fontFamily: "inherit", lineHeight: 1.5, boxSizing: "border-box", backgroundColor: "#f9fafb" }}
+              onInput={(e) => {
+                const t = e.currentTarget;
+                t.style.height = "auto";
+                t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+              }}
+            />
+            <button
+              onClick={submitComment}
+              disabled={!commentBody.trim() || submitting}
+              style={{ position: "absolute", right: 10, bottom: 9, background: "none", border: "none", cursor: commentBody.trim() ? "pointer" : "default", padding: 0, color: commentBody.trim() ? GRS_GREEN : "#d1d5db" }}
+            >
+              {submitting ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
