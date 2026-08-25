@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/auth-store";
-import { Clock, ArrowRight, ArrowLeft, Dumbbell } from "lucide-react";
+import { Clock, ArrowRight, ArrowLeft, Dumbbell, Star } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
@@ -64,6 +64,9 @@ export default function WarmupListPage() {
           </p>
         </div>
 
+        {/* FIFA 11+ — hardcoded featured card */}
+        <FeaturedProgramCard />
+
         {loading ? (
           <LoadingSkeleton />
         ) : error ? (
@@ -83,6 +86,43 @@ export default function WarmupListPage() {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function FeaturedProgramCard() {
+  return (
+    <div style={{ backgroundColor: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden", marginBottom: 14 }}>
+      <div style={{ height: 4, backgroundColor: "#1a5c2a" }} />
+      <div style={{ padding: "20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111", lineHeight: 1.3 }}>FIFA 11+</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "#92400e", backgroundColor: "#fffbeb", padding: "3px 8px", borderRadius: 20, border: "1px solid #fde68a" }}>
+              <Star size={10} /> Featured
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: "#1a5c2a", backgroundColor: "#f0fdf4", padding: "4px 10px", borderRadius: 20, border: "1px solid #bbf7d0", whiteSpace: "nowrap" }}>
+              <Clock size={11} /> 20 min
+            </span>
+          </div>
+        </div>
+        <p style={{ margin: "0 0 6px", fontSize: 13, color: "#4b5563", lineHeight: 1.55 }}>
+          FIFA&apos;s complete injury-prevention warm-up. 3 parts: Running · Strength &amp; Balance · High-Speed Running.
+          Reduces injury rates by up to 50% when done consistently.
+        </p>
+        <p style={{ margin: "0 0 16px", fontSize: 11, color: "#9ca3af", fontStyle: "italic" }}>Source: FIFA Medical Assessment and Research Centre (F-MARC)</p>
+        <Link
+          href="/warmup/the-11-plus"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            backgroundColor: "#1a5c2a", color: "#fff",
+            padding: "10px 20px", borderRadius: 10,
+            textDecoration: "none", fontWeight: 700, fontSize: 13,
+          }}
+        >
+          Start Programme <ArrowRight size={14} />
+        </Link>
       </div>
     </div>
   );
