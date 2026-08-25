@@ -126,6 +126,8 @@ export default function ArenaPostDetailPage() {
   const [editingCommentBody, setEditingCommentBody] = useState("");
   const [savingComment, setSavingComment]           = useState(false);
 
+  const [deletingCommentId, setDeletingCommentId]   = useState<string | null>(null);
+
   const [reportedComments, setReportedComments] = useState<Set<string>>(new Set());
   const [reportMenuId, setReportMenuId]         = useState<string | null>(null);
 
@@ -135,7 +137,25 @@ export default function ArenaPostDetailPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting]           = useState(false);
 
-  const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const commentInputRef  = useRef<HTMLTextAreaElement>(null);
+  const reportMenuRef    = useRef<HTMLDivElement>(null);
+
+  // Close report menus when tapping outside (mobile-safe)
+  useEffect(() => {
+    if (!reportMenuId && !postReportMenu) return;
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (reportMenuRef.current && !reportMenuRef.current.contains(e.target as Node)) {
+        setReportMenuId(null);
+        setPostReportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [reportMenuId, postReportMenu]);
 
   const authHeaders = useCallback(() => ({
     Authorization: `Bearer ${token}`,
@@ -230,6 +250,7 @@ export default function ArenaPostDetailPage() {
 
   const deleteComment = async (commentId: string) => {
     if (!post) return;
+    setDeletingCommentId(null);
     setComments((prev) => prev.filter((c) => c.id !== commentId));
     setCommentTotal((t) => Math.max(0, t - 1));
     try {
@@ -628,7 +649,7 @@ export default function ArenaPostDetailPage() {
         </div>
 
         {/* ── Comments ──────────────────────────────────────────────────── */}
-        <div style={{ backgroundColor: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+        <div style={{ backgroundColor: "#fff", borderRadius: 16, border: "1px solid #e5e7eb" }}>
 
           {/* Comment list */}
           {comments.length === 0 && !commentsLoading ? (
@@ -657,7 +678,7 @@ export default function ArenaPostDetailPage() {
                       {/* Row 2 — timestamp + action buttons */}
                       <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
                         <span style={{ fontSize: 11, color: "#9ca3af" }}>{timeAgo(c.created_at)}</span>
-                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+                        <div ref={reportMenuRef} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
                           {/* Report — only for other users' comments */}
                           {user && c.user?.id !== user.id && (
                             <div style={{ position: "relative" }}>
@@ -666,19 +687,19 @@ export default function ArenaPostDetailPage() {
                               ) : (
                                 <button
                                   onClick={() => setReportMenuId(reportMenuId === c.id ? null : c.id)}
-                                  style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                                  style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 6, display: "flex", alignItems: "center" }}
                                   title="Report comment"
                                 >
-                                  <Flag size={13} />
+                                  <Flag size={14} />
                                 </button>
                               )}
                               {reportMenuId === c.id && (
-                                <div style={{ position: "absolute", right: 0, top: 24, zIndex: 50, backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.12)", minWidth: 150, overflow: "hidden" }}>
+                                <div style={{ position: "absolute", right: 0, bottom: 28, zIndex: 50, backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 4px 16px rgba(0,0,0,0.14)", minWidth: 150, overflow: "hidden" }}>
                                   {(["offensive", "spam", "harassment", "other"] as const).map((reason) => (
                                     <button
                                       key={reason}
                                       onClick={() => reportComment(c.id, reason)}
-                                      style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer", textTransform: "capitalize", borderBottom: reason === "other" ? "none" : "1px solid #f3f4f6" }}
+                                      style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 14px", fontSize: 13, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer", textTransform: "capitalize", borderBottom: reason === "other" ? "none" : "1px solid #f3f4f6" }}
                                       onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#f9fafb"; }}
                                       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
                                     >
@@ -690,27 +711,48 @@ export default function ArenaPostDetailPage() {
                             </div>
                           )}
                           {/* Edit — comment author only */}
-                          {user && c.user?.id === user.id && editingCommentId !== c.id && (
+                          {user && c.user?.id === user.id && editingCommentId !== c.id && deletingCommentId !== c.id && (
                             <button
                               onClick={() => startEditComment(c)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 6, display: "flex", alignItems: "center" }}
                               title="Edit comment"
                             >
-                              <Pencil size={13} />
+                              <Pencil size={14} />
                             </button>
                           )}
-                          {/* Delete */}
-                          {canDeleteComment(c) && editingCommentId !== c.id && (
+                          {/* Delete — triggers confirmation, not immediate */}
+                          {canDeleteComment(c) && editingCommentId !== c.id && deletingCommentId !== c.id && (
                             <button
-                              onClick={() => deleteComment(c.id)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                              onClick={() => setDeletingCommentId(c.id)}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 6, display: "flex", alignItems: "center" }}
                               title="Delete comment"
                             >
-                              <Trash2 size={13} />
+                              <Trash2 size={14} />
                             </button>
                           )}
                         </div>
                       </div>
+
+                      {/* Delete confirmation row */}
+                      {deletingCommentId === c.id && (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 10px", marginBottom: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#991b1b" }}>Delete this comment?</span>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button
+                              onClick={() => setDeletingCommentId(null)}
+                              style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", background: "none", border: "1px solid #d1d5db", borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => deleteComment(c.id)}
+                              style={{ fontSize: 11, fontWeight: 700, color: "#fff", backgroundColor: "#dc2626", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
+                            >
+                              <Trash2 size={11} /> Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Inline editor or body */}
                       {editingCommentId === c.id ? (
