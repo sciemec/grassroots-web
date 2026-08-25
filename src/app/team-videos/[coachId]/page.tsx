@@ -58,18 +58,21 @@ export default function TeamVideosPage() {
   useEffect(() => {
     if (!coachId) return;
 
-    Promise.all([
-      fetch(`${API}/coaches/${coachId}`).then((r) => {
-        if (!r.ok) throw new Error("Coach not found");
-        return r.json();
-      }),
+    Promise.allSettled([
+      fetch(`${API}/coaches/${coachId}`).then((r) => r.ok ? r.json() : null),
       fetch(`${API}/coaches/${coachId}/match-videos`).then((r) => r.json()),
     ])
-      .then(([profileData, videosData]) => {
-        setCoach(profileData.data ?? profileData);
-        setVideos(Array.isArray(videosData.data) ? videosData.data : []);
+      .then(([profileResult, videosResult]) => {
+        if (profileResult.status === "fulfilled" && profileResult.value) {
+          const d = profileResult.value;
+          setCoach(d.data ?? d);
+        }
+        if (videosResult.status === "fulfilled") {
+          setVideos(Array.isArray(videosResult.value?.data) ? videosResult.value.data : []);
+        } else {
+          setError("Could not load videos.");
+        }
       })
-      .catch(() => setError("Team not found or an error occurred."))
       .finally(() => setLoading(false));
   }, [coachId]);
 
