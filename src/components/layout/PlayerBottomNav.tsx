@@ -10,11 +10,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Activity, Dumbbell, BookOpen, User } from "lucide-react";
+import { Home, Activity, Dumbbell, BookOpen, User, Wind } from "lucide-react";
 
 const NAV = [
   { href: "/player",            icon: Home,     label: "Hub"      },
-  { href: "/player/talent-id",  icon: Activity,  label: "Test"     },
+  { href: "/warmup",            icon: Wind,      label: "Warm-Up"  },
   { href: "/player/drills",     icon: Dumbbell,  label: "Drills"   },
   { href: "/player/passport",   icon: BookOpen,  label: "Passport" },
   { href: "/player/profile",    icon: User,      label: "Profile"  },
