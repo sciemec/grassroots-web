@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, Dumbbell, Calendar,
   TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard, Wind,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard, Wind, HeartPulse,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -188,6 +188,7 @@ export default function CoachHubPage() {
           <HubCard href="/coach/chemistry"  icon={Zap}          iconBg="#dbeafe" iconColor="#2563eb" label="Squad Chemistry" desc="Team bonding & cohesion"    />
           <HubCard href="/coach/stats"      icon={BarChart2}    iconBg="#f3f4f6" iconColor="#6b7280" label="Team Stats"      desc="Season statistics overview" />
           <HubCard href="/coach/success"    icon={Award}        iconBg="#fdf4ff" iconColor="#a21caf" label="Success Tracker" desc="Goals, wins & achievements" />
+          <HubCard href="/coach/yoyo-test"  icon={HeartPulse}   iconBg="#fef2f2" iconColor="#dc2626" label="Yo-Yo IR1 Test"   desc="Squad beep test · record distances · ranked results" badge="new" />
         </div>
 
         {/* ── 5. Analyst Tools ───────────────────────────────────────── */}

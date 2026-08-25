@@ -3799,6 +3799,32 @@ export default function PlayerAttributesPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Auto-open Yo-Yo modal when page is reached via ?test=yoyo link
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (loading || autoOpenedRef.current) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("test") !== "yoyo") return;
+    autoOpenedRef.current = true;
+    const existing = statuses.find((s) => s.code === "aerobic_endurance");
+    if (existing) { setYoyoTestStatus(existing); return; }
+    const attr = catalogue.find((a) => a.code === "aerobic_endurance");
+    if (attr) {
+      setYoyoTestStatus({
+        attribute_id: attr.id,
+        code: attr.code,
+        display_name: attr.display_name,
+        category: attr.category,
+        current_percentile: 0,
+        trend: "stable",
+        sessions_since_baseline: 0,
+        last_measured_at: "",
+        plateau_flagged_at: null,
+      });
+    }
+  }, [loading, statuses, catalogue]);
+
   const handleGenerate = async () => {
     setGenerating(true);
     try {

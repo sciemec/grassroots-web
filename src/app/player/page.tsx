@@ -650,6 +650,8 @@ export default function PlayerDashboardHome() {
               label="Player DNA" desc="Playing style fingerprint Â· traits" />
             <HubCard href="/player/attributes" icon={Activity} iconBg="#dcfce7" iconColor="#15803d"
               label="Physical Attributes" desc="Percentile dashboard Â· weekly AI focus Â· log measurements" badge="new" />
+            <HubCard href="/player/attributes?test=yoyo" icon={HeartPulse} iconBg="#fef2f2" iconColor="#dc2626"
+              label="Yo-Yo IR1 Test" desc="Beep test · camera tracks shuttles · aerobic score vs FIFA norms" badge="new" />
           </div>
         </section>
 
