@@ -119,6 +119,9 @@ export default function ArenaPostDetailPage() {
   const [reportedComments, setReportedComments] = useState<Set<string>>(new Set());
   const [reportMenuId, setReportMenuId]         = useState<string | null>(null);
 
+  const [postReported, setPostReported]   = useState(false);
+  const [postReportMenu, setPostReportMenu] = useState(false);
+
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
   const authHeaders = useCallback(() => ({
@@ -224,6 +227,23 @@ export default function ArenaPostDetailPage() {
     } catch {
       // Re-load comments if delete failed
       loadComments(1, post.id);
+    }
+  };
+
+  // ── Report post ────────────────────────────────────────────────────────────
+
+  const reportPost = async (reason: string) => {
+    if (!post) return;
+    setPostReportMenu(false);
+    setPostReported(true);
+    try {
+      await fetch(`${API}/arena/posts/${post.id}/report`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ reason }),
+      });
+    } catch {
+      // keep optimistic state
     }
   };
 
@@ -396,11 +416,47 @@ export default function ArenaPostDetailPage() {
               <MessageCircle size={16} />
               {commentTotal}
             </button>
-            {post.view_count != null && (
-              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#9ca3af", marginLeft: "auto" }}>
-                <Eye size={13} /> {post.view_count}
-              </span>
-            )}
+
+            {/* Right side: view count + report button */}
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+              {post.view_count != null && (
+                <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#9ca3af" }}>
+                  <Eye size={13} /> {post.view_count}
+                </span>
+              )}
+
+              {/* Report post — only visible to non-owners */}
+              {!isOwner && (
+                <div style={{ position: "relative" }}>
+                  {postReported ? (
+                    <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>Reported</span>
+                  ) : (
+                    <button
+                      onClick={() => setPostReportMenu(!postReportMenu)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex", alignItems: "center" }}
+                      title="Report post"
+                    >
+                      <Flag size={14} />
+                    </button>
+                  )}
+                  {postReportMenu && (
+                    <div style={{ position: "absolute", right: 0, bottom: 22, zIndex: 50, backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.12)", minWidth: 170, overflow: "hidden" }}>
+                      {(["offensive", "spam", "harassment", "misinformation", "other"] as const).map((reason) => (
+                        <button
+                          key={reason}
+                          onClick={() => reportPost(reason)}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 14px", fontSize: 12, fontWeight: 600, color: "#374151", background: "none", border: "none", cursor: "pointer", textTransform: "capitalize", borderBottom: reason === "other" ? "none" : "1px solid #f3f4f6" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#f9fafb"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
+                        >
+                          {reason}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
