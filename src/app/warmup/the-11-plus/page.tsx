@@ -400,10 +400,20 @@ const LEVEL_STYLES: Record<1 | 2 | 3, { label: string; sub: string; color: strin
 
 export default function ElevenPlusPage() {
   const [part2Level, setPart2Level]       = useState<1 | 2 | 3>(1);
-  const [ageBand, setAgeBand]             = useState<AgeBand | null>(null);
+  const [ageBand, setAgeBand]             = useState<AgeBand | null>(() => {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem("gs_11plus_age_band");
+    return (stored as AgeBand) ?? null;
+  });
   const [ageGuidance, setAgeGuidance]     = useState<AgeGuidance[]>([]);
   const [guidanceLoading, setGuidanceLoading] = useState(false);
   const [programId, setProgramId]         = useState<string | null>(null);
+
+  // Persist band selection across page refreshes
+  const handleBandSelect = (band: AgeBand) => {
+    setAgeBand(band);
+    localStorage.setItem("gs_11plus_age_band", band);
+  };
 
   // Resolve programme ID once on mount
   useEffect(() => {
@@ -469,7 +479,7 @@ export default function ElevenPlusPage() {
         <Overview />
 
         {/* Age band selector */}
-        <AgeBandSelector selected={ageBand} onSelect={setAgeBand} />
+        <AgeBandSelector selected={ageBand} onSelect={handleBandSelect} />
 
         {/* Part 1 */}
         <PartSection number={1} title="Running" subtitle="Active stretching & controlled contact · ~8 min"
