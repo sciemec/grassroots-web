@@ -11,7 +11,7 @@ import {
   BarChart3, Medal, Globe, Trophy, Briefcase,
   Crosshair, GraduationCap, CreditCard, Zap, Move, Flag, Shuffle, Send, Shield, Brain,
   Bell, User, Calendar, Star, DollarSign, CheckSquare, ClipboardList, MessageCircle,
-  Flame, ListChecks, Swords, Mic, Library
+  Flame, ListChecks, Swords, Mic, Library, Clapperboard
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useStreakStore } from "@/lib/streak-store";
@@ -90,6 +90,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/coach/scouting",           label: "Scouting",         icon: <UserSearch size={18} />,  roles: ["coach"]          },
   { href: "/coach/stats",              label: "Team Stats",       icon: <BarChart3 size={18} />,   roles: ["coach"]          },
   { href: "/coach/tactical-analysis",  label: "Tactical Analysis",icon: <Swords size={18} />,      roles: ["coach"]          },
+  { href: "/coach/match-videos",        label: "Match Videos",     icon: <Clapperboard size={18} />, roles: ["coach","admin"] },
   { href: "/coach/video-library",      label: "Video Library",    icon: <Library size={18} />,     roles: ["coach","admin"]  },
   { href: "/coach/success",            label: "Success Tracker",  icon: <Award size={18} />,       roles: ["coach"]          },
   { href: "/coach/notifications",      label: "Notifications",    icon: <Bell size={18} />,        roles: ["coach"]          },
