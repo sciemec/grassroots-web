@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   ArrowLeft, Heart, MessageCircle, Send, Trash2, Flag, Pencil,
@@ -98,6 +98,7 @@ const POST_TYPE_META: Record<string, { label: string; icon: React.ReactNode; bg:
 export default function ArenaPostDetailPage() {
   const params  = useParams<{ id: string }>();
   const id      = params?.id;
+  const router      = useRouter();
   const user        = useAuthStore((s) => s.user);
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
@@ -126,6 +127,9 @@ export default function ArenaPostDetailPage() {
 
   const [postReported, setPostReported]   = useState(false);
   const [postReportMenu, setPostReportMenu] = useState(false);
+
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting]           = useState(false);
 
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -280,6 +284,23 @@ export default function ArenaPostDetailPage() {
     }
   };
 
+  // ── Delete post ────────────────────────────────────────────────────────────
+
+  const deletePost = async () => {
+    if (!post || deleting) return;
+    setDeleting(true);
+    try {
+      await fetch(`${API}/arena/posts/${post.id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      router.push("/arena");
+    } catch {
+      setDeleting(false);
+      setDeleteConfirm(false);
+    }
+  };
+
   // ── Report comment ─────────────────────────────────────────────────────────
 
   const reportComment = async (commentId: string, reason: string) => {
@@ -397,17 +418,52 @@ export default function ArenaPostDetailPage() {
                 </div>
               </div>
 
-              {/* Edit button — owner only, hidden while editing */}
-              {isOwner && !editing && (
-                <button
-                  onClick={startEdit}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center", flexShrink: 0 }}
-                  title="Edit post"
-                >
-                  <Pencil size={14} />
-                </button>
+              {/* Edit / Delete buttons — owner (edit+delete) or admin (delete only) */}
+              {(isOwner || user?.role === "admin") && !editing && (
+                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                  {isOwner && (
+                    <button
+                      onClick={startEdit}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                      title="Edit post"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex", alignItems: "center" }}
+                    title="Delete post"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               )}
             </div>
+
+            {/* Delete confirmation banner */}
+            {deleteConfirm && (
+              <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#991b1b" }}>Delete this post? This cannot be undone.</span>
+                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                  <button
+                    onClick={() => setDeleteConfirm(false)}
+                    disabled={deleting}
+                    style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", background: "none", border: "1px solid #d1d5db", borderRadius: 8, padding: "5px 12px", cursor: "pointer" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={deletePost}
+                    disabled={deleting}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 700, color: "#fff", backgroundColor: deleting ? "#9ca3af" : "#dc2626", border: "none", borderRadius: 8, padding: "5px 12px", cursor: deleting ? "default" : "pointer" }}
+                  >
+                    {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                    {deleting ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Milestone label */}
             {post.milestone_label && (
