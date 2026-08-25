@@ -96,7 +96,8 @@ const POST_TYPE_META: Record<string, { label: string; icon: React.ReactNode; bg:
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ArenaPostDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params  = useParams<{ id: string }>();
+  const id      = params?.id;
   const user        = useAuthStore((s) => s.user);
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
@@ -365,10 +366,9 @@ export default function ArenaPostDetailPage() {
 
         {/* ── Post card ─────────────────────────────────────────────────── */}
         <div style={{
-          backgroundColor: "#fff",
+          backgroundColor: typeMeta ? typeMeta.bg : "#fff",
           borderRadius: 16,
           border: typeMeta ? `1px solid ${typeMeta.border}` : "1px solid #e5e7eb",
-          backgroundColor: typeMeta ? typeMeta.bg : "#fff",
           overflow: "hidden",
           marginBottom: 12,
         }}>
