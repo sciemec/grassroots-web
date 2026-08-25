@@ -613,8 +613,10 @@ export default function PlayerDashboardHome() {
               label="Conditioning" desc="Fitness plans Â· endurance Â· speed work" />
             <HubCard href="/player/tactics" icon={Layers} iconBg="#f0fdf4" iconColor="#1a5c2a"
               label="Tactics Academy" desc="Formations Â· your role Â· simulations" />
-            <HubCard href="/warmup" icon={Wind} iconBg="#f0fdf4" iconColor="#1a5c2a"
-              label="Warm-Up" desc="Injury-prevention routines Â· The 11+" />
+            <HubCard href="/warmup/the-11-plus" icon={Wind} iconBg="#f0fdf4" iconColor="#1a5c2a"
+              label="FIFA 11+" desc="20 min · 3 parts · injury prevention · F-MARC" badge="new" />
+            <HubCard href="/warmup" icon={HeartPulse} iconBg="#fee2e2" iconColor="#dc2626"
+              label="Warm-Up Hub" desc="All injury-prevention programmes" />
           </div>
         </section>
 
