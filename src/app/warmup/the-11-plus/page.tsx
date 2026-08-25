@@ -552,6 +552,72 @@ function LevelTabs({ level, onSelect }: { level: 1 | 2 | 3; onSelect: (l: 1 | 2 
   );
 }
 
+// ── Inline exercise illustrations ─────────────────────────────────────────────
+
+function SquatIllustration() {
+  return (
+    <svg
+      width="100%"
+      viewBox="0 0 680 360"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Squats with toe raise — start position, correct squat, and knee fault to avoid"
+      style={{ display: "block", backgroundColor: "#fff" }}
+    >
+      {/* Position 1: Standing start */}
+      <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="110" cy="90" r="16" fill="#1a5c2a" stroke="none" />
+        <line x1="110" y1="106" x2="110" y2="190" />
+        <line x1="110" y1="130" x2="80"  y2="160" />
+        <line x1="110" y1="130" x2="140" y2="160" />
+        <line x1="110" y1="190" x2="90"  y2="260" />
+        <line x1="110" y1="190" x2="130" y2="260" />
+        <line x1="90"  y1="260" x2="90"  y2="268" />
+        <line x1="130" y1="260" x2="130" y2="268" />
+      </g>
+      <text x="110" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">Start</text>
+
+      {/* Position 2: Squat bottom, correct */}
+      <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="340" cy="140" r="16" fill="#1a5c2a" stroke="none" />
+        <line x1="340" y1="156" x2="340" y2="220" />
+        <line x1="340" y1="170" x2="300" y2="150" />
+        <line x1="340" y1="170" x2="380" y2="150" />
+        <line x1="340" y1="220" x2="305" y2="255" />
+        <line x1="305" y1="255" x2="315" y2="270" />
+        <line x1="340" y1="220" x2="375" y2="255" />
+        <line x1="375" y1="255" x2="365" y2="270" />
+      </g>
+      <text x="340" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">Squat — correct</text>
+      <text x="340" y="318" fontSize="12" fill="#5F5E5A" textAnchor="middle" fontFamily="sans-serif">knees track over toes</text>
+
+      {/* Position 3: Squat bottom, incorrect (knees buckling in) */}
+      <g stroke="#993c1d" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="565" cy="140" r="16" fill="#993c1d" stroke="none" />
+        <line x1="565" y1="156" x2="565" y2="220" />
+        <line x1="565" y1="170" x2="525" y2="150" />
+        <line x1="565" y1="170" x2="605" y2="150" />
+        <line x1="565" y1="220" x2="555" y2="255" />
+        <line x1="555" y1="255" x2="530" y2="270" />
+        <line x1="565" y1="220" x2="575" y2="255" />
+        <line x1="575" y1="255" x2="600" y2="270" />
+      </g>
+      {/* Inward-pointing arrows marking the fault */}
+      <g stroke="#993c1d" strokeWidth="2" fill="none">
+        <line x1="540" y1="235" x2="555" y2="255" />
+        <line x1="590" y1="235" x2="575" y2="255" />
+      </g>
+      <text x="565" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">Squat — avoid</text>
+      <text x="565" y="318" fontSize="12" fill="#993c1d" textAnchor="middle" fontFamily="sans-serif">knees buckling inward</text>
+    </svg>
+  );
+}
+
+/** Map mediaAssetId → illustration component. Add more as illustrations are created. */
+const EXERCISE_SVG: Partial<Record<string, React.ReactNode>> = {
+  "11plus_p2_05_squat_l1": <SquatIllustration />,
+};
+
 // ── Exercise card (expandable) ────────────────────────────────────────────────
 
 function ExerciseCard({ exercise }: { exercise: Exercise }) {
@@ -599,21 +665,27 @@ function ExerciseCard({ exercise }: { exercise: Exercise }) {
       {open && (
         <div style={{ borderTop: "1px solid #f3f4f6" }}>
 
-          {/* Media placeholder — swap for <img> once assets are ready */}
-          <div style={{
-            margin: "14px 16px 0",
-            aspectRatio: "16 / 9",
-            backgroundColor: "#f8fafc",
-            borderRadius: 10,
-            border: "1px dashed #cbd5e1",
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 6,
-          }}>
-            <ImageIcon size={28} color="#cbd5e1" />
-            <span style={{ fontSize: 10, color: "#cbd5e1", letterSpacing: "0.04em" }}>
-              {exercise.mediaAssetId}
-            </span>
-          </div>
+          {/* Illustration — inline SVG if available, placeholder otherwise */}
+          {EXERCISE_SVG[exercise.mediaAssetId] ? (
+            <div style={{ margin: "14px 16px 0", borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb" }}>
+              {EXERCISE_SVG[exercise.mediaAssetId]}
+            </div>
+          ) : (
+            <div style={{
+              margin: "14px 16px 0",
+              aspectRatio: "16 / 9",
+              backgroundColor: "#f8fafc",
+              borderRadius: 10,
+              border: "1px dashed #cbd5e1",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center", gap: 6,
+            }}>
+              <ImageIcon size={28} color="#cbd5e1" />
+              <span style={{ fontSize: 10, color: "#cbd5e1", letterSpacing: "0.04em" }}>
+                {exercise.mediaAssetId}
+              </span>
+            </div>
+          )}
 
           <div style={{ padding: "14px 16px 16px" }}>
 
