@@ -7,6 +7,7 @@ import { useSidebarStore } from "@/lib/sidebar-store";
 import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
 import { FanSidebar } from "@/components/layout/FanSidebar";
+import FanBottomNav from "@/components/layout/FanBottomNav";
 import dynamic from "next/dynamic";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
@@ -44,6 +45,7 @@ export default function FanLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      <FanBottomNav />
       <ThutoChatVisitor />
       <GrassrootsNewsTicker />
     </GuestGateProvider>
