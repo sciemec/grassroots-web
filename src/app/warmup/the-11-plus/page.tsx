@@ -1,13 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Clock, ChevronDown, ChevronUp,
-  MapPin, Lightbulb, Timer, ImageIcon,
+  MapPin, Lightbulb, Timer, ImageIcon, Users, AlertCircle,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+
+type AgeBand = "u9_12" | "u13_15" | "u16_18" | "senior";
+
+interface AgeGuidance {
+  id: string;
+  age_band: AgeBand;
+  part_number: 1 | 2 | 3;
+  recommended_level: 1 | 2 | 3 | null;
+  adjusted_dosage_note: string;
+  coach_notes: string | null;
+}
+
+const AGE_BAND_LABELS: Record<AgeBand, string> = {
+  u9_12:   "U9–12",
+  u13_15:  "U13–15",
+  u16_18:  "U16–18",
+  senior:  "Senior / Adult",
+};
 
 interface Exercise {
   id: string;
@@ -381,7 +399,45 @@ const LEVEL_STYLES: Record<1 | 2 | 3, { label: string; sub: string; color: strin
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ElevenPlusPage() {
-  const [part2Level, setPart2Level] = useState<1 | 2 | 3>(1);
+  const [part2Level, setPart2Level]       = useState<1 | 2 | 3>(1);
+  const [ageBand, setAgeBand]             = useState<AgeBand | null>(null);
+  const [ageGuidance, setAgeGuidance]     = useState<AgeGuidance[]>([]);
+  const [guidanceLoading, setGuidanceLoading] = useState(false);
+  const [programId, setProgramId]         = useState<string | null>(null);
+
+  // Resolve programme ID once on mount
+  useEffect(() => {
+    const base  = process.env.NEXT_PUBLIC_API_URL ?? "";
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    fetch(`${base}/warmup-programs`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => {
+        const list: { id: string; code: string }[] = json?.data ?? [];
+        const prog = list.find((p) => p.code === "FIFA_11_PLUS" || p.code === "the_11_plus");
+        if (prog) setProgramId(prog.id);
+      })
+      .catch(() => {/* non-fatal — guidance just won't load */});
+  }, []);
+
+  // Fetch age guidance whenever band or programme ID changes
+  useEffect(() => {
+    if (!ageBand || !programId) return;
+    const base  = process.env.NEXT_PUBLIC_API_URL ?? "";
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    setGuidanceLoading(true);
+    fetch(`${base}/warmup-programs/${programId}/age-guidance?age_band=${ageBand}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => setAgeGuidance(json?.data ?? []))
+      .catch(() => setAgeGuidance([]))
+      .finally(() => setGuidanceLoading(false));
+  }, [ageBand, programId]);
+
+  const guidanceForPart = (part: 1 | 2 | 3): AgeGuidance | undefined =>
+    ageGuidance.find((g) => g.part_number === part);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -412,19 +468,25 @@ export default function ElevenPlusPage() {
         {/* Overview card */}
         <Overview />
 
+        {/* Age band selector */}
+        <AgeBandSelector selected={ageBand} onSelect={setAgeBand} />
+
         {/* Part 1 */}
-        <PartSection number={1} title="Running" subtitle="Active stretching & controlled contact · ~8 min">
+        <PartSection number={1} title="Running" subtitle="Active stretching & controlled contact · ~8 min"
+          guidance={guidanceForPart(1)} guidanceLoading={guidanceLoading && !!ageBand}>
           {PART1.map((ex) => <ExerciseCard key={ex.id} exercise={ex} />)}
         </PartSection>
 
         {/* Part 2 */}
-        <PartSection number={2} title="Strength, Plyometrics & Balance" subtitle="Select your level below · ~10 min">
+        <PartSection number={2} title="Strength, Plyometrics & Balance" subtitle="Select your level below · ~10 min"
+          guidance={guidanceForPart(2)} guidanceLoading={guidanceLoading && !!ageBand}>
           <LevelTabs level={part2Level} onSelect={setPart2Level} />
           {PART2[part2Level].map((ex) => <ExerciseCard key={ex.id} exercise={ex} />)}
         </PartSection>
 
         {/* Part 3 */}
-        <PartSection number={3} title="Running at High Speed" subtitle="Full intensity · ~2 min">
+        <PartSection number={3} title="Running at High Speed" subtitle="Full intensity · ~2 min"
+          guidance={guidanceForPart(3)} guidanceLoading={guidanceLoading && !!ageBand}>
           {PART3.map((ex) => <ExerciseCard key={ex.id} exercise={ex} />)}
         </PartSection>
 
@@ -481,11 +543,13 @@ function Overview() {
 // ── Part section wrapper ───────────────────────────────────────────────────────
 
 function PartSection({
-  number, title, subtitle, children,
+  number, title, subtitle, guidance, guidanceLoading, children,
 }: {
   number: 1 | 2 | 3;
   title: string;
   subtitle: string;
+  guidance?: AgeGuidance;
+  guidanceLoading?: boolean;
   children: React.ReactNode;
 }) {
   const color = PART_COLORS[number];
@@ -509,6 +573,11 @@ function PartSection({
 
       {/* Accent line */}
       <div style={{ height: 2, backgroundColor: color, borderRadius: 1, marginBottom: 14, opacity: 0.25 }} />
+
+      {/* Age guidance card for this part */}
+      {(guidanceLoading || guidance) && (
+        <PartGuidanceCard guidance={guidance} loading={!!guidanceLoading} partColor={color} />
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {children}
@@ -548,6 +617,126 @@ function LevelTabs({ level, onSelect }: { level: 1 | 2 | 3; onSelect: (l: 1 | 2 
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// ── Age band selector ─────────────────────────────────────────────────────────
+
+function AgeBandSelector({
+  selected, onSelect,
+}: {
+  selected: AgeBand | null;
+  onSelect: (band: AgeBand) => void;
+}) {
+  const bands: AgeBand[] = ["u9_12", "u13_15", "u16_18", "senior"];
+  return (
+    <div style={{ backgroundColor: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", padding: "16px", marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+        <Users size={14} color="#1a5c2a" />
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#374151" }}>
+          Age-based dosage guidance
+        </p>
+      </div>
+      <p style={{ margin: "0 0 12px", fontSize: 12, color: "#6b7280" }}>
+        Select your age group to see recommended adjustments for each part.
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+        {bands.map((band) => {
+          const active = band === selected;
+          return (
+            <button
+              key={band}
+              onClick={() => onSelect(band)}
+              style={{
+                padding: "9px 10px",
+                borderRadius: 10,
+                border: `2px solid ${active ? "#1a5c2a" : "#e5e7eb"}`,
+                backgroundColor: active ? "#f0fdf4" : "#fff",
+                cursor: "pointer",
+                textAlign: "center",
+                transition: "all 0.15s",
+              }}
+            >
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: active ? "#1a5c2a" : "#374151" }}>
+                {AGE_BAND_LABELS[band]}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+      {selected && (
+        <p style={{ margin: "10px 0 0", fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
+          Showing guidance for <strong style={{ color: "#374151" }}>{AGE_BAND_LABELS[selected]}</strong>
+          {" "}— scroll down to see adjustments inside each part.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Part guidance card ────────────────────────────────────────────────────────
+
+function PartGuidanceCard({
+  guidance, loading, partColor,
+}: {
+  guidance?: AgeGuidance;
+  loading: boolean;
+  partColor: string;
+}) {
+  if (loading) {
+    return (
+      <div style={{
+        marginBottom: 14, padding: "12px 14px",
+        backgroundColor: "#f9fafb", borderRadius: 12,
+        border: "1px solid #e5e7eb", display: "flex", flexDirection: "column", gap: 8,
+      }}>
+        <div style={{ height: 11, width: "40%", backgroundColor: "#e5e7eb", borderRadius: 4 }} />
+        <div style={{ height: 11, width: "90%", backgroundColor: "#e5e7eb", borderRadius: 4 }} />
+        <div style={{ height: 11, width: "70%", backgroundColor: "#e5e7eb", borderRadius: 4 }} />
+      </div>
+    );
+  }
+
+  if (!guidance) return null;
+
+  return (
+    <div style={{
+      marginBottom: 14, padding: "12px 14px",
+      backgroundColor: "#f9fafb", borderRadius: 12,
+      border: `1px solid ${partColor}40`,
+      borderLeft: `4px solid ${partColor}`,
+    }}>
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <AlertCircle size={13} color={partColor} />
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: partColor }}>
+          Age guidance — {AGE_BAND_LABELS[guidance.age_band]}
+        </span>
+        {guidance.recommended_level && (
+          <span style={{
+            marginLeft: "auto", fontSize: 10, fontWeight: 700,
+            color: LEVEL_STYLES[guidance.recommended_level].color,
+            backgroundColor: LEVEL_STYLES[guidance.recommended_level].bg,
+            border: `1px solid ${LEVEL_STYLES[guidance.recommended_level].border}`,
+            borderRadius: 20, padding: "2px 8px",
+          }}>
+            {LEVEL_STYLES[guidance.recommended_level].label}
+          </span>
+        )}
+      </div>
+
+      {/* Dosage note */}
+      <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 600, color: "#374151", lineHeight: 1.5 }}>
+        {guidance.adjusted_dosage_note}
+      </p>
+
+      {/* Coach notes */}
+      {guidance.coach_notes && (
+        <p style={{ margin: 0, fontSize: 12, color: "#6b7280", lineHeight: 1.6, fontStyle: "italic" }}>
+          {guidance.coach_notes}
+        </p>
+      )}
     </div>
   );
 }
