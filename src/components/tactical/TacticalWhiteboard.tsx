@@ -72,10 +72,11 @@ export default function TacticalWhiteboard({
       const engine = new TacticalEngine(lesson);
       
       engine.on("onUpdate", (data) => {
-        setCurrentTime(data.time);
-        setProgress(data.progress);
-        setActiveMovements(data.activeMovements);
-        setCompletedMovements(data.completedMovements);
+        const d = data as { time: number; progress: number; activeMovements: string[]; completedMovements: string[] };
+        setCurrentTime(d.time);
+        setProgress(d.progress);
+        setActiveMovements(d.activeMovements);
+        setCompletedMovements(d.completedMovements);
         drawCanvas();
       });
       
@@ -490,7 +491,7 @@ export default function TacticalWhiteboard({
               {[0.5, 1, 1.5, 2].map((s) => (
                 <button
                   key={s}
-                  onClick={() => handleSpeedChange(s)}
+                  onClick={() => handleSpeedChange(s as 0.5 | 1 | 1.5 | 2)}
                   className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
                     simulation?.getState().speed === s
                       ? "bg-[#f0b429] text-black"

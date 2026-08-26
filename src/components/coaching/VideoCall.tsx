@@ -206,7 +206,7 @@ export default function VideoCall({
           }`}
           title="Record"
         >
-          <Icons.Record className={isRecording ? 'text-white' : 'text-white'} size={20} />
+          <Icons.Circle className={isRecording ? 'text-white' : 'text-white'} size={20} />
         </button>
 
         <button

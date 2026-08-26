@@ -27,6 +27,7 @@ export interface AnalysisState {
   possession?: number;
   passingAccuracy?: number;
   keyPasses?: number;
+  intensity?: number;
 }
 
 export default function TacticsSimulator({

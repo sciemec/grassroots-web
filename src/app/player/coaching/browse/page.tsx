@@ -50,6 +50,7 @@ const mockCoaches: CoachProfile[] = [
     verificationBadge: "zifa",
     createdAt: "2024-01-10T00:00:00Z",
     updatedAt: "2025-06-01T00:00:00Z",
+    socialLinks: {},
   },
   {
     id: "c2",
@@ -84,6 +85,7 @@ const mockCoaches: CoachProfile[] = [
     verificationBadge: "national",
     createdAt: "2023-08-15T00:00:00Z",
     updatedAt: "2025-05-20T00:00:00Z",
+    socialLinks: {},
   },
   {
     id: "c3",
@@ -111,8 +113,10 @@ const mockCoaches: CoachProfile[] = [
     pricePerSession: 20,
     sessionDuration: 60,
     isVerified: false,
+    verificationBadge: "academy",
     createdAt: "2024-03-01T00:00:00Z",
     updatedAt: "2025-04-10T00:00:00Z",
+    socialLinks: {},
   },
   {
     id: "c4",
@@ -146,6 +150,7 @@ const mockCoaches: CoachProfile[] = [
     verificationBadge: "premier",
     createdAt: "2023-01-05T00:00:00Z",
     updatedAt: "2025-07-01T00:00:00Z",
+    socialLinks: {},
   },
 ];
 
