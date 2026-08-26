@@ -5,7 +5,7 @@
 import type { FFmpeg } from "@ffmpeg/ffmpeg";
 
 let ff: FFmpeg | null = null;
-let loadPromise: Promise<void> | null = null;
+let loadPromise: Promise<unknown> | null = null;
 
 async function getFFmpeg(): Promise<FFmpeg> {
   if (ff?.loaded) return ff;
@@ -79,7 +79,7 @@ export async function compressVideo(
     await engine.deleteFile("output.mp4").catch(() => undefined);
 
     onProgress(100);
-    return new File([data], "compressed.mp4", { type: "video/mp4" });
+    return new File([(data.buffer as ArrayBuffer)], "compressed.mp4", { type: "video/mp4" });
   } catch {
     // Compression failed — upload the original so the user isn't blocked
     onProgress(100);

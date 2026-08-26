@@ -1,8 +1,8 @@
 // src/types/tactics.ts
 
-export type Position = 
+export type Position =
   | "GK" | "RB" | "RCB" | "CB" | "LCB" | "LB"
-  | "RWB" | "LWB" | "CDM" | "RM" | "RCM" | "CM" | "LCM" | "LM"
+  | "RWB" | "LWB" | "CDM" | "RCDM" | "LCDM" | "RM" | "RCM" | "CM" | "LCM" | "LM"
   | "RAM" | "CAM" | "LAM" | "RW" | "RS" | "ST" | "LS" | "LW";
 
 export type Formation = "4-3-3" | "4-4-2" | "4-2-3-1" | "3-5-2" | "5-3-2";

@@ -60,7 +60,8 @@ function partLabel(partName: string, level: number | null, hasLevels: boolean) {
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function WarmupPlayerPage() {
-  const { id } = useParams<{ id: string }>();
+  const _params = useParams<{ id: string }>();
+  const id = _params?.id;
   const token = useAuthStore((s) => s.token);
 
   const [program, setProgram] = useState<WarmupProgram | null>(null);

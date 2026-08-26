@@ -11,7 +11,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { downloadGeneralAnalysisPdf } from '@/lib/generate-analysis-pdf';
 import { getUploadStrategy, type UploadStrategyResult } from '@/lib/use-upload-strategy';
 import { enqueueUpload, flushQueue } from '@/lib/upload-queue';
-import UploadGate from '@/components/upload/UploadGate';
+import { UploadGate } from '@/components/upload/UploadGate';
 
 interface GeneralAnalysisParticipants {
   estimated_count: number;

@@ -44,7 +44,8 @@ function initials(name: string) {
 }
 
 export default function WatchMatchVideoPage() {
-  const { videoId } = useParams<{ videoId: string }>();
+  const _params = useParams<{ videoId: string }>();
+  const videoId = _params?.videoId;
   const token = useAuthStore((s) => s.token);
   const user  = useAuthStore((s) => s.user);
 

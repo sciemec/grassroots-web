@@ -47,7 +47,8 @@ function formatDate(iso: string): string {
 }
 
 export default function TeamVideosPage() {
-  const { coachId } = useParams<{ coachId: string }>();
+  const params = useParams<{ coachId: string }>();
+  const coachId = params?.coachId;
   const token = useAuthStore((s) => s.token);
 
   const [coach, setCoach]   = useState<CoachProfile | null>(null);
