@@ -127,6 +127,21 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "grassroots-auth",
+      version: 1,
+      migrate: (persistedState, version) => {
+        if (version < 1) {
+          // One-time migration: clean up the old separate localStorage key
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("auth_token");
+          }
+          // Preserve the session only if BOTH user and token are present.
+          // If either is missing (stale pre-unification session), force re-login.
+          const s = persistedState as Partial<AuthState>;
+          if (s.token && s.user) return s as AuthState;
+          return null as unknown as AuthState;
+        }
+        return persistedState as AuthState;
+      },
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
