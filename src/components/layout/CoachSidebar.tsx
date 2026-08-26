@@ -110,10 +110,20 @@ export function CoachSidebar() {
                 <span className="text-sm font-bold text-[#f0b429]">{user.name?.charAt(0) ?? 'C'}</span>
               </div>
               {!isCollapsed && (
-                <div className="min-w-0">
-                  <p className="text-sm font-bold truncate">{user.name}</p>
-                  <p className="text-[10px] text-white/50">Coach</p>
-                </div>
+                <>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold truncate">{user.name}</p>
+                    <p className="text-[10px] text-white/50">Coach</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    title="Sign out"
+                    aria-label="Sign out"
+                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-all shrink-0"
+                  >
+                    <LogOut size={15} />
+                  </button>
+                </>
               )}
             </div>
           </div>
