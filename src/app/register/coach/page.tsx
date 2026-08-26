@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, CheckCircle, Users } from "lucide-react";
 import { normalizePhone } from "@/lib/phone-normalize";
 import { COUNTRIES } from "@/lib/countries";
+import { useAuthStore } from "@/lib/auth-store";
 
 interface FormData {
   first_name: string;
@@ -107,7 +108,13 @@ export default function RegisterCoachPage() {
       const data = await res.json();
 
       if (data.token) {
-        localStorage.setItem("auth_token", data.token);
+        useAuthStore.getState().login({
+          id:    data.user?.id    ?? "",
+          name:  data.user?.name  ?? `${form.first_name.trim()} ${form.surname.trim()}`,
+          email: data.user?.email ?? (form.contactType === "email" ? form.email.trim().toLowerCase() : ""),
+          role:  "coach",
+          token: data.token,
+        });
       }
       if (data.user?.id) {
         localStorage.setItem("player_id", data.user.id);
