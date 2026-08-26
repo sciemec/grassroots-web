@@ -986,7 +986,7 @@ export default function AnalystMatchEye() {
                       </div>
               )}
 
-              {activeTab === "summary" && (
+              {activeTab === "summary" && firstResult && secondResult && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {/* Combined stat boxes */}
                   <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: "20px" }}>

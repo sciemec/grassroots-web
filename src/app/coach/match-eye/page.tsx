@@ -329,7 +329,7 @@ export default function MatchEyePage() {
       ]);
 
       const data = await ffmpeg.readFile(outName);
-      const blob = new Blob([(data as Uint8Array).buffer], { type: pendingFile.type || "video/mp4" });
+      const blob = new Blob([((data as Uint8Array).buffer as ArrayBuffer)], { type: pendingFile.type || "video/mp4" });
       const trimmedFile = new File([blob], `trimmed_${pendingFile.name}`, { type: pendingFile.type || "video/mp4" });
 
       await ffmpeg.deleteFile(inName).catch(() => undefined);
