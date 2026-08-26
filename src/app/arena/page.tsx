@@ -480,6 +480,12 @@ export default function ArenaPage() {
 
   const uploadMedia = async (file: File): Promise<string | null> => {
     try {
+      // Guard: fail fast with a clear message if the session token is missing —
+      // avoids sending "Authorization: Bearer null" to the backend.
+      if (!authToken) {
+        setMediaError("Your session has expired — please refresh the page and log in again.");
+        return null;
+      }
       // Step 1 — get presigned PUT URL (fast, <1s)
       const res = await fetch("/api/upload/presigned", {
         method: "POST",
@@ -586,6 +592,11 @@ export default function ArenaPage() {
       const payload: Record<string, unknown> = { body: postBody, post_type: "standard" };
       if (image_url) payload.image_url = image_url;
       if (video_url) payload.video_url = video_url;
+      // Guard: check token before sending to backend — avoids a confusing 401
+      // when the session token is null (sends "Bearer null" without this check).
+      if (!authToken) {
+        throw new Error("Your session has expired — please refresh the page and log in again.");
+      }
       const res = await fetch(`${API}/arena/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
