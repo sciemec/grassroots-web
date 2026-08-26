@@ -21,7 +21,7 @@ import { getDepartmentStats } from "@/lib/department-drills";
 import { useAuthStore } from "@/lib/auth-store";
 import { useEffect, useState } from "react";
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const ICON_MAP: Record<string, React.ElementType> = {
   Shield,
   Users,
   Flame,

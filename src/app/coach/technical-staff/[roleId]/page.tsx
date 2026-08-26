@@ -40,7 +40,7 @@ import { useAuthStore } from "@/lib/auth-store";
 
 // ─── Icon map ────────────────────────────────────────────────────────────────
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const ICON_MAP: Record<string, React.ElementType> = {
   Shield,
   Users,
   Flame,

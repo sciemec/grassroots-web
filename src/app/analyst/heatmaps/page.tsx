@@ -382,7 +382,7 @@ export default function HeatmapsPage() {
               <Download className="h-4 w-4" /> Export PDF Report
             </button>
 
-            <button onClick={importFromMatchEye}
+            <button onClick={() => importFromMatchEye()}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 py-2.5 text-sm font-semibold text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors">
               <Camera className="h-4 w-4" /> Import from Match Eye
             </button>

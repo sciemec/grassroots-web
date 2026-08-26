@@ -80,11 +80,11 @@ function MatchBrainSession() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const homeTeam  = params.get("home")      ?? "Home";
-  const awayTeam  = params.get("away")      ?? "Away";
-  const sport     = params.get("sport")     ?? "football";
-  const formation = params.get("formation") ?? "4-3-3";
-  const periodsN  = (parseInt(params.get("periods") ?? "2", 10) as 2 | 4);
+  const homeTeam  = params?.get("home")      ?? "Home";
+  const awayTeam  = params?.get("away")      ?? "Away";
+  const sport     = params?.get("sport")     ?? "football";
+  const formation = params?.get("formation") ?? "4-3-3";
+  const periodsN  = (parseInt(params?.get("periods") ?? "2", 10) as 2 | 4);
 
   const PERIOD_OFFSETS  = periodsN === 4 ? PERIOD_OFFSETS_4 : PERIOD_OFFSETS_2;
   const PERIOD_LABEL    = periodsN === 4 ? "Quarter" : "Half";

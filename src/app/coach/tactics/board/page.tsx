@@ -272,7 +272,7 @@ const MODES: { key: Mode; icon: ElementType; label: string }[] = [
 
 function BoardPageInner() {
   const searchParams = useSearchParams();
-  const deptId   = searchParams.get("dept");
+  const deptId   = searchParams?.get("dept");
   const deptRole = deptId ? getRoleConfig(deptId) : null;
 
   const [mode, setMode]           = useState<Mode>("xg");

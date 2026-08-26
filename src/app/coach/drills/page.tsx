@@ -149,8 +149,8 @@ function DrillCard({ drill, dept }: { drill: Drill; dept: string }) {
 
 function DrillsPageInner() {
   const params = useSearchParams();
-  const deptParam = params.get("dept") ?? "";
-  const categoryParam = params.get("category") ?? "";
+  const deptParam = params?.get("dept") ?? "";
+  const categoryParam = params?.get("category") ?? "";
 
   const roleConfig = getRoleConfig(deptParam);
   const department = roleConfig?.department ?? "all";
