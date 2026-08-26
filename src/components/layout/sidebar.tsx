@@ -220,11 +220,11 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* User info — mobile only */}
+        {/* User info — all screen sizes, with inline Sign Out */}
         {user && (
-          <div className="md:hidden p-4 border-b border-white/10">
+          <div className="p-4 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#f0b429]/20 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-full bg-[#f0b429]/20 flex items-center justify-center shrink-0">
                 <span className="text-sm font-bold text-[#f0b429]">
                   {user.name?.charAt(0) ?? "U"}
                 </span>
@@ -233,6 +233,14 @@ export function Sidebar() {
                 <p className="text-sm font-bold truncate">{user.name}</p>
                 <p className="text-[10px] text-white/50 capitalize">{user.role}</p>
               </div>
+              <button
+                onClick={handleLogout}
+                title="Sign out"
+                aria-label="Sign out"
+                className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-all shrink-0"
+              >
+                <LogOut size={15} />
+              </button>
             </div>
           </div>
         )}
@@ -267,17 +275,7 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 space-y-3">
-          {user && (
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl
-                         text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
-            >
-              <LogOut size={16} />
-              Sign Out
-            </button>
-          )}
+        <div className="p-4 border-t border-white/10">
           <p className="text-center text-[8px] text-white/25">© 2026 GrassRoots Sports</p>
         </div>
       </aside>
