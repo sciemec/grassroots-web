@@ -269,7 +269,7 @@ export default function PitchPage() {
     // Step 2: Gemini Files API (via Render proxy — mobile-safe)
     updateStep(1, 'running');
     try {
-      const uploaded = await uploadVideoInChunksParallel(blobToAnalyse, () => {});
+      const uploaded = await uploadVideoInChunksParallel(new File([blobToAnalyse], 'capture.mp4', { type: blobToAnalyse.type }), () => {});
       fileUri  = uploaded.fileUri;
       fileName = uploaded.fileName;
       updateStep(1, 'done');

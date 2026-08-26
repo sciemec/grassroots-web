@@ -958,6 +958,42 @@ function StandingBroadJumpIllustration() {
   );
 }
 
+function SquatIllustration() {
+  return (
+    <svg
+      width="100%"
+      viewBox="0 0 680 320"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Squat — feet shoulder-width apart, lower until thighs are parallel to the floor"
+      style={{ display: "block", backgroundColor: "#fff" }}
+    >
+      {/* Floor line */}
+      <line x1="240" y1="270" x2="440" y2="270" stroke="#B4B2A9" strokeWidth="2" />
+      <g stroke="#1a5c2a" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {/* Head */}
+        <circle cx="340" cy="80" r="16" fill="#1a5c2a" stroke="none" />
+        {/* Torso (upright) */}
+        <line x1="340" y1="96" x2="340" y2="175" />
+        {/* Arms extended forward for balance */}
+        <line x1="340" y1="120" x2="300" y2="140" />
+        <line x1="340" y1="120" x2="380" y2="140" />
+        {/* Left thigh (bent, going out-left) */}
+        <line x1="340" y1="175" x2="300" y2="230" />
+        {/* Left shin (going down) */}
+        <line x1="300" y1="230" x2="295" y2="270" />
+        {/* Right thigh (bent, going out-right) */}
+        <line x1="340" y1="175" x2="380" y2="230" />
+        {/* Right shin (going down) */}
+        <line x1="380" y1="230" x2="385" y2="270" />
+      </g>
+      <text x="340" y="300" fontSize="14" fill="#2C2C2A" textAnchor="middle" fontFamily="sans-serif">
+        Feet shoulder-width — lower until thighs parallel to floor
+      </text>
+    </svg>
+  );
+}
+
 /** Map mediaAssetId → illustration component. Add more as illustrations are created. */
 const EXERCISE_SVG: Partial<Record<string, React.ReactNode>> = {
   "11plus_p2_04_balance_l1": <SingleLegStanceIllustration />,

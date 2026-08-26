@@ -16,11 +16,14 @@ export function BiometricProfile({
   onRefresh, 
   compact = false 
 }: BiometricProfileProps) {
-  const fatigueStatus = biometricService.getFatigueStatus(data.fatigueIndex);
-  const recoveryRecommendation = biometricService.getRecoveryRecommendation(
-    data.fatigueIndex,
-    data.overallForm
-  );
+  const fatigueLabel = biometricService.getFatigueStatus(data.fatigueIndex);
+  const fatigueColor =
+    data.fatigueIndex < 20 ? 'text-emerald-400' :
+    data.fatigueIndex < 40 ? 'text-green-400' :
+    data.fatigueIndex < 60 ? 'text-yellow-400' :
+    data.fatigueIndex < 80 ? 'text-orange-400' :
+    'text-red-400';
+  const recoveryRecommendation = biometricService.getRecoveryRecommendation(data.fatigueIndex);
 
   if (!data.hasData) {
     return (
@@ -58,8 +61,8 @@ export function BiometricProfile({
         <div className="h-6 w-px bg-gray-700" />
         <div>
           <span className="text-xs text-gray-400">Fatigue:</span>
-          <span className={`ml-1 text-sm font-bold ${fatigueStatus.color}`}>
-            {fatigueStatus.text}
+          <span className={`ml-1 text-sm font-bold ${fatigueColor}`}>
+            {fatigueLabel}
           </span>
         </div>
         {data.lastScanDate && (
@@ -124,11 +127,11 @@ export function BiometricProfile({
         </div>
         <div>
           <p className="text-[10px] text-gray-400">Fatigue Index</p>
-          <p className={`text-2xl font-bold ${fatigueStatus.color}`}>
+          <p className={`text-2xl font-bold ${fatigueColor}`}>
             {data.fatigueIndex}
           </p>
-          <p className={`text-[10px] ${fatigueStatus.color}`}>
-            {fatigueStatus.text} - {recoveryRecommendation}
+          <p className={`text-[10px] ${fatigueColor}`}>
+            {fatigueLabel} - {recoveryRecommendation}
           </p>
         </div>
       </div>

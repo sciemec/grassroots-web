@@ -689,15 +689,18 @@ export default function GeminiDrillsPage() {
       const worstLabel = dimMap[worstKey]?.label ?? worstKey.replace(/_/g, ' ');
 
       const result: DrillResult = {
-        drillId:         selected.id,
-        drillName:       selected.name,
-        sport:           selected.sport,
+        drillId:          selected.id,
+        drillName:        selected.name,
+        sport:            selected.sport,
+        passportLabel:    selected.name,
         overall_score,
         scores,
-        top_strength:    data.summary ?? (bestKey  ? `Strong ${bestLabel} technique detected by pose analysis.` : 'Good technique shown.'),
-        key_improvement: worstKey ? `Focus on improving ${worstLabel} — this was your lowest-scoring mechanic.` : 'Keep practising all mechanics consistently.',
-        analysedAt:      new Date().toISOString(),
-        engine:          'mediapipe',
+        top_strength:     data.summary ?? (bestKey  ? `Strong ${bestLabel} technique detected by pose analysis.` : 'Good technique shown.'),
+        key_improvement:  worstKey ? `Focus on improving ${worstLabel} — this was your lowest-scoring mechanic.` : 'Keep practising all mechanics consistently.',
+        coach_note:       '',
+        data_confidence:  'pose-only',
+        analysedAt:       new Date().toISOString(),
+        engine:           'mediapipe',
       };
 
       saveDrillResult(result);

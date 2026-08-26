@@ -206,7 +206,10 @@ function buildDomainScoresFromTests(
 const VIDEO_TEST_DOMAIN_MAP: Record<TestType, keyof DomainScores> = {
   sprint:       "linearSpeed",
   jump:         "explosivePower",
+  balance:      "balance",
   ball_mastery: "ballMastery",
+  set_piece:    "ballMastery",
+  team:         "cognitiveSpeed",
 };
 
 function vmToPrimaryScore(vm: VideoMeasurement, testType: TestType): number {

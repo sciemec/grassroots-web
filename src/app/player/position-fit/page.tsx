@@ -511,7 +511,7 @@ export default function PositionFitPage() {
     if (!camBlob || !camTarget) return;
     setCamPhase('processing');
     try {
-      const uploaded = await uploadVideoInChunksParallel(camBlob, () => {});
+      const uploaded = await uploadVideoInChunksParallel(new File([camBlob], 'capture.mp4', { type: camBlob.type }), () => {});
       const res = await fetch('/api/fitness-test/measure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

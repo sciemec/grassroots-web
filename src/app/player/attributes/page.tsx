@@ -3889,7 +3889,7 @@ export default function PlayerAttributesPage() {
             <div>
               <h1 className="text-xl font-bold text-gray-900">Physical Attributes</h1>
               <p className="text-sm text-gray-500">
-                {user?.first_name ? `${user.first_name}'s` : "Your"} performance dashboard
+                {user?.name ? `${user.name.split(' ')[0]}'s` : "Your"} performance dashboard
               </p>
             </div>
           </div>
