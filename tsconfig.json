@@ -41,6 +41,8 @@
     ".agents",
     ".claude",
     "open-next.config.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "tests",
+    "src/lib/__tests__"
   ]
 }

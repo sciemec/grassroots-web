@@ -12,7 +12,7 @@ import { queryAI } from "@/lib/ai-query";
 import { uploadVideoInChunksParallel } from "@/lib/upload-chunks";
 import { getUploadStrategy, type UploadStrategyResult } from "@/lib/use-upload-strategy";
 import { enqueueUpload, flushQueue } from "@/lib/upload-queue";
-import UploadGate from "@/components/upload/UploadGate";
+import { UploadGate } from "@/components/upload/UploadGate";
 
 interface StatEntry {
   [key: string]: string | number;

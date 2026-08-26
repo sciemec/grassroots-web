@@ -20,7 +20,7 @@ import { postToArena } from '@/lib/arena-poster';
 import { uploadVideoInChunksParallel, getUploadAdvisory, type UploadAdvisory } from '@/lib/upload-chunks';
 import { getUploadStrategy, type UploadStrategyResult } from '@/lib/use-upload-strategy';
 import { enqueueUpload, flushQueue } from '@/lib/upload-queue';
-import UploadGate from '@/components/upload/UploadGate';
+import { UploadGate } from '@/components/upload/UploadGate';
 import {
   getDrillsForSport, getDrillById, drillStorageKey, allDrillResultsKey,
   type GeminiDrill, type DrillResult,

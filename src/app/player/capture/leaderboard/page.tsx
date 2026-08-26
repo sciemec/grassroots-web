@@ -84,9 +84,9 @@ function DrillLeaderboard() {
   const user         = useAuthStore((s) => s.user);
 
   // Filters from query params (can also be changed in-page)
-  const [drillId,  setDrillId]  = useState(searchParams.get("drill_id")  ?? DRILLS[0].id);
-  const [ageGroup, setAgeGroup] = useState(searchParams.get("age_group") ?? "");
-  const [gender,   setGender]   = useState(searchParams.get("gender")    ?? "");
+  const [drillId,  setDrillId]  = useState(searchParams?.get("drill_id")  ?? DRILLS[0].id);
+  const [ageGroup, setAgeGroup] = useState(searchParams?.get("age_group") ?? "");
+  const [gender,   setGender]   = useState(searchParams?.get("gender")    ?? "");
 
   const [data,    setData]    = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(false);

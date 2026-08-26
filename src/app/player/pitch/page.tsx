@@ -11,7 +11,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { uploadVideoInChunksParallel } from '@/lib/upload-chunks';
 import { getUploadStrategy, type UploadStrategyResult } from '@/lib/use-upload-strategy';
 import { enqueueUpload, flushQueue } from '@/lib/upload-queue';
-import UploadGate from '@/components/upload/UploadGate';
+import { UploadGate } from '@/components/upload/UploadGate';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

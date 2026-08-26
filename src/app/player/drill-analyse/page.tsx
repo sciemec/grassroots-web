@@ -121,8 +121,8 @@ function barLabel(pct: number): string {
 function DrillAnalysePage() {
   const token      = useAuthStore((s) => s.token);
   const searchParams = useSearchParams();
-  const drillType  = searchParams.get("drill_type") ?? "ball_mastery";
-  const drillName  = searchParams.get("name") ?? DRILL_TYPE_LABELS[drillType] ?? "Drill Analysis";
+  const drillType  = searchParams?.get("drill_type") ?? "ball_mastery";
+  const drillName  = searchParams?.get("name") ?? DRILL_TYPE_LABELS[drillType] ?? "Drill Analysis";
 
   const mechanics  = DRILL_MECHANICS[drillType] ?? [];
   const isBallMastery = drillType === "ball_mastery" || mechanics.length === 0;

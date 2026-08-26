@@ -90,7 +90,7 @@ function PitchMarkings() {
 
 function ViewInner() {
   const searchParams = useSearchParams();
-  const rawState = searchParams.get("state");
+  const rawState = searchParams?.get("state");
 
   const board = useMemo((): BoardState | null => {
     if (!rawState) return null;
