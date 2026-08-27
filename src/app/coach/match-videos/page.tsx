@@ -6,12 +6,14 @@ import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import {
   ArrowLeft, Film, Upload, Play, ChevronUp, Trash2, Share2,
-  Check, Loader2, LinkIcon, Download, Eye, Plus, X,
+  Check, Loader2, LinkIcon, Download, Eye, Plus, X, Lock, Link2, Globe,
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+type VideoVisibility = "private" | "link_only" | "public";
 
 interface MatchVideo {
   id: string;
@@ -20,12 +22,18 @@ interface MatchVideo {
   opponent: string | null;
   competition: string | null;
   video_url: string | null;
-  r2_key: string | null;
   arena_post_id: string | null;
   view_count: number;
   duration_seconds: number | null;
+  visibility: VideoVisibility;
   created_at: string;
 }
+
+const VISIBILITY_CONFIG: Record<VideoVisibility, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
+  private:   { label: "Private",   icon: <Lock   size={10} />, color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
+  link_only: { label: "Link Only", icon: <Link2  size={10} />, color: "#1a5c2a", bg: "#f0fdf4", border: "#bbf7d0" },
+  public:    { label: "Public",    icon: <Globe  size={10} />, color: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,16 +57,19 @@ function VideoCard({
   token,
   onDelete,
   onPosted,
+  onVisibilityChange,
 }: {
   video: MatchVideo;
   token: string | null;
   onDelete: (id: string) => void;
   onPosted: (id: string, arenaPostId: string) => void;
+  onVisibilityChange: (id: string, v: VideoVisibility) => void;
 }) {
-  const [playing,  setPlaying]  = useState(false);
-  const [posting,  setPosting]  = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [copied,   setCopied]   = useState(false);
+  const [playing,          setPlaying]          = useState(false);
+  const [posting,          setPosting]          = useState(false);
+  const [deleting,         setDeleting]         = useState(false);
+  const [copied,           setCopied]           = useState(false);
+  const [savingVisibility, setSavingVisibility] = useState(false);
 
   const watchUrl = typeof window !== "undefined"
     ? `${window.location.origin}/watch/${video.id}`
@@ -123,6 +134,21 @@ function VideoCard({
     }).catch(() => {});
   }
 
+  async function handleVisibilityChange(v: VideoVisibility) {
+    if (v === video.visibility || savingVisibility) return;
+    setSavingVisibility(true);
+    try {
+      await fetch(`${API}/coach/match-videos/${video.id}/visibility`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token ?? ""}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ visibility: v }),
+      });
+      onVisibilityChange(video.id, v);
+    } catch { /* silent — optimistic update skipped on error */ } finally {
+      setSavingVisibility(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
       {/* Card header */}
@@ -142,7 +168,7 @@ function VideoCard({
             {video.competition ? ` · ${video.competition}`    : ""}
             {video.duration_seconds ? ` · ${formatDuration(video.duration_seconds)}` : ""}
           </p>
-          <div className="flex items-center gap-3 mt-1.5">
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
             <span className="flex items-center gap-1 text-xs text-gray-400">
               <Eye size={11} /> {video.view_count} view{video.view_count !== 1 ? "s" : ""}
             </span>
@@ -154,6 +180,33 @@ function VideoCard({
                 On Arena
               </span>
             )}
+            {/* Visibility selector */}
+            <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 ml-auto">
+              {(["private", "link_only", "public"] as VideoVisibility[]).map((v) => {
+                const cfg = VISIBILITY_CONFIG[v];
+                const active = video.visibility === v;
+                return (
+                  <button
+                    key={v}
+                    onClick={() => handleVisibilityChange(v)}
+                    disabled={savingVisibility}
+                    title={cfg.label}
+                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold transition-colors disabled:opacity-60"
+                    style={{
+                      background: active ? cfg.bg : "transparent",
+                      color:      active ? cfg.color : "#9ca3af",
+                      borderRight: v !== "public" ? "1px solid #e5e7eb" : undefined,
+                    }}
+                  >
+                    {savingVisibility && active
+                      ? <Loader2 size={9} className="animate-spin" />
+                      : cfg.icon
+                    }
+                    {active && <span>{cfg.label}</span>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -538,6 +591,10 @@ export default function CoachMatchVideosPage() {
     setVideos((prev) => prev.map((v) => v.id === id ? { ...v, arena_post_id: arenaPostId } : v));
   }
 
+  function handleVisibilityChange(id: string, visibility: VideoVisibility) {
+    setVideos((prev) => prev.map((v) => v.id === id ? { ...v, visibility } : v));
+  }
+
   return (
     <div className="flex h-screen" style={{ background: "#f4f2ee" }}>
       <Sidebar />
@@ -608,6 +665,7 @@ export default function CoachMatchVideosPage() {
                   token={token}
                   onDelete={handleDeleted}
                   onPosted={handlePosted}
+                  onVisibilityChange={handleVisibilityChange}
                 />
               ))}
             </div>

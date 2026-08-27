@@ -65,11 +65,13 @@ export default function WatchMatchVideoPage() {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (r.status === 403) throw new Error("PRIVATE");
+        if (r.status === 404) throw new Error("NOT_FOUND");
+        if (!r.ok) throw new Error("ERROR");
         return r.json();
       })
       .then((d) => setVideo(d.data ?? d))
-      .catch(() => setVideoError("Video not found or you don't have permission to view it."))
+      .catch((e: Error) => setVideoError(e.message))
       .finally(() => setVideoLoading(false));
   }, [videoId, token]);
 
@@ -132,9 +134,17 @@ export default function WatchMatchVideoPage() {
             <Loader2 size={32} style={{ margin: "0 auto 12px", display: "block", animation: "spin 1s linear infinite" }} />
             Loading video…
           </div>
+        ) : videoError === "PRIVATE" ? (
+          <div style={{ textAlign: "center", padding: 60 }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
+            <p style={{ fontWeight: 700, fontSize: 16, color: "#111", marginBottom: 8 }}>This video is private</p>
+            <p style={{ color: "#6b7280", fontSize: 14, maxWidth: 340, margin: "0 auto" }}>
+              The coach hasn&apos;t made this video publicly viewable. If you&apos;re a parent or player expecting access, contact your coach to share the link.
+            </p>
+          </div>
         ) : videoError ? (
           <div style={{ textAlign: "center", padding: 60 }}>
-            <p style={{ color: "#dc2626", fontWeight: 600, marginBottom: 16 }}>{videoError}</p>
+            <p style={{ color: "#dc2626", fontWeight: 600, marginBottom: 16 }}>Video not found or the link may have expired.</p>
             {!token && (
               <Link href="/login" style={{ display: "inline-block", padding: "10px 24px", backgroundColor: "#1a5c2a", color: "#fff", borderRadius: 10, textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
                 Sign in to watch
