@@ -153,6 +153,25 @@ export default function CoachYoyoTestPage() {
     setSelectedPlayerId("");
     setShowForm(false);
     setSaving(false);
+
+    // Fire-and-forget: persist result in player's attribute profile
+    // Silently ignored if squad membership isn't confirmed or attribute code doesn't exist
+    if (token) {
+      fetch(`${API}/coach/attribute-measurements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          player_user_id: selectedPlayerId,
+          attribute_code: "yoyo_ir1",
+          raw_value: dist,
+          unit: "metres",
+          measured_at: new Date(testedAt).toISOString(),
+        }),
+      }).catch(() => {});
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -508,11 +527,14 @@ export default function CoachYoyoTestPage() {
                     {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
                   </div>
 
-                  {/* Name + position */}
+                  {/* Name + position — click-through to squad player detail */}
                   <div>
-                    <p style={{ fontWeight: 700, fontSize: 13, color: "#111", marginBottom: 1 }}>
+                    <Link
+                      href={`/coach/squad/${r.player_id}`}
+                      style={{ fontWeight: 700, fontSize: 13, color: "#1a5c2a", textDecoration: "none" }}
+                    >
                       {r.player_name}
-                    </p>
+                    </Link>
                     <p style={{ fontSize: 11, color: "#9ca3af" }}>{r.position}</p>
                   </div>
 
@@ -586,7 +608,7 @@ export default function CoachYoyoTestPage() {
 
         {/* Note */}
         <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 16, textAlign: "center" }}>
-          Results saved locally on this device. Note: coaches record squad data manually — players log their own measurements in the Player Hub.
+          Results saved locally and posted to each player&apos;s attribute profile — visible in the Player Hub.
         </p>
       </div>
     </div>

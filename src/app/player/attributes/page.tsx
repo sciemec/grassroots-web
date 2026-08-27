@@ -10,7 +10,6 @@ import {
 import { useAuthStore } from "@/lib/auth-store";
 import { Sidebar } from "@/components/layout/sidebar";
 import api from "@/lib/api";
-import { useYoyoPoseDetector, type YoyoPhase } from "@/hooks/useYoyoPoseDetector";
 import { useSitUpDetector, type SitUpPhase } from "@/hooks/useSitUpDetector";
 import { useBroadJumpDetector }      from "@/hooks/useBroadJumpDetector";
 import { useFlamingoBalanceDetector } from "@/hooks/useFlamingoBalanceDetector";
@@ -87,58 +86,23 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   coordination: { bg: "#f0fdf4", text: "#14532d", border: "#86efac" },
 };
 
-// ─── Yo-Yo IR1 Protocol ──────────────────────────────────────────────────────
+// ─── Yo-Yo IR1 level → distance lookup (Bangsbo protocol) ────────────────────
 
-const YOYO_PROTOCOL = [
-  { level: 5,  speedKmh: 10.0, shuttles: 3 },
-  { level: 6,  speedKmh: 10.5, shuttles: 3 },
-  { level: 7,  speedKmh: 11.0, shuttles: 3 },
-  { level: 8,  speedKmh: 11.5, shuttles: 3 },
-  { level: 9,  speedKmh: 12.0, shuttles: 4 },
-  { level: 10, speedKmh: 12.5, shuttles: 4 },
-  { level: 11, speedKmh: 13.0, shuttles: 4 },
-  { level: 12, speedKmh: 13.5, shuttles: 5 },
-  { level: 13, speedKmh: 14.0, shuttles: 5 },
-  { level: 14, speedKmh: 14.5, shuttles: 5 },
-  { level: 15, speedKmh: 15.0, shuttles: 6 },
-  { level: 16, speedKmh: 15.5, shuttles: 6 },
-  { level: 17, speedKmh: 16.0, shuttles: 6 },
-  { level: 18, speedKmh: 16.5, shuttles: 7 },
-  { level: 19, speedKmh: 17.0, shuttles: 7 },
-  { level: 20, speedKmh: 17.5, shuttles: 7 },
-  { level: 21, speedKmh: 18.0, shuttles: 8 },
-  { level: 22, speedKmh: 18.5, shuttles: 8 },
-  { level: 23, speedKmh: 19.0, shuttles: 8 },
-];
-
-interface ShuttleEntry {
-  level: number;
-  shuttleNum: number;
-  totalInLevel: number;
-  globalShuttle: number;
-  startTime: number;
-  endTime: number;
-  recoveryEnd: number;
-}
-
-const YOYO_SCHEDULE: ShuttleEntry[] = (() => {
-  const entries: ShuttleEntry[] = [];
-  let t = 0;
-  let global = 0;
-  for (const { level, speedKmh, shuttles } of YOYO_PROTOCOL) {
-    const shuttleTime = 40 / (speedKmh / 3.6);
-    for (let s = 0; s < shuttles; s++) {
-      global++;
-      entries.push({
-        level, shuttleNum: s + 1, totalInLevel: shuttles,
-        globalShuttle: global,
-        startTime: t, endTime: t + shuttleTime, recoveryEnd: t + shuttleTime + 10,
-      });
-      t += shuttleTime + 10;
-    }
-  }
-  return entries;
-})();
+const YOYO_LEVEL_DISTANCES: Record<string, number> = {
+  "5/1": 120,  "5/2": 160,  "5/3": 200,  "5/4": 240,
+  "6/1": 280,  "6/2": 320,  "6/3": 360,  "6/4": 400,
+  "7/1": 440,  "7/2": 480,  "7/3": 520,  "7/4": 560,
+  "8/1": 600,  "8/2": 640,  "8/3": 680,  "8/4": 720,
+  "9/1": 760,  "9/2": 800,  "9/3": 840,  "9/4": 880,
+  "10/1": 920, "10/2": 960, "10/3": 1000, "10/4": 1040,
+  "11/1": 1080,"11/2": 1120,"11/3": 1160,"11/4": 1200,
+  "12/1": 1240,"12/2": 1280,"12/3": 1320,"12/4": 1360,
+  "13/1": 1400,"13/2": 1440,"13/3": 1480,"13/4": 1520,
+  "14/1": 1560,"14/2": 1600,"14/3": 1640,"14/4": 1680,
+  "15/1": 1720,"15/2": 1760,"15/3": 1800,"15/4": 1840,
+  "16/1": 1880,"16/2": 1920,"16/3": 1960,"16/4": 2000,
+  "17/1": 2040,"17/2": 2080,"17/3": 2120,
+};
 
 function categoryStyle(cat: string) {
   return CATEGORY_COLORS[cat] ?? { bg: "#f3f4f6", text: "#374151", border: "#d1d5db" };
@@ -318,9 +282,9 @@ function WeeklyFocusCard({
   );
 }
 
-// ─── Yo-Yo IR1 Test Modal ────────────────────────────────────────────────────
+// ─── Yo-Yo IR1 Test Modal (manual entry) ─────────────────────────────────────
 
-function YoyoTestModal({
+function SimpleYoyoModal({
   status,
   onClose,
   onSaved,
@@ -329,142 +293,44 @@ function YoyoTestModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [phase, setPhase] = useState<"ready" | "playing" | "ended">("ready");
-  const [currentEntry, setCurrentEntry] = useState<ShuttleEntry>(YOYO_SCHEDULE[0]);
-  const [completedShuttles, setCompletedShuttles] = useState(0);
-  const [consecutiveMisses, setConsecutiveMisses] = useState(0);
+  const [inputMode, setInputMode] = useState<"distance" | "level">("distance");
+  const [distanceInput, setDistanceInput] = useState("");
+  const [levelInput, setLevelInput] = useState("10/1");
+  const [measuredAt, setMeasuredAt] = useState(
+    () => new Date().toISOString().split("T")[0]
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const missedRef = useRef<Set<number>>(new Set());
-  const lastCompletedRef = useRef<number>(0);
 
-  // ── Camera mode ─────────────────────────────────────────────────────────
-  const [cameraMode, setCameraMode] = useState(false);
-  const [cameraStarting, setCameraStarting] = useState(false);
-  const [cameraError, setCameraError] = useState(false);
-  const [cameraPhase, setCameraPhase] = useState<YoyoPhase>("IDLE");
-  // Ref mirrors cameraMode so rAF callbacks never read stale state
-  const cameraModeRef = useRef(false);
-  // Ref mirrors consecutiveMisses for camera callbacks (avoids stale closure)
-  const consecutiveMissesRef = useRef(0);
+  const resolvedDist =
+    inputMode === "distance"
+      ? (parseInt(distanceInput, 10) > 0 ? parseInt(distanceInput, 10) : null)
+      : (YOYO_LEVEL_DISTANCES[levelInput] ?? null);
 
-  const getAudioTime = useCallback(() => audioRef.current?.currentTime ?? 0, []);
-
-  // Callbacks for the pose detector — stable refs, functional setState
-  const handleShuttleCompletedCamera = useCallback((globalShuttle: number) => {
-    if (missedRef.current.has(globalShuttle)) return;
-    setCompletedShuttles((n) => n + 1);
-    consecutiveMissesRef.current = 0;
-    setConsecutiveMisses(0);
-  }, []);
-
-  const handleMissCamera = useCallback((globalShuttle: number) => {
-    missedRef.current.add(globalShuttle);
-    consecutiveMissesRef.current += 1;
-    const next = consecutiveMissesRef.current;
-    setConsecutiveMisses(next);
-    if (next >= 2) {
-      audioRef.current?.pause();
-      setPhase("ended");
-    }
-  }, []);
-
-  const { cameraVideoRef, start: startCamera, stop: stopCamera } = useYoyoPoseDetector({
-    schedule: YOYO_SCHEDULE,
-    getAudioTime,
-    onShuttleCompleted: handleShuttleCompletedCamera,
-    onMissDetected: handleMissCamera,
-    onPhaseChange: setCameraPhase,
-  });
-
-  // ── Audio timeline sync ─────────────────────────────────────────────────
-  // When cameraMode is active, camera is the sole source of truth —
-  // skip the timeupdate auto-completion path.
-  const handleTimeUpdate = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const t = audio.currentTime;
-    let entry: ShuttleEntry | null = null;
-    for (let i = YOYO_SCHEDULE.length - 1; i >= 0; i--) {
-      if (YOYO_SCHEDULE[i].startTime <= t) { entry = YOYO_SCHEDULE[i]; break; }
-    }
-    if (!entry) return;
-    setCurrentEntry(entry);
-    // Camera mode: skip auto-completion (handled by pose detector)
-    if (cameraModeRef.current) return;
-    if (t >= entry.endTime && lastCompletedRef.current < entry.globalShuttle) {
-      lastCompletedRef.current = entry.globalShuttle;
-      if (!missedRef.current.has(entry.globalShuttle)) {
-        setCompletedShuttles((n) => n + 1);
-        setConsecutiveMisses(0);
-      }
-    }
-  }, []);
-
-  // Stop camera whenever the test ends (from any source)
-  useEffect(() => {
-    if (phase === "ended") stopCamera();
-  }, [phase, stopCamera]);
-
-  // ── Handlers ────────────────────────────────────────────────────────────
-  const handleToggleCamera = (on: boolean) => {
-    setCameraMode(on);
-    cameraModeRef.current = on;
-    if (!on) setCameraError(false);
-  };
-
-  const handleStart = async () => {
-    if (cameraMode) {
-      setCameraStarting(true);
-      const videoEl = cameraVideoRef.current;
-      if (videoEl) {
-        const ok = await startCamera(videoEl);
-        if (!ok) {
-          setCameraError(true);
-          setCameraMode(false);
-          cameraModeRef.current = false;
-        }
-      }
-      setCameraStarting(false);
-    }
-    audioRef.current?.play();
-    setPhase("playing");
-  };
-
-  const handleMiss = () => {
-    if (phase !== "playing") return;
-    missedRef.current.add(currentEntry.globalShuttle);
-    consecutiveMissesRef.current += 1;
-    const next = consecutiveMissesRef.current;
-    setConsecutiveMisses(next);
-    if (next >= 2) { audioRef.current?.pause(); setPhase("ended"); }
-  };
-
-  const handleEnd = () => { audioRef.current?.pause(); stopCamera(); setPhase("ended"); };
-
-  const handleClose = () => { audioRef.current?.pause(); stopCamera(); onClose(); };
+  const vo2max = resolvedDist
+    ? Math.round(((resolvedDist / 40) * 0.0136 + 45.3) * 10) / 10
+    : null;
 
   const handleSave = async () => {
-    const metres = completedShuttles * 40;
-    setSaving(true); setError("");
+    if (!resolvedDist) return;
+    setSaving(true);
+    setError("");
     try {
       await api.post("/attribute-measurements", {
         attribute_id: status.attribute_id,
-        raw_value: metres,
+        raw_value: resolvedDist,
         unit: "metres",
-        measured_at: new Date().toISOString(),
+        measured_at: new Date(measuredAt).toISOString(),
       });
       setSaved(true);
       setTimeout(() => { onSaved(); onClose(); }, 1000);
     } catch {
       setError("Failed to save. Please try again.");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
-
-  const score = completedShuttles * 40;
-  // (inSprint no longer needed — camera phase driven by onPhaseChange callback)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -475,198 +341,119 @@ function YoyoTestModal({
         <div className="flex items-center justify-between px-5 py-4" style={{ background: "#1a5c2a" }}>
           <div>
             <p className="font-bold text-white text-base">Yo-Yo IR Level 1</p>
-            <p className="text-xs text-green-200">Aerobic endurance test</p>
+            <p className="text-xs text-green-200">Enter your distance</p>
           </div>
-          <button onClick={handleClose}
-            className="rounded-full p-1.5 hover:bg-white/20 transition-colors">
+          <button onClick={onClose} className="rounded-full p-1.5 hover:bg-white/20 transition-colors">
             <X className="h-4 w-4 text-white" />
           </button>
         </div>
 
-        {/* Hidden audio element */}
-        <audio ref={audioRef} src="/audio/yoyo_ir1.mp3"
-          onTimeUpdate={handleTimeUpdate} onEnded={() => setPhase("ended")} preload="auto" />
-
-        {/* Camera video element — always mounted so cameraVideoRef is valid before start() */}
-        <div style={{ display: phase === "playing" && cameraMode && !cameraError ? "block" : "none" }}>
-          <div className="relative bg-black" style={{ aspectRatio: "4/3" }}>
-            <video ref={cameraVideoRef} autoPlay playsInline muted
-              className="w-full h-full object-cover" />
-            {/* Zone labels */}
-            <div className="absolute inset-x-0 bottom-0 flex justify-between px-3 pb-2">
-              {(["A — 0 m", "B — 20 m"] as const).map((label) => (
-                <span key={label}
-                  className="rounded px-2 py-0.5 text-xs font-bold text-white"
-                  style={{ background: "rgba(0,0,0,0.5)" }}>
-                  {label}
-                </span>
-              ))}
-            </div>
-            {/* Phase badge — driven by pose detector via onPhaseChange */}
-            <div className="absolute top-2 right-2">
-              <span className="rounded-full px-2.5 py-1 text-xs font-bold text-white"
-                style={{
-                  background:
-                    cameraPhase === "RUN"      ? "#1a5c2a" :
-                    cameraPhase === "RECOVERY" ? "#d97706" : "#6b7280",
-                }}>
-                {cameraPhase === "RUN" ? "SPRINT ➜ B" : cameraPhase === "RECOVERY" ? "RETURN ➜ A" : "REST"}
-              </span>
-            </div>
-            {/* Detection note */}
-            <div className="absolute top-2 left-2">
-              <span className="rounded px-2 py-0.5 text-xs text-white"
-                style={{ background: "rgba(0,0,0,0.45)" }}>
-                AI detecting
-              </span>
-            </div>
+        {saved ? (
+          <div className="flex flex-col items-center gap-3 py-8">
+            <CheckCircle2 className="h-10 w-10" style={{ color: "#16a34a" }} />
+            <p className="font-semibold text-gray-800">Saved!</p>
           </div>
-        </div>
+        ) : (
+          <div className="p-5 flex flex-col gap-4">
+            <p className="text-sm text-gray-500">
+              Run the test to the beep audio, then enter the total distance you completed.
+            </p>
 
-        <div className="p-5">
-          {/* ── Ready phase ─────────────────────────────────────────────── */}
-          {phase === "ready" && (
-            <div className="flex flex-col gap-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">
-                  Run 40 m shuttles (A→B→A) in time with the beeps.
-                  Test ends after 2 consecutive misses.
-                </p>
-                <p className="text-xs text-gray-400 mt-1">Score = completed shuttles × 40 m</p>
-              </div>
-
-              {/* Camera toggle */}
-              <div className="rounded-xl border p-3" style={{ borderColor: "#e5e7eb" }}>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">AI camera detection</p>
-                    <p className="text-xs text-gray-500">Auto-detects misses via your phone camera</p>
-                  </div>
-                  <button
-                    onClick={() => handleToggleCamera(!cameraMode)}
-                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-                    style={{ background: cameraMode ? "#1a5c2a" : "#d1d5db" }}
-                    role="switch"
-                    aria-checked={cameraMode}
-                  >
-                    <span
-                      className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
-                      style={{ transform: cameraMode ? "translateX(1.375rem)" : "translateX(0.125rem)" }}
-                    />
+            {/* Input mode toggle */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Enter result as</p>
+              <div className="flex gap-2">
+                {(["distance", "level"] as const).map((m) => (
+                  <button key={m} onClick={() => setInputMode(m)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
+                    style={{
+                      borderColor: inputMode === m ? "#1a5c2a" : "#d1d5db",
+                      backgroundColor: inputMode === m ? "#f0fdf4" : "#fff",
+                      color: inputMode === m ? "#1a5c2a" : "#6b7280",
+                    }}>
+                    {m === "distance" ? "Distance (m)" : "Level reached"}
                   </button>
-                </div>
-                {cameraMode && (
-                  <p className="text-xs mt-2 rounded-lg px-2.5 py-2"
-                    style={{ background: "#f0fdf4", color: "#15803d" }}>
-                    Position camera face-on, wide enough so zones A (0 m), B (20 m) and the recovery area are all visible.
-                  </p>
-                )}
+                ))}
               </div>
-
-              <button
-                onClick={handleStart}
-                disabled={cameraStarting}
-                className="w-full rounded-xl py-3.5 text-sm font-bold text-white flex items-center justify-center gap-2"
-                style={{ background: "#1a5c2a", opacity: cameraStarting ? 0.7 : 1 }}>
-                {cameraStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {cameraStarting ? "Starting camera..." : "Start Test"}
-              </button>
             </div>
-          )}
 
-          {/* ── Playing phase ────────────────────────────────────────────── */}
-          {phase === "playing" && (
-            <div className="flex flex-col gap-4">
-              {/* Stats row */}
-              <div className="flex items-center justify-between">
-                <div className="rounded-lg px-3 py-2" style={{ background: "#dcfce7" }}>
-                  <p className="text-xs text-green-700 font-semibold">LEVEL</p>
-                  <p className="text-2xl font-bold" style={{ color: "#1a5c2a" }}>{currentEntry.level}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-400 font-semibold">SHUTTLE</p>
-                  <p className="text-xl font-bold text-gray-800">
-                    {currentEntry.shuttleNum} / {currentEntry.totalInLevel}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-400 font-semibold">DISTANCE</p>
-                  <p className="text-xl font-bold" style={{ color: "#1a5c2a" }}>{score} m</p>
-                </div>
-              </div>
-
-              {/* Miss warning */}
-              {consecutiveMisses > 0 && (
-                <div className="rounded-lg px-3 py-2 text-center text-sm font-semibold"
-                  style={{ background: "#fee2e2", color: "#b91c1c" }}>
-                  {consecutiveMisses === 1
-                    ? "⚠️ 1 miss — one more ends the test"
-                    : "Test ending..."}
-                </div>
-              )}
-
-              {/* Camera error fallback notice */}
-              {cameraError && (
-                <div className="rounded-lg px-3 py-1.5 text-xs text-center"
-                  style={{ background: "#fef3c7", color: "#92400e" }}>
-                  Camera unavailable — tap Miss manually
-                </div>
-              )}
-
-              {/* Miss button: shown in manual mode OR when camera errored */}
-              {(!cameraMode || cameraError) && (
-                <button onClick={handleMiss}
-                  className="w-full rounded-xl py-4 text-lg font-bold text-white active:scale-95 transition-transform"
-                  style={{ background: "#dc2626" }}>
-                  Miss
-                </button>
-              )}
-
-              {/* Camera active — no miss button needed */}
-              {cameraMode && !cameraError && (
-                <div className="rounded-lg px-3 py-2 text-center text-xs text-gray-500"
-                  style={{ background: "#f9fafb" }}>
-                  AI is counting misses automatically
-                </div>
-              )}
-
-              <button onClick={handleEnd}
-                className="text-xs text-gray-400 hover:text-gray-600 transition-colors text-center">
-                End test early
-              </button>
-            </div>
-          )}
-
-          {/* ── Ended phase ──────────────────────────────────────────────── */}
-          {phase === "ended" && (
-            saved ? (
-              <div className="flex flex-col items-center gap-3 py-4">
-                <CheckCircle2 className="h-10 w-10" style={{ color: "#16a34a" }} />
-                <p className="font-semibold text-gray-800">Saved!</p>
+            {/* Distance or Level input */}
+            {inputMode === "distance" ? (
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                  Total distance (metres)
+                </label>
+                <input
+                  type="number" min={40} max={2200} step={40}
+                  value={distanceInput}
+                  onChange={(e) => setDistanceInput(e.target.value)}
+                  placeholder="e.g. 1360"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  style={{ borderColor: "#d1d5db" }}
+                />
+                <p className="text-xs text-gray-400 mt-1">Each completed shuttle = 40 m</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
-                <div className="rounded-xl p-4 text-center"
-                  style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
-                  <p className="text-xs text-gray-500 mb-1">Final Score</p>
-                  <p className="text-4xl font-bold" style={{ color: "#1a5c2a" }}>{score} m</p>
-                  <p className="text-xs text-gray-400 mt-1">{completedShuttles} shuttles completed</p>
-                </div>
-                {error && <p className="text-xs text-red-600 text-center">{error}</p>}
-                <button onClick={handleSave} disabled={saving}
-                  className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
-                  style={{ background: "#1a5c2a", opacity: saving ? 0.7 : 1 }}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Save Result
-                </button>
-                <button onClick={onClose}
-                  className="text-xs text-gray-400 hover:text-gray-600 text-center">
-                  Discard
-                </button>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                  Last level completed
+                </label>
+                <select
+                  value={levelInput}
+                  onChange={(e) => setLevelInput(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  style={{ borderColor: "#d1d5db", backgroundColor: "#fff" }}
+                >
+                  {Object.keys(YOYO_LEVEL_DISTANCES).map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      Level {lvl} — {YOYO_LEVEL_DISTANCES[lvl]}m
+                    </option>
+                  ))}
+                </select>
               </div>
-            )
-          )}
-        </div>
+            )}
+
+            {/* Test date */}
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                Test date
+              </label>
+              <input
+                type="date" value={measuredAt}
+                onChange={(e) => setMeasuredAt(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+                style={{ borderColor: "#d1d5db" }}
+              />
+            </div>
+
+            {/* Preview */}
+            {resolvedDist && vo2max && (
+              <div className="rounded-xl p-3 text-sm"
+                style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                <span className="font-bold" style={{ color: "#1a5c2a" }}>{resolvedDist} m</span>
+                <span className="text-gray-500"> · VO₂max ≈ </span>
+                <span className="font-bold text-gray-700">{vo2max} ml/kg/min</span>
+              </div>
+            )}
+
+            {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+
+            <button
+              onClick={handleSave}
+              disabled={saving || !resolvedDist}
+              className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2"
+              style={{ background: "#1a5c2a", opacity: (saving || !resolvedDist) ? 0.5 : 1 }}
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Result
+            </button>
+
+            <button onClick={onClose}
+              className="text-xs text-gray-400 hover:text-gray-600 text-center">
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -4040,7 +3827,7 @@ export default function PlayerAttributesPage() {
 
       {/* Yo-Yo IR1 Test Modal */}
       {yoyoTestStatus && (
-        <YoyoTestModal
+        <SimpleYoyoModal
           status={yoyoTestStatus}
           onClose={() => setYoyoTestStatus(null)}
           onSaved={() => { setYoyoTestStatus(null); loadData(); }}
