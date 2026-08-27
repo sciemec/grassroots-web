@@ -31,9 +31,22 @@ interface MatchVideo {
   opponent: string | null;
   competition: string | null;
   video_url: string;
+  thumbnail_url: string | null;
   arena_post_id: string | null;
   view_count: number;
   _source: "match";
+}
+
+type ThumbState = "idle" | "generating" | "ready" | "skipped";
+
+async function generateThumbnailSafe(file: File): Promise<Blob | null> {
+  try {
+    const { generateThumbnail } = await import("@/lib/ffmpeg-processor");
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
+    return await Promise.race([generateThumbnail(file), timeout]);
+  } catch {
+    return null;
+  }
 }
 
 interface MediaItem {
@@ -168,6 +181,15 @@ function MatchVideoCard({
   return (
     <div style={{ backgroundColor: "white", borderRadius: 12, padding: "14px 18px", border: "1px solid #e5e7eb" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        {/* Thumbnail or film icon */}
+        <div style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: video.thumbnail_url ? undefined : "#f0fdf4" }}>
+          {video.thumbnail_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={video.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <Film size={18} color="#1a5c2a" />
+          )}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{video.title}</span>
@@ -317,6 +339,7 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
   const [uploading, setUploading]     = useState(false);
   const [progress, setProgress]       = useState(0);
   const [uploadError, setUploadError] = useState("");
+  const [thumbState, setThumbState]   = useState<ThumbState>("idle");
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload(e: React.FormEvent) {
@@ -328,7 +351,32 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
     setUploadError("");
     setUploading(true);
     setProgress(0);
+    setThumbState("idle");
     try {
+      // Start thumbnail generation in parallel — never blocks the video upload
+      let thumbnailUrlPromise: Promise<string | null> = Promise.resolve(null);
+      if (file) {
+        setThumbState("generating");
+        thumbnailUrlPromise = (async () => {
+          const blob = await generateThumbnailSafe(file);
+          if (!blob) { setThumbState("skipped"); return null; }
+          setThumbState("ready");
+          try {
+            const pr = await fetch("/api/upload/presigned", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ fileName: "thumbnail.jpg", contentType: "image/jpeg", source: "match_thumbnails" }),
+            });
+            const { uploadUrl: tUrl, publicUrl: tPublic } = await pr.json();
+            if (tUrl) {
+              await fetch(tUrl, { method: "PUT", body: blob, headers: { "Content-Type": "image/jpeg" } });
+              return tPublic as string;
+            }
+          } catch { /* silent — thumbnail is optional */ }
+          return null;
+        })();
+      }
+
       const presignRes = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -362,6 +410,13 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
         });
       }
 
+      // Give thumbnail pipeline up to 5 s after XHR finishes (on 2G it will have
+      // long finished during the upload window; this covers edge cases only).
+      const thumbnailUrl = await Promise.race([
+        thumbnailUrlPromise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
+      ]);
+
       // Read token fresh from Zustand at the moment of POST — avoids stale closure
       // capturing a null value from an earlier render before hydration completed.
       const freshToken = useAuthStore.getState().token;
@@ -377,6 +432,7 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
           competition: competition || null,
           video_url: publicUrl || "",
           r2_key: key || "",
+          thumbnail_url: thumbnailUrl || null,
         }),
       });
       if (!saveRes.ok) {
@@ -402,6 +458,7 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
         onUploaded({ ...saved.data, _source: "match" });
         setTitle(""); setMatchDate(""); setOpponent(""); setCompetition(""); setFile(null);
         if (fileRef.current) fileRef.current.value = "";
+        setThumbState("idle");
         setOpen(false);
       }
     } catch (err) {
@@ -468,6 +525,13 @@ function UploadForm({ token, onUploaded }: { token: string | null; onUploaded: (
             <div style={{ height: "100%", width: `${progress}%`, backgroundColor: "#1a5c2a", transition: "width 0.3s" }} />
           </div>
           <p style={{ fontSize: 12, color: "#6b7280", margin: "6px 0 0" }}>Uploading… {progress}%</p>
+          {thumbState !== "idle" && (
+            <p style={{ fontSize: 11, margin: "4px 0 0", color: thumbState === "ready" ? "#1a5c2a" : "#9ca3af" }}>
+              {thumbState === "generating" && "Generating thumbnail (optional)…"}
+              {thumbState === "ready"      && "✓ Thumbnail ready"}
+              {thumbState === "skipped"    && "Thumbnail skipped — will use default icon"}
+            </p>
+          )}
         </div>
       )}
 

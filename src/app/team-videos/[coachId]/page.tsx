@@ -29,6 +29,7 @@ interface MatchVideo {
   competition: string | null;
   arena_post_id: string;
   view_count: number;
+  thumbnail_url: string | null;
 }
 
 function timeAgo(iso: string): string {
@@ -194,9 +195,14 @@ function VideoCard({ video, token }: { video: MatchVideo; token: string | null }
       onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#1a5c2a"; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "#e5e7eb"; }}
     >
-      {/* Play thumbnail */}
-      <div style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: "#1a3d26", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Play size={20} color="#c8962a" fill="#c8962a" />
+      {/* Play thumbnail or poster image */}
+      <div style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: "#1a3d26", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", position: "relative" }}>
+        {video.thumbnail_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={video.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <Play size={20} color="#c8962a" fill="#c8962a" />
+        )}
       </div>
 
       {/* Info */}
