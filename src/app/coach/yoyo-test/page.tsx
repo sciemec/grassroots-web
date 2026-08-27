@@ -165,7 +165,7 @@ export default function CoachYoyoTestPage() {
         },
         body: JSON.stringify({
           player_user_id: selectedPlayerId,
-          attribute_code: "yoyo_ir1",
+          attribute_code: "aerobic_endurance",
           raw_value: dist,
           unit: "metres",
           measured_at: new Date(testedAt).toISOString(),
