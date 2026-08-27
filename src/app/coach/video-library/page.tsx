@@ -299,6 +299,9 @@ function MediaCard({ item, onDelete }: { item: MediaItem; onDelete: (id: string)
             {item.size_bytes ? ` · ${formatSize(item.size_bytes)}` : ""}
             {` · ${item.view_count} view${item.view_count !== 1 ? "s" : ""}`}
           </p>
+          <p style={{ margin: "4px 0 0", fontSize: 11, color: "#9ca3af" }}>
+            Saved automatically from {ctxLabel(item.context)}
+          </p>
         </div>
         <button onClick={handleDelete} disabled={deleting} title="Delete"
           style={{ background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 4, flexShrink: 0 }}>
