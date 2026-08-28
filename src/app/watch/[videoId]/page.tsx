@@ -15,6 +15,7 @@ interface MatchVideo {
   opponent: string | null;
   competition: string | null;
   video_url: string;
+  thumbnail_url: string | null;
   arena_post_id: string | null;
   view_count: number;
   coach_name?: string;
@@ -160,6 +161,7 @@ export default function WatchMatchVideoPage() {
                   controls
                   autoPlay
                   src={video.video_url}
+                  poster={video.thumbnail_url ?? undefined}
                   style={{ width: "100%", display: "block", borderRadius: 12, backgroundColor: "#000", maxHeight: 480 }}
                 />
               ) : (

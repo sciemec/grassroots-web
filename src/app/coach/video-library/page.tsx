@@ -138,6 +138,7 @@ function MatchVideoCard({
           body: parts.join(" · "),
           post_type: "standard",
           video_url: video.video_url,
+          thumbnail_url: video.thumbnail_url ?? null,
           metadata: {
             match_video_id: video.id,
             watch_url: `${window.location.origin}/watch/${video.id}`,
