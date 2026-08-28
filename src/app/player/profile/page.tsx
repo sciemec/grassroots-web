@@ -20,6 +20,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
+import { PlayerGamificationPanel } from "@/components/player/PlayerGamificationPanel";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
 import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
@@ -533,6 +534,9 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               <p className="text-sm text-muted-foreground">Manage your public profile and scout visibility</p>
             </div>
           </div>
+
+          {/* Gamification Panel — XP, streak, radar chart */}
+          <PlayerGamificationPanel />
 
           {/* Avatar + verification badge */}
           <div className="mb-6 flex items-center gap-5">
