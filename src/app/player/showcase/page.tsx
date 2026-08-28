@@ -68,7 +68,7 @@ function adaptMediaToClip(m: Record<string, unknown>): ShowcaseClip {
     position_fit:     Array.isArray(meta.position_fit) ? (meta.position_fit as string[]) : [],
     scout_note:       String(fb.scout_note ?? ""),
     development_flag: String(fb.improvements ?? meta.development_flag ?? ""),
-    open_for_scouting: m.visibility === "scout_visible",
+    open_for_scouting: m.visibility === "public" || m.visibility === "scout_visible",
     view_count:       Number(m.view_count ?? 0),
     created_at:       String(m.created_at ?? ""),
   };
@@ -119,7 +119,8 @@ export default function ShowcasePage() {
   const [phase, setPhase]               = useState<Phase>("idle");
   const [progress, setProgress]         = useState(0);
   const [errorMsg, setErrorMsg]         = useState("");
-  const [shareClipId, setShareClipId]   = useState<string | null>(null);
+  const [shareClipId, setShareClipId]     = useState<string | null>(null);
+  const [uploadVisibility, setUploadVisibility] = useState<"private" | "team" | "public">("private");
   const [gateProbing, setGateProbing]   = useState(false);
   const [gateStrategy, setGateStrategy] = useState<UploadStrategyResult | null>(null);
 
@@ -163,6 +164,7 @@ export default function ShowcasePage() {
     setPhase("idle");
     setProgress(0);
     setErrorMsg("");
+    setUploadVisibility("private");
     setGateProbing(false);
     setGateStrategy(null);
   };
@@ -386,7 +388,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
         position_fit:     analysis.position_fit,
         scout_note:       analysis.scout_note,
         development_flag: analysis.development_flag,
-        open_for_scouting: true,
+        open_for_scouting: uploadVisibility === "public",
         view_count:       0,
         created_at:       new Date().toISOString(),
       };
@@ -398,7 +400,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
           media_type: "video",
           title:      `${selectedSkill} showcase`,
           context:    "showcase",
-          visibility: "scout_visible",
+          visibility: uploadVisibility,
           metadata: {
             skill_type:       selectedSkill,
             ai_rating:        analysis.skill_rating,
@@ -430,7 +432,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
       );
       setPhase("error");
     }
-  }, [selectedSkill, user, clips]);
+  }, [selectedSkill, user, clips, uploadVisibility]);
 
   // ── Gate wrapper ───────────────────────────────────────────────────────────
 
@@ -462,7 +464,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
     try {
       const clip = updated.find((c) => c.id === clipId);
       await api.patch(`/media/${clipId}`, {
-        visibility: clip?.open_for_scouting ? "scout_visible" : "private",
+        visibility: clip?.open_for_scouting ? "public" : "private",
       });
     } catch { /* localStorage updated */ }
   };
@@ -671,6 +673,37 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                     }}
                   />
 
+                  {/* Visibility picker */}
+                  <div className="mt-4">
+                    <p className="mb-2 text-sm font-medium text-[#f0b429]">Who can see this clip?</p>
+                    <div className="flex items-center rounded-lg border border-[#f0b429]/20 overflow-hidden bg-[#f0b429]/5 w-fit">
+                      {(["private", "team", "public"] as const).map((v, i) => {
+                        const labels = { private: "🔒 Private", team: "🔗 Team", public: "🌍 Public" };
+                        const active = uploadVisibility === v;
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setUploadVisibility(v)}
+                            className="px-3 py-2 text-xs font-bold transition-colors"
+                            style={{
+                              background: active ? "#f0b429" : "transparent",
+                              color: active ? "#1a3a1a" : "#9ca3af",
+                              borderRight: i < 2 ? "1px solid rgba(240,180,41,0.2)" : undefined,
+                            }}
+                          >
+                            {labels[v]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {uploadVisibility === "private" && "Only you can see this clip."}
+                      {uploadVisibility === "team" && "Anyone with the link can watch."}
+                      {uploadVisibility === "public" && "Visible in scout discovery feeds."}
+                    </p>
+                  </div>
+
                   {errorMsg && (
                     <p className="mt-2 text-xs text-red-400">{errorMsg}</p>
                   )}
@@ -711,8 +744,8 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
                                   }
                                 }
                               } catch { /* use fallback */ }
-                              const newClip: ShowcaseClip = { id: Date.now().toString(), skill_type: selectedSkill!, video_url: "", ai_rating: analysis.skill_rating, top_strength: analysis.top_strength, position_fit: analysis.position_fit, scout_note: analysis.scout_note, development_flag: analysis.development_flag, open_for_scouting: true, view_count: 0, created_at: new Date().toISOString() };
-                              try { const saved = await api.post("/media", { r2_key: `local/showcase/${Date.now()}`, r2_url: fileUri, media_type: "video", title: `${selectedSkill} showcase`, context: "showcase", visibility: "scout_visible", metadata: { skill_type: selectedSkill, ...analysis } }); newClip.id = saved.data?.data?.id ?? saved.data?.id ?? newClip.id; } catch { /* ok */ }
+                              const newClip: ShowcaseClip = { id: Date.now().toString(), skill_type: selectedSkill!, video_url: "", ai_rating: analysis.skill_rating, top_strength: analysis.top_strength, position_fit: analysis.position_fit, scout_note: analysis.scout_note, development_flag: analysis.development_flag, open_for_scouting: uploadVisibility === "public", view_count: 0, created_at: new Date().toISOString() };
+                              try { const saved = await api.post("/media", { r2_key: `local/showcase/${Date.now()}`, r2_url: fileUri, media_type: "video", title: `${selectedSkill} showcase`, context: "showcase", visibility: uploadVisibility, metadata: { skill_type: selectedSkill, ...analysis } }); newClip.id = saved.data?.data?.id ?? saved.data?.id ?? newClip.id; } catch { /* ok */ }
                               const updated = [newClip, ...clips];
                               setClips(updated);
                               saveLocalClips(updated);

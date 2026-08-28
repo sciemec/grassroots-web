@@ -13,7 +13,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/ap
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type VideoVisibility = "private" | "link_only" | "public";
+type VideoVisibility = "private" | "team" | "public";
 
 interface MatchVideo {
   id: string;
@@ -43,9 +43,9 @@ async function generateThumbnailSafe(file: File): Promise<Blob | null> {
 }
 
 const VISIBILITY_CONFIG: Record<VideoVisibility, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
-  private:   { label: "Private",   icon: <Lock   size={10} />, color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
-  link_only: { label: "Link Only", icon: <Link2  size={10} />, color: "#1a5c2a", bg: "#f0fdf4", border: "#bbf7d0" },
-  public:    { label: "Public",    icon: <Globe  size={10} />, color: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
+  private: { label: "Private", icon: <Lock  size={10} />, color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
+  team:    { label: "Team",    icon: <Link2 size={10} />, color: "#1a5c2a", bg: "#f0fdf4", border: "#bbf7d0" },
+  public:  { label: "Public",  icon: <Globe size={10} />, color: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -106,6 +106,7 @@ function VideoCard({
         body: JSON.stringify({
           body: parts.join(" · "),
           post_type: "standard",
+          visibility: "team",
           video_url: video.video_url,
           metadata: {
             match_video_id: video.id,
@@ -200,7 +201,7 @@ function VideoCard({
             )}
             {/* Visibility selector */}
             <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 ml-auto">
-              {(["private", "link_only", "public"] as VideoVisibility[]).map((v) => {
+              {(["private", "team", "public"] as VideoVisibility[]).map((v) => {
                 const cfg = VISIBILITY_CONFIG[v];
                 const active = video.visibility === v;
                 return (
@@ -332,6 +333,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
   const [opponent,    setOpponent]    = useState("");
   const [competition, setCompetition] = useState("");
   const [file,        setFile]        = useState<File | null>(null);
+  const [visibility,  setVisibility]  = useState<VideoVisibility>("team");
   const [uploading,   setUploading]   = useState(false);
   const [progress,    setProgress]    = useState(0);
   const [error,       setError]       = useState("");
@@ -437,6 +439,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
           thumbnail_url: thumbnailUrl || null,
           r2_key:        r2Key        || null,
           duration_seconds: null,
+          visibility,
         }),
       });
 
@@ -455,6 +458,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
         onUploaded(saved.data as MatchVideo);
         setTitle(""); setMatchDate(""); setOpponent(""); setCompetition("");
         setFile(null);
+        setVisibility("team");
         setThumbState("idle");
         if (fileRef.current) fileRef.current.value = "";
         setOpen(false);
@@ -534,6 +538,37 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
           />
         </div>
+      </div>
+
+      {/* Visibility picker */}
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Who can see this video?</label>
+        <div className="flex items-center gap-0 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 w-fit">
+          {(["private", "team", "public"] as VideoVisibility[]).map((v) => {
+            const cfg = VISIBILITY_CONFIG[v];
+            const active = visibility === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setVisibility(v)}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-colors"
+                style={{
+                  background: active ? cfg.bg : "transparent",
+                  color:      active ? cfg.color : "#9ca3af",
+                  borderRight: v !== "public" ? "1px solid #e5e7eb" : undefined,
+                }}
+              >
+                {cfg.icon} {cfg.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-gray-400 mt-1">
+          {visibility === "private" && "Only you can see this video."}
+          {visibility === "team"    && "Anyone with the link can watch (share with parents)."}
+          {visibility === "public"  && "Visible in public discovery feeds."}
+        </p>
       </div>
 
       <div>
