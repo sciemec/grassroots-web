@@ -1,7 +1,7 @@
 // Grassroots Sport Pro — Service Worker v2
 // Uses native Cache API only — NO CDN imports, works fully offline.
 // Bump CACHE_VERSION on every deployment to bust stale caches.
-const CACHE_VERSION = "v20260506-1";
+const CACHE_VERSION = "v20260828-1";
 
 const STATIC_CACHE = `gs-static-${CACHE_VERSION}`;   // Next.js hashed JS/CSS chunks
 const PAGES_CACHE  = `gs-pages-${CACHE_VERSION}`;    // HTML shells for hub pages
