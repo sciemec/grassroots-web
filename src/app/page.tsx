@@ -1,212 +1,23 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { Award, Zap, ChevronRight, Radio, Users } from "lucide-react";
+import { PublicNavbar } from "@/components/layout/public-navbar";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
 const PublicVideoGrid  = dynamic(() => import("@/components/home/PublicVideoGrid"),   { ssr: false });
-import {
-  Award, Zap, MapPin, Users, Globe, ChevronRight,
-  Radio, ArrowRight, Camera, Dumbbell, IdCard,
-  Share2, Globe2,
-} from "lucide-react";
-import { PublicNavbar } from "@/components/layout/public-navbar";
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Types
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-interface LeaderboardAthlete {
-  id:       string;
-  name:     string;
-  sport:    string;
-  province: string;
-  score:    number;
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Constants
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const GRS_GREEN = "#1c3d22";
-const GRS_GOLD  = "#c8962a";
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// CoreGoals â€” Identify Â· Nurture Â· Market (with WORKING links)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function CoreGoals() {
-  return (
-    <section className="py-16 px-4" style={{ background: GRS_GREEN }}>
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <div
-            className="text-xs font-medium tracking-widest uppercase mb-2"
-            style={{ color: "rgba(255,255,255,0.5)" }}
-          >
-            What GrassRoots Sports does
-          </div>
-          <h2 className="text-3xl font-black text-white">
-            Identify. Nurture. Market.
-          </h2>
-          <p className="text-white/60 text-sm mt-3 max-w-xl mx-auto">
-            Every feature on the platform serves one of these three goals.
-            Geography should not determine a player&apos;s destiny.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {[
-            {
-              number:  "01",
-              title:   "Identify",
-              color:   GRS_GOLD,
-              desc:    "Six athletic tests run with a single phone â€” no equipment, no timing gates. AI-powered AQ scoring benchmarks every player against Zimbabwe-calibrated norms.",
-              bullets: [
-                "Jump, sprint, balance, reaction, endurance, ball mastery",
-                "AQ score vs age-group norms",
-                "Position match scores for all 5 positions",
-              ],
-              link: "/player/talent-id",
-              icon: <Camera size={20} />,
-              cta:  "Take your test â†’",
-            },
-            {
-              number:  "02",
-              title:   "Nurture",
-              color:   "#4ade80",
-              desc:    "125 structured drills unlock as players improve. THUTO AI coaches boys and Amara coaches girls. Weekly DQ tracking shows trajectory, not just snapshots.",
-              bullets: [
-                "Drill curriculum from EFL, Costa Rica U14, France U17",
-                "THUTO and Amara coaching on web + WhatsApp",
-                "Technique degradation score under fatigue",
-              ],
-              link: "/player/drills",
-              icon: <Dumbbell size={20} />,
-              cta:  "See your drills â†’",
-            },
-            {
-              number:  "03",
-              title:   "Market",
-              color:   "#60a5fa",
-              desc:    "Two ways to get discovered: Your personal Talent Passport and the Arena social network. Share videos, connect with scouts, and build your brand.",
-              bullets: [
-                "ðŸŽ« Talent Passport â€” Verified profile with QR code",
-                "ðŸ“¹ Arena â€” Post videos, get noticed by scouts",
-                "ðŸ¤ Connect directly with clubs and academies",
-              ],
-              links: [
-                { href: "/player/talent-id", label: "Talent Passport", icon: <IdCard size={14} />, color: "#60a5fa" },
-                { href: "/arena",            label: "Arena Network",   icon: <Globe2 size={14} />, color: "#a78bfa" },
-              ],
-              icon: <Share2 size={20} />,
-            },
-          ].map((g) => (
-            <div
-              key={g.title}
-              className="rounded-2xl p-6 border border-[#f0b429]/10 hover:border-[#f0b429]/30 transition-all duration-300"
-              style={{ background: "rgba(255,255,255,0.05)" }}
-            >
-              <div className="text-4xl font-black mb-3 opacity-30 text-white">
-                {g.number}
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 rounded-xl bg-white/10">
-                  {g.icon}
-                </div>
-                <h3
-                  className="text-xl font-black text-white"
-                  style={{ color: g.color }}
-                >
-                  {g.title}
-                </h3>
-              </div>
-              <p className="text-sm text-white/60 leading-relaxed mb-4">
-                {g.desc}
-              </p>
-              <ul className="space-y-1.5 mb-5">
-                {g.bullets.map((b) => (
-                  <li key={b} className="flex items-start gap-2 text-xs text-white/70">
-                    <span style={{ color: g.color }} className="mt-0.5">âœ“</span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {"links" in g && g.links ? (
-                <div className="flex gap-3">
-                  {g.links.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="flex-1 inline-flex items-center justify-center gap-2 text-xs font-bold px-3 py-2 rounded-full transition-all hover:opacity-80"
-                      style={{ background: link.color, color: "#fff" }}
-                    >
-                      {link.icon}
-                      {link.label}
-                      <ChevronRight size={10} />
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <Link
-                  href={"link" in g ? g.link : "#"}
-                  className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full transition-all hover:opacity-80"
-                  style={{ background: g.color, color: "#fff" }}
-                >
-                  {"cta" in g ? g.cta : ""}
-                  <ChevronRight size={12} />
-                </Link>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Main page component
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function GrassrootsSportsLanding() {
-  const [activityWire,   setActivityWire]   = useState<string[]>([]);
-  const [wireIndex,      setWireIndex]      = useState(0);
-  const [topTalents,     setTopTalents]     = useState<LeaderboardAthlete[]>([]);
-  const [talentsLoading, setTalentsLoading] = useState(true);
+  const [activityWire, setActivityWire] = useState<string[]>([]);
+  const [wireIndex,    setWireIndex]    = useState(0);
 
   useEffect(() => {
-    async function fetchLandingMetrics() {
-      try {
-        const [wireRes, leaderboardRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticker-wire`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/talent-leaderboard?limit=3`),
-        ]);
-
-        if (wireRes.ok) {
-          const wireData = await wireRes.json();
-          if (wireData.ticker_items) setActivityWire(wireData.ticker_items);
-        }
-
-        if (leaderboardRes.ok) {
-          const leaderboardData = await leaderboardRes.json();
-          const transformed = (leaderboardData.data || []).map(
-            (item: { user_id: string; initials?: string; sport?: string; province?: string; percentile?: number }) => ({
-              id:       item.user_id,
-              name:     item.initials  || "Athlete",
-              sport:    item.sport     || "Multi-sport",
-              province: item.province  || "Zimbabwe",
-              score:    item.percentile || 0,
-            })
-          );
-          setTopTalents(transformed);
-        }
-      } catch (err) {
-        console.error("Landing metrics fetch error:", err);
-      } finally {
-        setTalentsLoading(false);
-      }
-    }
-    fetchLandingMetrics();
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticker-wire`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.ticker_items) setActivityWire(data.ticker_items); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -220,10 +31,10 @@ export default function GrassrootsSportsLanding() {
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c3d22] selection:bg-[#f0b429]/30 antialiased font-sans">
 
-      {/* â”€â”€ Navigation â”€â”€ */}
+      {/* Navigation */}
       <PublicNavbar />
 
-      {/* â”€â”€ Live activity wire â”€â”€ */}
+      {/* Live activity wire */}
       {activityWire.length > 0 && (
         <div className="bg-[#fffbeb] border-b border-amber-200 py-2.5 px-4 overflow-hidden">
           <div className="max-w-6xl mx-auto flex items-center gap-2">
@@ -237,7 +48,7 @@ export default function GrassrootsSportsLanding() {
         </div>
       )}
 
-      {/* â”€â”€ Hero â”€â”€ */}
+      {/* Hero */}
       <header className="relative overflow-hidden bg-gradient-to-br from-[#e2f0d9] via-[#f0f9e8] to-[#f4f2ee] border-b border-[#1c3d22]/10 py-16 lg:py-20 px-6 text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 bg-white/80 border border-[#1c3d22]/10 rounded-full px-4 py-1.5 mb-2 shadow-3xs">
@@ -253,7 +64,7 @@ export default function GrassrootsSportsLanding() {
           <p className="text-sm sm:text-base font-semibold text-zinc-600 max-w-2xl mx-auto leading-relaxed">
             AI-powered athletic scoring, personalised training curricula, and a
             digital Talent Passport built to get African grassroots athletes
-            discovered by scouts â€” with nothing but a smartphone.
+            discovered by scouts &mdash; with nothing but a smartphone.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
             <Link
@@ -272,271 +83,14 @@ export default function GrassrootsSportsLanding() {
         </div>
       </header>
 
-      {/* â”€â”€ Core goals â”€â”€ */}
-      <CoreGoals />
-
-      {/* â”€â”€ Video upload â”€â”€ */}
+      {/* Public athlete video grid */}
       <PublicVideoGrid />
 
-      <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-12">
-
-        {/* â”€â”€ Platform quick-links â”€â”€ */}
-        <section className="space-y-2">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-            Platform quick-links
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Link
-              href="/player/talent-id"
-              className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-amber-50 text-[#c8962a]">
-                  <Camera size={16} />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">
-                    Biometric Testing
-                  </h4>
-                  <p className="text-[11px] text-gray-400 font-semibold truncate">
-                    6 tests Â· AQ score Â· position profile
-                  </p>
-                </div>
-              </div>
-              <ArrowRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors shrink-0" />
-            </Link>
-
-            <Link
-              href="/player/drills"
-              className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700">
-                  <Dumbbell size={16} />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide">
-                    Drill Library
-                  </h4>
-                  <p className="text-[11px] text-gray-400 font-semibold truncate">
-                    125 drills Â· unlocks as you improve
-                  </p>
-                </div>
-              </div>
-              <ArrowRight size={14} className="text-gray-300 group-hover:text-[#1c3d22] transition-colors shrink-0" />
-            </Link>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                href="/player/talent-id"
-                className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="p-2 rounded-xl bg-green-50 text-green-700">
-                    <IdCard size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-[10px] font-black text-gray-900 uppercase">Passport</h4>
-                  </div>
-                </div>
-                <ArrowRight size={12} className="text-gray-300 group-hover:text-[#1c3d22]" />
-              </Link>
-              <Link
-                href="/arena"
-                className="bg-white border border-gray-200 hover:border-[#1c3d22] p-4 rounded-2xl flex items-center justify-between group shadow-3xs transition-all"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
-                    <Globe2 size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-[10px] font-black text-gray-900 uppercase">Arena</h4>
-                  </div>
-                </div>
-                <ArrowRight size={12} className="text-gray-300 group-hover:text-[#1c3d22]" />
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* â”€â”€ Sport grid â”€â”€ */}
-        <section className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 space-y-6 shadow-3xs">
-          <div className="text-center max-w-md mx-auto space-y-1">
-            <Globe size={28} className="mx-auto text-[#1c3d22]" />
-            <h2 className="text-xl font-black uppercase tracking-tight text-gray-900">
-              All Sports. One Platform.
-            </h2>
-            <p className="text-xs text-gray-400 font-semibold">
-              Our scoring engine maps athletic performance across multi-sport streams.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            {["Football", "Athletics", "Rugby", "Netball", "Basketball", "Swimming", "Tennis", "Boxing"].map(
-              (sport) => (
-                <div
-                  key={sport}
-                  className="p-3.5 bg-[#f0f9e8]/50 text-[#1c3d22] border border-[#e2f0d9] font-black text-xs rounded-xl uppercase tracking-wide"
-                >
-                  {sport}
-                </div>
-              )
-            )}
-          </div>
-        </section>
-
-        {/* â”€â”€ Leaderboard â”€â”€ */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <div>
-              <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">
-                Top National Talent
-              </h2>
-              <p className="text-xs text-gray-400 font-semibold">
-                Verified profiles receiving active scout evaluations
-              </p>
-            </div>
-            <Link
-              href="/talent-leaderboard"
-              className="text-[#1c3d22] hover:text-emerald-800 font-black text-xs uppercase tracking-wider flex items-center gap-0.5 underline"
-            >
-              Full leaderboard <ChevronRight size={14} />
-            </Link>
-          </div>
-
-          {talentsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-gray-100 rounded-2xl animate-pulse border" />
-              ))}
-            </div>
-          ) : topTalents.length === 0 ? (
-            <div className="text-center py-6 border border-dashed text-xs text-gray-400 italic rounded-2xl bg-white">
-              No leaderboard entries yet.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {topTalents.map((athlete, index) => (
-                <div
-                  key={athlete.id}
-                  className="bg-white rounded-2xl p-4 border border-gray-200 flex items-center justify-between gap-4 shadow-3xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-[#e2f0d9] flex items-center justify-center text-[#1c3d22] font-black text-xs border border-[#1c3d22]/10">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <h3 className="font-black text-gray-900 text-sm uppercase">
-                        {athlete.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase mt-0.5">
-                        <span>{athlete.sport}</span>
-                        <span>â€¢</span>
-                        <MapPin size={10} className="text-gray-300" />
-                        <span>{athlete.province}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-base font-black text-[#1c3d22] leading-none">
-                      {athlete.score}th
-                    </p>
-                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">
-                      Percentile
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-      </div>
-
-      {/* â”€â”€ AI Drill Analysis section â”€â”€ */}
-      <section className="bg-white border-t border-gray-100 py-14 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <span
-              className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 inline-block"
-              style={{ background: "#f0fdf4", color: "#1c3d22" }}
-            >
-              Pro Feature Â· 1 Free Trial
-            </span>
-            <h2 className="text-2xl font-black text-gray-900 mt-2 mb-2">
-              AI Drill Analysis â€” All 10 Sports
-            </h2>
-            <p className="text-sm text-gray-500 max-w-xl mx-auto">
-              Upload a short drill video. Gemini AI watches the full clip and gives you
-              professional coaching feedback in seconds â€” technique, posture, timing.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-5 gap-3 mb-8">
-            {[
-              { emoji: "âš½", label: "Football"   },
-              { emoji: "ðŸ‰", label: "Rugby"      },
-              { emoji: "ðŸƒ", label: "Athletics"  },
-              { emoji: "ðŸ", label: "Netball"    },
-              { emoji: "ðŸ€", label: "Basketball" },
-              { emoji: "ðŸ", label: "Cricket"    },
-              { emoji: "ðŸŠ", label: "Swimming"   },
-              { emoji: "ðŸŽ¾", label: "Tennis"     },
-              { emoji: "ðŸ", label: "Volleyball" },
-              { emoji: "ðŸ‘", label: "Hockey"     },
-            ].map((s) => (
-              <a
-                key={s.label}
-                href="/player/analyse"
-                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border border-gray-100 hover:border-[#1c3d22] hover:bg-[#f0fdf4] transition-all text-center group"
-              >
-                <span className="text-2xl leading-none">{s.emoji}</span>
-                <span className="text-[10px] font-black text-gray-500 group-hover:text-[#1c3d22] uppercase tracking-wide leading-tight">
-                  {s.label}
-                </span>
-              </a>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            {[
-              { step: "1", label: "Select Sport & Drill", desc: "Pick from 10 sports and your specific drill type" },
-              { step: "2", label: "Upload Short Video",   desc: "Film yourself doing the drill â€” under 60 seconds" },
-              { step: "3", label: "Get AI Coaching",      desc: "Gemini watches the full clip and coaches you instantly" },
-            ].map((item) => (
-              <div key={item.step} className="text-center p-4 rounded-2xl bg-gray-50">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white mx-auto mb-2"
-                  style={{ background: "#1c3d22" }}
-                >
-                  {item.step}
-                </div>
-                <p className="text-xs font-black text-gray-800 mb-1">{item.label}</p>
-                <p className="text-[11px] text-gray-500">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <a
-              href="/player/analyse"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-black text-white transition hover:opacity-90"
-              style={{ background: "#1c3d22" }}
-            >
-              âš¡ Try AI Drill Analysis Free
-            </a>
-            <p className="text-[11px] text-gray-400 mt-2">
-              1 free analysis included Â· No credit card required
-            </p>
-          </div>
-        </div>
-      </section>
-
-
-      {/* â”€â”€ Footer â”€â”€ */}
+      {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-8 text-center px-4">
         <Award size={32} className="mx-auto text-[#1c3d22] mb-2" />
         <p className="text-[10px] font-black text-gray-800 uppercase tracking-widest">
-          Grassroots Sports Development Network Â© 2026 Â· Identify, Nurture, and Market Talent
+          Grassroots Sports Development Network &copy; 2026 &middot; Identify, Nurture, and Market Talent
         </p>
         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1">
           Zimbabwe&apos;s First AI-Powered Multi-Sport Talent Discovery Platform
