@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 
 const ThutoChatVisitor = dynamic(() => import("@/components/thuto/ThutoChatVisitor"), { ssr: false });
+const PublicVideoGrid  = dynamic(() => import("@/components/home/PublicVideoGrid"),   { ssr: false });
 import {
   Award, Zap, MapPin, Users, Globe, ChevronRight,
   Radio, ArrowRight, Camera, Dumbbell, IdCard,
@@ -528,7 +529,7 @@ export default function GrassrootsSportsLanding() {
       <CoreGoals />
 
       {/* â”€â”€ Video upload â”€â”€ */}
-      <VideoUpload />
+      <PublicVideoGrid />
 
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-12">
 
