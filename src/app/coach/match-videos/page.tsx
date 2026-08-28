@@ -106,7 +106,7 @@ function VideoCard({
         body: JSON.stringify({
           body: parts.join(" · "),
           post_type: "standard",
-          visibility: "team",
+          visibility: "public",
           video_url: video.video_url,
           metadata: {
             match_video_id: video.id,
