@@ -90,6 +90,7 @@ const nextConfig = {
 
   async headers() {
     return [
+      // Security headers on every route
       {
         source: "/(.*)",
         headers: [
@@ -100,6 +101,26 @@ const nextConfig = {
           { key: "Permissions-Policy",      value: "camera=(self), microphone=(), geolocation=()" },
         ],
       },
+      // Service worker — must never be served from cache so the browser
+      // always byte-compares the freshly deployed file and triggers the
+      // update flow when CACHE_VERSION has changed.
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      // Dynamic hub pages — user-generated content, feeds, dashboards.
+      // Must not be cached by the browser or any intermediary proxy so
+      // users always receive fresh data after a deploy.
+      {
+        source: "/(player|coach|scout|fan|admin|arena|analyst|academy|verify)(.*)",
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+        ],
+      },
+      // COOP/COEP required for SharedArrayBuffer (video encoding pages)
       {
         source: "/(video-studio|streaming/broadcast)(.*)",
         headers: [
