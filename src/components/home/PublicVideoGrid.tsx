@@ -230,7 +230,7 @@ export default function PublicVideoGrid() {
 
         {/* Grid */}
         {loading ? (
-          <div className="grid grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
             {Array.from({ length: 12 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -246,7 +246,7 @@ export default function PublicVideoGrid() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
             {tiles.map((tile) => (
               <VideoCard key={tile.id} tile={tile} />
             ))}
