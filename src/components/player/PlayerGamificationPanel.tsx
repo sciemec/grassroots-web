@@ -195,7 +195,7 @@ export function PlayerGamificationPanel() {
             >
               {level.label}
             </span>
-            <span className="text-[11px] text-white/50 font-medium">
+            <span className="text-xs text-white/50 font-medium">
               {gam.xpTotal.toLocaleString()} XP
             </span>
           </div>
@@ -237,13 +237,13 @@ export function PlayerGamificationPanel() {
             <p className="text-[10px] text-white/30">Tap a spoke to expand</p>
           </div>
 
-          <div style={{ height: 200 }}>
+          <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.08)" />
                 <PolarAngleAxis
                   dataKey="subject"
-                  tick={{ fill: "#c8edd0", fontSize: 10, fontWeight: 600 }}
+                  tick={{ fill: "#c8edd0", fontSize: 12, fontWeight: 600 }}
                   onClick={(e) => {
                     const name = (e as { value?: string }).value ?? null;
                     setExpanded(expanded === name ? null : name);
@@ -269,18 +269,18 @@ export function PlayerGamificationPanel() {
           {/* Expanded category detail */}
           {expanded && expandedStatuses.length > 0 && (
             <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">{expanded}</p>
+              <p className="text-xs font-black uppercase tracking-widest text-white/40 mb-2">{expanded}</p>
               {expandedStatuses.map((s) => (
                 <div key={s.code} className="flex items-center justify-between">
-                  <span className="text-xs text-white/70">{s.display_name}</span>
+                  <span className="text-sm text-white/70">{s.display_name}</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <div className="w-24 h-2 rounded-full bg-white/10 overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{ width: `${s.current_percentile}%`, background: s.current_percentile >= 70 ? "#16a34a" : s.current_percentile >= 40 ? "#f0b429" : "#dc2626" }}
                       />
                     </div>
-                    <span className="text-[11px] font-bold text-white/60 w-8 text-right">{s.current_percentile}%</span>
+                    <span className="text-xs font-bold text-white/60 w-8 text-right">{s.current_percentile}%</span>
                     {s.trend === "improving"  && <TrendingUp   className="w-3 h-3 text-green-400"  />}
                     {s.trend === "declining"  && <TrendingDown className="w-3 h-3 text-red-400"    />}
                     {(s.trend === "plateau" || s.trend === "stable") && <Minus className="w-3 h-3 text-white/30" />}
@@ -291,37 +291,37 @@ export function PlayerGamificationPanel() {
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-center">
-          <p className="text-xs text-white/40 font-medium">No physical attributes measured yet.</p>
-          <a href="/player/attributes" className="text-xs text-[#f0b429] mt-1 block font-semibold">
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-center">
+          <p className="text-sm text-white/40 font-medium">No physical attributes measured yet.</p>
+          <a href="/player/attributes" className="text-sm text-[#f0b429] mt-1 block font-semibold">
             Log your first measurement →
           </a>
         </div>
       )}
 
       {/* ── Row 3: Quick stats + Today's mission ──────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
         {/* Quick stats */}
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm px-3 py-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Quick Stats</p>
-          <div className="space-y-1.5">
+          <p className="text-xs font-black uppercase tracking-widest text-white/40 mb-2">Quick Stats</p>
+          <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-[11px] text-white/50">Sessions</span>
-              <span className="text-[11px] font-bold text-white/80">{gam.totalSessions}</span>
+              <span className="text-sm text-white/50">Sessions</span>
+              <span className="text-sm font-bold text-white/80">{gam.totalSessions}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[11px] text-white/50">Total XP</span>
-              <span className="text-[11px] font-bold" style={{ color: level.colour }}>{gam.xpTotal.toLocaleString()}</span>
+              <span className="text-sm text-white/50">Total XP</span>
+              <span className="text-sm font-bold" style={{ color: level.colour }}>{gam.xpTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[11px] text-white/50">Streak</span>
-              <span className="text-[11px] font-bold text-orange-400">🔥 {gam.streak}</span>
+              <span className="text-sm text-white/50">Streak</span>
+              <span className="text-sm font-bold text-orange-400">🔥 {gam.streak}</span>
             </div>
             {gam.dq > 0 && (
               <div className="flex justify-between">
-                <span className="text-[11px] text-white/50">DQ Score</span>
-                <span className="text-[11px] font-bold text-white/80">{gam.dq.toFixed(1)}</span>
+                <span className="text-sm text-white/50">DQ Score</span>
+                <span className="text-sm font-bold text-white/80">{gam.dq.toFixed(1)}</span>
               </div>
             )}
           </div>
@@ -329,27 +329,27 @@ export function PlayerGamificationPanel() {
 
         {/* Today's mission */}
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm px-3 py-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Today&apos;s Mission</p>
+          <p className="text-xs font-black uppercase tracking-widest text-white/40 mb-2">Today&apos;s Mission</p>
           {mission ? (
             missionDone ? (
-              <div className="flex flex-col items-center justify-center h-[60px]">
-                <CheckCircle2 className="w-6 h-6 text-green-400" />
-                <p className="text-[10px] text-green-400 mt-1 font-semibold">Done!</p>
+              <div className="flex flex-col items-center justify-center py-3">
+                <CheckCircle2 className="w-7 h-7 text-green-400" />
+                <p className="text-xs text-green-400 mt-1 font-semibold">Done!</p>
               </div>
             ) : (
               <>
-                <p className="text-[11px] text-white/70 leading-snug mb-2 line-clamp-2">{mission.text}</p>
-                <div className="flex gap-1.5">
+                <p className="text-sm text-white/70 leading-snug mb-3 line-clamp-3">{mission.text}</p>
+                <div className="flex gap-2">
                   <button
                     onClick={() => handleMission("done")}
-                    className="flex-1 text-[10px] font-bold py-1 rounded-lg text-center"
+                    className="flex-1 text-xs font-bold py-2 rounded-lg text-center min-h-[36px]"
                     style={{ background: "#16a34a22", color: "#4ade80", border: "1px solid #16a34a44" }}
                   >
                     Done ✓
                   </button>
                   <button
                     onClick={() => handleMission("skip")}
-                    className="flex-1 text-[10px] font-bold py-1 rounded-lg text-center"
+                    className="flex-1 text-xs font-bold py-2 rounded-lg text-center min-h-[36px]"
                     style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.08)" }}
                   >
                     Skip
@@ -358,9 +358,9 @@ export function PlayerGamificationPanel() {
               </>
             )
           ) : (
-            <div className="flex flex-col items-center justify-center h-[60px]">
-              <p className="text-[10px] text-white/30 text-center">No active goal.</p>
-              <a href="/player/goal" className="text-[10px] text-[#f0b429] mt-1 font-semibold">Set a goal →</a>
+            <div className="flex flex-col items-center justify-center py-3">
+              <p className="text-sm text-white/30 text-center">No active goal.</p>
+              <a href="/player/goal" className="text-sm text-[#f0b429] mt-1 font-semibold">Set a goal →</a>
             </div>
           )}
         </div>

@@ -25,9 +25,8 @@ export function SwUpdateBanner() {
       const wb = new Workbox("/sw.js");
 
       // `waiting` fires when a new SW has installed and is waiting to take over.
-      // `externalwaiting` fires when a different tab triggered the install.
+      // In workbox-window v7+, `waiting` covers both same-tab and external-tab installs.
       wb.addEventListener("waiting", () => setWaiting(true));
-      wb.addEventListener("externalwaiting", () => setWaiting(true));
 
       wbRef.current = wb;
       wb.register().catch(() => {/* silently ignore — no SW support */});
