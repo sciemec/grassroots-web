@@ -75,14 +75,13 @@ function levelFromXp(xp: number) {
 // ── Radar data builder ────────────────────────────────────────────────────────
 
 const CATEGORY_LABELS: Record<string, string> = {
-  speed:        "Speed",
-  endurance:    "Endurance",
-  strength:     "Strength",
-  power:        "Power",
-  agility:      "Agility",
-  flexibility:  "Flex",
-  balance:      "Balance",
-  coordination: "Coord",
+  speed_agility:      "Speed",
+  endurance:          "Endurance",
+  strength_endurance: "Strength",
+  power:              "Power",
+  flexibility:        "Flex",
+  balance:            "Balance",
+  coordination:       "Coord",
 };
 
 function buildRadarData(statuses: AttributeStatus[]) {
