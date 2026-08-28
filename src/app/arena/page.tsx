@@ -103,6 +103,7 @@ interface Post {
   activity_type?: string;
   activity_data?: Record<string, string | number | boolean | null | undefined>;
   share_token?: string;
+  visibility?: string;
   user?: { id: string; name: string; role: string; sport?: string; province?: string };
 }
 
@@ -184,7 +185,8 @@ export default function ArenaPage() {
   const [editingPostId,  setEditingPostId]  = useState<string | null>(null);
   const [editBody,       setEditBody]       = useState("");
   const [savingEdit,     setSavingEdit]     = useState(false);
-  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [deletingPostId,  setDeletingPostId]  = useState<string | null>(null);
+  const [promotingPostId, setPromotingPostId] = useState<string | null>(null);
 
   // ── Tab state ────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"for-you" | "following" | "connections" | "videos" | "pathways">("for-you");
@@ -660,6 +662,21 @@ export default function ArenaPage() {
       setEditBody("");
     } catch { alert("Could not save edit. Please try again."); }
     setSavingEdit(false);
+  };
+
+  const handleMakePublic = async (postId: string) => {
+    setPromotingPostId(postId);
+    setPostMenuOpen(null);
+    try {
+      const res = await fetch(`${API}/arena/posts/${postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ visibility: "public" }),
+      });
+      if (!res.ok) throw new Error();
+      setPosts(prev => prev.map(p => p.id !== postId ? p : { ...p, visibility: "public" }));
+    } catch { alert("Could not update visibility. Please try again."); }
+    setPromotingPostId(null);
   };
 
   const handleShare = async (postId: string) => {
@@ -1277,6 +1294,14 @@ export default function ArenaPage() {
                                 className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-50 transition">
                                 <Pencil size={14} /> Edit
                               </button>
+                              {post.video_url && post.visibility !== "public" && (
+                                <button
+                                  onClick={() => handleMakePublic(post.id)}
+                                  disabled={promotingPostId === post.id}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 transition disabled:opacity-50">
+                                  <Globe size={14} /> {promotingPostId === post.id ? "Saving…" : "Make Public"}
+                                </button>
+                              )}
                               <button onClick={() => handleDeletePost(post.id)}
                                 disabled={isDeleting}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 transition disabled:opacity-50">
