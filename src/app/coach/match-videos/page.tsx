@@ -13,7 +13,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/ap
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type VideoVisibility = "private" | "team" | "public";
+type VideoVisibility = "private" | "link_only" | "public";
 
 interface MatchVideo {
   id: string;
@@ -44,7 +44,7 @@ async function generateThumbnailSafe(file: File): Promise<Blob | null> {
 
 const VISIBILITY_CONFIG: Record<VideoVisibility, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
   private: { label: "Private", icon: <Lock  size={10} />, color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
-  team:    { label: "Team",    icon: <Link2 size={10} />, color: "#1a5c2a", bg: "#f0fdf4", border: "#bbf7d0" },
+  link_only: { label: "Team",    icon: <Link2 size={10} />, color: "#1a5c2a", bg: "#f0fdf4", border: "#bbf7d0" },
   public:  { label: "Public",  icon: <Globe size={10} />, color: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
 };
 
@@ -201,7 +201,7 @@ function VideoCard({
             )}
             {/* Visibility selector */}
             <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 ml-auto">
-              {(["private", "team", "public"] as VideoVisibility[]).map((v) => {
+              {(["private", "link_only", "public"] as VideoVisibility[]).map((v) => {
                 const cfg = VISIBILITY_CONFIG[v];
                 const active = video.visibility === v;
                 return (
@@ -333,7 +333,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
   const [opponent,    setOpponent]    = useState("");
   const [competition, setCompetition] = useState("");
   const [file,        setFile]        = useState<File | null>(null);
-  const [visibility,  setVisibility]  = useState<VideoVisibility>("team");
+  const [visibility,  setVisibility]  = useState<VideoVisibility>("link_only");
   const [uploading,   setUploading]   = useState(false);
   const [progress,    setProgress]    = useState(0);
   const [error,       setError]       = useState("");
@@ -544,7 +544,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
       <div>
         <label className="block text-xs font-semibold text-gray-600 mb-1">Who can see this video?</label>
         <div className="flex items-center gap-0 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 w-fit">
-          {(["private", "team", "public"] as VideoVisibility[]).map((v) => {
+          {(["private", "link_only", "public"] as VideoVisibility[]).map((v) => {
             const cfg = VISIBILITY_CONFIG[v];
             const active = visibility === v;
             return (
@@ -566,7 +566,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
         </div>
         <p className="text-xs text-gray-400 mt-1">
           {visibility === "private" && "Only you can see this video."}
-          {visibility === "team"    && "Anyone with the link can watch (share with parents)."}
+          {visibility === "link_only" && "Anyone with the link can watch (share with parents)."}
           {visibility === "public"  && "Visible in public discovery feeds."}
         </p>
       </div>
