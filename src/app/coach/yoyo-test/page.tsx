@@ -157,12 +157,13 @@ export default function CoachYoyoTestPage() {
 
     // Fire-and-forget: persist result in player's attribute profile
     // Silently ignored if squad membership isn't confirmed or attribute code doesn't exist
-    if (token) {
+    const attrToken = useAuthStore.getState().token;
+    if (attrToken) {
       fetch(`${API}/coach/attribute-measurements`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${attrToken}`,
         },
         body: JSON.stringify({
           player_user_id: selectedPlayerId,
