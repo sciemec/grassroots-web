@@ -421,6 +421,8 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
 
       // Save record via Laravel
       const freshToken = useAuthStore.getState().token;
+      // eslint-disable-next-line no-console
+      console.log("[POST-submit] token tail:", freshToken?.slice(-8));
       if (!freshToken) throw new Error("Session expired — please log in again.");
 
       const saveRes = await fetch(`${API}/coach/match-videos`, {
@@ -665,9 +667,12 @@ export default function CoachMatchVideosPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
+    const freshToken = useAuthStore.getState().token;
+    if (!freshToken) return;
+    // eslint-disable-next-line no-console
+    console.log("[GET-mount] token tail:", freshToken.slice(-8));
     fetch(`${API}/coach/match-videos`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      headers: { Authorization: `Bearer ${freshToken}`, Accept: "application/json" },
     })
       .then((r) => r.json())
       .then((d) => setVideos(Array.isArray(d.data) ? d.data : []))
