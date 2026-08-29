@@ -107,7 +107,7 @@ export default function CommunityPage() {
 
   useEffect(() => {
     const token = useAuthStore.getState().token;
-    const headers: HeadersInit = token && token !== "dev-token" ? { Authorization: `Bearer ${token}` } : {};
+    const headers: HeadersInit = token && token !== "dev-token" ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {};
 
     setFeedLoading(true);
     Promise.all([
@@ -180,7 +180,7 @@ export default function CommunityPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`,
         },
         body: JSON.stringify({ followed_type: followType, followed_id: followId.trim() }),
       });

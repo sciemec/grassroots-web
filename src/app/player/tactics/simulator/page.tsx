@@ -23,7 +23,7 @@ export default function PlayerTacticsSimulatorPage() {
       }
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (res.ok) {
           const data = await res.json();
@@ -33,7 +33,7 @@ export default function PlayerTacticsSimulatorPage() {
           if (pos && user.id) {
             const chemRes = await fetch(
               `${process.env.NEXT_PUBLIC_API_URL}/chemistry/player/${user.id}/position/${pos}`,
-              { headers: { Authorization: `Bearer ${token}` } }
+              { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }
             );
             if (chemRes.ok) {
               const chemData = await chemRes.json();

@@ -91,7 +91,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!token) return;
     const loadInbox = () => {
-      fetch(`${API}/arena/inbox`, { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${API}/arena/inbox`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
         .then((r) => r.ok ? r.json() : { data: [] })
         .then((json) => setThreads(safeArray(json.data ?? json)))
         .catch(() => {})
@@ -105,7 +105,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!activeThread || !token) return;
     fetch(`${API}/arena/messages/${activeThread.other_user.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : { data: [] })
       .then((json) => setMessages(safeArray(json.data ?? json)))
@@ -126,7 +126,7 @@ export default function MessagesPage() {
     try {
       await fetch(`${API}/arena/messages/${activeThread.other_user.id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ body }),
       });
     } catch {}

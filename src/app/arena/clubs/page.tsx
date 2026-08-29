@@ -75,7 +75,7 @@ export default function ClubsPage() {
     if (sport)    params.set("sport", sport);
     if (province) params.set("province", province);
     setLoading(true);
-    fetch(`${API}/arena/clubs?${params}`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/arena/clubs?${params}`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.ok ? r.json() : { data: [] })
       .then((json) => setClubs(safeArray(json.data ?? json)))
       .catch(() => {})
@@ -87,10 +87,10 @@ export default function ClubsPage() {
     setJoining(club.id);
     try {
       if (club.is_member) {
-        await fetch(`${API}/arena/clubs/${club.id}/leave`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`${API}/arena/clubs/${club.id}/leave`, { method: "DELETE", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
         setClubs((cs) => cs.map((c) => c.id === club.id ? { ...c, is_member: false, member_count: c.member_count - 1 } : c));
       } else {
-        await fetch(`${API}/arena/clubs/${club.id}/join`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`${API}/arena/clubs/${club.id}/join`, { method: "POST", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
         setClubs((cs) => cs.map((c) => c.id === club.id ? { ...c, is_member: true, member_count: c.member_count + 1 } : c));
       }
     } catch {}

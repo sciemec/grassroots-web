@@ -23,7 +23,7 @@ export default function PlayerCoachingDashboard() {
       try {
         // Load stats
         const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/coaching/stats`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (statsRes.ok) {
           const data = await statsRes.json();
@@ -32,7 +32,7 @@ export default function PlayerCoachingDashboard() {
 
         // Load upcoming sessions
         const upcomingRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/coaching/sessions/upcoming`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (upcomingRes.ok) {
           const data = await upcomingRes.json();
@@ -41,7 +41,7 @@ export default function PlayerCoachingDashboard() {
 
         // Load recent sessions
         const recentRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/coaching/sessions/recent`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (recentRes.ok) {
           const data = await recentRes.json();
@@ -50,7 +50,7 @@ export default function PlayerCoachingDashboard() {
 
         // Load reviews
         const reviewsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/coaching/reviews`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (reviewsRes.ok) {
           const data = await reviewsRes.json();

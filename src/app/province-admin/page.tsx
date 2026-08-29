@@ -123,7 +123,7 @@ export default function ProvinceAdminPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API_URL}/province-admin/stats`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((data) => setStats(data?.data ?? data))

@@ -269,7 +269,7 @@ export default function SchoolHubPage() {
   // ── Fetch from backend, fall back to localStorage, fall back to seed ─────────
   useEffect(() => {
     const token = useAuthStore.getState().token;
-    const h = { Authorization: `Bearer ${token}` };
+    const h = { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` };
 
     const tryFetch = async <T,>(path: string, lsKey: string, setter: (v: T[]) => void, seed: T[]) => {
       // 1 — try localStorage cache
@@ -315,7 +315,7 @@ export default function SchoolHubPage() {
       const token = useAuthStore.getState().token;
       await fetch(`${API}/school/messages`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ to_subject: `Re: ${activeMsg.subject}`, body: replyBody }),
       });
     } catch {}
@@ -339,7 +339,7 @@ export default function SchoolHubPage() {
       const token = useAuthStore.getState().token;
       await fetch(`${API}/school/announcements`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ title: a.title, body: a.body, priority: a.priority }),
       });
     } catch {}

@@ -33,7 +33,7 @@ export default function AnnouncementsPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API_URL}/province-admin/announcements`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((j) => setAnnouncements(safeArray<Announcement>(j)))
@@ -54,7 +54,7 @@ export default function AnnouncementsPage() {
     try {
       const res = await fetch(`${API_URL}/province-admin/announcements`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const json = await res.json();

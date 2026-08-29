@@ -169,7 +169,7 @@ export default function PlayerAnalysisPage() {
   useEffect(() => {
     setHistory(loadHistory());
     if (!token) return;
-    fetch(`${API_URL}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API_URL}/coach/squad`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.json())
       .then((data: unknown) => {
         const raw = (data as { data?: SquadPlayer[] }).data ?? (Array.isArray(data) ? (data as SquadPlayer[]) : []);
@@ -445,7 +445,7 @@ export default function PlayerAnalysisPage() {
     try {
       await fetch(`${API_URL}/arena/posts`, {
         method:  "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body:    JSON.stringify({ body, post_type: "milestone", activity_type: "player_analysis" }),
       });
       setArenaPosted(true);

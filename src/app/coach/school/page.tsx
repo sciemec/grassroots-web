@@ -95,7 +95,7 @@ async function loadData<T>(
   // 2. Fetch fresh from API
   try {
     const res = await fetch(`${API_URL}${endpoint}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     });
     if (res.ok) {
       const json = await res.json();

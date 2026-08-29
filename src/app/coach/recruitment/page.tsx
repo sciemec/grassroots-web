@@ -255,7 +255,7 @@ export default function CoachRecruitmentPage() {
   useEffect(() => {
     if (!token) return;
     setLoadingPostings(true);
-    fetch(`${API}/arena/talent-wanted?mine=true`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/arena/talent-wanted?mine=true`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.json())
       .then((j) => setPostings(safeArray<Posting>(j)))
       .catch(() => setError("Failed to load postings."))
@@ -276,7 +276,7 @@ export default function CoachRecruitmentPage() {
     setApplications([]);
     try {
       const res = await fetch(`${API}/arena/talent-wanted/${postingId}/applications`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       const j = await res.json();
       setApplications(safeArray<Application>(j?.applications ?? j));
@@ -296,7 +296,7 @@ export default function CoachRecruitmentPage() {
     try {
       await fetch(`${API}/arena/talent-wanted/${activePostingId}/applications/${appId}`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
       setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));

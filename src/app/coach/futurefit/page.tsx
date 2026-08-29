@@ -978,7 +978,7 @@ function AssignModal({
   const token = useAuthStore.getState().token;
 
   useEffect(() => {
-    fetch(`${api}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${api}/coach/squad`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((j) => setSquad(Array.isArray(j.data) ? j.data : []))
       .catch(() => setSquad([]))
@@ -1014,7 +1014,7 @@ function AssignModal({
     try {
       const res = await fetch(`${api}/coach/drill-assignments`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body:    JSON.stringify({
           drill_name:       drillName,
           format_label:     formatLabel,
@@ -1164,7 +1164,7 @@ function AssignedTab({
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     fetch(`${api}/coach/drill-assignments`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((j) => {

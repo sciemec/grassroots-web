@@ -350,7 +350,7 @@ Assess the player and return ONLY a valid JSON object — no extra text, no mark
             method:  "POST",
             headers: {
               "Content-Type":  "application/json",
-              "Authorization": `Bearer ${token}`,
+              "Authorization": `Bearer ${useAuthStore.getState().token ?? ""}`,
             },
             body: JSON.stringify({
               message:       PROMPT,

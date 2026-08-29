@@ -163,7 +163,7 @@ export default function ShootingTechniquePage() {
     if (!token) return;
     setHistLoading(true);
     try {
-      const r = await fetch(`${API_URL}/player/shooting`, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(`${API_URL}/player/shooting`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
       if (r.ok) { const json = await r.json(); setHistory(Array.isArray(json.data) ? json.data : []); }
     } catch { /* silent */ } finally { setHistLoading(false); }
   };
@@ -290,7 +290,7 @@ Return this exact JSON structure:
     if (token) {
       fetch(`${API_URL}/player/shooting`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           sport,
           position,

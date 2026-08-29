@@ -52,7 +52,7 @@ export default function PotmVotePage() {
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}),
       };
 
       // Fetch match info + existing vote status + squad in parallel
@@ -122,7 +122,7 @@ export default function PotmVotePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}),
         },
         body: JSON.stringify({ voted_for_id: selected }),
       });

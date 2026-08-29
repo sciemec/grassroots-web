@@ -102,7 +102,7 @@ function VideoCard({
 
       const res = await fetch(`${API}/arena/posts`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           body: parts.join(" · "),
           post_type: "standard",
@@ -121,7 +121,7 @@ function VideoCard({
       if (arenaPostId) {
         await fetch(`${API}/coach/match-videos/${video.id}/arena`, {
           method: "PATCH",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
           body: JSON.stringify({ arena_post_id: arenaPostId }),
         }).catch(() => {});
         onPosted(video.id, arenaPostId);

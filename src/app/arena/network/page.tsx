@@ -69,7 +69,7 @@ function UserCard({ user, token, onConnect }: { user: SuggestedUser; token: stri
     try {
       await fetch(`${API}/arena/connect/${user.id}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       onConnect(user.id);
     } catch { setSent(false); }
@@ -111,9 +111,9 @@ export default function NetworkPage() {
       setLoading(true);
       try {
         const [connRes, pendingRes, sugRes] = await Promise.allSettled([
-          fetch(`${API}/arena/connections`,         { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API}/arena/connections/pending`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(`${API}/arena/suggested`,           { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/arena/connections`,         { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }),
+          fetch(`${API}/arena/connections/pending`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }),
+          fetch(`${API}/arena/suggested`,           { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }),
         ]);
         if (connRes.status === "fulfilled" && connRes.value.ok) {
           const json = await connRes.value.json();

@@ -632,7 +632,7 @@ export default function PlayerMatchEyePage() {
       const apiBase = process.env.NEXT_PUBLIC_API_URL!;
       const res = await fetch(`${apiBase}/video-analyses`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           sport,
           analysis_type: "match_eye",
@@ -660,7 +660,7 @@ export default function PlayerMatchEyePage() {
       const apiBase = process.env.NEXT_PUBLIC_API_URL!;
       await fetch(`${apiBase}/video-analyses/${id}/share-to-arena`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       setArenaShared(true);
     } catch { /* silent */ } finally { setSharing(false); }

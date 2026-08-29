@@ -23,7 +23,7 @@ export default function NewSessionPage() {
     if (videoFile) {
       const presignedRes = await fetch("/api/upload/presigned", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ filename: videoFile.name, contentType: videoFile.type, folder: "training" }),
       });
       const { uploadUrl, publicUrl } = await presignedRes.json() as { uploadUrl: string; publicUrl: string };
@@ -33,7 +33,7 @@ export default function NewSessionPage() {
 
     const sessionRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/training/sessions`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
       body: JSON.stringify({ focus_area: formData.focusArea, duration: formData.duration, feeling: formData.feeling, video_url: videoUrl }),
     });
 
@@ -41,7 +41,7 @@ export default function NewSessionPage() {
       const arenaBody = `Completed a ${formData.focusArea} training session!${formData.feeling === "amazing" ? " Feeling amazing!" : ""}`;
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/arena/posts`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ body: arenaBody, video_url: videoUrl, post_type: "session_milestone", metadata: { focus_area: formData.focusArea, duration: formData.duration, feeling: formData.feeling } }),
       }).catch(() => {});
       router.push("/player/training");

@@ -72,7 +72,7 @@ export default function ParentDashboardPage() {
     if (!token) { setError("Please log in."); setLoading(false); return; }
 
     fetch(`${API}/guardian/dashboard`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then(r => {
         if (r.status === 403) { setAddonRequired(true); setLoading(false); return null; }

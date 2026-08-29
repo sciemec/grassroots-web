@@ -90,7 +90,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && token !== "dev-token" ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token && token !== "dev-token" ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}),
         },
         body: JSON.stringify({
           filename:    `fan-hub/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}/${crypto.randomUUID()}.${f.name.split(".").pop()}`,
@@ -146,7 +146,7 @@ export default function UploadModal({ onClose, onSuccess }: UploadModalProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && token !== "dev-token" ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token && token !== "dev-token" ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}),
         },
         body: JSON.stringify({
           r2_key:     r2Key,

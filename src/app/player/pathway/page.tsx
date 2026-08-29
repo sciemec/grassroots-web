@@ -97,7 +97,7 @@ const CHECKPOINTS = [
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 function authHeaders(token: string) {
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` };
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────

@@ -41,7 +41,7 @@ export default function ProvinceAdminPlayersPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API_URL}/province-admin/zones`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
@@ -57,7 +57,7 @@ export default function ProvinceAdminPlayersPage() {
     const url = zone === "all"
       ? `${API_URL}/province-admin/players`
       : `${API_URL}/province-admin/players?zone_id=${zone}`;
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(url, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
         const raw = data?.data ?? data;
@@ -75,7 +75,7 @@ export default function ProvinceAdminPlayersPage() {
     try {
       const res = await fetch(`${API_URL}/province-admin/shortlist/${playerId}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
       });
       if (res.ok) {
         setPlayers(prev =>

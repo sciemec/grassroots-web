@@ -59,7 +59,7 @@ export function useSessionSubmit() {
     const token = useAuthStore.getState().token;
     const authHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(token && token !== 'dev-token' ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token && token !== 'dev-token' ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}),
     };
 
     try {

@@ -37,7 +37,7 @@ export default function ProvinceAdminShortlistPage() {
     if (!token) return;
     setLoading(true);
     fetch(`${API_URL}/province-admin/shortlist`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
@@ -56,7 +56,7 @@ export default function ProvinceAdminShortlistPage() {
     try {
       const res = await fetch(`${API_URL}/province-admin/shortlist/${playerId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (res.ok) setPlayers(prev => prev.filter(p => p.id !== playerId));
     } finally {

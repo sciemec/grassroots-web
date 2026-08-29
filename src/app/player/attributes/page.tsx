@@ -3353,7 +3353,7 @@ function SprintTimingModal({
           unit: "seconds",
           measured_at: new Date().toISOString().split("T")[0],
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }
       );
       onSaved();
     } catch {

@@ -63,7 +63,7 @@ export default function WatchMatchVideoPage() {
   useEffect(() => {
     if (!videoId) return;
     fetch(`${API}/coach/match-videos/${videoId}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
     })
       .then((r) => {
         if (r.status === 403) throw new Error("PRIVATE");
@@ -81,7 +81,7 @@ export default function WatchMatchVideoPage() {
     if (!video?.arena_post_id) return;
     setCommLoading(true);
     fetch(`${API}/arena/posts/${video.arena_post_id}/comments`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
     })
       .then((r) => r.json())
       .then((d) => setComments(Array.isArray(d.data) ? d.data : []))
@@ -96,7 +96,7 @@ export default function WatchMatchVideoPage() {
     try {
       const res = await fetch(`${API}/arena/posts/${video.arena_post_id}/comments`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ body: newComment.trim() }),
       });
       const d = await res.json();

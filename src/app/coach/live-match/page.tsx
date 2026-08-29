@@ -406,7 +406,7 @@ export default function LiveMatchPage() {
 
       fetch(`${API}/matches`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           opponent:     record.opponent,
           venue:        record.venue,
@@ -425,7 +425,7 @@ export default function LiveMatchPage() {
       if (user?.id) {
         fetch('/api/gamification', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({
             playerId:      String(user.id),
             action:        'match_completed',

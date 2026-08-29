@@ -56,7 +56,7 @@ export default function ParentSubscribePage() {
     const token = useAuthStore.getState().token;
     const res = await fetch(`${API}/guardian/addon/subscribe`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       body: JSON.stringify({ payment_method: method, mobile_money_number: phone }),
     });
 
@@ -82,7 +82,7 @@ export default function ParentSubscribePage() {
         const token = useAuthStore.getState().token;
         const res = await fetch(`${API}/guardian/addon/confirm`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({ reference, status: "paid" }),
         });
         if (res.ok) { stopPolling(); setPhase("paid"); }

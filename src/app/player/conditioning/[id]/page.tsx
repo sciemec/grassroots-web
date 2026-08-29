@@ -143,7 +143,7 @@ export default function ExerciseCardDetailPage() {
     if (token && process.env.NEXT_PUBLIC_API_URL) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/conditioning/sessions`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           session_type: card.category,
           cards_used: [card.id],

@@ -86,7 +86,7 @@ function PostingCard({ posting, token, onApply, onClose }: {
     try {
       await fetch(`${API}/arena/talent-wanted/${posting.id}/apply`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ cover_note: note }),
       });
       setSubmitted(true);
@@ -199,7 +199,7 @@ function NewPostingModal({ token, onCreated, onClose }: {
     try {
       const res = await fetch(`${API}/arena/talent-wanted`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           ...form,
           age_min: form.age_min ? parseInt(form.age_min) : null,
@@ -296,7 +296,7 @@ export default function RecruitmentPage() {
     if (sport)    params.set("sport", sport);
     if (province) params.set("province", province);
     setLoading(true);
-    fetch(`${API}/arena/talent-wanted?${params}`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/arena/talent-wanted?${params}`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.ok ? r.json() : { data: [] })
       .then((json) => setPostings(safeArray(json.data ?? json)))
       .catch(() => {})

@@ -135,7 +135,7 @@ export default function CoachProfilePage({ params }: { params: Promise<{ coachId
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/coaches/${coachId}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+        { headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {} },
       );
       if (!res.ok) throw new Error("not found");
       const json = await res.json();
@@ -170,7 +170,7 @@ export default function CoachProfilePage({ params }: { params: Promise<{ coachId
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}),
         },
         body: JSON.stringify({
           coachId: coach.id,

@@ -185,7 +185,7 @@ function DrillAnalysePage() {
       const feedback = results ?? { text: geminiText };
       const res = await fetch(`${apiBase}/video-analyses`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           sport: "Football",
           analysis_type: "drill_analyse",
@@ -213,7 +213,7 @@ function DrillAnalysePage() {
       const apiBase = process.env.NEXT_PUBLIC_API_URL!;
       await fetch(`${apiBase}/video-analyses/${id}/share-to-arena`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       setArenaShared(true);
     } catch { /* silent */ } finally { setSharing(false); }

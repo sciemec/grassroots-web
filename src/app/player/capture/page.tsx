@@ -698,7 +698,7 @@ export default function FootballSkillAnalysisPage() {
   useEffect(() => {
     if (!token || !user) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {

@@ -59,7 +59,7 @@ export default function SafeguardingPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API_URL}/province-admin/safeguarding`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((j) => setFlags(safeArray<Flag>(j)))
@@ -80,7 +80,7 @@ export default function SafeguardingPage() {
     try {
       const res = await fetch(`${API_URL}/province-admin/safeguarding`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const json = await res.json();
@@ -99,7 +99,7 @@ export default function SafeguardingPage() {
     try {
       const res = await fetch(`${API_URL}/province-admin/safeguarding/${id}`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
       if (!res.ok) return;

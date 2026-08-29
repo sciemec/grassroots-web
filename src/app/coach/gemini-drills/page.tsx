@@ -201,7 +201,7 @@ export default function CoachGeminiDrillsPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach/squad`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then(r => r.ok ? r.json() : null)
       .then(d => {

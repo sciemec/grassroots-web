@@ -101,7 +101,7 @@ export default function AcademyJoinPage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`,
         },
         body: JSON.stringify({ club: form.academy.trim() }),
       }).catch(() => {/* non-critical */});

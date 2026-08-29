@@ -35,7 +35,7 @@ export default function NewLeaguePage() {
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/province-admin/zones`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.json())
       .then((j) => setZones(safeArray<Zone>(j)))

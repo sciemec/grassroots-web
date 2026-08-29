@@ -42,9 +42,9 @@ export default function ReportsPage() {
   useEffect(() => {
     if (!token) return;
     Promise.allSettled([
-      fetch(`${API_URL}/province-admin/stats`, { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${API_URL}/province-admin/stats`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
         .then((r) => r.ok ? r.json() : null),
-      fetch(`${API_URL}/province-admin/leagues`, { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${API_URL}/province-admin/leagues`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
         .then((r) => r.ok ? r.json() : null),
     ]).then(([statsRes, leaguesRes]) => {
       if (statsRes.status === "fulfilled" && statsRes.value) {

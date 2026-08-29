@@ -365,7 +365,7 @@ export default function BiometricsPage() {
     if (!p || !token || token === 'dev-token') return;
     fetch(`${API_URL}/player/biometric-scores`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       body: JSON.stringify({
         drill:             drill?.id,
         performance_index: p.performance_index,

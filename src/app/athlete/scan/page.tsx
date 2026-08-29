@@ -93,7 +93,7 @@ export default function AthleteScanPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`,
         },
         body: JSON.stringify({
           testType: "20m_sprint",

@@ -288,7 +288,7 @@ export function VideoVaultPage() {
   useEffect(() => {
     const token = useAuthStore.getState().token;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/vault`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then(r => r.json())
       .then(data => { setVideos(data.videos ?? []); setLoading(false); })
@@ -301,7 +301,7 @@ export function VideoVaultPage() {
     const token = useAuthStore.getState().token;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/vault/${videoId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       body: JSON.stringify({ visibility }),
     });
     setVideos(vs => vs.map(v => v.id === videoId ? { ...v, visibility } : v));
@@ -311,7 +311,7 @@ export function VideoVaultPage() {
     const token = useAuthStore.getState().token;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/arena/posts/share-video`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       body: JSON.stringify({
         video_url:    video.url,
         body:         caption,
@@ -329,7 +329,7 @@ export function VideoVaultPage() {
     const token = useAuthStore.getState().token;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/vault/${videoId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     });
     setVideos(vs => vs.filter(v => v.id !== videoId));
   };

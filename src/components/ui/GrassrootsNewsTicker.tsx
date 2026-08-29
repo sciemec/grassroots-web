@@ -73,7 +73,7 @@ export default function GrassrootsNewsTicker() {
     try {
       const res = await fetch(`${API_URL}/arena/follow/${userId}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
       });
       if (res.ok) setFollowing((prev) => new Set([...prev, userId]));
     } catch {

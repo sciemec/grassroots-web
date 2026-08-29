@@ -481,7 +481,7 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
         // Save athletic profile
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/athletic-profile`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({
             age_group:          ageGroup,
             profile:            prof,
@@ -495,7 +495,7 @@ export default function FitnessTestTab({ user }: FitnessTestTabProps) {
         // Auto-update player position
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/profile`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({ position: rankedPositions[0].id }),
         });
       } catch { /* silent — results are shown regardless */ }

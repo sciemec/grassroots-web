@@ -293,7 +293,7 @@ export default function WarmupPage() {
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     fetch(`${apiUrl}/warmup-programs`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
     })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);

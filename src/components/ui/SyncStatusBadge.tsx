@@ -38,7 +38,7 @@ async function pingApi(token: string | null): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/profile`, {
       method: "GET",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
       signal: AbortSignal.timeout(5000),
     });
     return res.status !== 0;
@@ -106,7 +106,7 @@ export default function SyncStatusBadge() {
             try {
               await fetch(`${API_URL}/player/goal/mission`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
                 body: JSON.stringify(m),
               });
             } catch { /* continue */ }
@@ -119,7 +119,7 @@ export default function SyncStatusBadge() {
         try {
           await fetch(`${API_URL}/training/schedule`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
             body: rawSchedule,
           });
         } catch { /* continue */ }

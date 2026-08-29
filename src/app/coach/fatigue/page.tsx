@@ -126,7 +126,7 @@ export default function FatigueMonitorPage() {
   // Load squad
   useEffect(() => {
     if (!token) return;
-    fetch(`${API}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/coach/squad`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.json())
       .then((data) => {
         const raw = data.data || data.squad || [];
@@ -175,7 +175,7 @@ export default function FatigueMonitorPage() {
   const fetchReadings = async (sid: string) => {
     if (!token) return;
     try {
-      const r    = await fetch(`${API}/coach/fatigue/sessions/${sid}/readings`, { headers: { Authorization: `Bearer ${token}` } });
+      const r    = await fetch(`${API}/coach/fatigue/sessions/${sid}/readings`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
       const data = await r.json();
       applyReadings(data.data || []);
     } catch { /* silent */ }
@@ -206,7 +206,7 @@ export default function FatigueMonitorPage() {
       if (token) {
         const r    = await fetch(`${API}/coach/fatigue/sessions`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
           body: JSON.stringify({ session_name: sessionName, duration_minutes: duration, player_ids: selectedIds }),
         });
         const data = await r.json();
@@ -243,7 +243,7 @@ export default function FatigueMonitorPage() {
     if (token && sessionId && !sessionId.startsWith("local-")) {
       fetch(`${API}/coach/fatigue/sessions/${sessionId}/readings`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ player_id: logTarget, fatigue_score: logScore, flags: logFlags, minute_mark: minuteMark, logged_by: "coach" }),
       }).catch(() => {});
     }
@@ -256,7 +256,7 @@ export default function FatigueMonitorPage() {
     if (pollRef.current)  clearInterval(pollRef.current);
     if (token && sessionId && !sessionId.startsWith("local-")) {
       fetch(`${API}/coach/fatigue/sessions/${sessionId}/end`, {
-        method: "POST", headers: { Authorization: `Bearer ${token}` },
+        method: "POST", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       }).catch(() => {});
     }
     setPhase("report");

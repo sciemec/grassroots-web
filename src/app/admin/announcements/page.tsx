@@ -44,7 +44,7 @@ export default function AdminAnnouncementsPage() {
 
     if (!token) return;
     fetch(`${API}/admin/announcements`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {

@@ -48,7 +48,7 @@ export default function ProvinceAdminClubsPage() {
     if (!token) return;
     setLoading(true);
     fetch(`${API_URL}/province-admin/clubs?status=${status}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
@@ -67,7 +67,7 @@ export default function ProvinceAdminClubsPage() {
     try {
       const res = await fetch(`${API_URL}/province-admin/clubs/${clubId}/${action}`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
       });
       if (res.ok) loadClubs(tab);
     } finally {

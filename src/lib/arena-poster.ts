@@ -29,7 +29,7 @@ export async function postToArena(
   fetch(`${process.env.NEXT_PUBLIC_API_URL}/arena/posts`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),

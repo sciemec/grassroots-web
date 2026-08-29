@@ -57,7 +57,7 @@ export default function AthletePassportPage() {
     try {
       // Load profile
       const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (profileRes.ok) {
         const profileData = await profileRes.json();
@@ -68,7 +68,7 @@ export default function AthletePassportPage() {
 
       // Load biometric results
       const bioRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/player/biometrics/results`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (bioRes.ok) {
         const bioData = await bioRes.json();

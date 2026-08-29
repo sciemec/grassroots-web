@@ -84,7 +84,7 @@ export default function NewRecruitmentPage() {
     try {
       const res = await fetch(`${API}/arena/talent-wanted`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           sport, position,
           age_min: ageMin ? parseInt(ageMin) : undefined,

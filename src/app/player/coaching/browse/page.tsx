@@ -272,7 +272,7 @@ export default function BrowseCoachesPage() {
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/coaches?${params.toString()}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        { headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {} }
       );
       if (!res.ok) throw new Error("API error");
       const data = await res.json();

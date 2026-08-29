@@ -423,7 +423,7 @@ Return this exact JSON structure:
       labMechanics.forEach((m) => { ratingPayload[`${m.key}_score`] = labRatings[m.key]; });
       fetch(`${API_URL}/coach/set-piece-lab`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({ sport: labSport, set_piece_type: labSetPiece, situation: labSituation, team_name: labTeamName || null, opponent_tendency: labOppTendency || null, overall_score: labOverallScore, ai_feedback: labFeedback, ...ratingPayload }),
       }).catch(() => {});
     }

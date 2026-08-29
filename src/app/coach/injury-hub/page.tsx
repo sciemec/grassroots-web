@@ -101,7 +101,7 @@ export default function CoachInjuryHubPage() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/coach/injury-hub`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } },
       );
       if (!res.ok) throw new Error();
       const data = await res.json();

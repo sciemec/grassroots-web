@@ -133,7 +133,7 @@ export default function SprintMechanicsPage() {
     setHistLoading(true);
     try {
       const r = await fetch(`${API_URL}/player/sprint`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (r.ok) {
         const json = await r.json();
@@ -261,7 +261,7 @@ Return this exact JSON structure:
     if (token) {
       fetch(`${API_URL}/player/sprint`, {
         method:  "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body:    JSON.stringify({
           sport, position,
           distance_metres:     distance,

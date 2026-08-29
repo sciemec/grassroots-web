@@ -45,7 +45,7 @@ export default function LeaguesPage() {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/province-admin/leagues`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();

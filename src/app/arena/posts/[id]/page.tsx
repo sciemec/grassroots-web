@@ -158,7 +158,7 @@ export default function ArenaPostDetailPage() {
   }, [reportMenuId, postReportMenu]);
 
   const authHeaders = useCallback(() => ({
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`,
     "Content-Type": "application/json",
   }), [token]);
 

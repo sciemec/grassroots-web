@@ -333,7 +333,7 @@ export default function MyCardPage() {
     const fetchData = async () => {
       try {
         const res = await fetch(`${apiUrl}/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
         if (!res.ok) throw new Error('fetch failed');
         const json = await res.json();
@@ -343,7 +343,7 @@ export default function MyCardPage() {
         let scoutViews = 0;
         try {
           const vr = await fetch(`${apiUrl}/players/${json.player_id}/view-count`, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           });
           if (vr.ok) {
             const vj = await vr.json();

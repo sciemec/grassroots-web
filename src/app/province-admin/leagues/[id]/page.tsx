@@ -117,11 +117,11 @@ export default function LeagueDetailPage() {
   const [whatsappMsg, setWhatsappMsg] = useState("");
 
   const API = process.env.NEXT_PUBLIC_API_URL;
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const headers = { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" };
 
   const loadData = async () => {
     try {
-      const res = await fetch(`${API}/province-admin/leagues/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API}/province-admin/leagues/${id}`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json.data);
@@ -134,7 +134,7 @@ export default function LeagueDetailPage() {
 
   const loadAllClubs = async () => {
     try {
-      const res = await fetch(`${API}/province-admin/clubs?status=active`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API}/province-admin/clubs?status=active`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
       const json = await res.json();
       setAllClubs(safeArray<Club>(json));
     } catch { /* silent */ }

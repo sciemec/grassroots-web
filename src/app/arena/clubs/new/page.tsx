@@ -44,7 +44,7 @@ export default function NewClubPage() {
     try {
       const res = await fetch(`${API}/arena/clubs`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify(form),
       });
       if (res.ok) {

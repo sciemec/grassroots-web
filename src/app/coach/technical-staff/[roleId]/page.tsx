@@ -225,7 +225,7 @@ function PlanCard({
         `${process.env.NEXT_PUBLIC_API_URL}/coach/training-plans/${plan.id}`,
         {
           method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         }
       );
       onDelete(plan.id);
@@ -339,7 +339,7 @@ export default function RoleWorkspacePage() {
     if (activeTab !== "plans" || plansFetched || !token) return;
     setPlansLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach/training-plans`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.json())
       .then((res) => {

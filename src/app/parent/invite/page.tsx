@@ -84,7 +84,7 @@ export default function InviteParentPage() {
     if (!token) return;
     try {
       const res = await fetch(`${API}/guardian/linked`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -113,7 +113,7 @@ export default function InviteParentPage() {
     if (token) {
       fetch(`${API}/guardian/invite`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body:    JSON.stringify({ invite_code: newCode, expires_at: newExpiry.toISOString() }),
       }).catch(() => { /* not critical */ });
     }
@@ -149,7 +149,7 @@ export default function InviteParentPage() {
     try {
       await fetch(`${API}/guardian/revoke/${id}`, {
         method:  "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
     } catch { /* reverted on next load */ }
   };

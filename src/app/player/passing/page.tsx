@@ -200,7 +200,7 @@ export default function PassingAnalyzerPage() {
     setHistLoading(true);
     try {
       const r = await fetch(`${API_URL}/player/passing`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (r.ok) {
         const json = await r.json();
@@ -270,7 +270,7 @@ Return this exact JSON structure:
     if (token) {
       fetch(`${API_URL}/player/passing`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           sport,
           position:             position || null,

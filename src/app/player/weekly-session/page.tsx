@@ -234,7 +234,7 @@ export default function WeeklySessionPage() {
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/grs-test`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       body: JSON.stringify({
         player_name:    state.config.playerName,
         age:            state.config.age,

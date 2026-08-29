@@ -384,7 +384,7 @@ export default function PositionFitPage() {
       try {
         await fetch(`${apiBase}/player/biometrics/submit`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({
             testType: 'position-fit',
             ageGroup: res.ageGroup,
@@ -418,7 +418,7 @@ export default function PositionFitPage() {
     try {
       await fetch(`${apiBase}/arena/posts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ body: postBody, post_type: 'milestone' }),
       });
       setArenaShared(true);

@@ -265,7 +265,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
       const token = useAuthStore.getState().token;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/guardian/invite`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ age_group: inviteAgeGroup }),
       });
       const data = await res.json();

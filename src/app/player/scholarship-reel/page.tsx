@@ -80,7 +80,7 @@ export default function ScholarshipReelPage() {
   useEffect(() => {
     if (!hasHydrated || !user || !token) return;
     fetch(`${API}/player/scholarship-reel/${user.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.json())
       .then((d) => {
@@ -107,7 +107,7 @@ export default function ScholarshipReelPage() {
       const ext = file.name.split(".").pop() ?? "mp4";
       const presignRes = await fetch("/api/upload/presigned", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ filename: `reel-${Date.now()}.${ext}`, contentType: file.type }),
       });
       if (!presignRes.ok) throw new Error("Could not get upload URL");
@@ -163,7 +163,7 @@ export default function ScholarshipReelPage() {
     try {
       const res = await fetch(`${API}/player/scholarship-reel`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           r2_url:        videoUrl.trim(),
           thumbnail_url: thumbUrl.trim() || undefined,
@@ -193,7 +193,7 @@ export default function ScholarshipReelPage() {
     try {
       const res = await fetch(`${API}/player/scholarship-reel/${clipId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (res.ok) {
         setClips((prev) => prev.filter((c) => c.id !== clipId));

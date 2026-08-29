@@ -272,7 +272,7 @@ export default function CoachDrillAnalysisPage() {
       try {
         const presignRes = await fetch(`${APP_URL}/api/upload/presigned`, {
           method:  "POST",
-          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {}) },
           body:    JSON.stringify({
             filename:     `coach-drills/${drillId}/${Date.now()}.${file.name.split(".").pop() ?? "mp4"}`,
             content_type: file.type,
@@ -368,7 +368,7 @@ export default function CoachDrillAnalysisPage() {
     try {
       await fetch(`${API_URL}/player/biometric-scores`, {
         method:  "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body:    JSON.stringify({
           player_name:       playerName.trim(),
           drill:             drill.id,
@@ -389,7 +389,7 @@ export default function CoachDrillAnalysisPage() {
     try {
       await fetch(`${API_URL}/arena/posts`, {
         method:  "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body:    JSON.stringify({
           body,
           post_type:     "milestone",

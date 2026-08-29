@@ -43,7 +43,7 @@ export default function PlayerInvitationsPage() {
     setError(null);
     try {
       const res = await fetch(`${api}/player/invitations`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       if (!res.ok) throw new Error("Failed to load invitations");
       const json = await res.json();
@@ -65,7 +65,7 @@ export default function PlayerInvitationsPage() {
     try {
       const res = await fetch(`${api}/player/invitations/${id}/${action}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Request failed");

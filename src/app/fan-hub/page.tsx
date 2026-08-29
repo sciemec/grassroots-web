@@ -113,7 +113,7 @@ export default function FanHubPage() {
     try {
       const token = useAuthStore.getState().token;
       const authHeaders: HeadersInit = token && token !== "dev-token"
-        ? { Authorization: `Bearer ${token}` }
+        ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` }
         : {};
 
       const [featRes, feedRes, mediaRes, aiRes, statsRes, hlRes] = await Promise.allSettled([

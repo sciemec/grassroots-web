@@ -34,7 +34,7 @@ export default function WarmupListPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API}/warmup-programs`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.json())
       .then((j) => setPrograms(Array.isArray(j.data) ? j.data : []))

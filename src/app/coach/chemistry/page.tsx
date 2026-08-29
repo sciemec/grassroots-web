@@ -229,7 +229,7 @@ export default function CoachChemistryPage() {
     setPlayerFingerprint(null);
     const token = useAuthStore.getState().token ?? "";
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemistry/fingerprint/${selectedFpPlayer}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.json())
       .then((res) => {

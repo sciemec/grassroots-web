@@ -76,9 +76,9 @@ export default function ClubDetailPage() {
   useEffect(() => {
     if (!token || !id) return;
     Promise.allSettled([
-      fetch(`${API}/arena/clubs/${id}`,         { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${API}/arena/clubs/${id}/reviews`,  { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${API}/arena/clubs/${id}/players`,  { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${API}/arena/clubs/${id}`,         { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }),
+      fetch(`${API}/arena/clubs/${id}/reviews`,  { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }),
+      fetch(`${API}/arena/clubs/${id}/players`,  { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }),
     ]).then(async ([clubRes, revRes, playersRes]) => {
       if (clubRes.status === "fulfilled" && clubRes.value.ok) {
         const json = await clubRes.value.json();
@@ -101,7 +101,7 @@ export default function ClubDetailPage() {
     setClub({ ...club, is_following: !wasFollowing, member_count: club.member_count + (wasFollowing ? -1 : 1) });
     setJoining(true);
     try {
-      await fetch(`${API}/arena/clubs/${id}/follow`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(`${API}/arena/clubs/${id}/follow`, { method: "POST", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } });
     } catch {
       setClub({ ...club, is_following: wasFollowing, member_count: club.member_count });
     }
@@ -114,7 +114,7 @@ export default function ClubDetailPage() {
     try {
       const res = await fetch(`${API}/arena/clubs/${id}/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ rating, body: reviewBody }),
       });
       if (res.ok) {

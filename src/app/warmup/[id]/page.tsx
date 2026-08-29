@@ -75,7 +75,7 @@ export default function WarmupPlayerPage() {
   useEffect(() => {
     if (!token || !id) return;
     fetch(`${API}/warmup-programs/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((j) => setProgram(j.data ?? null))

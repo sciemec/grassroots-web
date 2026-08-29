@@ -43,7 +43,7 @@ export default function AllFixturesPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API_URL}/province-admin/fixtures`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((j) => setFixtures(safeArray<Fixture>(j)))

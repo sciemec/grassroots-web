@@ -566,7 +566,7 @@ export default function AnalysePage() {
     try {
       await fetch(`${API_URL}/player/biometrics/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           testType: "biomechanics-talent-id",
           rawScore: overallScore,
@@ -592,7 +592,7 @@ export default function AnalysePage() {
       if (!saved) {
         const saveRes = await fetch(`${API_URL}/video-analyses`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({
             sport: "Athletics",
             analysis_type: "fitness_analyse",
@@ -619,7 +619,7 @@ export default function AnalysePage() {
       if (analysisId) {
         await fetch(`${API_URL}/video-analyses/${analysisId}/share-to-arena`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         });
       } else {
         // Fallback: direct post (backend may not have video_analyses yet)
@@ -634,7 +634,7 @@ export default function AnalysePage() {
           `#GrassRootsSports #BiomechanicsTalent #Zimbabwe`;
         await fetch(`${API_URL}/arena/posts`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           body: JSON.stringify({ body: postBody, post_type: "milestone" }),
         });
       }
@@ -647,7 +647,7 @@ export default function AnalysePage() {
     try {
       await fetch(`${API_URL}/player/biometrics/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           testType: `biomechanics-${t.id}`,
           rawScore: score,
@@ -668,7 +668,7 @@ export default function AnalysePage() {
       // Try video_analyses pathway first
       const saveRes = await fetch(`${API_URL}/video-analyses`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({
           sport: "Athletics",
           analysis_type: "fitness_analyse",
@@ -682,7 +682,7 @@ export default function AnalysePage() {
         if (id) {
           await fetch(`${API_URL}/video-analyses/${id}/share-to-arena`, {
             method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
           });
           setTestArenaPosted((prev) => ({ ...prev, [t.id]: true }));
           return;
@@ -696,7 +696,7 @@ export default function AnalysePage() {
         `#GrassRootsSports #TalentID #Zimbabwe`;
       await fetch(`${API_URL}/arena/posts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ body, post_type: "milestone" }),
       });
       setTestArenaPosted((prev) => ({ ...prev, [t.id]: true }));

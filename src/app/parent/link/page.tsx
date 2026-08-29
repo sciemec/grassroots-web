@@ -26,7 +26,7 @@ export default function ParentLinkPage() {
     const token = useAuthStore.getState().token;
     const res = await fetch(`${API}/guardian/link`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       body: JSON.stringify({ invite_code: code.toUpperCase(), whatsapp_number: whatsapp }),
     });
 

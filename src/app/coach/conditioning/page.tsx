@@ -127,7 +127,7 @@ export default function CoachConditioningPage() {
     const token = useAuthStore.getState().token;
     if (!API || !token) return;
 
-    fetch(`${API}/coach/squad`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/coach/squad`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         const list = data?.data ?? data?.squad ?? [];

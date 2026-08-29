@@ -90,7 +90,7 @@ export default function ArenaNotificationsPage() {
 
   useEffect(() => {
     if (!hasHydrated || !token) return;
-    fetch(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/notifications`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.json())
       .then((json) => setNotifications(safeArray<ArenaNotification>(json)))
       .catch(() => {})
@@ -99,17 +99,17 @@ export default function ArenaNotificationsPage() {
 
   const markRead = async (id: string) => {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
-    await fetch(`${API}/notifications/${id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    await fetch(`${API}/notifications/${id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }).catch(() => {});
   };
 
   const markAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    await fetch(`${API}/notifications/mark-all-read`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    await fetch(`${API}/notifications/mark-all-read`, { method: "POST", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }).catch(() => {});
   };
 
   const dismiss = async (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
-    await fetch(`${API}/notifications/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    await fetch(`${API}/notifications/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } }).catch(() => {});
   };
 
   const handleClick = (n: ArenaNotification) => {

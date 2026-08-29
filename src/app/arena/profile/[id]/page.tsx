@@ -109,7 +109,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     if (!hasHydrated) return;
     fetch(`${API}/arena/profile/${id}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
     })
       .then((r) => { if (r.status === 404) { setNotFound(true); return null; } return r.json(); })
       .then((json) => {
@@ -129,7 +129,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
     setIsFollowing(!prev);
     await fetch(`${API}/arena/follow/${id}`, {
       method: prev ? "DELETE" : "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     }).catch(() => setIsFollowing(prev));
   };
 
@@ -139,7 +139,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
     try {
       await fetch(`${API}/arena/posts/${postId}/report`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ reason }),
       });
     } catch { /* silent */ }
@@ -149,7 +149,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
     setConnStatus("pending");
     await fetch(`${API}/arena/connect/${id}`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     }).catch(() => setConnStatus("none"));
   };
 

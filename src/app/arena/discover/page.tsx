@@ -106,7 +106,7 @@ export default function DiscoverPage() {
       if (minScore) params.set("min_score", String(minScore));
 
       const res = await fetch(`${API}/arena/discover?${params}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
       });
       if (res.ok) {
         const json = await res.json();
@@ -128,7 +128,7 @@ export default function DiscoverPage() {
     try {
       await fetch(`${API}/arena/follow/${playerId}`, {
         method: currently ? "DELETE" : "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
       });
     } catch {
       setPlayers((prev) => prev.map((p) => p.id === playerId ? { ...p, is_following: currently } : p));

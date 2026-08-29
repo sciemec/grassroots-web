@@ -135,7 +135,7 @@ export default function ConditioningLibraryPage() {
       return;
     }
     fetch(`${API}/exercise-cards/recommended`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {

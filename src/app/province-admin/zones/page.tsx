@@ -27,7 +27,7 @@ export default function ZonesPage() {
   useEffect(() => {
     if (!token) return;
     fetch(`${API_URL}/province-admin/zones`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
     })
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((j) => setZones(safeArray<Zone>(j)))

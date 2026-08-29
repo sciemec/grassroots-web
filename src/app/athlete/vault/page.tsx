@@ -61,7 +61,7 @@ export default function AthleteVaultPage() {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`,
         },
         body: JSON.stringify({ filename: file.name, contentType: file.type }),
       });

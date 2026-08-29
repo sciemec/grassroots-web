@@ -133,7 +133,7 @@ function MatchVideoCard({
 
       const res = await fetch(`${API}/arena/posts`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           body: parts.join(" · "),
           post_type: "standard",
@@ -152,7 +152,7 @@ function MatchVideoCard({
       if (arenaPostId) {
         await fetch(`${API}/coach/match-videos/${video.id}/arena`, {
           method: "PATCH",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, "Content-Type": "application/json" },
           body: JSON.stringify({ arena_post_id: arenaPostId }),
         }).catch(() => {});
         onPosted(video.id, arenaPostId);
@@ -275,7 +275,7 @@ function MediaCard({ item, onDelete }: { item: MediaItem; onDelete: (id: string)
     setDeleting(true);
     await fetch(`${API}/media/${item.id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, Accept: "application/json" },
     }).catch(() => {});
     onDelete(item.id);
   }
@@ -568,14 +568,14 @@ export default function CoachVideoLibraryPage() {
     if (!token) return;
 
     // Fetch match videos
-    fetch(`${API}/coach/match-videos`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API}/coach/match-videos`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } })
       .then((r) => r.json())
       .then((d) => setMatchVideos((Array.isArray(d.data) ? d.data : []).map((v: MatchVideo) => ({ ...v, _source: "match" as const }))))
       .catch(() => {})
       .finally(() => setMatchLoading(false));
 
     // Fetch auto-captured media
-    fetch(`${API}/media?page=1`, { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } })
+    fetch(`${API}/media?page=1`, { headers: { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}`, Accept: "application/json" } })
       .then((r) => r.json())
       .then((d) => setMediaItems((Array.isArray(d.data) ? d.data : []).map((m: MediaItem) => ({ ...m, _source: "media" as const }))))
       .catch(() => {})

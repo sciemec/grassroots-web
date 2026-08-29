@@ -84,7 +84,7 @@ export default function RecruitmentDetailPage({ params }: { params: Promise<{ id
   useEffect(() => {
     if (!hasHydrated) return;
     fetch(`${API}/arena/talent-wanted/${id}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
     })
       .then((r) => r.ok ? r.json() : null)
       .then((json) => {
@@ -104,7 +104,7 @@ export default function RecruitmentDetailPage({ params }: { params: Promise<{ id
     try {
       const res = await fetch(`${API}/arena/talent-wanted/${id}/apply`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` },
         body: JSON.stringify({ message: message.trim(), availability: availability.trim() }),
       });
       if (res.ok) {
