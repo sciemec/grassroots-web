@@ -13,6 +13,8 @@ const BG = "#f4f2ee";
 interface ProfileData {
   id: string;
   name: string;
+  first_name?: string;
+  surname?: string;
   role: string;
   sport: string;
   province: string;
@@ -204,7 +206,8 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
     </div>
   );
 
-  const initials = (profile?.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const displayName = [profile?.first_name, profile?.surname].filter(Boolean).join(" ") || profile?.name || "Unknown";
+  const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const isOwnProfile = user?.id === id;
   const videoPosts = posts.filter((p) => p.video_url);
   const textPosts  = posts.filter((p) => !p.video_url);
@@ -224,7 +227,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
                 style={{ background: GRS_GREEN }}>{initials}</div>
             )}
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-gray-900">{profile?.name}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{displayName}</h1>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 <span className="px-2 py-0.5 rounded-full text-xs font-medium text-white" style={{ background: GOLD }}>{profile?.role}</span>
                 {profile?.sport && <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{profile.sport}</span>}
