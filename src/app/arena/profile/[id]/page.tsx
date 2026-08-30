@@ -117,7 +117,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const searchParams = useSearchParams();
-  const playId       = searchParams.get("play");
+  const playId       = searchParams?.get("play") ?? null;
   const playRef      = useRef<HTMLDivElement>(null);
 
   const [profile, setProfile]           = useState<ProfileData | null>(null);
