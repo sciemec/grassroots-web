@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag } from "lucide-react";
+import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -18,7 +18,11 @@ interface ProfileData {
   province: string;
   position?: string;
   bio?: string;
+  photo_url?: string;
   avatar_url?: string;
+  height_cm?: number;
+  weight_kg?: number;
+  dominant_foot?: string;
   thuto_score?: number;
   peak_level_label?: string;
   upside_rating?: number;
@@ -27,6 +31,10 @@ interface ProfileData {
   comparable_name?: string;
   prediction_narrative?: string;
   data_quality?: string;
+  follower_count?: number;
+  following_count?: number;
+  is_following?: boolean;
+  connection_status?: string;
 }
 
 interface ArenaPost {
@@ -36,6 +44,17 @@ interface ArenaPost {
   like_count: number;
   comment_count: number;
   created_at: string;
+}
+
+interface ShowcaseClip {
+  id: string;
+  skill_type: string;
+  video_url: string;
+  thumbnail_url?: string;
+  ai_rating?: number;
+  top_strength?: string;
+  scout_note?: string;
+  view_count: number;
 }
 
 function timeAgo(iso: string): string {
@@ -97,6 +116,7 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
 
   const [profile, setProfile]           = useState<ProfileData | null>(null);
   const [posts, setPosts]               = useState<ArenaPost[]>([]);
+  const [showcases, setShowcases]       = useState<ShowcaseClip[]>([]);
   const [scoutViews, setScoutViews]     = useState(0);
   const [isFollowing, setIsFollowing]   = useState(false);
   const [connStatus, setConnStatus]     = useState<"none"|"pending"|"connected">("none");
@@ -114,11 +134,13 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
       .then((r) => { if (r.status === 404) { setNotFound(true); return null; } return r.json(); })
       .then((json) => {
         if (!json) return;
-        setProfile(json.user ?? json);
+        const userData = json.user ?? json.data ?? json;
+        setProfile(userData);
         setPosts(Array.isArray(json.posts) ? json.posts : []);
+        setShowcases(Array.isArray(json.showcases) ? json.showcases : []);
         setScoutViews(json.scout_views ?? 0);
-        setIsFollowing(json.is_following ?? false);
-        setConnStatus(json.connection_status ?? "none");
+        setIsFollowing(userData.is_following ?? false);
+        setConnStatus(userData.connection_status ?? "none");
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -180,8 +202,8 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
         {/* Profile header */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <div className="flex items-start gap-4">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
+            {(profile?.photo_url || profile?.avatar_url) ? (
+              <img src={profile.photo_url ?? profile.avatar_url} alt={profile.name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
             ) : (
               <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
                 style={{ background: GRS_GREEN }}>{initials}</div>
@@ -195,6 +217,11 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
                 {profile?.position && <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{profile.position}</span>}
               </div>
               {profile?.bio && <p className="text-sm text-gray-600 mt-2 line-clamp-2">{profile.bio}</p>}
+              {/* Follower counts */}
+              <div className="flex gap-3 mt-2 text-xs text-gray-500">
+                <span><span className="font-semibold text-gray-800">{profile?.follower_count ?? 0}</span> followers</span>
+                <span><span className="font-semibold text-gray-800">{profile?.following_count ?? 0}</span> following</span>
+              </div>
             </div>
           </div>
 
@@ -265,6 +292,38 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Showcase clips */}
+        {showcases.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Skill Showcase</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {showcases.map((clip) => (
+                <a key={clip.id} href={clip.video_url} target="_blank" rel="noopener noreferrer"
+                  className="group relative rounded-xl overflow-hidden border border-gray-100 bg-gray-50 aspect-video flex items-center justify-center hover:border-gray-300 transition-colors">
+                  {clip.thumbnail_url ? (
+                    <img src={clip.thumbnail_url} alt={clip.skill_type} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${GRS_GREEN}22, ${GOLD}22)` }} />
+                  )}
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors" />
+                  <Play size={24} className="relative text-white drop-shadow" fill="white" />
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white text-xs font-semibold capitalize">{clip.skill_type}</span>
+                      {clip.ai_rating != null && (
+                        <span className="text-xs font-bold px-1.5 py-0.5 rounded text-white" style={{ background: GOLD }}>{clip.ai_rating}/10</span>
+                      )}
+                    </div>
+                    {clip.top_strength && (
+                      <p className="text-white/80 text-xs mt-0.5 line-clamp-1">{clip.top_strength}</p>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
         )}
 
