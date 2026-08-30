@@ -66,7 +66,7 @@ function ThumbnailPlaceholder({ name, sport }: { name: string; sport: string | n
 }
 
 function VideoCard({ tile }: { tile: VideoTile }) {
-  const href = `/arena/profile/${tile.user_id}`;
+  const href = `/arena/profile/${tile.user_id}?play=${tile.id}`;
   const sportLabel = tile.sport
     ? tile.sport.charAt(0).toUpperCase() + tile.sport.slice(1)
     : null;
@@ -108,7 +108,7 @@ function VideoCard({ tile }: { tile: VideoTile }) {
         )}
 
         {/* Play icon overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-200">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
             <Play className="h-4 w-4 fill-white text-white ml-0.5" />
           </div>
