@@ -8,7 +8,7 @@ import {
   Users, Target, Activity, Zap, Dumbbell, Calendar,
   TrendingUp, TrendingDown, BarChart3, Award, Video,
   UserSearch, Shield, Flame, Globe, Bell, Crosshair, BarChart2, Layers,
-  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard, Wind, HeartPulse,
+  ChevronRight, ArrowRight, Play, Eye, School, GraduationCap, Trophy, Film, Mic, UserCheck, Clapperboard, Wind, HeartPulse, ShoppingBag,
 } from "lucide-react";
 
 const GRS_GREEN = "#1a5c2a";
@@ -212,8 +212,15 @@ export default function CoachHubPage() {
           <HubCard href={`/team-videos/${user?.id ?? ""}`}    icon={Play}         iconBg="#fff7ed" iconColor="#c2410c" label="Team Videos"   desc="Public match archive for parents & players" />
         </div>
 
-        {/* ── 7. School Programme ────────────────────────────────────── */}
-        <SectionLabel>7 · School Programme</SectionLabel>
+        {/* ── 7. Coaching Marketplace ────────────────────────────────── */}
+        <SectionLabel>7 · Coaching Marketplace</SectionLabel>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+          <HubCard href="/coach/marketplace-profile" icon={ShoppingBag} iconBg="#fef3c7" iconColor="#d97706" label="My Coach Profile"  desc="Set rates, availability & credentials" badge="new" />
+          <HubCard href="/player/coaching/browse"    icon={UserSearch}  iconBg="#dcfce7" iconColor="#16a34a" label="Browse as Player"  desc="Preview how players find coaches"      />
+        </div>
+
+        {/* ── 8. School Programme ────────────────────────────────────── */}
+        <SectionLabel>8 · School Programme</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <HubCard href="/coach/school"    icon={Users}         iconBg="#dcfce7" iconColor="#16a34a" label="School Coach"   desc="Teams, fixtures & coaching tools" badge="new" />
           <HubCard href="/school-hub"      icon={School}        iconBg="#f0fdf4" iconColor="#1a5c2a" label="School Hub"     desc="NASH teams, fixtures & notices"   badge="nash" />
