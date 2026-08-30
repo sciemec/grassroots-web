@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Home, Users, Heart, MessageCircle, Share2, Image,
   Video, MapPin, Globe, LogIn, Plus, Send,
@@ -179,6 +179,10 @@ export default function ArenaPage() {
   const [mediaError,        setMediaError]         = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const playRef       = useRef<HTMLDivElement>(null);
+
+  const searchParams = useSearchParams();
+  const playId       = searchParams?.get("play") ?? null;
 
   // ── Edit / delete state ────────────────────────────────────────────────────
   const [postMenuOpen,   setPostMenuOpen]   = useState<string | null>(null);
@@ -310,6 +314,14 @@ export default function ArenaPage() {
   useEffect(() => {
     fetchVideos();
   }, [fetchVideos]);
+
+  // Scroll to the ?play= post once the feed has loaded
+  useEffect(() => {
+    if (!playId || loadingPosts) return;
+    if (playRef.current) {
+      playRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [playId, loadingPosts]);
 
   // ── Social actions (Document 15) ─────────────────────────────────────────
 
@@ -1144,9 +1156,13 @@ export default function ArenaPage() {
                   const isDeleting = deletingPostId === post.id;
                   const menuOpen = postMenuOpen === post.id;
                   return (
-                  <div key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative"
+                  <div key={post.id}
+                    ref={post.id === playId ? playRef : undefined}
+                    className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative"
                     style={
-                      post.post_type === "milestone" || post.post_type === "achievement"
+                      post.id === playId
+                        ? { borderColor: "#c8962a", boxShadow: "0 0 0 3px rgba(200,150,42,0.25)" }
+                        : post.post_type === "milestone" || post.post_type === "achievement"
                         ? { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0" }
                         : post.post_type === "prediction_upgrade"
                         ? { borderColor: "#fde68a" }

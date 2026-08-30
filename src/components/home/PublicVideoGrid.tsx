@@ -66,7 +66,7 @@ function ThumbnailPlaceholder({ name, sport }: { name: string; sport: string | n
 }
 
 function VideoCard({ tile }: { tile: VideoTile }) {
-  const href = `/arena/profile/${tile.user_id}?play=${tile.id}`;
+  const href = `/arena?play=${tile.id}`;
   const sportLabel = tile.sport
     ? tile.sport.charAt(0).toUpperCase() + tile.sport.slice(1)
     : null;
@@ -275,7 +275,7 @@ export default function PublicVideoGrid() {
         {/* CTA nudge */}
         {!loading && tiles.length > 0 && (
           <p className="mt-6 text-center text-xs" style={{ color: "#1c3d2280" }}>
-            Click any thumbnail to watch on The Arena &mdash;{" "}
+            Click any thumbnail to watch in The Arena &mdash;{" "}
             <Link href="/register" className="font-semibold underline" style={{ color: "#c8962a" }}>
               join free
             </Link>{" "}
