@@ -2,6 +2,107 @@
 
 ---
 
+## SESSION LOG — 30 August 2026 (continued)
+
+### Theme — GET /coaches Browse Endpoint + Arena Profile Optional Auth
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. `GET /coaches` Browse Endpoint — ADDED ✅
+
+**Commit:** `9ae1323` — pushed to `sciemec/bhora-ai` → Render auto-deployed
+
+**Root cause:** `/player/coaching/browse` was always falling back to `mockCoaches` because `GET /coaches` returned 404 — the route didn't exist. Only `GET /coaches/{coachId}` (individual profile) was registered.
+
+**Fix:** Added `browseCoaches()` method to `CoachingMarketplaceController.php`:
+- Queries `users` (role=coach) left-joined with `player_profiles`
+- Supports `?q` (name search) and `?sport` filters
+- Aggregates coaching_sessions stats (total sessions, students, avg rating) per coach
+- Returns array shaped to match the `CoachProfile` interface the frontend expects
+- Registered `Route::get('/coaches', ...)` **before** `GET /coaches/{coachId}` to avoid route conflict
+
+**File:** `app/Http/Controllers/Api/CoachingMarketplaceController.php`
+
+#### 2. Arena Profile — Optional Auth + Video Fields ✅
+
+**Commit:** `c770673` — pushed to `sciemec/bhora-ai` → Render auto-deployed
+
+**Changes to `ArenaSocialController::profile()`:**
+- `Auth::id()` → `auth('sanctum')->id()` — unauthenticated visitors can now view public Arena profiles without hitting a 401
+- Fetches 8 recent posts instead of 5
+- Includes `video_url`, `thumbnail_url`, `sport` in the posts query so the profile page can render inline video players
+
+---
+
+### WHAT STILL NEEDS DOING (30 August 2026 continued)
+
+| Item | Status | Action Required |
+|---|---|---|
+| July/August migrations audit | ASSESSED — no idempotency bugs found | All recent migrations use `createIfNotExists` guards or are self-correcting |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| `arena_posts` activity + WhatsApp migrations | NOT YET VERIFIED | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
+## SESSION LOG — 30 August 2026
+
+### Theme — Chemistry Migrations Fix + bhora-ai Job Queue Fixes
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### 1. Chemistry Migrations — FIXED ✅
+
+**Root cause:** Same pattern as the arena UUID bug (May 2026). `start.sh` runs on every Render restart. The 5 chemistry migrations had previously been recorded as "done" in the `migrations` table (from an earlier deploy attempt that created partial state), so `php artisan migrate --force` was skipping them silently. The tables (`style_fingerprints`, `style_fingerprint_history`, `style_similarities`, `chemistry_data_access_log`) and the two `player_profiles` columns never existed on the live DB.
+
+**Fix:** Added a chemistry tinker patch to `start.sh` (matching the existing arena/biomechanics patch pattern):
+- Drops the 4 chemistry tables with `CASCADE`
+- Drops `safeguarding_consent_chemistry` + `chemistry_notifications_enabled` columns from `player_profiles` (if they exist)
+- Deletes all 5 chemistry migration records from the `migrations` table
+- `php artisan migrate --force` then re-runs all 5 fresh
+
+**Commits:**
+- `2d8dd05` — `start.sh` chemistry patch → pushed to `sciemec/bhora-ai` → Render auto-deploying
+
+**Pages now unblocked:** `/coach/chemistry`, `/coach/chemistry/pair/[playerA]/[playerB]`, `/player/similar`
+
+---
+
+#### 2. bhora-ai Job Queue Fixes ✅
+
+**Commit:** `08db992` — pushed to `sciemec/bhora-ai`
+
+- `AnalyseAndPostToArenaJob.php` — added `public string $queue = 'match-eye'`
+- `ThutoWeeklyFocusJob.php` — added `public string $queue = 'match-eye'`
+
+Both jobs now route to the dedicated match-eye queue worker service.
+
+---
+
+### WHAT STILL NEEDS DOING (30 August 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Chemistry migrations | ✅ FIXED — `2d8dd05` | Wait for Render deploy to complete, verify tables exist |
+| Coach marketplace migrations | WRITTEN IN CLAUDE.md — code now in bhora-ai | Migrations auto-run via `start.sh`; verify `coach_profiles` table exists |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
 ## SESSION LOG — 21 July 2026
 
 ### Theme — Login Proxy Timeout Fix + Registration Cold-Start Banners
@@ -54,7 +155,7 @@ Player registration (`src/app/register/player/page.tsx`) already had this banner
 | `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
 | bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
 | bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
-| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| Chemistry migrations (7 May) | ✅ FIXED — `2d8dd05` (30 Aug 2026) | start.sh patch added — re-runs all 5 migrations on next deploy |
 | `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
 
