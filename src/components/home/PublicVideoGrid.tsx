@@ -66,7 +66,7 @@ function ThumbnailPlaceholder({ name, sport }: { name: string; sport: string | n
 }
 
 function VideoCard({ tile }: { tile: VideoTile }) {
-  const href = `/arena?play=${tile.id}`;
+  const href = `/arena/posts/${tile.id}`;
   const sportLabel = tile.sport
     ? tile.sport.charAt(0).toUpperCase() + tile.sport.slice(1)
     : null;
