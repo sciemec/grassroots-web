@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect, use } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useRef, use } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -44,6 +44,9 @@ interface ArenaPost {
   like_count: number;
   comment_count: number;
   created_at: string;
+  video_url?: string;
+  thumbnail_url?: string;
+  sport?: string;
 }
 
 interface ShowcaseClip {
@@ -113,6 +116,9 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
   const user        = useAuthStore((s) => s.user);
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const searchParams = useSearchParams();
+  const playId       = searchParams.get("play");
+  const playRef      = useRef<HTMLDivElement>(null);
 
   const [profile, setProfile]           = useState<ProfileData | null>(null);
   const [posts, setPosts]               = useState<ArenaPost[]>([]);
@@ -145,6 +151,13 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id, hasHydrated, token]);
+
+  // Auto-scroll to the ?play= video once data has loaded
+  useEffect(() => {
+    if (!loading && playId && playRef.current) {
+      playRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [loading, playId]);
 
   const toggleFollow = async () => {
     const prev = isFollowing;
@@ -193,6 +206,8 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
 
   const initials = (profile?.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const isOwnProfile = user?.id === id;
+  const videoPosts = posts.filter((p) => p.video_url);
+  const textPosts  = posts.filter((p) => !p.video_url);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
@@ -327,12 +342,48 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
           </div>
         )}
 
-        {/* Recent posts */}
-        {posts.length > 0 && (
+        {/* Video posts */}
+        {videoPosts.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Videos</h2>
+            <div className="space-y-4">
+              {videoPosts.map((post) => {
+                const isTarget = post.id === playId;
+                return (
+                  <div key={post.id}
+                    ref={isTarget ? playRef : undefined}
+                    className={`rounded-xl overflow-hidden border transition-all ${isTarget ? "border-[#c8962a] ring-2 ring-[#c8962a]/30" : "border-gray-100"}`}>
+                    <video
+                      controls
+                      poster={post.thumbnail_url || undefined}
+                      className="w-full"
+                      style={{ maxHeight: "360px", background: "#000" }}
+                      preload="metadata">
+                      <source src={post.video_url} />
+                    </video>
+                    {post.body && (
+                      <div className="px-3 py-2.5">
+                        <p className="text-sm text-gray-700 line-clamp-2">{post.body}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                          <span className="flex items-center gap-1"><Heart size={11} />{post.like_count}</span>
+                          <span className="flex items-center gap-1"><MessageSquare size={11} />{post.comment_count}</span>
+                          <span>{timeAgo(post.created_at)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent posts — text */}
+        {textPosts.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-900 mb-3">Recent Posts</h2>
             <div className="space-y-3">
-              {posts.map((post) => (
+              {textPosts.map((post) => (
                 <div key={post.id} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
