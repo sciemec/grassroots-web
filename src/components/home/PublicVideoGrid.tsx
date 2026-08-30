@@ -72,11 +72,30 @@ function VideoCard({ tile }: { tile: VideoTile }) {
     : null;
   const emoji = tile.sport ? (SPORT_EMOJI[tile.sport.toLowerCase()] ?? "🏅") : "🏅";
 
+  const handleMouseEnter = (e: React.MouseEvent<HTMLVideoElement>) => {
+    e.currentTarget.play().catch(() => {});
+  };
+  const handleMouseLeave = (e: React.MouseEvent<HTMLVideoElement>) => {
+    e.currentTarget.pause();
+    e.currentTarget.currentTime = 0;
+  };
+
   return (
     <Link href={href} className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c8962a] rounded-xl">
-      {/* Thumbnail */}
+      {/* Thumbnail / video preview */}
       <div className="relative w-full overflow-hidden rounded-xl bg-[#1c3d22]" style={{ paddingBottom: "56.25%" }}>
-        {tile.thumbnail_url ? (
+        {tile.video_url ? (
+          <video
+            src={tile.video_url}
+            poster={tile.thumbnail_url ?? undefined}
+            muted
+            playsInline
+            preload="metadata"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : tile.thumbnail_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={tile.thumbnail_url}
