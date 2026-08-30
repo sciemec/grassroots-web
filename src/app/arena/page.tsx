@@ -1,7 +1,7 @@
 // src/app/arena/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -142,6 +142,18 @@ const PROVINCES = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Reads the ?play= search param — must be in its own component so it can be
+// wrapped in <Suspense> (Next.js requirement for useSearchParams in App Router)
+// ─────────────────────────────────────────────────────────────────────────────
+function PlayParamReader({ setPlayId }: { setPlayId: (id: string | null) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    setPlayId(searchParams?.get("play") ?? null);
+  }, [searchParams, setPlayId]);
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ArenaPage() {
@@ -180,9 +192,7 @@ export default function ArenaPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const playRef       = useRef<HTMLDivElement>(null);
-
-  const searchParams = useSearchParams();
-  const playId       = searchParams?.get("play") ?? null;
+  const [playId, setPlayId] = useState<string | null>(null);
 
   // ── Edit / delete state ────────────────────────────────────────────────────
   const [postMenuOpen,   setPostMenuOpen]   = useState<string | null>(null);
@@ -754,6 +764,9 @@ export default function ArenaPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG }}>
+      <Suspense fallback={null}>
+        <PlayParamReader setPlayId={setPlayId} />
+      </Suspense>
       <ArenaNav userName={user?.name ?? "You"} />
 
       {/* Hero banner */}
