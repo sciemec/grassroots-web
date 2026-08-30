@@ -2,6 +2,40 @@
 
 ---
 
+## SESSION LOG — 30 August 2026 (audit)
+
+### Theme — WhatsApp Migration Audit: Already Complete
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### WhatsApp Twilio → Meta Cloud API — CONFIRMED FULLY DONE ✅
+
+**Finding:** The CLAUDE.md "still needs doing" entries for `AnalyseWhatsappVideoJob` and `config/services.php` were stale. All three bhora-ai files are already on Meta Cloud API:
+
+| File | Status |
+|---|---|
+| `config/services.php` | ✅ `whatsapp` block present (lines 38–43). No `twilio` block anywhere. |
+| `app/Services/WhatsAppService.php` | ✅ Fully on Meta Cloud API — `graph.facebook.com/v20.0`. Reads `config('services.whatsapp.access_token')` + `config('services.whatsapp.phone_number_id')`. |
+| `app/Jobs/AnalyseWhatsappVideoJob.php` | ✅ Uses injected `WhatsAppService $wa` via `handle()`. All replies go through `$wa->sendText()`. No Twilio SDK or HTTP calls anywhere. |
+
+No code changes needed. CLAUDE.md updated to mark these items done.
+
+---
+
+### WHAT STILL NEEDS DOING (30 August 2026 audit)
+
+| Item | Status | Action Required |
+|---|---|---|
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
+| `arena_posts` activity + WhatsApp migrations | NOT YET VERIFIED | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
 ## SESSION LOG — 30 August 2026 (continued)
 
 ### Theme — GET /coaches Browse Endpoint + Arena Profile Optional Auth
@@ -44,8 +78,8 @@
 | `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
 | `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
 | `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
-| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
-| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| bhora-ai `AnalyseWhatsappVideoJob` | ✅ DONE | Already uses `WhatsAppService` — confirmed 30 August 2026 |
+| bhora-ai `config/services.php` | ✅ DONE | `whatsapp` block present, no `twilio` block — confirmed 30 August 2026 |
 | `arena_posts` activity + WhatsApp migrations | NOT YET VERIFIED | From 22 June + 14 June sessions |
 | First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
 
