@@ -1,4 +1,4 @@
-import { ShieldCheck, MapPin, Ruler, Trophy, User, Scale, Footprints } from "lucide-react";
+import { ShieldCheck, MapPin, Ruler, Trophy, User, Scale, Footprints, Zap, CheckCircle } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { LogProfileView } from "@/components/player/LogProfileView";
 import { AdBanner } from "@/components/ui/AdBanner";
@@ -15,6 +15,19 @@ interface ShowcaseClip {
   top_strength: string;
   scout_note: string;
   view_count: number;
+}
+
+interface GrsTest {
+  aqScore: number | null;
+  tier: string | null;
+  sessionDate: string;
+  coachVerified: boolean;
+}
+
+interface DrillScore {
+  drillName: string;
+  score: number;
+  topStrength: string | null;
 }
 
 interface PublicProfile {
@@ -34,6 +47,8 @@ interface PublicProfile {
   school: string | null;
   goals: number | null;
   appearances: number | null;
+  grs_test: GrsTest | null;
+  drill_scores: DrillScore[];
 }
 
 async function getShowcaseClips(id: string): Promise<ShowcaseClip[]> {
@@ -187,6 +202,87 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             <div className="mx-5 mb-5 rounded-xl bg-[#f0b429]/5 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#f0b429]/70 mb-1.5">About</p>
               <p className="text-sm text-[#f0b429]/70 leading-relaxed">{profile.bio}</p>
+            </div>
+          )}
+
+          {/* GRS Athletic Score */}
+          {profile.grs_test && profile.grs_test.aqScore !== null && (
+            <div className="mx-5 mb-5">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]/50 mb-2">
+                GRS Athletic Score
+              </p>
+              <div className="rounded-2xl border border-[#f0b429]/10 bg-[#f0b429]/5 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f0b429]/10">
+                      <Zap className="h-5 w-5 text-[#f0b429]" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-extrabold text-white">
+                        {profile.grs_test.aqScore}
+                        <span className="text-sm font-normal text-[#f0b429]/40"> / 100</span>
+                      </p>
+                      <p className="text-[10px] text-[#f0b429]/40 uppercase tracking-wide">Athletic Quotient</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {profile.grs_test.tier && (
+                      <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
+                        profile.grs_test.tier.toLowerCase() === "elite"  ? "bg-purple-500/20 text-purple-300" :
+                        profile.grs_test.tier.toLowerCase() === "gold"   ? "bg-[#f0b429]/20 text-[#f0b429]" :
+                        profile.grs_test.tier.toLowerCase() === "silver" ? "bg-white/20 text-white/70" :
+                        "bg-amber-900/30 text-amber-400"
+                      }`}>
+                        {profile.grs_test.tier.toUpperCase()}
+                      </span>
+                    )}
+                    {profile.grs_test.coachVerified && (
+                      <div className="mt-1.5 flex items-center justify-end gap-1 text-[#f0b429]/50">
+                        <CheckCircle className="h-3 w-3" />
+                        <span className="text-[9px]">Coach verified</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Drill Analysis Scores */}
+          {profile.drill_scores && profile.drill_scores.length > 0 && (
+            <div className="mx-5 mb-5">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]/50 mb-2">
+                AI Drill Analysis
+              </p>
+              <div className="space-y-2">
+                {profile.drill_scores.slice(0, 5).map((drill) => (
+                  <div key={drill.drillName} className="rounded-xl bg-[#f0b429]/5 px-4 py-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs font-semibold text-white truncate pr-2">{drill.drillName}</p>
+                      <span className={`text-sm font-extrabold shrink-0 ${
+                        drill.score >= 8 ? "text-[#f0b429]" :
+                        drill.score >= 5 ? "text-white" :
+                        "text-white/50"
+                      }`}>
+                        {drill.score.toFixed(1)}<span className="text-[10px] font-normal text-[#f0b429]/30">/10</span>
+                      </span>
+                    </div>
+                    {/* Score bar */}
+                    <div className="h-1 rounded-full bg-white/10">
+                      <div
+                        className="h-1 rounded-full"
+                        style={{
+                          width: `${(drill.score / 10) * 100}%`,
+                          background: drill.score >= 8 ? "#f0b429" : drill.score >= 5 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)",
+                        }}
+                      />
+                    </div>
+                    {drill.topStrength && (
+                      <p className="mt-1.5 text-[10px] text-[#f0b429]/40 leading-snug">{drill.topStrength}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
