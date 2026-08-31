@@ -87,6 +87,8 @@ export default function DiscoverPage() {
 
   const [players, setPlayers]         = useState<Player[]>([]);
   const [loading, setLoading]         = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
   const [query, setQuery]             = useState("");
   const [sport, setSport]             = useState("");
   const [province, setProvince]       = useState("");
@@ -111,10 +113,27 @@ export default function DiscoverPage() {
       if (res.ok) {
         const json = await res.json();
         setPlayers(safeArray<Player>(json));
+        setNextPageUrl(json?.next_page_url ?? null);
       }
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [token, sport, province, position, minScore]);
+
+  const loadMore = async () => {
+    if (!nextPageUrl || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(nextPageUrl, {
+        headers: token ? { Authorization: `Bearer ${useAuthStore.getState().token ?? ""}` } : {},
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setPlayers((prev) => [...prev, ...safeArray<Player>(json)]);
+        setNextPageUrl(json?.next_page_url ?? null);
+      }
+    } catch { /* silent */ }
+    finally { setLoadingMore(false); }
+  };
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -237,47 +256,58 @@ export default function DiscoverPage() {
             <p className="text-gray-300 text-xs">Try adjusting your filters</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {players.map((player) => {
-              const initials = (player.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-              return (
-                <div key={player.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-3">
-                    {player.avatar_url ? (
-                      <img src={player.avatar_url} alt={player.name ?? "Player"} className="w-12 h-12 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                        style={{ background: GRS_GREEN }}>{initials}</div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <Link href={`/arena/profile/${player.id}`} className="font-semibold text-gray-900 hover:underline truncate block">
-                        {player.name ?? "Unknown Player"}
-                      </Link>
-                      <p className="text-xs text-gray-500 truncate">{player.position || player.role} · {player.sport}</p>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {players.map((player) => {
+                const initials = (player.name ?? "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+                return (
+                  <div key={player.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-3 mb-3">
+                      {player.avatar_url ? (
+                        <img src={player.avatar_url} alt={player.name ?? "Player"} className="w-12 h-12 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                          style={{ background: GRS_GREEN }}>{initials}</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/arena/profile/${player.id}`} className="font-semibold text-gray-900 hover:underline truncate block">
+                          {player.name ?? "Unknown Player"}
+                        </Link>
+                        <p className="text-xs text-gray-500 truncate">{player.position || player.role} · {player.sport}</p>
+                      </div>
                     </div>
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {player.province && <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{player.province}</span>}
+                      {player.peak_level_label && <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "#f0fdf4", color: GRS_GREEN }}>{player.peak_level_label}</span>}
+                      {player.thuto_score != null && (
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${ScoreColor(player.thuto_score)}`}
+                          style={{ background: "#f9fafb" }}>
+                          {player.thuto_score}
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={() => toggleFollow(player.id, player.is_following)}
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                      style={player.is_following
+                        ? { background: "#f9fafb", color: "#6b7280", borderColor: "#d1d5db" }
+                        : { background: GOLD, color: "white", borderColor: GOLD }}>
+                      {player.is_following ? <UserCheck size={13} /> : <UserPlus size={13} />}
+                      {player.is_following ? "Following" : "Follow"}
+                    </button>
                   </div>
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {player.province && <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{player.province}</span>}
-                    {player.peak_level_label && <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "#f0fdf4", color: GRS_GREEN }}>{player.peak_level_label}</span>}
-                    {player.thuto_score != null && (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${ScoreColor(player.thuto_score)}`}
-                        style={{ background: "#f9fafb" }}>
-                        {player.thuto_score}
-                      </span>
-                    )}
-                  </div>
-                  <button onClick={() => toggleFollow(player.id, player.is_following)}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium border transition-colors"
-                    style={player.is_following
-                      ? { background: "#f9fafb", color: "#6b7280", borderColor: "#d1d5db" }
-                      : { background: GOLD, color: "white", borderColor: GOLD }}>
-                    {player.is_following ? <UserCheck size={13} /> : <UserPlus size={13} />}
-                    {player.is_following ? "Following" : "Follow"}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            {nextPageUrl && (
+              <div className="mt-6 text-center">
+                <button onClick={loadMore} disabled={loadingMore}
+                  className="px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+                  style={{ background: GRS_GREEN }}>
+                  {loadingMore ? "Loading…" : "Load more athletes"}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
