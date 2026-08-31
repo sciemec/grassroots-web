@@ -430,10 +430,13 @@ export default function ArenaPostDetailPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{authorName}</span>
+                  <Link href={`/arena/profile/${post.user_id}`} style={{ fontWeight: 700, fontSize: 14, color: "#111", textDecoration: "none" }}>{authorName}</Link>
                   <span style={{ fontSize: 10, fontWeight: 700, color: roleColor, backgroundColor: `${roleColor}18`, padding: "1px 7px", borderRadius: 20, textTransform: "capitalize" }}>
                     {post.user?.role ?? "player"}
                   </span>
+                  <Link href={`/arena/profile/${post.user_id}`} style={{ fontSize: 10, fontWeight: 600, color: "#6b7280", border: "1px solid #d1d5db", borderRadius: 20, padding: "1px 8px", textDecoration: "none", whiteSpace: "nowrap" }}>
+                    View Profile
+                  </Link>
                   {typeMeta && (
                     <span style={{ fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 3, color: "#374151", backgroundColor: typeMeta.border, padding: "1px 7px", borderRadius: 20 }}>
                       {typeMeta.icon} {typeMeta.label}
