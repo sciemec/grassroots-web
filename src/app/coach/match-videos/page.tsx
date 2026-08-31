@@ -458,7 +458,7 @@ function UploadForm({ onUploaded }: { onUploaded: (v: MatchVideo) => void }) {
         onUploaded(saved.data as MatchVideo);
         setTitle(""); setMatchDate(""); setOpponent(""); setCompetition("");
         setFile(null);
-        setVisibility("team");
+        setVisibility("link_only");
         setThumbState("idle");
         if (fileRef.current) fileRef.current.value = "";
         setOpen(false);
