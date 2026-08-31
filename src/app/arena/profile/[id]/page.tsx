@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, use } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play } from "lucide-react";
+import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play, ExternalLink } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -277,6 +277,15 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
                   <MessageCircle size={14} /> Message
                 </Link>
               )}
+            </div>
+          )}
+          {/* View Profile button — shown to everyone including own profile */}
+          {profile?.role === "player" && (
+            <div className="mt-3">
+              <Link href={`/player/public/${id}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+                <ExternalLink size={14} /> View Profile
+              </Link>
             </div>
           )}
         </div>
