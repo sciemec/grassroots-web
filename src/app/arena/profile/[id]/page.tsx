@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, use } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play, ExternalLink } from "lucide-react";
+import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play, ExternalLink, Zap, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -37,6 +37,17 @@ interface ProfileData {
   following_count?: number;
   is_following?: boolean;
   connection_status?: string;
+  grs_test?: {
+    aqScore: number | null;
+    tier: string | null;
+    sessionDate: string;
+    coachVerified: boolean;
+  } | null;
+  drill_scores?: {
+    drillName: string;
+    score: number;
+    topStrength: string | null;
+  }[];
 }
 
 interface ArenaPost {
@@ -199,10 +210,13 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
     </div>
   );
 
-  if (notFound) return (
+  if (notFound || !profile) return (
     <div style={{ minHeight: "100vh", backgroundColor: BG }}>
       <ArenaNav userName={user?.name ?? "A"} />
-      <div className="text-center py-20"><p className="text-gray-400">Profile not found</p><Link href="/arena/discover" className="text-sm font-medium mt-3 inline-block hover:underline" style={{ color: GRS_GREEN }}>Discover Athletes</Link></div>
+      <div className="text-center py-20">
+        <p className="text-gray-400">Profile not found</p>
+        <Link href="/arena/discover" className="text-sm font-medium mt-3 inline-block hover:underline" style={{ color: GRS_GREEN }}>Discover Athletes</Link>
+      </div>
     </div>
   );
 
@@ -351,6 +365,80 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
                     )}
                   </div>
                 </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* GRS Athletic Score */}
+        {profile.grs_test && profile.grs_test.aqScore !== null && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">GRS Athletic Score</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                  <Zap className="h-5 w-5" style={{ color: GOLD }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-extrabold text-gray-900">
+                    {profile.grs_test.aqScore}
+                    <span className="text-sm font-normal text-gray-400"> / 100</span>
+                  </p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">Athletic Quotient</p>
+                </div>
+              </div>
+              <div className="text-right">
+                {profile.grs_test.tier && (
+                  <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
+                    profile.grs_test.tier.toLowerCase() === "elite"  ? "bg-purple-100 text-purple-700" :
+                    profile.grs_test.tier.toLowerCase() === "gold"   ? "bg-yellow-100 text-yellow-700" :
+                    profile.grs_test.tier.toLowerCase() === "silver" ? "bg-gray-100 text-gray-600" :
+                    "bg-amber-50 text-amber-700"
+                  }`}>
+                    {profile.grs_test.tier.toUpperCase()}
+                  </span>
+                )}
+                {profile.grs_test.coachVerified && (
+                  <div className="mt-1.5 flex items-center justify-end gap-1 text-gray-400">
+                    <CheckCircle className="h-3 w-3" />
+                    <span className="text-xs">Coach verified</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI Drill Analysis */}
+        {profile.drill_scores && profile.drill_scores.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">AI Drill Analysis</h2>
+            <div className="space-y-2">
+              {profile.drill_scores.map((drill) => (
+                <div key={drill.drillName} className="rounded-xl bg-gray-50 px-4 py-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-semibold text-gray-800 truncate pr-2">{drill.drillName}</p>
+                    <span className={`text-sm font-extrabold shrink-0 ${
+                      drill.score >= 8 ? "text-yellow-600" :
+                      drill.score >= 5 ? "text-gray-700" :
+                      "text-gray-400"
+                    }`}>
+                      {drill.score.toFixed(1)}<span className="text-xs font-normal text-gray-300">/10</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-gray-200">
+                    <div
+                      className="h-1.5 rounded-full"
+                      style={{
+                        width: `${(drill.score / 10) * 100}%`,
+                        background: drill.score >= 8 ? GOLD : drill.score >= 5 ? "#6b7280" : "#d1d5db",
+                      }}
+                    />
+                  </div>
+                  {drill.topStrength && (
+                    <p className="mt-1.5 text-xs text-gray-400 leading-snug">{drill.topStrength}</p>
+                  )}
+                </div>
               ))}
             </div>
           </div>
