@@ -8,7 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   ArrowLeft, Heart, MessageCircle, Send, Trash2, Flag, Pencil,
-  Trophy, Zap, Star, Video, Globe, Eye, Loader2, ChevronDown, Check, X,
+  Trophy, Zap, Star, Video, Eye, Loader2, ChevronDown, Check, X,
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
@@ -166,9 +166,8 @@ export default function ArenaPostDetailPage() {
 
   useEffect(() => {
     if (!id || !hasHydrated) return;
-    if (!token) { setLoading(false); return; }
 
-    fetch(`${API}/arena/posts/${id}`, { headers: authHeaders() })
+    fetch(`${API}/arena/posts/${id}`, { headers: token ? authHeaders() : {} })
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((d) => {
         const p: Post = d.data ?? d;
@@ -186,7 +185,7 @@ export default function ArenaPostDetailPage() {
 
   function loadComments(page: number, postId: string) {
     setComLd(true);
-    fetch(`${API}/arena/posts/${postId}/comments?page=${page}`, { headers: authHeaders() })
+    fetch(`${API}/arena/posts/${postId}/comments?page=${page}`, { headers: token ? authHeaders() : {} })
       .then((r) => r.json())
       .then((d) => {
         const batch: Comment[] = Array.isArray(d.data) ? d.data : (d.comments ?? []);
@@ -375,30 +374,6 @@ export default function ArenaPostDetailPage() {
   // ── Render states ──────────────────────────────────────────────────────────
 
   if (!hasHydrated || loading) return <LoadingSkeleton />;
-
-  if (!token) {
-    return (
-      <div style={{ minHeight: "100vh", backgroundColor: "#f4f2ee", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <div style={{ maxWidth: 400, width: "100%", textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: "#1a3d26", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-            <Globe size={28} color="#f0b429" />
-          </div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#111", margin: "0 0 8px" }}>Sign in to view</h2>
-          <p style={{ fontSize: 14, color: "#6b7280", margin: "0 0 24px", lineHeight: 1.6 }}>
-            Join The Arena to view posts, like, and comment.
-          </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href={`/login?next=/arena/posts/${id}`} style={{ padding: "11px 24px", backgroundColor: GRS_GREEN, color: "#fff", borderRadius: 10, textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
-              Sign In
-            </Link>
-            <Link href="/register" style={{ padding: "11px 24px", backgroundColor: "#fff", color: "#374151", borderRadius: 10, textDecoration: "none", fontWeight: 700, fontSize: 14, border: "1px solid #d1d5db" }}>
-              Register Free
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (error || !post) {
     return (
