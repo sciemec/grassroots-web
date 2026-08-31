@@ -437,6 +437,9 @@ export default function ArenaPostDetailPage() {
                   <Link href={`/arena/profile/${post.user_id}`} style={{ fontSize: 10, fontWeight: 600, color: "#6b7280", border: "1px solid #d1d5db", borderRadius: 20, padding: "1px 8px", textDecoration: "none", whiteSpace: "nowrap" }}>
                     View Profile
                   </Link>
+                  <Link href="/arena/discover" style={{ fontSize: 10, fontWeight: 600, color: "#1a5c2a", border: "1px solid #1a5c2a", borderRadius: 20, padding: "1px 8px", textDecoration: "none", whiteSpace: "nowrap" }}>
+                    Discover Athletes
+                  </Link>
                   {typeMeta && (
                     <span style={{ fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", gap: 3, color: "#374151", backgroundColor: typeMeta.border, padding: "1px 7px", borderRadius: 20 }}>
                       {typeMeta.icon} {typeMeta.label}
