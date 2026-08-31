@@ -143,7 +143,8 @@ export default function PlayerProfilePage() {
   const [cropDragging,  setCropDragging]  = useState(false);
   const [cropDragStart, setCropDragStart] = useState({ x: 0, y: 0 });
 
-  // Invite Parent state
+  // Edit panel + Invite Parent state
+  const [showEditPanel, setShowEditPanel]     = useState(false);
   const [showInvitePanel, setShowInvitePanel] = useState(false);
   const [inviteAgeGroup, setInviteAgeGroup]   = useState<"u13" | "u17">("u17");
   const [inviteCode, setInviteCode]           = useState<string | null>(null);
@@ -461,11 +462,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 ref={cropCanvasRef}
                 width={280}
                 height={280}
-                style={{
-                  borderRadius: "50%",
-                  cursor: cropDragging ? "grabbing" : "grab",
-                  touchAction: "none",
-                }}
+                style={{ borderRadius: "50%", cursor: cropDragging ? "grabbing" : "grab", touchAction: "none" }}
                 onMouseDown={onCropMouseDown}
                 onMouseMove={onCropMouseMove}
                 onMouseUp={onCropMouseUp}
@@ -478,521 +475,380 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             </div>
             <div className="mb-5 px-1">
               <label className="mb-1 block text-xs text-white/50">Zoom</label>
-              <input
-                type="range"
-                min={0.1}
-                max={4}
-                step={0.05}
-                value={cropScale}
+              <input type="range" min={0.1} max={4} step={0.05} value={cropScale}
                 onChange={(e) => setCropScale(parseFloat(e.target.value))}
-                className="w-full accent-[#f0b429]"
-              />
+                className="w-full accent-[#f0b429]" />
             </div>
             <div className="flex gap-3">
-              <button
-                type="button"
+              <button type="button"
                 onClick={() => { setCropSrc(null); setCropScale(1); setCropOffset({ x: 0, y: 0 }); }}
-                className="flex-1 rounded-lg border border-white/20 py-2.5 text-sm text-white/70 hover:bg-white/10 transition-colors"
-              >
+                className="flex-1 rounded-lg border border-white/20 py-2.5 text-sm text-white/70 hover:bg-white/10 transition-colors">
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={handleCropSave}
-                className="flex-1 rounded-lg bg-[#f0b429] py-2.5 text-sm font-semibold text-[#1a3a1a] hover:bg-[#f5c542] transition-colors"
-              >
+              <button type="button" onClick={handleCropSave}
+                className="flex-1 rounded-lg bg-[#f0b429] py-2.5 text-sm font-semibold text-[#1a3a1a] hover:bg-[#f5c542] transition-colors">
                 Save Photo
               </button>
             </div>
-            <p className="mt-3 text-center text-xs text-white/30">
-              Drag to reposition · Scroll or slide to zoom
-            </p>
+            <p className="mt-3 text-center text-xs text-white/30">Drag to reposition · Scroll or slide to zoom</p>
           </div>
         </div>
       )}
 
       <Sidebar />
-      <main className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-2xl">
+      <main className="flex-1 overflow-auto p-4 md:p-6">
+        <div className="mx-auto max-w-2xl space-y-4">
 
           <ProUpgradeBanner />
 
-          {/* Scout View Badge */}
-          {profile?.id && (
-            <div className="mb-4">
-              <ScoutViewBadge playerId={profile.id} />
-            </div>
-          )}
-
-          {/* Header */}
-          <div className="mb-8 flex items-center gap-3">
-            <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">Player Profile</h1>
-              <p className="text-sm text-muted-foreground">Manage your public profile and scout visibility</p>
-            </div>
-          </div>
-
-          {/* Gamification Panel — XP, streak, radar chart */}
-          <PlayerGamificationPanel />
-
-          {/* Avatar + verification badge */}
-          <div className="mb-6 flex items-center gap-5">
-            <div className="relative">
-              {photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={photoUrl}
-                  alt={user?.name ?? "Player"}
-                  className="h-20 w-20 rounded-full object-cover border-2 border-primary/30"
-                />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                  <User className="h-10 w-10 text-muted-foreground" />
-                </div>
-              )}
+          {/* ── HERO IDENTITY CARD ─────────────────────────────────────────── */}
+          <div className="rounded-2xl border border-white/10 bg-card p-5 shadow-sm">
+            {/* Top row: back arrow + title + edit button */}
+            <div className="mb-5 flex items-center gap-3">
+              <Link href="/player" className="rounded-lg p-1.5 hover:bg-muted transition-colors">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-bold truncate">My Profile</h1>
+                <p className="text-xs text-muted-foreground">Player Card</p>
+              </div>
               <button
                 type="button"
-                onClick={() => photoInputRef.current?.click()}
-                disabled={uploadingPhoto}
-                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors"
-                title="Upload profile photo"
+                onClick={() => setShowEditPanel((v) => !v)}
+                className="shrink-0 rounded-xl border border-[#f0b429]/40 bg-[#f0b429]/10 px-4 py-2 text-xs font-bold text-[#f0b429] transition-colors hover:bg-[#f0b429]/20"
               >
-                {uploadingPhoto
-                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  : <Camera className="h-3.5 w-3.5" />
-                }
+                {showEditPanel ? "Done" : "Edit Profile"}
               </button>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoSelect}
-                className="sr-only"
-              />
             </div>
-            <div>
-              <p className="text-lg font-bold">{user?.name ?? "Your Profile"}</p>
-              <p className="text-sm text-muted-foreground">{user?.email ?? "Sign in to save your profile"}</p>
-              <div className="mt-1 flex items-center gap-2">
-                {profile?.verification_status === "approved" ? (
-                  <span className="flex items-center gap-1 rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-medium text-green-700">
-                    <CheckCircle2 className="h-3 w-3" /> Verified
-                  </span>
+
+            {/* Avatar + identity row */}
+            <div className="flex items-start gap-4">
+              <div className="relative shrink-0">
+                {photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoUrl} alt={user?.name ?? "Player"}
+                    className="h-24 w-24 rounded-2xl object-cover border-2 border-primary/30" />
                 ) : (
-                  <Link
-                    href="/player/verification"
-                    className="rounded-full border border-yellow-500/40 bg-yellow-500/10 px-2.5 py-1 text-xs font-medium text-yellow-700 hover:bg-yellow-500/20 transition-colors"
-                  >
-                    Get verified →
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Profile completion progress bar */}
-          <div className="mb-8 rounded-xl border border-white/15 bg-card p-4 shadow-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-medium">Profile completion</p>
-              <p className="text-sm font-bold text-primary">{count}/{total} fields · {pct}%</p>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            {pct < 100 && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Complete your profile to improve your chances of being discovered by scouts.
-              </p>
-            )}
-            {pct === 100 && (
-              <p className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Profile complete — scouts can see everything about you!
-              </p>
-            )}
-          </div>
-
-          {/* DYNAMIC METRIC DISCOVERY CARDS: Renders live derived metrics from config on active position select */}
-          {watchedValues.position && (
-            <div className="mb-8 rounded-2xl border bg-card p-5 shadow-sm border-primary/20">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`p-2.5 rounded-xl border ${dynamicConfig.badgeColor}`}>
-                  <LiveIconComponent size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-[#f0b429]">{dynamicConfig.title}</h3>
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dynamic Developmental Targets ({watchedValues.age_group ? watchedValues.age_group.toUpperCase() : "GENERAL"})</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {dynamicConfig.successMetrics.map((metric) => (
-                  <div key={metric.label} className="border-l-4 border-[#f0b429] bg-muted/40 px-3 py-2 rounded-r-xl">
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight truncate">{metric.label}</p>
-                    <p className="text-base font-black text-[#f0b429] mt-0.5">{metric.target}</p>
+                  <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-muted">
+                    <User className="h-12 w-12 text-muted-foreground" />
                   </div>
-                ))}
+                )}
+                <button type="button" onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors"
+                  title="Upload profile photo">
+                  {uploadingPhoto ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                </button>
+                <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="sr-only" />
               </div>
-            </div>
-          )}
 
-          {/* Scout visibility toggle */}
-          <div className="mb-8 flex items-center justify-between rounded-xl border border-white/15 bg-card p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              {profile?.scout_visible ? (
-                <Eye className="h-5 w-5 text-green-500" />
-              ) : (
-                <EyeOff className="h-5 w-5 text-muted-foreground" />
-              )}
-              <div>
-                <p className="font-medium">Scout visibility</p>
-                <p className="text-xs text-muted-foreground">
-                  {profile?.scout_visible
-                    ? "Scouts can find your profile in searches"
-                    : "Your profile is hidden from scout searches"}
-                </p>
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-bold truncate">{user?.name ?? "Your Profile"}</p>
+                <p className="text-xs text-muted-foreground truncate mb-2">{user?.email ?? ""}</p>
+
+                {/* Verification badge */}
+                <div className="mb-3">
+                  {profile?.verification_status === "approved" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2.5 py-1 text-xs font-medium text-green-700">
+                      <CheckCircle2 className="h-3 w-3" /> Verified
+                    </span>
+                  ) : (
+                    <Link href="/player/verification"
+                      className="inline-block rounded-full border border-yellow-500/40 bg-yellow-500/10 px-2.5 py-1 text-xs font-medium text-yellow-700 hover:bg-yellow-500/20 transition-colors">
+                      Get verified →
+                    </Link>
+                  )}
+                </div>
+
+                {/* Quick info chips */}
+                <div className="flex flex-wrap gap-1.5">
+                  {(profile?.sport || watchedValues.sport) && (
+                    <span className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-medium capitalize">
+                      {profile?.sport || watchedValues.sport}
+                    </span>
+                  )}
+                  {(profile?.position || watchedValues.position) && (
+                    <span className="rounded-full bg-[#f0b429]/10 border border-[#f0b429]/20 px-2.5 py-0.5 text-xs font-medium capitalize text-[#f0b429]">
+                      {profile?.position || watchedValues.position}
+                    </span>
+                  )}
+                  {(profile?.province || watchedValues.province) && (
+                    <span className="rounded-full bg-muted border border-white/10 px-2.5 py-0.5 text-xs font-medium">
+                      {profile?.province || watchedValues.province}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-            <button
-              onClick={toggleVisibility}
-              disabled={togglingVisibility}
-              className={`relative h-6 w-11 rounded-full transition-colors ${profile?.scout_visible ? "bg-green-500" : "bg-muted"}`}
-            >
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${profile?.scout_visible ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
+
+            {/* Scout visibility toggle */}
+            <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+              <div className="flex items-center gap-2.5">
+                {profile?.scout_visible
+                  ? <Eye className="h-4 w-4 text-green-500" />
+                  : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                <div>
+                  <p className="text-sm font-medium">Scout visibility</p>
+                  <p className="text-xs text-muted-foreground">
+                    {profile?.scout_visible ? "Open to scout searches" : "Hidden from scouts"}
+                  </p>
+                </div>
+              </div>
+              <button onClick={toggleVisibility} disabled={togglingVisibility}
+                className={`relative h-6 w-11 rounded-full transition-colors ${profile?.scout_visible ? "bg-green-500" : "bg-muted"}`}>
+                <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${profile?.scout_visible ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* ── GAMIFICATION PANEL — star of the show ─────────────────────── */}
+          <PlayerGamificationPanel />
 
-            {/* Primary sport */}
-            <div>
-              <label className="mb-2 block text-sm font-medium">Primary sport</label>
-              <SportSelector
-                value={selectedSport}
-                onChange={(v) => {
-                  setSelectedSport(v as SportKey);
-                  reset((prev) => ({ ...prev, sport: v as string, position: "" }));
-                }}
-                size="sm"
-              />
-            </div>
-
-            {/* Position + Province */}
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Playing Details</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Position</label>
-                <select
-                  {...register("position")}
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Select position…</option>
-                  {(SPORT_MAP[selectedSport]?.positions ?? POSITIONS).map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-                {errors.position && <p className="mt-1 text-xs text-destructive">{errors.position.message}</p>}
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Province</label>
-                <select
-                  {...register("province")}
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Select province…</option>
-                  {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-                {errors.province && <p className="mt-1 text-xs text-destructive">{errors.province.message}</p>}
-              </div>
-            </div>
-
-            {/* Area / Village / Town */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Area / Village / Town <span className="font-normal text-muted-foreground">(optional)</span>
-              </label>
-              <input
-                {...register("area")}
-                type="text"
-                placeholder="e.g. Gutu Growth Point, Wedza, Mhangura, near Marondera…"
-                className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Type anywhere you are from — village, farm, growth point, mission, suburb
-              </p>
-            </div>
-
-            {/* Age Group + Gender + Preferred Foot + Height + Weight */}
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Physical Details</p>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Age Group</label>
-                <select
-                  {...register("age_group")}
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring uppercase"
-                >
-                  <option value="">Select…</option>
-                  {AGE_GROUPS.map((ag) => <option key={ag} value={ag}>{ag.toUpperCase()}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Gender</label>
-                <select
-                  {...register("gender")}
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Select…</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Preferred Foot</label>
-                <select
-                  {...register("preferred_foot")}
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm capitalize outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="">Select…</option>
-                  {PREFERRED_FEET.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Height (cm)</label>
-                <input
-                  {...register("height_cm")}
-                  type="number"
-                  placeholder="175"
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Weight (kg)</label>
-                <input
-                  {...register("weight_kg")}
-                  type="number"
-                  placeholder="70"
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Date of Birth</label>
-                <input
-                  {...register("date_of_birth")}
-                  type="date"
-                  max={new Date().toISOString().split("T")[0]}
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-            </div>
-
-            {/* Club + School */}
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Club & School</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  Club <span className="font-normal text-muted-foreground">(optional)</span>
-                </label>
-                <input
-                  {...register("club")}
-                  type="text"
-                  placeholder="e.g. Dynamos FC"
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  School <span className="font-normal text-muted-foreground">(optional)</span>
-                </label>
-                <input
-                  {...register("school")}
-                  type="text"
-                  placeholder="e.g. Prince Edward High"
-                  className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
-                />
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">
-                Bio <span className="font-normal text-muted-foreground">(optional, max 500 chars)</span>
-              </label>
-              <textarea
-                {...register("bio")}
-                rows={4}
-                placeholder="Tell scouts about yourself — your strengths, ambitions, teams you've played for…"
-                className="w-full resize-none rounded-xl border bg-card px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
-              />
-              {errors.bio && <p className="mt-1 text-xs text-destructive">{errors.bio.message}</p>}
-            </div>
-
-            {error && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
-            {saved && (
-              <div className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-700">
-                <CheckCircle2 className="h-4 w-4" /> Profile saved successfully
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting || !isDirty}
-              className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Saving…
-                </span>
-              ) : "Save profile"}
-            </button>
-          </form>
-
-          {/* QR Profile Card ─ only shown to logged-in users */}
-          {user && (
-            <div className="mt-6 mb-6">
-              <QRProfileCard
-                playerId={String(user.id)}
-                playerName={user.name}
-                ageGroup={profile?.age_group ?? user.age_group}
-                province={profile?.province ?? user.province}
-                selfieUrl={photoUrl ?? undefined}
-              />
-            </div>
-          )}
-
-          {/* View as Scout + Share profile link */}
-          <div className="mb-6 flex gap-3">
-            <Link
-              href="/player/profile/scout-view"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 py-3 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/10"
-            >
+          {/* ── SCOUT DISCOVERY STRIP ─────────────────────────────────────── */}
+          <div className="flex gap-3">
+            <Link href="/player/profile/scout-view"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 py-3 text-sm font-semibold text-[#f0b429] transition-colors hover:bg-[#f0b429]/10">
               <Eye className="h-4 w-4" /> View as Scout
               <ExternalLink className="h-3.5 w-3.5 opacity-60" />
             </Link>
             {profile?.id && (
-              <button
-                type="button"
-                onClick={copyProfileLink}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-white hover:bg-white/10"
-              >
+              <button type="button" onClick={copyProfileLink}
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-white hover:bg-white/10">
                 <Copy className="h-4 w-4" />
                 {copied ? "Copied!" : "Share"}
               </button>
             )}
           </div>
 
-          {/* Invite Parent */}
-          <div className="mb-6 rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
-            <button
-              type="button"
-              onClick={() => { setShowInvitePanel((v) => !v); setInviteCode(null); setInviteError(""); }}
-              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors"
-            >
+          {/* Scout View Badge */}
+          {profile?.id && <ScoutViewBadge playerId={profile.id} />}
+
+          {/* ── EDIT PROFILE COLLAPSIBLE ──────────────────────────────────── */}
+          <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
+            <button type="button" onClick={() => setShowEditPanel((v) => !v)}
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
               <span className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-[#f0b429]" />
-                Invite Parent / Guardian
+                <User className="h-4 w-4 text-[#f0b429]" />
+                Edit Profile
+                {pct < 100 ? (
+                  <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-400">{pct}% complete</span>
+                ) : (
+                  <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-400">Complete ✓</span>
+                )}
               </span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${showInvitePanel ? "rotate-180" : ""}`} />
+              <ChevronDown className={`h-4 w-4 transition-transform ${showEditPanel ? "rotate-180" : ""}`} />
             </button>
 
-            {showInvitePanel && (
-              <div className="border-t border-white/10 px-5 pb-5 pt-4">
-                <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
-                  Generate a 6-character code. Your parent enters it at{" "}
-                  <span className="text-[#f0b429]">grassrootssports.live/parent/link</span> to connect to your account.
-                  The code expires after 48 hours.
-                </p>
+            {showEditPanel && (
+              <div className="border-t border-white/10 px-5 pb-6 pt-4 space-y-6">
 
-                {/* Age group selector */}
-                <div className="mb-4">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Your Age Group</p>
-                  <div className="flex gap-2">
-                    {(["u13", "u17"] as const).map((ag) => (
-                      <button
-                        key={ag}
-                        type="button"
-                        onClick={() => setInviteAgeGroup(ag)}
-                        className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
-                          inviteAgeGroup === ag
-                            ? "bg-[#f0b429] text-[#1a3a1a]"
-                            : "border border-white/10 bg-white/5 text-white/60 hover:text-white"
-                        }`}
-                      >
-                        {ag.toUpperCase()}
-                      </button>
-                    ))}
+                {/* Profile completion bar */}
+                <div className="rounded-xl border border-white/15 bg-background/50 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-medium">Profile completion</p>
+                    <p className="text-sm font-bold text-primary">{count}/{total} · {pct}%</p>
                   </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
+                  </div>
+                  {pct < 100 && (
+                    <p className="mt-2 text-xs text-muted-foreground">Complete your profile to improve scout discovery.</p>
+                  )}
+                  {pct === 100 && (
+                    <p className="mt-2 text-xs text-green-600 font-medium flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Profile complete — scouts can see everything!
+                    </p>
+                  )}
                 </div>
 
-                {inviteError && (
-                  <p className="mb-3 rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">{inviteError}</p>
-                )}
-
-                {/* Generated code display */}
-                {inviteCode ? (
-                  <div className="rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4 text-center">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#f0b429]/70">Invite Code</p>
-                    <p className="mb-3 font-mono text-4xl font-black tracking-[0.3em] text-[#f0b429]">{inviteCode}</p>
-                    <p className="mb-4 text-xs text-muted-foreground">
-                      Expires {inviteExpiry ? new Date(inviteExpiry).toLocaleString() : "in 48 hours"}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={copyInviteCode}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#f0b429] px-4 py-2.5 text-sm font-bold text-[#1a3a1a] transition-opacity hover:opacity-90"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        {inviteCopied ? "Copied!" : "Copy Code"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={generateInvite}
-                        disabled={inviteLoading}
-                        className="rounded-lg border border-white/10 px-4 py-2.5 text-xs text-muted-foreground hover:text-white transition-colors"
-                      >
-                        New Code
-                      </button>
+                {/* Dynamic metric discovery cards */}
+                {watchedValues.position && (
+                  <div className="rounded-2xl border bg-card p-5 border-primary/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`p-2.5 rounded-xl border ${dynamicConfig.badgeColor}`}>
+                        <LiveIconComponent size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-[#f0b429]">{dynamicConfig.title}</h3>
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                          Developmental Targets ({watchedValues.age_group ? watchedValues.age_group.toUpperCase() : "GENERAL"})
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {dynamicConfig.successMetrics.map((metric) => (
+                        <div key={metric.label} className="border-l-4 border-[#f0b429] bg-muted/40 px-3 py-2 rounded-r-xl">
+                          <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight truncate">{metric.label}</p>
+                          <p className="text-base font-black text-[#f0b429] mt-0.5">{metric.target}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={generateInvite}
-                    disabled={inviteLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a5c2a] px-4 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                  >
-                    {inviteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
-                    {inviteLoading ? "Generating..." : "Generate Invite Code"}
-                  </button>
                 )}
+
+                {/* Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">Primary sport</label>
+                    <SportSelector
+                      value={selectedSport}
+                      onChange={(v) => {
+                        setSelectedSport(v as SportKey);
+                        reset((prev) => ({ ...prev, sport: v as string, position: "" }));
+                      }}
+                      size="sm"
+                    />
+                  </div>
+
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Playing Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Position</label>
+                      <select {...register("position")}
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring">
+                        <option value="">Select position…</option>
+                        {(SPORT_MAP[selectedSport]?.positions ?? POSITIONS).map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                      {errors.position && <p className="mt-1 text-xs text-destructive">{errors.position.message}</p>}
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Province</label>
+                      <select {...register("province")}
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring">
+                        <option value="">Select province…</option>
+                        {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      {errors.province && <p className="mt-1 text-xs text-destructive">{errors.province.message}</p>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium">
+                      Area / Village / Town <span className="font-normal text-muted-foreground">(optional)</span>
+                    </label>
+                    <input {...register("area")} type="text"
+                      placeholder="e.g. Gutu Growth Point, Wedza, Mhangura, near Marondera…"
+                      className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Village, farm, growth point, mission, suburb — anywhere
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Physical Details</p>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Age Group</label>
+                      <select {...register("age_group")}
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring uppercase">
+                        <option value="">Select…</option>
+                        {AGE_GROUPS.map((ag) => <option key={ag} value={ag}>{ag.toUpperCase()}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Gender</label>
+                      <select {...register("gender")}
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring">
+                        <option value="">Select…</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="prefer_not_to_say">Prefer not to say</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Preferred Foot</label>
+                      <select {...register("preferred_foot")}
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm capitalize outline-none focus:ring-1 focus:ring-ring">
+                        <option value="">Select…</option>
+                        {PREFERRED_FEET.map((f) => <option key={f} value={f}>{f}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Height (cm)</label>
+                      <input {...register("height_cm")} type="number" placeholder="175"
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Weight (kg)</label>
+                      <input {...register("weight_kg")} type="number" placeholder="70"
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">Date of Birth</label>
+                      <input {...register("date_of_birth")} type="date"
+                        max={new Date().toISOString().split("T")[0]}
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring" />
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Club & School</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">
+                        Club <span className="font-normal text-muted-foreground">(optional)</span>
+                      </label>
+                      <input {...register("club")} type="text" placeholder="e.g. Dynamos FC"
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium">
+                        School <span className="font-normal text-muted-foreground">(optional)</span>
+                      </label>
+                      <input {...register("school")} type="text" placeholder="e.g. Prince Edward High"
+                        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium">
+                      Bio <span className="font-normal text-muted-foreground">(optional, max 500 chars)</span>
+                    </label>
+                    <textarea {...register("bio")} rows={4}
+                      placeholder="Tell scouts about yourself — your strengths, ambitions, teams you've played for…"
+                      className="w-full resize-none rounded-xl border bg-card px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground" />
+                    {errors.bio && <p className="mt-1 text-xs text-destructive">{errors.bio.message}</p>}
+                  </div>
+
+                  {error && (
+                    <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
+                  )}
+                  {saved && (
+                    <div className="flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-700">
+                      <CheckCircle2 className="h-4 w-4" /> Profile saved successfully
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={isSubmitting || !isDirty}
+                    className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+                      </span>
+                    ) : "Save profile"}
+                  </button>
+                </form>
               </div>
             )}
           </div>
 
-          {/* Talent Prediction Card */}
+          {/* ── QR PROFILE CARD ───────────────────────────────────────────── */}
           {user && (
-            <div className="mb-6">
-              <PotentialCard
-                playerId={String(user.id)}
-                playerName={user.name}
-              />
-            </div>
+            <QRProfileCard
+              playerId={String(user.id)}
+              playerName={user.name}
+              ageGroup={profile?.age_group ?? user.age_group}
+              province={profile?.province ?? user.province}
+              selfieUrl={photoUrl ?? undefined}
+            />
           )}
 
-          {/* AI Profile Narrative */}
-          <div className="mb-6 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
+          {/* ── TALENT PREDICTION ─────────────────────────────────────────── */}
+          {user && (
+            <PotentialCard playerId={String(user.id)} playerName={user.name} />
+          )}
+
+          {/* ── AI SCOUT NARRATIVE ────────────────────────────────────────── */}
+          <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
             <div className="mb-3 flex items-center gap-2">
               <Brain className="h-4 w-4 text-[#f0b429]" />
               <h3 className="font-semibold text-[#f0b429]">AI Scout Narrative</h3>
@@ -1000,11 +856,8 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             {aiNarrative ? (
               <>
                 <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{aiNarrative}</p>
-                <button
-                  onClick={generateNarrative}
-                  disabled={generatingNarrative}
-                  className="text-xs text-accent hover:text-[#f0b429] transition-colors"
-                >
+                <button onClick={generateNarrative} disabled={generatingNarrative}
+                  className="text-xs text-accent hover:text-[#f0b429] transition-colors">
                   {generatingNarrative ? "Regenerating…" : "↻ Regenerate"}
                 </button>
               </>
@@ -1013,43 +866,34 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 <p className="mb-3 text-sm text-muted-foreground">
                   Generate a 3-sentence professional scouting profile — written by AI, based on your position and club. Shown to scouts on your public profile.
                 </p>
-                <button
-                  onClick={generateNarrative}
-                  disabled={generatingNarrative || !profile?.position}
-                  className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-xs font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40"
-                >
-                  {generatingNarrative ? (
-                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
-                  ) : (
-                    <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>
-                  )}
+                <button onClick={generateNarrative} disabled={generatingNarrative || !profile?.position}
+                  className="flex items-center gap-2 rounded-xl bg-[#f0b429] px-4 py-2 text-xs font-semibold text-[#1a3a1a] transition-colors hover:bg-[#f5c542] disabled:opacity-40">
+                  {generatingNarrative
+                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating…</>
+                    : <><Sparkles className="h-3.5 w-3.5" /> Generate narrative</>}
                 </button>
                 {!profile?.position && (
-                  <p className="mt-2 text-xs text-muted-foreground">Complete your position above first</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Complete your position in Edit Profile first</p>
                 )}
               </>
             )}
           </div>
 
-          {/* Plays Like... */}
+          {/* ── PLAYS LIKE ────────────────────────────────────────────────── */}
           {(() => {
             const comparisons = getComparisons(profile?.position ?? "", profile?.sport ?? "football");
             if (!comparisons.length) return null;
             return (
-              <div className="mb-8 rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
+              <div className="rounded-2xl border border-[#f0b429]/15 bg-card/60 p-5 backdrop-blur-sm">
                 <div className="mb-3 flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#f0b429]" />
                   <h3 className="font-semibold text-[#f0b429]">Plays Like…</h3>
                 </div>
-                <p className="mb-3 text-xs text-muted-foreground">
-                  Based on your position and sport, scouts may compare you to:
-                </p>
+                <p className="mb-3 text-xs text-muted-foreground">Based on your position and sport, scouts may compare you to:</p>
                 <div className="flex flex-wrap gap-2">
                   {comparisons.map((name) => (
-                    <span
-                      key={name}
-                      className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-medium text-[#f0b429]"
-                    >
+                    <span key={name}
+                      className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1.5 text-xs font-medium text-[#f0b429]">
                       {name}
                     </span>
                   ))}
@@ -1061,8 +905,8 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             );
           })()}
 
-          {/* Tactical Pitch */}
-          <div className="mb-8 rounded-2xl border border-[#f0b429]/20 bg-card p-5 shadow-sm">
+          {/* ── TACTICAL PITCH ────────────────────────────────────────────── */}
+          <div className="rounded-2xl border border-[#f0b429]/20 bg-card p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
               <Target className="h-4 w-4 text-[#f0b429]" />
               <h3 className="font-semibold text-[#f0b429]">My Position on the Pitch</h3>
@@ -1083,8 +927,76 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             <TacticalPitch position={watchedValues.position || profile?.position} />
           </div>
 
-          {/* Highlight Reel */}
+          {/* ── HIGHLIGHT REEL ────────────────────────────────────────────── */}
           <HighlightReel mode="self" />
+
+          {/* ── INVITE PARENT ─────────────────────────────────────────────── */}
+          <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
+            <button type="button"
+              onClick={() => { setShowInvitePanel((v) => !v); setInviteCode(null); setInviteError(""); }}
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+              <span className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-[#f0b429]" />
+                Invite Parent / Guardian
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${showInvitePanel ? "rotate-180" : ""}`} />
+            </button>
+
+            {showInvitePanel && (
+              <div className="border-t border-white/10 px-5 pb-5 pt-4">
+                <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
+                  Generate a 6-character code. Your parent enters it at{" "}
+                  <span className="text-[#f0b429]">grassrootssports.live/parent/link</span> to connect to your account.
+                  The code expires after 48 hours.
+                </p>
+
+                <div className="mb-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Your Age Group</p>
+                  <div className="flex gap-2">
+                    {(["u13", "u17"] as const).map((ag) => (
+                      <button key={ag} type="button" onClick={() => setInviteAgeGroup(ag)}
+                        className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors ${
+                          inviteAgeGroup === ag
+                            ? "bg-[#f0b429] text-[#1a3a1a]"
+                            : "border border-white/10 bg-white/5 text-white/60 hover:text-white"
+                        }`}>
+                        {ag.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {inviteError && <p className="mb-3 rounded-lg bg-red-900/30 px-3 py-2 text-xs text-red-400">{inviteError}</p>}
+
+                {inviteCode ? (
+                  <div className="rounded-xl border border-[#f0b429]/30 bg-[#f0b429]/5 p-4 text-center">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[#f0b429]/70">Invite Code</p>
+                    <p className="mb-3 font-mono text-4xl font-black tracking-[0.3em] text-[#f0b429]">{inviteCode}</p>
+                    <p className="mb-4 text-xs text-muted-foreground">
+                      Expires {inviteExpiry ? new Date(inviteExpiry).toLocaleString() : "in 48 hours"}
+                    </p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={copyInviteCode}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#f0b429] px-4 py-2.5 text-sm font-bold text-[#1a3a1a] transition-opacity hover:opacity-90">
+                        <Copy className="h-3.5 w-3.5" />
+                        {inviteCopied ? "Copied!" : "Copy Code"}
+                      </button>
+                      <button type="button" onClick={generateInvite} disabled={inviteLoading}
+                        className="rounded-lg border border-white/10 px-4 py-2.5 text-xs text-muted-foreground hover:text-white transition-colors">
+                        New Code
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" onClick={generateInvite} disabled={inviteLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a5c2a] px-4 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+                    {inviteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+                    {inviteLoading ? "Generating..." : "Generate Invite Code"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
         </div>
       </main>
