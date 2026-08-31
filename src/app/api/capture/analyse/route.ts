@@ -175,21 +175,42 @@ The practice_plan must have exactly 3 exercises, each directly targeting the cor
       ? await geminiVision(systemPrompt, [frame], userPrompt, { max_tokens: 1000 })
       : await geminiText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 1000 });
 
+    // Strip all code-fence variants: ```json, ```JSON, ```javascript, ``` with any hint or none
     const cleaned = raw
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, "")
+      .replace(/^```[\w]*\r?\n?/i, "")
+      .replace(/\r?\n?```\s*$/,    "")
       .trim();
 
-    let feedback: FeedbackResult;
+    // ── Parse attempt 1: cleaned string ───────────────────────────────────────
+    let feedback: FeedbackResult | null = null;
     try {
       feedback = JSON.parse(cleaned) as FeedbackResult;
     } catch {
-      // Gemini returned narrative — wrap gracefully
+      // ── Parse attempt 2: extract the outermost {...} block ─────────────────
+      // Handles cases where Gemini wraps JSON in prose or adds trailing text.
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          feedback = JSON.parse(jsonMatch[0]) as FeedbackResult;
+        } catch {
+          // Both passes failed — log for debugging, return clean fallback below
+        }
+      }
+    }
+
+    if (!feedback) {
+      // Server-side debug log — never surfaces to the user
+      console.error(
+        "[THUTO capture] Failed to parse Gemini response. drill=%s cleaned_preview=%s",
+        drill,
+        cleaned.slice(0, 400),
+      );
+
       feedback = {
         drill_score: 6.0,
-        strength: `Great work recording yourself — that alone shows commitment. ${raw.slice(0, 180)}`,
-        correction: "Focus on your body position and balance throughout the movement.",
-        drillRecommendation: "Slow-motion shadow drill: perform the skill at 50% speed, 3 sets of 5 reps, focusing on each body position.",
+        strength: `You showed up and put the work in — that discipline is what separates players who improve from those who don't.`,
+        correction: `Focus on your body position and balance throughout the movement. Keep your knees slightly bent and weight centred over the ball.`,
+        drillRecommendation: `Wall pass drill: stand 3 metres from a wall, pass firmly and control the return with your first touch, alternating feet. 3 sets of 20 reps daily.`,
         practice_plan: {
           title: `${drill} — Practice Block`,
           exercises: [
@@ -197,22 +218,22 @@ The practice_plan must have exactly 3 exercises, each directly targeting the cor
               name: "Shadow Technique",
               duration: "10 min",
               reps: "3 sets of 10",
-              description: `Perform the ${drill.toLowerCase()} movement slowly without a ball at 50% speed. Focus on your body position at each stage.`,
-              why: "Slow repetition locks in correct mechanics before adding speed.",
+              description: `Perform the ${drill.toLowerCase()} movement at 50% speed without a ball. Focus on body position at every stage.`,
+              why: "Slow repetition locks in correct mechanics before adding ball and speed.",
             },
             {
               name: "Wall Pass Drill",
               duration: "10 min",
               reps: "3 sets of 20",
-              description: "Stand 3 metres from a wall. Pass the ball and control the return with your first touch, alternating feet.",
-              why: "Builds the fundamental ball control that underpins all technique.",
+              description: "Stand 3 metres from a wall. Pass firmly and control the return with your first touch, alternating feet each rep.",
+              why: "Builds the muscle memory for quick, balanced touches under pressure.",
             },
             {
               name: "Cone Dribble Circuit",
               duration: "5 min",
               reps: "5 circuits",
-              description: "Place 5 stones 1 metre apart. Dribble through with inside and outside of each foot. No stopping.",
-              why: "Develops close control and the body shape needed for this drill.",
+              description: "Place 5 stones or cones 1 metre apart. Dribble through with the inside and outside of each foot. No stopping.",
+              why: "Develops close ball control and the body shape needed for this drill.",
             },
           ],
         },
