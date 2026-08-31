@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 import { useSidebarStore } from "@/lib/sidebar-store";
 import { PlayerSidebar } from "@/components/layout/PlayerSidebar";
@@ -29,19 +29,22 @@ export default function PlayerLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const isCollapsed = useSidebarStore((s) => s.isCollapsed);
 
   useEffect(() => {
     if (!hasHydrated) return;
-
+    // Public player profile pages are accessible to everyone — scouts, coaches,
+    // fans, unauthenticated visitors scanning a QR code. Never redirect away.
+    if (pathname?.startsWith("/player/public/")) return;
     // If a logged-in user lands on the wrong hub, send them to their own dashboard.
     // Unauthenticated guests (no user) are welcome — no /login enforcement redirect.
     if (user && user.role !== "player" && user.role !== "admin") {
       router.push(`/${user.role}`);
     }
-  }, [hasHydrated, user, router]);
+  }, [hasHydrated, user, router, pathname]);
 
   // Brief spinner while Zustand rehydrates state from localStorage
   if (!hasHydrated) {
