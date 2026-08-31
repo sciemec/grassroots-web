@@ -76,6 +76,7 @@ interface THUTOFeedback {
     title:     string;
     exercises: PracticeExercise[];
   };
+  scores?: Record<string, number>;
 }
 
 interface PlayerProfile {
@@ -770,6 +771,7 @@ export default function FootballSkillAnalysisPage() {
           gender:         gender || undefined,
           position:       position !== "footballer" ? position : undefined,
           practice_plan:  data.practice_plan,
+          scores:         data.scores ?? {},
           sport:          "football",
         });
         const saved = saveRes.data?.data ?? saveRes.data;

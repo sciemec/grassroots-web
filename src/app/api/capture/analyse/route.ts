@@ -2,7 +2,8 @@
  * POST /api/capture/analyse
  *
  * THUTO (and AMARA for female players) analyses a skill clip using Gemini Vision.
- * Returns a drill score, qualitative coaching feedback, and a 3-exercise practice plan.
+ * Returns a drill score, qualitative coaching feedback, a 3-exercise practice plan,
+ * and 3 drill-specific sub-metric scores (0–100) for radar chart display.
  *
  * Body:
  *   frame            — base64 JPEG (from canvas frame extraction)
@@ -15,11 +16,25 @@
  *   videoUrl         — R2 public URL (optional — for record keeping)
  *
  * Returns:
- *   { drill_score, strength, correction, drillRecommendation, practice_plan }
+ *   { drill_score, strength, correction, drillRecommendation, practice_plan, scores }
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { geminiVision, geminiText } from "@/lib/gemini";
+
+// ── Drill-specific sub-metric keys (must match DrillMetric.key in capture/page.tsx) ──
+const DRILL_SCORE_KEYS: Record<string, [string, string, string]> = {
+  "First Touch & Control":  ["dispersion_radius",  "release_latency",   "bilateral_ratio"],
+  "Rebound Turn & Strike":  ["turn_sharpness",     "strike_accuracy",   "body_shield_position"],
+  "Passing Accuracy":       ["gate_precision",     "velocity_control",  "weak_foot_score"],
+  "Shooting":               ["placement_accuracy", "strike_power",      "weak_foot_accuracy"],
+  "Crossing":               ["landing_accuracy",   "delivery_height",   "both_feet_ratio"],
+  "Free Kick":              ["wall_clearance",     "target_accuracy",   "strike_elevation"],
+  "Heading (Rosch Test)":   ["forehead_contact",   "attack_angle",      "bilateral_accuracy"],
+  "Ball Juggling":          ["max_consecutive",    "sequence_quality",  "weak_foot_juggles"],
+  "Tennis Ball CNS Test":   ["cycles_30s",         "bilateral_speed",   "eyes_closed"],
+  "Throw-In":               ["max_distance",       "weak_accuracy",     "technique_score"],
+};
 
 interface AnalyseBody {
   frame?:       string;
@@ -49,6 +64,7 @@ interface FeedbackResult {
     title:     string;
     exercises: PracticeExercise[];
   };
+  scores?: Record<string, number>;
 }
 
 export async function POST(req: NextRequest) {
@@ -108,6 +124,12 @@ Look carefully at the frame. Analyse their actual technique — not what you ass
 The technique focus areas for this skill are: ${focus}.
 Without seeing their specific footage, give general THUTO coaching feedback.`;
 
+  // ── Build drill-specific scores block ────────────────────────────────────
+  const drillMetricKeys = DRILL_SCORE_KEYS[drill];
+  const scoresBlock = drillMetricKeys
+    ? `,\n  "scores": {\n${drillMetricKeys.map(k => `    "${k}": <integer 0–100>`).join(",\n")}\n  }`
+    : "";
+
   const responseFormat = `
 Return a JSON object with EXACTLY these fields (no markdown, no extra text):
 {
@@ -126,9 +148,9 @@ Return a JSON object with EXACTLY these fields (no markdown, no extra text):
         "why": "One sentence on why this fixes the correction above."
       }
     ]
-  }
+  }${scoresBlock}
 }
-The practice_plan must have exactly 3 exercises, each directly targeting the correction you identified.`;
+The practice_plan must have exactly 3 exercises, each directly targeting the correction you identified.${drillMetricKeys ? `\nThe scores object must have exactly 3 keys (${drillMetricKeys.join(", ")}), each an integer 0–100 based on your assessment of the footage.` : ""}`;
 
   const userPrompt = `${drillContext}\n${responseFormat}`;
 
@@ -139,6 +161,7 @@ The practice_plan must have exactly 3 exercises, each directly targeting the cor
       strength: `You showed up and put in the work on your ${drill.toLowerCase()}. That discipline is what separates players who improve.`,
       correction: `Focus on your body shape when performing ${drill.toLowerCase()}. Keep your knees slightly bent and your weight balanced — this gives you more control.`,
       drillRecommendation: `Wall pass drill: stand 3 metres from a wall. Pass the ball and control the return with your first touch, alternating feet. 3 sets of 20 reps daily.`,
+      scores: drillMetricKeys ? Object.fromEntries(drillMetricKeys.map(k => [k, 60])) : {},
       practice_plan: {
         title: `${drill} — Practice Block`,
         exercises: [
@@ -172,8 +195,8 @@ The practice_plan must have exactly 3 exercises, each directly targeting the cor
   // ── Call Gemini ───────────────────────────────────────────────────────────
   try {
     const raw = frame
-      ? await geminiVision(systemPrompt, [frame], userPrompt, { max_tokens: 1000 })
-      : await geminiText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 1000 });
+      ? await geminiVision(systemPrompt, [frame], userPrompt, { max_tokens: 1200 })
+      : await geminiText(systemPrompt, [{ role: "user", content: userPrompt }], { max_tokens: 1200 });
 
     // Strip all code-fence variants: ```json, ```JSON, ```javascript, ``` with any hint or none
     const cleaned = raw
@@ -211,6 +234,7 @@ The practice_plan must have exactly 3 exercises, each directly targeting the cor
         strength: `You showed up and put the work in — that discipline is what separates players who improve from those who don't.`,
         correction: `Focus on your body position and balance throughout the movement. Keep your knees slightly bent and weight centred over the ball.`,
         drillRecommendation: `Wall pass drill: stand 3 metres from a wall, pass firmly and control the return with your first touch, alternating feet. 3 sets of 20 reps daily.`,
+        scores: {},
         practice_plan: {
           title: `${drill} — Practice Block`,
           exercises: [
