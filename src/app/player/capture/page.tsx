@@ -655,6 +655,166 @@ const CATEGORIES: { id: DrillDef["category"]; label: string; icon: React.ReactNo
   { id: "Physical",   label: "Physical",   icon: <Activity className="h-4 w-4" />, color: "#c2410c" },
 ];
 
+// ─── Drill sub-metric radar chart ────────────────────────────────────────────
+
+interface DrillScoresRadarProps {
+  scores:  Record<string, number>;   // key → 0-100
+  metrics: DrillMetric[];            // for human-readable labels
+}
+
+function DrillScoresRadar({ scores, metrics }: DrillScoresRadarProps) {
+  const entries = Object.entries(scores).filter(([, v]) => typeof v === "number");
+  if (entries.length < 2) return null;
+
+  const N  = entries.length;
+  const CX = 140;           // SVG centre x
+  const CY = 130;           // SVG centre y
+  const R  = 90;            // outer radius
+  const W  = 280;
+  const H  = 260;
+
+  // Angle for axis i: start from top (-π/2), distribute evenly
+  const angle = (i: number) => (i * (2 * Math.PI)) / N - Math.PI / 2;
+
+  // Point on axis i at fraction f (0-1) of radius
+  const pt = (i: number, f: number) => ({
+    x: CX + R * f * Math.cos(angle(i)),
+    y: CY + R * f * Math.sin(angle(i)),
+  });
+
+  // Grid rings at 25 / 50 / 75 / 100%
+  const gridRings = [0.25, 0.5, 0.75, 1.0];
+
+  const polygonPoints = entries
+    .map(([, v], i) => {
+      const p = pt(i, Math.max(0, Math.min(100, v)) / 100);
+      return `${p.x},${p.y}`;
+    })
+    .join(" ");
+
+  return (
+    <div
+      className="rounded-2xl p-4"
+      style={{ background: "#151515", border: "1px solid #2a2a2a" }}
+    >
+      {/* Header */}
+      <p
+        className="text-[10px] font-black uppercase tracking-widest mb-3"
+        style={{ color: "#c8962a" }}
+      >
+        📊 Sub-metric breakdown
+      </p>
+
+      <div className="flex items-center gap-4">
+        {/* SVG radar */}
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="flex-shrink-0"
+          style={{ width: 180, height: 165 }}
+          aria-hidden="true"
+        >
+          {/* Grid rings */}
+          {gridRings.map((f) => {
+            const ringPts = entries
+              .map((_, i) => {
+                const p = pt(i, f);
+                return `${p.x},${p.y}`;
+              })
+              .join(" ");
+            return (
+              <polygon
+                key={f}
+                points={ringPts}
+                fill="none"
+                stroke="#2a2a2a"
+                strokeWidth={1}
+              />
+            );
+          })}
+
+          {/* Axis spokes */}
+          {entries.map((_, i) => {
+            const tip = pt(i, 1);
+            return (
+              <line
+                key={i}
+                x1={CX} y1={CY}
+                x2={tip.x} y2={tip.y}
+                stroke="#333"
+                strokeWidth={1}
+              />
+            );
+          })}
+
+          {/* Filled polygon — player's scores */}
+          <polygon
+            points={polygonPoints}
+            fill="#1a5c2a"
+            fillOpacity={0.45}
+            stroke="#97c459"
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+
+          {/* Score dots */}
+          {entries.map(([, v], i) => {
+            const p = pt(i, Math.max(0, Math.min(100, v)) / 100);
+            return (
+              <circle
+                key={i}
+                cx={p.x} cy={p.y}
+                r={3.5}
+                fill="#97c459"
+                stroke="#0e0e0e"
+                strokeWidth={1.5}
+              />
+            );
+          })}
+        </svg>
+
+        {/* Legend — metric name + bar + value */}
+        <div className="flex-1 space-y-2 min-w-0">
+          {entries.map(([key, value]) => {
+            const label = metrics.find((m) => m.key === key)?.label ?? key;
+            const pct   = Math.max(0, Math.min(100, value));
+            return (
+              <div key={key} className="space-y-0.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p
+                    className="text-[10px] font-semibold truncate"
+                    style={{ color: "#a0a0a0" }}
+                  >
+                    {label}
+                  </p>
+                  <p
+                    className="text-[10px] font-black tabular-nums flex-shrink-0"
+                    style={{ color: "#c8962a" }}
+                  >
+                    {pct}
+                  </p>
+                </div>
+                <div
+                  className="h-1 w-full rounded-full overflow-hidden"
+                  style={{ background: "#2a2a2a" }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${pct}%`,
+                      background:
+                        pct >= 70 ? "#97c459" : pct >= 45 ? "#c8962a" : "#ef4444",
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function FootballSkillAnalysisPage() {
@@ -1372,6 +1532,14 @@ export default function FootballSkillAnalysisPage() {
                   )}
                 </p>
               </div>
+
+              {/* ── SUB-METRIC RADAR ── */}
+              {feedback.scores && Object.keys(feedback.scores).length >= 2 && (
+                <DrillScoresRadar
+                  scores={feedback.scores}
+                  metrics={drill.metrics}
+                />
+              )}
 
               {/* ── PRACTICE PLAN ── */}
               {feedback.practice_plan?.exercises?.length > 0 && (
