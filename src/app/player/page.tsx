@@ -640,7 +640,7 @@ export default function PlayerDashboardHome() {
               label="Football Skill Analysis" desc="10 drills · protocols · AI coaching · metrics" badge="new" />
             <HubCard href="/player/assessment" icon={Star} iconBg="#fdf4ff" iconColor="#a21caf"
               label="Athletic Profile" desc="6-test battery Â· jump Â· sprint Â· balance Â· drill analysis" />
-            <HubCard href="/player/goal" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
+            <HubCard href="/player/success" icon={Zap} iconBg="#fef3c7" iconColor="#d97706"
               label="Success Engine" desc="Daily check-in Â· streak Â· goal tracking" />
             <HubCard href="/player/potential" icon={TrendingUp} iconBg="#dcfce7" iconColor="#16a34a"
               label="My Potential" desc="THUTO score Â· peak level Â· comparable players" />

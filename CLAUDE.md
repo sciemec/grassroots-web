@@ -2,6 +2,61 @@
 
 ---
 
+## SESSION LOG — 30 August 2026
+
+### Theme — Coach Marketplace Backend: Tables + Controller Wiring
+
+---
+
+### COMPLETED THIS SESSION — DO NOT REBUILD
+
+#### Coach Marketplace Backend — FULLY WIRED ✅
+
+**bhora-ai commit:** `e150b00` — pushed to `sciemec/bhora-ai` master → Render auto-deploys via `start.sh → php artisan migrate --force`
+
+**3 new migrations:**
+
+| File | Table | Purpose |
+|---|---|---|
+| `2026_08_30_000001_create_coach_profiles_table.php` | `coach_profiles` | One row per coach: price, session duration, verification badge, experience, current/former clubs, specialties, coaching style, languages, session types, avg_rating |
+| `2026_08_30_000002_create_coach_credentials_table.php` | `coach_credentials` | CAF/UEFA/ZIFA licenses — FK to coach_profiles |
+| `2026_08_30_000003_create_coach_availability_slots_table.php` | `coach_availability_slots` | Weekly recurring slots (day, start_time, end_time, max_bookings, booked_count) — FK to coach_profiles |
+
+**`CoachingMarketplaceController.php` — fully wired to real tables:**
+
+| Method | Before | After |
+|---|---|---|
+| `browseCoaches()` | Hardcoded `credentials: []`, `availability: []`, `pricePerSession: 35`, `isVerified: true`, `verificationBadge: 'zifa'` | LEFT JOINs `coach_profiles`; queries `coach_credentials` + `coach_availability_slots` per coach; uses real price/badge/specialties/experience — falls back gracefully when coach has no profile |
+| `coachProfile()` | Same hardcoded values + no JOIN | LEFT JOINs `coach_profiles`; queries credentials + availability + decodes JSON fields (specialties, languages, session_types, former_clubs) |
+| `bookSession()` | `$price = 35.00` hardcoded | `DB::table('coach_profiles')->where('user_id', coachId)->value('price_per_session') ?? 35.00` |
+
+**Architecture decision:** Coaches with no `coach_profiles` row still appear in browse/profile with graceful defaults (empty credentials/availability arrays, price falls back to 35). The LEFT JOIN pattern means zero breakage for existing coaches.
+
+**How a coach sets up their marketplace profile:**
+- Coaches INSERT a row into `coach_profiles` with `user_id = their UUID`
+- Add rows to `coach_credentials` (CAF A License, etc.)
+- Add rows to `coach_availability_slots` (Monday 08:00–10:00, etc.)
+- Frontend at `/player/coaching/[coachId]` then shows real data
+
+---
+
+### WHAT STILL NEEDS DOING (30 August 2026)
+
+| Item | Status | Action Required |
+|---|---|---|
+| Coach profile setup UI | ✅ DONE — commit `cf4025eb` | `/coach/marketplace-profile` built: profile form, credentials CRUD, availability slots, session types, pricing |
+| `coach_profiles` migration on Render | Auto-runs on deploy | Verify via Render logs after `e150b00` deploys |
+| `GROQ_API_KEY` on Render | NOT SET | Add from console.groq.com — THUTO chat broken without this |
+| `AI_SERVICE_URL` on Render | NOT CONFIRMED | Add `AI_SERVICE_URL=https://ai.bhora-ai.onrender.com` |
+| `STRIPE_WEBHOOK_SECRET` on Render | Must be set | Blueprint purchase webhook signature validation |
+| bhora-ai `AnalyseWhatsappVideoJob` | NOT UPDATED | Replace Twilio HTTP with Meta Cloud API (from 23 June) |
+| bhora-ai `config/services.php` | NOT UPDATED | Replace `twilio` block with `whatsapp` block |
+| Chemistry migrations (7 May) | NOT YET RUN | `php artisan migrate --force` for 5 tables |
+| `arena_posts` activity + WhatsApp migrations | NOT YET ON RENDER | From 22 June + 14 June sessions |
+| First real coach/user | ZERO active users | Top priority — onboard ONE coach at ONE school |
+
+---
+
 ## SESSION LOG — 30 August 2026 (audit)
 
 ### Theme — WhatsApp Migration Audit: Already Complete
@@ -10306,6 +10361,7 @@ Tests: 10m sprint → Illinois agility → Vertical jump → Reaction catch (`Re
 /coach/scouting             External scouting feed
 /coach/talent-id            Talent identification dashboard
 /coach/training-plans/new   New training plan wizard
+/coach/marketplace-profile  Coach Marketplace Profile setup — credentials, availability, pricing, session types
 /coach/success              Coach success engine
 /coach/success/checkin      Coach daily check-in
 /admin/health               Platform health monitor
