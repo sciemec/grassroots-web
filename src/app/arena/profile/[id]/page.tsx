@@ -218,7 +218,18 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         {/* Profile header */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 relative">
+          {/* View Profile — top-right corner */}
+          {(profile?.role === "player" || profile?.role === "coach" || profile?.role === "scout") && (
+            <Link href={
+              profile.role === "player" ? `/player/public/${id}` :
+              profile.role === "coach"  ? `/arena/coach/${id}` :
+                                          `/arena/scout/${id}`
+            }
+              className="absolute top-4 right-4 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+              <ExternalLink size={12} /> View Profile
+            </Link>
+          )}
           <div className="flex items-start gap-4">
             {(profile?.photo_url || profile?.avatar_url) ? (
               <img src={profile.photo_url ?? profile.avatar_url} alt={profile.name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
@@ -277,19 +288,6 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
                   <MessageCircle size={14} /> Message
                 </Link>
               )}
-            </div>
-          )}
-          {/* View Profile button — shown to everyone including own profile */}
-          {(profile?.role === "player" || profile?.role === "coach" || profile?.role === "scout") && (
-            <div className="mt-3">
-              <Link href={
-                profile.role === "player" ? `/player/public/${id}` :
-                profile.role === "coach"  ? `/arena/coach/${id}` :
-                                            `/arena/scout/${id}`
-              }
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
-                <ExternalLink size={14} /> View Profile
-              </Link>
             </div>
           )}
         </div>
