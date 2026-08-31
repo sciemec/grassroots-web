@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, use } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserPlus, UserCheck, MessageCircle, Eye, Heart, MessageSquare, Star, Flag, Play, ExternalLink, Zap, CheckCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -126,6 +126,7 @@ function ScoreBar({ value }: { value: number }) {
 
 export default function ArenaProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router      = useRouter();
   const user        = useAuthStore((s) => s.user);
   const token       = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
@@ -154,6 +155,11 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
       .then((json) => {
         if (!json) return;
         const userData = json.user ?? json.data ?? json;
+        // Players have a dedicated Talent Passport — send scouts/visitors there directly
+        if (userData.role === "player") {
+          router.replace(`/player/public/${id}`);
+          return;
+        }
         setProfile(userData);
         setPosts(Array.isArray(json.posts) ? json.posts : []);
         setShowcases(Array.isArray(json.showcases) ? json.showcases : []);
