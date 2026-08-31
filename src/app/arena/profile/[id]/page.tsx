@@ -280,9 +280,13 @@ export default function ArenaProfilePage({ params }: { params: Promise<{ id: str
             </div>
           )}
           {/* View Profile button — shown to everyone including own profile */}
-          {profile?.role === "player" && (
+          {(profile?.role === "player" || profile?.role === "coach" || profile?.role === "scout") && (
             <div className="mt-3">
-              <Link href={`/player/public/${id}`}
+              <Link href={
+                profile.role === "player" ? `/player/public/${id}` :
+                profile.role === "coach"  ? `/arena/coach/${id}` :
+                                            `/arena/scout/${id}`
+              }
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
                 <ExternalLink size={14} /> View Profile
               </Link>
