@@ -10,6 +10,7 @@ import GuestBanner from "@/components/ui/guest-banner";
 import { GuestGateProvider } from "@/components/ui/register-modal";
 import PlayerBottomNav from "@/components/layout/PlayerBottomNav";
 import dynamic from "next/dynamic";
+import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
 
 // Dynamically import Thuto AI Coach widget without Server-Side Rendering
 const ThutoChat = dynamic(() => import("@/components/thuto/ThutoChat"), { ssr: false });
@@ -66,6 +67,11 @@ export default function PlayerLayout({
         <div className={`flex-1 flex flex-col min-w-0 transition-[margin-left] duration-300 ${isCollapsed ? 'lg:ml-16' : 'lg:ml-72'}`}>
           {/* Guest awareness banner */}
           <GuestBanner />
+
+          {/* Pro upgrade prompt — only renders for free-tier players, dismissible for 7 days */}
+          <div className="px-4 pt-3">
+            <ProUpgradeBanner />
+          </div>
 
           {/* Page content */}
           <main className="flex-1 pb-20 lg:pb-0">
