@@ -5,7 +5,7 @@ import { AdBanner } from "@/components/ui/AdBanner";
 import PotentialCard from "@/components/player/PotentialCard";
 import { RepresentationForm } from "@/components/player/RepresentationForm";
 import TacticalPitch from "@/components/TacticalPitch";
-import { TalentPassportRadar } from "@/components/player/TalentPassportRadar";
+import PublicPassportTabs from "@/components/player/PublicPassportTabs";
 
 interface ShowcaseClip {
   id: string;
@@ -32,6 +32,12 @@ interface DrillScore {
   avgSubScore?: number | null;
 }
 
+interface PhysicalAxis {
+  code: string;
+  label: string;
+  percentile: number | null;
+}
+
 interface PublicProfile {
   id: string;
   name: string;
@@ -51,6 +57,7 @@ interface PublicProfile {
   appearances: number | null;
   grs_test: GrsTest | null;
   drill_scores: DrillScore[];
+  physical_axes: PhysicalAxis[];
 }
 
 async function getShowcaseClips(id: string): Promise<ShowcaseClip[]> {
@@ -250,10 +257,14 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             </div>
           )}
 
-          {/* Technical Passport Radar */}
-          {profile.drill_scores && profile.drill_scores.length > 0 && (
+          {/* Passport Radar — Physical DNA + Technical tabs */}
+          {((profile.drill_scores && profile.drill_scores.length > 0) ||
+            (profile.physical_axes && profile.physical_axes.some((a) => a.percentile !== null))) && (
             <div className="mx-5 mb-5">
-              <TalentPassportRadar drillScores={profile.drill_scores} />
+              <PublicPassportTabs
+                drillScores={profile.drill_scores ?? []}
+                physicalAxes={profile.physical_axes ?? []}
+              />
             </div>
           )}
 
