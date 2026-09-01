@@ -49,6 +49,16 @@ function ringPts(cx: number, cy: number, r: number, f: number, n: number): strin
 
 // ─── Physical DNA radar (7 axes, green) ───────────────────────────────────────
 
+const PHYSICAL_DEFAULTS: PhysicalAxis[] = [
+  { code: "sprint_10m",          label: "Explosiveness",      percentile: null },
+  { code: "sprint_30m",          label: "Top speed",          percentile: null },
+  { code: "505_agility_seconds", label: "Change of direction",percentile: null },
+  { code: "vertical_jump",       label: "Vertical leap",      percentile: null },
+  { code: "functional_strength", label: "Strength",           percentile: null },
+  { code: "lateral_shuffle_5m",  label: "Core stability",     percentile: null },
+  { code: "recovery_heart_rate", label: "Stamina",            percentile: null },
+];
+
 const PHYSICAL_LABELS: string[][] = [
   ["Explosiveness"],
   ["Top speed"],
@@ -248,9 +258,17 @@ export default function PublicPassportTabs({
 }) {
   const [tab, setTab] = useState<"physical" | "technical">("physical");
 
-  const hasPhysical = physicalAxes.some((a) => a.percentile !== null);
+  // Always 7 physical axes — fill with null if backend returned empty array
+  const resolvedAxes: PhysicalAxis[] = physicalAxes.length === 7
+    ? physicalAxes
+    : PHYSICAL_DEFAULTS.map((def) => {
+        const found = physicalAxes.find((a) => a.code === def.code);
+        return found ?? def;
+      });
+
+  const hasPhysical = resolvedAxes.some((a) => a.percentile !== null);
   const hasTechnical = drillScores.length > 0;
-  const activeTab = !hasPhysical && hasTechnical ? "technical" : !hasTechnical && hasPhysical ? "physical" : tab;
+  const activeTab = !hasPhysical && hasTechnical ? "technical" : tab;
 
   const xp = xpTotal ?? 0;
   const streak = dailyStreak ?? 0;
@@ -260,7 +278,7 @@ export default function PublicPassportTabs({
     ? playerName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "?";
   const posAbbr = position ? getPosAbbr(position) : "–";
-  const axisCount = activeTab === "physical" ? physicalAxes.length : TECHNICAL_AXES.length;
+  const axisCount = activeTab === "physical" ? resolvedAxes.length : TECHNICAL_AXES.length;
 
   return (
     <div style={{
@@ -374,7 +392,7 @@ export default function PublicPassportTabs({
 
         {/* Radar */}
         {activeTab === "physical"
-          ? <PhysicalRadar axes={physicalAxes} />
+          ? <PhysicalRadar axes={resolvedAxes} />
           : <TechnicalRadar drillScores={drillScores} />
         }
 
@@ -386,8 +404,8 @@ export default function PublicPassportTabs({
           </svg>
           <span style={{ color: "#444", fontSize: 8 }}>
             {activeTab === "physical"
-              ? "EUROFIT percentile · Zimbabwe peers"
-              : "Gemini-assessed from drill footage"}
+              ? "EUROFIT percentile · Zimbabwe peers · centre = no data"
+              : "Gemini-assessed from drill footage · centre = no data"}
           </span>
         </div>
       </div>
