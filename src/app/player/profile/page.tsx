@@ -605,7 +605,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           <PlayerGamificationPanel />
 
           {/* ── PLAYER PASSPORT CARD ──────────────────────────────────────── */}
-          <PlayerPassportCard playerName={profile?.name ?? user?.name ?? undefined} />
+          <PlayerPassportCard playerName={user?.name ?? undefined} />
 
           {/* ── SCOUT DISCOVERY STRIP ─────────────────────────────────────── */}
           <div className="flex gap-3">
