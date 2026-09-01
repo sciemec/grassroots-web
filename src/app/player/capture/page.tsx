@@ -764,7 +764,7 @@ function DrillScoresRadar({ scores, metrics }: DrillScoresRadarProps) {
                 key={i}
                 cx={p.x} cy={p.y}
                 r={3.5}
-                fill="#97c459"
+                fill="#c0dd97"
                 stroke="#0e0e0e"
                 strokeWidth={1.5}
               />

@@ -5,6 +5,7 @@ import { AdBanner } from "@/components/ui/AdBanner";
 import PotentialCard from "@/components/player/PotentialCard";
 import { RepresentationForm } from "@/components/player/RepresentationForm";
 import TacticalPitch from "@/components/TacticalPitch";
+import { TalentPassportRadar } from "@/components/player/TalentPassportRadar";
 
 interface ShowcaseClip {
   id: string;
@@ -28,6 +29,7 @@ interface DrillScore {
   drillName: string;
   score: number;
   topStrength: string | null;
+  avgSubScore?: number | null;
 }
 
 interface PublicProfile {
@@ -248,7 +250,14 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             </div>
           )}
 
-          {/* Drill Analysis Scores */}
+          {/* Technical Passport Radar */}
+          {profile.drill_scores && profile.drill_scores.length > 0 && (
+            <div className="mx-5 mb-5">
+              <TalentPassportRadar drillScores={profile.drill_scores} />
+            </div>
+          )}
+
+          {/* Drill Analysis Scores — detail bars below the radar */}
           {profile.drill_scores && profile.drill_scores.length > 0 && (
             <div className="mx-5 mb-5">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-[#f0b429]/50 mb-2">
