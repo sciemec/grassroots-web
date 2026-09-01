@@ -260,21 +260,18 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
             </div>
           )}
 
-          {/* Passport Radar — Physical DNA + Technical tabs */}
-          {((profile.drill_scores && profile.drill_scores.length > 0) ||
-            (profile.physical_axes && profile.physical_axes.some((a) => a.percentile !== null))) && (
-            <div className="mx-5 mb-5">
-              <PublicPassportTabs
-                drillScores={profile.drill_scores ?? []}
-                physicalAxes={profile.physical_axes ?? []}
-                playerName={profile.name}
-                position={profile.position}
-                xpTotal={profile.xp_total ?? 0}
-                dailyStreak={profile.daily_streak ?? 0}
-                trainedMinutes={profile.trained_minutes ?? 0}
-              />
-            </div>
-          )}
+          {/* Passport Radar — always shown, empty axes collapse to centre */}
+          <div className="mx-5 mb-5">
+            <PublicPassportTabs
+              drillScores={profile.drill_scores ?? []}
+              physicalAxes={profile.physical_axes ?? []}
+              playerName={profile.name}
+              position={profile.position}
+              xpTotal={profile.xp_total ?? 0}
+              dailyStreak={profile.daily_streak ?? 0}
+              trainedMinutes={profile.trained_minutes ?? 0}
+            />
+          </div>
 
           {/* Drill Analysis Scores — detail bars below the radar */}
           {profile.drill_scores && profile.drill_scores.length > 0 && (
