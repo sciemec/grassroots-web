@@ -58,6 +58,9 @@ interface PublicProfile {
   grs_test: GrsTest | null;
   drill_scores: DrillScore[];
   physical_axes: PhysicalAxis[];
+  xp_total: number;
+  daily_streak: number;
+  trained_minutes: number;
 }
 
 async function getShowcaseClips(id: string): Promise<ShowcaseClip[]> {
@@ -264,6 +267,11 @@ export default async function PublicPlayerProfile({ params }: { params: Promise<
               <PublicPassportTabs
                 drillScores={profile.drill_scores ?? []}
                 physicalAxes={profile.physical_axes ?? []}
+                playerName={profile.name}
+                position={profile.position}
+                xpTotal={profile.xp_total ?? 0}
+                dailyStreak={profile.daily_streak ?? 0}
+                trainedMinutes={profile.trained_minutes ?? 0}
               />
             </div>
           )}
