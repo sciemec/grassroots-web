@@ -2,13 +2,12 @@
  * TalentPassportRadar
  *
  * Full 9-axis technical radar for the player public passport page.
- * Each axis = one drill category. Value = average of that drill's sub-metric
- * scores (0–100) from the player's most recent drill_analysis_results row
- * for that drill type.
+ * Always visible — the radar is shown even before a player has completed
+ * any drills. Untouched categories sit near the center (EMPTY_F); each
+ * axis grows outward as the player completes that drill category.
  *
- * Axes with no data are shown as grey dashed spokes with an open circle at
- * the tip — visually distinct from "scored 0". They are excluded from the
- * filled polygon so a low score and "never attempted" look different.
+ * Available axes: green filled polygon, colored dot, score label.
+ * Not-yet-attempted axes: grey dashed spoke, tiny grey dot near center.
  *
  * Pure server-renderable SVG — no "use client", no hooks, no recharts.
  */
@@ -42,6 +41,9 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
   const W          = 350;
   const H          = 340;
   const LABEL_PAD  = 22;   // px beyond R for axis label
+  // Untouched categories sit just off center so the polygon is always
+  // visible and the shape visibly "fills out" as drills are completed.
+  const EMPTY_F    = 0.03;
 
   // Angle for axis i — start from top (−π/2), distribute evenly clockwise
   const toAngle = (i: number) => (i * 2 * Math.PI) / N - Math.PI / 2;
@@ -66,10 +68,13 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
 
   const available = axisData.filter(a => a.value !== null);
 
-  // Polygon only connects axes that have real data, at their angular positions
-  const polygonPts = available
+  // All 9 axes in polygon — untouched ones sit at EMPTY_F (near center)
+  const polygonPts = axisData
     .map(a => {
-      const p = pt(a.index, Math.max(0, Math.min(100, a.value!)) / 100);
+      const f = a.value !== null
+        ? Math.max(0, Math.min(100, a.value)) / 100
+        : EMPTY_F;
+      const p = pt(a.index, f);
       return `${p.x},${p.y}`;
     })
     .join(" ");
@@ -135,17 +140,15 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
           );
         })}
 
-        {/* Filled polygon — available axes only */}
-        {available.length >= 2 && (
-          <polygon
-            points={polygonPts}
-            fill="#1a5c2a"
-            fillOpacity={0.45}
-            stroke="#97c459"
-            strokeWidth={2}
-            strokeLinejoin="round"
-          />
-        )}
+        {/* Filled polygon — all 9 axes, untouched ones near center */}
+        <polygon
+          points={polygonPts}
+          fill="#1a5c2a"
+          fillOpacity={0.45}
+          stroke="#97c459"
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
 
         {/* Score dots on available axes */}
         {available.map(a => {
@@ -162,19 +165,17 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
           );
         })}
 
-        {/* Open circles at outer tip — not yet attempted */}
+        {/* Tiny grey dot near center — not yet attempted axes */}
         {axisData
           .filter(a => a.value === null)
           .map(a => {
-            const tip = pt(a.index, 1);
+            const p = pt(a.index, EMPTY_F);
             return (
               <circle
                 key={`empty-${a.label}`}
-                cx={tip.x} cy={tip.y}
-                r={3}
-                fill="none"
-                stroke="#333"
-                strokeWidth={1.5}
+                cx={p.x} cy={p.y}
+                r={2}
+                fill="#333"
               />
             );
           })}
@@ -245,7 +246,7 @@ export function TalentPassportRadar({ drillScores }: { drillScores: DrillScore[]
         </p>
         {available.length < N && (
           <p style={{ color: "#3c3c3c", fontSize: 9 }}>
-            ○ = not yet attempted
+            · = not yet attempted
           </p>
         )}
       </div>

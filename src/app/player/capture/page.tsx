@@ -663,31 +663,39 @@ interface DrillScoresRadarProps {
 }
 
 function DrillScoresRadar({ scores, metrics }: DrillScoresRadarProps) {
-  const entries = Object.entries(scores).filter(([, v]) => typeof v === "number");
-  if (entries.length < 2) return null;
+  const scored = Object.entries(scores).filter(([, v]) => typeof v === "number");
+  // Always use the drill's full metric list as axes so the radar is visible
+  // even before Gemini returns scores. Falls back to scored keys if metrics
+  // is somehow empty (safety net only — metrics is always populated in practice).
+  const axisDefs = metrics.length > 0
+    ? metrics
+    : scored.map(([k]) => ({ key: k, label: k, unit: "", description: "" }));
 
-  const N  = entries.length;
-  const CX = 140;           // SVG centre x
-  const CY = 130;           // SVG centre y
-  const R  = 90;            // outer radius
-  const W  = 280;
-  const H  = 260;
+  const N       = Math.max(3, axisDefs.length);
+  const CX      = 140;
+  const CY      = 130;
+  const R       = 90;
+  const W       = 280;
+  const H       = 260;
+  // Unscored axes sit near the center so the shape "grows" as scores arrive
+  const EMPTY_F = 0.03;
 
-  // Angle for axis i: start from top (-π/2), distribute evenly
   const angle = (i: number) => (i * (2 * Math.PI)) / N - Math.PI / 2;
-
-  // Point on axis i at fraction f (0-1) of radius
-  const pt = (i: number, f: number) => ({
+  const pt    = (i: number, f: number) => ({
     x: CX + R * f * Math.cos(angle(i)),
     y: CY + R * f * Math.sin(angle(i)),
   });
 
-  // Grid rings at 25 / 50 / 75 / 100%
   const gridRings = [0.25, 0.5, 0.75, 1.0];
 
-  const polygonPoints = entries
-    .map(([, v], i) => {
-      const p = pt(i, Math.max(0, Math.min(100, v)) / 100);
+  // All axes included — unscored ones collapse to near-center
+  const polygonPoints = axisDefs
+    .map(({ key }, i) => {
+      const val = scores[key];
+      const f   = typeof val === "number"
+        ? Math.max(0, Math.min(100, val)) / 100
+        : EMPTY_F;
+      const p = pt(i, f);
       return `${p.x},${p.y}`;
     })
     .join(" ");
@@ -715,7 +723,7 @@ function DrillScoresRadar({ scores, metrics }: DrillScoresRadarProps) {
         >
           {/* Grid rings */}
           {gridRings.map((f) => {
-            const ringPts = entries
+            const ringPts = axisDefs
               .map((_, i) => {
                 const p = pt(i, f);
                 return `${p.x},${p.y}`;
@@ -733,20 +741,22 @@ function DrillScoresRadar({ scores, metrics }: DrillScoresRadarProps) {
           })}
 
           {/* Axis spokes */}
-          {entries.map((_, i) => {
-            const tip = pt(i, 1);
+          {axisDefs.map(({ key }, i) => {
+            const tip      = pt(i, 1);
+            const hasScore = typeof scores[key] === "number";
             return (
               <line
                 key={i}
                 x1={CX} y1={CY}
                 x2={tip.x} y2={tip.y}
-                stroke="#333"
+                stroke={hasScore ? "#2e5a2e" : "#333"}
                 strokeWidth={1}
+                strokeDasharray={hasScore ? undefined : "4 3"}
               />
             );
           })}
 
-          {/* Filled polygon — player's scores */}
+          {/* Filled polygon — all axes, unscored ones near center */}
           <polygon
             points={polygonPoints}
             fill="#1a5c2a"
@@ -756,9 +766,11 @@ function DrillScoresRadar({ scores, metrics }: DrillScoresRadarProps) {
             strokeLinejoin="round"
           />
 
-          {/* Score dots */}
-          {entries.map(([, v], i) => {
-            const p = pt(i, Math.max(0, Math.min(100, v)) / 100);
+          {/* Score dots — only on axes that have a real value */}
+          {axisDefs.map(({ key }, i) => {
+            const val = scores[key];
+            if (typeof val !== "number") return null;
+            const p = pt(i, Math.max(0, Math.min(100, val)) / 100);
             return (
               <circle
                 key={i}
@@ -770,11 +782,20 @@ function DrillScoresRadar({ scores, metrics }: DrillScoresRadarProps) {
               />
             );
           })}
+
+          {/* Tiny grey dots near center for unscored axes */}
+          {axisDefs.map(({ key }, i) => {
+            if (typeof scores[key] === "number") return null;
+            const p = pt(i, EMPTY_F);
+            return (
+              <circle key={`e-${i}`} cx={p.x} cy={p.y} r={2} fill="#333" />
+            );
+          })}
         </svg>
 
-        {/* Legend — metric name + bar + value */}
+        {/* Legend — only scored metrics shown */}
         <div className="flex-1 space-y-2 min-w-0">
-          {entries.map(([key, value]) => {
+          {scored.map(([key, value]) => {
             const label = metrics.find((m) => m.key === key)?.label ?? key;
             const pct   = Math.max(0, Math.min(100, value));
             return (
