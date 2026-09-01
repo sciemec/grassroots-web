@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Plus, CheckCircle2, Clock, X, UserCheck,
-  Loader2, Trash2, ShieldCheck, AlertCircle, Download, Play, ChevronUp,
+  Loader2, Trash2, ShieldCheck, AlertCircle, Download, Play, ChevronUp, Star,
 } from "lucide-react";
 import api from "@/lib/api";
 import jsPDF from "jspdf";
@@ -27,6 +27,27 @@ interface Registration {
   confirmed_at: string | null;
   created_at: string;
 }
+
+interface SkillRating {
+  code: string;
+  display_name: string;
+  rating: number;
+  notes?: string | null;
+  rated_at?: string;
+  sort_order?: number;
+}
+
+const SKILL_CODES = ["dribbling", "first_touch", "shooting", "sprint", "passing", "tackling"];
+const SKILL_LABELS: Record<string, string> = {
+  dribbling:   "Dribbling",
+  first_touch: "First Touch",
+  shooting:    "Shooting",
+  sprint:      "Sprint",
+  passing:     "Passing",
+  tackling:    "Tackling",
+};
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://bhora-ai.onrender.com/api/v1";
 
 const STATUS_CONFIG = {
   unmatched:            { label: "Not yet on platform",  color: "#6b7280", bg: "#f3f4f6",    icon: Clock },
@@ -563,6 +584,68 @@ function RegistrationCard({
   const busy = actionId === reg.id;
   const [playing, setPlaying] = useState(false);
 
+  // ── Skill ratings ─────────────────────────────────────────────────────────
+  const [showRatings, setShowRatings]         = useState(false);
+  const [ratings, setRatings]                 = useState<Record<string, number>>({});
+  const [ratingsLoaded, setRatingsLoaded]     = useState(false);
+  const [savingRatings, setSavingRatings]     = useState(false);
+  const [ratingsSaved, setRatingsSaved]       = useState(false);
+  const [ratingsError, setRatingsError]       = useState<string | null>(null);
+  const token = useAuthStore((s) => s.token);
+
+  async function loadRatings() {
+    if (ratingsLoaded) return;
+    try {
+      const res = await fetch(`${API_BASE}/coach/registered-players/${reg.id}/skill-ratings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const map: Record<string, number> = {};
+        (json.data as SkillRating[]).forEach((r) => { map[r.code] = r.rating; });
+        setRatings(map);
+      }
+    } catch {
+      // silently ignore — inputs start empty
+    } finally {
+      setRatingsLoaded(true);
+    }
+  }
+
+  async function saveRatings() {
+    const payload = SKILL_CODES
+      .filter((c) => ratings[c] !== undefined && ratings[c] >= 1)
+      .map((c) => ({ code: c, rating: ratings[c] }));
+
+    if (payload.length === 0) {
+      setRatingsError("Enter at least one rating (1–10) before saving.");
+      return;
+    }
+    setSavingRatings(true);
+    setRatingsError(null);
+    setRatingsSaved(false);
+    try {
+      const res = await fetch(`${API_BASE}/coach/registered-players/${reg.id}/skill-ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ratings: payload }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      setRatingsSaved(true);
+      setTimeout(() => setRatingsSaved(false), 3000);
+    } catch {
+      setRatingsError("Failed to save ratings. Please try again.");
+    } finally {
+      setSavingRatings(false);
+    }
+  }
+
+  function handleToggleRatings() {
+    if (!showRatings) loadRatings();
+    setShowRatings((v) => !v);
+    setRatingsError(null);
+  }
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
@@ -696,6 +779,122 @@ function RegistrationCard({
           ✓ Confirmed by academy on {new Date(reg.confirmed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · Certificate valid
         </p>
       )}
+
+      {/* ── Skill Ratings ─────────────────────────────────────────────────── */}
+      <div className="mt-3 border-t border-gray-100 pt-3">
+        <button
+          onClick={handleToggleRatings}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-600">
+            <Star size={12} style={{ color: "#c8962a" }} />
+            Skill Ratings
+          </span>
+          <ChevronUp
+            size={13}
+            className="text-gray-400 transition-transform"
+            style={{ transform: showRatings ? "rotate(0deg)" : "rotate(180deg)" }}
+          />
+        </button>
+
+        {showRatings && (
+          <div style={{ marginTop: 12 }}>
+            {!ratingsLoaded ? (
+              <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                <Loader2 size={11} className="animate-spin" /> Loading…
+              </p>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: "8px 16px",
+                  }}
+                >
+                  {SKILL_CODES.map((code) => (
+                    <div key={code}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: "#374151",
+                          marginBottom: 2,
+                        }}
+                      >
+                        {SKILL_LABELS[code]}
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        step={0.5}
+                        placeholder="—"
+                        value={ratings[code] ?? ""}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          setRatings((prev) => ({
+                            ...prev,
+                            [code]: isNaN(v) ? 0 : Math.min(10, Math.max(1, v)),
+                          }));
+                          setRatingsSaved(false);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "4px 8px",
+                          fontSize: 12,
+                          border: "1px solid #e5e7eb",
+                          borderRadius: 6,
+                          outline: "none",
+                          color: ratings[code] ? "#111827" : "#9ca3af",
+                          backgroundColor: ratings[code] ? "#f0fdf4" : "#fafafa",
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {ratingsError && (
+                  <p style={{ marginTop: 8, fontSize: 11, color: "#dc2626" }}>{ratingsError}</p>
+                )}
+
+                <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    onClick={saveRatings}
+                    disabled={savingRatings}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "5px 14px",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#fff",
+                      backgroundColor: savingRatings ? "#6b7280" : "#1a5c2a",
+                      border: "none",
+                      borderRadius: 7,
+                      cursor: savingRatings ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {savingRatings ? (
+                      <><Loader2 size={11} className="animate-spin" /> Saving…</>
+                    ) : (
+                      <><Star size={11} /> Save Ratings</>
+                    )}
+                  </button>
+
+                  {ratingsSaved && (
+                    <span style={{ fontSize: 11, color: "#16a34a", fontWeight: 600 }}>
+                      ✓ Ratings saved
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

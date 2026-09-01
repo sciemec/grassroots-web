@@ -15,6 +15,9 @@ import ScholarshipReel, {
   EMPTY_REEL,
   type ReelState,
 } from "@/components/passport/ScholarshipReel";
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
+} from "recharts";
 
 // ─── Local storage keys ───────────────────────────────────────────────────────
 const LS_ACADEMIC     = "gs_passport_academic";
@@ -119,6 +122,28 @@ export default function PassportPage() {
     sprint: null, shooting: null, "first-touch": null,
     dribbling: null, passing: null, tackling: null,
   });
+
+  const [skillTab, setSkillTab]                       = useState<"my" | "coach">("my");
+  const [coachRatings, setCoachRatings]               = useState<Record<string, number>>({});
+  const [coachRatingsLoaded, setCoachRatingsLoaded]   = useState(false);
+  const [coachRatingsLoading, setCoachRatingsLoading] = useState(false);
+
+  async function loadCoachRatings() {
+    if (coachRatingsLoaded) return;
+    setCoachRatingsLoading(true);
+    try {
+      const res = await api.get("/player/skill-ratings");
+      const rows = res.data?.data ?? [];
+      const map: Record<string, number> = {};
+      (rows as Array<{ skill_code: string; rating: number }>).forEach((r) => {
+        map[r.skill_code] = r.rating;
+      });
+      setCoachRatings(map);
+    } catch { } finally {
+      setCoachRatingsLoaded(true);
+      setCoachRatingsLoading(false);
+    }
+  }
 
   // ── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -805,26 +830,107 @@ Output exactly 3 sentences. No bullet points. No headers.`,
                 <p className="text-xs text-zinc-400">Latest scores from your technique sessions</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {(["sprint","shooting","first-touch","dribbling","passing","tackling"] as const).map((skill) => {
-                const reading = skillReadings[skill];
-                const label = skill.replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
-                const href = `/player/${skill}`;
-                return (
-                  <Link key={skill} href={href} className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2.5 hover:border-[#f0b429]/50 transition-colors">
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
-                    {reading ? (
-                      <>
-                        <p className="mt-0.5 text-lg font-bold text-white">{reading.score}<span className="text-xs text-zinc-500">/100</span></p>
-                        {reading.grade && <span className="inline-block rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#f0b429", color: "#1a1a1a" }}>{reading.grade}</span>}
-                      </>
-                    ) : (
-                      <p className="mt-1 text-xs text-zinc-500">Not tested yet →</p>
-                    )}
-                  </Link>
-                );
-              })}
+
+            {/* Tab switcher */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSkillTab("my")}
+                className="rounded-lg px-3 py-1.5 text-xs font-bold transition-colors"
+                style={skillTab === "my"
+                  ? { background: "#f0b429", color: "#1a1a1a" }
+                  : { background: "#27272a", color: "#a1a1aa" }}
+              >
+                My Scores
+              </button>
+              <button
+                onClick={() => { setSkillTab("coach"); loadCoachRatings(); }}
+                className="rounded-lg px-3 py-1.5 text-xs font-bold transition-colors"
+                style={skillTab === "coach"
+                  ? { background: "#f0b429", color: "#1a1a1a" }
+                  : { background: "#27272a", color: "#a1a1aa" }}
+              >
+                Coach Assessed
+              </button>
             </div>
+
+            {/* My Scores tab */}
+            {skillTab === "my" && (
+              <div className="grid grid-cols-2 gap-2">
+                {(["sprint","shooting","first-touch","dribbling","passing","tackling"] as const).map((skill) => {
+                  const reading = skillReadings[skill];
+                  const label = skill.replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                  const href = `/player/${skill}`;
+                  return (
+                    <Link key={skill} href={href} className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2.5 hover:border-[#f0b429]/50 transition-colors">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+                      {reading ? (
+                        <>
+                          <p className="mt-0.5 text-lg font-bold text-white">{reading.score}<span className="text-xs text-zinc-500">/100</span></p>
+                          {reading.grade && <span className="inline-block rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#f0b429", color: "#1a1a1a" }}>{reading.grade}</span>}
+                        </>
+                      ) : (
+                        <p className="mt-1 text-xs text-zinc-500">Not tested yet →</p>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Coach Assessed tab */}
+            {skillTab === "coach" && (
+              coachRatingsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#f0b429] border-t-transparent" />
+                </div>
+              ) : Object.keys(coachRatings).length === 0 ? (
+                <p className="py-6 text-center text-xs text-zinc-500">
+                  No coach ratings yet. Ask your coach to rate you in their Squad Dashboard.
+                </p>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <RadarChart data={[
+                      { subject: "Sprint",      score: (coachRatings["sprint"]      ?? 0) * 10 },
+                      { subject: "Shooting",    score: (coachRatings["shooting"]    ?? 0) * 10 },
+                      { subject: "First Touch", score: (coachRatings["first_touch"] ?? 0) * 10 },
+                      { subject: "Dribbling",   score: (coachRatings["dribbling"]   ?? 0) * 10 },
+                      { subject: "Passing",     score: (coachRatings["passing"]     ?? 0) * 10 },
+                      { subject: "Tackling",    score: (coachRatings["tackling"]    ?? 0) * 10 },
+                    ]}>
+                      <PolarGrid stroke="rgba(240,180,41,0.15)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: "#a1a1aa", fontSize: 10 }} />
+                      <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+                      <Radar name="Coach Rating" dataKey="score" fill="rgba(240,180,41,0.25)" stroke="#f0b429" strokeWidth={2} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {([
+                      { code: "sprint",      label: "Sprint" },
+                      { code: "shooting",    label: "Shooting" },
+                      { code: "first_touch", label: "First Touch" },
+                      { code: "dribbling",   label: "Dribbling" },
+                      { code: "passing",     label: "Passing" },
+                      { code: "tackling",    label: "Tackling" },
+                    ]).map(({ code, label }) => {
+                      const val = coachRatings[code];
+                      return (
+                        <div key={code} className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+                          {val != null ? (
+                            <p className="mt-0.5 text-lg font-bold text-white">
+                              {val.toFixed(1)}<span className="text-xs text-zinc-500">/10</span>
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-xs text-zinc-500">Not rated</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )
+            )}
           </div>
 
           {/* ── Scholarship Reel ── */}
