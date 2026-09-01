@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { HighlightReel } from "@/components/player/HighlightReel";
 import { PlayerGamificationPanel } from "@/components/player/PlayerGamificationPanel";
+import PlayerPassportCard from "@/components/player/PlayerPassportCard";
 import { QRProfileCard } from "@/components/ui/qr-profile-card";
 import { ScoutViewBadge } from "@/components/player/ScoutViewBadge";
 import { ProUpgradeBanner } from "@/components/player/ProUpgradeBanner";
@@ -602,6 +603,9 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
           {/* ── GAMIFICATION PANEL — star of the show ─────────────────────── */}
           <PlayerGamificationPanel />
+
+          {/* ── PLAYER PASSPORT CARD ──────────────────────────────────────── */}
+          <PlayerPassportCard playerName={profile?.name ?? user?.name ?? undefined} />
 
           {/* ── SCOUT DISCOVERY STRIP ─────────────────────────────────────── */}
           <div className="flex gap-3">
