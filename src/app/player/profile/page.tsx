@@ -15,7 +15,7 @@ import {
   Sparkles,
   Copy,
   Award,
-  Target,
+  Download,
   Users,
   ChevronDown,
 } from "lucide-react";
@@ -403,7 +403,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
         <Sidebar />
         <main className="flex-1 overflow-auto p-6">
           <div className="mx-auto max-w-2xl space-y-6">
@@ -432,6 +432,119 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
     );
   }
 
+  // ── PDF download ──────────────────────────────────────────────────────────
+  const downloadProfile = () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { jsPDF } = require("jspdf");
+    const doc = new jsPDF();
+
+    // Header bar
+    doc.setFillColor(26, 92, 42);
+    doc.rect(0, 0, 210, 32, "F");
+    doc.setTextColor(240, 180, 41);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("GrassRoots Sports", 14, 16);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(255, 255, 255);
+    doc.text("Player Profile  ·  grassrootssports.live", 14, 25);
+
+    // Name
+    doc.setTextColor(26, 92, 42);
+    doc.setFontSize(17);
+    doc.setFont("helvetica", "bold");
+    doc.text(user?.name ?? "Player", 14, 46);
+
+    // Sub-line chips
+    const chips = [profile?.sport, profile?.position, profile?.province].filter(Boolean).join("  ·  ");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    doc.text(chips, 14, 53);
+
+    // Divider
+    doc.setDrawColor(240, 180, 41);
+    doc.setLineWidth(0.4);
+    doc.line(14, 58, 196, 58);
+
+    // Fields
+    let y = 67;
+    const rows: [string, string][] = [
+      ["Age Group",      profile?.age_group?.toUpperCase() ?? "—"],
+      ["Gender",         profile?.gender ?? "—"],
+      ["Preferred Foot", profile?.preferred_foot ?? "—"],
+      ["Height",         profile?.height_cm ? `${profile.height_cm} cm` : "—"],
+      ["Weight",         profile?.weight_kg ? `${profile.weight_kg} kg` : "—"],
+      ["Club",           profile?.club ?? "—"],
+      ["School",         profile?.school ?? "—"],
+      ["Province",       profile?.province ?? "—"],
+      ["Area",           profile?.area ?? "—"],
+    ];
+    rows.forEach(([label, val]) => {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(26, 92, 42);
+      doc.setFontSize(9);
+      doc.text(label + ":", 14, y);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(50, 50, 50);
+      doc.text(val, 65, y);
+      y += 8;
+    });
+
+    // Bio
+    if (profile?.bio) {
+      y += 4;
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.2);
+      doc.line(14, y, 196, y);
+      y += 7;
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(26, 92, 42);
+      doc.text("Bio", 14, y);
+      y += 6;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60, 60, 60);
+      const bioLines = doc.splitTextToSize(profile.bio, 178);
+      doc.text(bioLines, 14, y);
+      y += bioLines.length * 5 + 4;
+    }
+
+    // AI narrative
+    if (aiNarrative) {
+      y += 4;
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.2);
+      doc.line(14, y, 196, y);
+      y += 7;
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(26, 92, 42);
+      doc.text("AI Scout Narrative", 14, y);
+      y += 6;
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(80, 80, 80);
+      const narLines = doc.splitTextToSize(aiNarrative, 178);
+      doc.text(narLines, 14, y);
+    }
+
+    // Footer
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(160, 160, 160);
+    doc.text(`Generated ${new Date().toLocaleDateString()}  ·  Zimbabwe's First AI-Powered Grassroots Sports Platform`, 14, 286);
+
+    doc.save(`GRS-Profile-${(user?.name ?? "player").replace(/\s+/g, "-")}.pdf`);
+  };
+
+  // ── Light theme CSS variable overrides ────────────────────────────────────
+  const lightTheme = {
+    "--card":             "#ffffff",
+    "--border":           "#e5e7eb",
+    "--muted":            "#f3f4f6",
+    "--background":       "#f4f2ee",
+    "--muted-foreground": "#6b7280",
+  } as React.CSSProperties;
+
   const { count, total, pct } = calcCompletion(watchedValues);
 
   const activePositionKey = (watchedValues.position || "").toLowerCase();
@@ -450,7 +563,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
   const LiveIconComponent = POSITION_ICON_REGISTRY[lookupKey] || Award;
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-[#f4f2ee]" style={lightTheme}>
 
       {/* ── Photo Crop Modal ───────────────────────────────────────────────── */}
       {cropSrc && (
@@ -613,9 +726,14 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
               <Eye className="h-4 w-4" /> View as Scout
               <ExternalLink className="h-3.5 w-3.5 opacity-60" />
             </Link>
+            <button type="button" onClick={downloadProfile}
+              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:bg-gray-50">
+              <Download className="h-4 w-4" />
+              PDF
+            </button>
             {profile?.id && (
               <button type="button" onClick={copyProfileLink}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-white hover:bg-white/10">
+                className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:bg-gray-50">
                 <Copy className="h-4 w-4" />
                 {copied ? "Copied!" : "Share"}
               </button>
@@ -628,7 +746,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           {/* ── EDIT PROFILE COLLAPSIBLE ──────────────────────────────────── */}
           <div className="rounded-2xl border border-white/10 bg-card overflow-hidden">
             <button type="button" onClick={() => setShowEditPanel((v) => !v)}
-              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors">
               <span className="flex items-center gap-2">
                 <User className="h-4 w-4 text-[#f0b429]" />
                 Edit Profile
@@ -908,26 +1026,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
             );
           })()}
 
-          {/* ── TACTICAL PITCH ────────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-[#f0b429]/20 bg-card p-5 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Target className="h-4 w-4 text-[#f0b429]" />
-              <h3 className="font-semibold text-[#f0b429]">My Position on the Pitch</h3>
-              {(watchedValues.position || profile?.position) && (
-                <span className="ml-auto rounded-full bg-[#f0b429]/10 px-2.5 py-0.5 text-xs font-medium text-[#f0b429] border border-[#f0b429]/20 capitalize">
-                  {watchedValues.position || profile?.position}
-                </span>
-              )}
-            </div>
-            {(watchedValues.height_cm || profile?.height_cm || watchedValues.weight_kg || profile?.weight_kg) && (
-              <p className="mb-3 text-xs text-muted-foreground">
-                {[
-                  (watchedValues.height_cm || profile?.height_cm) && `${watchedValues.height_cm || profile?.height_cm} cm`,
-                  (watchedValues.weight_kg || profile?.weight_kg) && `${watchedValues.weight_kg || profile?.weight_kg} kg`,
-                ].filter(Boolean).join(" · ")}
-              </p>
-            )}
-          </div>
 
           {/* ── HIGHLIGHT REEL ────────────────────────────────────────────── */}
           <HighlightReel mode="self" />
@@ -936,7 +1034,7 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           <div className="rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm overflow-hidden">
             <button type="button"
               onClick={() => { setShowInvitePanel((v) => !v); setInviteCode(null); setInviteError(""); }}
-              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-white/80 hover:text-white transition-colors">
+              className="flex w-full items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors">
               <span className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-[#f0b429]" />
                 Invite Parent / Guardian
