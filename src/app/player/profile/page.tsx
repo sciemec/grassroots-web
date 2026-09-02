@@ -37,7 +37,6 @@ import api from "@/lib/api";
 import { queryAI } from "@/lib/ai-query";
 
 import { getPositionConfig, POSITION_ICON_REGISTRY } from "@/config/positions";
-import TacticalPitch from "@/components/TacticalPitch";
 
 // ── Player similarity lookup ──────────────────────────────────────────────────
 const PLAYER_SIMILARITIES: Record<string, Record<string, string[]>> = {
@@ -928,7 +927,6 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
                 ].filter(Boolean).join(" · ")}
               </p>
             )}
-            <TacticalPitch position={watchedValues.position || profile?.position} />
           </div>
 
           {/* ── HIGHLIGHT REEL ────────────────────────────────────────────── */}
