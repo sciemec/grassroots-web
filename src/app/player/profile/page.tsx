@@ -719,6 +719,60 @@ Write like a FIFA scout. Be professional and positive. No bullet points.${ubuntu
           {/* ── PLAYER PASSPORT CARD ──────────────────────────────────────── */}
           <PlayerPassportCard playerName={user?.name ?? undefined} />
 
+          {/* ── PROFILE COMPLETION PROMPT ─────────────────────────────────── */}
+          {pct < 100 && (
+            <div className="rounded-2xl border border-[#f0b429]/20 bg-[#f0b429]/5 px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-[#f0b429] uppercase tracking-wide">Profile strength</p>
+                <span className="text-xs font-bold text-[#f0b429]">{pct}%</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10 mb-3">
+                <div
+                  className="h-full rounded-full bg-[#f0b429] transition-all duration-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {!watchedValues.position && (
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPanel(true)}
+                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
+                  >
+                    + Position
+                  </button>
+                )}
+                {!watchedValues.province && (
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPanel(true)}
+                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
+                  >
+                    + Province
+                  </button>
+                )}
+                {!watchedValues.height_cm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPanel(true)}
+                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
+                  >
+                    + Height
+                  </button>
+                )}
+                {!watchedValues.date_of_birth && (
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPanel(true)}
+                    className="rounded-full border border-[#f0b429]/30 bg-[#f0b429]/10 px-3 py-1 text-xs font-medium text-[#f0b429] hover:bg-[#f0b429]/20 transition-colors"
+                  >
+                    + Date of birth
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── SCOUT DISCOVERY STRIP ─────────────────────────────────────── */}
           <div className="flex gap-3">
             <Link href="/player/profile/scout-view"

@@ -193,7 +193,7 @@ export default function RegisterPlayerPage() {
       if (data.user?.id)           localStorage.setItem("player_id",       data.user.id);
       if (data.user?.passport_token) localStorage.setItem("passport_token", data.user.passport_token);
 
-      router.push("/login?registered=1");
+      router.push("/player/profile");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong.";
       setError(msg);
