@@ -50,13 +50,13 @@ function ringPts(cx: number, cy: number, r: number, f: number, n: number): strin
 // ─── Physical DNA radar (7 axes, green) ───────────────────────────────────────
 
 const PHYSICAL_DEFAULTS: PhysicalAxis[] = [
-  { code: "sprint_10m",          label: "Explosiveness",      percentile: null },
-  { code: "sprint_30m",          label: "Top speed",          percentile: null },
-  { code: "505_agility_seconds", label: "Change of direction",percentile: null },
-  { code: "vertical_jump",       label: "Vertical leap",      percentile: null },
+  { code: "explosiveness_0_10m", label: "Explosiveness",      percentile: null },
+  { code: "top_end_speed",       label: "Top speed",          percentile: null },
+  { code: "change_of_direction", label: "Change of direction",percentile: null },
+  { code: "vertical_leap",       label: "Vertical leap",      percentile: null },
   { code: "functional_strength", label: "Strength",           percentile: null },
-  { code: "lateral_shuffle_5m",  label: "Core stability",     percentile: null },
-  { code: "recovery_heart_rate", label: "Stamina",            percentile: null },
+  { code: "core_stability",      label: "Core stability",     percentile: null },
+  { code: "aerobic_endurance",   label: "Stamina",            percentile: null },
 ];
 
 const PHYSICAL_LABELS: string[][] = [
